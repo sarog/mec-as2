@@ -25,15 +25,15 @@ public class ResourceBundleGlobalChange_de extends MecResourceBundle{
     
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
-        {"title", "Globale Änderungen an allen Partnern" },
+        {"title", "Globale Ã„nderungen an allen Partnern" },
         {"button.ok", "Schliessen" }, 
         {"button.set", "Setzen" }, 
-        {"partnersetting.changed", "Einstellungen wurden geändert für {0} Partner." },  
-        {"partnersetting.notchanged", "Einstellungen wurden nicht geändert - fehlerhafter Wert" },  
-        {"info.text", "<HTML>Mit Hilfe dieses Dialog können Sie Parameter aller Partner "
-            + "gleichzeitig auf definierte Werte setzen. Wenn Sie \"Setzen\" gedrückt haben, "
-            + "wird der jeweilige Wert für <strong>ALLE</strong> Partner überschrieben.</HTML>" },
-        {"label.dirpoll", "Verzeichnispoll für alle Partner durchführen" },
+        {"partnersetting.changed", "Einstellungen wurden geÃ¤ndert fÃ¼r {0} Partner." },  
+        {"partnersetting.notchanged", "Einstellungen wurden nicht geÃ¤ndert - fehlerhafter Wert" },  
+        {"info.text", "<HTML>Mit Hilfe dieses Dialog kÃ¶nnen Sie Parameter aller Partner "
+            + "gleichzeitig auf definierte Werte setzen. Wenn Sie \"Setzen\" gedrÃ¼ckt haben, "
+            + "wird der jeweilige Wert fÃ¼r <strong>ALLE</strong> Partner Ã¼berschrieben.</HTML>" },
+        {"label.dirpoll", "Verzeichnispoll fÃ¼r alle Partner durchfÃ¼hren" },
         {"label.maxpollfiles", "Maximale Anzahl von Dateien aller Partner pro Pollvorgang" },
         {"label.pollinterval", "Verzeichnis Pollintervall aller Partner" },
     };

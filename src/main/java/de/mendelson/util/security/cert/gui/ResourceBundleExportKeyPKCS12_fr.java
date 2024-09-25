@@ -34,23 +34,23 @@ public class ResourceBundleExportKeyPKCS12_fr extends MecResourceBundle {
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"button.browse", "Parcourir..."},
-        {"keystore.contains.nokeys", "Ce porte-clef ne contient aucune clef privée."},
-        {"label.exportdir", "Répertoire d''exportation"},
-        {"label.exportdir.hint", "Répertoire dans lequel la liste de clés doit être créée (PKCS#12)"},
-        {"label.exportdir.help", "<HTML><strong>Répertoire d''exportation</strong><br><br>"
-            + "Veuillez indiquer ici le répertoire d''exportation dans lequel la clé privée doit être exportée.<br>"
-            + "Pour des raisons de sécurité, la clé n''est pas transférée sur le client, "
-            + "c''est pourquoi seule une sauvegarde côté serveur est possible.<br><br>"
-            + "Le système créera dans ce répertoire un fichier mémoire contenant un horodateur."
+        {"keystore.contains.nokeys", "Ce porte-clef ne contient aucune clef privÃ©e."},
+        {"label.exportdir", "RÃ©pertoire d''exportation"},
+        {"label.exportdir.hint", "RÃ©pertoire dans lequel la liste de clÃ©s doit Ãªtre crÃ©Ã©e (PKCS#12)"},
+        {"label.exportdir.help", "<HTML><strong>RÃ©pertoire d''exportation</strong><br><br>"
+            + "Veuillez indiquer ici le rÃ©pertoire d''exportation dans lequel la clÃ© privÃ©e doit Ãªtre exportÃ©e.<br>"
+            + "Pour des raisons de sÃ©curitÃ©, la clÃ© n''est pas transfÃ©rÃ©e sur le client, "
+            + "c''est pourquoi seule une sauvegarde cÃ´tÃ© serveur est possible.<br><br>"
+            + "Le systÃ¨me crÃ©era dans ce rÃ©pertoire un fichier mÃ©moire contenant un horodateur."
             + "</HTML>"},
         {"label.keypass", "Mot de passe"},
-        {"label.keypass.hint", "Mot de passe pour keystore exporté"},
+        {"label.keypass.hint", "Mot de passe pour keystore exportÃ©"},
         {"title", "Export de la clef vers le porte-clef (PKCS#12 format)"},
-        {"filechooser.key.export", "Veuillez sélectionner le répertoire d''exportation sur le serveur"},
-        {"key.export.success.title", "Succès"},
+        {"filechooser.key.export", "Veuillez sÃ©lectionner le rÃ©pertoire d''exportation sur le serveur"},
+        {"key.export.success.title", "SuccÃ¨s"},
         {"key.export.error.message", "Une erreur a eu lieu lors du processus d''export.\n{0}"},
         {"key.export.error.title", "Erreur"},
         {"label.alias", "Clef"},
-        {"key.exported.to.file", "La clef \"{0}\" a été insérée dans le porte-clef \"{1}\" (PKCS#12)"},};
+        {"key.exported.to.file", "La clef \"{0}\" a Ã©tÃ© insÃ©rÃ©e dans le porte-clef \"{1}\" (PKCS#12)"},};
 
 }

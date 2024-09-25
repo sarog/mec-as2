@@ -34,10 +34,10 @@ public class ResourceBundleRenameEntry_fr extends MecResourceBundle {
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"label.newalias", "Nouvel alias"},
-        {"label.newalias.hint", "L''alias ‡ utiliser dans le futur"},
+        {"label.newalias.hint", "L''alias √† utiliser dans le futur"},
         {"title", "Renommer un alias ({0})"},
-        {"alias.exists.title", "Le renommage d''alias a ÈchouÈ" },
-        {"alias.exists.message", "L''alias \"{0}\" existe dÈj‡ dans ce keystore." },
+        {"alias.exists.title", "Le renommage d''alias a √©chou√©" },
+        {"alias.exists.message", "L''alias \"{0}\" existe d√©j√† dans ce keystore." },
     };
 
 }

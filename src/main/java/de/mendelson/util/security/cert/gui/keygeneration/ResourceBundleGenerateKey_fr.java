@@ -25,97 +25,97 @@ public class ResourceBundleGenerateKey_fr extends MecResourceBundle {
     }
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
-        {"title", "Générer la clé"},
+        {"title", "GÃ©nÃ©rer la clÃ©"},
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
-        {"label.keytype", "Type de clé"},
-        {"label.keytype.help", "<HTML><strong>Type de clé</strong><br><br>"
-            + "Il s''agit de l''algorithme de création de la clé. Pour les clés qui en résultent, il y a des avantages et des inconvénients selon l''algorithme.<br>"
-            + "En 2022, nous vous recommanderions une clé RSA avec une longueur de clé de 2048 ou 4096 bits."
+        {"label.keytype", "Type de clÃ©"},
+        {"label.keytype.help", "<HTML><strong>Type de clÃ©</strong><br><br>"
+            + "Il s''agit de l''algorithme de crÃ©ation de la clÃ©. Pour les clÃ©s qui en rÃ©sultent, il y a des avantages et des inconvÃ©nients selon l''algorithme.<br>"
+            + "En 2022, nous vous recommanderions une clÃ© RSA avec une longueur de clÃ© de 2048 ou 4096 bits."
             + "</HTML>"
         },
         {"label.signature", "Signature"},
         {"label.signature.help", "<HTML><strong>Signature</strong><br><br>"
-            + "Il s''agit de l''algorithme de signature avec lequel la clé est signée. Il est nécessaire "
-            + "pour les tests d''intégrité de la clé elle-même. Ce paramètre n''a rien à voir avec les "
-            + "capacités de signature de la clé - vous pouvez donc par exemple créer des signatures SHA-2 "
-            + "avec une clé signée SHA-1 ou inversement.<br>"
-            + "En 2022, nous vous recommandons d''utiliser une clé signée SHA-2."
+            + "Il s''agit de l''algorithme de signature avec lequel la clÃ© est signÃ©e. Il est nÃ©cessaire "
+            + "pour les tests d''intÃ©gritÃ© de la clÃ© elle-mÃªme. Ce paramÃ¨tre n''a rien Ã  voir avec les "
+            + "capacitÃ©s de signature de la clÃ© - vous pouvez donc par exemple crÃ©er des signatures SHA-2 "
+            + "avec une clÃ© signÃ©e SHA-1 ou inversement.<br>"
+            + "En 2022, nous vous recommandons d''utiliser une clÃ© signÃ©e SHA-2."
             + "</HTML>"
         },
         {"label.size", "Taille"},
         {"label.size.help", "<HTML><strong>Taille</strong><br><br>"
-            + "Il s''agit de la longueur de la clé. En principe, les opérations cryptographiques avec des clés de plus grande "
-            + "longueur sont plus sûres que les opérations cryptographiques avec des clés de plus petite longueur. L''inconvénient "
-            + "des clés de grande longueur est que les opérations cryptographiques durent beaucoup plus longtemps, ce qui peut "
-            + "ralentir considérablement le traitement des données en fonction de la puissance de calcul.<br>" 
-            + "En 2022, nous vous recommandons une clé de 2048 ou 4096 bits."
+            + "Il s''agit de la longueur de la clÃ©. En principe, les opÃ©rations cryptographiques avec des clÃ©s de plus grande "
+            + "longueur sont plus sÃ»res que les opÃ©rations cryptographiques avec des clÃ©s de plus petite longueur. L''inconvÃ©nient "
+            + "des clÃ©s de grande longueur est que les opÃ©rations cryptographiques durent beaucoup plus longtemps, ce qui peut "
+            + "ralentir considÃ©rablement le traitement des donnÃ©es en fonction de la puissance de calcul.<br>" 
+            + "En 2022, nous vous recommandons une clÃ© de 2048 ou 4096 bits."
             + "</HTML>"
         },
         {"label.commonname", "Common name"},
         {"label.commonname.help", "<HTML><strong>Common name</strong><br><br>"
-            + "Il s''agit du nom de votre domaine, tel qu''il correspond à l''enregistrement DNS. "
-            + "Ce paramètre est important pour le handshake d''une connexion TLS. "
-            + "Il est possible (mais pas recommandé!) de saisir ici une adresse IP. Il est également "
-            + "possible de créer un certificat wildcard en remplaçant ici des parties du domaine par *. "
-            + "Mais cela n''est pas non plus recommandé, car tous les partenaires n''acceptent pas de "
-            + "telles clés. Si vous souhaitez utiliser cette clé comme clé TLS et que cette entrée "
-            + "renvoie à un domaine inexistant ou ne correspond pas à votre domaine, la plupart "
-            + "des systèmes devraient interrompre les connexions TLS entrantes."
+            + "Il s''agit du nom de votre domaine, tel qu''il correspond Ã  l''enregistrement DNS. "
+            + "Ce paramÃ¨tre est important pour le handshake d''une connexion TLS. "
+            + "Il est possible (mais pas recommandÃ©!) de saisir ici une adresse IP. Il est Ã©galement "
+            + "possible de crÃ©er un certificat wildcard en remplaÃ§ant ici des parties du domaine par *. "
+            + "Mais cela n''est pas non plus recommandÃ©, car tous les partenaires n''acceptent pas de "
+            + "telles clÃ©s. Si vous souhaitez utiliser cette clÃ© comme clÃ© TLS et que cette entrÃ©e "
+            + "renvoie Ã  un domaine inexistant ou ne correspond pas Ã  votre domaine, la plupart "
+            + "des systÃ¨mes devraient interrompre les connexions TLS entrantes."
             + "</HTML>"
         },
         {"label.commonname.hint", "(Le nom de domaine)" },
-        {"label.organisationunit", "Unité d''organisation"},
+        {"label.organisationunit", "UnitÃ© d''organisation"},
         {"label.organisationname", "Nom de l''organisation"},
-        {"label.locality", "Localité"},
+        {"label.locality", "LocalitÃ©"},
         {"label.locality.hint", "(City)" },
-        {"label.state", "État"},
+        {"label.state", "Ã‰tat"},
         {"label.countrycode", "Code pays"},
         {"label.countrycode.hint", "(2 chiffres, ISO 3166)" },
         {"label.mailaddress", "EMail"},
         {"label.mailaddress.help", "<HTML><strong>EMail</strong><br><br>"
-            + "Il s''agit de l''adresse e-mail associée à la clé. Techniquement, ce paramètre n''est pas important. "
-            + "Toutefois, si vous souhaitez faire certifier la clé, cette adresse e-mail sert généralement à la "
-            + "communication avec l''AC. En outre, l''adresse e-mail devrait également se trouver sur le domaine "
-            + "du serveur et correspondre à quelque chose comme webmaster@domain ou quelque chose de similaire, "
-            + "car la plupart des AC vérifient ainsi si vous êtes en possession du domaine correspondant."
+            + "Il s''agit de l''adresse e-mail associÃ©e Ã  la clÃ©. Techniquement, ce paramÃ¨tre n''est pas important. "
+            + "Toutefois, si vous souhaitez faire certifier la clÃ©, cette adresse e-mail sert gÃ©nÃ©ralement Ã  la "
+            + "communication avec l''AC. En outre, l''adresse e-mail devrait Ã©galement se trouver sur le domaine "
+            + "du serveur et correspondre Ã  quelque chose comme webmaster@domain ou quelque chose de similaire, "
+            + "car la plupart des AC vÃ©rifient ainsi si vous Ãªtes en possession du domaine correspondant."
             + "</HTML>"
         },
-        {"label.validity", "Validité en jours"},
-        {"label.validity.help", "<HTML><strong>Validité en jours</strong><br><br>"
-            + "Cette valeur n''est intéressante que pour les clés self signed. En cas d''authentification, l''AC "
-            + "écrasera cette valeur."
+        {"label.validity", "ValiditÃ© en jours"},
+        {"label.validity.help", "<HTML><strong>ValiditÃ© en jours</strong><br><br>"
+            + "Cette valeur n''est intÃ©ressante que pour les clÃ©s self signed. En cas d''authentification, l''AC "
+            + "Ã©crasera cette valeur."
             + "</HTML>"
         },
-        {"label.purpose", "Utilisation de clé supplémentaire"},
+        {"label.purpose", "Utilisation de clÃ© supplÃ©mentaire"},
         {"label.purpose.encsign", "Chiffrage et signature"},
         {"label.purpose.ssl", "TLS"},
         {"label.extension.ski", "Subject key identifier (SKI)" },
         {"label.extension.ski.help", "<HTML><strong>SKI</strong><br><br>"
-            + "Il existe plusieurs façons d'identifier un certificat : à l''aide du hachage "
-            + "du certificat, de l''émetteur, du numéro de série et de l''identifiant de clé "
+            + "Il existe plusieurs faÃ§ons d'identifier un certificat : Ã  l''aide du hachage "
+            + "du certificat, de l''Ã©metteur, du numÃ©ro de sÃ©rie et de l''identifiant de clÃ© "
             + "du demandeur (Subject Key Identifier, SKI). Le SKI fournit une identification "
-            + "univoque pour le demandeur du certificat et est souvent utilisé lors du travail "
-            + "avec la signature numérique XML ou, plus généralement, dans le domaine de la "
-            + "sécurité des services web. Souvent, cette extension avec l''OID 2.5.29.14 "
-            + "est donc nécessaire pour AS4."
+            + "univoque pour le demandeur du certificat et est souvent utilisÃ© lors du travail "
+            + "avec la signature numÃ©rique XML ou, plus gÃ©nÃ©ralement, dans le domaine de la "
+            + "sÃ©curitÃ© des services web. Souvent, cette extension avec l''OID 2.5.29.14 "
+            + "est donc nÃ©cessaire pour AS4."
             + "</HTML>"
         },
         {"label.subjectalternativenames", "Subject alternative names" },        
-        {"warning.mail.in.domain", "L''adresse e-mail ne fait pas partie du domaine \"{0}\" (e.g. myname@{0}).\nCela pourrait être un problème si vous souhaitez faire confiance à la clé plus tard."},
+        {"warning.mail.in.domain", "L''adresse e-mail ne fait pas partie du domaine \"{0}\" (e.g. myname@{0}).\nCela pourrait Ãªtre un problÃ¨me si vous souhaitez faire confiance Ã  la clÃ© plus tard."},
         {"warning.nonexisting.domain", "Le nom de domaine \"{0}\" ne semble pas exister." },
         {"warning.invalid.mail", "L''adresse mail \"{0}\" est invalide." },
-        {"button.reedit", "Modifier les paramètres" },
+        {"button.reedit", "Modifier les paramÃ¨tres" },
         {"button.ignore", "Ignorer les avertissements" },
-        {"warning.title", "Possible problème de paramètres" },
+        {"warning.title", "Possible problÃ¨me de paramÃ¨tres" },
         {"view.expert", "Vue d''experts" },
         {"view.basic", "Vue de base" },
         {"label.namedeccurve", "Courbe" },
         {"label.namedeccurve.help", "<HTML><strong>Courbe</strong><br><br>"
-            + "Vous choisissez ici le nom de la courbe EC qui doit être utilisé pour la génération "
-            + "de la clé. La longueur de clé souhaitée fait généralement partie du nom de la courbe, "
-            + "par exemple la clé de la courbe \"BrainpoolP256r1\" a une longueur de 256 bits. La courbe "
-            + "la plus utilisée en 2022 (environ 75% de tous les certificats EC sur Internet l''utilisent) "
+            + "Vous choisissez ici le nom de la courbe EC qui doit Ãªtre utilisÃ© pour la gÃ©nÃ©ration "
+            + "de la clÃ©. La longueur de clÃ© souhaitÃ©e fait gÃ©nÃ©ralement partie du nom de la courbe, "
+            + "par exemple la clÃ© de la courbe \"BrainpoolP256r1\" a une longueur de 256 bits. La courbe "
+            + "la plus utilisÃ©e en 2022 (environ 75% de tous les certificats EC sur Internet l''utilisent) "
             + "est la courbe NIST P-256, que vous trouverez ici sous le nom \"Prime256v1\". Elle est "
             + "la courbe standard d''OpenSSL en 2022."
             + "</HTML>" },

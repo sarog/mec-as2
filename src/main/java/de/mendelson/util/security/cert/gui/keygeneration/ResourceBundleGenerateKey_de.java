@@ -30,41 +30,41 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"title", "Schlüsselerstellung"},
+        {"title", "SchlÃ¼sselerstellung"},
         {"button.ok", "Ok"},
         {"button.cancel", "Abbruch"},
-        {"label.keytype", "Schlüsseltyp"},
-        {"label.keytype.help", "<HTML><strong>Schlüsseltyp</strong><br><br>"
-            + "Dies ist der Algorithmus zum Erstellen des Schlüssels. Für die daraus resultierenden Schlüssel gibt es je nach Algorithmus vor- und Nachteile.<br>"
-            + "Wir würden Ihnen Stand 2022 einen RSA Schlüssel mit der Schlüssellänge 2048 oder 4096 bit empfehlen."
+        {"label.keytype", "SchlÃ¼sseltyp"},
+        {"label.keytype.help", "<HTML><strong>SchlÃ¼sseltyp</strong><br><br>"
+            + "Dies ist der Algorithmus zum Erstellen des SchlÃ¼ssels. FÃ¼r die daraus resultierenden SchlÃ¼ssel gibt es je nach Algorithmus vor- und Nachteile.<br>"
+            + "Wir wÃ¼rden Ihnen Stand 2022 einen RSA SchlÃ¼ssel mit der SchlÃ¼ssellÃ¤nge 2048 oder 4096 bit empfehlen."
             + "</HTML>"
         },
         {"label.signature", "Signatur"},
         {"label.signature.help", "<HTML><strong>Signatur</strong><br><br>"
-            + "Dies ist der Signaturalgorithmus, mit dem der Schlüssel signiert ist. "
-            + "Er wird für Integritätstests des Schlüssels selber benötigt. Dieser Parameter hat nichts mit den "
-            + "Signaturfähigkeiten des Schlüssels zu tun - Sie können also zum Beispiel mit einem SHA-1 signierten "
-            + "Schlüssel auch SHA-2 Signaturen erstellen "
+            + "Dies ist der Signaturalgorithmus, mit dem der SchlÃ¼ssel signiert ist. "
+            + "Er wird fÃ¼r IntegritÃ¤tstests des SchlÃ¼ssels selber benÃ¶tigt. Dieser Parameter hat nichts mit den "
+            + "SignaturfÃ¤higkeiten des SchlÃ¼ssels zu tun - Sie kÃ¶nnen also zum Beispiel mit einem SHA-1 signierten "
+            + "SchlÃ¼ssel auch SHA-2 Signaturen erstellen "
             + "oder anders herum.<br>"
-            + "Wir würden Ihnen Stand 2022 einen SHA-2 signierten Schlüssel empfehlen."
+            + "Wir wÃ¼rden Ihnen Stand 2022 einen SHA-2 signierten SchlÃ¼ssel empfehlen."
             + "</HTML>"
         },
-        {"label.size", "Schlüssellänge"},
-        {"label.size.help", "<HTML><strong>Schlüssellänge</strong><br><br>"
-            + "Dies ist die Schlüssellänge des Schlüssels. Prinzipiell sind kryptographische Operationen mit "
-            + "grösserer Schlüssellänge sicherer als kryptographische Operationen mit Schlüsseln kleinerer Schlüssellänge. "
-            + "Der Nachteil grosser Schlüssellängen ist jedoch, dass kryptographische Operationen signifikant länger dauern, "
+        {"label.size", "SchlÃ¼ssellÃ¤nge"},
+        {"label.size.help", "<HTML><strong>SchlÃ¼ssellÃ¤nge</strong><br><br>"
+            + "Dies ist die SchlÃ¼ssellÃ¤nge des SchlÃ¼ssels. Prinzipiell sind kryptographische Operationen mit "
+            + "grÃ¶sserer SchlÃ¼ssellÃ¤nge sicherer als kryptographische Operationen mit SchlÃ¼sseln kleinerer SchlÃ¼ssellÃ¤nge. "
+            + "Der Nachteil grosser SchlÃ¼ssellÃ¤ngen ist jedoch, dass kryptographische Operationen signifikant lÃ¤nger dauern, "
             + "was die Datenverarbeitung je nach Rechenleistung signifikant verlangsamen kann.<br>"
-            + "Wir würden Ihnen Stand 2022 einen Schlüssel der Länge 2048 oder 4096 bit empfehlen."
+            + "Wir wÃ¼rden Ihnen Stand 2022 einen SchlÃ¼ssel der LÃ¤nge 2048 oder 4096 bit empfehlen."
             + "</HTML>"
         },
         {"label.commonname", "Common Name"},
         {"label.commonname.help", "<HTML><strong>Common Name</strong><br><br>"
-            + "Dies ist der Name Ihrer Domain, wie es dem DNS Eintrag entspricht. Dieser Parameter ist wichtig für das Handshake einer TLS Verbindung. "
-            + "Es ist möglich (aber nicht empfehlenswert!), hier eine IP Adresse einzugeben. Es ist ebenfalls möglich, "
+            + "Dies ist der Name Ihrer Domain, wie es dem DNS Eintrag entspricht. Dieser Parameter ist wichtig fÃ¼r das Handshake einer TLS Verbindung. "
+            + "Es ist mÃ¶glich (aber nicht empfehlenswert!), hier eine IP Adresse einzugeben. Es ist ebenfalls mÃ¶glich, "
             + "ein Wildcard Zertifikat zu erstellen, wenn Sie hier Teile der Domain durch * ersetzen. "
-            + "Aber auch das ist nicht empfehlenswert, weil nicht alle Partner solche Schlüssel akzeptieren.<br>"
-            + "Wenn Sie diesen Schlüssel als TLS Schlüssel verwenden möchten und dieser Eintrag auf eine nichtexistiente Domain verweist oder nicht Ihrer Domain entspricht, "
+            + "Aber auch das ist nicht empfehlenswert, weil nicht alle Partner solche SchlÃ¼ssel akzeptieren.<br>"
+            + "Wenn Sie diesen SchlÃ¼ssel als TLS SchlÃ¼ssel verwenden mÃ¶chten und dieser Eintrag auf eine nichtexistiente Domain verweist oder nicht Ihrer Domain entspricht, "
             + "sollten die meisten Systeme eingehende TLS Verbindungen abbrechen."
             + "</HTML>"
         },
@@ -74,49 +74,49 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
         {"label.locality", "Ort"},
         {"label.locality.hint", "(Stadt)"},
         {"label.state", "Land"},
-        {"label.countrycode", "Ländercode"},
+        {"label.countrycode", "LÃ¤ndercode"},
         {"label.countrycode.hint", "(2 Zeichen, ISO 3166)"},
         {"label.mailaddress", "Mail Adresse"},
         {"label.mailaddress.help", "<HTML><strong>Mail Adresse</strong><br><br>"
-            + "Dies ist die Mailadresse, die mit dem Schlüssel verknüpft ist. Technisch ist "
-            + "dieser Parameter uninteressant. Wenn Sie den Schlüssel jedoch beglaubigen lassen "
-            + "möchten, dient diese Mailadresse in der Regel für die Kommunikation mit der CA. "
+            + "Dies ist die Mailadresse, die mit dem SchlÃ¼ssel verknÃ¼pft ist. Technisch ist "
+            + "dieser Parameter uninteressant. Wenn Sie den SchlÃ¼ssel jedoch beglaubigen lassen "
+            + "mÃ¶chten, dient diese Mailadresse in der Regel fÃ¼r die Kommunikation mit der CA. "
             + "Ausserdem sollte die Mailadresse sich auch auf der Domain des Servers befinden "
-            + "und so etwas wie webmaster@domain oder ähnlichem entsprechen, "
-            + "weil die meisten CAs somit prüfen, ob Sie im Besitz der zugehörigen Domain sind."
+            + "und so etwas wie webmaster@domain oder Ã¤hnlichem entsprechen, "
+            + "weil die meisten CAs somit prÃ¼fen, ob Sie im Besitz der zugehÃ¶rigen Domain sind."
             + "</HTML>"
         },
-        {"label.validity", "Gültigkeit in Tagen"},
-        {"label.validity.help", "<HTML><strong>Gültigkeit in Tagen</strong><br><br>"
-            + "Dieser Wert ist nur für self signed Schlüssel interessant. Im Falle einer Beglaubigung wird die CA diesen Wert überschreiben."
+        {"label.validity", "GÃ¼ltigkeit in Tagen"},
+        {"label.validity.help", "<HTML><strong>GÃ¼ltigkeit in Tagen</strong><br><br>"
+            + "Dieser Wert ist nur fÃ¼r self signed SchlÃ¼ssel interessant. Im Falle einer Beglaubigung wird die CA diesen Wert Ã¼berschreiben."
             + "</HTML>"
         },
-        {"label.purpose", "Schlüsselerweiterungen"},
-        {"label.purpose.encsign", "Verschlüsselung und digitale Signatur"},
+        {"label.purpose", "SchlÃ¼sselerweiterungen"},
+        {"label.purpose.encsign", "VerschlÃ¼sselung und digitale Signatur"},
         {"label.purpose.ssl", "TLS"},
         {"label.extension.ski", "Subject key identifier (SKI)"},
         {"label.extension.ski.help", "<HTML><strong>SKI</strong><br><br>"
-            + "Es gibt mehrere Möglichkeiten, ein Zertifikat zu identifizieren: anhand des Hashs "
-            + "des Zertifikats, des Ausstellers, der Seriennummer und des Antragstellerschlüsselbezeichners "
-            + "(Subject Key Identifier, SKI). Der SKI stellt eine eindeutige Identifikation für den Antragsteller des "
-            + "Zertifikats bereit und wird häufig bei der Arbeit mit der digitalen XML-Signatur oder generell im Bereich der "
-            + "web service security verwendet. Häufig ist diese Erweiterung mit der OID 2.5.29.14 daher für AS4 erforderlich."
+            + "Es gibt mehrere MÃ¶glichkeiten, ein Zertifikat zu identifizieren: anhand des Hashs "
+            + "des Zertifikats, des Ausstellers, der Seriennummer und des AntragstellerschlÃ¼sselbezeichners "
+            + "(Subject Key Identifier, SKI). Der SKI stellt eine eindeutige Identifikation fÃ¼r den Antragsteller des "
+            + "Zertifikats bereit und wird hÃ¤ufig bei der Arbeit mit der digitalen XML-Signatur oder generell im Bereich der "
+            + "web service security verwendet. HÃ¤ufig ist diese Erweiterung mit der OID 2.5.29.14 daher fÃ¼r AS4 erforderlich."
             + "</HTML>"
         },
         {"label.subjectalternativenames", "Alternative Antragstellernamen"},
-        {"warning.mail.in.domain", "Die Mailadresse ist nicht Teil der Domain \"{0}\" (z.B. meinname@{0}).\nDies kann ein Problem sein, wenn der Schlüssel später beglaubigt werden soll."},
+        {"warning.mail.in.domain", "Die Mailadresse ist nicht Teil der Domain \"{0}\" (z.B. meinname@{0}).\nDies kann ein Problem sein, wenn der SchlÃ¼ssel spÃ¤ter beglaubigt werden soll."},
         {"warning.nonexisting.domain", "Die Domain \"{0}\" existiert nicht."},
-        {"warning.invalid.mail", "Die Mail Adresse \"{0}\" ist ungültig."},
-        {"button.reedit", "Überarbeiten"},
+        {"warning.invalid.mail", "Die Mail Adresse \"{0}\" ist ungÃ¼ltig."},
+        {"button.reedit", "Ãœberarbeiten"},
         {"button.ignore", "Warnungen ignorieren"},
-        {"warning.title", "Mögliches Problem der Schlüsselparameter"},
+        {"warning.title", "MÃ¶gliches Problem der SchlÃ¼sselparameter"},
         {"view.expert", "Experten Ansicht"},
         {"view.basic", "Standard Ansicht"},
         {"label.namedeccurve", "Kurve"},
         {"label.namedeccurve.help", "<HTML><strong>Kurve</strong><br><br>"
-            + "Hiermit wählen Sie den Namen der EC Kurve aus, der für die Generation des Schlüssels verwendet werden soll. "
-            + "Die gewünschte Schlüssellänge ist in der Regel Teil des Namens der Kurve, so hat zum Beispiel der Schlüssel der Kurve "
-            + "\"BrainpoolP256r1\" eine Länge von 256bit. Die Stand 2022 am meisten verwendete Kurve (ca 75% aller EC Zertifikate im Internet verwenden sie) ist NIST P-256, die Sie hier unter dem "
+            + "Hiermit wÃ¤hlen Sie den Namen der EC Kurve aus, der fÃ¼r die Generation des SchlÃ¼ssels verwendet werden soll. "
+            + "Die gewÃ¼nschte SchlÃ¼ssellÃ¤nge ist in der Regel Teil des Namens der Kurve, so hat zum Beispiel der SchlÃ¼ssel der Kurve "
+            + "\"BrainpoolP256r1\" eine LÃ¤nge von 256bit. Die Stand 2022 am meisten verwendete Kurve (ca 75% aller EC Zertifikate im Internet verwenden sie) ist NIST P-256, die Sie hier unter dem "
             + "Namen \"Prime256v1\" finden. Sie ist Stand 2022 die Standardkurve von OpenSSL."
             + "</HTML>"},};
 

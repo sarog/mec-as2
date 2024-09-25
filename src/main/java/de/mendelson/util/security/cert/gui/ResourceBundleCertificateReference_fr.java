@@ -27,10 +27,10 @@ public class ResourceBundleCertificateReference_fr extends MecResourceBundle{
     static final Object[][] CONTENTS = {        
         {"title", "Utilisation du certificat" },   
         {"button.ok", "Ok" },
-        {"label.info.certificate", "<HTML>Le certificat avec l''alias <strong>{0}</strong> est utilisé par les partenaires suivants</HTML>" },
-        {"label.info.key", "<HTML>La clé privée avec l''alias <strong>{0}</strong> est utilisée par les partenaires suivants</HTML>" },
-        {"label.notinuse.key", "<HTML>La clé privée avec l''alias <strong>{0}</strong> n''est utilisée par aucun partenaire dans la configuration.</HTML>" },
-        {"label.notinuse.certificate", "<HTML>Le certificat avec l''alias <strong>{0}</strong> n''est utilisé par aucun partenaire dans la configuration.</HTML>" },
+        {"label.info.certificate", "<HTML>Le certificat avec l''alias <strong>{0}</strong> est utilisÃ© par les partenaires suivants</HTML>" },
+        {"label.info.key", "<HTML>La clÃ© privÃ©e avec l''alias <strong>{0}</strong> est utilisÃ©e par les partenaires suivants</HTML>" },
+        {"label.notinuse.key", "<HTML>La clÃ© privÃ©e avec l''alias <strong>{0}</strong> n''est utilisÃ©e par aucun partenaire dans la configuration.</HTML>" },
+        {"label.notinuse.certificate", "<HTML>Le certificat avec l''alias <strong>{0}</strong> n''est utilisÃ© par aucun partenaire dans la configuration.</HTML>" },
     };
     
 }

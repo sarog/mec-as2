@@ -30,22 +30,22 @@ public class ResourceBundlePreferencesInterface_de extends MecResourceBundle {
      */
     static final Object[][] CONTENTS = {          
         {"label.cem", "Zertifikataustausch erlauben (CEM)"},
-        {"label.outboundstatusfiles", "Statusdateien für ausgehende Transaktionen schreiben"},        
-        {"label.showsecurityoverwrite", "Partnerverwaltung: Sicherheitseinstellungen der lokalen Station überschreiben" },
-        {"label.showsecurityoverwrite.help", "<HTML><strong>Sicherheitseinstellungen der lokalen Station überschreiben</strong><br><br>"
-            + "Wenn Sie diese Option einschalten, wird in der Partnerverwaltung pro Partner ein zusätzlicher "
-            + "Tab angezeigt.<br>Darin können Sie die privaten Schlüssel definieren, die für diesen Partner ein- und ausgehend "
-            + "auf jeden Fall verwendet werden - unabhängig von den Einstellungen der jeweiligen lokalen Station.<br>"
-            + "Diese Option ermöglicht es Ihnen, für jeden Partner bei gleicher lokaler Station unterschiedliche private "
-            + "Schlüssel zu verwenden.<br><br>Dies ist eine Option für die Kompatibilität mit anderen AS2 Produkten - manche Systeme "
+        {"label.outboundstatusfiles", "Statusdateien fÃ¼r ausgehende Transaktionen schreiben"},        
+        {"label.showsecurityoverwrite", "Partnerverwaltung: Sicherheitseinstellungen der lokalen Station Ã¼berschreiben" },
+        {"label.showsecurityoverwrite.help", "<HTML><strong>Sicherheitseinstellungen der lokalen Station Ã¼berschreiben</strong><br><br>"
+            + "Wenn Sie diese Option einschalten, wird in der Partnerverwaltung pro Partner ein zusÃ¤tzlicher "
+            + "Tab angezeigt.<br>Darin kÃ¶nnen Sie die privaten SchlÃ¼ssel definieren, die fÃ¼r diesen Partner ein- und ausgehend "
+            + "auf jeden Fall verwendet werden - unabhÃ¤ngig von den Einstellungen der jeweiligen lokalen Station.<br>"
+            + "Diese Option ermÃ¶glicht es Ihnen, fÃ¼r jeden Partner bei gleicher lokaler Station unterschiedliche private "
+            + "SchlÃ¼ssel zu verwenden.<br><br>Dies ist eine Option fÃ¼r die KompatibilitÃ¤t mit anderen AS2 Produkten - manche Systeme "
             + "haben genau diese Anforderungen, die jedoch eine Konfiguration von Beziehungen von Partnern und "
             + "nicht Einzelpartnern voraussetzen."
             + "</HTML>"},
         {"label.showhttpheader", "Partnerverwaltung: Anzeige der HTTP Header Konfiguration"},
         {"label.showhttpheader.help", "<HTML><strong>Anzeige der HTTP Header Konfiguration</strong><br><br>"
-            + "Wenn Sie diese Option einschalten, wird in der Partnerverwaltung pro Partner ein zusätzlicher "
-            + "Tab angezeigt, in dem Sie benutzerdefinierte HTTP Header für den Datenversand an diesen Partner "
-            + "definieren können."
+            + "Wenn Sie diese Option einschalten, wird in der Partnerverwaltung pro Partner ein zusÃ¤tzlicher "
+            + "Tab angezeigt, in dem Sie benutzerdefinierte HTTP Header fÃ¼r den Datenversand an diesen Partner "
+            + "definieren kÃ¶nnen."
             + "</HTML>"},
         {"label.showquota", "Partnerverwaltung: Anzeige der Benachrichtigungskonfiguration"},
     };

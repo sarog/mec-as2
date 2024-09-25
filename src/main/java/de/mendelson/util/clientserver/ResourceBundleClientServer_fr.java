@@ -28,7 +28,7 @@ public class ResourceBundleClientServer_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"clientserver.start", "Démarrage de l''interface client-serveur {0}, écoute sur le port {1}."},
-        {"clientserver.started", "{0} interface client-serveur démarrée."},
+        {"clientserver.start", "DÃ©marrage de l''interface client-serveur {0}, Ã©coute sur le port {1}."},
+        {"clientserver.started", "{0} interface client-serveur dÃ©marrÃ©e."},
     };
 }

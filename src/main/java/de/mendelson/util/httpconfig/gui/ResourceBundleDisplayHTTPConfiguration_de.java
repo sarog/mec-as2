@@ -28,12 +28,12 @@ public class ResourceBundleDisplayHTTPConfiguration_de extends MecResourceBundle
         {"title", "Serverseitige HTTP Konfiguration"},
         {"reading.configuration", "Lese HTTP Konfiguration..."},
         {"button.ok", "Schliessen" },
-        {"label.info.configfile", "Dieser Dialog zeigt Ihnen die serverseitige HTTP/S Konfiguration. Der mitgelieferte HTTP Server hat die Version <strong>jetty {0}</strong>. Sie können die Chiffren und die Protokolle in der Datei \"{1}\" auf dem Server konfigurieren. "
-            + "Basiseinstellungen nehmen Sie bitte in der Datei \"{2}\" oder direkt über die Servereinstellungen vor. Bitte starten Sie den Server neu, um Änderungen wirksam zu machen." },
+        {"label.info.configfile", "Dieser Dialog zeigt Ihnen die serverseitige HTTP/S Konfiguration. Der mitgelieferte HTTP Server hat die Version <strong>jetty {0}</strong>. Sie kÃ¶nnen die Chiffren und die Protokolle in der Datei \"{1}\" auf dem Server konfigurieren. "
+            + "Basiseinstellungen nehmen Sie bitte in der Datei \"{2}\" oder direkt Ã¼ber die Servereinstellungen vor. Bitte starten Sie den Server neu, um Ã„nderungen wirksam zu machen." },
         {"tab.misc", "Allgemein"},
         {"tab.cipher", "TLS Chiffren"},
         {"tab.protocols", "TLS Protokolle"},
         {"no.ssl.enabled", "Der TLS Support wurde im unterliegenden HTTP Server nicht eingeschaltet.\nBitte modifizieren Sie die Konfigurationsdatei {0}\nentsprechend der Dokumentation und starten Sie den Server neu." },        
-        {"no.embedded.httpserver", "Sie haben den unterliegenden HTTP Server nicht gestartet.\nEs ist keine Information verfügbar." },                
+        {"no.embedded.httpserver", "Sie haben den unterliegenden HTTP Server nicht gestartet.\nEs ist keine Information verfÃ¼gbar." },                
     };
 }

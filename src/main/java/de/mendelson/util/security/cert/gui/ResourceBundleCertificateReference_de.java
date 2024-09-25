@@ -29,8 +29,8 @@ public class ResourceBundleCertificateReference_de extends MecResourceBundle{
         {"title", "Zertifikatverwendung" },   
         {"button.ok", "Ok" },
         {"label.info.certificate", "<HTML>Das Zertifikat mit dem Alias <strong>{0}</strong> wird von folgenden Partnern verwendet</HTML>" },
-        {"label.info.key", "<HTML>Der private Schlüssel mit dem Alias <strong>{0}</strong> wird von folgenden Partnern verwendet</HTML>" },
-        {"label.notinuse.key", "<HTML>Der private Schlüssel mit dem Alias <strong>{0}</strong> wird in der Konfiguration von keinem Partner verwendet</HTML>" },
+        {"label.info.key", "<HTML>Der private SchlÃ¼ssel mit dem Alias <strong>{0}</strong> wird von folgenden Partnern verwendet</HTML>" },
+        {"label.notinuse.key", "<HTML>Der private SchlÃ¼ssel mit dem Alias <strong>{0}</strong> wird in der Konfiguration von keinem Partner verwendet</HTML>" },
         {"label.notinuse.certificate", "<HTML>Das Zertifikat mit dem Alias <strong>{0}</strong> wird in der Konfiguration von keinem Partner verwendet</HTML>" },
     };
     

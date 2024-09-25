@@ -33,27 +33,27 @@ public class ResourceBundleExportKeystore_fr extends MecResourceBundle {
         {"button.ok", "Ok"},
         {"button.cancel", "Annuler"},
         {"button.browse", "Parcourir"},
-        {"label.exportdir", "Répertoire d''exportation"},
-        {"label.exportdir.hint", "Répertoire dans lequel le fichier keystore est créé"},
-        {"label.exportdir.help", "<HTML><strong>Répertoire d''exportation</strong><br><br>"
-            + "Veuillez indiquer le répertoire d''exportation vers lequel la base de données<br>"
-            + "de clés doit être exportée.<br>"
-            + "Pour des raisons de sécurité, les clés ne sont pas transférées au client,<br>"
-            + "de sorte que seule la sauvegarde côté serveur est possible.<br>"
-            + "Le système créera un fichier de sauvegarde dans ce répertoire, qui contiendra un horodatage."
+        {"label.exportdir", "RÃ©pertoire d''exportation"},
+        {"label.exportdir.hint", "RÃ©pertoire dans lequel le fichier keystore est crÃ©Ã©"},
+        {"label.exportdir.help", "<HTML><strong>RÃ©pertoire d''exportation</strong><br><br>"
+            + "Veuillez indiquer le rÃ©pertoire d''exportation vers lequel la base de donnÃ©es<br>"
+            + "de clÃ©s doit Ãªtre exportÃ©e.<br>"
+            + "Pour des raisons de sÃ©curitÃ©, les clÃ©s ne sont pas transfÃ©rÃ©es au client,<br>"
+            + "de sorte que seule la sauvegarde cÃ´tÃ© serveur est possible.<br>"
+            + "Le systÃ¨me crÃ©era un fichier de sauvegarde dans ce rÃ©pertoire, qui contiendra un horodatage."
             + "</HTML>"},
         {"label.keypass", "Mot de passe"},
-        {"label.keypass.hint", "Mot de passe exporté du keystore"},
+        {"label.keypass.hint", "Mot de passe exportÃ© du keystore"},
         {"label.keypass.help", "<HTML><strong>Mot de passe</strong><br><br>"
-            + "Il s''agit du mot de passe avec lequel la base de données exportée côté serveur est "
-            + "sécurisée.<br>Veuillez saisir \"test\" si cette base de données doit "
-            + "être automatiquement importée ultérieurement dans le produit mendelson."
+            + "Il s''agit du mot de passe avec lequel la base de donnÃ©es exportÃ©e cÃ´tÃ© serveur est "
+            + "sÃ©curisÃ©e.<br>Veuillez saisir \"test\" si cette base de donnÃ©es doit "
+            + "Ãªtre automatiquement importÃ©e ultÃ©rieurement dans le produit mendelson."
             + "</HTML>"},
-        {"title", "Exporter toutes les entrées dans la base de données des clés"},
-        {"filechooser.key.export", "Veuillez sélectionner le répertoire d'exportation sur le serveur"},
-        {"keystore.export.success.title", "Succès"},
+        {"title", "Exporter toutes les entrÃ©es dans la base de donnÃ©es des clÃ©s"},
+        {"filechooser.key.export", "Veuillez sÃ©lectionner le rÃ©pertoire d'exportation sur le serveur"},
+        {"keystore.export.success.title", "SuccÃ¨s"},
         {"keystore.export.error.message", "Une erreur s''est produite au cours du processus d''exportation.\n{0}"},
         {"keystore.export.error.title", "Erreur"},
-        {"keystore.exported.to.file", "Le fichier keystore a été écrit dans le fichier keystore \"{0}\"."},};
+        {"keystore.exported.to.file", "Le fichier keystore a Ã©tÃ© Ã©crit dans le fichier keystore \"{0}\"."},};
 
 }

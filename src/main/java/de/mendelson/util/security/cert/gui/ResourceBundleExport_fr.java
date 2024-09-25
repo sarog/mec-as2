@@ -30,7 +30,7 @@ public class ResourceBundleExport_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"title", "Exporter une clé/un certificat"},
+        {"title", "Exporter une clÃ©/un certificat"},
         {"info.whattoexport", "Que voulez-vous exporter?" },
         {"button.ok", "Ok"},
         {"button.cancel", "Annuler"},

@@ -32,8 +32,8 @@ public class ResourceBundleCertificateUsedByPartnerChecker_fr extends MecResourc
     static final Object[][] CONTENTS = {
         {"used.crypt", "cryptage"},
         {"used.sign", "signature"},
-        {"used.crypt.overwritelocalsecurity", "cryptage (écrase station locale)"},
-        {"used.sign.overwritelocalsecurity", "signature (écrase station locale)"},
+        {"used.crypt.overwritelocalsecurity", "cryptage (Ã©crase station locale)"},
+        {"used.sign.overwritelocalsecurity", "signature (Ã©crase station locale)"},
     };
 
 }

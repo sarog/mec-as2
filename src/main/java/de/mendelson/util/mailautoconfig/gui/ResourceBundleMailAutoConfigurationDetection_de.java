@@ -30,7 +30,7 @@ public class ResourceBundleMailAutoConfigurationDetection_de extends MecResource
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"button.ok", "Ausgewählte Konfiguration verwenden"},
+        {"button.ok", "AusgewÃ¤hlte Konfiguration verwenden"},
         {"button.cancel", "Abbruch"},
         {"title", "Mail Server Einstellungen herausfinden"},
         {"label.mailaddress", "Mail Addresse" },
@@ -45,9 +45,9 @@ public class ResourceBundleMailAutoConfigurationDetection_de extends MecResource
         {"security." + MailServiceConfiguration.SECURITY_TLS, "TLS" },
         {"label.detectedprovider", "<HTML>Der erkannte Mail Anbieter ist <strong>{0}</strong></HTML>"},
         {"detection.failed.title", "Erkennung fehlgeschlagen" },
-        {"detection.failed.text", "Das System konnte nicht die Mailservereinstellungen für die Mailaddresse {0} herausfinden." },
-        {"label.email.hint", "Gültige Mailaddresse zum Hrausfinden der Servereinstellungen" },
-        {"email.invalid.title", "Ungültige Addresse"},
-        {"email.invalid.text", "Die Untersuchung wurde nicht durchgeführt - die Mailaddresse {0} ist ungültig."},
+        {"detection.failed.text", "Das System konnte nicht die Mailservereinstellungen fÃ¼r die Mailaddresse {0} herausfinden." },
+        {"label.email.hint", "GÃ¼ltige Mailaddresse zum Hrausfinden der Servereinstellungen" },
+        {"email.invalid.title", "UngÃ¼ltige Addresse"},
+        {"email.invalid.text", "Die Untersuchung wurde nicht durchgefÃ¼hrt - die Mailaddresse {0} ist ungÃ¼ltig."},
     };
 }

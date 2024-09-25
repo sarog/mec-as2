@@ -27,7 +27,7 @@ public class ResourceBundleJettyStarter_de extends MecResourceBundle {
     static final Object[][] CONTENTS = {        
         {"module.name", "[JETTY]" },
         {"httpserver.willstart", "Integrierter HTTP Server startet" },
-        {"httpserver.running", "Integrierter HTTP Server läuft ({0})" },
+        {"httpserver.running", "Integrierter HTTP Server lÃ¤uft ({0})" },
         {"httpserver.startup.problem", "Problem beim Start ({0})" },
         {"httpserver.stopped", "Integrierter HTTP Server gestoppt" },
         {"deployment.success", "[{0}] wurde erfolgreich bereitgestellt" },
@@ -36,6 +36,6 @@ public class ResourceBundleJettyStarter_de extends MecResourceBundle {
         {"userconfiguration.readerror", "Problem beim Lesen der Benutzerkonfiguration von {0}: {1} ... Ignoriere die Benutzerkonfiguration und starten den Webserver unter Verwendung der definierten Standardwerte" },
         {"userconfiguration.reading", "Lese benutzerdefinierte Konfiguration von {0}" },
         {"userconfiguration.setvar", "Setze benutzerdefinierten Wert [{0}] auf [{1}]" },
-        {"tls.keystore.reloaded", "Es wurden Änderungen im TLS Keystore registriert und die keystore Daten des HTTP servers wurden aktualisiert"},
+        {"tls.keystore.reloaded", "Es wurden Ã„nderungen im TLS Keystore registriert und die keystore Daten des HTTP servers wurden aktualisiert"},
     };
 }

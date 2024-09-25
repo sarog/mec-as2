@@ -32,81 +32,81 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"title", "Configuration des partenaires"},
         {"label.name", "Nom"},
         {"label.name.help", "<HTML><strong>Nom</strong><br><br>"
-            + "Il s''agit du nom interne du partenaire tel qu''il est utilisé dans le système. Il ne s''agit pas d''une "
-            + "valeur spécifique au protocole, mais elle est utilisée pour construire tout nom de fichier ou structure "
-            + "de répertoire lié à ce partenaire."
+            + "Il s''agit du nom interne du partenaire tel qu''il est utilisÃ© dans le systÃ¨me. Il ne s''agit pas d''une "
+            + "valeur spÃ©cifique au protocole, mais elle est utilisÃ©e pour construire tout nom de fichier ou structure "
+            + "de rÃ©pertoire liÃ© Ã  ce partenaire."
             + "</HTML>"},
         {"label.name.hint", "Nom du partenaire interne"},
         {"label.id", "AS2 id"},
         {"label.id.help", "<HTML><strong>AS2 id</strong><br><br>"
-            + "L''identification unique (dans votre réseau de partenaires) utilisée dans le protocole AS2 pour identifier "
+            + "L''identification unique (dans votre rÃ©seau de partenaires) utilisÃ©e dans le protocole AS2 pour identifier "
             + "ce partenaire. Vous pouvez le choisir librement - assurez-vous simplement qu''il est unique."
             + "</HTML>"},
         {"label.id.hint", "Identification des partenaires (protocole AS2)"},
         {"label.partnercomment", "Commentaire"},
-        {"label.url", "URL de réception"},
-        {"label.url.help", "<HTML><strong>URL de réception</strong><br><br>"
-            + "Il s''agit de l''URL de votre partenaire via laquelle son système AS2 est accessible.<br>"
-            + "Veuillez spécifier cette URL au format <strong>PROTOCOL://HOST:PORT/CHEMIN</strong>, où le "
-            + "<strong>PROTOCOL</strong> doit être l''un des formats \"http\" ou \"https\". <strong>HOST</strong> "
-            + "indique l''hôte du serveur AS2 de votre partenaire. <strong>PORT</strong> est le port de réception de "
+        {"label.url", "URL de rÃ©ception"},
+        {"label.url.help", "<HTML><strong>URL de rÃ©ception</strong><br><br>"
+            + "Il s''agit de l''URL de votre partenaire via laquelle son systÃ¨me AS2 est accessible.<br>"
+            + "Veuillez spÃ©cifier cette URL au format <strong>PROTOCOL://HOST:PORT/CHEMIN</strong>, oÃ¹ le "
+            + "<strong>PROTOCOL</strong> doit Ãªtre l''un des formats \"http\" ou \"https\". <strong>HOST</strong> "
+            + "indique l''hÃ´te du serveur AS2 de votre partenaire. <strong>PORT</strong> est le port de rÃ©ception de "
             + "votre partenaire.<strong>CHEMIN</strong> est le "
-            + "chemin de réception, par exemple \"/as2/HttpReceiver\".<br><br>"
-            + "L''entrée entière est marquée comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
-            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL."
+            + "chemin de rÃ©ception, par exemple \"/as2/HttpReceiver\".<br><br>"
+            + "L''entrÃ©e entiÃ¨re est marquÃ©e comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
+            + "si l''URL a un format incorrect ou si le port n''est pas dÃ©fini dans l''URL."
             + "</HTML>"},
         {"label.mdnurl", "URL des MDN"},
         {"label.mdnurl.help", "<HTML><strong>URL des MDN</strong> (<strong>M</strong>essage <strong>D</strong>elivery <strong>N</strong>otification)<br><br>"
             + "C''est l''URL que votre partenaire utilisera pour le MDN asynchrone entrant vers cette station locale. Dans le cas synchrone, "
-            + "cette valeur n''est pas utilisée, car le MDN est envoyé sur le canal de retour de la connexion sortante.<br>"
-            + "Veuillez spécifier cette URL au format <strong>PROTOCOL://HOST:PORT/CHEMIN</strong>. <br><strong>PROTOCOLE</strong> "
-            + "doit être l''un de \"http\" ou \"https\".<br><strong>HOST</strong> indique votre propre hôte de serveur AS2.<br>"
-            + "<strong>PORT</strong> est le port de réception de votre système AS2. <strong>CHEMIN</strong> indique le "
-            + "chemin de réception, par exemple \"/as2/HttpReceiver\"."
-            + "L''entrée entière est marquée comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
-            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL."
+            + "cette valeur n''est pas utilisÃ©e, car le MDN est envoyÃ© sur le canal de retour de la connexion sortante.<br>"
+            + "Veuillez spÃ©cifier cette URL au format <strong>PROTOCOL://HOST:PORT/CHEMIN</strong>. <br><strong>PROTOCOLE</strong> "
+            + "doit Ãªtre l''un de \"http\" ou \"https\".<br><strong>HOST</strong> indique votre propre hÃ´te de serveur AS2.<br>"
+            + "<strong>PORT</strong> est le port de rÃ©ception de votre systÃ¨me AS2. <strong>CHEMIN</strong> indique le "
+            + "chemin de rÃ©ception, par exemple \"/as2/HttpReceiver\"."
+            + "L''entrÃ©e entiÃ¨re est marquÃ©e comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
+            + "si l''URL a un format incorrect ou si le port n''est pas dÃ©fini dans l''URL."
             + "</HTML>"},
-        {"label.signalias.key", "Clef privée (Création de signature)"},
-        {"label.signalias.key.help", "<HTML><strong>Clef privée (Création de signature)</strong><br><br>"
-            + "Veuillez sélectionner ici une clé privée disponible dans le gestionnaire de certificats (signature/chiffrement) du système.<br>"
-            + "Avec cette clé, vous créez une signature numérique pour les messages sortants destinés à tous les partenaires distants.<br><br>"
-            + "Comme vous êtes le seul à posséder la clé privée placée ici, vous êtes également le seul à pouvoir signer les données. "
-            + "Vos partenaires peuvent vérifier cette signature avec le certificat - ce qui garantit que les données n''ont pas été "
-            + "modifiées et que vous êtes l''expéditeur."
+        {"label.signalias.key", "Clef privÃ©e (CrÃ©ation de signature)"},
+        {"label.signalias.key.help", "<HTML><strong>Clef privÃ©e (CrÃ©ation de signature)</strong><br><br>"
+            + "Veuillez sÃ©lectionner ici une clÃ© privÃ©e disponible dans le gestionnaire de certificats (signature/chiffrement) du systÃ¨me.<br>"
+            + "Avec cette clÃ©, vous crÃ©ez une signature numÃ©rique pour les messages sortants destinÃ©s Ã  tous les partenaires distants.<br><br>"
+            + "Comme vous Ãªtes le seul Ã  possÃ©der la clÃ© privÃ©e placÃ©e ici, vous Ãªtes Ã©galement le seul Ã  pouvoir signer les donnÃ©es. "
+            + "Vos partenaires peuvent vÃ©rifier cette signature avec le certificat - ce qui garantit que les donnÃ©es n''ont pas Ã©tÃ© "
+            + "modifiÃ©es et que vous Ãªtes l''expÃ©diteur."
             + "</HTML>"},
-        {"label.cryptalias.key", "Clef privée (Décryptage)"},
-        {"label.cryptalias.key.help", "<HTML><strong>Clef privée (Décryptage)</strong><br><br>"
-            + "Veuillez sélectionner ici une clé privée disponible dans le gestionnaire de certificats (signature/chiffrement) du système.<br>"
-            + "Si les messages entrants de n''importe quel partenaire sont cryptés pour cette station locale, cette clé est utilisée pour le décryptage.<br><br>"
-            + "Comme vous êtes le seul à posséder la clé privée que vous avez placée ici, vous êtes également le seul à pouvoir "
-            + "décrypter les données que vos partenaires ont cryptées avec votre certificat. Chaque partenaire peut donc crypter "
-            + "des données pour vous - mais vous seul pouvez les décrypter."
+        {"label.cryptalias.key", "Clef privÃ©e (DÃ©cryptage)"},
+        {"label.cryptalias.key.help", "<HTML><strong>Clef privÃ©e (DÃ©cryptage)</strong><br><br>"
+            + "Veuillez sÃ©lectionner ici une clÃ© privÃ©e disponible dans le gestionnaire de certificats (signature/chiffrement) du systÃ¨me.<br>"
+            + "Si les messages entrants de n''importe quel partenaire sont cryptÃ©s pour cette station locale, cette clÃ© est utilisÃ©e pour le dÃ©cryptage.<br><br>"
+            + "Comme vous Ãªtes le seul Ã  possÃ©der la clÃ© privÃ©e que vous avez placÃ©e ici, vous Ãªtes Ã©galement le seul Ã  pouvoir "
+            + "dÃ©crypter les donnÃ©es que vos partenaires ont cryptÃ©es avec votre certificat. Chaque partenaire peut donc crypter "
+            + "des donnÃ©es pour vous - mais vous seul pouvez les dÃ©crypter."
             + "</HTML>"},
-        {"label.signalias.cert", "Certificat du partenaire (Vérification de la signature)"},
-        {"label.signalias.cert.help", "<HTML><strong>Certificat du partenaire (Vérification de la signature)</strong><br><br>"
-            + "Veuillez sélectionner ici un certificat qui est disponible dans le gestionnaire de certificats (signature/chiffrement) du système.<br>"
-            + "Si les messages entrants de ce partenaire sont signés numériquement pour une station locale, ce certificat est utilisé pour vérifier cette signature."
+        {"label.signalias.cert", "Certificat du partenaire (VÃ©rification de la signature)"},
+        {"label.signalias.cert.help", "<HTML><strong>Certificat du partenaire (VÃ©rification de la signature)</strong><br><br>"
+            + "Veuillez sÃ©lectionner ici un certificat qui est disponible dans le gestionnaire de certificats (signature/chiffrement) du systÃ¨me.<br>"
+            + "Si les messages entrants de ce partenaire sont signÃ©s numÃ©riquement pour une station locale, ce certificat est utilisÃ© pour vÃ©rifier cette signature."
             + "</HTML>"},
         {"label.cryptalias.cert", "Certificat du partenaire (Cryptage)"},
         {"label.cryptalias.cert.help", "<HTML><strong>Certificat du partenaire (Cryptage)</strong><br><br>"
-            + "Veuillez sélectionner ici un certificat qui est disponible dans le gestionnaire de certificats (signature/chiffrement) du système.<br>"
-            + "Si vous souhaitez crypter les messages sortants à destination de ce partenaire, ce certificat sera utilisé pour crypter les données."
+            + "Veuillez sÃ©lectionner ici un certificat qui est disponible dans le gestionnaire de certificats (signature/chiffrement) du systÃ¨me.<br>"
+            + "Si vous souhaitez crypter les messages sortants Ã  destination de ce partenaire, ce certificat sera utilisÃ© pour crypter les donnÃ©es."
             + "</HTML>"},
-        {"label.signtype", "Algorithme de signature numérique"},
-        {"label.signtype.help", "<HTML><strong>Algorithme de signature numérique</strong><br><br>"
-            + "Vous choisissez ici l''algorithme de signature avec lequel les messages sortants destinés à ce partenaire doivent être signés.<br>"
-            + "Si vous avez choisi ici un algorithme de signature, un message signé est également attendu en entrée de ce partenaire - l''algorithme de signature est toutefois arbitraire."
+        {"label.signtype", "Algorithme de signature numÃ©rique"},
+        {"label.signtype.help", "<HTML><strong>Algorithme de signature numÃ©rique</strong><br><br>"
+            + "Vous choisissez ici l''algorithme de signature avec lequel les messages sortants destinÃ©s Ã  ce partenaire doivent Ãªtre signÃ©s.<br>"
+            + "Si vous avez choisi ici un algorithme de signature, un message signÃ© est Ã©galement attendu en entrÃ©e de ce partenaire - l''algorithme de signature est toutefois arbitraire."
             + "</HTML>"},
         {"label.encryptiontype", "Algorithme de chiffrement des messages"},
         {"label.encryptiontype.help", "<HTML><strong>Algorithme de chiffrement des messages</strong><br><br>"
-            + "Vous choisissez ici l''algorithme de cryptage avec lequel les messages sortants à destination de ce partenaire doivent être cryptés.<br>"
-            + "Si vous avez choisi ici un algorithme de cryptage, un message crypté est également attendu en entrée de ce partenaire - l''algorithme de cryptage est toutefois arbitraire."
+            + "Vous choisissez ici l''algorithme de cryptage avec lequel les messages sortants Ã  destination de ce partenaire doivent Ãªtre cryptÃ©s.<br>"
+            + "Si vous avez choisi ici un algorithme de cryptage, un message cryptÃ© est Ã©galement attendu en entrÃ©e de ce partenaire - l''algorithme de cryptage est toutefois arbitraire."
             + "</HTML>"},
         {"label.email", "E-mail"},
         {"label.email.help", "<HTML><strong>E-mail</strong><br><br>"
-            + "Cette valeur fait partie de la description du protocole AS2 mais n''est en fait actuellement pas du tout utilisée."
+            + "Cette valeur fait partie de la description du protocole AS2 mais n''est en fait actuellement pas du tout utilisÃ©e."
             + "</HTML>"},
-        {"label.email.hint", "Non utilisé ou validé dans le protocole AS2"},
+        {"label.email.hint", "Non utilisÃ© ou validÃ© dans le protocole AS2"},
         {"label.localstation", "Station locale"},
         {"label.localstation.help", "<HTML><strong>Station locale</strong><br><br>"
             + "Il existe deux types de partenaires:<br><br>"
@@ -120,95 +120,95 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "<td>Les partenaires distants</td>"
             + "</tr>"
             + "</table><br>"
-            + "Une station locale représente votre propre système."
+            + "Une station locale reprÃ©sente votre propre systÃ¨me."
             + "</HTML>"},
-        {"label.compression", "Compresser les messages sortants (nécessite une solution AS2 1.1 en face)"},
-        {"label.usecommandonreceipt", "Sur réception de message:"},
-        {"label.usecommandonsenderror", "Sur envoi échoué de message:"},
-        {"label.usecommandonsendsuccess", "Sur envoi réussi de message:"},
-        {"label.keepfilenameonreceipt", "Garder le nom de fichier original sur réception"},
-        {"label.keepfilenameonreceipt.help", "<HTML><strong>Garder le nom de fichier original sur réception</strong><br><br>"
-            + "Si cette option est activée, le système tente d''extraire le nom de fichier original des messages AS2 entrants "
-            + "et d''enregistrer le fichier transmis sous ce nom afin qu''il puisse être traité en conséquence.<br>"
-            + "Cette option ne fonctionnera que si l''expéditeur a ajouté les informations relatives au nom de fichier original. "
-            + "Si vous l''activez, veillez à ce que votre partenaire envoie des noms de fichiers uniques.<br><br>"
-            + "Si le nom de fichier extrait n''est pas un nom de fichier valide, il sera remplacé par un nom de fichier valide, "
-            + "un avertissement d''événement système POSTPROCESSING sera émis et le traitement se poursuivra.</HTML>"},
+        {"label.compression", "Compresser les messages sortants (nÃ©cessite une solution AS2 1.1 en face)"},
+        {"label.usecommandonreceipt", "Sur rÃ©ception de message:"},
+        {"label.usecommandonsenderror", "Sur envoi Ã©chouÃ© de message:"},
+        {"label.usecommandonsendsuccess", "Sur envoi rÃ©ussi de message:"},
+        {"label.keepfilenameonreceipt", "Garder le nom de fichier original sur rÃ©ception"},
+        {"label.keepfilenameonreceipt.help", "<HTML><strong>Garder le nom de fichier original sur rÃ©ception</strong><br><br>"
+            + "Si cette option est activÃ©e, le systÃ¨me tente d''extraire le nom de fichier original des messages AS2 entrants "
+            + "et d''enregistrer le fichier transmis sous ce nom afin qu''il puisse Ãªtre traitÃ© en consÃ©quence.<br>"
+            + "Cette option ne fonctionnera que si l''expÃ©diteur a ajoutÃ© les informations relatives au nom de fichier original. "
+            + "Si vous l''activez, veillez Ã  ce que votre partenaire envoie des noms de fichiers uniques.<br><br>"
+            + "Si le nom de fichier extrait n''est pas un nom de fichier valide, il sera remplacÃ© par un nom de fichier valide, "
+            + "un avertissement d''Ã©vÃ©nement systÃ¨me POSTPROCESSING sera Ã©mis et le traitement se poursuivra.</HTML>"},
         {"label.address", "Adresse"},
         {"label.notes.help", "<HTML><strong>Notes</strong><br><br>"
-            + "Vous trouverez ici la possibilité de prendre des notes sur ce partenaire pour votre propre usage."
+            + "Vous trouverez ici la possibilitÃ© de prendre des notes sur ce partenaire pour votre propre usage."
             + "</HTML>"},
         {"label.contact", "Contact"},
         {"tab.misc", "Divers"},
-        {"tab.security", "Sécurité"},
+        {"tab.security", "SÃ©curitÃ©"},
         {"tab.send", "Envoi"},
         {"tab.mdn", "MDN"},
-        {"tab.dirpoll", "Scrutation de répertoire"},
-        {"tab.receipt", "Réception"},
+        {"tab.dirpoll", "Scrutation de rÃ©pertoire"},
+        {"tab.receipt", "RÃ©ception"},
         {"tab.httpauth", "Authentication HTTP"},
-        {"tab.httpheader", "En-tête de HTTP"},
+        {"tab.httpheader", "En-tÃªte de HTTP"},
         {"tab.notification", "Notification"},
         {"tab.events", "Post-traitement"},
         {"tab.partnersystem", "Info"},
         {"label.subject", "Sujet du contenu"},
-        {"label.subject.help", "<HTML><strong>Sujet du contenu</strong><br><br>$'{'filename} sera remplacé par le nom de fichier send.<br>Cette valeur sera transférée dans l''en-tête HTTP, il y a des restrictions! Veuillez utiliser la norme ISO-8859-1 pour l''encodage des caractères, uniquement des caractères imprimables, pas de caractères spéciaux. CR, LF et TAB sont remplacés par \"\\r\", \"\\n\" et \"\\t\".</HTML>"},
+        {"label.subject.help", "<HTML><strong>Sujet du contenu</strong><br><br>$'{'filename} sera remplacÃ© par le nom de fichier send.<br>Cette valeur sera transfÃ©rÃ©e dans l''en-tÃªte HTTP, il y a des restrictions! Veuillez utiliser la norme ISO-8859-1 pour l''encodage des caractÃ¨res, uniquement des caractÃ¨res imprimables, pas de caractÃ¨res spÃ©ciaux. CR, LF et TAB sont remplacÃ©s par \"\\r\", \"\\n\" et \"\\t\".</HTML>"},
         {"label.contenttype", "Type de contenu"},
         {"label.contenttype.help", "<HTML><strong>Type de contenu</strong><br><br>"
             + "application/EDI-X12<br>"
             + "application/EDIFACT<br>"
             + "application/edi-consent<br>"
             + "application/XML<br><br>"
-            + "Le RFC AS2 indique que tous les types de contenu MIME doivent être pris en charge dans l''AS2 - "
+            + "Le RFC AS2 indique que tous les types de contenu MIME doivent Ãªtre pris en charge dans l''AS2 - "
             + "mais ce n''est pas une condition obligatoire. Vous ne devez donc pas compter sur le "
-            + "système de votre partenaire ou sur le traitement SMIME sous-jacent de l''AS2 de "
-            + "mendelson pour gérer d''autres types de contenu que ceux décrits."
+            + "systÃ¨me de votre partenaire ou sur le traitement SMIME sous-jacent de l''AS2 de "
+            + "mendelson pour gÃ©rer d''autres types de contenu que ceux dÃ©crits."
             + "</HTML>"},
         {"label.syncmdn", "Utilise des MDN synchrone"},
         {"label.syncmdn.help", "<HTML><strong>MDN synchrone</strong><br><br>"
             + "Le partenaire envoie la confirmation (MDN) sur le canal de retour de votre connexion sortante. "
-            + "La connexion sortante reste ouverte pendant que le partenaire décrypte les données et vérifie "
-            + "la signature. C''est la raison pour laquelle cette méthode nécessite plus de ressources que "
+            + "La connexion sortante reste ouverte pendant que le partenaire dÃ©crypte les donnÃ©es et vÃ©rifie "
+            + "la signature. C''est la raison pour laquelle cette mÃ©thode nÃ©cessite plus de ressources que "
             + "le traitement MDN asynchrone.</HTML>"},
         {"label.asyncmdn", "Utilise des MDN asynchrone"},
         {"label.asyncmdn.help", "<HTML><strong>MDN asynchrone</strong><br><br>"
-            + "Le partenaire établit une nouvelle connexion à votre système pour envoyer une confirmation pour votre "
-            + "message sortant. La vérification de la signature et le décryptage des données du côté de votre partenaire "
-            + "sont effectués après la fermeture de la connexion entrante. C''est la raison pour laquelle cette méthode "
-            + "nécessite moins de ressources que le MDN synchrone.</HTML>"},
-        {"label.signedmdn", "Utilise des MDN signés"},
-        {"label.signedmdn.help", "<HTML><strong>MDN signés</strong><br><br>"
-            + "Ce paramètre vous permet d''indiquer au système partenaire pour les messages AS2 sortants que vous souhaitez un accusé de réception signé (MDN).<br>"
-            + "Bien que cette option semble logique au premier abord, elle est malheureusement problématique. En effet, lorsque le MDN du partenaire est reçu, la transaction est terminée. "
-            + "Si la vérification de la signature du MDN est effectuée et échoue, il n''est plus possible d''informer le partenaire de ce problème. "
-            + "Une interruption de la transaction n''est plus possible - la transaction est déjà terminée. La vérification de la signature du MDN en mode automatique "
+            + "Le partenaire Ã©tablit une nouvelle connexion Ã  votre systÃ¨me pour envoyer une confirmation pour votre "
+            + "message sortant. La vÃ©rification de la signature et le dÃ©cryptage des donnÃ©es du cÃ´tÃ© de votre partenaire "
+            + "sont effectuÃ©s aprÃ¨s la fermeture de la connexion entrante. C''est la raison pour laquelle cette mÃ©thode "
+            + "nÃ©cessite moins de ressources que le MDN synchrone.</HTML>"},
+        {"label.signedmdn", "Utilise des MDN signÃ©s"},
+        {"label.signedmdn.help", "<HTML><strong>MDN signÃ©s</strong><br><br>"
+            + "Ce paramÃ¨tre vous permet d''indiquer au systÃ¨me partenaire pour les messages AS2 sortants que vous souhaitez un accusÃ© de rÃ©ception signÃ© (MDN).<br>"
+            + "Bien que cette option semble logique au premier abord, elle est malheureusement problÃ©matique. En effet, lorsque le MDN du partenaire est reÃ§u, la transaction est terminÃ©e. "
+            + "Si la vÃ©rification de la signature du MDN est effectuÃ©e et Ã©choue, il n''est plus possible d''informer le partenaire de ce problÃ¨me. "
+            + "Une interruption de la transaction n''est plus possible - la transaction est dÃ©jÃ  terminÃ©e. La vÃ©rification de la signature du MDN en mode automatique "
             + "n''a donc aucun sens. "
-            + "Le protocole AS2 prescrit ici que l''application doit résoudre ce problème logique, ce qui n''est pas possible.<br>"
-            + "La solution AS2 de mendelson affiche un avertissement en cas d''échec de la vérification de la signature MDN.<br><br>"
-            + "Il existe encore une particularité de ce réglage : si un problème est survenu lors du traitement côté partenaire, le MDN peut toujours être non signé - indépendamment de ce réglage."
+            + "Le protocole AS2 prescrit ici que l''application doit rÃ©soudre ce problÃ¨me logique, ce qui n''est pas possible.<br>"
+            + "La solution AS2 de mendelson affiche un avertissement en cas d''Ã©chec de la vÃ©rification de la signature MDN.<br><br>"
+            + "Il existe encore une particularitÃ© de ce rÃ©glage : si un problÃ¨me est survenu lors du traitement cÃ´tÃ© partenaire, le MDN peut toujours Ãªtre non signÃ© - indÃ©pendamment de ce rÃ©glage."
             + "</HTML>"},
         {"label.enabledirpoll", "Activer le sondage d''annuaire"},
         {"label.pollignore.help", "<HTML><strong>Activer le sondage d''annuaire</strong><br><br>"
-            + "La surveillance des répertoires ira chercher à intervalles réguliers un nombre défini de fichiers dans le répertoire surveillé et les traitera. "
-            + "Il faut s''assurer qu''à ce moment-là, le fichier soit "
-            + "présent dans son intégralité. Si vous copiez régulièrement des fichiers dans le répertoire surveillé, il peut arriver que des chevauchements temporels se produisent, "
-            + "c''est-à-dire qu''un fichier soit récupéré alors qu''il n''est pas encore entièrement disponible. "
-            + "C''est pourquoi, si vous copiez les fichiers dans le répertoire surveillé à l''aide d''une opération non atomique, vous devriez choisir une extension de nom de fichier au moment du processus de copie qui sera ignorée par le processus de surveillance. Une fois que le fichier entier est dans le répertoire surveillé "
-            + "répertoire, vous pouvez supprimer l''extension de nom de fichier à l''aide d''une opération atomique (move, mv, rename) et le fichier complet est récupéré. "
-            + "<br>La liste des extensions de nom de fichier est une liste d''extensions séparées par des virgules, par exemple \"*.tmp, *.upload\"."
+            + "La surveillance des rÃ©pertoires ira chercher Ã  intervalles rÃ©guliers un nombre dÃ©fini de fichiers dans le rÃ©pertoire surveillÃ© et les traitera. "
+            + "Il faut s''assurer qu''Ã  ce moment-lÃ , le fichier soit "
+            + "prÃ©sent dans son intÃ©gralitÃ©. Si vous copiez rÃ©guliÃ¨rement des fichiers dans le rÃ©pertoire surveillÃ©, il peut arriver que des chevauchements temporels se produisent, "
+            + "c''est-Ã -dire qu''un fichier soit rÃ©cupÃ©rÃ© alors qu''il n''est pas encore entiÃ¨rement disponible. "
+            + "C''est pourquoi, si vous copiez les fichiers dans le rÃ©pertoire surveillÃ© Ã  l''aide d''une opÃ©ration non atomique, vous devriez choisir une extension de nom de fichier au moment du processus de copie qui sera ignorÃ©e par le processus de surveillance. Une fois que le fichier entier est dans le rÃ©pertoire surveillÃ© "
+            + "rÃ©pertoire, vous pouvez supprimer l''extension de nom de fichier Ã  l''aide d''une opÃ©ration atomique (move, mv, rename) et le fichier complet est rÃ©cupÃ©rÃ©. "
+            + "<br>La liste des extensions de nom de fichier est une liste d''extensions sÃ©parÃ©es par des virgules, par exemple \"*.tmp, *.upload\"."
             + "</HTML>"},
         {"label.enabledirpoll.help", "<HTML><strong>Activer le sondage d''annuaire</strong><br><br>"
-            + "Si vous activez cette option, le système cherchera automatiquement de nouveaux fichiers dans le répertoire de départ "
-            + "pour ce partenaire. Si un nouveau fichier est trouvé, un message AS2 est généré à partir de celui-ci et envoyé au partenaire.<br>"
-            + "Veuillez noter que cette méthode de surveillance du répertoire ne peut utiliser que des paramètres généraux "
-            + "pour toutes les créations de messages. Si vous souhaitez définir des paramètres spécifiques pour chaque message "
+            + "Si vous activez cette option, le systÃ¨me cherchera automatiquement de nouveaux fichiers dans le rÃ©pertoire de dÃ©part "
+            + "pour ce partenaire. Si un nouveau fichier est trouvÃ©, un message AS2 est gÃ©nÃ©rÃ© Ã  partir de celui-ci et envoyÃ© au partenaire.<br>"
+            + "Veuillez noter que cette mÃ©thode de surveillance du rÃ©pertoire ne peut utiliser que des paramÃ¨tres gÃ©nÃ©raux "
+            + "pour toutes les crÃ©ations de messages. Si vous souhaitez dÃ©finir des paramÃ¨tres spÃ©cifiques pour chaque message "
             + "individuellement, veuillez utiliser le processus d''envoi via la ligne de commande.<br>"
-            + "En cas de fonctionnement en cluster (HA), vous devez désactiver toutes les surveillances de répertoire, car ce "
-            + "processus ne peut pas être synchronisé."
+            + "En cas de fonctionnement en cluster (HA), vous devez dÃ©sactiver toutes les surveillances de rÃ©pertoire, car ce "
+            + "processus ne peut pas Ãªtre synchronisÃ©."
             + "</HTML>"},
-        {"label.polldir", "Répertoire de scrutation"},
+        {"label.polldir", "RÃ©pertoire de scrutation"},
         {"label.pollinterval", "Intervalle de scrutation"},
         {"label.pollignore", "Ignorer les fichiers"},
-        {"label.pollignore.hint", "Liste des fichiers à ignorer, séparés par virgules (caractères génériques autorisés)."},
+        {"label.pollignore.hint", "Liste des fichiers Ã  ignorer, sÃ©parÃ©s par virgules (caractÃ¨res gÃ©nÃ©riques autorisÃ©s)."},
         {"label.maxpollfiles", "Max fichiers/sondage"},
         {"label.httpauth.message", "Authentification des messages AS2 sortants"},
         {"label.httpauth.none", "Aucune"},
@@ -223,25 +223,25 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.httpauth.credentials.asyncmdn.pass", "Mot de passe"},
         {"label.httpauth.oauth2.authorizationcode.asyncmdn", "OAuth2 (Authorization code)"},
         {"label.httpauth.oauth2.clientcredentials.asyncmdn", "OAuth2 (Client credentials)"},
-        {"label.notify.send", "Notifier lors d''un dépassement de quota sur message envoyé"},
-        {"label.notify.receive", "Notifier lors d''un dépassement de quota sur message reçu"},
-        {"label.notify.sendreceive", "Notifier lors d''un dépassement de quota sur message envoyé ou reçu"},
+        {"label.notify.send", "Notifier lors d''un dÃ©passement de quota sur message envoyÃ©"},
+        {"label.notify.receive", "Notifier lors d''un dÃ©passement de quota sur message reÃ§u"},
+        {"label.notify.sendreceive", "Notifier lors d''un dÃ©passement de quota sur message envoyÃ© ou reÃ§u"},
         {"header.httpheaderkey", "Nom"},
         {"header.httpheadervalue", "Valeur"},
         {"httpheader.add", "Ajouter "},
-        {"httpheader.delete", "Éliminer"},
+        {"httpheader.delete", "Ã‰liminer"},
         {"label.as2version", "Version AS2"},
         {"label.productname", "Nom du produit"},
-        {"label.features", "Fonctionnalités"},
-        {"label.features.cem", "Certificat d''échange via CEM"},
-        {"label.features.ma", "Plusieurs pièces jointes"},
+        {"label.features", "FonctionnalitÃ©s"},
+        {"label.features.cem", "Certificat d''Ã©change via CEM"},
+        {"label.features.ma", "Plusieurs piÃ¨ces jointes"},
         {"label.features.compression", "Compression"},
-        {"partnerinfo", "Votre partenaire transmet avec chaque message AS2 quelques informations à propos de ses capacités de système AS2. "
-            + "Il s''agit d''une liste de fonctions qui a été transmise par votre partenaire."},
-        {"partnersystem.noinfo", "Aucune information n''est disponible, qu''il y avait déjà une transaction?"},
+        {"partnerinfo", "Votre partenaire transmet avec chaque message AS2 quelques informations Ã  propos de ses capacitÃ©s de systÃ¨me AS2. "
+            + "Il s''agit d''une liste de fonctions qui a Ã©tÃ© transmise par votre partenaire."},
+        {"partnersystem.noinfo", "Aucune information n''est disponible, qu''il y avait dÃ©jÃ  une transaction?"},
         {"label.httpversion", "Version du protocole HTTP"},
         {"label.httpversion.help", "<HTML><strong>Version du protocole HTTP</strong><br><br>"
-            + "Les versions suivantes du protocole HTTP sont définies:"
+            + "Les versions suivantes du protocole HTTP sont dÃ©finies:"
             + "<ul>"
             + "<li>HTTP/1.0 (RFC 1945)</li>"
             + "<li>HTTP/1.1 (RFC 2616)</li>"
@@ -252,28 +252,28 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "Indice: Il <strong>ne s''agit pas</strong> de la version TLS!"
             + "</HTML>"},
         {"label.test.connection", "Connexion de test"},
-        {"label.mdn.description", "<HTML>Le MDN (Message Delivery Notification) est la confirmation du message AS2. Cette section définit le comportement de votre partenaire pour vos messages AS2 sortants.</HTML>"},
-        {"label.algorithmidentifierprotection", "<HTML>Utiliser l''attribut de protection de l''identificateur d''algorithme dans la signature (recommandé), voir RFC 6211</HTML>"},
-        {"tooltip.button.editevent", "Modifier l''événement"},
-        {"tooltip.button.addevent", "Créer un nouvel événement"},
-        {"label.httpauthentication.credentials.help", "<HTML><strong>Authentification d''accès de base HTTP</strong><br><br>"
-            + "Veuillez configurer ici l''authentification d''accès de base HTTP si celle-ci est activée du côté "
-            + "de votre partenaire (définie dans la RFC 7617). Pour les demandes non authentifiées (données de "
-            + "connexion incorrectes, etc.), le système du partenaire distant doit renvoyer un <strong>HTTP 401 "
-            + "Unauthorized</strong> status.<br>Si la connexion à votre partenaire nécessite l''authentification du "
-            + "client TLS (via des certificats), aucun réglage n''est nécessaire ici. Dans ce cas, veuillez "
-            + "importer les certificats du partenaire via le gestionnaire de certificats TLS - le système se "
+        {"label.mdn.description", "<HTML>Le MDN (Message Delivery Notification) est la confirmation du message AS2. Cette section dÃ©finit le comportement de votre partenaire pour vos messages AS2 sortants.</HTML>"},
+        {"label.algorithmidentifierprotection", "<HTML>Utiliser l''attribut de protection de l''identificateur d''algorithme dans la signature (recommandÃ©), voir RFC 6211</HTML>"},
+        {"tooltip.button.editevent", "Modifier l''Ã©vÃ©nement"},
+        {"tooltip.button.addevent", "CrÃ©er un nouvel Ã©vÃ©nement"},
+        {"label.httpauthentication.credentials.help", "<HTML><strong>Authentification d''accÃ¨s de base HTTP</strong><br><br>"
+            + "Veuillez configurer ici l''authentification d''accÃ¨s de base HTTP si celle-ci est activÃ©e du cÃ´tÃ© "
+            + "de votre partenaire (dÃ©finie dans la RFC 7617). Pour les demandes non authentifiÃ©es (donnÃ©es de "
+            + "connexion incorrectes, etc.), le systÃ¨me du partenaire distant doit renvoyer un <strong>HTTP 401 "
+            + "Unauthorized</strong> status.<br>Si la connexion Ã  votre partenaire nÃ©cessite l''authentification du "
+            + "client TLS (via des certificats), aucun rÃ©glage n''est nÃ©cessaire ici. Dans ce cas, veuillez "
+            + "importer les certificats du partenaire via le gestionnaire de certificats TLS - le systÃ¨me se "
             + "chargera alors de l''authentification du client TLS."
             + "</HTML>"},
-        {"label.overwrite.security", "Remplacer les paramètres de sécurité de la station locale"},
-        {"label.keep.security", "Utiliser les paramètres de sécurité de la station locale"},
-        {"label.overwrite.crypt", "Décrypter les messages entrants"},
-        {"label.overwrite.crypt.help", "<HTML><strong>Décrypter les messages entrants</strong><br><br>"
-            + "Cette clé est utilisée pour décrypter les messages entrants de ce partenaire - "
-            + "au lieu de la clé paramétrée de la station locale correspondante."
+        {"label.overwrite.security", "Remplacer les paramÃ¨tres de sÃ©curitÃ© de la station locale"},
+        {"label.keep.security", "Utiliser les paramÃ¨tres de sÃ©curitÃ© de la station locale"},
+        {"label.overwrite.crypt", "DÃ©crypter les messages entrants"},
+        {"label.overwrite.crypt.help", "<HTML><strong>DÃ©crypter les messages entrants</strong><br><br>"
+            + "Cette clÃ© est utilisÃ©e pour dÃ©crypter les messages entrants de ce partenaire - "
+            + "au lieu de la clÃ© paramÃ©trÃ©e de la station locale correspondante."
             + "</HTML>"},
         {"label.overwrite.sign", "Signer les messages sortants"},
         {"label.overwrite.sign.help", "<HTML><strong>Signer les messages sortants</strong><br><br>"
-            + "Cette clé est utilisée pour signer les messages sortants destinés à ce partenaire - à la place de la clé définie pour la station locale concernée."
+            + "Cette clÃ© est utilisÃ©e pour signer les messages sortants destinÃ©s Ã  ce partenaire - Ã  la place de la clÃ© dÃ©finie pour la station locale concernÃ©e."
             + "</HTML>"},};
 }

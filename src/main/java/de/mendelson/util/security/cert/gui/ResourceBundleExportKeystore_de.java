@@ -37,19 +37,19 @@ public class ResourceBundleExportKeystore_de extends MecResourceBundle {
         {"label.exportdir.hint", "Verzeichnis, in dem die Keystoredatei angelegt wird"},
         {"label.exportdir.help", "<HTML><strong>Exportverzeichnis</strong><br><br>"
             + "Bitte geben Sie das Exportverzeichnis an, in das der Keystore exportiert werden soll.<br>"
-            + "Aus Sicherheitsgründen werden die Schlüssel nicht auf den Client übertragen, <br>"
-            + "so dass nur ein Speichern auf der Serverseite möglich ist.<br>"
-            + "Das System erstellt in diesem Verzeichnis eine Speicherdatei, die einen Datumsstempel enthält."
+            + "Aus SicherheitsgrÃ¼nden werden die SchlÃ¼ssel nicht auf den Client Ã¼bertragen, <br>"
+            + "so dass nur ein Speichern auf der Serverseite mÃ¶glich ist.<br>"
+            + "Das System erstellt in diesem Verzeichnis eine Speicherdatei, die einen Datumsstempel enthÃ¤lt."
             + "</HTML>"},
         {"label.keypass", "Password"},
         {"label.keypass.hint", "Passwort des exportierten Keystores"},
         {"label.keypass.help", "<HTML><strong>Passwort des exportierten Keystores</strong><br><br>"
             + "Dies ist das Passwort, mit dem der serverseitig exportierte Keystore gesichert ist.<br>"
-            + "Bitte geben Sie \"test\" ein, wenn dieser Keystore später automatisch in das "
+            + "Bitte geben Sie \"test\" ein, wenn dieser Keystore spÃ¤ter automatisch in das "
             + "mendelson Produkt importiert werden soll."
             + "</HTML>"},
-        {"title", "Alle Einträge in Keystore Datei exportieren"},
-        {"filechooser.key.export", "Bitte wählen Sie das serverseitige Exportverzeichnis"},
+        {"title", "Alle EintrÃ¤ge in Keystore Datei exportieren"},
+        {"filechooser.key.export", "Bitte wÃ¤hlen Sie das serverseitige Exportverzeichnis"},
         {"keystore.export.success.title", "Erfolg"},
         {"keystore.export.error.message", "Beim Exportieren gab es ein Problem: \n{0}"},
         {"keystore.export.error.title", "Fehler"},

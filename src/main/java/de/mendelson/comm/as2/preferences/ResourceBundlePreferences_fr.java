@@ -36,30 +36,30 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"button.cancel", "Annuler"},
         {"button.modify", "Modifier"},
         {"button.browse", "Parcourir..."},
-        {"filechooser.selectdir", "Sélectionner un répertoire"},
-        {"title", "Préférences"},
+        {"filechooser.selectdir", "SÃ©lectionner un rÃ©pertoire"},
+        {"title", "PrÃ©fÃ©rences"},
         {"tab.language", "Client"},
-        {"tab.dir", "Répertoires"},
-        {"tab.security", "Sécurité"},
+        {"tab.dir", "RÃ©pertoires"},
+        {"tab.security", "SÃ©curitÃ©"},
         {"tab.proxy", "Proxy"},
         {"tab.misc", "Divers"},
         {"tab.maintenance", "Maintenance"},
         {"tab.notification", "Notification"},
         {"tab.interface", "Modules"},
         {"tab.log", "Journal"},
-        {"tab.connectivity", "Connectivité"},
+        {"tab.connectivity", "ConnectivitÃ©"},
         {"header.dirname", "Type"},
-        {"header.dirvalue", "Rép."},
+        {"header.dirvalue", "RÃ©p."},
         {"label.language", "Langue"},
         {"label.language.help", "<HTML><strong>Langue</strong><br><br>"
-            + "Il s''agit de la langue d''affichage du client. Si vous exécutez le client "
-            + "et le serveur dans des processus différents (ce qui est recommandé), "
-            + "la langue du serveur peut être différente. La langue utilisée dans "
+            + "Il s''agit de la langue d''affichage du client. Si vous exÃ©cutez le client "
+            + "et le serveur dans des processus diffÃ©rents (ce qui est recommandÃ©), "
+            + "la langue du serveur peut Ãªtre diffÃ©rente. La langue utilisÃ©e dans "
             + "le journal sera toujours la langue du serveur."
             + "</HTML>"},
-        {"label.country", "Pays/Région"},
-        {"label.country.help", "<HTML><strong>Pays/Région</strong><br><br>"
-            + "Ce paramètre contrôle principalement le format de date qui est utilisé pour afficher les dates de transaction, etc. dans le client."
+        {"label.country", "Pays/RÃ©gion"},
+        {"label.country.help", "<HTML><strong>Pays/RÃ©gion</strong><br><br>"
+            + "Ce paramÃ¨tre contrÃ´le principalement le format de date qui est utilisÃ© pour afficher les dates de transaction, etc. dans le client."
             + "</HTML>"},
         {"label.keystore.https.pass", "Mot de passe du porte-clef (envoi https):"},
         {"label.keystore.pass", "Mot de passe du porte-clef (encryption/signature):"},
@@ -73,51 +73,51 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"label.proxy.pass", "Mot de passe:"},
         {"label.proxy.pass.hint", "Mot de passe utilisateur du proxy"},
         {"label.proxy.use", "Utiliser un proxy HTTP pour les connexions sortante HTTP/HTTPs"},
-        {"label.proxy.useauthentification", "Utiliser l''authentification auprès du proxy"},
-        {"filechooser.keystore", "Merci de sélectionner le fichier porte-clef (format jks)."},
+        {"label.proxy.useauthentification", "Utiliser l''authentification auprÃ¨s du proxy"},
+        {"filechooser.keystore", "Merci de sÃ©lectionner le fichier porte-clef (format jks)."},
         {"label.days", "jours"},
-        {"label.deletemsgolderthan", "Supprimer automatiquement les entrées de transactions plus vieux que"},
-        {"label.deletemsglog", "Tenir informer dans le log à propos des messages automatiquement supprimés"},
+        {"label.deletemsgolderthan", "Supprimer automatiquement les entrÃ©es de transactions plus vieux que"},
+        {"label.deletemsglog", "Tenir informer dans le log Ã  propos des messages automatiquement supprimÃ©s"},
         {"label.deletestatsolderthan", "Supprimer automatiquement les statistiques qui sont plus vieux que"},
-        {"label.deletelogdirolderthan", "Suppression automatique des données de journal plus anciennes que"},
+        {"label.deletelogdirolderthan", "Suppression automatique des donnÃ©es de journal plus anciennes que"},
         {"label.asyncmdn.timeout", "Temps d''attente maximal pour un MDN asynchrone"},
         {"label.asyncmdn.timeout.help", "<HTML><strong>Temps d''attente maximal pour un MDN asynchrone</strong>"
-            + "<br><br>Le temps que le système attendra un MDN (message delivery notification) asynchrone pour un message AS2 envoyé avant de mettre la transaction en état d'échec.<br>"
-            + "Cette valeur est valable dans tout le système pour tous les partenaires.<br><br>La valeur par défaut est de 30 min."
+            + "<br><br>Le temps que le systÃ¨me attendra un MDN (message delivery notification) asynchrone pour un message AS2 envoyÃ© avant de mettre la transaction en Ã©tat d'Ã©chec.<br>"
+            + "Cette valeur est valable dans tout le systÃ¨me pour tous les partenaires.<br><br>La valeur par dÃ©faut est de 30 min."
             + "</HTML>"},
         {"label.httpsend.timeout", "Timeout sur envoi HTTP/S"},
         {"label.httpsend.timeout.help", "<HTML><strong>Timeout sur envoi HTTP/S</strong><br><br>"
-            + "Il s''agit du délai de connexion au réseau pour les connexions sortantes.<br>"
-            + "Si, après ce délai, aucune connexion n''a été établie avec votre système partenaire, la tentative de connexion "
-            + "est annulée et d''autres tentatives de connexion seront effectuées ultérieurement, le cas échéant, en fonction "
-            + "des paramètres de répétition.<br><br>"
-            + "La valeur par défaut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_SEND_TIMEOUT) + "."
+            + "Il s''agit du dÃ©lai de connexion au rÃ©seau pour les connexions sortantes.<br>"
+            + "Si, aprÃ¨s ce dÃ©lai, aucune connexion n''a Ã©tÃ© Ã©tablie avec votre systÃ¨me partenaire, la tentative de connexion "
+            + "est annulÃ©e et d''autres tentatives de connexion seront effectuÃ©es ultÃ©rieurement, le cas Ã©chÃ©ant, en fonction "
+            + "des paramÃ¨tres de rÃ©pÃ©tition.<br><br>"
+            + "La valeur par dÃ©faut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_SEND_TIMEOUT) + "."
             + "</HTML>"},
         {"label.min", "min"},
-        {"receipt.subdir", "Créer des sous-répertoires par partenaires pour les messages reçus"},
-        {"receipt.subdir.help", "<HTML><strong>Sous-répertoires pour l''accueil</strong><br><br>"
-            + "Définit si les données doivent être reçues dans le répertoire <strong>&lt;Station locale&gt;/inbox</strong>"
+        {"receipt.subdir", "CrÃ©er des sous-rÃ©pertoires par partenaires pour les messages reÃ§us"},
+        {"receipt.subdir.help", "<HTML><strong>Sous-rÃ©pertoires pour l''accueil</strong><br><br>"
+            + "DÃ©finit si les donnÃ©es doivent Ãªtre reÃ§ues dans le rÃ©pertoire <strong>&lt;Station locale&gt;/inbox</strong>"
             + " ou <strong>&lt;Station locale&gt;/inbox/&lt;Nom du partenaire&gt;</strong>."
             + "</HTML>"},
         //notification
         {"checkbox.notifycertexpire", "Notifier l''expiration de certificats"},
         {"checkbox.notifytransactionerror", "Notifier les erreurs de transaction"},
-        {"checkbox.notifycem", "Notifier des événements d'échange certificats (CEM)"},
-        {"checkbox.notifyfailure", "Notifier les problems système"},
-        {"checkbox.notifyresend", "Notifier renvoie rejetés"},
-        {"checkbox.notifyconnectionproblem", "Notifier les problèmes de connexion"},
-        {"checkbox.notifypostprocessing", "Problèmes lors du post-traitement"},
-        {"checkbox.notifyclientserver", "Notifier les problèmes client-serveur"},
+        {"checkbox.notifycem", "Notifier des Ã©vÃ©nements d'Ã©change certificats (CEM)"},
+        {"checkbox.notifyfailure", "Notifier les problems systÃ¨me"},
+        {"checkbox.notifyresend", "Notifier renvoie rejetÃ©s"},
+        {"checkbox.notifyconnectionproblem", "Notifier les problÃ¨mes de connexion"},
+        {"checkbox.notifypostprocessing", "ProblÃ¨mes lors du post-traitement"},
+        {"checkbox.notifyclientserver", "Notifier les problÃ¨mes client-serveur"},
         {"button.testmail", "Envoyer un e-mail de test"},
-        {"label.mailhost", "Hôte du serveur de mail (SMTP)"},
+        {"label.mailhost", "HÃ´te du serveur de mail (SMTP)"},
         {"label.mailhost.hint", "IP ou domaine du serveur"},
         {"label.mailport", "Port"},
         {"label.mailport.hint", "Port"},
         {"label.mailport.help", "<HTML><strong>SMTP Port</strong><br><br>"
-            + "En général, il s''agit de l'une de ces valeurs:<br>"
+            + "En gÃ©nÃ©ral, il s''agit de l'une de ces valeurs:<br>"
             + "<strong>25</strong> (Port standard)<br>"
-            + "<strong>465</strong> (Port TLS, valeur obsolète)<br>"
-            + "<strong>587</strong> (Port TLS, valeur par défaut)<br>"
+            + "<strong>465</strong> (Port TLS, valeur obsolÃ¨te)<br>"
+            + "<strong>587</strong> (Port TLS, valeur par dÃ©faut)<br>"
             + "<strong>2525</strong> (Port TLS, valeur alternative, pas de standard)"
             + "</HTML>"},
         {"label.mailaccount", "Compte sur le serveur de mail"},
@@ -125,9 +125,9 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"label.notificationmail", "Adresse de notification du destinataire"},
         {"label.notificationmail.help", "<HTML><strong>Adresse de notification du destinataire</strong><br><br>"
             + "L''adresse e-mail du destinataire de la notification.<br>"
-            + "Si la notification doit être envoyée à plusieurs destinataires, veuillez saisir ici une liste séparée par des virgules d''adresses de réception."
+            + "Si la notification doit Ãªtre envoyÃ©e Ã  plusieurs destinataires, veuillez saisir ici une liste sÃ©parÃ©e par des virgules d''adresses de rÃ©ception."
             + "</HTML>"},
-        {"label.replyto", "Adresse de réponse (Replyto)"},
+        {"label.replyto", "Adresse de rÃ©ponse (Replyto)"},
         {"label.smtpauthorization.header", "Autorisation SMTP"},
         {"label.smtpauthorization.credentials", "Utilisateur/Mot de passe"},
         {"label.smtpauthorization.none", "Aucun"},
@@ -137,112 +137,112 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"label.smtpauthorization.user.hint", "Nom d''utilisateur du serveur SMTP"},
         {"label.smtpauthorization.pass", "Mot de passe"},
         {"label.smtpauthorization.pass.hint", "Mot de passe du serveur SMTP"},
-        {"label.security", "Sécurité de connexion"},
-        {"testmail.message.success", "E-mail de test envoyé avec succés, a {0}"},
+        {"label.security", "SÃ©curitÃ© de connexion"},
+        {"testmail.message.success", "E-mail de test envoyÃ© avec succÃ©s, a {0}"},
         {"testmail.message.error", "Erreur lors de l''envoi de l''e-mail de test:\n{0}"},
-        {"testmail.title", "Résultat de l''envoi de l''email de test"},
+        {"testmail.title", "RÃ©sultat de l''envoi de l''email de test"},
         {"testmail", "L''email de test"},                
-        {"info.restart.client", "Un redémarrage du client est requise pour effectuer ces modifications valide!"},
-        {"remotedir.select", "Sélectionnez le répertoire sur le serveur"},
+        {"info.restart.client", "Un redÃ©marrage du client est requise pour effectuer ces modifications valide!"},
+        {"remotedir.select", "SÃ©lectionnez le rÃ©pertoire sur le serveur"},
         //retry
         {"label.retry.max", "Le nombre maximum de tentatives de connexion"},
         {"label.retry.max.help", "<HTML><strong>Le nombre maximum de tentatives de connexion</strong>"
-            + "<br><br>Il s'agit du nombre de tentatives utilisées pour relancer les connexions à "
-            + "un partenaire si une connexion n'a pas pu être établie. Le temps d''attente entre ces "
-            + "tentatives peut être configuré dans la propriété <strong>Le temps d''attente entre deux tentatives de connexion</strong>.<br><br>"
-            + "La valeur par défaut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT) + "."
+            + "<br><br>Il s'agit du nombre de tentatives utilisÃ©es pour relancer les connexions Ã  "
+            + "un partenaire si une connexion n'a pas pu Ãªtre Ã©tablie. Le temps d''attente entre ces "
+            + "tentatives peut Ãªtre configurÃ© dans la propriÃ©tÃ© <strong>Le temps d''attente entre deux tentatives de connexion</strong>.<br><br>"
+            + "La valeur par dÃ©faut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT) + "."
             + "</HTML>"},
         {"label.retry.waittime", "Le temps d''attente entre deux tentatives de connexion"},
         {"label.retry.waittime.help", "<HTML><strong>Le temps d''attente entre deux tentatives de connexion</strong>"
-            + "<br><br>Il s''agit du temps en secondes que le système attendra avant de se reconnecter "
-            + "au partenaire. Une nouvelle tentative de connexion n''est effectuée que s''il a été "
-            + "impossible d'établir une connexion avec un partenaire (par exemple, système du partenaire "
-            + "hors service ou problème d''infrastructure). Le nombre de tentatives de connexion peut être "
-            + "configuré dans la propriété <strong>Le nombre maximum de tentatives de connexion</strong>.<br><br>"
-            + "La valeur par défaut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S) + "s."
+            + "<br><br>Il s''agit du temps en secondes que le systÃ¨me attendra avant de se reconnecter "
+            + "au partenaire. Une nouvelle tentative de connexion n''est effectuÃ©e que s''il a Ã©tÃ© "
+            + "impossible d'Ã©tablir une connexion avec un partenaire (par exemple, systÃ¨me du partenaire "
+            + "hors service ou problÃ¨me d''infrastructure). Le nombre de tentatives de connexion peut Ãªtre "
+            + "configurÃ© dans la propriÃ©tÃ© <strong>Le nombre maximum de tentatives de connexion</strong>.<br><br>"
+            + "La valeur par dÃ©faut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S) + "s."
             + "</HTML>"},
         {"label.sec", "s"},
-        {"keystore.hint", "<HTML><strong>Attention:</strong><br>Veuillez modifier ces paramètres uniquement si vous souhaitez "
-            + "utiliser des keystores externes pour les intégrer. Avec des chemins modifiés, des problèmes peuvent survenir lors de la mise à jour.</HTML>"},
+        {"keystore.hint", "<HTML><strong>Attention:</strong><br>Veuillez modifier ces paramÃ¨tres uniquement si vous souhaitez "
+            + "utiliser des keystores externes pour les intÃ©grer. Avec des chemins modifiÃ©s, des problÃ¨mes peuvent survenir lors de la mise Ã  jour.</HTML>"},
         {"maintenancemultiplier.day", "jour(s)"},
         {"maintenancemultiplier.hour", "heure(s)"},
         {"maintenancemultiplier.minute", "minute(s)"},
-        {"label.logpollprocess", "Affichage d''informations sur le processus de vote dans le journal (Énorme quantité d'entrées - ne pas utiliser dans la production)"},
-        {"label.max.outboundconnections", "Connexions sortantes parallèles (max)"},
-        {"label.max.outboundconnections.help", "<HTML><strong>Connexions sortantes parallèles (max)</strong><br><br>"
-            + "Il s''agit du nombre maximal de connexions sortantes parallèles que votre système ouvrira. "
-            + "Cette valeur est principalement disponible pour éviter que le système de votre partenaire ne "
-            + "soit inondé de connexions entrantes de votre côté.<br><br>"
-            + "La valeur par défaut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS) + "."
+        {"label.logpollprocess", "Affichage d''informations sur le processus de vote dans le journal (Ã‰norme quantitÃ© d'entrÃ©es - ne pas utiliser dans la production)"},
+        {"label.max.outboundconnections", "Connexions sortantes parallÃ¨les (max)"},
+        {"label.max.outboundconnections.help", "<HTML><strong>Connexions sortantes parallÃ¨les (max)</strong><br><br>"
+            + "Il s''agit du nombre maximal de connexions sortantes parallÃ¨les que votre systÃ¨me ouvrira. "
+            + "Cette valeur est principalement disponible pour Ã©viter que le systÃ¨me de votre partenaire ne "
+            + "soit inondÃ© de connexions entrantes de votre cÃ´tÃ©.<br><br>"
+            + "La valeur par dÃ©faut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS) + "."
             + "</HTML>"},
-        {"label.max.inboundconnections", "Max connexions parallèles entrantes"},
-        {"label.max.inboundconnections.help", "<HTML><strong>Max connexions parallèles entrantes</strong><br><br>"
-            + "Il s''agit du nombre maximal de connexions entrantes parallèles qui peuvent être ouvertes depuis l''extérieur vers votre installation mendelson AS2. "
-            + "Cette valeur s''applique à l''ensemble du logiciel et n''est pas limitée à des partenaires individuels.<br>"
-            + "Ce paramètre est transmis au serveur HTTP embarqué, vous devez redémarrer le serveur AS2 après une modification.<br><br>"
-            + "Bien qu''il soit possible de limiter le nombre de connexions entrantes parallèles, il est préférable de régler "
-            + "ce paramètre dans votre pare-feu ou dans votre proxy en amont - cela s''applique alors à l''ensemble de votre système "
-            + "et pas seulement à un seul logiciel.<br><br>"
-            + "La valeur par défaut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS) + "."
+        {"label.max.inboundconnections", "Max connexions parallÃ¨les entrantes"},
+        {"label.max.inboundconnections.help", "<HTML><strong>Max connexions parallÃ¨les entrantes</strong><br><br>"
+            + "Il s''agit du nombre maximal de connexions entrantes parallÃ¨les qui peuvent Ãªtre ouvertes depuis l''extÃ©rieur vers votre installation mendelson AS2. "
+            + "Cette valeur s''applique Ã  l''ensemble du logiciel et n''est pas limitÃ©e Ã  des partenaires individuels.<br>"
+            + "Ce paramÃ¨tre est transmis au serveur HTTP embarquÃ©, vous devez redÃ©marrer le serveur AS2 aprÃ¨s une modification.<br><br>"
+            + "Bien qu''il soit possible de limiter le nombre de connexions entrantes parallÃ¨les, il est prÃ©fÃ©rable de rÃ©gler "
+            + "ce paramÃ¨tre dans votre pare-feu ou dans votre proxy en amont - cela s''applique alors Ã  l''ensemble de votre systÃ¨me "
+            + "et pas seulement Ã  un seul logiciel.<br><br>"
+            + "La valeur par dÃ©faut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS) + "."
             + "</HTML>"},
-        {"event.preferences.modified.subject", "La valeur {0} du paramètre serveur a été modifiée"},
-        {"event.preferences.modified.body", "Valeur précédente: {0}\n\nNouvelle valeur: {1}"},
-        {"event.notificationdata.modified.subject", "Les paramètres de notification ont été modifiés."},
-        {"event.notificationdata.modified.body", "Les données d''avis sont passées de\n\n{0}\n\nà\n\n{1}"},
+        {"event.preferences.modified.subject", "La valeur {0} du paramÃ¨tre serveur a Ã©tÃ© modifiÃ©e"},
+        {"event.preferences.modified.body", "Valeur prÃ©cÃ©dente: {0}\n\nNouvelle valeur: {1}"},
+        {"event.notificationdata.modified.subject", "Les paramÃ¨tres de notification ont Ã©tÃ© modifiÃ©s."},
+        {"event.notificationdata.modified.body", "Les donnÃ©es d''avis sont passÃ©es de\n\n{0}\n\nÃ \n\n{1}"},
         {"label.maxmailspermin", "Nombre maximum de notifications/min"},
         {"label.maxmailspermin.help", "<HTML><strong>Nombre maximum de notifications/min</strong><br><br>"
-            + "Pour éviter un trop grand nombre de courriers, vous pouvez résumer toutes les notifications en "
-            + "définissant le nombre maximum de notifications qui seront envoyées par minute. En utilisant "
-            + "cette fonctionnalité, vous recevrez des courriers contenant plusieurs notifications."
+            + "Pour Ã©viter un trop grand nombre de courriers, vous pouvez rÃ©sumer toutes les notifications en "
+            + "dÃ©finissant le nombre maximum de notifications qui seront envoyÃ©es par minute. En utilisant "
+            + "cette fonctionnalitÃ©, vous recevrez des courriers contenant plusieurs notifications."
             + "</HTML>"},
-        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Supprimer les anciennes entrées de transactions</strong><br><br>"
-            + "Ce paramètre définit la période pendant laquelle les entrées de transactions et les données associées "
-            + "(par exemple, les fichiers temporaires) restent dans le système et doivent être affichées dans l''aperçu "
-            + "des transactions.<br>Ces paramètres n''affectent pas vos données/fichiers reçus, ils ne sont pas affectés."
-            + "<br>Même pour les transactions supprimées, le journal des transactions est toujours disponible via la "
+        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Supprimer les anciennes entrÃ©es de transactions</strong><br><br>"
+            + "Ce paramÃ¨tre dÃ©finit la pÃ©riode pendant laquelle les entrÃ©es de transactions et les donnÃ©es associÃ©es "
+            + "(par exemple, les fichiers temporaires) restent dans le systÃ¨me et doivent Ãªtre affichÃ©es dans l''aperÃ§u "
+            + "des transactions.<br>Ces paramÃ¨tres n''affectent pas vos donnÃ©es/fichiers reÃ§us, ils ne sont pas affectÃ©s."
+            + "<br>MÃªme pour les transactions supprimÃ©es, le journal des transactions est toujours disponible via la "
             + "fonction recherche log.</HTML>"},
-        {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Suppression des anciennes données statistiques</strong><br><br>"
-            + "Le système collecte les données de compatibilité des systèmes partenaires et peut les afficher sous forme de "
-            + "statistiques. Cela détermine la période pendant laquelle ces données sont conservées.</HTML>"},
-        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Suppression des anciens répertoires de logs</strong><br><br>Même si les anciennes transactions ont été supprimées, les opérations peuvent toujours être retracées grâce aux fichiers journaux existants. Ce paramètre permet de supprimer ces fichiers journaux ainsi que tous les fichiers relatifs aux événements du système qui tombent dans la même période.</HTML>"},
+        {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Suppression des anciennes donnÃ©es statistiques</strong><br><br>"
+            + "Le systÃ¨me collecte les donnÃ©es de compatibilitÃ© des systÃ¨mes partenaires et peut les afficher sous forme de "
+            + "statistiques. Cela dÃ©termine la pÃ©riode pendant laquelle ces donnÃ©es sont conservÃ©es.</HTML>"},
+        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Suppression des anciens rÃ©pertoires de logs</strong><br><br>MÃªme si les anciennes transactions ont Ã©tÃ© supprimÃ©es, les opÃ©rations peuvent toujours Ãªtre retracÃ©es grÃ¢ce aux fichiers journaux existants. Ce paramÃ¨tre permet de supprimer ces fichiers journaux ainsi que tous les fichiers relatifs aux Ã©vÃ©nements du systÃ¨me qui tombent dans la mÃªme pÃ©riode.</HTML>"},
         {"label.colorblindness", "Support pour le daltonisme"},
-        {"warning.clientrestart.required", "Les paramètres du client ont été modifiés - veuillez redémarrer le client pour les rendre valides"},
-        {"warning.serverrestart.required", "Veuillez redémarrer le serveur pour que ces modifications soient valables."},
-        {"warning.changes.canceled", "L''utilisateur a annulé la boîte de dialogue des paramètres - aucune modification n''a été apportée aux paramètres."},
+        {"warning.clientrestart.required", "Les paramÃ¨tres du client ont Ã©tÃ© modifiÃ©s - veuillez redÃ©marrer le client pour les rendre valides"},
+        {"warning.serverrestart.required", "Veuillez redÃ©marrer le serveur pour que ces modifications soient valables."},
+        {"warning.changes.canceled", "L''utilisateur a annulÃ© la boÃ®te de dialogue des paramÃ¨tres - aucune modification n''a Ã©tÃ© apportÃ©e aux paramÃ¨tres."},
         {"label.darkmode", "Mode sombre"},
-        {"label.litemode", "Mode allégé"},
-        {"label.trustallservercerts", "TLS: Faire confiance à tous les certificats de serveur final de vos partenaires AS2"},
-        {"label.trustallservercerts.help", "<HTML><strong>TLS: Faire confiance à tous les certificats de serveur final de vos partenaires AS2</strong><br><br>"
-            + "Normalement, TLS exige que tous les certificats de la chaîne de confiance du système AS2 de votre partenaire soient conservés dans votre gestionnaire de certificats TLS. "
-            + "Si vous activez cette option, vous faites confiance au certificat final de votre système partenaire lors de l'établissement de la connexion sortante, "
-            + "si vous ne conservez que les certificats racine et intermédiaires correspondants dans le gestionnaire de certificats TLS. "
-            + "Veuillez noter que cette option n''est utile que si votre partenaire utilise un certificat certifié - les certificats auto-signés sont de toute façon acceptés."
-            + "<br><br><strong>Avertissement:</strong> l''activation de cette option diminue le niveau de sécurité, car des attaques man-in-the-middle sont possibles!"
+        {"label.litemode", "Mode allÃ©gÃ©"},
+        {"label.trustallservercerts", "TLS: Faire confiance Ã  tous les certificats de serveur final de vos partenaires AS2"},
+        {"label.trustallservercerts.help", "<HTML><strong>TLS: Faire confiance Ã  tous les certificats de serveur final de vos partenaires AS2</strong><br><br>"
+            + "Normalement, TLS exige que tous les certificats de la chaÃ®ne de confiance du systÃ¨me AS2 de votre partenaire soient conservÃ©s dans votre gestionnaire de certificats TLS. "
+            + "Si vous activez cette option, vous faites confiance au certificat final de votre systÃ¨me partenaire lors de l'Ã©tablissement de la connexion sortante, "
+            + "si vous ne conservez que les certificats racine et intermÃ©diaires correspondants dans le gestionnaire de certificats TLS. "
+            + "Veuillez noter que cette option n''est utile que si votre partenaire utilise un certificat certifiÃ© - les certificats auto-signÃ©s sont de toute faÃ§on acceptÃ©s."
+            + "<br><br><strong>Avertissement:</strong> l''activation de cette option diminue le niveau de sÃ©curitÃ©, car des attaques man-in-the-middle sont possibles!"
             + "</HTML>"},
-        {"label.stricthostcheck", "TLS: Faire confiance à tous les hôtes"},
-        {"label.stricthostcheck.help", "<HTML><strong>TLS: Faire confiance à tous les hôtes</strong><br><br>"
-            + "Vous indiquez ici si, dans le cas d''une connexion TLS sortante, il faut vérifier si le nom commun (CN) "
-            + "du certificat distant correspond à l''hôte distant. Cette vérification ne s''applique qu'aux certificats "
-            + "authentifiés."
+        {"label.stricthostcheck", "TLS: Faire confiance Ã  tous les hÃ´tes"},
+        {"label.stricthostcheck.help", "<HTML><strong>TLS: Faire confiance Ã  tous les hÃ´tes</strong><br><br>"
+            + "Vous indiquez ici si, dans le cas d''une connexion TLS sortante, il faut vÃ©rifier si le nom commun (CN) "
+            + "du certificat distant correspond Ã  l''hÃ´te distant. Cette vÃ©rification ne s''applique qu'aux certificats "
+            + "authentifiÃ©s."
             + "</HTML>"},
-        {"label.httpport", "Port d''entrée HTTP"},
-        {"label.httpport.help", "<HTML><strong>Port d''entrée HTTP</strong><br><br>"
-            + "Il s''agit du port pour les connexions entrantes non cryptées. Ce paramètre est transmis au serveur "
-            + "HTTP embarqué, vous devez redémarrer le serveur AS2 après une modification.<br>"
-            + "Le port fait partie de l''URL à laquelle votre partenaire doit envoyer les messages AS2. Il s''agit de http://host:<strong>port</strong>/as2/HttpReceiver<br><br>"
-            + "La valeur par défaut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT) + "."
+        {"label.httpport", "Port d''entrÃ©e HTTP"},
+        {"label.httpport.help", "<HTML><strong>Port d''entrÃ©e HTTP</strong><br><br>"
+            + "Il s''agit du port pour les connexions entrantes non cryptÃ©es. Ce paramÃ¨tre est transmis au serveur "
+            + "HTTP embarquÃ©, vous devez redÃ©marrer le serveur AS2 aprÃ¨s une modification.<br>"
+            + "Le port fait partie de l''URL Ã  laquelle votre partenaire doit envoyer les messages AS2. Il s''agit de http://host:<strong>port</strong>/as2/HttpReceiver<br><br>"
+            + "La valeur par dÃ©faut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT) + "."
             + "</HTML>"
         },
-        {"label.httpsport", "Port d''entrée HTTPS"},
-        {"label.httpsport.help", "<HTML><strong>Port d''entrée HTTPS</strong><br><br>"
-            + "Il s''agit du port pour les connexions entrantes cryptées. "
-            + "Ce paramètre est transmis au serveur "
-            + "HTTP embarqué, vous devez redémarrer le serveur AS2 après une modification.<br>"
-            + "Le port fait partie de l''URL à laquelle votre partenaire doit envoyer les messages AS2. Il s''agit de https://host:<strong>port</strong>/as2/HttpReceiver<br><br>"
-            + "La valeur par défaut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT) + "."
+        {"label.httpsport", "Port d''entrÃ©e HTTPS"},
+        {"label.httpsport.help", "<HTML><strong>Port d''entrÃ©e HTTPS</strong><br><br>"
+            + "Il s''agit du port pour les connexions entrantes cryptÃ©es. "
+            + "Ce paramÃ¨tre est transmis au serveur "
+            + "HTTP embarquÃ©, vous devez redÃ©marrer le serveur AS2 aprÃ¨s une modification.<br>"
+            + "Le port fait partie de l''URL Ã  laquelle votre partenaire doit envoyer les messages AS2. Il s''agit de https://host:<strong>port</strong>/as2/HttpReceiver<br><br>"
+            + "La valeur par dÃ©faut est " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT) + "."
             + "</HTML>"
         },
-        {"embedded.httpconfig.not.available", "Serveur HTTP non disponible ou problèmes d''accès au fichier de configuration"},
-        {"button.mailserverdetection", "Détecter serveur de messagerie"},        
+        {"embedded.httpconfig.not.available", "Serveur HTTP non disponible ou problÃ¨mes d''accÃ¨s au fichier de configuration"},
+        {"button.mailserverdetection", "DÃ©tecter serveur de messagerie"},        
     };
 }

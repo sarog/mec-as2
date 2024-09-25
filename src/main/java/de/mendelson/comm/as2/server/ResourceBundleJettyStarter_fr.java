@@ -27,16 +27,16 @@ public class ResourceBundleJettyStarter_fr extends MecResourceBundle {
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
         {"module.name", "[JETTY]" },
-        {"httpserver.willstart", "Démarrage du serveur HTTP" },
-        {"httpserver.running", "Serveur HTTP en cours d''exécution ({0})" },
-        {"httpserver.startup.problem", "Problème au démarrage ({0})" },
-        {"httpserver.stopped", "Le serveur HTTP intégré s''est arrêté" },
-        {"deployment.success", "[{0}] a été déployé avec succès" },
-        {"deployment.failed", "[{0}] n''a PAS été déployé : {1}" },
+        {"httpserver.willstart", "DÃ©marrage du serveur HTTP" },
+        {"httpserver.running", "Serveur HTTP en cours d''exÃ©cution ({0})" },
+        {"httpserver.startup.problem", "ProblÃ¨me au dÃ©marrage ({0})" },
+        {"httpserver.stopped", "Le serveur HTTP intÃ©grÃ© s''est arrÃªtÃ©" },
+        {"deployment.success", "[{0}] a Ã©tÃ© dÃ©ployÃ© avec succÃ¨s" },
+        {"deployment.failed", "[{0}] n''a PAS Ã©tÃ© dÃ©ployÃ© : {1}" },
         {"listener.started", "Attente de connexions entrantes {0}"},
-        {"userconfiguration.readerror", "Problème de lecture de la configuration utilisateur de {0} : {1} ... Ignorer la configuration utilisateur et démarrer le serveur web en utilisant les valeurs par défaut définies" },
-        {"userconfiguration.reading", "Lire la configuration personnalisée de {0}" },
-        {"userconfiguration.setvar", "Définir la valeur personnalisée [{0}] sur [{1}]" },
-        {"tls.keystore.reloaded", "Des changements ont été enregistrés dans le keystore TLS et les données du keystore du serveur HTTP ont été mises à jour"},
+        {"userconfiguration.readerror", "ProblÃ¨me de lecture de la configuration utilisateur de {0} : {1} ... Ignorer la configuration utilisateur et dÃ©marrer le serveur web en utilisant les valeurs par dÃ©faut dÃ©finies" },
+        {"userconfiguration.reading", "Lire la configuration personnalisÃ©e de {0}" },
+        {"userconfiguration.setvar", "DÃ©finir la valeur personnalisÃ©e [{0}] sur [{1}]" },
+        {"tls.keystore.reloaded", "Des changements ont Ã©tÃ© enregistrÃ©s dans le keystore TLS et les donnÃ©es du keystore du serveur HTTP ont Ã©tÃ© mises Ã  jour"},
     };
 }

@@ -36,11 +36,11 @@ public class ResourceBundleManualSend_de extends MecResourceBundle {
         {"label.filename", "Datei senden"},
         {"label.filename.hint", "Datei zum Senden an Ihren Partner"},
         {"label.testdata", "Testdaten senden"},
-        {"label.partner", "Empfänger"},
+        {"label.partner", "EmpfÃ¤nger"},
         {"label.localstation", "Sender"},
-        {"label.selectfile", "Bitte wählen Sie die zu versendene Datei"},
+        {"label.selectfile", "Bitte wÃ¤hlen Sie die zu versendene Datei"},
         {"title", "Manueller Dateiversand"},
-        {"send.success", "Die Datei wurde erfolgreich an den Versandprozess übergeben."},
-        {"send.failed", "Wegen eines Fehlers konnte die Datei nicht an den Versandprozess übergeben werden."},};
+        {"send.success", "Die Datei wurde erfolgreich an den Versandprozess Ã¼bergeben."},
+        {"send.failed", "Wegen eines Fehlers konnte die Datei nicht an den Versandprozess Ã¼bergeben werden."},};
 
 }

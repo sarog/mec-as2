@@ -30,7 +30,7 @@ public class ResourceBundleImport_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"title", "Importer une clé/un certificat"},
+        {"title", "Importer une clÃ©/un certificat"},
         {"info.whattoimport", "Que voulez-vous importer?" },
         {"button.ok", "Ok"},
         {"button.cancel", "Annuler"},        

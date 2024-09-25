@@ -30,24 +30,24 @@ public class ResourceBundlePreferencesInterface_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {             
-        {"label.cem", "Permettre l''échange de certificat (CEM)"},
-        {"label.outboundstatusfiles", "Écrire des fichiers de statut de transaction sortante"},        
-        {"label.showsecurityoverwrite", "Gestion des partenaires: Remplacer les paramètres de sécurité de la station locale" },
-        {"label.showsecurityoverwrite.help", "<HTML><strong>Remplacer les paramètres de sécurité de la station locale</strong><br><br>"
-            + "Si vous activez cette option, un onglet supplémentaire s''affiche pour chaque partenaire "
-            + "dans la gestion des partenaires.<br>Vous pouvez y définir les clés privées qui seront utilisées "
-            + "dans tous les cas pour ce partenaire à l''entrée et à la sortie - "
-            + "indépendamment des paramètres de la station locale correspondante.<br><br>"
-            + "Cette option vous permet d'utiliser des clés privées différentes pour chaque partenaire "
-            + "avec la même station locale. Il s''agit d'une option de compatibilité avec d''autres produits AS2 - "
-            + "certains systèmes ont exactement les mêmes exigences, "
-            + "mais qui nécessitent une configuration de relations de partenaires et non de partenaires individuels." 
+        {"label.cem", "Permettre l''Ã©change de certificat (CEM)"},
+        {"label.outboundstatusfiles", "Ã‰crire des fichiers de statut de transaction sortante"},        
+        {"label.showsecurityoverwrite", "Gestion des partenaires: Remplacer les paramÃ¨tres de sÃ©curitÃ© de la station locale" },
+        {"label.showsecurityoverwrite.help", "<HTML><strong>Remplacer les paramÃ¨tres de sÃ©curitÃ© de la station locale</strong><br><br>"
+            + "Si vous activez cette option, un onglet supplÃ©mentaire s''affiche pour chaque partenaire "
+            + "dans la gestion des partenaires.<br>Vous pouvez y dÃ©finir les clÃ©s privÃ©es qui seront utilisÃ©es "
+            + "dans tous les cas pour ce partenaire Ã  l''entrÃ©e et Ã  la sortie - "
+            + "indÃ©pendamment des paramÃ¨tres de la station locale correspondante.<br><br>"
+            + "Cette option vous permet d'utiliser des clÃ©s privÃ©es diffÃ©rentes pour chaque partenaire "
+            + "avec la mÃªme station locale. Il s''agit d'une option de compatibilitÃ© avec d''autres produits AS2 - "
+            + "certains systÃ¨mes ont exactement les mÃªmes exigences, "
+            + "mais qui nÃ©cessitent une configuration de relations de partenaires et non de partenaires individuels." 
             + "</HTML>"},
-        {"label.showhttpheader", "Gestion des partenaires: Laissez configurer les en-têtes de HTTP"},
-        {"label.showhttpheader.help", "<HTML><strong>Laissez configurer les en-têtes de HTTP</strong><br><br>"
-            + "Si vous activez cette option, un onglet supplémentaire s''affiche par partenaire dans "
-            + "la gestion des partenaires, dans lequel vous pouvez définir des en-têtes "
-            + "HTTP personnalisés pour l''envoi de données à ce partenaire."
+        {"label.showhttpheader", "Gestion des partenaires: Laissez configurer les en-tÃªtes de HTTP"},
+        {"label.showhttpheader.help", "<HTML><strong>Laissez configurer les en-tÃªtes de HTTP</strong><br><br>"
+            + "Si vous activez cette option, un onglet supplÃ©mentaire s''affiche par partenaire dans "
+            + "la gestion des partenaires, dans lequel vous pouvez dÃ©finir des en-tÃªtes "
+            + "HTTP personnalisÃ©s pour l''envoi de donnÃ©es Ã  ce partenaire."
             + "</HTML>"},
         {"label.showquota", "Gestion des partenaires: Laissez configurer l''avis de quote-part"},
     };

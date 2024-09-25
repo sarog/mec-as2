@@ -36,7 +36,7 @@ public class ResourceBundleAS2StatusBar_fr extends MecResourceBundle {
         {"count.pending", "Transactions attendant"},
         {"count.failure", "Transactions defectueuses"},
         {"count.selected", "Transactions choisies"},
-        {"configuration.issue", "Veuillez vérifier votre configuration"},
-        {"no.configuration.issues", "Pas des problèmes de configuration"},};
+        {"configuration.issue", "Veuillez vÃ©rifier votre configuration"},
+        {"no.configuration.issues", "Pas des problÃ¨mes de configuration"},};
 
 }

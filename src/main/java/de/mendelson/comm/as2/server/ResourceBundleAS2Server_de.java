@@ -26,7 +26,7 @@ public class ResourceBundleAS2Server_de extends MecResourceBundle {
     }
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
-        {"fatal.limited.strength", "Diese Java VM unterstützt nicht die notwendige Schlüssellänge. Bitte installieren Sie die \"Unlimited jurisdiction key strength policy\" Dateien, bevor Sie den " + AS2ServerVersion.getProductName() + " Server starten." },
+        {"fatal.limited.strength", "Diese Java VM unterstÃ¼tzt nicht die notwendige SchlÃ¼ssellÃ¤nge. Bitte installieren Sie die \"Unlimited jurisdiction key strength policy\" Dateien, bevor Sie den " + AS2ServerVersion.getProductName() + " Server starten." },
         {"server.willstart", "{0} startet"},
         {"server.start.details", "{0} Parameter:\n\nStarte den integrierten HTTP Server: {1}\n"
             + "Erlaube Client-Server Verbindungen von anderen Hosts: {2}\n"
@@ -35,15 +35,15 @@ public class ResourceBundleAS2Server_de extends MecResourceBundle {
             + "Systembenutzer: {5}\n"
             + "Systemidentifikation: {6}"},
         {"server.started", AS2ServerVersion.getFullProductName() + " gestartet in {0} ms."},
-        {"server.already.running", "Eine " + AS2ServerVersion.getProductName() + " Instanz scheint bereits zu laufen.\nEs könnte jedoch auch sein, dass eine vorherige Instanz nicht korrekt beendet wurde." + " Wenn Sie sicher sind, dass keine andere Instanz läuft,\nlöschen Sie bitte die Lock Datei \"{0}\"\n(Start Datum {1}) und starten den Server erneut."},
+        {"server.already.running", "Eine " + AS2ServerVersion.getProductName() + " Instanz scheint bereits zu laufen.\nEs kÃ¶nnte jedoch auch sein, dass eine vorherige Instanz nicht korrekt beendet wurde." + " Wenn Sie sicher sind, dass keine andere Instanz lÃ¤uft,\nlÃ¶schen Sie bitte die Lock Datei \"{0}\"\n(Start Datum {1}) und starten den Server erneut."},
         {"server.nohttp", "Der integrierte HTTP Server wurde nicht gestartet." }, 
         {"server.startup.failed", "Es gab ein Problem beim Starten des Servers - der Start wurde abgebrochen" },
-        {"server.shutdown", "{0} fährt herunter." },
-        {"bind.exception", "{0}\nSie haben einen Port definiert, der derzeit von einem anderen Prozess in Ihrem System verwendet wird.\nDies kann der Client-Server-Port oder der HTTP/S-Port sein, den Sie in der HTTP-Konfiguration definiert haben.\nBitte ändern Sie Ihre Konfiguration oder stoppen Sie den anderen Prozess, bevor Sie den {1} verwenden."},
+        {"server.shutdown", "{0} fÃ¤hrt herunter." },
+        {"bind.exception", "{0}\nSie haben einen Port definiert, der derzeit von einem anderen Prozess in Ihrem System verwendet wird.\nDies kann der Client-Server-Port oder der HTTP/S-Port sein, den Sie in der HTTP-Konfiguration definiert haben.\nBitte Ã¤ndern Sie Ihre Konfiguration oder stoppen Sie den anderen Prozess, bevor Sie den {1} verwenden."},
         {"server.started.issues", "Warnung: Es wurden {0} Konfigurationsprobleme beim Starten des Servers erkannt." },
         {"server.started.issue", "Warnung: Es wurde 1 Konfigurationsproblem beim Starten des Servers erkannt." }, 
         {"server.hello", "Dies ist {0}" },
-        {"server.hello.licenseexpire", "Die Lizenz läuft in {0} Tagen aus ({1}). Sie müssen die Lizenz über den mendelson Support (service@mendelson.de) erneuern, wenn Sie sie danach noch weiter verwenden möchten." },
-        {"server.hello.licenseexpire.single", "Die Lizenz läuft in {0} Tag aus ({1}). Sie müssen die Lizenz über den mendelson Support (service@mendelson.de) erneuern, wenn Sie sie danach noch weiter verwenden möchten." },
+        {"server.hello.licenseexpire", "Die Lizenz lÃ¤uft in {0} Tagen aus ({1}). Sie mÃ¼ssen die Lizenz Ã¼ber den mendelson Support (service@mendelson.de) erneuern, wenn Sie sie danach noch weiter verwenden mÃ¶chten." },
+        {"server.hello.licenseexpire.single", "Die Lizenz lÃ¤uft in {0} Tag aus ({1}). Sie mÃ¼ssen die Lizenz Ã¼ber den mendelson Support (service@mendelson.de) erneuern, wenn Sie sie danach noch weiter verwenden mÃ¶chten." },
     };
 }

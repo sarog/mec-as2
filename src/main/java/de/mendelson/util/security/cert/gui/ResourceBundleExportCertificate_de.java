@@ -39,16 +39,16 @@ public class ResourceBundleExportCertificate_de extends MecResourceBundle {
         {"label.exportfile.hint", "Zertifikatsdatei, die generiert wird"},
         {"label.alias", "Alias"},
         {"label.exportformat", "Format"},
-        {"error.empty.certificate", "Keine Zertifikatdaten verfügbar" },
-        {"filechooser.certificate.export", "Bitte wählen Sie den Dateinamen für den Export."},
+        {"error.empty.certificate", "Keine Zertifikatdaten verfÃ¼gbar" },
+        {"filechooser.certificate.export", "Bitte wÃ¤hlen Sie den Dateinamen fÃ¼r den Export."},
         {"certificate.export.error.title", "Fehler beim Export"},
         {"certificate.export.error.message", "Der Export des Zertifikates schlug fehl:\n{0}"},
         {"certificate.export.success.title", "Erfolg"},
         {"certificate.export.success.message", "Das Zertifikat konnte erfolgreich exportiert werden nach\n\"{0}\""},
         {KeystoreCertificate.CERTIFICATE_FORMAT_PEM, "Textformat (PEM, *.cer)"},
-        {KeystoreCertificate.CERTIFICATE_FORMAT_DER, "Binärformat (DER, *.cer)"},
+        {KeystoreCertificate.CERTIFICATE_FORMAT_DER, "BinÃ¤rformat (DER, *.cer)"},
         {KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7, "Mit Zertifizierungskette (PKCS#7, *.p7b)"},
-        {KeystoreCertificate.CERTIFICATE_FORMAT_SSH2, "SSH2 Format (öffentlicher Schlüssel, *.pub)"},
+        {KeystoreCertificate.CERTIFICATE_FORMAT_SSH2, "SSH2 Format (Ã¶ffentlicher SchlÃ¼ssel, *.pub)"},
     };
 
 }

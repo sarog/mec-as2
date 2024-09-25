@@ -35,7 +35,7 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"button.cancel", "Abbrechen"},
         {"button.modify", "Bearbeiten"},
         {"button.browse", "Durchsuchen"},
-        {"filechooser.selectdir", "Bitte wählen Sie das zu setzene Verzeichnis"},
+        {"filechooser.selectdir", "Bitte wÃ¤hlen Sie das zu setzene Verzeichnis"},
         {"title", "Einstellungen"},
         {"tab.language", "Client"},
         {"tab.dir", "Verzeichnisse"},
@@ -57,10 +57,10 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "</HTML>"},
         {"label.country", "Land/Region"},
         {"label.country.help", "<HTML><strong>Land/Region</strong><br><br>"
-            + "Diese Einstellung steuert im Wesentlichen nur das Datumsformat, das für die Anzeige von Transaktionsdaten usw. im Client verwendet wird."
+            + "Diese Einstellung steuert im Wesentlichen nur das Datumsformat, das fÃ¼r die Anzeige von Transaktionsdaten usw. im Client verwendet wird."
             + "</HTML>"},
         {"label.keystore.https.pass", "Keystore Passwort (zum Senden via Https):"},
-        {"label.keystore.pass", "Keystore Password (Verschlüsselung/digitale Signatur):"},
+        {"label.keystore.pass", "Keystore Password (VerschlÃ¼sselung/digitale Signatur):"},
         {"label.keystore.https", "Keystore (zum Senden via Https):"},
         {"label.keystore.encryptionsign", "Keystore( Verschl., Signatur):"},
         {"label.proxy.url", "Proxy URL:"},
@@ -70,29 +70,29 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.proxy.user.hint", "Proxy Login Benutzer"},
         {"label.proxy.pass", "Passwort:"},
         {"label.proxy.pass.hint", "Proxy Login Passwort"},
-        {"label.proxy.use", "HTTP Proxy für ausgehende HTTP/HTTPs Verbindungen benutzen"},
-        {"label.proxy.useauthentification", "Authentifizierung für Proxy benutzen"},
-        {"filechooser.keystore", "Bitte wählen Sie die Keystore Datei (JKS Format)."},
+        {"label.proxy.use", "HTTP Proxy fÃ¼r ausgehende HTTP/HTTPs Verbindungen benutzen"},
+        {"label.proxy.useauthentification", "Authentifizierung fÃ¼r Proxy benutzen"},
+        {"filechooser.keystore", "Bitte wÃ¤hlen Sie die Keystore Datei (JKS Format)."},
         {"label.days", "Tage"},
-        {"label.deletemsgolderthan", "Automatisches Löschen von Transaktionseinträgen, die älter sind als"},
-        {"label.deletemsglog", "Automatisches Löschen von Dateien und Logeinträgen protokollieren"},
-        {"label.deletestatsolderthan", "Automatisches Löschen von Statistikdaten, die älter sind als"},
-        {"label.deletelogdirolderthan", "Automatisches Löschen von Protokolldaten, die älter sind als"},
+        {"label.deletemsgolderthan", "Automatisches LÃ¶schen von TransaktionseintrÃ¤gen, die Ã¤lter sind als"},
+        {"label.deletemsglog", "Automatisches LÃ¶schen von Dateien und LogeintrÃ¤gen protokollieren"},
+        {"label.deletestatsolderthan", "Automatisches LÃ¶schen von Statistikdaten, die Ã¤lter sind als"},
+        {"label.deletelogdirolderthan", "Automatisches LÃ¶schen von Protokolldaten, die Ã¤lter sind als"},
         {"label.asyncmdn.timeout", "Maximale Wartezeit auf asynchrone MDNs"},
         {"label.asyncmdn.timeout.help", "<HTML><strong>Maximale Wartezeit auf asynchrone MDNs</strong>"
-            + "<br><br>Die Zeit, die das System auf eine asynchrone MDN (Message Delivery Notification) für eine gesendete AS2 Nachricht wartet, bevor es die Transaktion in den Status \"fehlgeschlagen\" versetzt.<br>"
-            + "Dieser Wert ist systemweit für alle Partner gültig.<br><br>Der Voreinstellungswert ist 30 min."
+            + "<br><br>Die Zeit, die das System auf eine asynchrone MDN (Message Delivery Notification) fÃ¼r eine gesendete AS2 Nachricht wartet, bevor es die Transaktion in den Status \"fehlgeschlagen\" versetzt.<br>"
+            + "Dieser Wert ist systemweit fÃ¼r alle Partner gÃ¼ltig.<br><br>Der Voreinstellungswert ist 30 min."
             + "</HTML>"},
         {"label.httpsend.timeout", "HTTP/S Sende-Timeout"},
         {"label.httpsend.timeout.help", "<HTML><strong>HTTP/S Sende-Timeout</strong><br><br>"
-            + "Dies ist Wert für die Zeitüberschreitung der Netzwerkverbindung für ausgehende Verbindungen.<br>"
+            + "Dies ist Wert fÃ¼r die ZeitÃ¼berschreitung der Netzwerkverbindung fÃ¼r ausgehende Verbindungen.<br>"
             + "Wenn nach dieser Zeit keine Verbindung zu Ihrem Partnersystem zustande gekommen ist, wird der Verbindungsversuch abgebrochen und es werden gegebenenfalls entsprechend "
-            + "der Wiederholungseinstellungen später weitere Verbindungsversuche unternommen.<br><br>"
+            + "der Wiederholungseinstellungen spÃ¤ter weitere Verbindungsversuche unternommen.<br><br>"
             + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_SEND_TIMEOUT) + "ms."
             + "</HTML>"},
         {"label.min", "min"},
-        {"receipt.subdir", "Unterverzeichnisse pro Partner für Nachrichtenempfang anlegen"},
-        {"receipt.subdir.help", "<HTML><strong>Unterverzeichnisse für Empfang</strong><br><br>"
+        {"receipt.subdir", "Unterverzeichnisse pro Partner fÃ¼r Nachrichtenempfang anlegen"},
+        {"receipt.subdir.help", "<HTML><strong>Unterverzeichnisse fÃ¼r Empfang</strong><br><br>"
             + "Stellt ein, ob Daten im Verzeichnis <strong>&lt;Lokale Station&gt;/inbox</strong>"
             + " oder <strong>&lt;Lokale Station&gt;/inbox/&lt;Partnername&gt;</strong> empfangen werden sollen."
             + "</HTML>"},
@@ -112,17 +112,17 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.mailport.help", "<HTML><strong>SMTP Port</strong><br><br>"
             + "In der Regel ist es einer dieser Werte:<br>"
             + "<strong>25</strong> (Standard Port)<br>"
-            + "<strong>465</strong> (TLS Port, überholter Wert)<br>"
+            + "<strong>465</strong> (TLS Port, Ã¼berholter Wert)<br>"
             + "<strong>587</strong> (TLS Port, Standardwert)<br>"
             + "<strong>2525</strong> (TLS Port, alternativer Wert, kein Standard)"
             + "</HTML>"},
         {"label.mailport.hint", "SMTP Port"},
         {"label.mailaccount", "Mailserver Konto"},
         {"label.mailpass", "Mailserver Passwort"},
-        {"label.notificationmail", "Benachrichtigungsempfänger Mailadresse"},
-        {"label.notificationmail.help", "<HTML><strong>Benachrichtigungsempfänger Mailadresse</strong><br><br>"
-            + "Die Mail Adresse des Empfängers der Benachrichtigung.<br>"
-            + "Wenn die Benachrichtigung an mehrere Empfänger geschickt werden soll, geben Sie hier bitte eine kommaseparierte Liste von Empfangsadressen ein."
+        {"label.notificationmail", "BenachrichtigungsempfÃ¤nger Mailadresse"},
+        {"label.notificationmail.help", "<HTML><strong>BenachrichtigungsempfÃ¤nger Mailadresse</strong><br><br>"
+            + "Die Mail Adresse des EmpfÃ¤ngers der Benachrichtigung.<br>"
+            + "Wenn die Benachrichtigung an mehrere EmpfÃ¤nger geschickt werden soll, geben Sie hier bitte eine kommaseparierte Liste von Empfangsadressen ein."
             + "</HTML>"},
         {"label.replyto", "Replyto Adresse"},
         {"label.smtpauthorization.header", "SMTP Autorisierung"},
@@ -139,8 +139,8 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"testmail.message.error", "Fehler beim Senden der Test-eMail:\n{0}"},
         {"testmail.title", "Senden einer Test-eMail"},
         {"testmail", "Test Mail"},                
-        {"info.restart.client", "Sie müssen den Client neu starten, damit diese Änderungen gültig werden!"},
-        {"remotedir.select", "Verzeichnis auf dem Server wählen"},
+        {"info.restart.client", "Sie mÃ¼ssen den Client neu starten, damit diese Ã„nderungen gÃ¼ltig werden!"},
+        {"remotedir.select", "Verzeichnis auf dem Server wÃ¤hlen"},
         //retry
         {"label.retry.max", "Max Anzahl der Versuche zum Verbindungsaufbau"},
         {"label.retry.max.help", "<HTML><strong>Max Anzahl der Versuche zum Verbindungsaufbau</strong>"
@@ -152,95 +152,95 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.retry.waittime", "Wartezeit zwischen Verbindungswiederholungen"},
         {"label.retry.waittime.help", "<HTML><strong>Wartezeit zwischen Verbindungswiederholungen</strong>"
             + "<br><br>Dies ist die Zeit in Sekunden, die das System wartet, bevor es erneut eine Verbindung "
-            + "zum Partner herstellt. Ein erneuter Verbindungsversuch wird nur dann durchgeführt, wenn "
-            + "es nicht möglich war, eine Verbindung zu einem Partner herzustellen (z.B. Ausfall des "
+            + "zum Partner herstellt. Ein erneuter Verbindungsversuch wird nur dann durchgefÃ¼hrt, wenn "
+            + "es nicht mÃ¶glich war, eine Verbindung zu einem Partner herzustellen (z.B. Ausfall des "
             + "Partnersystems oder Infrastrukturproblem). Die Anzahl der Verbindungswiederholungen kann "
             + "in der Eigenschaft <strong>Maximale Anzahl von Verbindungswiederholungen</strong> konfiguriert werden.<br><br>"
             + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S) + "s."
             + "</HTML>"},
         {"label.sec", "s"},
-        {"keystore.hint", "<HTML><strong>Achtung:</strong><br>Bitte ändern Sie diese Parameter nur, wenn Sie externe Keystores "
-            + "einbinden möchten. Mit veränderten Pfaden kann es zu Problemen beim Update kommen.</HTML>"},
+        {"keystore.hint", "<HTML><strong>Achtung:</strong><br>Bitte Ã¤ndern Sie diese Parameter nur, wenn Sie externe Keystores "
+            + "einbinden mÃ¶chten. Mit verÃ¤nderten Pfaden kann es zu Problemen beim Update kommen.</HTML>"},
         {"maintenancemultiplier.day", "Tag(e)"},
         {"maintenancemultiplier.hour", "Stunde(n)"},
         {"maintenancemultiplier.minute", "Minute(n)"},
-        {"label.logpollprocess", "Informationen zum Pollprozess im Protokoll anzeigen (viele Einträge - nicht im Produktivbetrieb verwenden)"},
+        {"label.logpollprocess", "Informationen zum Pollprozess im Protokoll anzeigen (viele EintrÃ¤ge - nicht im Produktivbetrieb verwenden)"},
         {"label.max.outboundconnections", "Max ausgehende parallele Verbindungen"},
         {"label.max.outboundconnections.help", "<HTML><strong>Max ausgehende parallele Verbindungen</strong><br><br>"
             + "Dies ist die Anzahl der maximalen parallelen ausgehenden Verbindungen, die Ihr "
-            + "System öffnen wird. Dieser Wert dient hauptsächlich dazu, Ihr Partnersystem vor einer Überlastung "
-            + "durch eingehende Verbindungen von Ihrer Seite zu schützen.<br><br>"
+            + "System Ã¶ffnen wird. Dieser Wert dient hauptsÃ¤chlich dazu, Ihr Partnersystem vor einer Ãœberlastung "
+            + "durch eingehende Verbindungen von Ihrer Seite zu schÃ¼tzen.<br><br>"
             + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS) + "."
             + "</HTML>"},
         {"label.max.inboundconnections", "Max eingehende parallele Verbindungen"},
         {"label.max.inboundconnections.help", "<HTML><strong>Max eingehende parallele Verbindungen</strong><br><br>"
             + "Dies ist die Anzahl der maximalen parallelen eingehenden Verbindungen, die von aussen zu Ihrer "
-            + "mendelson AS2 Installation geöffnet werden dürfen. Dieser Wert gilt für die gesamte Software und ist nicht "
-            + "auf einzelne Partner beschränkt.<br>"
+            + "mendelson AS2 Installation geÃ¶ffnet werden dÃ¼rfen. Dieser Wert gilt fÃ¼r die gesamte Software und ist nicht "
+            + "auf einzelne Partner beschrÃ¤nkt.<br>"
             + "Die Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
-            + "Sie müssen nach einer Änderung den AS2 Server neu starten.<br><br>"
-            + "Obwohl es hier die Möglichkeit gibt, die Anzahl parallel eingehender Verbindungen zu beschränken, "
+            + "Sie mÃ¼ssen nach einer Ã„nderung den AS2 Server neu starten.<br><br>"
+            + "Obwohl es hier die MÃ¶glichkeit gibt, die Anzahl parallel eingehender Verbindungen zu beschrÃ¤nken, "
             + "sollten Sie diese Einstellung doch besser an Ihrer Firewall oder in Ihrem vorgeschalteten Proxy vornehmen - "
-            + "das gilt dann für Ihr gesamtes System und nicht nur für eine einzelne Software.<br><br>"
+            + "das gilt dann fÃ¼r Ihr gesamtes System und nicht nur fÃ¼r eine einzelne Software.<br><br>"
             + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS) + "."
             + "</HTML>"},
         {"event.preferences.modified.subject", "Der Wert {0} der Servereinstellungen wurde modifiziert"},
         {"event.preferences.modified.body", "Alter Wert: {0}\nNeuer Wert: {1}"},
-        {"event.notificationdata.modified.subject", "Die Einstellungen zur Benachrichtigung wurden verändert"},
-        {"event.notificationdata.modified.body", "Die Benachrichtigungsdaten wurden von\n\n{0}\n\nnach\n\n{1}\n\n verändert."},
+        {"event.notificationdata.modified.subject", "Die Einstellungen zur Benachrichtigung wurden verÃ¤ndert"},
+        {"event.notificationdata.modified.body", "Die Benachrichtigungsdaten wurden von\n\n{0}\n\nnach\n\n{1}\n\n verÃ¤ndert."},
         {"label.maxmailspermin", "Max Anzahl von Benachrichtigungen/min"},
         {"label.maxmailspermin.help", "<HTML><strong>Max Anzahl von Benachrichtigungen/min</strong><br><br>"
-            + "Um zu viele Mails zu vermeiden, können Sie Benachrichtigungen zusammenfassen, indem Sie die maximale "
+            + "Um zu viele Mails zu vermeiden, kÃ¶nnen Sie Benachrichtigungen zusammenfassen, indem Sie die maximale "
             + "Anzahl von Benachrichtigungen pro Minute festlegen. Mit dieser Funktion erhalten Sie Mails, die "
             + "mehrere Benachrichtigungen enthalten."
             + "</HTML>"},
-        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Löschen alter Transaktionseinträge</strong><br><br>Dies legt den Zeitrahmen fest, in dem die "
-            + "Transaktionen und die zugehörigen temporären Daten im System verbleiben und in der Transaktionsübersicht "
+        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>LÃ¶schen alter TransaktionseintrÃ¤ge</strong><br><br>Dies legt den Zeitrahmen fest, in dem die "
+            + "Transaktionen und die zugehÃ¶rigen temporÃ¤ren Daten im System verbleiben und in der TransaktionsÃ¼bersicht "
             + "angezeigt werden sollen.<br>Diese Einstellungen betreffen <strong>nicht</strong> Ihre empfangenen Daten/Dateien, diese "
-            + "bleiben unberührt. Für gelöschte Transaktionen ist das Transaktionsprotokoll über die Funktionalität der Logsuche "
-            + "weiterhin verfügbar."
+            + "bleiben unberÃ¼hrt. FÃ¼r gelÃ¶schte Transaktionen ist das Transaktionsprotokoll Ã¼ber die FunktionalitÃ¤t der Logsuche "
+            + "weiterhin verfÃ¼gbar."
             + "</HTML>"},
-        {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Löschen alter Statistikdaten</strong><br><br>Das System sammelt Kompatibilitätsdaten "
+        {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>LÃ¶schen alter Statistikdaten</strong><br><br>Das System sammelt KompatibilitÃ¤tsdaten "
             + "der Partnersysteme und kann diese als Statistik darstellen. Dies legt den Zeitrahmen fest, in dem diese Daten vorgehalten werden.</HTML>"},
-        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Löschen alter Logverzeichnisse</strong><br><br>"
-            + "Auch wenn alte Transaktionen gelöscht wurden, lassen sich die Vorgänge noch über bestehende Protokolldateien nachvollziehen. "
-            + "Diese Einstellung löscht diese Protokolldateien und auch alle Dateien für Systemereignisse, die in den gleichen Zeitraum fallen.</HTML>"},
-        {"label.colorblindness", "Unterstützung für Farbblindheit"},
-        {"warning.clientrestart.required", "Die Client Einstellungen wurden geändert - bitte starten Sie den Client neu, damit sie gültig werden"},
-        {"warning.serverrestart.required", "Bitte starten Sie den Server neu, damit diese Änderungen gültig werden."},
-        {"warning.changes.canceled", "Der Benutzer hat den Einstellungsdialog abgebrochen - es wurden keine Änderungen an den Einstellungen vorgenommen."},
+        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>LÃ¶schen alter Logverzeichnisse</strong><br><br>"
+            + "Auch wenn alte Transaktionen gelÃ¶scht wurden, lassen sich die VorgÃ¤nge noch Ã¼ber bestehende Protokolldateien nachvollziehen. "
+            + "Diese Einstellung lÃ¶scht diese Protokolldateien und auch alle Dateien fÃ¼r Systemereignisse, die in den gleichen Zeitraum fallen.</HTML>"},
+        {"label.colorblindness", "UnterstÃ¼tzung fÃ¼r Farbblindheit"},
+        {"warning.clientrestart.required", "Die Client Einstellungen wurden geÃ¤ndert - bitte starten Sie den Client neu, damit sie gÃ¼ltig werden"},
+        {"warning.serverrestart.required", "Bitte starten Sie den Server neu, damit diese Ã„nderungen gÃ¼ltig werden."},
+        {"warning.changes.canceled", "Der Benutzer hat den Einstellungsdialog abgebrochen - es wurden keine Ã„nderungen an den Einstellungen vorgenommen."},
         {"label.darkmode", "Dunkler Modus"},
         {"label.litemode", "Heller Modus"},
         {"label.trustallservercerts", "TLS: Allen Endserverzertifikaten Ihrer AS2 Partner vertrauen"},
         {"label.trustallservercerts.help", "<HTML><strong>TLS: Allen Endserverzertifikaten Ihrer AS2 Partner vertrauen</strong><br><br>"
-            + "Normalerweise ist es für TLS erforderlich, alle Zertifikate der Trust Chain des AS2 Systems Ihres Partners in Ihrem TLS Zertifikatsmanager "
-            + "zu halten. Wenn Sie diese Option aktivieren, vertrauen Sie beim ausgehenden Verbindungsaufbau dem Endzertifikat Ihres Partnersystems, wenn Sie nur die zugehörigen Stamm- und Zwischenzertifikate im TLS Zertifikatsmanager vorhalten. "
+            + "Normalerweise ist es fÃ¼r TLS erforderlich, alle Zertifikate der Trust Chain des AS2 Systems Ihres Partners in Ihrem TLS Zertifikatsmanager "
+            + "zu halten. Wenn Sie diese Option aktivieren, vertrauen Sie beim ausgehenden Verbindungsaufbau dem Endzertifikat Ihres Partnersystems, wenn Sie nur die zugehÃ¶rigen Stamm- und Zwischenzertifikate im TLS Zertifikatsmanager vorhalten. "
             + "Bitte beachten Sie, dass diese Option nur sinnvoll ist, wenn Ihr Partner ein beglaubigtes Zertifikat verwendet - selbst signierte Zertifikate werden ohnehin akzeptiert."
-            + "<br><br><strong>Warnung:</strong> Die Aktivierung dieser Option senkt das Sicherheitsniveau, da Man-in-the-Middle Angriffe möglich sind!" + "</HTML>"},
-        {"label.stricthostcheck", "TLS: Strikte Prüfung des Hostnames"},
-        {"label.stricthostcheck.help", "<HTML><strong>TLS: Strikte Prüfung des Hostnames</strong><br><br>"
-            + "Hiermit stellen Sie ein, ob im Falle einer ausgehenden TLS Verbindung geprüft werden soll, ob der Common Name "
-            + "(CN) des entfernten Zertifikats mit dem entfernten Host übereinstimmt. Diese Prüfung gilt nur für "
+            + "<br><br><strong>Warnung:</strong> Die Aktivierung dieser Option senkt das Sicherheitsniveau, da Man-in-the-Middle Angriffe mÃ¶glich sind!" + "</HTML>"},
+        {"label.stricthostcheck", "TLS: Strikte PrÃ¼fung des Hostnames"},
+        {"label.stricthostcheck.help", "<HTML><strong>TLS: Strikte PrÃ¼fung des Hostnames</strong><br><br>"
+            + "Hiermit stellen Sie ein, ob im Falle einer ausgehenden TLS Verbindung geprÃ¼ft werden soll, ob der Common Name "
+            + "(CN) des entfernten Zertifikats mit dem entfernten Host Ã¼bereinstimmt. Diese PrÃ¼fung gilt nur fÃ¼r "
             + "beglaubigte Zertifikate."
             + "</HTML>"},
         {"label.httpport", "HTTP Eingangsport"},
         {"label.httpport.help", "<HTML><strong>HTTP Eingangsport</strong><br><br>"
-            + "Dies ist der Port für eingehende unverschlüsselte Verbindungen. Diese Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
-            + "Sie müssen nach einer Änderung den AS2 Server neu starten.<br>"
+            + "Dies ist der Port fÃ¼r eingehende unverschlÃ¼sselte Verbindungen. Diese Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
+            + "Sie mÃ¼ssen nach einer Ã„nderung den AS2 Server neu starten.<br>"
             + "Der Port ist Teil der URL, an die Ihr Partner AS2 Nachrichten senden muss. Dies ist http://Host:<strong>Port</strong>/as2/HttpReceiver.<br><br>"
             + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT) + "."
             + "</HTML>"
         },
         {"label.httpsport", "HTTPS Eingangsport"},
         {"label.httpsport.help", "<HTML><strong>HTTPS Eingangsport</strong><br><br>"
-            + "Dies ist der Port für eingehende verschlüsselte Verbindungen (TLS). "
+            + "Dies ist der Port fÃ¼r eingehende verschlÃ¼sselte Verbindungen (TLS). "
             + "Diese Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
-            + "Sie müssen nach einer Änderung den AS2 Server neu starten.<br>"
+            + "Sie mÃ¼ssen nach einer Ã„nderung den AS2 Server neu starten.<br>"
             + "Der Port ist Teil der URL, an die Ihr Partner AS2 Nachrichten senden muss. Dies ist https://Host:<strong>Port</strong>/as2/HttpReceiver<br><br>"
             + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT) + "."
             + "</HTML>"
         },
-        {"embedded.httpconfig.not.available", "HTTP Server nicht verfügbar oder Zugriffsprobleme auf Konfigurationsdatei"},
+        {"embedded.httpconfig.not.available", "HTTP Server nicht verfÃ¼gbar oder Zugriffsprobleme auf Konfigurationsdatei"},
         {"button.mailserverdetection", "Mail Server herausfinden"},        
     };
 

@@ -30,10 +30,10 @@ public class ResourceBundleCertificateUsedByPartnerChecker_de extends MecResourc
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"used.crypt", "Datenverschlüsselung"},
+        {"used.crypt", "DatenverschlÃ¼sselung"},
         {"used.sign", "Digitale Signatur"},
-        {"used.crypt.overwritelocalsecurity", "Datenverschlüsselung (Überschreibt lokale Station)"},
-        {"used.sign.overwritelocalsecurity", "Digitale Signatur (Überschreibt lokale Station)"},
+        {"used.crypt.overwritelocalsecurity", "DatenverschlÃ¼sselung (Ãœberschreibt lokale Station)"},
+        {"used.sign.overwritelocalsecurity", "Digitale Signatur (Ãœberschreibt lokale Station)"},
     };
 
 }

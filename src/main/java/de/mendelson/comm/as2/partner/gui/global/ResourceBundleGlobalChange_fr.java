@@ -27,15 +27,15 @@ public class ResourceBundleGlobalChange_fr extends MecResourceBundle{
     static final Object[][] CONTENTS = {
         {"title", "Changements globaux pour tous les partenaires" },
         {"button.ok", "Fermer" },    
-        {"button.set", "Définir" },
-        {"partnersetting.changed", "Changement de réglage pour {0} partenaires." },
-        {"partnersetting.notchanged", "Les paramètres n''ont pas été modifiés - valeur erronée" },  
-        {"info.text", "<HTML>Cette boîte de dialogue vous permet de définir des valeurs pour les paramètres "
-            + "de tous les partenaires en même temps. Si vous avez appuyé sur \"Définir\", la valeur correspondante "
-            + "est remplacée pour <strong>TOUS<strong> les partenaires.</HTML>" },
+        {"button.set", "DÃ©finir" },
+        {"partnersetting.changed", "Changement de rÃ©glage pour {0} partenaires." },
+        {"partnersetting.notchanged", "Les paramÃ¨tres n''ont pas Ã©tÃ© modifiÃ©s - valeur erronÃ©e" },  
+        {"info.text", "<HTML>Cette boÃ®te de dialogue vous permet de dÃ©finir des valeurs pour les paramÃ¨tres "
+            + "de tous les partenaires en mÃªme temps. Si vous avez appuyÃ© sur \"DÃ©finir\", la valeur correspondante "
+            + "est remplacÃ©e pour <strong>TOUS<strong> les partenaires.</HTML>" },
         {"label.dirpoll", "Effectuer un sondage d''annuaire pour tous les partenaires" },
         {"label.maxpollfiles", "Nombre maximum de fichiers de tous les partenaires par processus de polling" },
-        {"label.pollinterval", "Répertoire Intervalle de poll de tous les partenaires" },
+        {"label.pollinterval", "RÃ©pertoire Intervalle de poll de tous les partenaires" },
     };
     
 }

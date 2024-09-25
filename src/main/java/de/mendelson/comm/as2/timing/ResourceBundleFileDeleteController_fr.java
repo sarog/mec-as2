@@ -31,15 +31,15 @@ public class ResourceBundleFileDeleteController_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"autodelete", "{0}: Le fichier a été automatiquement supprimé par le processus de maintenance du système."},
-        {"delete.title", "Suppression de fichiers par la maintenance du système"},
-        {"delete.title.log", "Suppression des répertoires de journaux par la maintenance du système" },
-        {"delete.title.tempfiles", "Données temporaires"},
+        {"autodelete", "{0}: Le fichier a Ã©tÃ© automatiquement supprimÃ© par le processus de maintenance du systÃ¨me."},
+        {"delete.title", "Suppression de fichiers par la maintenance du systÃ¨me"},
+        {"delete.title.log", "Suppression des rÃ©pertoires de journaux par la maintenance du systÃ¨me" },
+        {"delete.title.tempfiles", "DonnÃ©es temporaires"},
         {"delete.title._rawincoming", "Fichiers entrants en provenance de _rawincoming"},
-        {"delete.header.logfiles", "Supprimer les fichiers journaux et les fichiers relatifs aux événements du système datant de plus de {0} jours" },
+        {"delete.header.logfiles", "Supprimer les fichiers journaux et les fichiers relatifs aux Ã©vÃ©nements du systÃ¨me datant de plus de {0} jours" },
         {"success", "SUCCES"},
         {"failure", "ERREUR"},
-        {"no.entries", "{0}: Aucune entrée trouvée" },
+        {"no.entries", "{0}: Aucune entrÃ©e trouvÃ©e" },
     };
 
 }

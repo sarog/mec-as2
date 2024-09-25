@@ -25,15 +25,15 @@ public class ResourceBundleFileDeleteController_de extends MecResourceBundle{
     
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
-        {"autodelete", "{0}: Die Datei wurde automatisch vom Systempflegeprozess gelöscht." },
-        {"delete.title", "Löschen von Dateien durch Systempflege" },
-        {"delete.title.log", "Löschen von Protokollverzeichnissen durch Systempflege" },
-        {"delete.title.tempfiles", "Temporäre Dateien" },
+        {"autodelete", "{0}: Die Datei wurde automatisch vom Systempflegeprozess gelÃ¶scht." },
+        {"delete.title", "LÃ¶schen von Dateien durch Systempflege" },
+        {"delete.title.log", "LÃ¶schen von Protokollverzeichnissen durch Systempflege" },
+        {"delete.title.tempfiles", "TemporÃ¤re Dateien" },
         {"delete.title._rawincoming", "Eingegangene Dateien aus _rawincoming" },
-        {"delete.header.logfiles", "Protokolldateien und Dateien für Systemereignisse löschen, die älter sind als {0} Tage" },
+        {"delete.header.logfiles", "Protokolldateien und Dateien fÃ¼r Systemereignisse lÃ¶schen, die Ã¤lter sind als {0} Tage" },
         {"success", "ERFOLG" },
         {"failure", "FEHLER" },
-        {"no.entries", "{0}: Keine Einträge gefunden" },
+        {"no.entries", "{0}: Keine EintrÃ¤ge gefunden" },
     };
     
 }
