@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker.java 17    30-09-16 12:42p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker.java 19    6.12.18 16:11 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,30 +12,32 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class ResourceBundleAS2MessagePacker extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"message.signed", "{0}: Outbound message signed with the algorithm \"{2}\", using keystore alias \"{1}\"." },
-        {"message.notsigned", "{0}: Outbound message is not signed." },                 
-        {"message.encrypted", "{0}: Outbound message encrypted with the algorithm \"{2}\", using keystore alias \"{1}\"." }, 
-        {"message.notencrypted", "{0}: Outbound message has not been encrypted." },     
-        {"mdn.created", "{0}: Outbound MDN created for AS2 message \"{1}\", state set to [{2}]." },
-        {"mdn.details", "{0}: Outbound MDN details: {1}" },
-        {"message.compressed", "{0}: Outbound payload compressed from {1} to {2}." },
-        {"message.compressed.unknownratio", "{0}: Outbound payload compressed." },
-        {"mdn.signed", "{0}: Outbound MDN has been signed with the algorithm \"{1}\"." },
-        {"mdn.notsigned", "{0}: Outbound MDN has not been signed." },
-        {"mdn.creation.start", "{0}: Generating outbound MDN, setting message id to \"{1}\"."},
-        {"message.creation.start", "{0}: Generating outbound AS2 message, setting message id to \"{0}\"."},
-        {"signature.no.aipa", "{0}: The signing process does not use the Algorithm Identifier Protection Attribute as defined in the configuration - this is insecure!" },
+    static final Object[][] CONTENTS = {
+        {"message.signed", "Outbound message signed with the algorithm \"{1}\", using keystore alias \"{0}\"." },
+        {"message.notsigned", "Outbound message is not signed." },                 
+        {"message.encrypted", "Outbound message encrypted with the algorithm \"{1}\", using keystore alias \"{0}\"." }, 
+        {"message.notencrypted", "Outbound message has not been encrypted." },     
+        {"mdn.created", "Outbound MDN created for AS2 message \"{0}\", state set to [{1}]." },
+        {"mdn.details", "Outbound MDN details: {0}" },
+        {"message.compressed", "Outbound payload compressed from {0} to {1}." },
+        {"message.compressed.unknownratio", "Outbound payload compressed." },
+        {"mdn.signed", "Outbound MDN has been signed with the algorithm \"{0}\"." },
+        {"mdn.notsigned", "Outbound MDN has not been signed." },
+        {"mdn.creation.start", "Generating outbound MDN, setting message id to \"{0}\"."},
+        {"message.creation.start", "Generating outbound AS2 message, setting message id to \"{0}\"."},
+        {"signature.no.aipa", "The signing process does not use the Algorithm Identifier Protection Attribute as defined in the configuration - this is insecure!" },
     };
     
 }

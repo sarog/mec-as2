@@ -1,7 +1,6 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/statistic/QuotaAccessDB.java 6     17.04.12 11:32 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/statistic/QuotaAccessDB.java 7     8.01.19 9:48 Heller $
 package de.mendelson.comm.as2.statistic;
 
-import java.sql.SQLException;
 import de.mendelson.comm.as2.partner.Partner;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -10,7 +9,7 @@ import java.util.List;
 /**
  * Dummy class, not used
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class QuotaAccessDB {
 
@@ -18,7 +17,7 @@ public class QuotaAccessDB {
     /** Creates new message I/O log and connects to localhost
      *@param host host to connect to
      */
-    public QuotaAccessDB(Connection configConnection, Connection runtimeConnection) throws SQLException {
+    public QuotaAccessDB(Connection configConnection, Connection runtimeConnection){
     }
 
     /**Resets a counter/quota entry in the db for a localstation/partner combination*/

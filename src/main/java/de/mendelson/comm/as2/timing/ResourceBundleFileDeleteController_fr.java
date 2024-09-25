@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleFileDeleteController_fr.java 1     27.08.14 12:01 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleFileDeleteController_fr.java 4     29.10.18 10:28 Heller $
 package de.mendelson.comm.as2.timing;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -11,20 +13,31 @@ import de.mendelson.util.MecResourceBundle;
 
 /**
  * ResourceBundle to localize a mendelson product
+ *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 1 $
+ * @version $Revision: 4 $
  */
-public class ResourceBundleFileDeleteController_fr extends MecResourceBundle{
-    
+public class ResourceBundleFileDeleteController_fr extends MecResourceBundle {
+
+    public static final long serialVersionUID = 1L;
+
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
-    
-    /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"autodelete", "{0}: ce fichier est plus vieux que {1} jours et a été supprimé par le processus de maintenance du système." },    
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"autodelete", "{0}: Le fichier a été automatiquement supprimé par le processus de maintenance du système."},
+        {"delete.title", "Suppression de fichiers par la maintenance du système"},
+        {"delete.title.tempfiles", "Données temporaires"},
+        {"delete.title._rawincoming", "Fichiers entrants en provenance de _rawincoming"},
+        {"success", "SUCCES"},
+        {"failure", "ERREUR"},
+        {"no.entries", "{0}: Aucune entrée trouvée" },
     };
-    
+
 }

@@ -1,7 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/ModuleLockResponse.java 2     26.05.14 17:59 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/ModuleLockResponse.java 3     4/03/18 12:27p Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
-import de.mendelson.comm.as2.modulelock.ClientInformation;
+import de.mendelson.util.modulelock.LockClientInformation;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 /*
@@ -15,11 +15,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ModuleLockResponse extends ClientServerResponse implements Serializable {
 
-    private ClientInformation lockKeeper = null;
+    private LockClientInformation lockKeeper = null;
     private boolean success = false;
     
     public ModuleLockResponse(ModuleLockRequest request) {
@@ -35,14 +35,14 @@ public class ModuleLockResponse extends ClientServerResponse implements Serializ
     /**
      * @return the clientInformation
      */
-    public ClientInformation getLockKeeper() {
+    public LockClientInformation getLockKeeper() {
         return lockKeeper;
     }
 
     /**
      * @param lockKeeper the clientInformation to set
      */
-    public void setLockKeeper(ClientInformation lockKeeper) {
+    public void setLockKeeper(LockClientInformation lockKeeper) {
         this.lockKeeper = lockKeeper;
     }
 

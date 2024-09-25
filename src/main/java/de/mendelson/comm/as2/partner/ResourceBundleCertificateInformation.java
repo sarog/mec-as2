@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation.java 1     2.03.10 10:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation.java 3     6/21/18 5:22p Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,20 +13,21 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleCertificateInformation extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"localstation.decrypt.prio1", "Inbound messages for the local station \"{0}\" will be decrypted using the certificate \"{1}\"."},
-        {"localstation.decrypt.prio2", "\"{0}\" is also prepared to decrypt inbound messages using the certificate \"{1}\"."},
-        {"localstation.sign.prio1", "Outbound messages from the local station \"{0}\" will be signed using the certificate \"{1}\"."},
-        {"partner.encrypt.prio1", "Outbound messages to the partner \"{0}\" will be encrypted using the certificate \"{1}\"."},
-        {"partner.sign.prio1", "Inbound message signatures from the partner \"{0}\" will be verified using the certificate \"{1}\"."},
-        {"partner.sign.prio2", "The system is also prepared to verify inbound message signatures from \"{0}\" using the certificate \"{1}\"."},};
+    static final Object[][] CONTENTS = {
+        {"localstation.decrypt", "Inbound messages for the local station \"{0}\" will be decrypted using the certificate \"{1}\"."},
+        {"localstation.sign", "Outbound messages from the local station \"{0}\" will be signed using the certificate \"{1}\"."},
+        {"partner.encrypt", "Outbound messages to the partner \"{0}\" will be encrypted using the certificate \"{1}\"."},
+        {"partner.sign", "Inbound message signatures from the partner \"{0}\" will be verified using the certificate \"{1}\"."},
+    };
 }

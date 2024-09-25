@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_fr.java 9     11/29/17 11:09a Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_fr.java 15    9.10.18 12:53 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -15,21 +15,30 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 9 $
+ * @version $Revision: 15 $
  */
 public class ResourceBundleAS2Server_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"fatal.limited.strength", "La force principale limitée a été détectée dans le JVM. Veuillez installer le \"Unlimited jurisdiction key strength policy\" dossiers avant de courir le serveur " + AS2ServerVersion.getProductName() + "." },
-        {"server.willstart", "{0}"},
+        {"server.willstart", "{0} commence maintenant"},
+        {"server.start.details", "{0} paramètre:\n\nDémarrer le serveur HTTP intégré: {1}\nAutoriser les connexions client-serveur à partir d''autres hôtes: {2}\nMémoire: {3}\nVersion Java : {4}\nUtilisateur du système: {5}"},
         {"server.started", "Démarrage du " + AS2ServerVersion.getFullProductName() + " dans {0} ms."},
         {"server.already.running", "Une instance de " + AS2ServerVersion.getProductName() + " semble déjà en cours.\nIl est aussi possible qu''une instance précédente du programme ne s''est pas terminée correctement. Si vous êtes sûr qu''aucune autre instance n''est en cours\nmerci de supprimer le fichier de lock \"{0}\" (Date de démarrage {1}) et redémarrer le serveur."},
         {"server.nohttp", "Le HTTP serveur intégré n''a pas été commencé." },  
+        {"server.startup.failed", "Il y a eu un problème lors du démarrage du serveur - le démarrage a été interrompu." },
+        {"server.shutdown", "{0} est en train de s''éteindre." },
         {"bind.exception", "{0}\nVous avez défini un port qui est actuellement utilisé dans votre système par un autre processus. Il peut s''agir du port client-serveur ou du port HTTP/S que vous avez défini dans la configuration HTTP.\nVeuillez modifier votre configuration ou arrêter l''autre processus avant d'utiliser le {1}."},
+        {"httpserver.willstart", "Démarrage du serveur HTTP" },
+        {"httpserver.running", "Serveur HTTP en cours d''exécution ({0})" },
+         {"server.started.issues", "Avertissement: Des problèmes de configuration ont été trouvés {0} lors du démarrage du serveur." },
+        {"server.started.issue", "Avertissement: Un problème de configuration a été détecté lors du démarrage du serveur." },
     };
 }

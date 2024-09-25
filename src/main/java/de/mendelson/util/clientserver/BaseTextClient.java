@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/BaseTextClient.java 14    9/17/15 10:38a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseTextClient.java 15    4/06/18 10:56a Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.console.LoggingHandlerPrintStream;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * Text Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public abstract class BaseTextClient implements ClientSessionHandlerCallback {
 
@@ -265,5 +265,15 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
      */
     public String getHost() {
         return host;
+    }
+    
+    /**This is called if there is any decoder problem between client and server which means that the client is not compatible to the server.
+     * This is not a result of a compare of the client/server versions but mainly a problem that occurs already if the client tries to connect/login.
+     * In this case a transfer of the client version to the server to check the versions is not even possible
+     * 
+     */
+    @Override
+    public void clientIsIncompatible( String errorMessage ){
+        this.logger.severe(errorMessage);
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleFileDisplay_de.java 4     18.08.11 16:28 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleFileDisplay_de.java 5     4/06/18 1:35p Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,16 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleFileDisplay_de extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
+    @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         
         {"no.file", "** KEINE DATEN VERFÜGBAR **" },
         {"file.notfound", "** DATEI {0} IST NICHT LÄNGER VERFÜGBAR **" },

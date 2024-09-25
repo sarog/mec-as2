@@ -1,4 +1,4 @@
-//$Header: /mbi_webclient/de/mendelson/util/clientserver/user/User.java 6     10/21/15 12:54p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/User.java 7     4/06/18 12:22p Heller $
 package de.mendelson.util.clientserver.user;
 
 import de.mendelson.util.security.PBKDF2;
@@ -18,10 +18,11 @@ import java.util.Map;
  * A single user for the client server system
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class User implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private Map<Integer, String> permissions = new HashMap<Integer, String>();
     private String name = null;
     private String passwdCrypted = null;

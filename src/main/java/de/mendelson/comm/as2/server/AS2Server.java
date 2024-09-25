@@ -1,12 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AS2Server.java 82    12/15/17 11:34a Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AS2Server.java 108   7.12.18 13:54 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.Copyright;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.AS2ShutdownThread;
-import de.mendelson.comm.as2.cert.CertificateCEMController;
+import de.mendelson.comm.as2.cem.CertificateCEMController;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationCheckController;
+import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
 import de.mendelson.comm.as2.database.DBDriverManager;
 import de.mendelson.comm.as2.database.DBServer;
 import de.mendelson.comm.as2.log.DBLoggingHandler;
@@ -19,22 +20,34 @@ import de.mendelson.comm.as2.timing.FileDeleteController;
 import de.mendelson.comm.as2.timing.MDNReceiptController;
 import de.mendelson.comm.as2.timing.MessageDeleteController;
 import de.mendelson.comm.as2.timing.StatisticDeleteController;
+import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.clientserver.log.ClientServerLoggingHandler;
 import de.mendelson.util.clientserver.user.DefaultPermissionDescription;
+import de.mendelson.util.httpconfig.server.HTTPServerConfigInfoProcessor;
 import de.mendelson.util.log.DailySubdirFileLoggingHandler;
+import de.mendelson.util.log.LogFormatter;
+import de.mendelson.util.log.LogFormatterAS2;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
-import java.io.File;
-import java.io.FileWriter;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import de.mendelson.util.systemevents.notification.SystemEventNotificationController;
+import de.mendelson.util.systemevents.notification.SystemEventNotificationControllerImplAS2;
+import java.io.IOException;
+import java.io.Writer;
 import java.net.BindException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
@@ -47,7 +60,7 @@ import org.eclipse.jetty.xml.XmlConfiguration;
  * Class to start the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 82 $
+ * @version $Revision: 108 $
  * @since build 68
  */
 public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
@@ -91,6 +104,11 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
     //the HTTP server, might be null if the AS2 server is started with the option -nohttpserver
     private Server server = null;
     private HTTPServerConfigInfo httpServerConfigInfo = null;
+    /**
+     * Indicates that the system is in shutdown process. No Notification etc
+     * will be sent anymore in that state
+     */
+    public static boolean inShutdownProcess = false;
 
     /**
      * Creates a new AS2 server and starts it
@@ -106,6 +124,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
         }
         this.startHTTPServer = startHTTPServer;
         this.allowAllClients = allowAllClients;
+        this.fireSystemEventServerStartupBegins();
         this.performStartupChecks();
         ServerStartupSequence startup = new ServerStartupSequence(this.logger);
         startup.performWork();
@@ -116,7 +135,72 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
         this.setupClientServerSessionHandler();
         this.start();
         //start the partner poll threads
-        this.pollManager.partnerConfigurationChanged();
+        this.pollManager.start();
+    }
+
+    private void fireSystemEventServerStartupBegins() {
+        String subject = this.rb.getResourceString("server.willstart", AS2ServerVersion.getFullProductName());
+        String body = this.rb.getResourceString("server.start.details",
+                new Object[]{
+                    AS2ServerVersion.getFullProductName(),
+                    Boolean.toString(this.startHTTPServer),
+                    Boolean.toString(this.allowAllClients),
+                    AS2Tools.getDataSizeDisplay(Runtime.getRuntime().maxMemory()),
+                    System.getProperty("java.version"),
+                    System.getProperty("user.name")
+                });
+        SystemEventManagerImplAS2.newEvent(
+                SystemEvent.SEVERITY_INFO,
+                SystemEvent.ORIGIN_SYSTEM,
+                SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                subject, body);
+    }
+
+    /**
+     * Informs the event manager that the server is finally running - with or
+     * without found configuration issues
+     */
+    private void fireSystemEventServerRunning(List<ConfigurationIssue> configurationIssues) {
+        String subject = this.rb.getResourceString("server.started",
+                String.valueOf(System.currentTimeMillis() - this.startTime));
+        String body = this.rb.getResourceString("server.start.details",
+                new Object[]{
+                    AS2ServerVersion.getFullProductName(),
+                    Boolean.toString(this.startHTTPServer),
+                    Boolean.toString(this.allowAllClients),
+                    AS2Tools.getDataSizeDisplay(Runtime.getRuntime().maxMemory()),
+                    System.getProperty("java.version"),
+                    System.getProperty("user.name")
+                });
+        int severity = SystemEvent.SEVERITY_INFO;
+        if (!configurationIssues.isEmpty()) {
+            StringBuilder issueListStr = new StringBuilder();
+            for (ConfigurationIssue issue : configurationIssues) {
+                issueListStr.append("*").append(issue.getSubject());
+                if (issue.getDetails() != null && issue.getDetails().trim().length() > 0) {
+                    issueListStr.append(" (").append(issue.getDetails()).append(")");
+                }
+                issueListStr.append("\n");
+            }
+            severity = SystemEvent.SEVERITY_WARNING;
+            if (configurationIssues.size() > 1) {
+                body = this.rb.getResourceString("server.started.issues", configurationIssues.size())
+                        + "\n"
+                        + issueListStr
+                        + "\n\n"
+                        + body;
+            } else {
+                body = this.rb.getResourceString("server.started.issue")
+                        + "\n"
+                        + issueListStr
+                        + "\n\n"
+                        + body;
+            }
+        }
+        SystemEventManagerImplAS2.newEvent(severity,
+                SystemEvent.ORIGIN_SYSTEM,
+                SystemEvent.TYPE_MAIN_SERVER_RUNNING,
+                subject, body);
     }
 
     private void performStartupChecks() throws Exception {
@@ -130,6 +214,13 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
         boolean unlimitedStrengthInstalled = helper.performUnlimitedStrengthJurisdictionPolicyTest();
         if (!unlimitedStrengthInstalled) {
             this.logger.severe(this.rb.getResourceString("fatal.limited.strength"));
+            String subject
+                    = this.rb.getResourceString("fatal.limited.strength");
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_ERROR,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    subject, "");
             System.exit(1);
         }
     }
@@ -143,19 +234,21 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
             this.configConnection = DBDriverManager.getConnectionWithoutErrorHandling(DBDriverManager.DB_CONFIG, "localhost");
             this.runtimeConnection = DBDriverManager.getConnectionWithoutErrorHandling(DBDriverManager.DB_RUNTIME, "localhost");
             this.server = this.startHTTPServer();
-            this.httpServerConfigInfo = HTTPServerConfigInfo.computeHTTPServerConfigInfo(this.server, this.startHTTPServer,
-                    "/as2/HttpReceiver", "/as2/ServerState");
             this.certificateManagerEncSign = new CertificateManager(this.logger);
             KeystoreStorage signEncStorage = new KeystoreStorageImplFile(
                     this.preferences.get(PreferencesAS2.KEYSTORE),
                     this.preferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray(),
-                    BCCryptoHelper.KEYSTORE_PKCS12);
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+            );
             this.certificateManagerEncSign.loadKeystoreCertificates(signEncStorage);
             this.certificateManagerSSL = new CertificateManager(this.logger);
             KeystoreStorage sslStorage = new KeystoreStorageImplFile(
                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND),
                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),
-                    BCCryptoHelper.KEYSTORE_JKS);
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+            );
             this.certificateManagerSSL.loadKeystoreCertificates(sslStorage);
             this.startSendOrderReceiver();
             this.setupLogger();
@@ -189,22 +282,51 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
             lockReleaseController.startLockReleaseControl();
             CertificateCEMController cemController = new CertificateCEMController(this.clientserver, this.configConnection, this.runtimeConnection, this.certificateManagerEncSign);
             Executors.newSingleThreadExecutor().submit(cemController);
+            SystemEventNotificationController notificationController = new SystemEventNotificationControllerImplAS2(
+                    this.getLogger(), this.preferences, this.clientserver, this.configConnection, this.runtimeConnection);
+            Executors.newSingleThreadExecutor().submit(notificationController);
             Runtime.getRuntime().addShutdownHook(new AS2ShutdownThread(this.dbServer));
             //listen for inbound client connects
             this.clientserver.start();
+            //run the configuration one time
+            List<ConfigurationIssue> configurationIssues = this.configCheckController.runOnce();
+            for (ConfigurationIssue issue : configurationIssues) {
+                SystemEventManagerImplAS2.newEvent(
+                        SystemEvent.SEVERITY_WARNING,
+                        SystemEvent.ORIGIN_SYSTEM,
+                        SystemEvent.TYPE_SERVER_CONFIGURATION_CHECK,
+                        issue.getSubject(), issue.getDetails());
+                this.getLogger().warning(issue.getSubject());
+            }
+            this.fireSystemEventServerRunning(configurationIssues);
             this.logger.info(rb.getResourceString("server.started",
                     String.valueOf(System.currentTimeMillis() - this.startTime)));
             //display the startup message on the console
             System.out.println(rb.getResourceString("server.started",
                     String.valueOf(System.currentTimeMillis() - this.startTime)));
         } catch (BindException e) {
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_ERROR,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    this.rb.getResourceString("server.startup.failed"),
+                    this.rb.getResourceString("bind.exception",
+                            new Object[]{e.getMessage(),
+                                AS2ServerVersion.getProductName()
+                            }));
             //populate the bind exception with some more information for the user
             BindException bindException = new BindException(this.rb.getResourceString("bind.exception",
-                    new Object[]{ e.getMessage(),
+                    new Object[]{e.getMessage(),
                         AS2ServerVersion.getProductName()
                     }));
             throw bindException;
         } catch (Exception e) {
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_ERROR,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    this.rb.getResourceString("server.startup.failed"),
+                    e.getMessage());
             throw e;
         }
     }
@@ -215,14 +337,20 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
         this.logger.addHandler(new ClientServerLoggingHandler(this.clientServerSessionHandler));
         this.logger.addHandler(new DBLoggingHandler());
         //add file logger that logs in a daily subdir
-        this.logger.addHandler(new DailySubdirFileLoggingHandler(new File(this.preferences.get(PreferencesAS2.DIR_LOG)), "as2.log"));
+        this.logger.addHandler(new DailySubdirFileLoggingHandler(
+                        Paths.get(this.preferences.get(PreferencesAS2.DIR_LOG)),
+                        "as2.log", new LogFormatterAS2(LogFormatter.FORMAT_LOGFILE,
+                        this.configConnection, this.runtimeConnection))
+        );
         this.logger.setLevel(Level.ALL);
     }
 
     private void setupClientServerSessionHandler() {
         //set up session handler for incoming client requests
         this.clientServerSessionHandler = new ClientServerSessionHandlerLocalhost(this.logger,
-                new String[]{AS2ServerVersion.getFullProductName()}, this.allowAllClients);
+                new String[]{AS2ServerVersion.getFullProductName()}, this.allowAllClients,
+                this.preferences.getBoolean(PreferencesAS2.COMMUNITY_EDITION) ? 1 : -1
+        );
         this.clientServerSessionHandler.setAnonymousProcessing(new AnonymousProcessingAS2());
         this.clientserver.setSessionHandler(this.clientServerSessionHandler);
         this.clientServerSessionHandler.setProductName(AS2ServerVersion.getProductName());
@@ -241,22 +369,38 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
      */
     private void checkLock() {
         //check if lock file exists, if it exists cancel!
-        File lockFile = new File(AS2ServerVersion.getProductName().replace(' ', '_') + ".lock");
-        if (lockFile.exists()) {
+        Path lockFile = Paths.get(AS2ServerVersion.getProductName().replace(' ', '_') + ".lock");
+        if (Files.exists(lockFile)) {
+            long lastModificationTime = System.currentTimeMillis();
+            try {
+                lastModificationTime = Files.getLastModifiedTime(lockFile).toMillis();
+            } catch (IOException e) {
+                //nop
+            }
             DateFormat format = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
             this.logger.severe(rb.getResourceString("server.already.running",
                     new Object[]{
-                        lockFile.getAbsolutePath(),
-                        format.format(new java.util.Date(lockFile.lastModified()))
+                        lockFile.toAbsolutePath().toString(),
+                        format.format(new java.util.Date(lastModificationTime))
                     }));
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_ERROR,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    this.rb.getResourceString("server.startup.failed"),
+                    rb.getResourceString("server.already.running",
+                            new Object[]{
+                                lockFile.toAbsolutePath().toString(),
+                                format.format(new java.util.Date(lastModificationTime))
+                            }));
             throw new RuntimeException(rb.getResourceString("server.already.running",
                     new Object[]{
-                        lockFile.getAbsolutePath(),
-                        format.format(new java.util.Date(lockFile.lastModified()))
+                        lockFile.toAbsolutePath().toString(),
+                        format.format(new java.util.Date(lastModificationTime))
                     }));
         } else {
             try {
-                FileWriter writer = new FileWriter(lockFile);
+                Writer writer = Files.newBufferedWriter(lockFile);
                 writer.write("");
                 writer.flush();
                 writer.close();
@@ -279,20 +423,48 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
     private Server startHTTPServer() throws Exception {
         //start the HTTP server if this is requested
         if (this.startHTTPServer) {
-            //setup jetty base and home path
-            System.setProperty("jetty.home", new File("./jetty9").getAbsolutePath());
-            System.setProperty("jetty.base", new File("./jetty9").getAbsolutePath());
-            //setup jetty logging
-            System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StrErrLog");
-            System.setProperty("org.eclipse.jetty.LEVEL", "INFO");
-            System.setProperty("org.eclipse.jetty.websocket.LEVEL", "INFO");
-            //org.eclipse.jetty.start.Main.main(new String[0]);
-            URL jettyXMLConfigurationURL = new File(System.getProperty("jetty.home") + "/etc/jetty.xml").toURI().toURL();
-            XmlConfiguration jettyXMLConfiguration = new XmlConfiguration(jettyXMLConfigurationURL);
-            org.eclipse.jetty.server.Server server = new org.eclipse.jetty.server.Server();
-            jettyXMLConfiguration.configure(server);
-            server.start();
-            return (server);
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_INFO,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,
+                    rb.getResourceString("httpserver.willstart"),
+                    "");
+            try {
+                //setup jetty base and home path
+                System.setProperty("jetty.home", Paths.get("./jetty9").toAbsolutePath().toString());
+                System.setProperty("jetty.base", Paths.get("./jetty9").toAbsolutePath().toString());
+                //setup jetty logging
+                System.setProperty("org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StrErrLog");
+                System.setProperty("org.eclipse.jetty.LEVEL", "INFO");
+                System.setProperty("org.eclipse.jetty.websocket.LEVEL", "INFO");
+                //org.eclipse.jetty.start.Main.main(new String[0]);
+                URL jettyXMLConfigurationURL = Paths.get(System.getProperty("jetty.home") + "/etc/jetty.xml").toUri().toURL();
+                XmlConfiguration jettyXMLConfiguration = new XmlConfiguration(jettyXMLConfigurationURL);
+                org.eclipse.jetty.server.Server httpServer = new org.eclipse.jetty.server.Server();
+                jettyXMLConfiguration.configure(httpServer);
+                httpServer.start();
+                this.httpServerConfigInfo = HTTPServerConfigInfo.computeHTTPServerConfigInfo(httpServer, this.startHTTPServer,
+                        "/as2/HttpReceiver", "/as2/ServerState");
+                HTTPServerConfigInfoProcessor infoProcessor = new HTTPServerConfigInfoProcessor(this.httpServerConfigInfo);
+                StringBuilder body = new StringBuilder();
+                body.append(infoProcessor.getMiscConfigurationText());
+                SystemEventManagerImplAS2.newEvent(
+                        SystemEvent.SEVERITY_INFO,
+                        SystemEvent.ORIGIN_SYSTEM,
+                        SystemEvent.TYPE_HTTP_SERVER_RUNNING,
+                        rb.getResourceString("httpserver.running",
+                                "jetty " + this.httpServerConfigInfo.getJettyHTTPServerVersion()),
+                        body.toString());
+                return (httpServer);
+            } catch (Exception e) {
+                SystemEventManagerImplAS2.newEvent(
+                        SystemEvent.SEVERITY_ERROR,
+                        SystemEvent.ORIGIN_SYSTEM,
+                        SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,
+                        rb.getResourceString("httpserver.willstart"),
+                        "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                throw e;
+            }
         } else {
             this.logger.info(rb.getResourceString("server.nohttp"));
         }
@@ -376,7 +548,11 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean {
      * Deletes the lock file
      */
     public static void deleteLockFile() {
-        File lockFile = new File(AS2ServerVersion.getProductName().replace(' ', '_') + ".lock");
-        lockFile.delete();
+        Path lockFile = Paths.get(AS2ServerVersion.getProductName().replace(' ', '_') + ".lock");
+        try {
+            Files.delete(lockFile);
+        } catch (Exception e) {
+            //nop
+        }
     }
 }

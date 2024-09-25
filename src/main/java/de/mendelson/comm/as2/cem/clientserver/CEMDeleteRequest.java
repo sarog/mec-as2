@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMDeleteRequest.java 1     20.09.12 11:01 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMDeleteRequest.java 2     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.cem.clientserver;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -16,10 +16,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class CEMDeleteRequest extends ClientServerMessage implements Serializable {
     
+    public static final long serialVersionUID = 1L;
     private CEMEntry entry = null;
     
     public CEMDeleteRequest(CEMEntry entry) {

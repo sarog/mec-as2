@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoRequest.java 1     1-11-16 12:19p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoRequest.java 3     5/08/18 12:42p Heller $
 package de.mendelson.util.clientserver.about;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -17,10 +17,11 @@ import java.lang.management.RuntimeMXBean;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class ServerInfoRequest extends ClientServerMessage implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     public static final String SERVER_FULL_PRODUCT_NAME = "full_product_name";
     public static final String SERVER_PRODUCT_NAME = "serverprodname";
     public static final String SERVER_VERSION = "serverversion";
@@ -38,6 +39,8 @@ public class ServerInfoRequest extends ClientServerMessage implements Serializab
     public static final String SERVER_START_METHOD_WINDOWS_SERVICE = "is_windows_service";
     public static final String LICENSEE = "server_licensee";
     public static final String SERVER_PATCH_LEVEL = "version_patch_level";    
+    /**32 or 64 bit?*/
+    public static final String JVM_DATA_MODEL = "jvm_data_model";
 
     private long clientPID = -1;
 

@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/cert/CertificateAccessDB.java 16    11.11.11 11:32 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cert/CertificateAccessDB.java 21    7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.cert;
 
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,11 +23,11 @@ import java.util.logging.Logger;
 /**
  * Access the certificate lists in the database
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 21 $
  */
 public class CertificateAccessDB {
 
-    /**Logger to log inforamtion to*/
+    /**Logger to log information to*/
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**Connection to the database*/
     private Connection configConnection;
@@ -53,25 +54,24 @@ public class CertificateAccessDB {
                 String fingerprint = result.getString("fingerprintsha1");
                 PartnerCertificateInformation information = new PartnerCertificateInformation(
                         fingerprint, result.getInt("category"));
-                information.setPriority(result.getInt("prio"));
                 partner.setCertificateInformation(information);
             }
         } catch (Exception e) {
             this.logger.severe("CertificateAccessDB.loadPartnerCertificateInformation: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -84,22 +84,21 @@ public class CertificateAccessDB {
         for (PartnerCertificateInformation certInfo : list) {
             PreparedStatement statement = null;
             try {
-                statement = this.configConnection.prepareStatement("INSERT INTO certificates(partnerid,fingerprintsha1,category,prio)VALUES(?,?,?,?)");
+                statement = this.configConnection.prepareStatement("INSERT INTO certificates(partnerid,fingerprintsha1,category)VALUES(?,?,?)");
                 statement.setEscapeProcessing(true);
                 statement.setInt(1, partner.getDBId());
                 statement.setString(2, certInfo.getFingerprintSHA1());
                 statement.setInt(3, certInfo.getCategory());
-                statement.setInt(4, certInfo.getPriority());
                 statement.execute();
             } catch (SQLException e) {
                 this.logger.severe("storePartnerCertificateInformationList: " + e.getMessage());
-                Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        //nop
+                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
@@ -116,14 +115,14 @@ public class CertificateAccessDB {
             statement.execute();
         } catch (SQLException e) {
             this.logger.severe("CertificateAccessDB.deletePartnerCertificateInformationList: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CertificateAccessDB.deletePartnerCertificateInformationList: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

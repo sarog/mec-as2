@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMListResponse.java 1     19.09.12 16:56 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMListResponse.java 2     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.cem.clientserver;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -17,10 +17,11 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class CEMListResponse extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private List<CEMEntry> list = null;
 
     public CEMListResponse(CEMListRequest request) {

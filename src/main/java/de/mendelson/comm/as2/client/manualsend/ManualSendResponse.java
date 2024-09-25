@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendResponse.java 3     8.05.13 17:13 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendResponse.java 4     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.comm.as2.message.AS2Info;
@@ -16,10 +16,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ManualSendResponse extends UploadResponseFile implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private AS2MessageInfo as2Info = null;
     
     public ManualSendResponse(ManualSendRequest request) {

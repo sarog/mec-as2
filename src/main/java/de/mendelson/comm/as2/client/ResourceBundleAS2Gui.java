@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 41    11/20/17 11:27a Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 47    6.12.18 17:57 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,16 +13,18 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 41 $
+ * @version $Revision: 47 $
  */
 public class ResourceBundleAS2Gui extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"menu.file", "File"},
         {"menu.file.exit", "Exit"},
         {"menu.file.partner", "Partner"},
@@ -36,6 +38,8 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"menu.file.statistic", "Statistic"},
         {"menu.file.quota", "Quota"},
         {"menu.file.serverinfo", "Display HTTP server configuration"},
+        {"menu.file.systemevents", "System events"},
+        {"menu.file.searchinserverlog", "Search in serverlog"},        
         {"menu.file.preferences", "Preferences"},
         {"menu.file.send", "Send file to partner"},
         {"menu.file.resend", "Send as new transaction"},
@@ -64,7 +68,7 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"dialog.msg.delete.message", "Do you really want to delete the selected messages permanent?"},
         {"dialog.msg.delete.title", "Delete messages"},
         {"welcome", "Welcome, {0}"},
-        {"warning.eval", "This is an evaluation copy."},
+        {"fatal.error", "Fatal error"},
         {"warning.refreshstopped", "The GUI refresh has been stopped."},
         {"tab.welcome", "News and updates"},
         {"tab.transactions", "Transactions"},
@@ -77,11 +81,11 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"login.failed.client.incompatible.title", "Login rejected"},
         {"uploading.to.server", "Uploading to server"},
         {"refresh.overview", "Refreshing transaction list"},
-        {"resend.performed", "This transaction has been manually resend as a new transaction ([{0}])."},
         {"dialog.resend.message", "Do you really want to resend the data of the selected transaction?"},
         {"dialog.resend.message.multiple", "Do you really want to resend the data of the selected {0} transactions?"},
         {"dialog.resend.title", "Transaction resend"},
         {"logputput.disabled", "** The log output has been disabled **"},
         {"logputput.enabled", "** The log output has been enabled **"},
+        {"resend.failed.nopayload", "Resend as new transaction failed: The selected transaction {0} has no payload." },
     };
 }

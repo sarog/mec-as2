@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 17    6/28/17 3:07p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 20    4/06/18 1:35p Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,9 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleCertificates extends MecResourceBundle{
+    
+    public static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -59,7 +61,7 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"certificate.import.error.message", "There occured an error during the import process.\n{0}" },
         {"certificate.import.error.title", "Error" },
         {"certificate.import.alias", "Certificate alias to use:" },
-        {"keystore.readonly.message", "The underlaying keystore is read-only.\nThis operation is not permitted." },
+        {"keystore.readonly.message", "The underlaying keystore is read-only.\nAny certificate write operation (modify/edit) is not possible in this state." },
         {"keystore.readonly.title", "Keystore r/o" },
         {"modifications.notalllowed.message", "Modifications are not possible"},
         {"generatekey.error.message", "{0}" },
@@ -72,6 +74,12 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"title.cert.in.use", "Certificate is in use" },
         {"cert.delete.impossible", "It is impossible to delete the entry:" },
         {"module.locked", "This certificate management is locked by another client, you are not allowed to commit your changes!" },
+        {"label.trustanchor", "Trust anchor:" },
+        {"warning.testkey", "Public mendelson test key - do not use in production!" },
+        {"label.key.valid", "This key is valid" },
+        {"label.key.invalid", "This key is valid" },
+        {"label.cert.valid", "This certificate is valid" },
+        {"label.cert.invalid", "This certificate is invalid" },
     };
     
 }

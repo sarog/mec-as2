@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_fr.java 6     18.05.12 11:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_fr.java 9     2.10.18 13:14 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,21 +15,27 @@ import de.mendelson.util.MecResourceBundle;
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDBServer_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
+    @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"server.started", "{0} démarré."},
+    static final Object[][] CONTENTS = {
+        {"database." + DBDriverManager.DB_CONFIG, "base de configuration" },
+        {"database." + DBDriverManager.DB_RUNTIME, "base de maturité" },
+        {"dbserver.startup", "Démarrer le serveur de base de données.." },
+        {"dbserver.running", "{0} données en cours d''exécution"},
         {"update.versioninfo", "Mise à jour automatique de BD: la version de BD trouvé est {0}"
             + ", la version de BD requise est {1}."},
         {"update.progress", "Mise à jour incrementale de base de données ..."},
-        {"update.progress.version.start", "(Commencement) La {1} BD a été mise à jour vers la version {0}."},
-        {"update.progress.version.end", "(Fin) La {1} BD a été mise à jour vers la version {0}."},
+        {"update.progress.version.start", "(Commencement) La {1} a été mise à jour vers la version {0}."},
+        {"update.progress.version.end", "(Fin) La {1} a été mise à jour vers la version {0}."},
         {"update.error", "FATAL: impossible de mettre à jour la base de données "
             + " de la version {0} vers la version {1}.\n"
             + "Merci de supprimer entièrement la base de donnée par la suppression"

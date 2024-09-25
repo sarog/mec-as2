@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServer.java 21    2/24/17 5:25p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientServer.java 22    4/06/18 10:56a Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
@@ -41,7 +41,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
  * Server root for the mendelson client/server architecture
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 22 $
  */
 public class ClientServer {
 
@@ -105,7 +105,7 @@ public class ClientServer {
         sslFilter.setUseClientMode(false);
         acceptor.getFilterChain().addFirst("TLS", sslFilter);
         //add CPU bound tasks first
-        acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger)));
+        acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger, null)));
         //log client-server communication
         //acceptor.getFilterChain().addLast("logger", new LoggingFilter());
         //see https://issues.apache.org/jira/browse/DIRMINA-682?page=com.atlassian.jira.plugin.system.issuetabpanels:all-tabpanel

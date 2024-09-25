@@ -1,8 +1,9 @@
-//$Header: /as2_cluster/de/mendelson/comm/as2/sendorder/SendOrderAccessDB.java 9     5/03/17 4:26p Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderAccessDB.java 13    7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.sendorder;
 
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
  * Accesses the queue for the internal send orders
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class SendOrderAccessDB {
 
@@ -56,13 +57,13 @@ public class SendOrderAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("SendOrderAccessDB.delete: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -84,13 +85,13 @@ public class SendOrderAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("SendOrderAccessDB.rescheduleOrder: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -109,13 +110,13 @@ public class SendOrderAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("SendOrderAccessDB.add: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -134,13 +135,13 @@ public class SendOrderAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("SendOrderAccessDB.resetAllToWait: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -159,13 +160,13 @@ public class SendOrderAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("SendOrderAccessDB.setState: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -224,14 +225,14 @@ public class SendOrderAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("SendOrderAccessDB.getNext: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("SendOrderAccessDB.getNext: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

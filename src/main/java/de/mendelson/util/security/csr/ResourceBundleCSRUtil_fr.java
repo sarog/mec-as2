@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/csr/ResourceBundleCSRUtil_fr.java 4     31.05.11 14:33 Heller $
+//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSRUtil_fr.java 5     4/06/18 1:35p Heller $
 package de.mendelson.util.security.csr;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,17 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleCSRUtil_fr extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {                
+    static final Object[][] CONTENTS = {                
         {"verification.failed", "L''opération a échoué - Vérification de la CSR created a échoué" },
         {"no.certificates.in.reply", "L''opération a échoué - Aucun certificat de la réponse de la CSR, incapable de patcher la clé" },
         {"missing.cert.in.trustchain", "L''opération a échoué - Le système n''a pas établi de la chaîne de confiance de la réponse.\nVeuillez importer le certificat avec le \nissuer\n {0} keystore du premier." },

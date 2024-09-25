@@ -1,7 +1,8 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewClientServer.java 3     23.03. $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewClientServer.java 6     15.11.18 12:17 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.clientserver.BaseClient;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -15,7 +16,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * Handles the access to remote directories
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class FileSystemViewClientServer{
 
@@ -32,27 +33,34 @@ public class FileSystemViewClientServer{
     
     public List<FileObject> getPathElements( String path ){
         FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_GET_PATH_ELEMENTS);
-        request.setParameterString(path);
+        request.setRequestFilePath(path);
         request.setFileFilter(this.fileFilter);
         return (this.sendSyncRequest(request)).getParameterFileArray();
     }
     
-    public String getPathStr(FileObject file){
-        FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_GET_PATH_STR);
-        request.setParameterFile(file);
+    public String getAbsolutePathStr(String path){
+        FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_GET_ABSOLUTE_PATH_STR);
+        request.setRequestFilePath(path);
         request.setFileFilter(this.fileFilter);
         return (this.sendSyncRequest(request)).getParameterString();
     }
     
-    public List<FileObject> listRoots() {
+    public List<FileObjectRoot> listRoots() {
         FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_LIST_ROOTS);
         request.setFileFilter(this.fileFilter);
-        return (this.sendSyncRequest(request)).getParameterFileArray();
+        List<FileObjectRoot> rootList = new ArrayList<FileObjectRoot>();
+        List<FileObject> requestResult = this.sendSyncRequest(request).getParameterFileArray();
+        for( FileObject entry:requestResult ){
+            if( entry instanceof FileObjectRoot){
+                rootList.add( (FileObjectRoot)entry);
+            }
+        }        
+        return (rootList);
     }
 
-    public List<FileObject> listChildren( FileObject parent ) {
+    public List<FileObject> listChildren( String path ) {
         FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_LIST_CHILDREN);
-        request.setParameterFile(parent);
+        request.setRequestFilePath(path);
         request.setFileFilter(this.fileFilter);
         return (this.sendSyncRequest(request)).getParameterFileArray();
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 30    7/05/17 2:29p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 37    7.12.18 9:09 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -34,11 +34,12 @@ import org.apache.mina.core.session.IoSession;
  * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 37 $
  */
 public class ClientServerSessionHandler extends IoHandlerAdapter {
 
     public static final String SESSION_ATTRIB_USER = "user";
+    public static final String SESSION_ATTRIB_CLIENT_PID = "pid";
     /**
      * User readable description of user permissions
      */
@@ -62,11 +63,13 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     private AnonymousProcessing anonymousProcessing = null;
     private ClientServerSessionHandlerCallback callback = null;
     private String[] validClientIds = null;
+    private final int maxClients;
 
-    public ClientServerSessionHandler(Logger logger, String[] validClientIds) {
+    public ClientServerSessionHandler(Logger logger, String[] validClientIds, int maxClients) {
         if (logger != null) {
             this.logger = logger;
         }
+        this.maxClients = maxClients;
         this.validClientIds = validClientIds;
         this.loginHandler = new PasswordValidationHandler(validClientIds);
         this.serverSessionLogger.setUseParentHandlers(false);
@@ -99,7 +102,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         int limit = 1000000; // 1 Mb
         int numLogFiles = 3;
         FileHandler fileHandler = new FileHandler(serverSessionLogPattern, limit, numLogFiles, true);
-        fileHandler.setFormatter(new LogFormatter());
+        fileHandler.setFormatter(new LogFormatter(LogFormatter.FORMAT_CONSOLE));
         return (fileHandler);
     }
 
@@ -177,32 +180,32 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 transmittedUser.setName(loginRequest.getUserName());
                 int validationState = this.loginHandler.validate(definedUser, loginRequest.getPasswd(),
                         loginRequest.getClientId());
-                if (validationState == PasswordValidationHandler.STATE_FAILURE) {                    
-                    LoginState state = new LoginState(loginRequest);                    
+                if (validationState == PasswordValidationHandler.STATE_FAILURE) {
+                    LoginState state = new LoginState(loginRequest);
                     state.setUser(transmittedUser);
                     state.setState(LoginState.STATE_AUTHENTICATION_FAILURE);
                     state.setStateDetails("Authentication failed: Wrong user/password combination or user does not exist");
                     this.logSession(session, Level.INFO, state.getStateDetails());
                     session.write(state);
                     return;
-                } else if (validationState == PasswordValidationHandler.STATE_INCOMPATIBLE_CLIENT) {                    
+                } else if (validationState == PasswordValidationHandler.STATE_INCOMPATIBLE_CLIENT) {
                     LoginState state = new LoginState(loginRequest);
                     state.setUser(transmittedUser);
                     state.setState(LoginState.STATE_INCOMPATIBLE_CLIENT);
                     StringBuilder validClientIdStr = new StringBuilder();
-                    for( String clientId:this.validClientIds){
-                        if( validClientIdStr.length() > 0 ){
-                            validClientIdStr.append( ", ");
+                    for (String clientId : this.validClientIds) {
+                        if (validClientIdStr.length() > 0) {
+                            validClientIdStr.append(", ");
                         }
-                        validClientIdStr.append( clientId );                        
+                        validClientIdStr.append(clientId);
                     }
                     state.setStateDetails("The login process to the server has failed because the client is incompatible. Please ensure that client and server have the same version. Client version: ["
-                    + loginRequest.getClientId() + "], Server version: [" + validClientIdStr + "]");
+                            + loginRequest.getClientId() + "], Server version: [" + validClientIdStr + "]");
                     this.logSession(session, Level.INFO, state.getStateDetails());
                     session.write(state);
                     session.closeOnFlush();
                     return;
-                } else if (validationState == PasswordValidationHandler.STATE_PASSWORD_REQUIRED) {                    
+                } else if (validationState == PasswordValidationHandler.STATE_PASSWORD_REQUIRED) {
                     LoginState state = new LoginState(loginRequest);
                     state.setUser(transmittedUser);
                     state.setState(LoginState.STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED);
@@ -211,12 +214,24 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                     session.write(state);
                     return;
                 }
+                synchronized (this.sessions) {
+                    if (this.maxClients > 0 && this.sessions.size() + 1 > this.maxClients) {
+                        LoginState state = new LoginState(loginRequest);
+                        state.setUser(transmittedUser);
+                        state.setState(LoginState.STATE_REJECTED);
+                        state.setStateDetails("Login request rejected.");
+                        this.logSession(session, Level.INFO, state.getStateDetails());
+                        session.write(state);
+                        return;
+                    }
+                }
                 //user is logged in: add the user name to the session
                 session.setAttribute(SESSION_ATTRIB_USER, loginRequest.getUserName());
+                session.setAttribute(SESSION_ATTRIB_CLIENT_PID, loginRequest.getPID());
                 //add the session to the list of available sessions
                 synchronized (this.sessions) {
                     this.sessions.add(session);
-                }                
+                }
                 //success!
                 LoginState loginSuccessState = new LoginState(loginRequest);
                 loginSuccessState.setState(LoginState.STATE_AUTHENTICATION_SUCCESS);

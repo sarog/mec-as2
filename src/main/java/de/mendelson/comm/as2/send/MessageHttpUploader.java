@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 158   9/25/17 1:27p Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 166   7.12.18 10:25 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
@@ -21,20 +21,21 @@ import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.AnonymousTextClient;
 import de.mendelson.util.clientserver.ClientServer;
-import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
@@ -102,7 +103,7 @@ import org.apache.http.protocol.HttpContext;
  * Class to allow HTTP multipart uploads
  *
  * @author S.Heller
- * @version $Revision: 158 $
+ * @version $Revision: 166 $
  */
 public class MessageHttpUploader {
 
@@ -232,7 +233,6 @@ public class MessageHttpUploader {
                 this.logger.log(Level.INFO,
                         this.rb.getResourceString("returncode.ok",
                                 new Object[]{
-                                    as2Info.getMessageId(),
                                     String.valueOf(returnCode),
                                     AS2Tools.getDataSizeDisplay(size),
                                     AS2Tools.getTimeDisplay(transferTime),
@@ -243,7 +243,6 @@ public class MessageHttpUploader {
                 this.logger.log(Level.INFO,
                         this.rb.getResourceString("returncode.accepted",
                                 new Object[]{
-                                    as2Info.getMessageId(),
                                     String.valueOf(returnCode),
                                     AS2Tools.getDataSizeDisplay(size),
                                     AS2Tools.getTimeDisplay(transferTime),
@@ -252,16 +251,16 @@ public class MessageHttpUploader {
         } else {
             //the system was unable to connect the partner
             if (returnCode < 0) {
-                throw new NoConnectionException(this.rb.getResourceString("error.noconnection", as2Info.getMessageId()));
+                throw new NoConnectionException(this.rb.getResourceString("error.noconnection"));
             } else if (returnCode == HttpServletResponse.SC_BAD_GATEWAY) {
                 //HTTP 502                
-                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode, as2Info.getMessageId()));
+                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode));
             } else if (returnCode == HttpServletResponse.SC_SERVICE_UNAVAILABLE) {
                 //HTTP 503                
-                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode, as2Info.getMessageId()));
+                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode));
             } else if (returnCode == HttpServletResponse.SC_GATEWAY_TIMEOUT) {
                 //HTTP 504
-                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode, as2Info.getMessageId()));
+                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode));
             }
             if (this.runtimeConnection != null) {
                 if (messageAccess == null) {
@@ -302,13 +301,26 @@ public class MessageHttpUploader {
                     }
                 }
                 if (!as2ToExists) {
+                    StringBuilder missingHeaderList = new StringBuilder("\"AS2-TO\"");
+                    if (!as2FromExists) {
+                        missingHeaderList.append(", \"AS2-FROM\"");
+                    }
+                    String responseDataStr = null;
+                    byte[] responseData = this.getResponseData();
+                    if (responseData.length < 1024) {
+                        responseDataStr = new String(responseData);
+                    } else {
+                        responseDataStr = new String(responseData, 0, 1024);
+                    }
                     throw new Exception(this.rb.getResourceString("answer.no.sync.mdn",
-                            new Object[]{as2Info.getMessageId(), "as2-to"}));
+                            new Object[]{as2Info.getMessageId(),
+                                missingHeaderList.toString(),
+                                responseDataStr}));
                 }
                 //send the data to the as2 server. It does not care if the MDN has been sync or async anymore
                 AnonymousTextClient client = null;
-                File tempFile = null;
-                FileOutputStream outStream = null;
+                Path tempFile = null;
+                OutputStream outStream = null;
                 try {
                     client = new AnonymousTextClient();
                     client.setDisplayServerLogMessages(false);
@@ -317,11 +329,11 @@ public class MessageHttpUploader {
                     IncomingMessageRequest messageRequest = new IncomingMessageRequest();
                     //create temporary file to store the data
                     tempFile = AS2Tools.createTempFile("SYNCMDN_received", ".bin");
-                    outStream = new FileOutputStream(tempFile);
+                    outStream = Files.newOutputStream(tempFile);
                     ByteArrayInputStream memIn = new ByteArrayInputStream(this.responseData);
                     this.copyStreams(memIn, outStream);
                     memIn.close();
-                    messageRequest.setMessageDataFilename(tempFile.getAbsolutePath());
+                    messageRequest.setMessageDataFilename(tempFile.toAbsolutePath().toString());
                     for (int i = 0; i < this.getResponseHeader().length; i++) {
                         String key = this.getResponseHeader()[i].getName();
                         String value = this.getResponseHeader()[i].getValue();
@@ -357,7 +369,17 @@ public class MessageHttpUploader {
                     }
                 }
                 if (tempFile != null) {
-                    tempFile.delete();
+                    try {
+                        Files.delete(tempFile);
+                    } catch (Exception e) {
+                        SystemEvent event = new SystemEvent(
+                                SystemEvent.SEVERITY_WARNING,
+                                SystemEvent.ORIGIN_SYSTEM,
+                                SystemEvent.TYPE_FILE_DELETE);
+                        event.setSubject(event.typeToTextLocalized());
+                        event.setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                        SystemEventManagerImplAS2.newEvent(event);
+                    }
                 }
             }
         }
@@ -430,7 +452,6 @@ public class MessageHttpUploader {
             this.logger.log(Level.INFO,
                     this.rb.getResourceString("using.proxy",
                             new Object[]{
-                                message.getAS2Info().getMessageId(),
                                 proxy.getHost(), String.valueOf(proxy.getPort()),}), message.getAS2Info());
         }
     }
@@ -541,7 +562,6 @@ public class MessageHttpUploader {
                     this.logger.log(Level.INFO,
                             this.rb.getResourceString("sending.mdn.async",
                                     new Object[]{
-                                        message.getAS2Info().getMessageId(),
                                         receiptURL
                                     }), message.getAS2Info());
                 }
@@ -555,14 +575,12 @@ public class MessageHttpUploader {
                             this.logger.log(Level.INFO,
                                     this.rb.getResourceString("sending.cem.sync",
                                             new Object[]{
-                                                messageInfo.getMessageId(),
                                                 receiver.getURL()
                                             }), messageInfo);
                         } else if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_AS2) {
                             this.logger.log(Level.INFO,
                                     this.rb.getResourceString("sending.msg.sync",
                                             new Object[]{
-                                                messageInfo.getMessageId(),
                                                 receiver.getURL()
                                             }), messageInfo);
                         }
@@ -574,7 +592,6 @@ public class MessageHttpUploader {
                             this.logger.log(Level.INFO,
                                     this.rb.getResourceString("sending.cem.async",
                                             new Object[]{
-                                                messageInfo.getMessageId(),
                                                 receiver.getURL(),
                                                 sender.getMdnURL()
                                             }), messageInfo);
@@ -582,7 +599,6 @@ public class MessageHttpUploader {
                             this.logger.log(Level.INFO,
                                     this.rb.getResourceString("sending.msg.async",
                                             new Object[]{
-                                                messageInfo.getMessageId(),
                                                 receiver.getURL(),
                                                 sender.getMdnURL()
                                             }), messageInfo);
@@ -639,7 +655,7 @@ public class MessageHttpUploader {
                 if (rawDataInputStream != null) {
                     rawDataInputStream.close();
                 }
-            }                
+            }
             if (httpResponse != null) {
                 this.responseData = this.readEntityData(httpResponse);
                 this.responseStatusLine = httpResponse.getStatusLine();
@@ -721,11 +737,13 @@ public class MessageHttpUploader {
             this.certStore = new KeystoreStorageImplFile(
                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND),
                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),
-                    BCCryptoHelper.KEYSTORE_JKS);
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS);
             this.trustStore = new KeystoreStorageImplFile(
                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND),
                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),
-                    BCCryptoHelper.KEYSTORE_JKS);
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS);
         }
         SSLSocketFactory socketFactory = new SSLSocketFactory(this.certStore.getKeystore(),
                 new String(this.certStore.getKeystorePass()),
@@ -792,7 +810,7 @@ public class MessageHttpUploader {
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 158 $";
+        String revision = "$Revision: 166 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }

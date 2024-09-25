@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplMemory.java 1     29.03.10 13:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplMemory.java 2     4/06/18 12:32p Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.ByteArrayInputStream;
@@ -7,10 +7,12 @@ import java.io.InputStream;
 /**
  * Container that stores byte arrays in memory
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ByteStorageImplMemory implements IByteStorage {
 
+    /**IByteStorage extends Serializable*/
+    public static final long serialVersionUID = 1L;
     private byte[] buffer = null;
 
     public ByteStorageImplMemory() {

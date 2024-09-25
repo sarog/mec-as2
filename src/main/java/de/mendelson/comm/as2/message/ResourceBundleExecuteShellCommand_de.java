@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleExecuteShellCommand_de.java 2     11.11.08 16:05 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleExecuteShellCommand_de.java 4     7.12.18 9:45 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,21 +12,23 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleExecuteShellCommand_de extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"executing.receipt", "{0}: Führe Shell Kommando nach Datenempfang aus." },
-        {"executing.send", "{0}: Führe Shell Kommando nach Datenversand aus." },
-        {"executing.command", "{0}: Shell Kommando: \"{1}\"." },
-        {"executed.command", "{0}: Shell Kommando ausgeführt, returncode={1}." },
+    static final Object[][] CONTENTS = {
+        {"executing.receipt", "Führe Shell Kommando nach Datenempfang aus." },
+        {"executing.send", "Führe Shell Kommando nach Datenversand aus." },
+        {"executing.command", "Shell Kommando: \"{0}\"." },
+        {"executed.command", "Shell Kommando ausgeführt, returncode={0}." },
     };
     
 }

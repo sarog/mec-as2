@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/util/security/cert/clientserver/UploadRequestKeystore.java 1     9.02.11 17:03 Heller $
+//$Header: /mec_oftp2/de/mendelson/util/security/cert/clientserver/UploadRequestKeystore.java 5     4.01.19 11:53 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.clientserver.clients.datatransfer.UploadRequestFile;
+import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -13,15 +15,40 @@ import java.io.Serializable;
 
 /**
  * Msg for the client server protocol
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 5 $
  */
 public class UploadRequestKeystore extends UploadRequestFile implements Serializable {
 
-   
+    public static final int KEYSTORE_TYPE_SSL = KeystoreStorageImplFile.KEYSTORE_USAGE_SSL;
+    public static final int KEYSTORE_TYPE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
+    
+    public static final long serialVersionUID = 1L;
+
+    private String keystoreStorageType;
+    private int keystoreUsage;
+
+    public UploadRequestKeystore(final int KEYSTORE_USAGE, final String KEYSTORE_STORAGE_TYPE) {
+        this.keystoreStorageType = KEYSTORE_STORAGE_TYPE;
+        this.keystoreUsage = KEYSTORE_USAGE;
+    }
+
     @Override
     public String toString() {
         return ("Upload request keystore");
     }
+
+    /**
+     * @return the keystoreType
+     */
+    public String getKeystoreStorageType() {
+        return keystoreStorageType;
+    }
+    
+    public int getKeystoreUsage(){
+        return( this.keystoreUsage);
+    }
+    
 
 }

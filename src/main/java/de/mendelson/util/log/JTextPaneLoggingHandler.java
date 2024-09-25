@@ -1,4 +1,4 @@
-//$Header: /mec_oftp2/de/mendelson/util/log/JTextPaneLoggingHandler.java 24    18-02-16 4:38p Heller $
+//$Header: /as2/de/mendelson/util/log/JTextPaneLoggingHandler.java 25    7/30/18 1:46p Heller $
 package de.mendelson.util.log;
 
 import java.awt.Color;
@@ -29,7 +29,7 @@ import javax.swing.text.StyledDocument;
  * Handler to log logger data to a swing text component
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 25 $
  */
 public class JTextPaneLoggingHandler extends Handler {
 
@@ -37,7 +37,7 @@ public class JTextPaneLoggingHandler extends Handler {
      * The max number of bytes that are displayed. If the content exceeds this
      * there is data removed at the start
      */
-    private long maxBuffersize = 30000;
+    private final long MAX_BUFFER_SIZE = 30000;
     private boolean doneHeader;
     private JTextPane jTextPane = null;
     private Style currentStyle;
@@ -174,14 +174,14 @@ public class JTextPaneLoggingHandler extends Handler {
         synchronized (document) {
             try {
                 long documentLength = document.getLength();
-                long oversize = (documentLength + buffer.length()) - this.maxBuffersize;
+                long oversize = (documentLength + buffer.length()) - this.MAX_BUFFER_SIZE;
                 if (oversize > 0) {
                     if (documentLength >= oversize) {
                         document.remove(0, (int) oversize);
                     } else {
                         document.remove(0, (int) documentLength);
-                        if (buffer.length() > this.maxBuffersize) {
-                            buffer.delete(0, (int) (buffer.length() - this.maxBuffersize));
+                        if (buffer.length() > this.MAX_BUFFER_SIZE) {
+                            buffer.delete(0, (int) (buffer.length() - this.MAX_BUFFER_SIZE));
                         }
                     }
                 }
@@ -200,8 +200,13 @@ public class JTextPaneLoggingHandler extends Handler {
             @Override
             public void run() {
                 try {
-                    JTextPaneLoggingHandler.this.jTextPane.setCaretPosition(document.getLength());
-                } catch (Throwable e) {
+                    synchronized (document) {
+                        int documentLength = document.getLength();
+                        if (documentLength <= MAX_BUFFER_SIZE) {
+                            JTextPaneLoggingHandler.this.jTextPane.setCaretPosition(documentLength);
+                        }
+                    }
+                } catch (Error e) {
                     //ignore
                 }
             }
@@ -409,13 +414,7 @@ public class JTextPaneLoggingHandler extends Handler {
      * @return the maxBuffersize
      */
     public long getMaxBuffersize() {
-        return maxBuffersize;
+        return MAX_BUFFER_SIZE;
     }
 
-    /**
-     * @param maxBuffersize the maxBuffersize to set
-     */
-    public void setMaxBuffersize(long maxBuffersize) {
-        this.maxBuffersize = maxBuffersize;
-    }
 }

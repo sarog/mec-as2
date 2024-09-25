@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/csr/ResourceBundleCSR.java 2     3/20/17 3:07p Heller $
+//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSR.java 3     4/06/18 1:35p Heller $
 package de.mendelson.util.security.csr;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,17 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleCSR extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
                 
         {"label.selectcsrfile", "Please select the file where to store the request" },
         {"csr.title", "Trust certificate: Certificate Sign Request" },

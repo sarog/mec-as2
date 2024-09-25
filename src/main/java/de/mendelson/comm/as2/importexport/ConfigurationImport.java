@@ -1,16 +1,17 @@
-//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationImport.java 14    18.09.12 14:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationImport.java 18    5.10.18 10:02 Heller $
 package de.mendelson.comm.as2.importexport;
 
 import de.mendelson.util.security.cert.CertificateManager;
-import de.mendelson.comm.as2.notification.NotificationAccessDB;
-import de.mendelson.comm.as2.notification.NotificationData;
+import de.mendelson.util.systemevents.notification.NotificationAccessDB;
+import de.mendelson.util.systemevents.notification.NotificationData;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
+import de.mendelson.util.systemevents.notification.NotificationAccessDBImplAS2;
+import de.mendelson.util.systemevents.notification.NotificationDataImplAS2;
 import java.io.InputStream;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -36,7 +37,7 @@ import org.xml.sax.InputSource;
  * Exports configuration data to a file
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 18 $
  */
 public class ConfigurationImport {
 
@@ -63,7 +64,9 @@ public class ConfigurationImport {
         try {
             KeystoreStorage storage = new KeystoreStorageImplFile("certificates.p12",
                     this.preferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray(),
-                    BCCryptoHelper.KEYSTORE_PKCS12);
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+            );
             this.certificateManager.loadKeystoreCertificates(storage);
         } catch (Exception e) {
             this.logger.severe(e.getMessage());
@@ -88,7 +91,7 @@ public class ConfigurationImport {
         Element rootElement = this.getRootElement(inStream);
         if (importNotification) {
             NotificationData notification = this.readNotificationData(rootElement);
-            NotificationAccessDB access = new NotificationAccessDB(this.configConnection);
+            NotificationAccessDB access = new NotificationAccessDBImplAS2(this.configConnection, this.runtimeConnection);
             access.updateNotification(notification);
         }
         //insert or update the partners, that depends on the AS2 id
@@ -160,7 +163,7 @@ public class ConfigurationImport {
         NodeList notifcationList = parent.getElementsByTagName("notification");
         for (int i = 0; i < notifcationList.getLength(); i++) {
             Element notificationElement = (Element) notifcationList.item(i);
-            notification = NotificationData.fromXML(notificationElement);
+            notification = NotificationDataImplAS2.fromXML(notificationElement);
         }
         return (notification);
     }

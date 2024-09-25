@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableModelCEMOverview.java 4     20.09.12 12:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableModelCEMOverview.java 5     6/21/18 5:22p Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -19,7 +19,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class TableModelCEMOverview extends AbstractTableModel {
 
@@ -106,7 +106,7 @@ public class TableModelCEMOverview extends AbstractTableModel {
                 case 4:
                     return (entry.getReceiverAS2Id());
                 case 5:
-                    return (entry.getSerialId());
+                    return (new String[]{entry.getIssuername(),entry.getSerialId()});
                 case 6:
                     return (CEMEntry.getCategoryLocalized(entry.getCategory()));
             }

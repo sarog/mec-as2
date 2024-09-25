@@ -1,8 +1,12 @@
-//$Header: /as2/de/mendelson/util/AS2Tools.java 4     3.07.15 10:41 Heller $
+//$Header: /as2/de/mendelson/util/AS2Tools.java 9     7.11.18 13:09 Heller $
 package de.mendelson.util;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -24,7 +28,7 @@ import org.apache.commons.io.FileUtils;
  * Some programming tools for mendelson business integration
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 9 $
  */
 public class AS2Tools {
 
@@ -54,46 +58,45 @@ public class AS2Tools {
     }
 
     /**
-     * Creates a temp file in a data stamped folder below the directory temp
+     * Folds a string using the passed delimiter where the max line length is
+     * the passed lineLenght
+     *
+     * @param source Source string to use
+     * @param delimiter Delimiter to add at the folding point
+     * @param lineLength Max line length of the result
      */
-    public static synchronized File createTempFile(String prefix, String suffix) throws IOException {
-        DateFormat dateformat = new SimpleDateFormat("yyyyMMdd");
-        String tempDirStr = new File("temp").getAbsolutePath();
-        File targetDir = new File(tempDirStr + File.separator + dateformat.format(new Date()));
-        if (!targetDir.exists()) {
-            boolean created = targetDir.mkdirs();
-            if (!created) {
-                throw new IOException("Unable to create directory " + targetDir.getAbsolutePath());
-            }
+    public static final String fold(String source, String delimiter, int lineLength) {
+        if( source == null ){
+            return( "null" );
         }
-        //create a unique file in the temp subdirectory
-        File tempFile = File.createTempFile(prefix, suffix, targetDir);
-        return (tempFile);
+        StringBuilder result = new StringBuilder();
+        int linePos = 0;
+        for( int i = 0; i < source.length(); i++ ){
+            char singleChar = source.charAt(i);
+            if( singleChar == ' ' && linePos >= lineLength){
+                result.append( delimiter );
+                linePos = 0;
+            }else{
+                result.append( singleChar );
+                linePos++;
+            }
+        }        
+        return(result.toString());
     }
 
     /**
      * Creates a temp file in a data stamped folder below the directory temp
      */
-    public static synchronized void deleteTempFilesOlderThan(long numberOfSecs) {
-        //find out all available temp directories
-        String tempDirStr = new File("temp").getAbsolutePath();
-        File targetDir = new File(tempDirStr);
-        long cutoff = TimeUnit.SECONDS.toMillis(numberOfSecs);
-        File[] subdirList = targetDir.listFiles();
-        if (subdirList != null) {
-            for (File subdir : subdirList) {
-                if (subdir.isDirectory() && !subdir.getName().startsWith(".")) {
-                    long diff = System.currentTimeMillis() - subdir.lastModified();
-                    if (diff > cutoff) {
-                        try {
-                            FileUtils.deleteDirectory(subdir);
-                        } catch (Exception e) {
-                            //nop
-                        }
-                    }
-                }
-            }
+    public static synchronized Path createTempFile(String prefix, String suffix) throws IOException {
+        DateFormat dateformat = new SimpleDateFormat("yyyyMMdd");        
+        String tempDirStr = Paths.get("temp").toAbsolutePath().toString();
+        Path targetDir = Paths.get(tempDirStr + FileSystems.getDefault().getSeparator() + dateformat.format(new Date()));
+        if (!Files.exists(targetDir)) {
+            Files.createDirectories(targetDir);
         }
+        //create a unique file in the temp subdirectory
+        Path tempFile = Files.createTempFile(targetDir, prefix, suffix);
+        return (tempFile);
     }
 
     /**
@@ -125,4 +128,5 @@ public class AS2Tools {
         float timeInSecs = (float) ((float) duration / 1000f);
         return (formatter.format(timeInSecs) + "s");
     }
+
 }

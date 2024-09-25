@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoResponse.java 1     1-11-16 12:19p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoResponse.java 2     4/06/18 12:21p Heller $
 package de.mendelson.util.clientserver.about;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -16,10 +16,11 @@ import java.util.Properties;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ServerInfoResponse extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     public static final String SERVER_PRODUCT_NAME = ServerInfoRequest.SERVER_PRODUCT_NAME;
     public static final String SERVER_VERSION = ServerInfoRequest.SERVER_VERSION;
     public static final String SERVER_BUILD = ServerInfoRequest.SERVER_BUILD;

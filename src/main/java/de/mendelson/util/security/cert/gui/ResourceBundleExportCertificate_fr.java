@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_fr.java 2     31.07.12 9:32 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_fr.java 3     4/06/18 1:35p Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,17 +13,19 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleExportCertificate_fr extends MecResourceBundle{
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
   public Object[][] getContents() {
-    return contents;
+    return CONTENTS;
   }
 
   /**List of messages in the specific language*/
-  static final Object[][] contents = {
+  static final Object[][] CONTENTS = {
         
     {"button.ok", "Valider" },
     {"button.cancel", "Annuler" },

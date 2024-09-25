@@ -1,12 +1,15 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 9     23.03.15 17:21  $Revision: 1 $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 15    15.11.18 12:17 Heller $Revision: 1 $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.BorderFactory;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -25,7 +28,7 @@ import javax.swing.tree.TreePath;
  * Browser widget for remote files/directories
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 15 $
  */
 public class RemoteFileBrowser extends JDialog {
 
@@ -51,6 +54,8 @@ public class RemoteFileBrowser extends JDialog {
         }
         this.setTitle(title);
         initComponents();
+        //generate a gap to the scroll pane
+        this.jTreeRemoteStructure.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         this.fileView = new FileSystemViewClientServer(client);
     }
 
@@ -63,7 +68,7 @@ public class RemoteFileBrowser extends JDialog {
     @Override
     public void setVisible(boolean flag) {
         if (flag) {
-            List<FileObject> rootList = this.fileView.listRoots();
+            List<FileObjectRoot> rootList = this.fileView.listRoots();
             this.jTreeRemoteStructure.addRoots(rootList);
             this.getRootPane().setDefaultButton(this.jButtonOk);
             this.treeChangeListener = new TreeSelectionListener() {
@@ -71,7 +76,8 @@ public class RemoteFileBrowser extends JDialog {
                 public void valueChanged(javax.swing.event.TreeSelectionEvent evt) {
                     DefaultMutableTreeNode selectedNode = jTreeRemoteStructure.getSelectedNode();
                     if (selectedNode != null && selectedNode.getUserObject() instanceof FileObject) {
-                        jTextFieldActualPath.setText(((FileObject) selectedNode.getUserObject()).getPathStr());
+                        jTextFieldActualPath.setText(
+                                ((FileObject) selectedNode.getUserObject()).getAbsolutePathDisplayOnServerSide());
                     }
                 }
             };
@@ -91,7 +97,7 @@ public class RemoteFileBrowser extends JDialog {
             //if the path does NOT exist there could be nothing added - the
             //path is invalid on the server side
             if (this.jTreeRemoteStructure.nodeexists(object)) {
-                List<FileObject> childList = this.fileView.listChildren(object);
+                List<FileObject> childList = this.fileView.listChildren(object.getAbsolutePathDisplayOnServerSide());
                 this.jTreeRemoteStructure.addChildren(object, childList);
             }
         }
@@ -108,8 +114,8 @@ public class RemoteFileBrowser extends JDialog {
      *
      * @param path
      */
-    public void setSelectedFile(String preselectedFile) {
-        this.preselectedPath = preselectedFile;
+    public void setSelectedFile(String preselectedFilename) {
+        this.preselectedPath = this.fileView.getAbsolutePathStr(preselectedFilename);
     }
 
     private void performLazyLoad(TreePath path) {
@@ -120,7 +126,7 @@ public class RemoteFileBrowser extends JDialog {
                 public void run() {
                     //unexplored node, reload it from remote
                     FileObject parent = (FileObject) nodeToExpand.getUserObject();
-                    List<FileObject> childList = RemoteFileBrowser.this.fileView.listChildren(parent);
+                    List<FileObject> childList = RemoteFileBrowser.this.fileView.listChildren(parent.getAbsolutePathDisplayOnServerSide());
                     RemoteFileBrowser.this.jTreeRemoteStructure.addChildren(parent, childList);
                 }
             };
@@ -143,7 +149,7 @@ public class RemoteFileBrowser extends JDialog {
         jScrollPaneRemote = new javax.swing.JScrollPane();
         jTreeRemoteStructure = new de.mendelson.util.clientserver.clients.filesystemview.JTreeRemoteStructure();
         jTextFieldActualPath = new javax.swing.JTextField();
-        jPanel2 = new javax.swing.JPanel();
+        jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
 
@@ -168,7 +174,7 @@ public class RemoteFileBrowser extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMain.add(jScrollPaneRemote, gridBagConstraints);
 
-        jTextFieldActualPath.setBackground(new java.awt.Color(212, 208, 200));
+        jTextFieldActualPath.setBackground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
         jTextFieldActualPath.setBorder(null);
         jTextFieldActualPath.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
@@ -195,7 +201,7 @@ public class RemoteFileBrowser extends JDialog {
         gridBagConstraints.weighty = 1.0;
         getContentPane().add(jPanelMain, gridBagConstraints);
 
-        jPanel2.setLayout(new java.awt.GridBagLayout());
+        jPanelButtons.setLayout(new java.awt.GridBagLayout());
 
         jButtonOk.setText(this.rb.getResourceString( "button.ok"));
         jButtonOk.addActionListener(new java.awt.event.ActionListener() {
@@ -207,7 +213,7 @@ public class RemoteFileBrowser extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 5);
-        jPanel2.add(jButtonOk, gridBagConstraints);
+        jPanelButtons.add(jButtonOk, gridBagConstraints);
 
         jButtonCancel.setText(this.rb.getResourceString( "button.cancel"));
         jButtonCancel.addActionListener(new java.awt.event.ActionListener() {
@@ -218,17 +224,17 @@ public class RemoteFileBrowser extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 10, 10);
-        jPanel2.add(jButtonCancel, gridBagConstraints);
+        jPanelButtons.add(jButtonCancel, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
-        getContentPane().add(jPanel2, gridBagConstraints);
+        getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds((screenSize.width-421)/2, (screenSize.height-339)/2, 421, 339);
+        setSize(new java.awt.Dimension(509, 534));
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jTreeRemoteStructureTreeExpanded(javax.swing.event.TreeExpansionEvent evt) {//GEN-FIRST:event_jTreeRemoteStructureTreeExpanded
@@ -254,7 +260,7 @@ public class RemoteFileBrowser extends JDialog {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonOk;
-    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JScrollPane jScrollPaneRemote;
     private javax.swing.JTextField jTextFieldActualPath;

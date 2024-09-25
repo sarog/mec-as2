@@ -1,7 +1,8 @@
-//$Header: /mbi_webclient/de/mendelson/util/clientserver/codec/ClientServerDecoder.java 5     10/20/15 2:48p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerDecoder.java 7     4/06/18 11:49a Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.ClientSessionHandlerCallback;
 import java.io.ByteArrayInputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectInput;
@@ -26,15 +27,23 @@ import org.apache.mina.filter.codec.ProtocolDecoderOutput;
  * Decodes a command from the line
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ClientServerDecoder extends CumulativeProtocolDecoder {
 
     private Logger logger;
     private MecResourceBundle rb;
+    private final ClientSessionHandlerCallback clientCallback;
 
-    public ClientServerDecoder(Logger logger) {
+    /**
+     *
+     * @param logger
+     * @param clientCallback This may be null if there is no callback or this is
+     * not a client instance
+     */
+    public ClientServerDecoder(Logger logger, ClientSessionHandlerCallback clientCallback) {
         super();
+        this.clientCallback = clientCallback;
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
                     de.mendelson.util.clientserver.codec.ResourceBundleServerDecoder.class.getName());
@@ -79,7 +88,11 @@ public class ClientServerDecoder extends CumulativeProtocolDecoder {
             objectInput.close();
             decoderOutput.write(object);
         } catch (InvalidClassException ex) {
-            this.logger.severe(this.rb.getResourceString("client.incompatible"));           
+            ex.printStackTrace();
+            this.logger.severe(this.rb.getResourceString("client.incompatible"));
+            if (this.clientCallback != null) {
+                this.clientCallback.clientIsIncompatible(this.rb.getResourceString("client.incompatible"));
+            }
         }
         //buffer has been consumed: return true
         return (true);

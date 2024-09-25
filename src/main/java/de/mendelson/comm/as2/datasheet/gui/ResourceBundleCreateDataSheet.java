@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/ResourceBundleCreateDataSheet.java 3     2.10.14 11:19 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/ResourceBundleCreateDataSheet.java 4     4/06/18 1:35p Heller $ 
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,16 +13,18 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleCreateDataSheet extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"title", "Datasheet for new communication link" },
         {"button.ok", ">> Create datasheet"},
         {"button.cancel", "Cancel"},   

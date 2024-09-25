@@ -1,15 +1,17 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 10    8/08/17 11:08a Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 18    6.12.18 16:26 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageCreation;
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.File;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -27,7 +29,7 @@ import java.util.logging.Logger;
  * Sender class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 18 $
  */
 public class SendOrderSender {
 
@@ -56,24 +58,25 @@ public class SendOrderSender {
      * @return NULL in the case of an error
      */
     public AS2Message send(CertificateManager certificateManager, Partner sender,
-            Partner receiver, File[] files, String[] originalFilenames, String userdefinedId) {
+            Partner receiver, Path[] files, String[] originalFilenames, String userdefinedId,
+            String subject) {
         try {
             long startProcessTime = System.currentTimeMillis();
             AS2MessageCreation messageCreation = new AS2MessageCreation(certificateManager, certificateManager);
             messageCreation.setLogger(this.logger);
-            messageCreation.setServerResources(this.configConnection, this.runtimeConnection);
-            AS2Message message = messageCreation.createMessage(sender, receiver, files, originalFilenames, userdefinedId);
+            messageCreation.setServerResources(this.configConnection, this.runtimeConnection);            
+            AS2Message message = messageCreation.createMessage(sender, receiver, 
+                    files, originalFilenames, userdefinedId, subject);
             StringBuilder filenames = new StringBuilder();
-            for (File file : files) {
+            for (Path file : files) {
                 if (filenames.length() > 0) {
                     filenames.append(", ");
                 }
-                filenames.append(file.getName());
+                filenames.append(file.getFileName().toString());
             }
             this.logger.log(Level.INFO,
                     rb.getResourceString("message.packed",
-                            new Object[]{
-                                message.getAS2Info().getMessageId(),
+                            new Object[]{                                
                                 filenames.toString(),
                                 receiver.getName(),
                                 AS2Tools.getDataSizeDisplay(message.getRawDataSize()),
@@ -95,7 +98,7 @@ public class SendOrderSender {
                         e.getMessage()
                     }
                     ));
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
             e.printStackTrace();
         }
         return (null);
@@ -122,8 +125,9 @@ public class SendOrderSender {
      * @return NULL in the case of an error
      */
     public AS2Message send(CertificateManager certificateManager, Partner sender,
-            Partner receiver, File file, String userdefinedId) {
-        return (this.send(certificateManager, sender, receiver, new File[]{file}, null, userdefinedId));
+            Partner receiver, File file, String userdefinedId, String subject) {
+        return (this.send(certificateManager, sender, receiver, new Path[]{file.toPath()}, null, userdefinedId,
+                subject));
     }
 
     /**

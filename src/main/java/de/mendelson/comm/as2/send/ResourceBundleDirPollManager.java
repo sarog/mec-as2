@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager.java 13    9/10/15 10:28a Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager.java 18    7.12.18 9:51 Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,28 +12,35 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleDirPollManager extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"manager.started", "Directory poll manager started." },
-        {"poll.stopped", "Directory poll manager: Poll for relationship \"{0}/{1}\" stopped." },
-        {"poll.started", "Directory poll manager: Poll for relationship \"{0}/{1}\" started. Ignore files: \"{2}\". Poll interval: {3}s" },
-        {"poll.modified", "Directory poll manager: Partner settings for the relationship \"{0}/{1}\" have been modified." },
-        {"warning.ro", "Outbox file {0} is read-only, ignoring." },
-        {"warning.notcomplete", "Outbox file {0} is not complete so far, ignoring." },
-        {"messagefile.deleted", "{0}: The file \"{1}\" has been deleted and enqueued into the processing message queue of the server." },
+    static final Object[][] CONTENTS = {
+        {"none", "None" },
+        {"manager.status.modified", "Directory poll manager changed poll states, {0} directories are monitored" },
+        {"poll.stopped", "[Directory poll manager] Poll for relationship \"{0}/{1}\" stopped." },
+        {"poll.started", "[Directory poll manager] Poll for relationship \"{0}/{1}\" started. Ignore files: \"{2}\". Poll interval: {3}s" },
+        {"poll.modified", "[Directory poll manager] Partner settings for the relationship \"{0}/{1}\" have been modified." },
+        {"warning.ro", "[Directory poll manager] Outbox file {0} is read-only, ignoring." },
+        {"warning.noread", "[Directory poll manager] No read access for outbox file {0}, ignoring." },
+        {"warning.notcomplete", "[Directory poll manager] Outbox file {0} is not complete so far, ignoring." },
+        {"messagefile.deleted", "The file \"{0}\" has been deleted and enqueued into the processing message queue of the server." },
         {"processing.file", "Processing the file \"{0}\" for the relationship \"{1}/{2}\"." },
         {"processing.file.error", "Error processing the file \"{0}\" for the relationship  \"{1}/{2}\": \"{3}\"." },
         {"poll.log.wait", "[Outbound directory poll] {0}->{1}: Next outbound poll process in {2}s ({3})" },
-        {"poll.log.polling", "[Outbound directory poll] {0}->{1}: Polling directory \"{2}\""}
+        {"poll.log.polling", "[Outbound directory poll] {0}->{1}: Polling directory \"{2}\""},
+        {"title.list.polls.running", "Summary: Directories that are monitored:" },
+        {"title.list.polls.stopped", "The following directory monitoring processes have been stopped" },
+        {"title.list.polls.started", "The following directory monitoring processes have been started" },
     };
     
 }

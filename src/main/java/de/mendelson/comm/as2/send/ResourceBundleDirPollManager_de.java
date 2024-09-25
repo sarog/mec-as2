@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager_de.java 13    9/10/15 10:28a Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager_de.java 20    7.12.18 9:51 Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,28 +12,35 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleDirPollManager_de extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"manager.started", "Manager zur Verzeichnisüberwachung gestartet." },
-        {"poll.stopped", "Verzeichnisüberwachung für die Beziehung \"{0}/{1}\" wurde gestoppt." },
-        {"poll.started", "Verzeichnisüberwachung für die Beziehung \"{0}/{1}\" wurde gestartet. Ignoriere: \"{2}\". Intervall: {3}s" },
-        {"poll.modified", "Directory poll manager: Partner settings for the relationship \"{0}/{1}\" have been modified." },
-        {"warning.ro", "Ausgangsdatei {0} ist schreibgeschützt, Datei wird ignoriert." },
-        {"warning.notcomplete", "Ausgangsdatei {0} ist noch nicht vollständig vorhanden, Datei wird ignoriert." },
-        {"messagefile.deleted", "{0}: Die Datei \"{1}\" wurde gelöscht und der Verarbeitungswarteschlange des Servers übergeben." },
+    static final Object[][] CONTENTS = {
+        {"none", "Keine" },
+        {"manager.status.modified", "Die Verzeichnisüberwachung hat Verzeichnisüberwachungen verändert, es werden {0} Verzeichnisse überwacht" },
+        {"poll.stopped", "Die Verzeichnisüberwachung für die Beziehung \"{0}/{1}\" wurde gestoppt." },
+        {"poll.started", "Die Verzeichnisüberwachung für die Beziehung \"{0}/{1}\" wurde gestartet. Ignoriere: \"{2}\". Intervall: {3}s" },
+        {"poll.modified", "[Verzeichnisüberwachung] Die Partnereinstellungen für die Beziehung \"{0}/{1}\" wurden verändert." },
+        {"warning.noread", "[Verzeichnisüberwachung] Kein Lesezugriff möglich für die Ausgangsdatei {0}, Datei wird ignoriert."},
+        {"warning.ro", "[Verzeichnisüberwachung] Die Ausgangsdatei {0} ist schreibgeschützt, diese Datei wird ignoriert." },
+        {"warning.notcomplete", "[Verzeichnisüberwachung] Die Ausgangsdatei {0} ist noch nicht vollständig vorhanden, Datei wird ignoriert." },
+        {"messagefile.deleted", "Die Datei \"{0}\" wurde gelöscht und der Verarbeitungswarteschlange des Servers übergeben." },
         {"processing.file", "Verarbeite die Datei \"{0}\" für die Beziehung \"{1}/{2}\"." }, 
         {"processing.file.error", "Verarbeitungsfehler der Datei \"{0}\" für die Beziehung \"{1}/{2}\": \"{3}\"." },
         {"poll.log.wait", "[Verzeichnisüberwachung] {0}->{1}: Nächster Pollprozess in {2}s ({3})" },
-        {"poll.log.polling", "[Verzeichnisüberwachung] {0}->{1}: Polle Verzeichnis \"{2}\""}
+        {"poll.log.polling", "[Verzeichnisüberwachung] {0}->{1}: Prüfe Verzeichnis \"{2}\" auf neue Dateien"},
+        {"title.list.polls.running", "Zusammenfassung der überwachten Verzeichnisse:" },
+        {"title.list.polls.stopped", "Die folgenden Überwachungen wurden beendet" },
+        {"title.list.polls.started", "Die folgenden Überwachungen wurden gestartet" },
     };
     
 }

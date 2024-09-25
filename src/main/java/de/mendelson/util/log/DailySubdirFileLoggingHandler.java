@@ -1,10 +1,14 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 4     10/30/15 2:28p Heller $
+//$Header: /as2/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 12    7.12.18 13:55 Heller $
 package de.mendelson.util.log;
 
 import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -25,28 +29,27 @@ import java.util.logging.LogRecord;
  * Handler to log logger data to a file in a daily subdirectory. A log dir and a
  * log file name could be passed to this class, the log will be written to
  * logDir/yyMMdd/logfilename Sample: logger.addHandler( new
- * DailySubdirFileLoggingHandler(new File("mylogdir"), "mylogfile.log") );
+ * DailySubdirFileLoggingHandler(Paths.get("mylogdir"), "mylogfile.log") );
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 12 $
  */
 public class DailySubdirFileLoggingHandler extends Handler {
 
     private boolean doneHeader;
     private BufferedWriter writer = null;
-    private DateFormat logDateFormat = new SimpleDateFormat("yyyyMMdd");
-    private File logDir;
-    private String logfileName;
+    private final DateFormat logDateFormat = new SimpleDateFormat("yyyyMMdd");
+    private final Path logDir;
+    private final String logfileName;
     //stores the actual log file name that is used to write log to
     private String actualLogFilename = null;
     private long maxLogFileSize = -1;
 
-    public DailySubdirFileLoggingHandler(File logDir, String logfileName) {
+    public DailySubdirFileLoggingHandler(Path logDir, String logfileName, LogFormatter logFormatter) {
         this.logDir = logDir;
         this.logfileName = logfileName;
-        this.setFormatter(new LogFormatter());
+        this.setFormatter(logFormatter);
     }
-    
     /**
      * Sets the size of a single log file in bytes
      */
@@ -138,25 +141,32 @@ public class DailySubdirFileLoggingHandler extends Handler {
         this.flush();
     }
 
-    private File getFullLogDir() {
+    private Path getFullLogDir() {
         StringBuilder path = new StringBuilder();
-        path.append(this.logDir.getAbsolutePath());
-        path.append(File.separator);
+        path.append(this.logDir.toAbsolutePath().toString());
+        path.append(FileSystems.getDefault().getSeparator());
         path.append(this.logDateFormat.format(new Date()));
-        return (new File(path.toString()));
+        return (Paths.get(path.toString()));
     }
 
-    private String generateNewLogFileName(File fullLogDir) {
-        File newLogFile = new File(fullLogDir.getAbsolutePath() + File.separator + this.logfileName);
+    private String generateNewLogFileName(Path fullLogDir) {
+        Path newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString()
+                + FileSystems.getDefault().getSeparator() + this.logfileName);
         if (this.maxLogFileSize == -1) {
-            return (newLogFile.getAbsolutePath());
+            return (newLogFile.toAbsolutePath().toString());
         }
         int counter = 1;
-        while (newLogFile.exists() && newLogFile.length() > this.maxLogFileSize) {
-            newLogFile = new File(fullLogDir.getAbsolutePath() + File.separator + this.logfileName + "." + counter);
-            counter++;
+        try {
+            while (Files.exists(newLogFile) && Files.size(newLogFile) > this.maxLogFileSize) {
+                newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString()
+                        + FileSystems.getDefault().getSeparator()
+                        + this.logfileName + "." + counter);
+                counter++;
+            }
+        } catch (IOException e) {
+            //nop
         }
-        return (newLogFile.getAbsolutePath());
+        return (newLogFile.toAbsolutePath().toString());
     }
 
     /**
@@ -164,10 +174,11 @@ public class DailySubdirFileLoggingHandler extends Handler {
      * pos
      */
     private synchronized void logMessage(Level level, String message, int rawMessageLength) {
-        File fullLogDir = this.getFullLogDir();
+        Path fullLogDir = this.getFullLogDir();
         String newLogFilename = this.generateNewLogFileName(fullLogDir);
         //check if the loggers output stream is still valid        
-        if (this.writer == null || this.actualLogFilename == null || !newLogFilename.equals(this.actualLogFilename)) {
+        if (this.writer == null || this.actualLogFilename == null || !newLogFilename.equals(this.actualLogFilename)
+                || !Files.exists( Paths.get(newLogFilename))) {
             if (this.writer != null) {
                 try {
                     //close existing writer
@@ -177,12 +188,17 @@ public class DailySubdirFileLoggingHandler extends Handler {
                     e.printStackTrace();
                 }
             }
-            if (!fullLogDir.exists()) {
-                fullLogDir.mkdirs();
+            if (!Files.exists(fullLogDir)) {
+                try {
+                    Files.createDirectories(fullLogDir);
+                } catch (IOException e) {
+                    //nop
+                }
             }
             try {
-                //open a new log file
-                this.writer = new BufferedWriter(new FileWriter(newLogFilename, true));
+                //open a new log file - append to existing and create if it does not exist so far
+                this.writer = Files.newBufferedWriter(Paths.get(newLogFilename), 
+                        StandardOpenOption.APPEND, StandardOpenOption.CREATE);
                 this.actualLogFilename = newLogFilename;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -207,5 +223,4 @@ public class DailySubdirFileLoggingHandler extends Handler {
 //            fileLogger.log(Level.INFO, "This is a test " + i);
 //        }
 //    }
-
 }

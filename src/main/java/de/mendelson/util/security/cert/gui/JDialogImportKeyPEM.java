@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/util/security/cert/gui/JDialogImportKeyPEM.java 2     19-02-16 1:35p Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogImportKeyPEM.java 3     7.11.18 15:33 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -7,6 +7,7 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.PEMKeys2Keystore;
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
@@ -26,7 +27,7 @@ import javax.swing.SwingUtilities;
 /**
  * Dialog to configure a single partner
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class JDialogImportKeyPEM extends JDialog {
 
@@ -79,10 +80,10 @@ public class JDialogImportKeyPEM extends JDialog {
                 throw new IllegalArgumentException("JDialogImportKeyPEM:performImport: Unsupported keystore type " + this.keystoreType);
             }
             importer.setTargetKeyStore(this.manager.getKeystore(), this.manager.getKeystorePass());
-            importer.importKey(new File(this.jTextFieldImportPEMFile.getText()),
+            importer.importKey(Paths.get(this.jTextFieldImportPEMFile.getText()),
                     this.jPasswordFieldPEMPassphrase.getPassword(),
                     this.manager.getKeystorePass(),
-                    new File(this.jTextFieldImportCert.getText()),
+                    Paths.get(this.jTextFieldImportCert.getText()),
                     this.jTextFieldNewAlias.getText());
             JOptionPane.showMessageDialog(this,
                     this.rb.getResourceString("key.import.success.message"),

@@ -1,11 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendRequest.java 2     14.05.13 16:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendRequest.java 4     6/22/18 1:48p Heller $
 package de.mendelson.comm.as2.cem.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -18,13 +20,18 @@ import java.util.Date;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class CEMSendRequest extends ClientServerMessage implements Serializable {
-
+   
+    public static final long serialVersionUID = 1L;
     private Partner initiator = null;
     private KeystoreCertificate certificate = null;
     private Date activationDate = null;
+    private List<Partner> receiver = new ArrayList<Partner>();
+    private boolean purposeSSL = false;
+    private boolean purposeEncryption = false;
+    private boolean purposeSignature = false;
 
     public CEMSendRequest() {
     }
@@ -75,5 +82,71 @@ public class CEMSendRequest extends ClientServerMessage implements Serializable 
     public void setActivationDate(Date activationDate) {
         this.activationDate = activationDate;
     }
+    
+    /**
+     * @return the receiver
+     */
+    public List<Partner> getReceiver() {
+        return receiver;
+    }
+
+    /**
+     * @param newReceiver the receiver to set
+     */
+    public void setReceiver(List<Partner> newReceiver) {
+        this.receiver.clear();
+        this.receiver.addAll( newReceiver );
+    }
+    
+    /**
+     * @param newReceiver the receiver to set
+     */
+    public void setReceiver(Partner newReceiver) {
+        this.receiver.clear();
+        this.receiver.add( newReceiver );
+    }
+    
+    /**
+     * @return the purposeSSL
+     */
+    public boolean isPurposeSSL() {
+        return purposeSSL;
+    }
+
+    /**
+     * @param purposeSSL the purposeSSL to set
+     */
+    public void setPurposeSSL(boolean purposeSSL) {
+        this.purposeSSL = purposeSSL;
+    }
+
+    /**
+     * @return the purposeEncryption
+     */
+    public boolean isPurposeEncryption() {
+        return purposeEncryption;
+    }
+
+    /**
+     * @param purposeEncryption the purposeEncryption to set
+     */
+    public void setPurposeEncryption(boolean purposeEncryption) {
+        this.purposeEncryption = purposeEncryption;
+    }
+
+    /**
+     * @return the purposeSignature
+     */
+    public boolean isPurposeSignature() {
+        return purposeSignature;
+    }
+
+    /**
+     * @param purposeSignature the purposeSignature to set
+     */
+    public void setPurposeSignature(boolean purposeSignature) {
+        this.purposeSignature = purposeSignature;
+    }
+    
     
 }

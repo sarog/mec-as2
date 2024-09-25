@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 12    4.12.14 13:06 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 14    6/05/18 3:14p Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.Serializable;
@@ -20,10 +20,12 @@ import java.util.StringTokenizer;
  * Stores the options about the MDN, have been set by an inbound AS2 message
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class DispositionNotificationOptions implements Serializable {
 
+    public static final long serialVersionUID = 1L;
+    
     //"signed-receipt-protocol=optional, pkcs7-signature; signed-receipt-micalg=optional"
     private String headerValue = "";
     private final String DEFAULT_HEADER_VALUE = "signed-receipt-protocol=optional, pkcs7-signature; signed-receipt-micalg=optional";
@@ -147,6 +149,18 @@ public class DispositionNotificationOptions implements Serializable {
         }
         if (value.indexOf("sha512") >= 0 || value.indexOf("sha-512") >= 0) {
             list.add(Integer.valueOf(AS2Message.SIGNATURE_SHA512));
+        }
+        if (value.indexOf("sha3-224") >= 0 ) {
+            list.add(Integer.valueOf(AS2Message.SIGNATURE_SHA3_224));
+        }
+        if (value.indexOf("sha3-256") >= 0 ) {
+            list.add(Integer.valueOf(AS2Message.SIGNATURE_SHA3_256));
+        }
+        if (value.indexOf("sha3-384") >= 0 ) {
+            list.add(Integer.valueOf(AS2Message.SIGNATURE_SHA3_384));
+        }
+        if (value.indexOf("sha3-512") >= 0 ) {
+            list.add(Integer.valueOf(AS2Message.SIGNATURE_SHA3_512));
         }
         if (value.indexOf("md5") >= 0) {
             list.add(Integer.valueOf(AS2Message.SIGNATURE_MD5));

@@ -49,7 +49,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Dialog to display the test result of a connection test
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class JDialogConnectionTestResult extends JDialog {
 
@@ -134,7 +134,8 @@ public class JDialogConnectionTestResult extends JDialog {
         //display the log if there is any
         Logger testLogger = Logger.getAnonymousLogger();
         testLogger.setUseParentHandlers(false);
-        JTextPaneLoggingHandler handler = new JTextPaneLoggingHandler(this.jTextPaneLog, new LogFormatter());
+        JTextPaneLoggingHandler handler = new JTextPaneLoggingHandler(this.jTextPaneLog,
+                new LogFormatter(LogFormatter.FORMAT_CONSOLE));
         this.setDefaultLogColors(handler);
         testLogger.setLevel(Level.ALL);
         testLogger.addHandler(handler);
@@ -145,9 +146,9 @@ public class JDialogConnectionTestResult extends JDialog {
         if (result.wasSSLTest()) {
             String cipher = result.getUsedCipherSuite();
             //SSL_NULL_WITH_NULL_NULL is the inital cipher - if it is still the selected then a successful handshake did not happen
-            if (cipher != null && !cipher.equals( "SSL_NULL_WITH_NULL_NULL")) {
+            if (cipher != null && !cipher.equals("SSL_NULL_WITH_NULL_NULL")) {
                 testLogger.log(Level.FINEST, this.rb.getResourceString("used.cipher", cipher));
-            }            
+            }
         }
         //hide dialog on esc
         ActionListener actionListenerESC = new ActionListener() {

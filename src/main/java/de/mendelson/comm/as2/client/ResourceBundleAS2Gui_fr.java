@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 33    11/20/17 11:27a Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 39    6.12.18 17:57 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,10 +14,12 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 33 $
+ * @version $Revision: 39 $
  */
 public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -37,6 +39,8 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"menu.file.statistic", "Statistiques"},
         {"menu.file.quota", "Quota"},
         {"menu.file.serverinfo", "Affichage Configuration du serveur HTTP"},
+        {"menu.file.systemevents", "Evénements système"},
+        {"menu.file.searchinserverlog", "Rechercher journal"},        
         {"menu.file.preferences", "Préférences"},
         {"menu.file.send", "Envoyer un fichier à un partenaire"},
         {"menu.file.resend", "Envoyer en tant que nouvelle transaction"},
@@ -65,7 +69,7 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"dialog.msg.delete.message", "Voulez-vous vraiment supprimer de manière permanente les messages sélectionnés ?"},
         {"dialog.msg.delete.title", "Suppression"},
         {"welcome", "Bienvenue, {0}"},
-        {"warning.eval", "Ceci est une copie d''évaluation."},
+        {"fatal.error", "Erreur"},
         {"warning.refreshstopped", "Le rafraîchissement de l''interface a été arrêté."},
         {"tab.welcome", "Nouveautés et mises à jour"},
         {"tab.transactions", "Transactions"},
@@ -78,11 +82,11 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"login.failed.client.incompatible.title", "Login rejeté"},
         {"uploading.to.server", "Téléchargement sur le serveur"},
         {"refresh.overview", "Rafraîchissant"},
-        {"resend.performed", "Cette transaction a été renvoyer manuellement comme une nouvelle transaction ([{0}])." },
         {"dialog.resend.message", "Voulez-vous vraiment de renvoyer les données de la transaction sélectionnée?"},
         {"dialog.resend.message.multiple", "Voulez-vous vraiment de renvoyer les données des {0} transactions sélectionnées?"},
         {"dialog.resend.title", "Transaction renvoyer"},        
         {"logputput.disabled", "** La sortie dans le journal a été désactivé **"},
         {"logputput.enabled", "** La sortie du journal a été activé **"},
+        {"resend.failed.nopayload", "Renvoi en cas d'échec d'une nouvelle transaction: La transaction sélectionnée {0} n'a pas de données utilisateur." },
     };
 }

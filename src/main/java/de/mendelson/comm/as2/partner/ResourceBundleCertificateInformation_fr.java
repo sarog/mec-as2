@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation_fr.java 2     2.03.10 10:55 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation_fr.java 4     6/21/18 5:22p Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,20 +13,21 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleCertificateInformation_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"localstation.decrypt.prio1", "Les messages entrants pour la station locale \"{0}\" vont être déchiffrées en utilisant le certificat \"{1}\"."},
-        {"localstation.decrypt.prio2", "\"{0}\" est également disposé à décrypter les messages entrants en utilisant le certificat \"{1}\"."},
-        {"localstation.sign.prio1", "Messages sortants de la station locale \"{0}\" seront signés à l'aide du certificat \"{1}\"."},
-        {"partner.encrypt.prio1", "Les messages sortants au partenaire \"{0}\" seront chiffrées à l'aide du certificat \"{1}\"."},
-        {"partner.sign.prio1", "Signatures de message entrant provenant du partenaire \"{0}\" seront vérifiées à l'aide du certificat \"{1}\"."},
-        {"partner.sign.prio2", "Le système est également disposé à vérifier les signatures de message entrant de \"{0}\" à l'aide du certificat \"{1}\"."},};
+    static final Object[][] CONTENTS = {
+        {"localstation.decrypt", "Les messages entrants pour la station locale \"{0}\" vont être déchiffrées en utilisant le certificat \"{1}\"."},
+        {"localstation.sign", "Messages sortants de la station locale \"{0}\" seront signés à l'aide du certificat \"{1}\"."},
+        {"partner.encrypt", "Les messages sortants au partenaire \"{0}\" seront chiffrées à l'aide du certificat \"{1}\"."},
+        {"partner.sign", "Signatures de message entrant provenant du partenaire \"{0}\" seront vérifiées à l'aide du certificat \"{1}\"."},        
+    };
 }

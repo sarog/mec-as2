@@ -1,6 +1,5 @@
-//$Header: /mec_oftp2/de/mendelson/util/log/panel/LogConsolePanel.java 4     18-02-16 4:38p Heller $
+//$Header: /as2/de/mendelson/util/log/panel/LogConsolePanel.java 8     7.12.18 9:09 Heller $
 package de.mendelson.util.log.panel;
-
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.log.IRCColors;
@@ -31,7 +30,7 @@ import javax.swing.JPanel;
 /**
  * The frame system output/debug info is written to
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 8 $
  */
 public class LogConsolePanel extends JPanel implements ClipboardOwner {
 
@@ -75,17 +74,7 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
     }
     
     public LogConsolePanel( Logger logger ) {        
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleLogConsole.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
-        this.initComponents();
-        LogFormatter logFormatter = new LogFormatter();
-        logFormatter.setMessageFormat("[{0,time}]");
-        this.initialize(logger, logFormatter);
+        this( logger, new LogFormatter(LogFormatter.FORMAT_CONSOLE));
     }
 
     /**Enables/disables the display log*/
@@ -135,7 +124,7 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
         this.handler.setColor(level, color);
     }
 
-    /**returns the printstream to write output data to*/
+    /**returns the PrintStream to write output data to*/
     public PrintStream getPrintStream() {
         return (this.out);
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig_fr.java 6     27.05.14 9:59 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig_fr.java 10    20.09.18 16:55 Heller $
 package de.mendelson.comm.as2.partner.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,17 +13,19 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 6 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundlePartnerConfig_fr extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"title", "Configuration des partenaires" },
         {"button.ok", "Valider" },
         {"button.cancel", "Annuler" },
@@ -41,10 +43,18 @@ public class ResourceBundlePartnerConfig_fr extends MecResourceBundle{
         {"dialog.partner.renamedir.title", "Retitrez l'annuaire de message d'associé" },
         {"directory.rename.failure", "Incapable de retitrer \"{0}\" à \"{1}\"." },
         {"directory.rename.success", "L'annuaire \"{0}\" a été retitré à \"{1}\"." },
-        {"directory.delete.failure", "Incapable de supprimer \"{0}\"." },
+        {"directory.delete.failure", "Incapable de supprimer \"{0}\": [\"{1}\"]" },
         {"directory.delete.success", "L'annuaire \"{0}\" a été supprimé." },
         {"saving", "Enregistrement..." },
         {"module.locked", "La gestion des partenaires est verrouillé par un autre client, vous n''êtes pas autorisé à valider vos modifications!" },
+        {"event.partner.deleted.subject", "Le partenaire {0} a été supprimé de la gestion des partenaires par l''utilisateur." },
+        {"event.partner.deleted.body", "Données du partenaire supprimé:\n\n{0}" },
+        {"event.partner.deleted.subject", "Le partenaire {0} a été supprimé de la gestion des partenaires par l''utilisateur." },
+        {"event.partner.deleted.body", "Données du partenaire supprimé:\n\n{0}" },
+        {"event.partner.added.subject", "Le partenaire {0} a été ajouté par l'utilisateur à la gestion des partenaires." },
+        {"event.partner.added.body", "Données du nouveau partenaire:\n\n{0}" },
+        {"event.partner.modified.subject", "Le partenaire {0} a été modifié par l''utilisateur" },
+        {"event.partner.modified.body", "Données antérieures du partenaire:\n\n{0}\n\nDonnées sur les nouveaux partenaires:\n\n{1}" },        
     };
     
 }

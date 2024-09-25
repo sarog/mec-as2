@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/ClientSessionHandlerCallback.java 7     20.09.12 16:38 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandlerCallback.java 8     4/06/18 10:56a Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -15,15 +15,16 @@ import java.util.logging.Logger;
  */
 /**
  * Client side protocol handler classback interface
+ *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public interface ClientSessionHandlerCallback {
 
     public void loginRequestedFromServer();
 
-    public void connected( SocketAddress address);
-   
+    public void connected(SocketAddress address);
+
     public void loggedOut();
 
     public void disconnected();
@@ -36,6 +37,7 @@ public interface ClientSessionHandlerCallback {
 
     public Logger getLogger();
 
-    public void syncRequestFailed( Throwable throwable );
-}
+    public void syncRequestFailed(Throwable throwable);
 
+    public void clientIsIncompatible(String errorMessage);
+}

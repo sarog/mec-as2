@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/manualsend/ManualSendRequest.java 6     3/23/17 11:59a Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendRequest.java 8     6/13/18 2:03p Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -18,16 +18,32 @@ import java.util.List;
  * Message for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ManualSendRequest extends UploadRequestFile implements Serializable {
 
+    /**
+     * @return the subject
+     */
+    public String getSubject() {
+        return subject;
+    }
+
+    /**
+     * @param subject the subject to set
+     */
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    public static final long serialVersionUID = 1L;
     private Partner sender;
     private Partner receiver;
     private List<String> filenames = new ArrayList<String>();
     private String resendMessageId = null;
     private String userdefinedId = null;
     private List<String> uploadHashs = new ArrayList<String>();
+    private String subject = null;
 
     @Override
     public String toString() {

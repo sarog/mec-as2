@@ -1,12 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 24    18.11.14 13:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 29    7.12.18 11:55 Heller $
 package de.mendelson.comm.as2.log;
 
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
  * Access to the AS2 log that stores log messages for every transaction
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 29 $
  */
 public class LogAccessDB {
 
@@ -36,7 +37,7 @@ public class LogAccessDB {
     private int LEVEL_WARNING = 1;
     private int LEVEL_INFO = 0;
     /**
-     * Logger to log inforamtion to
+     * Logger to log information to
      */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
@@ -83,7 +84,7 @@ public class LogAccessDB {
         }
         return (Level.INFO);
     }
-        
+
     /**
      * Adds a log line to the db
      */
@@ -104,16 +105,21 @@ public class LogAccessDB {
                 statement.setObject(4, message);
             }
             statement.execute();
+        } catch (SQLIntegrityConstraintViolationException e) {
+            this.logger.severe("LogAccessDB.log "
+                    + "(" + e.getClass().getSimpleName() + "): "
+                    + " The system tries to store a log entry for the message id \"" + messageId
+                    + "\", but this message seems not to exist in the system.");
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } catch (Exception e) {
             this.logger.severe("LogAccessDB.log: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
-            e.printStackTrace();
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nope
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -147,13 +153,13 @@ public class LogAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("LogAccessDB.getLog: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -176,13 +182,13 @@ public class LogAccessDB {
             statement.execute();
         } catch (Exception e) {
             this.logger.severe("deleteMessageLog: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

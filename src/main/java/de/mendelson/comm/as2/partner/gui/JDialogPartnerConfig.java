@@ -1,25 +1,25 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 50    6/08/17 12:25p Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 65    9.01.19 11:49 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
 import de.mendelson.comm.as2.clientserver.message.PartnerConfigurationChanged;
+import de.mendelson.util.modulelock.LockClientInformation;
+import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.clientserver.PartnerModificationRequest;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
-import de.mendelson.util.ImageUtil;
 import de.mendelson.util.LayoutManagerJToolbar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.AllowModificationCallback;
 import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.clients.fileoperation.FileOperationClient;
+import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewRequest;
+import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewResponse;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
-import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.CertificateManager;
-import de.mendelson.util.security.cert.KeystoreStorage;
-import de.mendelson.util.security.cert.clientserver.KeystoreStorageImplClientServer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -27,7 +27,6 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -47,7 +46,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * Dialog to configure the partner of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 65 $
  */
 public class JDialogPartnerConfig extends JDialog {
 
@@ -61,22 +60,27 @@ public class JDialogPartnerConfig extends JDialog {
     private List<Partner> partnerList = new ArrayList<Partner>();
     private JPanelPartner panelEditPartner = null;
     private JTreePartner jTreePartner = null;
-    private CertificateManager certificateManagerEncSign = null;
-    private CertificateManager certificateManagerSSL = null;
+    private CertificateManager certificateManagerEncSign;
+    private CertificateManager certificateManagerSSL;
     private GUIClient guiClient;
     private Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private AS2StatusBar status;
     private List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
+    private LockClientInformation lockKeeper;
 
     /**
      * Creates new form JDialogMessageMapping
      */
     public JDialogPartnerConfig(JFrame parent,
             GUIClient guiClient,
-            AS2StatusBar status, boolean changesAllowed) {
+            AS2StatusBar status, boolean changesAllowed,
+            LockClientInformation lockKeeper,
+            CertificateManager certificateManagerEncSign,
+            CertificateManager certificateManagerSSL) {
         super(parent, true);
         this.status = status;
         this.guiClient = guiClient;
+        this.lockKeeper = lockKeeper;
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -84,60 +88,24 @@ public class JDialogPartnerConfig extends JDialog {
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
-        this.certificateManagerEncSign = new CertificateManager(this.logger);
-        try {
-            //ask the server for the keystore password
-            PreferencesClient client = new PreferencesClient(guiClient.getBaseClient());
-            char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-            String keystoreName = client.get(PreferencesAS2.KEYSTORE);
-            KeystoreStorage storage = new KeystoreStorageImplClientServer(
-                    guiClient.getBaseClient(), keystoreName, keystorePass, BCCryptoHelper.KEYSTORE_PKCS12);
-            this.certificateManagerEncSign.loadKeystoreCertificates(storage);
-        } catch (Exception e) {
-            this.logger.severe(e.getMessage());
-        }
-        this.certificateManagerSSL = new CertificateManager(this.logger);
-        try {
-            //ask the server for the keystore password
-            PreferencesClient client = new PreferencesClient(guiClient.getBaseClient());
-            char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-            String keystoreName = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
-            KeystoreStorage storage = new KeystoreStorageImplClientServer(
-                    guiClient.getBaseClient(), keystoreName, keystorePass, BCCryptoHelper.KEYSTORE_JKS);
-            this.certificateManagerSSL.loadKeystoreCertificates(storage);
-        } catch (Exception e) {
-            this.logger.severe(e.getMessage());
-        }
-        
+        this.certificateManagerEncSign = certificateManagerEncSign;
+        this.certificateManagerSSL = certificateManagerSSL;
         this.jTreePartner = new JTreePartner(guiClient.getBaseClient());
         this.initComponents();
         this.jScrollPaneTree.setViewportView(this.jTreePartner);
-        this.panelEditPartner = new JPanelPartner(this.guiClient.getBaseClient(), 
+        this.panelEditPartner = new JPanelPartner(this.guiClient.getBaseClient(),
                 this.jTreePartner,
-                this.certificateManagerEncSign, 
+                this.certificateManagerEncSign,
                 this.certificateManagerSSL,
-                this.jButtonPartnerConfigOk, this.status);
+                this.jButtonPartnerConfigOk, this.status, changesAllowed);
         this.jPanelPartner.add(this.panelEditPartner);
         this.getRootPane().setDefaultButton(this.jButtonPartnerConfigOk);
         try {
             this.partnerList.addAll(this.jTreePartner.buildTree());
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(parent, e.getMessage());
+            JOptionPane.showMessageDialog(parent, "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
             return;
         }
-        //mix up the add/edit/delete icons
-        ImageUtil imageUtil = new ImageUtil();
-        ImageIcon iconBase = (ImageIcon) this.jButtonNewPartner.getIcon();
-
-        ImageIcon iconAdd = new ImageIcon(this.getClass().
-                getResource("/de/mendelson/comm/as2/partner/gui/mini_add.gif"));
-        ImageIcon iconDelete = new ImageIcon(this.getClass().
-                getResource("/de/mendelson/comm/as2/partner/gui/mini_delete.gif"));
-        ImageIcon iconMixedAdd = imageUtil.mixImages(iconBase, iconAdd);
-        ImageIcon iconMixedDelete = imageUtil.mixImages(iconBase, iconDelete);
-
-        this.jButtonNewPartner.setIcon(iconMixedAdd);
-        this.jButtonDeletePartner.setIcon(iconMixedDelete);
         this.jTreePartner.addTreeSelectionListener(new TreeSelectionListener() {
             @Override
             public void valueChanged(TreeSelectionEvent evt) {
@@ -149,8 +117,22 @@ public class JDialogPartnerConfig extends JDialog {
         this.jPanelModuleLockWarning.setVisible(!changesAllowed);
     }
 
+    /**Asks the server for an absolute path on its side - this is useful if client
+     * and server are running on different OS or if the client/server path structure is not the same
+     * @param directory
+     * @return A string array of the size 2: 0: path, 1: path separator
+     */
+    private String[] getAbsolutePathOnServerSide( String directory ){
+        FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_GET_ABSOLUTE_PATH_STR);
+        request.setRequestFilePath(directory);
+        FileSystemViewResponse response = (FileSystemViewResponse)this.guiClient.getBaseClient().sendSync(request);
+        return(new String[]{response.getParameterString(), response.getServerSideFileSeparator()});
+    }
+    
+    
     /**
-     * Selects a partner - by its name. If the name does not exist nothing happens
+     * Selects a partner - by its name. If the name does not exist nothing
+     * happens
      */
     public void setPreselectedPartner(String partnerName) {
         Partner partner = this.jTreePartner.getPartnerByName(partnerName);
@@ -172,9 +154,9 @@ public class JDialogPartnerConfig extends JDialog {
      * Checks if the operation is allowed - this could be set by external
      * callbacks
      */
-    private boolean isOperationAllowed() {
+    private boolean isOperationAllowed(boolean silent) {
         for (AllowModificationCallback callback : this.allowModificationCallbackList) {
-            boolean modificationAllowed = callback.allowModification();
+            boolean modificationAllowed = callback.allowModification(silent);
             if (!modificationAllowed) {
                 return (false);
             }
@@ -241,30 +223,32 @@ public class JDialogPartnerConfig extends JDialog {
      * A partner name has been changed: Ask if the underlaying directory should
      * be changed, too
      */
-    private void handlePartnerNameChange(Partner existingPartner, Partner newPartner) {
+    private void handlePartnerNameChange(Partner existingPartner, Partner newPartner) {        
         //get the message path from the server
         PreferencesClient preferences = new PreferencesClient(this.guiClient.getBaseClient());
         String messageDir = preferences.get(PreferencesAS2.DIR_MSG);
-        int requestValue = JOptionPane.showConfirmDialog(
-                this, this.rb.getResourceString("dialog.partner.renamedir.message",
+        String[] serversideInfo = this.getAbsolutePathOnServerSide(messageDir);
+        String serverSideMessagePath = serversideInfo[0];
+        String serverSideFileSeparator = serversideInfo[1];
+        int requestValue = JOptionPane.showConfirmDialog(this, this.rb.getResourceString("dialog.partner.renamedir.message",
                         new Object[]{existingPartner.getName(), newPartner.getName(),
-                            existingPartner.getMessagePath(messageDir)}),
+                            existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
                 this.rb.getResourceString("dialog.partner.renamedir.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
             return;
         }
         FileOperationClient fileClient = new FileOperationClient(this.guiClient.getBaseClient());
-        boolean success = fileClient.rename(existingPartner.getMessagePath(messageDir),
-                newPartner.getMessagePath(messageDir));
+        boolean success = fileClient.rename(existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator));
         if (success) {
             this.logger.log(Level.FINE, this.rb.getResourceString("directory.rename.success",
-                    new Object[]{existingPartner.getMessagePath(messageDir),
-                        newPartner.getMessagePath(messageDir)}));
+                    new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                        newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         } else {
             this.logger.log(Level.SEVERE, this.rb.getResourceString("directory.rename.failure",
-                    new Object[]{existingPartner.getMessagePath(messageDir),
-                        newPartner.getMessagePath(messageDir)}));
+                    new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                        newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         }
     }
 
@@ -272,23 +256,29 @@ public class JDialogPartnerConfig extends JDialog {
         //get the message path from the server
         PreferencesClient preferences = new PreferencesClient(this.guiClient.getBaseClient());
         String messageDir = preferences.get(PreferencesAS2.DIR_MSG);
+        String[] serversideInfo = this.getAbsolutePathOnServerSide(messageDir);
+        String serverSideMessagePath = serversideInfo[0];
+        String serverSideFileSeparator = serversideInfo[1];
         int requestValue = JOptionPane.showConfirmDialog(
                 this, this.rb.getResourceString("dialog.partner.deletedir.message",
                         new Object[]{existingPartner.getName(),
-                            existingPartner.getMessagePath(messageDir)}),
+                            existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
                 this.rb.getResourceString("dialog.partner.deletedir.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
             return;
         }
         FileOperationClient fileClient = new FileOperationClient(this.guiClient.getBaseClient());
-        boolean success = fileClient.delete(existingPartner.getMessagePath(messageDir));
+        boolean success = fileClient.delete(existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator));
         if (success) {
             this.logger.log(Level.FINE, this.rb.getResourceString("directory.delete.success",
-                    new Object[]{existingPartner.getMessagePath(messageDir)}));
+                    new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         } else {
-            this.logger.log(Level.SEVERE, this.rb.getResourceString("directory.delete.failure",
-                    new Object[]{existingPartner.getMessagePath(messageDir)}));
+            this.logger.log(Level.WARNING, this.rb.getResourceString("directory.delete.failure",
+                    new Object[]{
+                        existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                        fileClient.getLastException().getMessage()
+                    }));
         }
     }
 
@@ -376,7 +366,8 @@ public class JDialogPartnerConfig extends JDialog {
                     JDialogPartnerConfig.this.unlock();
                     JDialogPartnerConfig.this.status.stopProgressIfExists(uniqueId);
                     JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, JDialogPartnerConfig.this);
-                    JOptionPane.showMessageDialog(parent, e.getMessage());
+                    JOptionPane.showMessageDialog(parent, "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                    e.printStackTrace();
                 } finally {
                     JDialogPartnerConfig.this.unlock();
                     JDialogPartnerConfig.this.status.stopProgressIfExists(uniqueId);
@@ -404,6 +395,7 @@ public class JDialogPartnerConfig extends JDialog {
         jPanelMain = new javax.swing.JPanel();
         jPanelModuleLockWarning = new javax.swing.JPanel();
         jLabelModuleLockedWarning = new javax.swing.JLabel();
+        jButtonModuleLockInfo = new javax.swing.JButton();
         jPanelPartnerMain = new javax.swing.JPanel();
         jSplitPane = new javax.swing.JSplitPane();
         jScrollPaneTree = new javax.swing.JScrollPane();
@@ -422,7 +414,7 @@ public class JDialogPartnerConfig extends JDialog {
         jToolBar.setFloatable(false);
         jToolBar.setRollover(true);
 
-        jButtonNewPartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/singlepartner24x24.gif"))); // NOI18N
+        jButtonNewPartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/add_24x24.gif"))); // NOI18N
         jButtonNewPartner.setText(this.rb.getResourceString( "button.new"));
         jButtonNewPartner.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jButtonNewPartner.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
@@ -445,7 +437,7 @@ public class JDialogPartnerConfig extends JDialog {
         });
         jToolBar.add(jButtonClonePartner);
 
-        jButtonDeletePartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/singlepartner24x24.gif"))); // NOI18N
+        jButtonDeletePartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/delete_24x24.gif"))); // NOI18N
         jButtonDeletePartner.setText(this.rb.getResourceString( "button.delete"));
         jButtonDeletePartner.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jButtonDeletePartner.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
@@ -475,6 +467,17 @@ public class JDialogPartnerConfig extends JDialog {
         gridBagConstraints.weighty = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelModuleLockWarning.add(jLabelModuleLockedWarning, gridBagConstraints);
+
+        jButtonModuleLockInfo.setText("...");
+        jButtonModuleLockInfo.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonModuleLockInfo.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonModuleLockInfoActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelModuleLockWarning.add(jButtonModuleLockInfo, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -550,14 +553,14 @@ public class JDialogPartnerConfig extends JDialog {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonDeletePartnerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonDeletePartnerActionPerformed
-        if (!this.isOperationAllowed()) {
+        if (!this.isOperationAllowed(false)) {
             return;
         }
         this.deleteSelectedPartner();
     }//GEN-LAST:event_jButtonDeletePartnerActionPerformed
 
     private void jButtonNewPartnerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewPartnerActionPerformed
-        if (!this.isOperationAllowed()) {
+        if (!this.isOperationAllowed(false)) {
             return;
         }
         Partner partner = this.jTreePartner.createNewPartner(this.certificateManagerEncSign);
@@ -581,7 +584,7 @@ public class JDialogPartnerConfig extends JDialog {
     }//GEN-LAST:event_closeDialog
 
     private void jButtonClonePartnerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonClonePartnerActionPerformed
-        if (!this.isOperationAllowed()) {
+        if (!this.isOperationAllowed(false)) {
             return;
         }
         Partner selectedPartner = this.jTreePartner.getSelectedPartner();
@@ -636,10 +639,16 @@ public class JDialogPartnerConfig extends JDialog {
         this.okPressed();
     }//GEN-LAST:event_jButtonPartnerConfigOkActionPerformed
 
+    private void jButtonModuleLockInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonModuleLockInfoActionPerformed
+        JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        ModuleLock.displayDialogModuleLocked(parent, this.lockKeeper, ModuleLock.MODULE_PARTNER);
+    }//GEN-LAST:event_jButtonModuleLockInfoActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonClonePartner;
     private javax.swing.JButton jButtonDeletePartner;
+    private javax.swing.JButton jButtonModuleLockInfo;
     private javax.swing.JButton jButtonNewPartner;
     private de.mendelson.comm.as2.partner.gui.JButtonPartnerConfigOk jButtonPartnerConfigOk;
     private javax.swing.JLabel jLabelModuleLockedWarning;

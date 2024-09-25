@@ -1,8 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNInfo.java 3     19.09.13 16:28 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNInfo.java 5     4/06/18 12:32p Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Properties;
 
@@ -16,10 +15,12 @@ import java.util.Properties;
 /**
  * Stores all information about a as2 message
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class AS2MDNInfo implements AS2Info {
 
+    /**AS2Info extends Serializable*/
+    public static final long serialVersionUID = 1L;
     private String messageId;
     private String senderId;
     private String receiverId;
@@ -50,6 +51,7 @@ public class AS2MDNInfo implements AS2Info {
     /**Contains the mdn text of a remote partner, only available for inbound messages*/
     private String remoteMDNText = null;
     private String receivedContentMIC;
+    private String dispositionState = null;
 
     public AS2MDNInfo() {
         this.useragent = AS2ServerVersion.getUserAgent();
@@ -276,6 +278,20 @@ public class AS2MDNInfo implements AS2Info {
     @Override
     public boolean isMDN() {
         return( true );
+    }
+
+    /**
+     * @return the dispositionState
+     */
+    public String getDispositionState() {
+        return dispositionState;
+    }
+
+    /**
+     * @param dispositionState the dispositionState to set
+     */
+    public void setDispositionState(String dispositionState) {
+        this.dispositionState = dispositionState;
     }
 
 }

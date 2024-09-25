@@ -1,7 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ComparatorFiledateOldestFirst.java 1     6.06.11 11:46 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ComparatorFiledateOldestFirst.java 2     24.10.18 11:30 Heller $
 package de.mendelson.comm.as2.send;
 
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributeView;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.Comparator;
 
 /*
@@ -13,22 +16,30 @@ import java.util.Comparator;
  */
 /**
  * Comparator to use to compare file dates by their age
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public class ComparatorFiledateOldestFirst implements Comparator {
+public class ComparatorFiledateOldestFirst implements Comparator<Path> {
 
-    /**Compares tow object of the type File by their last modification date
+    /**
+     * Compares tow object of the type Path by their last modification date
      */
     @Override
-    public int compare(Object o1, Object o2) {
-        long lastModified1 = ((File) o1).lastModified();
-        long lastModified2 = ((File) o2).lastModified();
-        if (lastModified1 < lastModified2) {
-            return (-1);
-        }
-        if (lastModified1 > lastModified2) {
-            return (1);
+    public int compare(Path o1, Path o2) {
+        try {
+            BasicFileAttributes view1 = Files.getFileAttributeView(o1, BasicFileAttributeView.class).readAttributes();
+            long lastModified1 = view1.lastModifiedTime().toMillis();
+            BasicFileAttributes view2 = Files.getFileAttributeView(o2, BasicFileAttributeView.class).readAttributes();            
+            long lastModified2 = view2.lastModifiedTime().toMillis();
+            if (lastModified1 < lastModified2) {
+                return (-1);
+            }
+            if (lastModified1 > lastModified2) {
+                return (1);
+            }
+        } catch (Exception e) {
+            //returns 0 now
         }
         return (0);
     }

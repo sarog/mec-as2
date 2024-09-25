@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 36    7/24/17 11:47a Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 40    7/03/18 9:35a Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
@@ -43,7 +43,7 @@ import javax.mail.util.ByteArrayDataSource;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 36 $
+ * @version $Revision: 40 $
  */
 public class AS2MDNCreation {
 
@@ -162,21 +162,22 @@ public class AS2MDNCreation {
             String senderAS2Id, Partner receiver, String receiverAS2Id, String dispositionState,
             String additionalText) throws Exception {
         AS2Message message = new AS2Message(new AS2MDNInfo());
-        AS2MDNInfo info = (AS2MDNInfo) message.getAS2Info();
-        info.setMessageId(UniqueId.createMessageId(senderAS2Id, receiverAS2Id));
+        AS2MDNInfo mdnInfo = (AS2MDNInfo) message.getAS2Info();
+        mdnInfo.setMessageId(UniqueId.createMessageId(senderAS2Id, receiverAS2Id));
+        mdnInfo.setDispositionState(dispositionState);
         if (this.logger != null) {
             this.logger.log(Level.FINE, this.rb.getResourceString("mdn.creation.start",
                     new Object[]{
                         relatedMessageInfo.getMessageId(),
-                        info.getMessageId()
+                        mdnInfo.getMessageId()
                     }),
                     relatedMessageInfo);
         }
-        info.setSenderId(senderAS2Id);
-        info.setReceiverId(receiverAS2Id);
-        info.setRelatedMessageId(relatedMessageInfo.getMessageId());
+        mdnInfo.setSenderId(senderAS2Id);
+        mdnInfo.setReceiverId(receiverAS2Id);
+        mdnInfo.setRelatedMessageId(relatedMessageInfo.getMessageId());
         try {
-            info.setSenderHost(InetAddress.getLocalHost().getCanonicalHostName());
+            mdnInfo.setSenderHost(InetAddress.getLocalHost().getCanonicalHostName());
         } catch (UnknownHostException e) {
             //nop
         }
@@ -230,15 +231,15 @@ public class AS2MDNCreation {
             if (this.logger != null) {
                 this.logger.log(Level.SEVERE, this.rb.getResourceString("mdn.created",
                         new Object[]{
-                            info.getMessageId(), info.getRelatedMessageId(), dispositionState
-                        }), info);
+                            mdnInfo.getMessageId(), mdnInfo.getRelatedMessageId(), dispositionState
+                        }), mdnInfo);
             }
         } else {
             if (this.logger != null) {
                 this.logger.log(Level.FINE, this.rb.getResourceString("mdn.created",
                         new Object[]{
-                            info.getMessageId(), info.getRelatedMessageId(), dispositionState
-                        }), info);
+                            mdnInfo.getMessageId(), mdnInfo.getRelatedMessageId(), dispositionState
+                        }), mdnInfo);
             }
         }
         return (message);
@@ -286,21 +287,29 @@ public class AS2MDNCreation {
     private MimeMessage signMDN(MimeMessage mimeMessage, Partner sender, Partner receiver, AS2Message as2Message, AS2MessageInfo relatedMessageInfo) throws Exception {
         if (relatedMessageInfo.getDispositionNotificationOptions().signMDN()) {
             int preferredDigestDispositionNotification = relatedMessageInfo.getDispositionNotificationOptions().getPreferredSignatureAlgorithm();
-            int relatedMessageDigest = relatedMessageInfo.getSignType();
+            int relatedMessageDigest = relatedMessageInfo.getSignType();            
             //The preferred sign digest from the disposition notification option does not contain the signature scheme. Means if the sender used
             //a special signature scheme this should be used for the MDN signature, too - even if it is impossible to signal this
             //by the dispositoin notification option.
-            if( preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA1 && relatedMessageDigest == AS2Message.SIGNATURE_SHA1_RSASSA_PSS){
+            if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA1 && relatedMessageDigest == AS2Message.SIGNATURE_SHA1_RSASSA_PSS) {
                 preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA1_RSASSA_PSS;
-            }else if( preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA224 && relatedMessageDigest == AS2Message.SIGNATURE_SHA224_RSASSA_PSS){
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA224 && relatedMessageDigest == AS2Message.SIGNATURE_SHA224_RSASSA_PSS) {
                 preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA224_RSASSA_PSS;
-            }else if( preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA256 && relatedMessageDigest == AS2Message.SIGNATURE_SHA256_RSASSA_PSS){
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA256 && relatedMessageDigest == AS2Message.SIGNATURE_SHA256_RSASSA_PSS) {
                 preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA256_RSASSA_PSS;
-            }else if( preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA384 && relatedMessageDigest == AS2Message.SIGNATURE_SHA384_RSASSA_PSS){
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA384 && relatedMessageDigest == AS2Message.SIGNATURE_SHA384_RSASSA_PSS) {
                 preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA384_RSASSA_PSS;
-            }else if( preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA512 && relatedMessageDigest == AS2Message.SIGNATURE_SHA512_RSASSA_PSS){
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA512 && relatedMessageDigest == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
                 preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA512_RSASSA_PSS;
-            }                        
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_224 && relatedMessageDigest == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
+                preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_256 && relatedMessageDigest == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
+                preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_384 && relatedMessageDigest == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
+                preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_512 && relatedMessageDigest == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
+                preferredDigestDispositionNotification = AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS;
+            }
             as2Message.getAS2Info().setSignType(preferredDigestDispositionNotification);
             String digestStr = null;
             if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_MD5) {
@@ -309,9 +318,9 @@ public class AS2MDNCreation {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA1;
             } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA1_RSASSA_PSS) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA_1_RSASSA_PSS;
-            }else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA224) {
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA224) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA224;
-            }else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA224_RSASSA_PSS) {
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA224_RSASSA_PSS) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA_224_RSASSA_PSS;
             } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA256) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA256;
@@ -325,6 +334,22 @@ public class AS2MDNCreation {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA512;
             } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA_512_RSASSA_PSS;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_224) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_224;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_256) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_256;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_384) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_384;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_512) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_512;
+            }else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_224_RSASSA_PSS;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_256_RSASSA_PSS;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_384_RSASSA_PSS;
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
+                digestStr = BCCryptoHelper.ALGORITHM_SHA3_512_RSASSA_PSS;
             }
             if (digestStr == null) {
                 as2Message.getAS2Info().setSignType(AS2Message.SIGNATURE_NONE);

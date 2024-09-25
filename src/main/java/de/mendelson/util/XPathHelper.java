@@ -1,8 +1,9 @@
-//$Header: /as4/de/mendelson/util/XPathHelper.java 26    17-03-16 3:31p Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/XPathHelper.java 27    6.11.18 11:57 Heller $
 package de.mendelson.util;
 
-import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -36,7 +37,7 @@ import org.xml.sax.InputSource;
  * parameters of XPATH pathes, get values of nodes ...
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 27 $
  */
 public class XPathHelper {
 
@@ -56,9 +57,15 @@ public class XPathHelper {
      * @param filename Name of the xml file to parse
      */
     public XPathHelper(String filename) throws Exception {
-        InputStream inStream = new FileInputStream(filename);
-        this.parse(new InputSource(inStream));
-        inStream.close();
+        InputStream inStream = null;
+        try {
+            inStream = Files.newInputStream(Paths.get(filename));
+            this.parse(new InputSource(inStream));
+        } finally {
+            if (inStream != null) {
+                inStream.close();
+            }
+        }
     }
 
     public XPathHelper(InputSource source) throws Exception {
@@ -123,8 +130,9 @@ public class XPathHelper {
         this.namespaceContext.addNamespace(ns, uri);
     }
 
-    /**Adds namespaces to the xpath processing. This is
-     * necessary for xml data that contains something like
+    /**
+     * Adds namespaces to the xpath processing. This is necessary for xml data
+     * that contains something like
      * <semiramis xmlns="com.cisag.app.sales.obj.SalesOrder">
      * ...
      * </semiramis>

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 43    9/10/15 10:28a Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 47    13.11.18 12:36 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -7,6 +7,8 @@ import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +20,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.logging.Logger;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -31,7 +34,7 @@ import java.util.logging.Logger;
  * and sends them
  *
  * @author S.Heller
- * @version $Revision: 43 $
+ * @version $Revision: 47 $
  */
 public class DirPollManager {
 
@@ -64,7 +67,28 @@ public class DirPollManager {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         this.certificateManager = certificateManager;
-        this.logger.info(this.rb.getResourceString("manager.started"));
+    }
+
+    /**
+     * Start all poll threads
+     */
+    public void start() {
+        this.partnerConfigurationChanged();
+        List<DirPollThread> threadList = this.getPollThreads();
+        this.logger.info(this.rb.getResourceString("manager.status.modified", String.valueOf(threadList.size())));
+    }
+
+    /**
+     * Returns the list of poll threads that are currently active
+     */
+    private List<DirPollThread> getPollThreads() {
+        List<DirPollThread> pollThreadList = new ArrayList<DirPollThread>();
+        synchronized (this.mapPollThread) {
+            for (String key : this.mapPollThread.keySet()) {
+                pollThreadList.add(this.mapPollThread.get(key));
+            }
+        }
+        return (pollThreadList);
     }
 
     /**
@@ -72,6 +96,9 @@ public class DirPollManager {
      * stop now unused tasks and start other
      */
     public void partnerConfigurationChanged() {
+        List<String> pollStopLines = new ArrayList<String>();
+        List<String> pollStartLines = new ArrayList<String>();
+
         PartnerAccessDB access = new PartnerAccessDB(this.configConnection, this.runtimeConnection);
         List<Partner> partner = access.getPartner();
         List<Partner> localStations = access.getLocalStations();
@@ -83,20 +110,28 @@ public class DirPollManager {
             for (Partner sender : localStations) {
                 for (Partner receiver : partner) {
                     String id = sender.getDBId() + "_" + receiver.getDBId();
-                    //add partner task if it does not exist so far
-                    if (!this.mapPollThread.containsKey(id) && !receiver.isLocalStation()) {
-                        this.addPartnerPollThread(sender, receiver);
+                    //add partner task if it does not exist so far and if the receiver is no local station and the dir poll is enabled
+                    if (!this.mapPollThread.containsKey(id) && !receiver.isLocalStation() && receiver.isEnableDirPoll()) {
+                        DirPollThread newPoll = this.addPartnerPollThread(sender, receiver);
+                        pollStartLines.add(newPoll.getLogLine());
                     } else if (this.mapPollThread.containsKey(id)) {
                         DirPollThread thread = (DirPollThread) this.mapPollThread.get(id);
                         if (!receiver.isLocalStation()) {
                             if (thread.hasBeenModified(sender, receiver)) {
+                                //restart a poll thread - it has been modified
                                 thread.requestStop();
                                 this.mapPollThread.remove(id);
                                 //restart the poll thread with the new values
-                                this.addPartnerPollThread(sender, receiver);
+                                if (receiver.isEnableDirPoll()) {
+                                    DirPollThread restartPoll = this.addPartnerPollThread(sender, receiver);
+                                } else {
+                                    //no restart - means it has been stopped/deleted
+                                    pollStopLines.add(thread.getLogLine());
+                                }
                             }
                         } else {
                             //its a local station now: stop the task and remove it
+                            pollStopLines.add(thread.getLogLine());
                             thread.requestStop();
                             this.mapPollThread.remove(id);
                         }
@@ -122,10 +157,60 @@ public class DirPollManager {
                 //old still running taks, has been deleted in the config: stop and remove
                 if (!idFound) {
                     DirPollThread thread = this.mapPollThread.get(id);
+                    pollStopLines.add(thread.getLogLine());
                     thread.requestStop();
                     this.mapPollThread.remove(id);
                 }
             }
+        }
+        //all done - now fire a system event
+        if (!pollStopLines.isEmpty() || !pollStartLines.isEmpty()) {
+            SystemEvent event = new SystemEvent(
+                    SystemEvent.SEVERITY_INFO,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED);
+            List<DirPollThread> threadList = this.getPollThreads();
+            event.setSubject(this.rb.getResourceString("manager.status.modified", String.valueOf(threadList.size())));
+
+            StringBuilder bodyBuilder = new StringBuilder();
+            //display stopped polls
+            bodyBuilder.append(rb.getResourceString("title.list.polls.stopped")).append("\n");
+            bodyBuilder.append("------").append("\n");
+            Collections.sort(pollStopLines);
+            for (String line : pollStopLines) {
+                bodyBuilder.append(line).append("\n");
+            }
+            if (pollStopLines.isEmpty()) {
+                bodyBuilder.append(rb.getResourceString("none")).append("\n");
+            }
+            bodyBuilder.append("\n\n");
+            //display started polls
+            bodyBuilder.append(rb.getResourceString("title.list.polls.started")).append("\n");
+            bodyBuilder.append("------").append("\n");
+            Collections.sort(pollStartLines);
+            for (String line : pollStartLines) {
+                bodyBuilder.append(line).append("\n");
+            }
+            if (pollStartLines.isEmpty()) {
+                bodyBuilder.append(rb.getResourceString("none")).append("\n");
+            }
+            bodyBuilder.append("\n\n");
+            //display all current polls
+            bodyBuilder.append(rb.getResourceString("title.list.polls.running")).append("\n");
+            bodyBuilder.append("------").append("\n");
+            List<String> pollRunningLines = new ArrayList<String>();
+            for (DirPollThread thread : threadList) {
+                pollRunningLines.add(thread.getLogLine() + "\n");
+            }
+            Collections.sort(pollRunningLines);
+            for (String line : pollRunningLines) {
+                bodyBuilder.append(line);
+            }
+            if (pollRunningLines.isEmpty()) {
+                bodyBuilder.append(rb.getResourceString("none")).append("\n");
+            }
+            event.setBody(bodyBuilder.toString());
+            SystemEventManagerImplAS2.newEvent(event);
         }
     }
 
@@ -133,13 +218,14 @@ public class DirPollManager {
      * Adds a new partner to the poll thread list
      *
      */
-    private void addPartnerPollThread(Partner localStation, Partner partner) {
+    private DirPollThread addPartnerPollThread(Partner localStation, Partner partner) {
         DirPollThread thread = new DirPollThread(this.configConnection, this.runtimeConnection, this.clientserver, this.certificateManager,
                 localStation, partner);
         synchronized (this.mapPollThread) {
             this.mapPollThread.put(localStation.getDBId() + "_" + partner.getDBId(), thread);
-            Executors.newSingleThreadExecutor().submit(thread);            
+            Executors.newSingleThreadExecutor().submit(thread);
         }
+        return (thread);
     }
 
 }

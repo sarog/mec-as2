@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 9     7/27/17 3:33p Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 16    17.12.18 11:42 Heller $
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -7,7 +7,6 @@ import de.mendelson.comm.as2.client.ListCellRendererSignature;
 import de.mendelson.comm.as2.datasheet.DatasheetBuilder;
 import de.mendelson.comm.as2.datasheet.DatasheetInformation;
 import de.mendelson.comm.as2.message.AS2Message;
-import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
@@ -22,7 +21,9 @@ import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import java.awt.Desktop;
-import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -30,7 +31,6 @@ import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import org.apache.commons.io.FileUtils;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -43,7 +43,7 @@ import org.apache.commons.io.FileUtils;
  * Winzard to create a PDF that contains a data sheet
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 16 $
  */
 public class JDialogCreateDataSheet extends JDialog {
 
@@ -68,7 +68,7 @@ public class JDialogCreateDataSheet extends JDialog {
                     ResourceBundleCreateDataSheet.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }        
+        }
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.certificateManagerSSL = certificateManagerSSL;
         this.statusbar = statusbar;
@@ -120,8 +120,8 @@ public class JDialogCreateDataSheet extends JDialog {
         this.jComboBoxEncryptionType.addItem(Integer.valueOf(AS2Message.ENCRYPTION_RC4_56));
         this.jComboBoxEncryptionType.addItem(Integer.valueOf(AS2Message.ENCRYPTION_RC4_128));
         this.jComboBoxEncryptionType.addItem(Integer.valueOf(AS2Message.ENCRYPTION_DES));
-        
-        this.jComboBoxSignType.setRenderer( new ListCellRendererSignature());
+
+        this.jComboBoxSignType.setRenderer(new ListCellRendererSignature());
         this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_NONE));
         this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA1));
         this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_MD5));
@@ -131,11 +131,18 @@ public class JDialogCreateDataSheet extends JDialog {
         this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA256_RSASSA_PSS));
         this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA384_RSASSA_PSS));
         this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA512_RSASSA_PSS));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_224));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_256));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_384));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_512));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS));
+        this.jComboBoxSignType.addItem(Integer.valueOf(AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS));
         this.jComboBoxEncryptionType.setSelectedItem(Integer.valueOf(AS2Message.ENCRYPTION_3DES));
         this.jComboBoxSignType.setSelectedItem(Integer.valueOf(AS2Message.SIGNATURE_SHA1));
     }
-    
-    
+
     private void createPDF() {
         final String uniqueId = this.getClass().getName() + ".createPDF." + System.currentTimeMillis();
         Runnable runnable = new Runnable() {
@@ -154,46 +161,44 @@ public class JDialogCreateDataSheet extends JDialog {
                     }
                     information.setReceiptURL(JDialogCreateDataSheet.this.jTextFieldReceiptURL.getText());
                     information.setComment(JDialogCreateDataSheet.this.jTextAreaComment.getText());
-                    information.setEncryption(((Integer)JDialogCreateDataSheet.this.jComboBoxEncryptionType.getSelectedItem()).intValue());
-                    information.setSignature(((Integer)JDialogCreateDataSheet.this.jComboBoxSignType.getSelectedItem()).intValue());
+                    information.setEncryption(((Integer) JDialogCreateDataSheet.this.jComboBoxEncryptionType.getSelectedItem()).intValue());
+                    information.setSignature(((Integer) JDialogCreateDataSheet.this.jComboBoxSignType.getSelectedItem()).intValue());
                     information.setRequestSyncMDN(JDialogCreateDataSheet.this.jCheckBoxSyncMDN.isSelected());
                     information.setRequestSignedMDN(JDialogCreateDataSheet.this.jCheckBoxSignedMDN.isSelected());
                     information.setCompression(JDialogCreateDataSheet.this.jCheckBoxCompression.isSelected() ? AS2Message.COMPRESSION_ZLIB : AS2Message.COMPRESSION_NONE);
                     CertificateManager certificateManagerEncSign = JDialogCreateDataSheet.this.certificateManagerEncSign;
                     KeyStoreUtil keystoreUtil = new KeyStoreUtil();
-                    PartnerCertificateInformation infoEncryption = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT, 1);
-                    if (infoEncryption != null) {
+                    PartnerCertificateInformation infoEncryption = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT);
+                    if (infoEncryption != null && !infoEncryption.isEmpty()) {
                         String alias = certificateManagerEncSign.getAliasByFingerprint(infoEncryption.getFingerprintSHA1());
                         byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerEncSign.getKeystore(), alias, "PKCS7");
                         information.setCertDecryptData(pkcs7);
                     }
-                    PartnerCertificateInformation infoSignature = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN, 1);
-                    if (infoSignature != null) {
+                    PartnerCertificateInformation infoSignature = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN);
+                    if (infoSignature != null && !infoSignature.isEmpty()) {
                         String alias = certificateManagerEncSign.getAliasByFingerprint(infoSignature.getFingerprintSHA1());
                         byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerEncSign.getKeystore(), alias, "PKCS7");
                         information.setCertVerifySignature(pkcs7);
                     }
-                    PartnerCertificateInformation infoSSL = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SSL, 1);
-                    if (infoSSL != null) {
+                    PartnerCertificateInformation infoSSL = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SSL);
+                    if (infoSSL != null && !infoSSL.isEmpty()) {
                         String alias = certificateManagerSSL.getAliasByFingerprint(infoSSL.getFingerprintSHA1());
                         byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerSSL.getKeystore(), alias, "PKCS7");
                         information.setCertSSL(pkcs7);
                     }
                     DatasheetBuilder builder = new DatasheetBuilder(localPartner, remotePartner, information);
-                    try {
-                        //there is a lock on the created file - no idea how to remove it
-                        File tempFile = AS2Tools.createTempFile("as2_datasheet_temp", ".pdf");
-                        File outFile = AS2Tools.createTempFile("as2_datasheet", ".pdf");
-                        builder.create(tempFile);
-                        FileUtils.copyFile(tempFile, outFile);
-                        JDialogCreateDataSheet.this.logger.info(JDialogCreateDataSheet.this.rb.getResourceString("file.written", outFile.getAbsolutePath()));
-                        Desktop.getDesktop().open(outFile);
-                    } catch (Exception e) {
-                        JDialogCreateDataSheet.this.logger.warning("createPDF: " + e.getMessage());
-                        e.printStackTrace();
-                    }
+                    //there is a lock on the created file - no idea how to remove it
+                    Path tempFile = AS2Tools.createTempFile("as2_datasheet_temp", ".pdf");
+                    Path outFile = AS2Tools.createTempFile("as2_datasheet", ".pdf");
+                    builder.create(tempFile);
+                    Files.copy(tempFile, outFile, StandardCopyOption.REPLACE_EXISTING);
+                    JDialogCreateDataSheet.this.logger.info(
+                            JDialogCreateDataSheet.this.rb.getResourceString("file.written",
+                                    outFile.toAbsolutePath().toString()));
+                    Desktop.getDesktop().open(outFile.toFile());
                 } catch (Throwable e) {
-                    JDialogCreateDataSheet.this.logger.warning("createPDF: " + e.getMessage());
+                    e.printStackTrace();
+                    JDialogCreateDataSheet.this.logger.warning("createPDF: [" + e.getClass().getSimpleName() + "] " + e.getMessage());
                 } finally {
                     JDialogCreateDataSheet.this.statusbar.stopProgressIfExists(uniqueId);
                 }

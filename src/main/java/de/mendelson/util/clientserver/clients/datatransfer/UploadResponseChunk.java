@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/datatransfer/UploadResponseChunk.java 1     16.05.11 15:06 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/UploadResponseChunk.java 2     4/06/18 12:21p Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -14,10 +14,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol: A data chunk has been received
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class UploadResponseChunk extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private String targetHash = null;
     
     public UploadResponseChunk(UploadRequestChunk request) {

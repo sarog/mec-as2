@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageResponse.java 2     21.08.14 15:28 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageResponse.java 3     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -17,10 +17,11 @@ import javax.servlet.http.HttpServletResponse;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class IncomingMessageResponse extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private Properties header = new Properties();
     private byte[] mdnData = null;
     private String contentType = null;

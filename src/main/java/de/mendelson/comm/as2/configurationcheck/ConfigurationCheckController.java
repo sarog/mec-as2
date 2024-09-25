@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 7     3/23/17 11:19a Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 12    4.10.18 13:23 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * Checks several issues of the configuration
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 12 $
  */
 public class ConfigurationCheckController {
 
@@ -36,7 +36,6 @@ public class ConfigurationCheckController {
     private ConfigurationCheckThread checkThread;
     private Connection configConnection;
     private Connection runtimeConnection;
-    private final List<ConfigurationIssue> issueList = Collections.synchronizedList(new ArrayList<ConfigurationIssue>());
     private PreferencesAS2 preferences = new PreferencesAS2();
 
     public ConfigurationCheckController(CertificateManager managerEncSign, CertificateManager managerSSL, Connection configConnection,
@@ -51,11 +50,16 @@ public class ConfigurationCheckController {
      * Returns all available issues that are detected by the server control
      */
     public List<ConfigurationIssue> getIssues() {
-        List<ConfigurationIssue> issues = new ArrayList<ConfigurationIssue>();
-        synchronized (this.issueList) {
-            issues.addAll(this.issueList);
-        }
-        return (issues);
+        return (this.checkThread.getIssues());
+    }
+
+    /**
+     * Runs the configuration checks once - outside the thread context
+     */
+    public List<ConfigurationIssue> runOnce() {
+        ConfigurationCheckThread testThread = new ConfigurationCheckThread(this.configConnection, this.runtimeConnection);
+        testThread.runAllChecks();
+        return (this.getIssues());
     }
 
     /**
@@ -68,6 +72,7 @@ public class ConfigurationCheckController {
 
     public class ConfigurationCheckThread implements Runnable {
 
+        private final List<ConfigurationIssue> issueList = Collections.synchronizedList(new ArrayList<ConfigurationIssue>());
         private Connection configConnection;
         private Connection runtimeConnection;
         private boolean stopRequested = false;
@@ -83,22 +88,35 @@ public class ConfigurationCheckController {
         public void run() {
             Thread.currentThread().setName("Configuration check thread");
             while (!stopRequested) {
-                synchronized (issueList) {
-                    issueList.clear();
+                synchronized (this.issueList) {
+                    this.issueList.clear();
+                    this.runAllChecks();
                 }
-                this.checkCertificatesExpired();
-                this.checkSSLKeystore();
-                this.checkAutoDelete();
-                this.checkCPUCores();
-                this.checkHeapMemory();
-                this.checkOutboundConnectionsAllowed();
-                this.checkAllPartnersCertificatesAvailable();
                 try {
                     Thread.sleep(WAIT_TIME);
                 } catch (InterruptedException e) {
                     //nop
                 }
             }
+        }
+
+        public List<ConfigurationIssue> getIssues() {
+            List<ConfigurationIssue> issues = new ArrayList<ConfigurationIssue>();
+            synchronized (this.issueList) {
+                issues.addAll(this.issueList);
+            }
+            return (issues);
+        }
+        
+        public void runAllChecks() {
+            this.checkCertificatesExpired();
+            this.checkSSLKeystore();
+            this.checkAutoDelete();
+            this.checkCPUCores();
+            this.checkHeapMemory();
+            this.checkOutboundConnectionsAllowed();
+            this.checkAllPartnersCertificatesAvailable();
+            this.checkDataModel32bit();
         }
 
         /**
@@ -134,8 +152,8 @@ public class ConfigurationCheckController {
                         issue = new ConfigurationIssue(ConfigurationIssue.CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER);
                     }
                     issue.setDetails(partner.getName());
-                    synchronized (issueList) {
-                        issueList.add(issue);
+                    synchronized (this.issueList) {
+                        this.issueList.add(issue);
                     }
                 }
 
@@ -148,8 +166,8 @@ public class ConfigurationCheckController {
                 if (CertificateExpireController.getCertificateExpireDuration(cert) <= 0) {
                     ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN);
                     issue.setDetails(cert.getAlias());
-                    synchronized (issueList) {
-                        issueList.add(issue);
+                    synchronized (this.issueList) {
+                        this.issueList.add(issue);
                     }
                 }
             }
@@ -158,10 +176,27 @@ public class ConfigurationCheckController {
                 if (CertificateExpireController.getCertificateExpireDuration(cert) <= 0) {
                     ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CERTIFICATE_EXPIRED_SSL);
                     issue.setDetails(cert.getAlias());
-                    synchronized (issueList) {
-                        issueList.add(issue);
+                    synchronized (this.issueList) {
+                        this.issueList.add(issue);
                     }
                 }
+            }
+        }
+
+        private void checkDataModel32bit() {
+            String dataModel = "";
+            try {
+                dataModel = System.getProperty("sun.arch.data.model");
+                int bits = Integer.parseInt(dataModel);
+                if (bits == 32) {
+                    ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.JVM_32_BIT);
+                    synchronized (issueList) {
+                        this.issueList.add(issue);
+                    }
+                }
+            } catch (Throwable e) {
+                //ignore this - it does work only on oracle VMs. If the property is not supported it will return "unknown" which could
+                //not be parsed as an integer and will result in a NumberFormatException
             }
         }
 
@@ -171,35 +206,52 @@ public class ConfigurationCheckController {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.NO_OUTBOUND_CONNECTIONS_ALLOWED);
                 issue.setDetails("");
                 synchronized (issueList) {
-                    issueList.add(issue);
+                    this.issueList.add(issue);
                 }
             }
         }
 
+        /**
+         * Finds out some issues that could occure in the SSL configuration: no
+         * SSL key set, multiple SSL keys, use of public test keys as SSL key
+         */
         private void checkSSLKeystore() {
             List<KeystoreCertificate> sslList = managerSSL.getKeyStoreCertificateList();
             StringBuilder aliasList = new StringBuilder();
             int keyCount = 0;
+            List<KeystoreCertificate> keystoreKeysList = new ArrayList<KeystoreCertificate>();
             for (KeystoreCertificate cert : sslList) {
                 if (cert.getIsKeyPair()) {
                     if (aliasList.length() > 0) {
                         aliasList.append(", ");
                     }
                     aliasList.append(cert.getAlias());
+                    keystoreKeysList.add(cert);
                     keyCount++;
                 }
             }
             if (keyCount == 0) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.NO_KEY_IN_SSL_KEYSTORE);
-                synchronized (issueList) {
-                    issueList.add(issue);
+                synchronized (this.issueList) {
+                    this.issueList.add(issue);
                 }
-            }
-            if (keyCount > 1) {
+            } else if (keyCount > 1) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE);
                 issue.setDetails(aliasList.toString());
-                synchronized (issueList) {
-                    issueList.add(issue);
+                synchronized (this.issueList) {
+                    this.issueList.add(issue);
+                }
+            } else {
+                KeystoreCertificate usedSSLKey = keystoreKeysList.get(0);
+                String foundFingerprint = usedSSLKey.getFingerPrintSHA1();
+                for (String testFingerprint : KeystoreCertificate.TEST_KEYS_FINGERPRINTS_SHA1) {
+                    if (foundFingerprint.equalsIgnoreCase(testFingerprint)) {
+                        ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL);
+                        issue.setDetails(usedSSLKey.getAlias());
+                        synchronized (this.issueList) {
+                            this.issueList.add(issue);
+                        }
+                    }
                 }
             }
         }
@@ -211,8 +263,8 @@ public class ConfigurationCheckController {
                 if (transmissionCount > 30000) {
                     ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE);
                     issue.setDetails(String.valueOf(transmissionCount));
-                    synchronized (issueList) {
-                        issueList.add(issue);
+                    synchronized (this.issueList) {
+                        this.issueList.add(issue);
                     }
                 }
             }
@@ -223,8 +275,8 @@ public class ConfigurationCheckController {
             if (cores < 4) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.FEW_CPU_CORES);
                 issue.setDetails(String.valueOf(cores));
-                synchronized (issueList) {
-                    issueList.add(issue);
+                synchronized (this.issueList) {
+                    this.issueList.add(issue);
                 }
             }
         }
@@ -234,8 +286,8 @@ public class ConfigurationCheckController {
             if (maxMemory < 950000000L) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.LOW_MAX_HEAP_MEMORY);
                 issue.setDetails(AS2Tools.getDataSizeDisplay(maxMemory));
-                synchronized (issueList) {
-                    issueList.add(issue);
+                synchronized (this.issueList) {
+                    this.issueList.add(issue);
                 }
             }
         }

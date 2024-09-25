@@ -1,24 +1,21 @@
-//$Header: /mec_as2/de/mendelson/util/security/PEMKeys2Keystore.java 6     19-02-16 1:35p Heller $
+//$Header: /oftp2/de/mendelson/util/security/PEMKeys2Keystore.java 9     7.11.18 15:33 Heller $
 package de.mendelson.util.security;
 
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
-import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
@@ -46,7 +43,7 @@ import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
  * PRIVATE KEY-----
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class PEMKeys2Keystore{
 
@@ -76,7 +73,8 @@ public class PEMKeys2Keystore{
         this.targetKeystoreType = targetKeystoreType;
         //forget it to work without BC at this point, the SUN JCE provider
         //could not handle pcks12        
-        Security.addProvider(new BouncyCastleProvider());
+        // performs "Security.addProvider(new BouncyCastleProvider());" and adds some BC related system properties
+        new BCCryptoHelper().initialize();
     }
 
     /**
@@ -128,14 +126,14 @@ public class PEMKeys2Keystore{
      * @param alias Alias to use in the new keystore
      *
      */
-    public void importKey(File pemKeyFile, char[] keypassIn,
+    public void importKey(Path pemKeyFile, char[] keypassIn,
             char[] keypassOut,
-            File certificateFile, String alias) throws Exception {
-        FileReader fileReader = null;
+            Path certificateFile, String alias) throws Exception {
+        Reader fileReader = null;
         InputStream certStream = null;
         try {
-            fileReader = new FileReader(pemKeyFile);
-            certStream = new FileInputStream(certificateFile);
+            fileReader = Files.newBufferedReader(pemKeyFile);
+            certStream = Files.newInputStream(certificateFile);
             this.importKey(fileReader, keypassIn, keypassOut, certStream, alias);
         } finally {
             if (fileReader != null) {
@@ -196,11 +194,15 @@ public class PEMKeys2Keystore{
      * @param keystorePass Password for the keystore
      * @param filename Filename where to save the keystore to
      */
-    public void saveKeyStore(KeyStore keystore, char[] keystorePass,
-            File file) throws Exception {
-        OutputStream out = new FileOutputStream(file);
-        keystore.store(out, keystorePass);
-        out.close();
+    public void saveKeyStore(KeyStore keystore, char[] keystorePass, Path file) throws Exception {
+        OutputStream out = null;
+        try{
+            out = Files.newOutputStream(file);
+            keystore.store(out, keystorePass);
+        }finally{
+            if( out != null )
+                out.close();
+        }
     }
 
     /**

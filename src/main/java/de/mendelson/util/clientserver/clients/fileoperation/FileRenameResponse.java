@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/fileoperation/FileRenameResponse.java 1     12.01.11 11:13 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/fileoperation/FileRenameResponse.java 2     4/06/18 12:21p Heller $
 package de.mendelson.util.clientserver.clients.fileoperation;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -14,10 +14,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class FileRenameResponse extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private boolean success = false;
 
     public FileRenameResponse(FileRenameRequest request) {

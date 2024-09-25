@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/AllowModificationCallback.java 1     23.05.14 12:24 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/AllowModificationCallback.java 2     4/03/18 1:25p Heller $
 package de.mendelson.util.clientserver;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,10 +12,11 @@ package de.mendelson.util.clientserver;
  * Interface every class has to implement that will be executed if a 
  * certificate modification is requested by the user
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public interface AllowModificationCallback{
    
-    public boolean allowModification();
+    public boolean allowModification( boolean silent);
+    
     
 }

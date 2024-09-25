@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerResponse.java 5     20.08.14 15:35 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerResponse.java 7     4/06/18 12:22p Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -12,11 +13,13 @@ import java.io.Serializable;
 
 /**
  * A sync response from the server - will follow a request
+ *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ClientServerResponse extends ClientServerMessage implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private Throwable exception = null;
 
     public ClientServerResponse(ClientServerMessage request) {
@@ -25,8 +28,8 @@ public class ClientServerResponse extends ClientServerMessage implements Seriali
     }
 
     @Override
-    public boolean _isSyncRequest(){
-        return( true );
+    public boolean _isSyncRequest() {
+        return (true);
     }
 
     /**

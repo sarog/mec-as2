@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationResponse.java 3     12/11/17 1:29p Heller $
+//$Header: /as4/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationResponse.java 6     9.10.18 12:29 Heller $
 package de.mendelson.util.httpconfig.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -17,11 +17,11 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse implements Serializable {
 
-    
+    public static final long serialVersionUID = 1L;
 
     private String httpServerConfigFile = null;
     private List<String> cipherList = new ArrayList<String>();
@@ -29,27 +29,57 @@ public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse
     private boolean sslEnabled = false;
     private boolean embeddedHTTPServerStarted = false;
     private String javaVersion = null;
-
-    /**
-     * @return the configurationStr
-     */
-    public String getConfigurationStr() {
-        return configurationStr;
-    }
-
-    private String configurationStr = "";
+    private String embeddedJettyServerVersion = null;
+    private String miscConfigurationText = "";
+    private String protocolConfigurationText = "";
+    private String cipherConfigurationText = "";
 
     public DisplayHTTPServerConfigurationResponse(DisplayHTTPServerConfigurationRequest request) {
         super(request);
     }
 
-    public void setConfigurationStr(String configurationStr) {
-        this.configurationStr = configurationStr;
+    /**
+     * @return the protocolConfigurationText
+     */
+    public String getProtocolConfigurationText() {
+        return protocolConfigurationText;
+    }
+
+    /**
+     * @param protocolConfigurationText the protocolConfigurationText to set
+     */
+    public void setProtocolConfigurationText(String protocolConfigurationText) {
+        this.protocolConfigurationText = protocolConfigurationText;
+    }
+
+    /**
+     * @return the cipherConfigurationText
+     */
+    public String getCipherConfigurationText() {
+        return cipherConfigurationText;
+    }
+
+    /**
+     * @param cipherConfigurationText the cipherConfigurationText to set
+     */
+    public void setCipherConfigurationText(String cipherConfigurationText) {
+        this.cipherConfigurationText = cipherConfigurationText;
+    }
+
+    public void setMiscConfigurationText(String miscConfigurationText) {
+        this.miscConfigurationText = miscConfigurationText;
+    }
+
+    /**
+     * @return the configurationStr
+     */
+    public String getMiscConfigurationText() {
+        return (this.miscConfigurationText);
     }
 
     @Override
     public String toString() {
-        return ("Display information about the server");
+        return ("Display information about the HTTP server");
     }
 
     /**
@@ -123,5 +153,19 @@ public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse
     public void setJavaVersion(String javaVersion) {
         this.javaVersion = javaVersion;
     }
-    
+
+    /**
+     * @return the embeddedJettyServerVersion
+     */
+    public String getEmbeddedJettyServerVersion() {
+        return embeddedJettyServerVersion;
+    }
+
+    /**
+     * @param embeddedJettyServerVersion the embeddedJettyServerVersion to set
+     */
+    public void setEmbeddedJettyServerVersion(String embeddedJettyServerVersion) {
+        this.embeddedJettyServerVersion = embeddedJettyServerVersion;
+    }
+
 }

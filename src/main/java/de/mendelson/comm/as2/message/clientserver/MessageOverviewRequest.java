@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewRequest.java 2     17.09.12 16:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewRequest.java 3     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
 import de.mendelson.comm.as2.message.MessageOverviewFilter;
@@ -14,10 +14,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class MessageOverviewRequest extends ClientServerMessage implements Serializable{
 
+    public static final long serialVersionUID = 1L;
     private MessageOverviewFilter filter = null;
     private String messageId = null;
 

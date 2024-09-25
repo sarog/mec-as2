@@ -1,16 +1,16 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/AS2Payload.java 11    5-01-17 9:03a Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 13    7.11.18 10:39 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -24,10 +24,12 @@ import java.io.Serializable;
  * have multiple attachments in as2 transmission
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 13 $
  */
 public class AS2Payload implements Serializable {
 
+    public static final long serialVersionUID = 1L;
+    
     /**
      * Original filename of the sender, mustnt be provided
      */
@@ -94,11 +96,11 @@ public class AS2Payload implements Serializable {
     /**
      * Writes the payload to the message to the passed file
      */
-    public void writeTo(File file) throws Exception {
-        FileOutputStream outStream = null;
+    public void writeTo(Path file) throws Exception {
+        OutputStream outStream = null;
         InputStream inStream = null;
         try {
-            outStream = new FileOutputStream(file);
+            outStream = Files.newOutputStream(file);
             inStream = this.data.getInputStream();
             this.copyStreams(inStream, outStream);
         } finally {
@@ -118,10 +120,10 @@ public class AS2Payload implements Serializable {
      * the object if possible.
      */
     public void loadDataFromPayloadFile() throws Exception {
-        FileInputStream inStream = null;
+        InputStream inStream = null;
         ByteArrayOutputStream outStream = null;
         try {
-            inStream = new FileInputStream(this.payloadFilename);
+            inStream = Files.newInputStream(Paths.get(this.payloadFilename));
             outStream = new ByteArrayOutputStream();
             this.copyStreams(inStream, outStream);
         } finally {

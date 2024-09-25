@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/importexport/ResourceBundleImportConfiguration_de.java 4     6.01.10 11:16 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/importexport/ResourceBundleImportConfiguration_de.java 5     4/06/18 1:35p Heller $ 
 package de.mendelson.comm.as2.importexport;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,15 +13,18 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleImportConfiguration_de extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
+    @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"button.import", "Importieren"},
         {"button.cancel", "Abbrechen"},
         {"title", "Import der Konfiguration"},

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 44    7/06/17 11:10a Heller $
+//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 48    7.11.18 10:40 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.MecResourceBundle;
@@ -6,13 +6,13 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.GeneralSecurityException;
 import java.security.Key;
 import java.security.cert.Certificate;
@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.StringTokenizer;
-import java.util.Vector;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.security.auth.x500.X500Principal;
@@ -53,7 +52,7 @@ import org.bouncycastle.util.io.pem.PemObject;
  * Utility class to handle java keyStore issues
  *
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 48 $
  */
 public class KeyStoreUtil {
 
@@ -81,7 +80,7 @@ public class KeyStoreUtil {
     public void saveKeyStore(KeyStore keystore, char[] keystorePass, String filename) throws Exception {
         OutputStream out = null;
         try {
-            out = new FileOutputStream(filename);
+            out = Files.newOutputStream(Paths.get(filename));
             this.saveKeyStore(keystore, keystorePass, out);
         } finally {
             if (out != null) {
@@ -108,11 +107,11 @@ public class KeyStoreUtil {
      */
     public void loadKeyStore(KeyStore keystoreInstance,
             String filename, char[] keystorePass) throws Exception {
-        File inFile = new File(filename);
-        FileInputStream inStream = null;
+        Path inFile = Paths.get(filename);
+        InputStream inStream = null;
         try {
-            if (inFile.exists()) {
-                inStream = new FileInputStream(inFile);
+            if (Files.exists(inFile)) {
+                inStream = Files.newInputStream(inFile);
                 keystoreInstance.load(inStream, keystorePass);
             } else {
                 keystoreInstance.load(null, null);
@@ -382,7 +381,7 @@ public class KeyStoreUtil {
             String alias, int certIndex, Provider provider) throws Exception {
         InputStream inCert = null;
         try {
-            inCert = new FileInputStream(certificateFilename);
+            inCert = Files.newInputStream(Paths.get(certificateFilename));
             this.importX509Certificate(keystore, inCert, alias, certIndex, provider);
         } finally {
             if (inCert != null) {
@@ -406,7 +405,7 @@ public class KeyStoreUtil {
             String alias, int certIndex) throws Exception {
         InputStream inCert = null;
         try {
-            inCert = new FileInputStream(certificateFilename);
+            inCert = Files.newInputStream(Paths.get(certificateFilename));
             this.importX509Certificate(keystore, inCert, alias, certIndex, null);
         } finally {
             if (inCert != null) {
@@ -479,7 +478,7 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public File[] exportX509CertificatePKCS7(KeyStore keystore, String alias, String baseFilename) throws Exception {
+    public Path[] exportX509CertificatePKCS7(KeyStore keystore, String alias, String baseFilename) throws Exception {
         X509Certificate certificate = (X509Certificate) keystore.getCertificate(alias);
         return (this.exportX509CertificatePKCS7(new X509Certificate[]{certificate}, baseFilename));
     }
@@ -489,14 +488,14 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public File[] exportX509CertificatePKCS7(X509Certificate[] certificates, String baseFilename) throws Exception {
+    public Path[] exportX509CertificatePKCS7(X509Certificate[] certificates, String baseFilename) throws Exception {
         byte[] certificate = this.convertX509CertificateToPKCS7(certificates);
-        File file = new File(baseFilename);
+        Path file = Paths.get(baseFilename);
         if (certificate != null) {
-            FileOutputStream outStream = null;
+            OutputStream outStream = null;
             ByteArrayInputStream inStream = null;
             try {
-                outStream = new FileOutputStream(file);
+                outStream = Files.newOutputStream(file);
                 inStream = new ByteArrayInputStream(certificate);
                 this.copyStreams(inStream, outStream);
             } finally {
@@ -505,7 +504,7 @@ public class KeyStoreUtil {
                 outStream.close();
             }
         }
-        return (new File[]{file});
+        return (new Path[]{file});
     }
 
     /**
@@ -626,19 +625,25 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public File[] exportX509CertificateDER(KeyStore keystore, String alias,
+    public Path[] exportX509CertificateDER(KeyStore keystore, String alias,
             String baseFilename) throws Exception {
         byte[] certificate = this.exportX509Certificate(keystore, alias, "DER");
-        File file = new File(baseFilename);
+        Path file = Paths.get(baseFilename);
+        ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
         if (certificate != null) {
-            FileOutputStream outStream = new FileOutputStream(file);
-            ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
-            this.copyStreams(inStream, outStream);
-            inStream.close();
+            OutputStream outStream = null;
+            try {
+                outStream = Files.newOutputStream(file);
+                this.copyStreams(inStream, outStream);
+            } finally {
+                if (inStream != null) {
+                    inStream.close();
+                }
+            }
             outStream.flush();
             outStream.close();
         }
-        return (new File[]{file});
+        return (new Path[]{file});
     }
 
     /**
@@ -646,19 +651,25 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public File[] exportX509CertificatePEM(KeyStore keystore, String alias,
+    public Path[] exportX509CertificatePEM(KeyStore keystore, String alias,
             String baseFilename) throws Exception {
         byte[] certificate = this.exportX509Certificate(keystore, alias, "PEM");
-        File file = new File(baseFilename);
+        Path file = Paths.get(baseFilename);
         if (certificate != null) {
-            FileOutputStream outStream = new FileOutputStream(file);
+            OutputStream outStream = null;
             ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
-            this.copyStreams(inStream, outStream);
-            inStream.close();
+            try {
+                outStream = Files.newOutputStream(file);
+                this.copyStreams(inStream, outStream);
+            } finally {
+                if (inStream != null) {
+                    inStream.close();
+                }
+            }
             outStream.flush();
             outStream.close();
         }
-        return (new File[]{file});
+        return (new Path[]{file});
     }
 
     /**
@@ -669,7 +680,7 @@ public class KeyStoreUtil {
      * @param keystorePass Password for the keystore
      * @param alias Alias the keystore holds the private key with
      */
-    public void extractPrivateKeyToPKCS8(KeyStore keystore, char[] keystorePass, String alias, File outFile)
+    public void extractPrivateKeyToPKCS8(KeyStore keystore, char[] keystorePass, String alias, Path outFile)
             throws Exception {
         if (!keystore.isKeyEntry(alias)) {
             throw new Exception(this.rb.getResourceString("privatekey.notfound", alias));
@@ -677,10 +688,16 @@ public class KeyStoreUtil {
         Key privateKey = keystore.getKey(alias, keystorePass);
         if (privateKey != null) {
             PKCS8EncodedKeySpec pkcs8 = new PKCS8EncodedKeySpec(privateKey.getEncoded());
-            OutputStream os = new FileOutputStream(outFile);
-            os.write(pkcs8.getEncoded());
-            os.flush();
-            os.close();
+            OutputStream os = null;
+            try {
+                os = Files.newOutputStream(outFile);
+                os.write(pkcs8.getEncoded());
+            } finally {
+                if (os != null) {
+                    os.flush();
+                    os.close();
+                }
+            }
         }
     }
 
@@ -701,9 +718,9 @@ public class KeyStoreUtil {
      * Returns a list of aliases for a specified keystore, vector of string
      * because this may be used for GUI lists
      */
-    public Vector<String> getKeyAliases(KeyStore keystore) throws KeyStoreException {
+    public List<String> getKeyAliases(KeyStore keystore) throws KeyStoreException {
         Enumeration enumeration = keystore.aliases();
-        Vector<String> keyList = new Vector<String>();
+        List<String> keyList = new ArrayList<String>();
         while (enumeration.hasMoreElements()) {
             String alias = (String) enumeration.nextElement();
             if (keystore.isKeyEntry(alias)) {
@@ -717,9 +734,9 @@ public class KeyStoreUtil {
      * Returns a list of aliases for a specified keystore, vector of string
      * because this may be used for GUI lists
      */
-    public Vector<String> getNonKeyAliases(KeyStore keystore) throws KeyStoreException {
+    public List<String> getNonKeyAliases(KeyStore keystore) throws KeyStoreException {
         Enumeration enumeration = keystore.aliases();
-        Vector<String> nonkeyList = new Vector<String>();
+        List<String> nonkeyList = new ArrayList<String>();
         while (enumeration.hasMoreElements()) {
             String alias = (String) enumeration.nextElement();
             if (!keystore.isKeyEntry(alias)) {

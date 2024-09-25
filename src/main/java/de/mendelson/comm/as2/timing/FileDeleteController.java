@@ -1,17 +1,27 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 3     3.07.15 10:40 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 9     6.11.18 17:50 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.util.AS2Tools;
+import de.mendelson.util.IOFileFilterCreationDate;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.ClientServer;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.File;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 
 /*
@@ -22,15 +32,15 @@ import java.util.logging.Logger;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Controlles the timed deletion of AS2 file entries from the file system
+ * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 9 $
  */
 public class FileDeleteController {
 
     /**
-     * Logger to log inforamtion to
+     * Logger to log information to
      */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private PreferencesAS2 preferences = new PreferencesAS2();
@@ -66,8 +76,8 @@ public class FileDeleteController {
     public class FileDeleteThread implements Runnable {
 
         private boolean stopRequested = false;
-        //wait this time between checks, once a minute
-        private final long WAIT_TIME = TimeUnit.MINUTES.toMillis(1);
+        //wait this time between checks
+        private final long WAIT_TIME = TimeUnit.HOURS.toMillis(6);
         //DB connection
         private Connection configConnection;
         private Connection runtimeConnection;
@@ -87,26 +97,113 @@ public class FileDeleteController {
                     //nop
                 }
                 if (preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE)) {
-                    File rawIncomingDir = new File(new File(preferences.get(PreferencesAS2.DIR_MSG)).getAbsolutePath() + File.separator + "_rawincoming");
-                    File[] fileList = rawIncomingDir.listFiles();
+                    Path rawIncomingDir 
+                            = Paths.get(Paths.get(preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString()
+                                    + FileSystems.getDefault().getSeparator() + "_rawincoming");
                     //delete all files that are older than MDN wait time + delete log time
                     long maxAgeInS = (preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN)
-                            *preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S))
-                            +TimeUnit.MINUTES.toSeconds(preferences.getInt(PreferencesAS2.ASYNC_MDN_TIMEOUT));                            
-                    long cutoff = TimeUnit.SECONDS.toMillis(maxAgeInS);
-                    if (fileList != null) {
-                        for (File file : fileList) {
-                            if (file.isFile()) {
-                                long diff = System.currentTimeMillis() - file.lastModified();
-                                if (diff > cutoff) {
-                                    file.delete();
-                                }
-                            }
+                            * preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S))
+                            + TimeUnit.MINUTES.toSeconds(preferences.getInt(PreferencesAS2.ASYNC_MDN_TIMEOUT));
+                    long olderThanTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(maxAgeInS);
+                    int eventSeverity = SystemEvent.SEVERITY_INFO;
+                    IOFileFilterCreationDate fileFilter = new IOFileFilterCreationDate(IOFileFilterCreationDate.MODE_OLDER_THAN, olderThanTime);
+                    StringBuilder deleteLog = new StringBuilder();
+                    AtomicInteger foundEntries = new AtomicInteger(0);
+                    try {
+                        deleteLog.append(rb.getResourceString("delete.title._rawincoming"));
+                        deleteLog.append(System.lineSeparator()).append("---").append(System.lineSeparator());
+                        //delete _rawincoming entries
+                        int severity = this.deleteFilesInDirectory(rawIncomingDir, fileFilter, deleteLog, foundEntries);
+                        if (severity == SystemEvent.SEVERITY_WARNING) {
+                            eventSeverity = SystemEvent.SEVERITY_WARNING;
                         }
+                    } catch (Exception e) {
+                        eventSeverity = SystemEvent.SEVERITY_WARNING;
+                        deleteLog.append("[").append(e.getClass().getSimpleName()).append("]: ").append(e.getMessage());
                     }
-                    AS2Tools.deleteTempFilesOlderThan(maxAgeInS);
+                    try {
+                        //delete temp dir entries and subdirectories
+                        fileFilter.setIncludeDirecories(true);
+                        deleteLog.append(System.lineSeparator());
+                        deleteLog.append(System.lineSeparator());
+                        deleteLog.append(rb.getResourceString("delete.title.tempfiles"));
+                        deleteLog.append(System.lineSeparator()).append("---").append(System.lineSeparator());
+                        int severity = this.deleteFilesInDirectory(Paths.get("temp"), fileFilter, deleteLog, foundEntries);
+                        if (severity == SystemEvent.SEVERITY_WARNING) {
+                            eventSeverity = SystemEvent.SEVERITY_WARNING;
+                        }
+                    } catch (Exception e) {
+                        eventSeverity = SystemEvent.SEVERITY_WARNING;
+                        deleteLog.append("[").append(e.getClass().getSimpleName()).append("]: ").append(e.getMessage());
+                    }
+                    if (foundEntries.intValue() > 0) {
+                        SystemEvent event = new SystemEvent(
+                                eventSeverity, SystemEvent.ORIGIN_SYSTEM, SystemEvent.TYPE_FILE_DELETE);
+                        event.setSubject(rb.getResourceString("delete.title"));
+                        event.setBody(deleteLog.toString());
+                        SystemEventManagerImplAS2.newEvent(event);
+                    }
                 }
             }
         }
+
+        /**
+         * Deletes all files found in the passed path that matches the file
+         * filter
+         *
+         * @return The severity of the operation
+         */
+        private int deleteFilesInDirectory(Path directory, IOFileFilterCreationDate fileFilter,
+                StringBuilder deleteLog, AtomicInteger foundEntries) throws Exception {
+            int eventSeverity = SystemEvent.SEVERITY_INFO;
+            List<Path> fileList = this.listFilesNIO(directory, fileFilter);
+            if (fileList.isEmpty()) {
+                deleteLog.append(rb.getResourceString("no.entries", directory.toAbsolutePath().toString()));
+                deleteLog.append(System.lineSeparator());
+            }
+            for (Path singlePath : fileList) {
+                foundEntries.incrementAndGet();
+                //if its a directory descent into it and delete it first
+                if (Files.isDirectory(singlePath)) {
+                    int severity = this.deleteFilesInDirectory(singlePath, fileFilter, deleteLog, foundEntries);
+                    if (severity == SystemEvent.SEVERITY_WARNING) {
+                        eventSeverity = SystemEvent.SEVERITY_WARNING;
+                    }
+                }
+                try {
+                    Files.delete(singlePath);
+                    deleteLog.append(rb.getResourceString("success") + ": ");
+                    deleteLog.append(singlePath.toAbsolutePath().toString());
+                    deleteLog.append(System.lineSeparator());
+                    logger.config(rb.getResourceString("autodelete", singlePath.toAbsolutePath().toString()));
+                } catch (Exception delEx) {
+                    deleteLog.append(rb.getResourceString("failure") + " [" + delEx.getClass().getSimpleName() + "]: ");
+                    deleteLog.append(singlePath.toAbsolutePath().toString());
+                    deleteLog.append(System.lineSeparator());
+                    eventSeverity = SystemEvent.SEVERITY_WARNING;
+                }
+            }
+            return (eventSeverity);
+        }
+
+        /**
+         * Non blocking file directory list
+         */
+        private List<Path> listFilesNIO(Path dir, DirectoryStream.Filter fileFilter) throws Exception {
+            List<Path> result = new ArrayList<Path>();
+            DirectoryStream<Path> stream = null;
+            try {
+                stream = Files.newDirectoryStream(dir, fileFilter);
+                for (Path entry : stream) {
+                    result.add(entry);
+                }
+            } finally {
+                if (stream != null) {
+                    stream.close();
+                }
+            }
+            return result;
+        }
+
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/RefreshClientMessageOverviewList.java 4     14.01.11 17:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/RefreshClientMessageOverviewList.java 5     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -13,10 +13,12 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class RefreshClientMessageOverviewList extends ClientServerMessage implements Serializable{
 
+    public static final long serialVersionUID = 1L;
+    
     /**Event if the clients prevent update - the delete updates should
      * be always displayed
      */

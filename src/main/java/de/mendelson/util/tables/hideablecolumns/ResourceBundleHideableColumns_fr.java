@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/tables/hideablecolumns/ResourceBundleHideableColumns_fr.java 1     10.07.15 15:28 Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/ResourceBundleHideableColumns_fr.java 2     4/06/18 1:35p Heller $
 package de.mendelson.util.tables.hideablecolumns;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,29 +11,30 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-
-/** 
+/**
  * ResourceBundle to localize a mendelson product
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public class ResourceBundleHideableColumns_fr extends MecResourceBundle{
+public class ResourceBundleHideableColumns_fr extends MecResourceBundle {
 
-  @Override
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-  /**List of messages in the specific language*/
-  static final Object[][] contents = {
-   
-    {"header.column", "Colonne" },
-    {"header.visible", "Visible" },
-    {"title", "Configuration de colonne" },
-    {"label.info", "S''il vous plaît sélectionner les colonnes visibles ci-dessous." },
-    {"header.icon", "[Image] - toujours visible" },
-    {"label.ok", "Ok" },
-  };		
-  
-    
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"header.column", "Colonne"},
+        {"header.visible", "Visible"},
+        {"title", "Configuration de colonne"},
+        {"label.info", "S''il vous plaît sélectionner les colonnes visibles ci-dessous."},
+        {"header.icon", "[Image] - toujours visible"},
+        {"label.ok", "Ok"},};
+
 }

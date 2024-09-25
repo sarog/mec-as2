@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ServerLogMessage.java 3     7.01.11 15:43 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ServerLogMessage.java 5     4/06/18 12:22p Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.Serializable;
@@ -13,10 +13,11 @@ import java.util.logging.Level;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ServerLogMessage extends ClientServerMessage implements Serializable{
 
+    public static final long serialVersionUID = 1L;
     private Level level = Level.INFO;
         
     private String message = null;

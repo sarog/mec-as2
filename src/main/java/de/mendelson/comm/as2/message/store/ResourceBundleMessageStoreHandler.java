@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/store/ResourceBundleMessageStoreHandler.java 7     1.12.10 12:50 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/store/ResourceBundleMessageStoreHandler.java 9     7.12.18 9:45 Heller $
 package de.mendelson.comm.as2.message.store;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,22 +12,24 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleMessageStoreHandler extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"message.error.stored", "{0}: Message payload stored to \"{1}\"." },
-        {"message.error.raw.stored", "{0}: Raw outgoing message stored to \"{1}\"." },        
+    static final Object[][] CONTENTS = {
+        {"message.error.stored", "The message payload has been stored to \"{0}\"." },
+        {"message.error.raw.stored", "The raw outgoing message has been stored to \"{0}\"." },        
         {"dir.createerror", "Unable to create directory \"{0}\"." },  
-        {"comm.success", "{0}: AS2 communication successful, payload {1} has been moved to \"{2}\"." },
-        {"outboundstatus.written", "{0}: Outbound status file written to \"{1}\"."},
+        {"comm.success", "The AS2 communication was successful, the payload {0} has been moved to \"{1}\"." },
+        {"outboundstatus.written", "The outbound status file has been written to \"{0}\"."},
     };
     
 }

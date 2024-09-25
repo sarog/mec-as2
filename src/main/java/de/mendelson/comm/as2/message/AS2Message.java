@@ -1,14 +1,14 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 53    7/20/17 2:49p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 57    1.11.18 14:20 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
@@ -17,10 +17,12 @@ import java.util.Properties;
  * Stores a AS2 message
  *
  * @author S.Heller
- * @version $Revision: 53 $
+ * @version $Revision: 57 $
  */
 public class AS2Message implements Serializable {
 
+    public static final long serialVersionUID = 1L;
+    
     public static final int ENCRYPTION_UNKNOWN = 0;
     public static final int ENCRYPTION_NONE = 1;
     public static final int ENCRYPTION_3DES = 2;
@@ -54,6 +56,14 @@ public class AS2Message implements Serializable {
     public static final int SIGNATURE_SHA256_RSASSA_PSS = 10;
     public static final int SIGNATURE_SHA384_RSASSA_PSS = 11;
     public static final int SIGNATURE_SHA512_RSASSA_PSS = 12;
+    public static final int SIGNATURE_SHA3_224 = 13;
+    public static final int SIGNATURE_SHA3_256 = 14;
+    public static final int SIGNATURE_SHA3_384 = 15;
+    public static final int SIGNATURE_SHA3_512 = 16;    
+    public static final int SIGNATURE_SHA3_224_RSASSA_PSS = 17;
+    public static final int SIGNATURE_SHA3_256_RSASSA_PSS = 18;
+    public static final int SIGNATURE_SHA3_384_RSASSA_PSS = 19;
+    public static final int SIGNATURE_SHA3_512_RSASSA_PSS = 20;    
     public static final int COMPRESSION_UNKNOWN = 0;
     public static final int COMPRESSION_NONE = 1;
     public static final int COMPRESSION_ZLIB = 2;
@@ -235,10 +245,10 @@ public class AS2Message implements Serializable {
      * Writes the payload to the message to the passed file
      */
     public void writeRawDecryptedTo(File file) throws Exception {
-        FileOutputStream outStream = null;
+        OutputStream outStream = null;
         InputStream inStream = null;
         try {
-            outStream = new FileOutputStream(file);
+            outStream = Files.newOutputStream(file.toPath());
             inStream = this.decryptedRawData.getInputStream();
             this.copyStreams(inStream, outStream);
         } finally {

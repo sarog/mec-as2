@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/server/ResourceBundleClientServerSessionHandlerLocalhost_de.java 5     5.08.13 12:04 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleClientServerSessionHandlerLocalhost_de.java 6     4/06/18 1:35p Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,16 +13,18 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleClientServerSessionHandlerLocalhost_de extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"only.localhost.clients", "Der entfernte Server darf nur Verbindungen von localhost entgegennehmen. Um dieses Verhalten zu ändern, starten Sie ihn bitte mit der Option \"-allowallclients\"."},
         {"allowallclients.true", "**Der AS22 Server akzeptiert AS2 Client Anfragen von anderen Hosts**"},
         {"allowallclients.false", "**Der AS2 Server akzeptiert nur lokale Client Anfragen**"},

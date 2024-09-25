@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 6     12/11/17 1:29p Heller $
+//$Header: /as4/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 8     9.10.18 12:29 Heller $
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.IStatusBar;
@@ -26,7 +26,7 @@ import javax.swing.SwingUtilities;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class JDialogDisplayHTTPConfiguration extends JDialog {
 
@@ -90,44 +90,24 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                     JDialogDisplayHTTPConfiguration.this.statusbar.startProgressIndeterminate(
                             JDialogDisplayHTTPConfiguration.this.rb.getResourceString("reading.configuration"), uniqueId);
                     DisplayHTTPServerConfigurationResponse response
-                            = (DisplayHTTPServerConfigurationResponse) JDialogDisplayHTTPConfiguration.this.baseClient.sendSyncWaitInfinite(new DisplayHTTPServerConfigurationRequest());
-                    JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(response.getConfigurationStr());
+                            = (DisplayHTTPServerConfigurationResponse) JDialogDisplayHTTPConfiguration.this.baseClient.sendSyncWaitInfinite(new DisplayHTTPServerConfigurationRequest());                    
+                    JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(response.getMiscConfigurationText());
                     JDialogDisplayHTTPConfiguration.this.jLabelConfigFileInfo.setText("<HTML>"
                             + JDialogDisplayHTTPConfiguration.this.rb.getResourceString("label.info.configfile",
-                                    "<strong>" + response.getHttpServerConfigFile() + "</strong>")
+                                    new Object[]{
+                                        "<strong>" + response.getHttpServerConfigFile() + "</strong>",
+                                        response.getEmbeddedJettyServerVersion()})
                             + "</HTML>");
-                    if (!response.isEmbeddedHTTPServerStarted()) {
+                    if (!response.isEmbeddedHTTPServerStarted()) {                        
                         JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(
                                 JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
                         JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(
                                 JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
                         JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(
                                 JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
-                    } else if (response.isSSLEnabled()) {
-                        StringBuilder cipherBuilder = new StringBuilder();
-                        cipherBuilder.append(JDialogDisplayHTTPConfiguration.this.rb.getResourceString("info.cipher",
-                                new Object[]{
-                                    response.getHttpServerConfigFile(),
-                                    response.getJavaVersion()
-                                }));
-                        cipherBuilder.append("\n\n");
-                        for (String cipher : response.getCipher()) {
-                            cipherBuilder.append(cipher);
-                            cipherBuilder.append("\n");
-                        }
-                        JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(cipherBuilder.toString());
-                        StringBuilder protocolBuilder = new StringBuilder();
-                        protocolBuilder.append(JDialogDisplayHTTPConfiguration.this.rb.getResourceString("info.protocols",
-                                new Object[]{
-                                    response.getHttpServerConfigFile(),
-                                    response.getJavaVersion()
-                                }));
-                        protocolBuilder.append("\n\n");
-                        for (String protocol : response.getProtocol()) {
-                            protocolBuilder.append(protocol);
-                            protocolBuilder.append("\n");
-                        }
-                        JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(protocolBuilder.toString());
+                    } else if (response.isSSLEnabled()) {                                                 
+                        JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(response.getCipherConfigurationText());
+                        JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(response.getProtocolConfigurationText());
                     } else {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(
                                 JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.ssl.enabled",
@@ -181,8 +161,8 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
 
         jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/httpconfig/gui/ports32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(15, 10, 10, 10);
         jPanelEdit.add(jLabelIcon, gridBagConstraints);
 
         jPanelSpace.setLayout(new java.awt.GridBagLayout());
@@ -232,8 +212,9 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 10);
+        gridBagConstraints.insets = new java.awt.Insets(15, 5, 10, 10);
         jPanelEdit.add(jLabelConfigFileInfo, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -263,7 +244,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(764, 514));
+        setSize(new java.awt.Dimension(757, 559));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker_fr.java 9     30-09-16 12:42p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker_fr.java 11    6.12.18 16:11 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,31 +15,33 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class ResourceBundleAS2MessagePacker_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
 
     /**
      * List of messages in the specific language
      */
-    static final Object[][] contents = {
-        {"message.signed", "{0}: Message sortant signé avec l''algorithme {2}, utilisant l''alias \"{1}\" du porte-clef."},
-        {"message.notsigned", "{0}: Le message sortant n''est pas signé."},
-        {"message.encrypted", "{0}: Message sortant crypté avec l''algorithme {2}, utilisant l''alias \"{1}\" du porte-clef."},
-        {"message.notencrypted", "{0}: Le message sortant n''a pas été crypté."},
-        {"mdn.created", "{0}: MDN sortant créé pour message AS2 \"{1}\", état passé à [{2}]."},
-        {"mdn.details", "{0}: Détails MDN: {1}"},
-        {"message.compressed", "{0}: Contenu sortant compressé de {1} à {2}."},
-        {"message.compressed.unknownratio", "{0}: Contenu sortant compressé."},
-        {"mdn.signed", "{0}: Le MDN sortant a été signé avec l''algorithme \"{1}\"."},
-        {"mdn.notsigned", "{0}: Le MDN sortant n''a pas été signé."},
-        {"mdn.creation.start", "{0}: Génération sortant MDN, la mise en identifiant de message à \"{1}\"."},
-        {"message.creation.start", "{0}: Génération sortant message AS2, la mise en identifiant de message à \"{0}\"."},
-        {"signature.no.aipa", "{0}: Le processus de signature ne pas utiliser l'attribut Algorithm Protection Identificateur tel que défini dans la configuration - ceci est peu sécuritaire!"},};
+    static final Object[][] CONTENTS = {
+        {"message.signed", "Message sortant signé avec l''algorithme {1}, utilisant l''alias \"{0}\" du porte-clef."},
+        {"message.notsigned", "Le message sortant n''est pas signé."},
+        {"message.encrypted", "Message sortant crypté avec l''algorithme {1}, utilisant l''alias \"{0}\" du porte-clef."},
+        {"message.notencrypted", "Le message sortant n''a pas été crypté."},
+        {"mdn.created", "MDN sortant créé pour message AS2 \"{0}\", état passé à [{1}]."},
+        {"mdn.details", "Détails MDN: {0}"},
+        {"message.compressed", "Contenu sortant compressé de {0} à {1}."},
+        {"message.compressed.unknownratio", "Contenu sortant compressé."},
+        {"mdn.signed", "Le MDN sortant a été signé avec l''algorithme \"{0}\"."},
+        {"mdn.notsigned", "Le MDN sortant n''a pas été signé."},
+        {"mdn.creation.start", "Génération sortant MDN, la mise en identifiant de message à \"{0}\"."},
+        {"message.creation.start", "Génération sortant message AS2, la mise en identifiant de message à \"{0}\"."},
+        {"signature.no.aipa", "Le processus de signature ne pas utiliser l'attribut Algorithm Protection Identificateur tel que défini dans la configuration - ceci est peu sécuritaire!"},};
 
 }

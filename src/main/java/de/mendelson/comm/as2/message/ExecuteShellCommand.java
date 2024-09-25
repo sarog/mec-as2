@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ExecuteShellCommand.java 26    11.02.14 12:58 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ExecuteShellCommand.java 28    7.12.18 9:45 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.log.LogAccessDB;
@@ -8,8 +8,8 @@ import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.Exec;
 import de.mendelson.util.MecResourceBundle;
-import java.io.File;
 import java.io.PrintStream;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * Allows to execute a shell command. This is used to execute a shell command on
  *message receipt
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 28 $
  */
 public class ExecuteShellCommand {
 
@@ -91,7 +91,7 @@ public class ExecuteShellCommand {
             return;
         }
         if (payload != null && payload.size() > 0) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.send", messageInfo.getMessageId()), messageInfo);
+            this.logger.log(Level.INFO, this.rb.getResourceString("executing.send"), messageInfo);
             for (AS2Payload singlePayload : payload) {
                 if (singlePayload.getPayloadFilename() == null) {
                     this.logger.warning("executeShellCommandOnSend: payload filename does not exist.");
@@ -136,13 +136,13 @@ public class ExecuteShellCommand {
                     }
                 }
                 this.logger.log(Level.INFO, this.rb.getResourceString("executing.command",
-                        new Object[]{messageInfo.getMessageId(), command}), messageInfo);
+                        new Object[]{command}), messageInfo);
                 Exec exec = new Exec();
                 try {
                     int returnCode = exec.start(command, new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)),
                             new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)));
                     this.logger.log(Level.INFO, this.rb.getResourceString("executed.command",
-                            new Object[]{messageInfo.getMessageId(), String.valueOf(returnCode)}), messageInfo);
+                            new Object[]{String.valueOf(returnCode)}), messageInfo);
                 } catch (Exception e) {
                     this.logger.warning(e.getMessage());
                 }
@@ -167,14 +167,14 @@ public class ExecuteShellCommand {
         }
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         if (payload != null) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.receipt", messageInfo.getMessageId()), messageInfo);
+            this.logger.log(Level.INFO, this.rb.getResourceString("executing.receipt"), messageInfo);
             for (int i = 0; i < payload.size(); i++) {
                 if (payload.get(i).getPayloadFilename() == null) {
                     continue;
                 }
                 String filename = payload.get(i).getPayloadFilename();
                 String command = this.replace(messageSender.getCommandOnReceipt(), "${filename}",
-                        new File(filename).getAbsolutePath());
+                        Paths.get(filename).toAbsolutePath().toString());
                 command = this.replace(command, "${sender}", messageSender.getName());
                 command = this.replace(command, "${receiver}", messageReceiver.getName());
                 command = this.replace(command, "${messageid}", messageInfo.getMessageId());
@@ -184,13 +184,13 @@ public class ExecuteShellCommand {
                     command = this.replace(command, "${subject}", "");
                 }
                 this.logger.log(Level.INFO, this.rb.getResourceString("executing.command",
-                        new Object[]{messageInfo.getMessageId(), command}), messageInfo);
+                        new Object[]{command}), messageInfo);
                 Exec exec = new Exec();
                 try {
                     int returnCode = exec.start(command, new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)),
                             new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)));
                     this.logger.log(Level.INFO, this.rb.getResourceString("executed.command",
-                            new Object[]{messageInfo.getMessageId(), String.valueOf(returnCode)}), messageInfo);
+                            new Object[]{String.valueOf(returnCode)}), messageInfo);
                 } catch (Exception e) {
                     this.logger.warning(e.getMessage());
                 }

@@ -1,9 +1,10 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/MecResourceBundle.java 11    26.06.09 18:06 Heller $
+//$Header: /as2/de/mendelson/util/MecResourceBundle.java 14    7/03/18 9:35a Heller $
 package de.mendelson.util;
 
-import java.util.*;
-import java.io.*;
+import java.io.Serializable;
 import java.text.MessageFormat;
+import java.util.ListResourceBundle;
+import java.util.MissingResourceException;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,15 +17,17 @@ import java.text.MessageFormat;
  * Class that implements some additional methods to the ListResourceBundle and wrapps error messages
  * if some resources are not found
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public abstract class MecResourceBundle extends ListResourceBundle implements Serializable {
-
+    
+    public static final long serialVersionUID = 1L;
     /** Creates new MecResourceBundle */
     public MecResourceBundle() {
     }
 
     /** Stores the resources as array*/
+    @Override
     public abstract Object[][] getContents();
 
     /**Returns the encoded string of the resource
@@ -35,7 +38,7 @@ public abstract class MecResourceBundle extends ListResourceBundle implements Se
     }
 
     /**Returns a formatted localized message with passed argument
-     * @param resourceStr Resource indeitification String
+     * @param resourceStr Resource identification String
      * @param arg Argument passed to the message
      */
     public String getResourceString(String resourceStr, Object arg) {

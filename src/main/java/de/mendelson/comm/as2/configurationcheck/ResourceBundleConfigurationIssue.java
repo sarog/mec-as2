@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 5     3/23/17 11:19a Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 8     5/08/18 12:42p Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,10 +14,12 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleConfigurationIssue extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -39,5 +41,7 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
         {String.valueOf(ConfigurationIssue.CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER), "Missing sign certificate of remote partner"},        
         {String.valueOf(ConfigurationIssue.KEY_MISSING_ENC_LOCAL_STATION), "Missing enc key of local station"},
         {String.valueOf(ConfigurationIssue.KEY_MISSING_SIGN_LOCAL_STATION), "Missing sign key of local station"},
+        {String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL), "Use of a public available test key as SSL key"},
+        {String.valueOf(ConfigurationIssue.JVM_32_BIT), "Using a 32bit Java VM is not recommended for production use as the max heap memory is limited there to 1.3GB"},
     };
 }

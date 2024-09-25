@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/upgrade/DB18ToScript.java 5     5/03/17 2:40p Heller $
+//$Header: /as2/de/mendelson/upgrade/DB18ToScript.java 6     7.11.18 10:40 Heller $
 package de.mendelson.upgrade;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -6,19 +6,19 @@ import de.mendelson.comm.as2.database.DBDriverManager;
 import de.mendelson.util.ConsoleProgressBar;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.Calendar;
-import java.util.Date;
 import java.util.Properties;
 import org.hsqldb.Server;
 /*
@@ -33,7 +33,7 @@ import org.hsqldb.Server;
  * Update as2, must be applied for versions < 2012
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class DB18ToScript {
 
@@ -171,13 +171,13 @@ public class DB18ToScript {
      * checks if the selected database requires an upgrade
      */
     private boolean upgradeIsRequired(String dbName) throws Exception {
-        File propertiesFile = new File(dbName + ".properties");
+        Path propertiesFile = Paths.get(dbName + ".properties");
         String version = "";
-        if (propertiesFile.exists()) {
+        if (Files.exists(propertiesFile)) {
             Properties dbProperties = new Properties();
-            FileInputStream inStream = null;
+            InputStream inStream = null;
             try {
-                inStream = new FileInputStream(propertiesFile.getAbsolutePath());
+                inStream = Files.newInputStream(propertiesFile);
                 dbProperties.load(inStream);
             } finally {
                 if (inStream != null) {

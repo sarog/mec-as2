@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/upgrade/DBScriptTo20.java 5     5/03/17 2:40p Heller $
+//$Header: /as2/de/mendelson/upgrade/DBScriptTo20.java 6     7.11.18 10:40 Heller $
 package de.mendelson.upgrade;
 
 import de.mendelson.comm.as2.database.DBDriverManager;
@@ -6,10 +6,13 @@ import de.mendelson.util.ConsoleProgressBar;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileReader;
+import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.StreamCorruptedException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -29,7 +32,7 @@ import org.hsqldb.persist.HsqlProperties;
 /**
  * Update as2, must be applied for versions < 2012
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class DBScriptTo20 {
 
@@ -96,13 +99,13 @@ public class DBScriptTo20 {
     }
 
     private boolean updateIsRequired(String dbName) throws Exception {
-        File propertiesFile = new File(dbName + ".properties");
+        Path propertiesFile = Paths.get(dbName + ".properties");
         String version = "";
-        if (propertiesFile.exists()) {
+        if (Files.exists(propertiesFile)) {
             Properties dbProperties = new Properties();
-            FileInputStream inStream = null;
+            InputStream inStream = null;
             try {
-                inStream = new FileInputStream(propertiesFile.getAbsolutePath());
+                inStream = Files.newInputStream(propertiesFile);
                 dbProperties.load(inStream);
             } finally {
                 if (inStream != null) {

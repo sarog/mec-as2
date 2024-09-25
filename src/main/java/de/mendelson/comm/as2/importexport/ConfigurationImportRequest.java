@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationImportRequest.java 2     17.01.11 10:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationImportRequest.java 3     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.importexport;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -15,10 +15,12 @@ import java.util.List;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ConfigurationImportRequest extends UploadRequestFile implements Serializable{
 
+    public static final long serialVersionUID = 1L;
+    
     private List<Partner> partnerListToImport;
     private boolean importNotification = false;;
     private boolean importServerSettings = false;

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 9     5.11.13 13:32 Heller $
+//$Header: /mbi_webclient/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 11    22.10.18 10:55 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -24,23 +24,30 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a keystore file
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class KeystoreStorageImplFile implements KeystoreStorage {
 
+    public static final int KEYSTORE_USAGE_SSL = 1;
+    public static final int KEYSTORE_USAGE_ENC_SIGN = 2;
+    public static final String KEYSTORE_STORAGE_TYPE_JKS = BCCryptoHelper.KEYSTORE_JKS;
+    public static final String KEYSTORE_STORAGE_TYPE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
+    
     private KeyStore keystore = null;
     private char[] keystorePass = null;
     private String keystoreFilename = null;
     private KeyStoreUtil keystoreUtil = new KeyStoreUtil();
-    private String keystoreType = BCCryptoHelper.KEYSTORE_PKCS12;
     private MecResourceBundle rb;
+    private int keystoreUsage = KEYSTORE_USAGE_ENC_SIGN;
+    private String keystoreStorageType = KEYSTORE_STORAGE_TYPE_PKCS12;
 
     /**
      * @param keystoreFilename
      * @param keystorePass
      * @param keystoreType keystore type as defined in the class BCCryptoHelper
      */
-    public KeystoreStorageImplFile(String keystoreFilename, char[] keystorePass, String keystoreType) throws Exception {
+    public KeystoreStorageImplFile(String keystoreFilename, char[] keystorePass, final int KEYSTORE_USAGE,
+            final String KEYSTORE_STORAGE_TYPE) throws Exception {
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -50,9 +57,10 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
         }
         this.keystoreFilename = keystoreFilename;
         this.keystorePass = keystorePass;
-        this.keystoreType = keystoreType;
+        this.keystoreUsage = KEYSTORE_USAGE;
+        this.keystoreStorageType = KEYSTORE_STORAGE_TYPE;
         BCCryptoHelper cryptoHelper = new BCCryptoHelper();
-        this.keystore = cryptoHelper.createKeyStoreInstance(keystoreType);
+        this.keystore = cryptoHelper.createKeyStoreInstance(this.keystoreStorageType);
         this.keystoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
     }
 
@@ -141,7 +149,12 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     }
 
     @Override
-    public String getKeystoreType() {
-        return (this.keystoreType);
+    public String getKeystoreStorageType() {
+        return( this.keystoreStorageType);
+    }
+    
+    @Override
+    public int getKeystoreUsage() {
+        return( this.keystoreUsage);
     }
 }

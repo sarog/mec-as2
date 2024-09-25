@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogSendCEM.java 30    15.05.13 11:15 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/gui/DialogSendCEM.java 33    8.01.19 11:58 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.clientserver.CEMSendRequest;
@@ -7,16 +7,11 @@ import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.gui.ListCellRendererPartner;
-import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
-import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
-import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
-import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.ListCellRendererCertificates;
-import de.mendelson.util.security.cert.clientserver.KeystoreStorageImplClientServer;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -43,7 +38,7 @@ import javax.swing.SwingUtilities;
  * application
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 33 $
  */
 public class DialogSendCEM extends JDialog {
 
@@ -52,31 +47,11 @@ public class DialogSendCEM extends JDialog {
     private Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private BaseClient baseClient;
 
-    public DialogSendCEM(JFrame parent, BaseClient baseClient) {
-        this(parent, null, baseClient);
-    }
-
-    public DialogSendCEM(JFrame parent, CertificateManager certificateManager,
+    public DialogSendCEM(JFrame parent, CertificateManager certificateManagerEncSign,
             BaseClient baseClient) {
         super(parent, true);
         this.baseClient = baseClient;
-        //load the certificates if they arent passed here
-        if (certificateManager == null) {
-            PreferencesClient client = new PreferencesClient(baseClient);
-            char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-            String keystoreName = client.get(PreferencesAS2.KEYSTORE);
-            try {
-                KeystoreStorage storage = new KeystoreStorageImplClientServer(
-                        baseClient, keystoreName, keystorePass, BCCryptoHelper.KEYSTORE_PKCS12);
-                this.certificateManagerEncSign = new CertificateManager(this.logger);
-                this.certificateManagerEncSign.loadKeystoreCertificates(storage);
-            } catch (Exception e) {
-                this.logger.severe(e.getMessage());
-                throw new RuntimeException(e);
-            }
-        } else {
-            this.certificateManagerEncSign = certificateManager;
-        }
+        this.certificateManagerEncSign = certificateManagerEncSign;
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -94,18 +69,24 @@ public class DialogSendCEM extends JDialog {
             }
         }
         Collections.sort(sortedCertificateList);
-        this.jComboBoxInitiator.removeAllItems();
         this.jComboBoxKeys.removeAllItems();
         this.jComboBoxKeys.setRenderer(new ListCellRendererCertificates());
         for (KeystoreCertificate cert : sortedCertificateList) {
             this.jComboBoxKeys.addItem(cert);
         }
+        this.jComboBoxInitiator.removeAllItems();
+        this.jComboBoxRemotePartner.removeAllItems();
         this.jComboBoxInitiator.setRenderer(new ListCellRendererPartner());
+        this.jComboBoxRemotePartner.setRenderer(new ListCellRendererPartner());
+        this.jComboBoxRemotePartner.addItem(this.rb.getResourceString("partner.all"));
         PartnerListResponse response = (PartnerListResponse) baseClient.sendSync(new PartnerListRequest(PartnerListRequest.LIST_LOCALSTATION));
-        List<Partner> initiatorList = response.getList();
-        for (Partner partner : initiatorList) {
+        for (Partner partner : response.getList()) {
             this.jComboBoxInitiator.addItem(partner);
-        }       
+        }
+        response = (PartnerListResponse) baseClient.sendSync(new PartnerListRequest(PartnerListRequest.LIST_NON_LOCALSTATIONS_SUPPORTING_CEM));
+        for (Partner partner : response.getList()) {
+            this.jComboBoxRemotePartner.addItem(partner);
+        }
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(new Date());
         calendar.add(Calendar.YEAR, 1);
@@ -115,6 +96,13 @@ public class DialogSendCEM extends JDialog {
         Date thirtyDays = calendar.getTime();
         this.jDateChooser.setSelectableDateRange(new Date(), nextYear);
         this.jDateChooser.setDate(thirtyDays);
+    }
+
+    private void setButtonState() {
+        this.jButtonOk.setEnabled(
+                this.jCheckBoxSSL.isSelected()
+                || this.jCheckBoxEncryption.isSelected()
+                || this.jCheckBoxSignature.isSelected());
     }
 
     /**
@@ -134,7 +122,14 @@ public class DialogSendCEM extends JDialog {
         jLabelActivationDate = new javax.swing.JLabel();
         jPanelSpace = new javax.swing.JPanel();
         jLabelInitiator = new javax.swing.JLabel();
-        jComboBoxInitiator = new javax.swing.JComboBox();
+        jComboBoxInitiator = new javax.swing.JComboBox<>();
+        jComboBoxRemotePartner = new javax.swing.JComboBox();
+        jLabelRemotePartner = new javax.swing.JLabel();
+        jLabelIcon = new javax.swing.JLabel();
+        jLabelHintCEMReceiver = new javax.swing.JLabel();
+        jCheckBoxSSL = new javax.swing.JCheckBox();
+        jCheckBoxSignature = new javax.swing.JCheckBox();
+        jCheckBoxEncryption = new javax.swing.JCheckBox();
         jPanelButton = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
@@ -147,11 +142,9 @@ public class DialogSendCEM extends JDialog {
 
         jPanelMain.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelMain.setLayout(new java.awt.GridBagLayout());
-
-        jComboBoxKeys.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.ipadx = 4;
         gridBagConstraints.ipady = 2;
@@ -161,7 +154,7 @@ public class DialogSendCEM extends JDialog {
         jPanelMain.add(jComboBoxKeys, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 9;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -170,21 +163,21 @@ public class DialogSendCEM extends JDialog {
         jLabelKeys.setText(this.rb.getResourceString( "label.certificate"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelMain.add(jLabelKeys, gridBagConstraints);
 
         jLabelActivationDate.setText(this.rb.getResourceString( "label.activationdate"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 9;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelMain.add(jLabelActivationDate, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 14;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
@@ -193,15 +186,13 @@ public class DialogSendCEM extends JDialog {
         jLabelInitiator.setText(this.rb.getResourceString( "label.initiator"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridy = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelMain.add(jLabelInitiator, gridBagConstraints);
-
-        jComboBoxInitiator.setModel(new javax.swing.DefaultComboBoxModel(new String[] { "Item 1", "Item 2", "Item 3", "Item 4" }));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.ipadx = 4;
         gridBagConstraints.ipady = 2;
@@ -209,6 +200,83 @@ public class DialogSendCEM extends JDialog {
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
         jPanelMain.add(jComboBoxInitiator, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 5);
+        jPanelMain.add(jComboBoxRemotePartner, gridBagConstraints);
+
+        jLabelRemotePartner.setText(this.rb.getResourceString( "label.receiver"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
+        jPanelMain.add(jLabelRemotePartner, gridBagConstraints);
+
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/cem32x32.gif"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelMain.add(jLabelIcon, gridBagConstraints);
+
+        jLabelHintCEMReceiver.setFont(new java.awt.Font("Tahoma", 2, 11)); // NOI18N
+        jLabelHintCEMReceiver.setText(this.rb.getResourceString( "partner.cem.hint")
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMain.add(jLabelHintCEMReceiver, gridBagConstraints);
+
+        jCheckBoxSSL.setSelected(true);
+        jCheckBoxSSL.setText(this.rb.getResourceString( "purpose.ssl"));
+        jCheckBoxSSL.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxSSLActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 2, 5, 5);
+        jPanelMain.add(jCheckBoxSSL, gridBagConstraints);
+
+        jCheckBoxSignature.setSelected(true);
+        jCheckBoxSignature.setText(this.rb.getResourceString( "purpose.signature")
+        );
+        jCheckBoxSignature.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxSignatureActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 13;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 2, 5, 5);
+        jPanelMain.add(jCheckBoxSignature, gridBagConstraints);
+
+        jCheckBoxEncryption.setSelected(true);
+        jCheckBoxEncryption.setText(this.rb.getResourceString( "purpose.encryption"));
+        jCheckBoxEncryption.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jCheckBoxEncryptionActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 12;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 2, 5, 5);
+        jPanelMain.add(jCheckBoxEncryption, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -246,8 +314,8 @@ public class DialogSendCEM extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds((screenSize.width-434)/2, (screenSize.height-212)/2, 434, 212);
+        setSize(new java.awt.Dimension(663, 409));
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCancelActionPerformed
@@ -261,7 +329,18 @@ public class DialogSendCEM extends JDialog {
         request.setActivationDate(this.jDateChooser.getDate());
         request.setCertificate((KeystoreCertificate) this.jComboBoxKeys.getSelectedItem());
         request.setInitiator((Partner) this.jComboBoxInitiator.getSelectedItem());
-        CEMSendResponse response = (CEMSendResponse)this.baseClient.sendSync(request);
+        request.setPurposeEncryption(this.jCheckBoxEncryption.isSelected());
+        request.setPurposeSignature(this.jCheckBoxSignature.isSelected());
+        request.setPurposeSSL(this.jCheckBoxSSL.isSelected());
+        PartnerListResponse allPartnerResponse = (PartnerListResponse) this.baseClient.sendSync(new PartnerListRequest(PartnerListRequest.LIST_NON_LOCALSTATIONS));
+        List<Partner> allPartnerList = allPartnerResponse.getList();        
+        if (this.jComboBoxRemotePartner.getSelectedItem().equals(this.rb.getResourceString("partner.all"))) {
+            request.setReceiver(allPartnerList);
+        } else {
+            request.setReceiver((Partner) this.jComboBoxRemotePartner.getSelectedItem());
+        }
+        List<Partner> receiverList = request.getReceiver();
+        CEMSendResponse response = (CEMSendResponse) this.baseClient.sendSync(request);
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         if (response.getException() == null) {
             JOptionPane.showMessageDialog(parent,
@@ -270,21 +349,21 @@ public class DialogSendCEM extends JDialog {
                     JOptionPane.INFORMATION_MESSAGE);
             List<Partner> informedPartner = response.getInformedPartner();
             StringBuilder informedBuilder = new StringBuilder();
-            for( Partner partner:informedPartner){
-                informedBuilder.append( "\n");
-                informedBuilder.append( partner.getName() );                
+            for (Partner partner : informedPartner) {
+                informedBuilder.append("\n");
+                informedBuilder.append(partner.getName());
             }
-            this.logger.log(Level.FINE, this.rb.getResourceString("cem.informed", informedBuilder ));
-            PartnerListResponse allPartnerResponse = (PartnerListResponse) this.baseClient.sendSync(new PartnerListRequest(PartnerListRequest.LIST_NON_LOCALSTATIONS));
-            List<Partner> allPartnerList = allPartnerResponse.getList();
+            this.logger.log(Level.FINE, this.rb.getResourceString("cem.informed", informedBuilder));
             StringBuilder notInformedBuilder = new StringBuilder();
-            for( Partner partner:allPartnerList){
-                if( !informedPartner.contains(partner)){
-                    notInformedBuilder.append( "\n");
-                    notInformedBuilder.append( partner.getName());                    
-                }                
+            for (Partner partner : receiverList) {
+                if (!informedPartner.contains(partner)) {
+                    notInformedBuilder.append("\n");
+                    notInformedBuilder.append(partner.getName());
+                }
             }
-            this.logger.log(Level.FINE, this.rb.getResourceString("cem.not.informed", notInformedBuilder ));
+            if( notInformedBuilder.toString().length() > 0 ){
+                this.logger.log(Level.FINE, this.rb.getResourceString("cem.not.informed", notInformedBuilder));
+            }
         } else {
             Throwable e = response.getException();
             JOptionPane.showMessageDialog(parent,
@@ -295,15 +374,35 @@ public class DialogSendCEM extends JDialog {
         }
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
+
+    private void jCheckBoxSSLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxSSLActionPerformed
+        this.setButtonState();
+    }//GEN-LAST:event_jCheckBoxSSLActionPerformed
+
+    private void jCheckBoxEncryptionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxEncryptionActionPerformed
+        this.setButtonState();
+    }//GEN-LAST:event_jCheckBoxEncryptionActionPerformed
+
+    private void jCheckBoxSignatureActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxSignatureActionPerformed
+        this.setButtonState();
+    }//GEN-LAST:event_jCheckBoxSignatureActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonOk;
-    private javax.swing.JComboBox jComboBoxInitiator;
+    private javax.swing.JCheckBox jCheckBoxEncryption;
+    private javax.swing.JCheckBox jCheckBoxSSL;
+    private javax.swing.JCheckBox jCheckBoxSignature;
+    private javax.swing.JComboBox<Partner> jComboBoxInitiator;
     private javax.swing.JComboBox jComboBoxKeys;
+    private javax.swing.JComboBox jComboBoxRemotePartner;
     private com.toedter.calendar.JDateChooser jDateChooser;
     private javax.swing.JLabel jLabelActivationDate;
+    private javax.swing.JLabel jLabelHintCEMReceiver;
+    private javax.swing.JLabel jLabelIcon;
     private javax.swing.JLabel jLabelInitiator;
     private javax.swing.JLabel jLabelKeys;
+    private javax.swing.JLabel jLabelRemotePartner;
     private javax.swing.JPanel jPanelButton;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JPanel jPanelSpace;

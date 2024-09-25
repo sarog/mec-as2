@@ -1,4 +1,4 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 47    3.02.15 14:54 Heller $
+///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 50    6.11.18 16:59 Heller $
 package de.mendelson.comm.as2.servlet;
 
 import de.mendelson.Copyright;
@@ -9,17 +9,20 @@ import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.clientserver.AnonymousTextClient;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -42,7 +45,7 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet to receive AS2 messages via HTTP
  *
  * @author S.Heller
- * @version $Revision: 47 $
+ * @version $Revision: 50 $
  */
 public class HttpReceiver extends HttpServlet {
 
@@ -84,16 +87,15 @@ public class HttpReceiver extends HttpServlet {
     public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         //stores if the commit already occured. Do not send an additional error in this case
         boolean committed = false;
-        File dataFile = null;
+        Path dataFile = null;
         try {
             InputStream inStream = request.getInputStream();
             //store the data in a file to process it later. This may be useful
             //for a huge data request that may lead to a out of memory fairly easy.
             dataFile = AS2Tools.createTempFile("as2", "request");
-            dataFile.deleteOnExit();
-            FileOutputStream fileStream = null;
+            OutputStream fileStream = null;
             try {
-                fileStream = new FileOutputStream(dataFile);
+                fileStream = Files.newOutputStream(dataFile);
                 this.copyStreams(inStream, fileStream);
             } finally {
                 if (fileStream != null) {
@@ -128,7 +130,17 @@ public class HttpReceiver extends HttpServlet {
             }
         } finally {
             if (dataFile != null) {
-                dataFile.delete();
+                try {
+                    Files.delete(dataFile);
+                } catch (IOException e) {
+                    SystemEvent event = new SystemEvent(
+                            SystemEvent.SEVERITY_WARNING,
+                            SystemEvent.ORIGIN_SYSTEM,
+                            SystemEvent.TYPE_FILE_DELETE);
+                    event.setSubject(event.typeToTextLocalized());
+                    event.setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                    SystemEventManagerImplAS2.newEvent(event);
+                }
             }
         }
     }//end of doPost
@@ -137,17 +149,17 @@ public class HttpReceiver extends HttpServlet {
      * Informs the AS2 server that a new message arrived and returns the HTTP
      * returncode that has been set by the processing server
      */
-    private void informAS2ServerIncomingMessage(File dataFile,
+    private void informAS2ServerIncomingMessage(Path dataFile,
             LinkedHashMap<String, String> headerMap, HttpServletRequest request,
             HttpServletResponse response) throws Throwable {
         AnonymousTextClient client = null;
         try {
             client = new AnonymousTextClient();
             client.setDisplayServerLogMessages(false);
-            PreferencesAS2 preferences = new PreferencesAS2();            
+            PreferencesAS2 preferences = new PreferencesAS2();
             client.connect("localhost", preferences.getInt(PreferencesAS2.CLIENTSERVER_COMM_PORT), 30000);
             IncomingMessageRequest messageRequest = new IncomingMessageRequest();
-            messageRequest.setMessageDataFilename(dataFile.getAbsolutePath());
+            messageRequest.setMessageDataFilename(dataFile.toAbsolutePath().toString());
             messageRequest.setContentType(request.getContentType());
             String remoteHost = request.getRemoteHost();
             if (remoteHost == null) {
@@ -157,12 +169,12 @@ public class HttpReceiver extends HttpServlet {
             Iterator<String> headerIterator = headerMap.keySet().iterator();
             while (headerIterator.hasNext()) {
                 String key = headerIterator.next();
-                if( key != null ){
+                if (key != null) {
                     String value = headerMap.get(key);
-                    if( value != null ){
+                    if (value != null) {
                         messageRequest.addHeader(key, value);
                     }
-                }                
+                }
             }
             IncomingMessageResponse messageResponse = (IncomingMessageResponse) client.sendSyncWaitInfinite(messageRequest);
             if (messageResponse.getException() != null) {

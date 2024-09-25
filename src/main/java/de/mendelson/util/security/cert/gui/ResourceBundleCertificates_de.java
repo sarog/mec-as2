@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 18    6/28/17 3:07p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 21    4/06/18 1:35p Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,10 +13,12 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 21 $
  */
 public class ResourceBundleCertificates_de extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -58,8 +60,8 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"certificate.import.error.message", "Es gab einen Fehler während des Imports:\n{0}"},
         {"certificate.import.error.title", "Fehler"},
         {"certificate.import.alias", "Alias für dieses Zertifikat:"},
-        {"keystore.readonly.message", "Die zugrundeliegende Keystore Datei ist schreibgeschützt.\nDiese Operation ist nicht möglich."},
-        {"keystore.readonly.title", "Keystore schreibgeschützt"},
+        {"keystore.readonly.message", "Die zugrundeliegende Keystore Datei ist schreibgeschützt.\nEine Schreiboperation (Speichern/Verändern) kann nicht durchgeführt werden."},
+        {"keystore.readonly.title", "Keystore schreibgeschützt - Bearbeiten nicht möglich"},
         {"modifications.notalllowed.message", "Modifikationen sind nicht möglich"},
         {"generatekey.error.message", "{0}"},
         {"generatekey.error.title", "Fehler bei der Schlüsselerstellung"},
@@ -71,5 +73,11 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"title.cert.in.use", "Zertifikat wird verwendet" },
         {"cert.delete.impossible", "Der Eintrag kann nicht gelöscht werden:" },
         {"module.locked", "Diese Zertifikatverwaltung wird aktuell exklusiv von einem anderen Client geöffnet, Sie können keine Änderungen vornehmen!" },
+        {"label.trustanchor", "Trust anchor:" },
+        {"warning.testkey", "Öffentlich verfügbarer mendelson Testschlüssel - nicht im produktiven Betrieb verwenden!" },
+        {"label.key.valid", "Dieser Schlüssel ist gültig" },
+        {"label.key.invalid", "Dieser Schlüssel ist ungültig" },
+        {"label.cert.valid", "Dieses Zertifikat ist gültig" },
+        {"label.cert.invalid", "Dieses Zertifikat ist ungültig" },
     };
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 14    11/15/17 11:55a Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 18    6.12.18 16:26 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * Receiver class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 18 $
  */
 public class SendOrderReceiver implements Runnable {
 
@@ -106,13 +106,15 @@ public class SendOrderReceiver implements Runnable {
                 = new ThreadPoolExecutor(Math.max(maxOutboundConnections, 1), Math.max(maxOutboundConnections, 1),
                         0L, TimeUnit.MILLISECONDS, queue);
         //listen until send stop is requested
-        long lastConfigCheck = System.currentTimeMillis();
+        long lastConfigCheckTime = System.currentTimeMillis();
+        //stores the time a warning ist last displayed that all outbound connections are used
+        long lastWarningMaxOutboundConnectionsReachedTime = System.currentTimeMillis();
         while (this.runPermission) {
             //this try is necessary because this thread must never stop. If it stops no more messages
             //and MDN are send!
             try {
                 //read new orders from the database if there are free possible outbound connections
-                if (System.currentTimeMillis() - lastConfigCheck > TimeUnit.SECONDS.toMillis(10)) {
+                if (System.currentTimeMillis() - lastConfigCheckTime > TimeUnit.SECONDS.toMillis(10)) {
                     int activeConnections = threadExecutor.getActiveCount();
                     //check if the user has changed the outbound connection settings
                     int maxOutboundConnectionsNew = this.preferences.getInt(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS);
@@ -141,7 +143,7 @@ public class SendOrderReceiver implements Runnable {
                                     String.valueOf(activeConnections)
                                 }));
                     }
-                    lastConfigCheck = System.currentTimeMillis();
+                    lastConfigCheckTime = System.currentTimeMillis();
                 }
                 //check if new outbound connection are currently possible
                 int possibleNewConnections = maxOutboundConnections - threadExecutor.getActiveCount();
@@ -160,6 +162,14 @@ public class SendOrderReceiver implements Runnable {
                             }
                         };
                         threadExecutor.execute(connectionRunner);
+                    }
+                }else{
+                    if (System.currentTimeMillis() - lastWarningMaxOutboundConnectionsReachedTime > TimeUnit.MINUTES.toMillis(1)) {
+                        this.logger.warning(this.rb.getResourceString("warning.nomore.outbound.connections.available",
+                                new Object[]{
+                                    String.valueOf(maxOutboundConnections),                                    
+                                }));
+                        lastWarningMaxOutboundConnectionsReachedTime = System.currentTimeMillis();
                     }
                 }
                 Thread.sleep(TimeUnit.MILLISECONDS.toMillis(200));
@@ -206,7 +216,6 @@ public class SendOrderReceiver implements Runnable {
                     AS2MDNInfo mdnInfo = (AS2MDNInfo) order.getMessage().getAS2Info();
                     logger.log(Level.INFO, rb.getResourceString("outbound.connection.prepare.mdn",
                             new Object[]{
-                                mdnInfo.getMessageId(),
                                 order.getReceiver().getMdnURL(),
                                 String.valueOf(activeConnectionsCount),
                                 String.valueOf(maxOutboundConnectionsCount),}), mdnInfo);
@@ -216,9 +225,9 @@ public class SendOrderReceiver implements Runnable {
                 } else {
                     //its a AS2 message that has been sent
                     AS2MessageInfo messageInfo = (AS2MessageInfo) order.getMessage().getAS2Info();
-                    logger.log(Level.INFO, rb.getResourceString("outbound.connection.prepare.message",
+                    this.messageAccess.initializeOrUpdateMessage(messageInfo);
+                    this.logger.log(Level.INFO, rb.getResourceString("outbound.connection.prepare.message",
                             new Object[]{
-                                messageInfo.getMessageId(),
                                 order.getReceiver().getURL(),
                                 String.valueOf(activeConnectionsCount),
                                 String.valueOf(maxOutboundConnectionsCount),}), messageInfo);
@@ -268,7 +277,7 @@ public class SendOrderReceiver implements Runnable {
                                 DateFormat.MEDIUM);
                         logger.log(Level.INFO, rb.getResourceString("async.mdn.wait",
                                 new Object[]{
-                                    messageInfo.getMessageId(), format.format(endTime)
+                                   format.format(endTime)
                                 }), messageInfo);
                     }
                 }
@@ -282,15 +291,12 @@ public class SendOrderReceiver implements Runnable {
             //to many retries: cancel the transaction
             if (retryCount > maxRetryCount) {
                 logger.log(Level.SEVERE, e.getMessage(), order.getMessage().getAS2Info());
-                logger.log(Level.SEVERE, rb.getResourceString("max.retry.reached",
-                        new Object[]{
-                            order.getMessage().getAS2Info().getMessageId(),}), order.getMessage().getAS2Info());
+                logger.log(Level.SEVERE, rb.getResourceString("max.retry.reached"), order.getMessage().getAS2Info());
                 this.processUploadError(order);
             } else {
                 logger.log(Level.WARNING, e.getMessage(), order.getMessage().getAS2Info());
                 logger.log(Level.WARNING, rb.getResourceString("retry",
                         new Object[]{
-                            order.getMessage().getAS2Info().getMessageId(),
                             String.valueOf(this.preferences.getInt(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S)),
                             String.valueOf(retryCount),
                             String.valueOf(maxRetryCount)

@@ -1,17 +1,17 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelNotification.java 19    18.09.12 14:51 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelNotification.java 24    22.10.18 13:03 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
 import de.mendelson.comm.as2.clientserver.message.PerformNotificationTestRequest;
-import de.mendelson.comm.as2.notification.NotificationAccessDB;
-import de.mendelson.comm.as2.notification.NotificationData;
-import de.mendelson.comm.as2.notification.clientserver.NotificationGetRequest;
-import de.mendelson.comm.as2.notification.clientserver.NotificationGetResponse;
-import de.mendelson.comm.as2.notification.clientserver.NotificationSetMessage;
+import de.mendelson.util.systemevents.notification.NotificationData;
+import de.mendelson.util.systemevents.notification.clientserver.NotificationGetRequest;
+import de.mendelson.util.systemevents.notification.clientserver.NotificationGetResponse;
+import de.mendelson.util.systemevents.notification.clientserver.NotificationSetMessage;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
+import de.mendelson.util.systemevents.notification.NotificationDataImplAS2;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
@@ -28,7 +28,7 @@ import javax.swing.JOptionPane;
  * Panel to define the directory preferences
  *
  * @author S.Heller
- * @version: $Revision: 19 $
+ * @version: $Revision: 24 $
  */
 public class PreferencesPanelNotification extends PreferencesPanel {
 
@@ -70,9 +70,9 @@ public class PreferencesPanelNotification extends PreferencesPanel {
     @Override
     public void loadPreferences() {
         this.inInit = true;
-        NotificationData data = ((NotificationGetResponse)this.baseClient.sendSync(new NotificationGetRequest())).getData();
-        this.jTextFieldAccountName.setText(data.getAccountName());
-        this.jPasswordFieldAccountPass.setText(new String(data.getAccountPassword()));
+        NotificationDataImplAS2 data 
+                = (NotificationDataImplAS2)((NotificationGetResponse) 
+                        this.baseClient.sendSync(new NotificationGetRequest())).getData();
         this.jTextFieldHost.setText(data.getMailServer());
         this.jTextFieldNotificationMail.setText(data.getNotificationMail());
         this.jTextFieldPort.setText(String.valueOf(data.getMailServerPort()));
@@ -82,18 +82,19 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         this.jCheckBoxNotifyCEM.setSelected(data.notifyCEM());
         this.jCheckBoxNotifySystemFailure.setSelected(data.notifySystemFailure());
         this.jCheckBoxNotifyResend.setSelected(data.notifyResendDetected());
-        this.jCheckBoxSMTPAuthentication.setSelected(data.isUseSMTHAuth());
-        if (data.getSmtpUser() != null) {
-            this.jTextFieldUser.setText(data.getSmtpUser());
+        this.jCheckBoxSMTPAuthentication.setSelected(data.usesSMTHAuth());
+        if (data.getSMTPUser() != null) {
+            this.jTextFieldUser.setText(data.getSMTPUser());
         } else {
             this.jTextFieldUser.setText("");
         }
-        if (data.getSmtpPass() != null) {
-            this.jPasswordFieldPass.setText(String.valueOf(data.getSmtpPass()));
+        if (data.getSMTPPass() != null) {
+            this.jPasswordFieldPass.setText(String.valueOf(data.getSMTPPass()));
         } else {
             this.jPasswordFieldPass.setText("");
         }
         this.jComboBoxSecurity.setSelectedItem(new SecurityEntry(data.getConnectionSecurity()));
+        this.jTextFieldMaxMailsPerMin.setText(String.valueOf(data.getMaxNotificationsPerMin()));
         this.inInit = false;
         this.setButtonState();
     }
@@ -107,10 +108,8 @@ public class PreferencesPanelNotification extends PreferencesPanel {
      * Captures the gui settings, creates a notification data object from these
      * settings and returns this
      */
-    private NotificationData captureGUIData() {
-        NotificationData data = new NotificationData();
-        data.setAccountName(this.jTextFieldAccountName.getText());
-        data.setAccountPassword(this.jPasswordFieldAccountPass.getPassword());
+    private NotificationDataImplAS2 captureGUIData() {
+        NotificationDataImplAS2 data = new NotificationDataImplAS2();
         data.setMailServer(this.jTextFieldHost.getText());
         try {
             data.setMailServerPort(Integer.valueOf(this.jTextFieldPort.getText()).intValue());
@@ -122,12 +121,17 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         data.setNotifyCEM(this.jCheckBoxNotifyCEM.isSelected());
         data.setNotifySystemFailure(this.jCheckBoxNotifySystemFailure.isSelected());
         data.setNotificationMail(this.jTextFieldNotificationMail.getText());
-        data.setUseSMTHAuth(this.jCheckBoxSMTPAuthentication.isSelected());
-        data.setSmtpUser(this.jTextFieldUser.getText());
-        data.setSmtpPass(this.jPasswordFieldPass.getPassword());
+        data.setUsesSMTHAuth(this.jCheckBoxSMTPAuthentication.isSelected());
+        data.setSMTPUser(this.jTextFieldUser.getText());
+        data.setSMTPPass(this.jPasswordFieldPass.getPassword());
         data.setReplyTo(this.jTextFieldReplyTo.getText());
         data.setNotifyResendDetected(this.jCheckBoxNotifyResend.isSelected());
         data.setConnectionSecurity(((SecurityEntry) this.jComboBoxSecurity.getSelectedItem()).getValue());
+        try {
+            data.setMaxNotificationsPerMin(new Integer(this.jTextFieldMaxMailsPerMin.getText()));
+        } catch (Exception e) {
+            //nop, ignore
+        }
         return (data);
     }
 
@@ -141,8 +145,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         NotificationSetMessage message = new NotificationSetMessage();
         message.setData(data);
         this.baseClient.sendAsync(message);
-        
-        
+
     }
 
     private void sendTestMail() {
@@ -195,11 +198,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jTextFieldAccountName = new javax.swing.JTextField();
-        jLabelAccountName = new javax.swing.JLabel();
         jPanelSpace = new javax.swing.JPanel();
-        jLabelAccountPass = new javax.swing.JLabel();
-        jPasswordFieldAccountPass = new javax.swing.JPasswordField();
         jCheckBoxNotifyCert = new javax.swing.JCheckBox();
         jCheckBoxNotifyTransactionError = new javax.swing.JCheckBox();
         jCheckBoxNotifyCEM = new javax.swing.JCheckBox();
@@ -224,58 +223,16 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         jCheckBoxNotifyResend = new javax.swing.JCheckBox();
         jLabelSecurity = new javax.swing.JLabel();
         jComboBoxSecurity = new javax.swing.JComboBox();
+        jLabelMaxMailsPerMain = new javax.swing.JLabel();
+        jTextFieldMaxMailsPerMin = new javax.swing.JTextField();
 
         setLayout(new java.awt.GridBagLayout());
-
-        jTextFieldAccountName.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                jTextFieldAccountNameKeyReleased(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
-        add(jTextFieldAccountName, gridBagConstraints);
-
-        jLabelAccountName.setText(this.rb.getResourceString( "label.mailaccount"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelAccountName, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 15;
+        gridBagConstraints.gridy = 16;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
         add(jPanelSpace, gridBagConstraints);
-
-        jLabelAccountPass.setText(this.rb.getResourceString( "label.mailpass"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelAccountPass, gridBagConstraints);
-
-        jPasswordFieldAccountPass.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                jPasswordFieldAccountPassKeyReleased(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 5;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jPasswordFieldAccountPass, gridBagConstraints);
 
         jCheckBoxNotifyCert.setText(this.rb.getResourceString( "checkbox.notifycertexpire"));
         jCheckBoxNotifyCert.addActionListener(new java.awt.event.ActionListener() {
@@ -311,17 +268,19 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
         add(jCheckBoxNotifyCEM, gridBagConstraints);
 
         jLabelHost.setText(this.rb.getResourceString("label.mailhost"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelHost, gridBagConstraints);
 
+        jTextFieldHost.setMinimumSize(new java.awt.Dimension(180, 20));
+        jTextFieldHost.setPreferredSize(new java.awt.Dimension(180, 20));
         jTextFieldHost.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextFieldHostKeyReleased(evt);
@@ -329,22 +288,22 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 0.7;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         add(jTextFieldHost, gridBagConstraints);
 
         jLabelPort.setText(this.rb.getResourceString( "label.mailport"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelPort, gridBagConstraints);
 
+        jTextFieldPort.setMinimumSize(new java.awt.Dimension(60, 20));
+        jTextFieldPort.setPreferredSize(new java.awt.Dimension(60, 20));
         jTextFieldPort.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextFieldPortKeyReleased(evt);
@@ -352,9 +311,8 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 5;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 0.3;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -363,11 +321,13 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         jLabelNotificationMail.setText(this.rb.getResourceString( "label.notificationmail"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 14;
+        gridBagConstraints.gridy = 15;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelNotificationMail, gridBagConstraints);
 
+        jTextFieldNotificationMail.setMinimumSize(new java.awt.Dimension(180, 20));
+        jTextFieldNotificationMail.setPreferredSize(new java.awt.Dimension(180, 20));
         jTextFieldNotificationMail.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextFieldNotificationMailKeyReleased(evt);
@@ -375,22 +335,22 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 14;
-        gridBagConstraints.gridwidth = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.gridy = 15;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         add(jTextFieldNotificationMail, gridBagConstraints);
 
         jLabelReplyTo.setText(this.rb.getResourceString( "label.replyto"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 8;
+        gridBagConstraints.gridy = 9;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelReplyTo, gridBagConstraints);
 
+        jTextFieldReplyTo.setMinimumSize(new java.awt.Dimension(180, 20));
+        jTextFieldReplyTo.setPreferredSize(new java.awt.Dimension(180, 20));
         jTextFieldReplyTo.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextFieldReplyToKeyReleased(evt);
@@ -398,12 +358,10 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 8;
-        gridBagConstraints.gridwidth = 6;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         add(jTextFieldReplyTo, gridBagConstraints);
 
         jButtonSendTestMail.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/testconnection16x16.gif"))); // NOI18N
@@ -429,7 +387,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 13;
+        gridBagConstraints.gridy = 14;
         gridBagConstraints.gridwidth = 7;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(10, 0, 10, 0);
@@ -451,23 +409,23 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridy = 11;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jCheckBoxSMTPAuthentication, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 11;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
         add(jPasswordFieldPass, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 10;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
@@ -476,7 +434,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         jLabelUser.setText(this.rb.getResourceString( "label.smtpauthentication.user"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridy = 11;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelUser, gridBagConstraints);
@@ -484,7 +442,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         jLabelPass.setText(this.rb.getResourceString( "label.smtpauthentication.pass"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridy = 12;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelPass, gridBagConstraints);
@@ -498,7 +456,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jCheckBoxNotifySystemFailure, gridBagConstraints);
@@ -512,7 +470,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jCheckBoxNotifyResend, gridBagConstraints);
@@ -520,11 +478,13 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         jLabelSecurity.setText(this.rb.getResourceString( "label.security"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 7;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelSecurity, gridBagConstraints);
 
+        jComboBoxSecurity.setMinimumSize(new java.awt.Dimension(100, 20));
+        jComboBoxSecurity.setPreferredSize(new java.awt.Dimension(100, 20));
         jComboBoxSecurity.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBoxSecurityActionPerformed(evt);
@@ -532,11 +492,29 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 7;
         gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         add(jComboBoxSecurity, gridBagConstraints);
+
+        jLabelMaxMailsPerMain.setText(this.rb.getResourceString("label.maxmailspermin"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jLabelMaxMailsPerMain, gridBagConstraints);
+
+        jTextFieldMaxMailsPerMin.setMinimumSize(new java.awt.Dimension(40, 20));
+        jTextFieldMaxMailsPerMin.setPreferredSize(new java.awt.Dimension(40, 20));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
+        add(jTextFieldMaxMailsPerMin, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jButtonSendTestMailActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonSendTestMailActionPerformed
@@ -550,14 +528,6 @@ private void jTextFieldHostKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST
 private void jTextFieldPortKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldPortKeyReleased
     this.savePreferences();
 }//GEN-LAST:event_jTextFieldPortKeyReleased
-
-private void jTextFieldAccountNameKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldAccountNameKeyReleased
-    this.savePreferences();
-}//GEN-LAST:event_jTextFieldAccountNameKeyReleased
-
-private void jPasswordFieldAccountPassKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldAccountPassKeyReleased
-    this.savePreferences();
-}//GEN-LAST:event_jPasswordFieldAccountPassKeyReleased
 
 private void jTextFieldReplyToKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldReplyToKeyReleased
     this.savePreferences();
@@ -593,9 +563,9 @@ private void jCheckBoxNotifySystemFailureActionPerformed(java.awt.event.ActionEv
 
     private void jComboBoxSecurityActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxSecurityActionPerformed
         if (!this.inInit) {
-            SecurityEntry selectedEntry = (SecurityEntry)this.jComboBoxSecurity.getSelectedItem();
-            this.jTextFieldPort.setText( String.valueOf(selectedEntry.getDefaultPort()));
-            this.savePreferences();            
+            SecurityEntry selectedEntry = (SecurityEntry) this.jComboBoxSecurity.getSelectedItem();
+            this.jTextFieldPort.setText(String.valueOf(selectedEntry.getDefaultPort()));
+            this.savePreferences();
         }
     }//GEN-LAST:event_jComboBoxSecurityActionPerformed
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -607,9 +577,8 @@ private void jCheckBoxNotifySystemFailureActionPerformed(java.awt.event.ActionEv
     private javax.swing.JCheckBox jCheckBoxNotifyTransactionError;
     private javax.swing.JCheckBox jCheckBoxSMTPAuthentication;
     private javax.swing.JComboBox jComboBoxSecurity;
-    private javax.swing.JLabel jLabelAccountName;
-    private javax.swing.JLabel jLabelAccountPass;
     private javax.swing.JLabel jLabelHost;
+    private javax.swing.JLabel jLabelMaxMailsPerMain;
     private javax.swing.JLabel jLabelNotificationMail;
     private javax.swing.JLabel jLabelPass;
     private javax.swing.JLabel jLabelPort;
@@ -618,12 +587,11 @@ private void jCheckBoxNotifySystemFailureActionPerformed(java.awt.event.ActionEv
     private javax.swing.JLabel jLabelUser;
     private javax.swing.JPanel jPanelSep;
     private javax.swing.JPanel jPanelSpace;
-    private javax.swing.JPasswordField jPasswordFieldAccountPass;
     private javax.swing.JPasswordField jPasswordFieldPass;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator2;
-    private javax.swing.JTextField jTextFieldAccountName;
     private javax.swing.JTextField jTextFieldHost;
+    private javax.swing.JTextField jTextFieldMaxMailsPerMin;
     private javax.swing.JTextField jTextFieldNotificationMail;
     private javax.swing.JTextField jTextFieldPort;
     private javax.swing.JTextField jTextFieldReplyTo;
@@ -648,15 +616,14 @@ private void jCheckBoxNotifySystemFailureActionPerformed(java.awt.event.ActionEv
             this.value = value;
         }
 
-        public int getDefaultPort(){
-            if( this.value == NotificationData.SECURITY_SSL){
-                return( 465 );
-            }else{
-                return( 25 );
+        public int getDefaultPort() {
+            if (this.value == NotificationData.SECURITY_SSL) {
+                return (465);
+            } else {
+                return (25);
             }
         }
-        
-        
+
         @Override
         public String toString() {
             if (this.getValue() == NotificationData.SECURITY_PLAIN) {

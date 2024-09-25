@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2Message_de.java 12    7/21/17 10:41a Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2Message_de.java 15    7/03/18 9:35a Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,9 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class ResourceBundleAS2Message_de extends MecResourceBundle{
+    
+    public static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -36,6 +38,14 @@ public class ResourceBundleAS2Message_de extends MecResourceBundle{
         {"signature." + AS2Message.SIGNATURE_SHA256_RSASSA_PSS, "SHA-256 (RSASSA-PSS)" },
         {"signature." + AS2Message.SIGNATURE_SHA384_RSASSA_PSS, "SHA-384 (RSASSA-PSS)" },
         {"signature." + AS2Message.SIGNATURE_SHA512_RSASSA_PSS, "SHA-512 (RSASSA-PSS)" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_224, "SHA3-224" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_256, "SHA3-256" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_384, "SHA3-384" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_512, "SHA3-512" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS, "SHA3-224 (RSASSA-PSS)" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS, "SHA3-256 (RSASSA-PSS)" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS, "SHA3-384 (RSASSA-PSS)" },
+        {"signature." + AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS, "SHA3-512 (RSASSA-PSS)" },
         {"encryption." + AS2Message.ENCRYPTION_UNKNOWN, "Unbekannt" },        
         {"encryption." + AS2Message.ENCRYPTION_NONE, "Keine Verschlüsselung" },        
         {"encryption." + AS2Message.ENCRYPTION_3DES, "3DES" },        

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSecurity.java 14    19.09.14 11:05 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSecurity.java 15    24.09.18 17:35 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecFileChooser;
@@ -22,7 +22,7 @@ import javax.swing.SwingUtilities;
  * Panel to define the directory preferences
  *
  * @author S.Heller
- * @version: $Revision: 14 $
+ * @version: $Revision: 15 $
  */
 public class PreferencesPanelSecurity extends PreferencesPanel {
 
@@ -98,7 +98,7 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         add(jTextFieldKeystoreHTTPS, gridBagConstraints);
 
         jLabelKeystoreHTTPS.setText(this.rb.getResourceString( "label.keystore.https"));
@@ -106,7 +106,7 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         add(jLabelKeystoreHTTPS, gridBagConstraints);
 
         jButtonBrowseKeystoreHTTPS.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/folder.gif"))); // NOI18N
@@ -120,7 +120,7 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         add(jButtonBrowseKeystoreHTTPS, gridBagConstraints);
 
         jLabelKeystoreHTTPSPass.setText(this.rb.getResourceString( "label.keystore.https.pass"));

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration.java 5     12/11/17 1:29p Heller $ 
+//$Header: /as4/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration.java 9     9.10.18 12:29 Heller $ 
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,10 +13,12 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDisplayHTTPConfiguration extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -26,13 +28,11 @@ public class ResourceBundleDisplayHTTPConfiguration extends MecResourceBundle {
         {"title", "Server side HTTP configuration"},
         {"reading.configuration", "Reading HTTP configuration..."},
         {"button.ok", "Close" },
-        {"label.info.configfile", "This dialog contains the server side HTTP/S configuration. You could set up the ports, protocols and ciphers in the file \"{0}\" on the server. Please restart the server for the changes to be applied." },
+        {"label.info.configfile", "This dialog contains the server side HTTP/S configuration. The bundled HTTP server has the version <strong>jetty {1}</strong>. You could set up the ports, protocols and ciphers in the file \"{0}\" on the server. Please restart the server for the changes to be applied." },
         {"tab.misc", "Misc"},
         {"tab.cipher", "SSL/TLS cipher"},
         {"tab.protocols", "SSL/TLS protocols"},
-        {"no.ssl.enabled", "The TLS/SSL support has not been enabled in the underlaying HTTP server.\nPlease modify the configuration file {0}\naccording to the documentation and restart the server." },
-        {"info.cipher", "The following ciphers are supported by the underlying HTTP server.\nWhich ones are supported depends on your used Java VM (it''s {1}).\nYou can disable single ciphers in the configuration file\n(\"{0}\")." },
-        {"info.protocols", "The following protocols are supported by the underlying HTTP server.\nWhich ones are supported depends on your used Java VM (it''s {1}).\nYou can disable single protocols in the configuration file\n(\"{0}\")." },
-        {"no.embedded.httpserver", "You did not start the embedded HTTP server.\nThere is no information available." },
+        {"no.ssl.enabled", "The TLS/SSL support has not been enabled in the underlaying HTTP server.\nPlease modify the configuration file {0}\naccording to the documentation and restart the server." },        
+        {"no.embedded.httpserver", "You did not start the embedded HTTP server.\nThere is no information available." },               
     };
 }

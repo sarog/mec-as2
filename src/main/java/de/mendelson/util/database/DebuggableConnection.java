@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/DebuggableConnection.java 2     4.01.13 9:45 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggableConnection.java 5     22.10.18 13:03 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Array;
@@ -19,7 +19,7 @@ import java.sql.Struct;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
-import java.util.logging.Logger;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -30,15 +30,17 @@ import java.util.logging.Logger;
 
 /**
  * Database connection that could be debugged
+ *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class DebuggableConnection implements Connection {
 
-    private Logger logger = Logger.getLogger("de.mendelson.mbi");
     private Connection connection = null;
 
-    /** Creates a new instance of DebuggableConnection */
+    /**
+     * Creates a new instance of DebuggableConnection
+     */
     public DebuggableConnection(Connection connection) {
         this.connection = connection;
         //debug purpose: find out who requested the database connection
@@ -152,67 +154,61 @@ public class DebuggableConnection implements Connection {
 
     @Override
     public PreparedStatement prepareStatement(String str) throws SQLException {
-        try{
+        try {
             PreparedStatement statement = this.connection.prepareStatement(str);
             return (new DebuggablePreparedStatement(str, statement));
-        }
-        catch( SQLSyntaxErrorException e ){
-            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str  + "]");
+        } catch (SQLSyntaxErrorException e) {
+            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
     }
 
     @Override
     public PreparedStatement prepareStatement(String str, int param) throws SQLException {
-        try{
+        try {
             PreparedStatement statement = this.connection.prepareStatement(str, param);
             return (new DebuggablePreparedStatement(str, statement));
-        }
-        catch( SQLSyntaxErrorException e ){
-            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str  + "]");
+        } catch (SQLSyntaxErrorException e) {
+            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
     }
 
     @Override
     public PreparedStatement prepareStatement(String str, int[] values) throws SQLException {
-        try{
+        try {
             PreparedStatement statement = this.connection.prepareStatement(str, values);
             return (new DebuggablePreparedStatement(str, statement));
-        }
-        catch( SQLSyntaxErrorException e ){
-            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str  + "]");
+        } catch (SQLSyntaxErrorException e) {
+            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
     }
 
     @Override
     public PreparedStatement prepareStatement(String str, String[] str1) throws SQLException {
-        try{
+        try {
             PreparedStatement statement = this.connection.prepareStatement(str, str1);
             return (new DebuggablePreparedStatement(str, statement));
-        }
-        catch( SQLSyntaxErrorException e ){
-            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str  + "]");
+        } catch (SQLSyntaxErrorException e) {
+            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
     }
 
     @Override
     public PreparedStatement prepareStatement(String str, int param, int param2) throws SQLException {
-        try{
+        try {
             PreparedStatement statement = this.connection.prepareStatement(str, param, param2);
             return (new DebuggablePreparedStatement(str, statement));
-        }
-        catch( SQLSyntaxErrorException e ){
-            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str  + "]");
+        } catch (SQLSyntaxErrorException e) {
+            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
     }
 
     @Override
     public PreparedStatement prepareStatement(String str, int param, int param2, int param3) throws SQLException {
-        try{
+        try {
             PreparedStatement statement = this.connection.prepareStatement(str, param, param2, param3);
             return (new DebuggablePreparedStatement(str, statement));
-        }
-        catch( SQLSyntaxErrorException e ){
-            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str  + "]");
+        } catch (SQLSyntaxErrorException e) {
+            throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
     }
 
@@ -336,18 +332,22 @@ public class DebuggableConnection implements Connection {
         return (this.connection.isWrapperFor(iface));
     }
 
+    @Override
     public void setSchema(String schema) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public String getSchema() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public void abort(Executor executor) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

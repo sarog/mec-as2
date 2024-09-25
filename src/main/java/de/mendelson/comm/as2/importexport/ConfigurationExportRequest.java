@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationExportRequest.java 1     14.01.11 12:21 Heller $
+//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationExportRequest.java 2     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.importexport;
 
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadRequest;
@@ -13,10 +13,12 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ConfigurationExportRequest extends DownloadRequest implements Serializable{
-
+    
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public String toString(){
         return( "Export request" );

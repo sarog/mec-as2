@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyJKS_fr.java 1     23.07.10 13:19 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyJKS_fr.java 2     4/06/18 1:35p Heller $
 package de.mendelson.util.security.cert.gui;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,43 +11,40 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-/** 
+/**
  * ResourceBundle to localize gui entries
+ *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public class ResourceBundleImportKeyJKS_fr extends MecResourceBundle{
+public class ResourceBundleImportKeyJKS_fr extends MecResourceBundle {
 
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-  /**List of messages in the specific language*/
-  static final Object[][] contents = {
-        
-    {"button.ok", "Valider" },
-    {"button.cancel", "Annuler" },
-    {"button.browse", "Parcourir..." },
-            
-    {"keystore.contains.nokeys", "Ce porte-clef ne contient aucune clef privée." },
-    
-    {"label.importkey", "Importer le fichier de clef (JKS):" },
-    {"label.keypass", "Mot de passe d'import de la clef:" },
-            
-    {"title", "Importer les clefs depuis le fichier porte-clef (JKS format)" },
-    {"filechooser.key.import", "Merci de sélectionner le fichier porte-clef JKS pour l'import" },
-            
-    {"multiple.keys.message", "Merci de sélectionner la clef à importer" },
-    {"multiple.keys.title", "Le porte-clef contient plusieurs clefs" },
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
 
-    {"key.import.success.message", "La clef a été importée avec succès." },
-    {"key.import.success.title", "Succès" },
-    {"key.import.error.message", "Une erreur a eu lieu lors du processus d'import.\n{0}" },
-    {"key.import.error.title", "Erreur" },
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"button.ok", "Valider"},
+        {"button.cancel", "Annuler"},
+        {"button.browse", "Parcourir..."},
+        {"keystore.contains.nokeys", "Ce porte-clef ne contient aucune clef privée."},
+        {"label.importkey", "Importer le fichier de clef (JKS):"},
+        {"label.keypass", "Mot de passe d'import de la clef:"},
+        {"title", "Importer les clefs depuis le fichier porte-clef (JKS format)"},
+        {"filechooser.key.import", "Merci de sélectionner le fichier porte-clef JKS pour l'import"},
+        {"multiple.keys.message", "Merci de sélectionner la clef à importer"},
+        {"multiple.keys.title", "Le porte-clef contient plusieurs clefs"},
+        {"key.import.success.message", "La clef a été importée avec succès."},
+        {"key.import.success.title", "Succès"},
+        {"key.import.error.message", "Une erreur a eu lieu lors du processus d'import.\n{0}"},
+        {"key.import.error.title", "Erreur"},
+        {"enter.keypassword", "Entrer le mot de passe de la clef pour \"{0}\""},};
 
-    {"enter.keypassword", "Entrer le mot de passe de la clef pour \"{0}\"" },
-    
-  };		
-  
 }

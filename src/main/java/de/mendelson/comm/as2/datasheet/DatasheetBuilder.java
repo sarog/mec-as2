@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 11    7/20/17 5:09p Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 14    6.11.18 16:59 Heller $
 package de.mendelson.comm.as2.datasheet;
 
 import de.intarsys.pdf.cds.CDSRectangle;
@@ -24,6 +24,7 @@ import de.mendelson.util.MecResourceBundle;
 import java.awt.Rectangle;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ import java.util.ResourceBundle;
  * Class that is responsible for the creation of a PDF file
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class DatasheetBuilder {
 
@@ -131,6 +132,14 @@ public class DatasheetBuilder {
         algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA256_RSASSA_PSS));
         algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA384_RSASSA_PSS));
         algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA512_RSASSA_PSS));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_224));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_256));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_384));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_512));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS));
+        algorithms.add(this.rbMessage.getResourceString("signature." + AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS));
         String[] algorithmArray = new String[algorithms.size()];
         algorithmArray = algorithms.toArray(algorithmArray);
         return (algorithmArray);
@@ -498,12 +507,12 @@ public class DatasheetBuilder {
     /**
      * Finally writes the in memory document to the harddisk
      */
-    private void saveDocument(File outputFile) throws IOException {
-        FileLocator locator = new FileLocator(outputFile.getAbsolutePath());
+    private void saveDocument(String absolutePath) throws IOException {
+        FileLocator locator = new FileLocator(absolutePath);
         this.document.save(locator, null);
     }
 
-    public void create(File outFile) throws Exception {
+    public void create(Path outFile) throws Exception {
         PDPage page = this.openNewPage();
         CSCreator creator = CSCreator.createNew(page);
         this.writeHeader(creator);
@@ -519,6 +528,6 @@ public class DatasheetBuilder {
             this.addAttachment(page, "verifysignature.p7b", "Verify our data signature using this certificate", this.localInformation.getCertVerifySignature());
         }
         this.closePage(creator);
-        this.saveDocument(outFile);
+        this.saveDocument(outFile.toAbsolutePath().toString());
     }
 }

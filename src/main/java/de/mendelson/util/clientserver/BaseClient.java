@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 40    3-11-16 1:35p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 42    4/06/18 2:41p Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
@@ -39,7 +39,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * Abstract client for a user
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 42 $
  */
 public class BaseClient {
 
@@ -112,6 +112,9 @@ public class BaseClient {
         login.setUserName(user);
         login.setClientId(clientId);
         LoginState state = (LoginState) this.sendSync(login);
+        if( state.getState() == LoginState.STATE_INCOMPATIBLE_CLIENT){
+            this.clientSessionHandler.getCallback().clientIsIncompatible(state.getStateDetails());
+        }
         return (state);
     }
 
@@ -142,7 +145,7 @@ public class BaseClient {
             sslFilter.setUseClientMode(true);
             this.connector.getFilterChain().addFirst("TLS", sslFilter);
             //add CPU bound tasks first
-            this.connector.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger)));
+            this.connector.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger, this.clientSessionHandler.getCallback())));
             //log client-server communication
             //this.connector.getFilterChain().addLast("logger", new LoggingFilter());
             //multi threaded model: allow and receive simulanously

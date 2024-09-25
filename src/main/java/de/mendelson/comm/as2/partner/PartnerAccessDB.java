@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerAccessDB.java 57    5/03/17 9:21a Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerAccessDB.java 64    7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.cert.CertificateAccessDB;
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
  * Implementation of a server log for the mendelson as2 server database
  *
  * @author S.Heller
- * @version $Revision: 57 $
+ * @version $Revision: 64 $
  */
 public class PartnerAccessDB {
 
@@ -140,6 +141,7 @@ public class PartnerAccessDB {
                 partner.setHttpProtocolVersion(result.getString("httpversion"));
                 partner.setMaxPollFiles(result.getInt("maxpollfiles"));
                 partner.setUseAlgorithmIdentifierProtectionAttribute(result.getInt("algidentprotatt") == 1);
+                partner.setEnableDirPoll(result.getInt("enabledirpoll") == 1);
                 //ensure to have a valid partner DB id before loading the releated data
                 this.certificateAccess.loadPartnerCertificateInformation(partner);
                 this.loadHttpHeader(partner);
@@ -149,21 +151,21 @@ public class PartnerAccessDB {
         } catch (Exception e) {
             e.printStackTrace();
             this.logger.severe("PartnerAccessDB.getPartnerByQuery: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             return (null);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -189,28 +191,8 @@ public class PartnerAccessDB {
     public List<Partner> getNonLocalStations() {
         return (this.getPartnerByQuery("SELECT * FROM partner WHERE islocal<>1"));
     }
-
-    /**
-     * receives a partner configuration and updates the database with them
-     */
-    public void modifyPartner(List<Partner> newPartner) {
-        //first delete all partners that are in the DB but not in the new list
-        List<Partner> existingPartner = this.getPartner();
-        for (int i = 0; i < existingPartner.size(); i++) {
-            if (!newPartner.contains(existingPartner.get(i))) {
-                this.deletePartner(existingPartner.get(i));
-            }
-        }
-        //insert all NEW partners and update the existing
-        for (int i = 0; i < newPartner.size(); i++) {
-            if (newPartner.get(i).getDBId() < 0) {
-                this.insertPartner(newPartner.get(i));
-            } else {
-                this.updatePartner(newPartner.get(i));
-            }
-        }
-    }
-
+    
+    
     /**
      * Updates a single partner in the db
      */
@@ -232,7 +214,8 @@ public class PartnerAccessDB {
                     + "notifyreceiveenabled=?,notifysendreceiveenabled=?,"
                     + "commandonsenderror=?,usecommandonsenderror=?,commandonsendsuccess=?,"
                     + "usecommandonsendsuccess=?,contenttransferencoding=?,httpversion=?,"
-                    + "maxpollfiles=?,partnercontact=?,partneraddress=?,algidentprotatt=? "
+                    + "maxpollfiles=?,partnercontact=?,partneraddress=?,algidentprotatt=?, "
+                    + "enabledirpoll=?"        
                     + "WHERE id=?");
             statement.setEscapeProcessing(true);
             statement.setString(1, partner.getAS2Identification());
@@ -288,18 +271,19 @@ public class PartnerAccessDB {
                 statement.setObject(40, partner.getContactCompany());
             }
             statement.setInt(41, partner.getUseAlgorithmIdentifierProtectionAttribute() ? 1 : 0);
+            statement.setInt(42, partner.isEnableDirPoll() ? 1 : 0);
             //where statement
-            statement.setInt(42, partner.getDBId());
+            statement.setInt(43, partner.getDBId());
             statement.execute();
         } catch (SQLException e) {
             this.logger.severe("updatePartner: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -323,14 +307,14 @@ public class PartnerAccessDB {
             statement.execute();
         } catch (SQLException e) {
             this.logger.severe("PartnerAccessDB.deletePartner: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerAccessDB.deletePartner: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -353,9 +337,9 @@ public class PartnerAccessDB {
                     + "notifysendenabled,notifyreceiveenabled,notifysendreceiveenabled,"
                     + "commandonsenderror,usecommandonsenderror,commandonsendsuccess,"
                     + "usecommandonsendsuccess,contenttransferencoding,httpversion,"
-                    + "maxpollfiles,partnercontact,partneraddress,algidentprotatt"
+                    + "maxpollfiles,partnercontact,partneraddress,algidentprotatt,enabledirpoll"
                     + ")VALUES("
-                    + "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    + "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             statement.setEscapeProcessing(true);
             statement.setString(1, partner.getAS2Identification());
             statement.setString(2, partner.getName());
@@ -410,17 +394,18 @@ public class PartnerAccessDB {
                 statement.setObject(40, partner.getContactCompany());
             }
             statement.setInt(41, partner.getUseAlgorithmIdentifierProtectionAttribute() ? 1 : 0);
+            statement.setInt(42, partner.isEnableDirPoll() ? 1 : 0);
             statement.execute();
         } catch (SQLException e) {
             this.logger.severe("PartnerAccessDB.insertPartner: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerAccessDB.insertPartner: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -481,16 +466,19 @@ public class PartnerAccessDB {
                 header.setValue(result.getString("headervalue"));
                 partner.addHttpHeader(header);
             }
+        } catch (SQLException e) {
+            this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } catch (Exception e) {
             this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (result != null) {
@@ -498,7 +486,7 @@ public class PartnerAccessDB {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -514,15 +502,18 @@ public class PartnerAccessDB {
             statement.setEscapeProcessing(true);
             statement.setInt(1, partner.getDBId());
             statement.execute();
+        } catch (SQLException e) {
+            this.logger.severe("PartnerAccessDB.deleteHttpHeader: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } catch (Exception e) {
             this.logger.severe("PartnerAccessDB.deleteHttpHeader: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -545,15 +536,18 @@ public class PartnerAccessDB {
                 statement.setString(2, header.getKey());
                 statement.setString(3, header.getValue());
                 statement.execute();
+            }catch (SQLException e) {
+                this.logger.severe("PartnerAccessDB.storeHttpHeader: " + e.getMessage());
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } catch (Exception e) {
                 this.logger.severe("PartnerAccessDB.storeHttpHeader: " + e.getMessage());
-                Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        //nop
+                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }

@@ -1,10 +1,11 @@
-//$Header: /as2_cluster/de/mendelson/comm/as2/message/MessageAccessDB.java 101   5/04/17 9:13a Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MessageAccessDB.java 107   7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.message;
 
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.statistic.ServerInteroperabilityAccessDB;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -28,7 +29,7 @@ import java.util.logging.Logger;
  * Implementation of a server log for the as2 server database
  *
  * @author S.Heller
- * @version $Revision: 101 $
+ * @version $Revision: 107 $
  */
 public class MessageAccessDB {
 
@@ -68,18 +69,20 @@ public class MessageAccessDB {
             }
         } catch (SQLException e) {
             this.logger.severe("getMessageCount: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -105,21 +108,21 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("getMessageState: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             try {
                 if (result != null) {
                     result.close();
                 }
             } catch (Exception e) {
-                //nop
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
             try {
                 if (statement != null) {
                     statement.close();
                 }
             } catch (Exception e) {
-                //nop
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         }
         return (state);
@@ -129,7 +132,7 @@ public class MessageAccessDB {
      * Sets the corresponding message status to the new value. This will change
      * the state in any case without any check
      *
-     * @param state one of the staes defined in the class AS2Message
+     * @param state one of the states defined in the class AS2Message
      */
     public void setMessageState(String messageId, int fromState, int toState) {
         PreparedStatement statement = null;
@@ -143,7 +146,7 @@ public class MessageAccessDB {
             int rows = statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.setMessageState: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
@@ -153,14 +156,16 @@ public class MessageAccessDB {
                 }
             }
         }
-        //perform the notification
+        //A transaction has been stopped. This is worth a system event because a notification might be triggered
+        //for such an event
         if (toState == AS2Message.STATE_STOPPED) {
-            Notification notification = new Notification(this.configConnection, this.runtimeConnection);
+            SystemEventManagerImplAS2 eventManager
+                    = new SystemEventManagerImplAS2();
             try {
-                notification.sendTransactionError(messageId);
+                eventManager.newEventTransactionError(messageId, this.configConnection, this.runtimeConnection);
             } catch (Exception e) {
                 this.logger.severe("MessageAccessDB.setMessageState: " + e.getMessage());
-                Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                SystemEventManagerImplAS2.systemFailure(e);
             }
         }
     }
@@ -205,20 +210,20 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getPayload: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -260,7 +265,7 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             return (null);
         } finally {
             if (result != null) {
@@ -268,7 +273,7 @@ public class MessageAccessDB {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -276,7 +281,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -322,7 +327,7 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getLastMessageEntry: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             return (null);
         } finally {
             if (result != null) {
@@ -330,7 +335,7 @@ public class MessageAccessDB {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getLastMessageEntry: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -338,7 +343,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getLastMessageEntry: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -383,7 +388,7 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getMessageOverview: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             return (null);
         } finally {
             if (result != null) {
@@ -391,7 +396,7 @@ public class MessageAccessDB {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessageOverview: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -399,7 +404,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessageOverview: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -520,14 +525,14 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getMessageOverview: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessageOverview: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -535,7 +540,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessageOverview: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -571,14 +576,14 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -586,7 +591,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -622,14 +627,14 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.deleteMessage: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.deleteMessage: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -656,13 +661,13 @@ public class MessageAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.setMessageSendDate: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -684,13 +689,13 @@ public class MessageAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.updateFilenames: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -725,14 +730,14 @@ public class MessageAccessDB {
 
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.insertPayload: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statementDelete);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statementInsert);
         } finally {
             if (statementDelete != null) {
                 try {
                     statementDelete.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.insertPayload: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statementInsert != null) {
@@ -740,7 +745,7 @@ public class MessageAccessDB {
                     statementInsert.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.insertPayload: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -803,14 +808,14 @@ public class MessageAccessDB {
             AS2Server.incTransactionCounter();
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.initializeMessage: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.initializeMessage: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -830,14 +835,14 @@ public class MessageAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.updateSubject: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.updateSubject: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -854,14 +859,14 @@ public class MessageAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.updateResendCounter: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.updateResendCounter: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -909,14 +914,14 @@ public class MessageAccessDB {
             this.insertPayloads(info.getMessageId(), message.getPayloads());
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.updateMessage: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.updateMessage: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -965,14 +970,14 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getMessagesSendOlderThan: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessagesSendOlderThan: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -980,7 +985,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessagesSendOlderThan: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1032,14 +1037,14 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -1047,7 +1052,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1099,14 +1104,14 @@ public class MessageAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -1114,7 +1119,7 @@ public class MessageAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

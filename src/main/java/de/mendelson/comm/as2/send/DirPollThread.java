@@ -1,24 +1,31 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 8     2/07/17 1:58p Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 21    7.12.18 9:51 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.sendorder.SendOrderSender;
 import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.util.FileFilterRegexpMatch;
+import de.mendelson.util.IOFileFilterRegexpMatch;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.text.DateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Collections;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -40,7 +47,7 @@ import java.util.logging.Logger;
  * Thread that polls a directory
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 21 $
  */
 public class DirPollThread implements Runnable {
 
@@ -86,6 +93,23 @@ public class DirPollThread implements Runnable {
     }
 
     /**
+     * Returns a line that describes this thread for the log
+     */
+    public String getLogLine() {
+        StringBuilder builder = new StringBuilder();
+        builder.append("[");
+        builder.append(this.sender.getName());
+        builder.append(" -> ");
+        builder.append(this.receiver.getName());
+        builder.append("] ");        
+        builder.append( Paths.get(this.getMonitoredDirectory()).toAbsolutePath().toString() );
+        builder.append( " (");
+        builder.append( String.valueOf(TimeUnit.MILLISECONDS.toSeconds(this.pollInterval)));
+        builder.append( "s)");
+        return (builder.toString());
+    }
+
+    /**
      * Checks if the passed data is still the data that is stored in this thread
      */
     public boolean hasBeenModified(Partner newSender, Partner newReceiver) {
@@ -111,8 +135,25 @@ public class DirPollThread implements Runnable {
      */
     public void requestStop() {
         this.logger.info(rb.getResourceString("poll.stopped",
-                new Object[]{this.sender.getName(), this.receiver.getName()}));
+                new Object[]{
+                    this.sender.getName(),
+                    this.receiver.getName()
+                }));
         this.stopRequested = true;
+    }
+
+    /**Builds up the directory that is monitored by this process*/
+    private String getMonitoredDirectory() {
+        StringBuilder outboxDirName = new StringBuilder();
+        outboxDirName.append(Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString());
+        outboxDirName.append(FileSystems.getDefault().getSeparator());
+        outboxDirName.append(MessageStoreHandler.convertToValidFilename(this.receiver.getName()));
+        outboxDirName.append(FileSystems.getDefault().getSeparator());
+        outboxDirName.append("outbox");
+        outboxDirName.append(FileSystems.getDefault().getSeparator());
+        outboxDirName.append(MessageStoreHandler.convertToValidFilename(this.sender.getName()));
+        outboxDirName.append(FileSystems.getDefault().getSeparator());
+        return( outboxDirName.toString());
     }
 
     /**
@@ -120,13 +161,18 @@ public class DirPollThread implements Runnable {
      */
     @Override
     public void run() {
-        String pollIgnoreList = this.sender.getPollIgnoreListAsString();
+        String pollIgnoreList = this.receiver.getPollIgnoreListAsString();
         if (pollIgnoreList == null) {
             pollIgnoreList = "--";
         }
-        this.logger.info(rb.getResourceString("poll.started", new Object[]{
-            this.sender.getName(), this.receiver.getName(), pollIgnoreList, this.receiver.getPollInterval()
-        }));
+        this.logger.info(rb.getResourceString("poll.started",
+                new Object[]{
+                    this.sender.getName(),
+                    this.receiver.getName(),
+                    pollIgnoreList,
+                    this.receiver.getPollInterval()
+                }
+        ));
         //allow to process 3 files threaded
         ExecutorService fixedTheadExecutor = Executors.newFixedThreadPool(3);
         while (!stopRequested) {
@@ -147,20 +193,15 @@ public class DirPollThread implements Runnable {
                 //nop
             }
             if (!stopRequested) {
-                StringBuilder outboxDirName = new StringBuilder();
-                outboxDirName.append(new File(this.preferences.get(PreferencesAS2.DIR_MSG)).getAbsolutePath());
-                outboxDirName.append(File.separator);
-                outboxDirName.append(MessageStoreHandler.convertToValidFilename(this.receiver.getName()));
-                outboxDirName.append(File.separator);
-                outboxDirName.append("outbox");
-                outboxDirName.append(File.separator);
-                outboxDirName.append(MessageStoreHandler.convertToValidFilename(this.sender.getName()));
-                outboxDirName.append(File.separator);
-                File outboxDir = new File(outboxDirName.toString());
-                if (!outboxDir.exists()) {
-                    outboxDir.mkdirs();
+                Path outboxDir = Paths.get(this.getMonitoredDirectory());
+                if (Files.notExists(outboxDir)) {
+                    try {
+                        Files.createDirectories(outboxDir);
+                    } catch (Exception e) {
+                        //nop
+                    }
                 }
-                FileFilterRegexpMatch fileFilter = new FileFilterRegexpMatch();
+                IOFileFilterRegexpMatch fileFilter = new IOFileFilterRegexpMatch();
                 if (this.receiver.getPollIgnoreList() != null) {
                     for (String ignoreEntry : this.receiver.getPollIgnoreList()) {
                         fileFilter.addNonMatchingPattern(ignoreEntry);
@@ -170,49 +211,77 @@ public class DirPollThread implements Runnable {
                     this.logger.log(Level.FINER, this.rb.getResourceString("poll.log.polling",
                             new Object[]{
                                 this.sender.getName(), this.receiver.getName(),
-                                outboxDir.getAbsolutePath()
+                                outboxDir.toAbsolutePath().toString()
                             }));
                 }
-                File[] files = outboxDir.listFiles(fileFilter);
-                Arrays.sort(files, new ComparatorFiledateOldestFirst());
-                List<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
-                int fileCounter = 0;
-                for (File file : files) {
-                    //take a defined max number of files per poll process only
-                    if (fileCounter == this.receiver.getMaxPollFiles()) {
-                        break;
-                    }
-                    if (file.isDirectory()) {
-                        continue;
-                    }
-                    if (!file.canWrite()) {
-                        logger.warning(rb.getResourceString("warning.ro", file.getAbsolutePath()));
-                        continue;
-                    }
-                    if (!this.renameIsPossible(file)) {
-                        logger.warning(rb.getResourceString("warning.notcomplete", file.getAbsolutePath()));
-                        continue;
-                    }
-                    final File finalFile = file;
-                    Callable<Boolean> singleTask = new Callable<Boolean>() {
-
-                        @Override
-                        public Boolean call() {
-                            processFile(finalFile);
-                            return (Boolean.TRUE);
-                        }
-                    };
-                    tasks.add(singleTask);
-                    fileCounter++;
-                }
-                //wait for all threads to be finished
                 try {
-                    fixedTheadExecutor.invokeAll(tasks);
-                } catch (InterruptedException e) {
+                    List<Path> files = this.listFilesNIO(outboxDir, fileFilter);
+                    Collections.sort(files, new ComparatorFiledateOldestFirst());
+                    List<Callable<Boolean>> tasks = new ArrayList<Callable<Boolean>>();
+                    int fileCounter = 0;
+                    for (Path file : files) {
+                        //take a defined max number of files per poll process only
+                        if (fileCounter == this.receiver.getMaxPollFiles()) {
+                            break;
+                        }
+                        //ignore directories
+                        if (Files.isDirectory(file)) {
+                            continue;
+                        }
+                        if (!Files.isReadable(file)) {
+                            logger.warning(rb.getResourceString("warning.noread", file.toString()));
+                            continue;
+                        }
+                        if (!Files.isWritable(file)) {
+                            logger.warning(rb.getResourceString("warning.ro", file.toString()));
+                            continue;
+                        }
+                        //it is not sure that this triggers as the behavior depends on the OS file locking mechanism
+                        if (!this.renameIsPossible(file.toFile())) {
+                            logger.warning(rb.getResourceString("warning.notcomplete", file.toString()));
+                            continue;
+                        }
+                        final Path finalFile = file;
+                        Callable<Boolean> singleTask = new Callable<Boolean>() {
+                            @Override
+                            public Boolean call() {
+                                processFile(finalFile);
+                                return (Boolean.TRUE);
+                            }
+                        };
+                        tasks.add(singleTask);
+                        fileCounter++;
+                    }
+                    //wait for all threads to be finished
+                    try {
+                        fixedTheadExecutor.invokeAll(tasks);
+                    } catch (InterruptedException e) {
+                        //nop
+                    }
+                } catch (Exception e) {
                     //nop
                 }
             }
         }
+    }
+
+    /**
+     * Non blocking file directory polling
+     */
+    private List<Path> listFilesNIO(Path dir, DirectoryStream.Filter fileFilter) throws Exception {
+        List<Path> result = new ArrayList<Path>();
+        DirectoryStream<Path> stream = null;
+        try {
+            stream = Files.newDirectoryStream(dir, fileFilter);
+            for (Path entry : stream) {
+                result.add(entry);
+            }
+        } finally {
+            if (stream != null) {
+                stream.close();
+            }
+        }
+        return result;
     }
 
     /**
@@ -233,33 +302,51 @@ public class DirPollThread implements Runnable {
     /**
      * Processes a single, found file
      */
-    private void processFile(File file) {
+    private void processFile(Path file) {
         try {
             logger.fine(rb.getResourceString("processing.file",
                     new Object[]{
-                        file.getName(),
+                        file.getFileName().toString(),
                         this.sender.getName(),
                         this.receiver.getName()
                     }));
             SendOrderSender orderSender = new SendOrderSender(this.configConnection, this.runtimeConnection);
-            AS2Message message = orderSender.send(this.certificateManagerEncSign, this.sender, this.receiver, file, null);
+            AS2Message message = orderSender.send(this.certificateManagerEncSign, this.sender, this.receiver, file.toFile(), null,
+                    this.receiver.getSubject());
             clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
 
-            boolean deleted = file.delete();
-            if (deleted) {
+            try {
+                Files.delete(file);
                 logger.log(Level.INFO,
                         rb.getResourceString("messagefile.deleted",
                                 new Object[]{
-                                    message.getAS2Info().getMessageId(),
-                                    file.getName(),}),
+                                    file.getFileName().toString()}),
                         message.getAS2Info());
+            } catch (IOException e) {
+                SystemEvent event = new SystemEvent(
+                        SystemEvent.SEVERITY_WARNING,
+                        SystemEvent.ORIGIN_SYSTEM,
+                        SystemEvent.TYPE_FILE_DELETE);
+                event.setSubject(event.typeToTextLocalized());
+                event.setBody(
+                        rb.getResourceString("processing.file",
+                                new Object[]{
+                                    file.getFileName().toString(),
+                                    this.sender.getName(),
+                                    this.receiver.getName()
+                                }) + "\n\n[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                SystemEventManagerImplAS2.newEvent(event);
             }
         } catch (Throwable e) {
             String message = rb.getResourceString("processing.file.error",
-                    new Object[]{file.getName(), this.sender, this.receiver, e.getMessage()});
+                    new Object[]{
+                        file.getFileName().toString(),
+                        this.sender,
+                        this.receiver,
+                        e.getMessage()});
             logger.severe(message);
             Exception exception = new Exception(message, e);
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, exception);
+            SystemEventManagerImplAS2.systemFailure(exception, SystemEvent.TYPE_PROCESSING_ANY);
         }
     }
 }

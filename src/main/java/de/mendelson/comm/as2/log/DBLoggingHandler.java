@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 14    4.01.13 12:13 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 15    6.12.18 17:31 Heller $
 package de.mendelson.comm.as2.log;
 
 import de.mendelson.comm.as2.database.DBDriverManager;
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 /**
  * Handler to log logger data to a data base
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class DBLoggingHandler extends Handler {
 
@@ -64,6 +64,7 @@ public class DBLoggingHandler extends Handler {
      * Format and publish a LogRecord.
      * @param  record  description of the log event
      */
+    @Override
     public synchronized void publish(LogRecord record) {
         if (!isLoggable(record)) {
             return;
@@ -93,11 +94,13 @@ public class DBLoggingHandler extends Handler {
     /**
      * Flush any buffered messages.
      */
+    @Override
     public synchronized void flush() {
     }
 
     /**Just flushes the current message
      */
+    @Override
     public synchronized void close() throws SecurityException {
         this.flush();
     }
@@ -109,9 +112,11 @@ public class DBLoggingHandler extends Handler {
         if (parameter != null && parameter.length > 0) {
             if (parameter[0] instanceof AS2MessageInfo) {
                 AS2MessageInfo info = (AS2MessageInfo) parameter[0];
+                message = "[" + info.getMessageId() + "] " + message;
                 this.access.log(level, millis, message, info.getMessageId());
             } else if (parameter[0] instanceof AS2MDNInfo) {
                 AS2MDNInfo info = (AS2MDNInfo) parameter[0];
+                message = "[" + info.getMessageId() + "] " + message;
                 this.access.log(level, millis, message, info.getRelatedMessageId());
             }
         }

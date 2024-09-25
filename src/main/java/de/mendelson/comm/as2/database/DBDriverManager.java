@@ -1,14 +1,20 @@
-//$Header: /as2/de/mendelson/comm/as2/database/DBDriverManager.java 21    5/03/17 2:40p Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/DBDriverManager.java 26    16.10.18 11:40 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.DebuggableConnection;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManager;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.logging.Logger;
 import org.apache.commons.dbcp2.BasicDataSource;
 
@@ -23,7 +29,7 @@ import org.apache.commons.dbcp2.BasicDataSource;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 26 $
  */
 public class DBDriverManager {
 
@@ -36,11 +42,25 @@ public class DBDriverManager {
     public static final PreferencesAS2 preferences = new PreferencesAS2();
     private final static String DB_USER_NAME = "sa";
     private final static String DB_PASSWORD = "as2dbadmin";
+    /**
+     * Resourcebundle to localize messages of the DB server
+     */
+    private static MecResourceBundle rb;
 
-    public static void registerDriver() throws Exception{
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleDBDriverManager.class.getName());
+        } //load up resourcebundle
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
+
+    public static void registerDriver() throws Exception {
         Class.forName("org.hsqldb.jdbcDriver");
     }
-    
+
     /**
      * Setup the driver manager, initialize the connection pool
      *
@@ -119,7 +139,7 @@ public class DBDriverManager {
         } else if (DB_TYPE == DBDriverManager.DB_RUNTIME) {
             alias = alias + "runtime";
         } else if (DB_TYPE != DB_DEPRICATED) {
-            throw new RuntimeException("Unknown DB type requested in MecDriverManager.");
+            throw new RuntimeException("Unknown DB type requested in DBDriverManager.");
         }
         return (alias);
     }
@@ -132,46 +152,69 @@ public class DBDriverManager {
      * class
      */
     public static boolean createDatabase(final int DB_TYPE) throws Exception {
-        // It will be create automatically if it does not yet exist
-        // the given files in the URL is the name of the database
-        // "sa" is the user name and "" is the (empty) password
-        StringBuilder message = new StringBuilder("Creating database ");
-        String createResource = null;
-        int dbVersion = 0;
-        if (DB_TYPE == DBDriverManager.DB_CONFIG) {
-            message.append("CONFIG");
-            dbVersion = AS2ServerVersion.getRequiredDBVersionConfig();
-            createResource = SQLScriptExecutor.SCRIPT_RESOURCE_CONFIG;
-        } else if (DB_TYPE == DBDriverManager.DB_RUNTIME) {
-            message.append("RUNTIME");
-            dbVersion = AS2ServerVersion.getRequiredDBVersionRuntime();
-            createResource = SQLScriptExecutor.SCRIPT_RESOURCE_RUNTIME;
-        } else if (DB_TYPE != DBDriverManager.DB_DEPRICATED) {
-            throw new RuntimeException("Unknown DB type requested in DBDriverManager.");
-        }
-        Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).info(message.toString());
-        Connection connection = null;
         try {
-            connection = DriverManager.getConnection(
-                    "jdbc:hsqldb:" + DBDriverManager.getDBName(DB_TYPE),
-                    "sa", "");
-            Statement statement = connection.createStatement();
-            statement.execute("ALTER USER " + DB_USER_NAME.toUpperCase() + " SET PASSWORD '" + DB_PASSWORD + "'");
-            statement.close();
-            SQLScriptExecutor executor = new SQLScriptExecutor();
-            executor.create(connection, createResource, dbVersion);
-            Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).info("Database created.");
-        } catch (Exception e) {
-            throw new Exception("Database not created: " + e.getMessage());
-        } finally {
-            if (connection != null) {
+            // It will be create automatically if it does not yet exist
+            // the given files in the URL is the name of the database
+            // "sa" is the user name and "" is the (empty) password            
+            String createResource = null;
+            int dbVersion = 0;
+            if (DB_TYPE == DBDriverManager.DB_CONFIG) {
+                dbVersion = AS2ServerVersion.getRequiredDBVersionConfig();
+                createResource = SQLScriptExecutor.SCRIPT_RESOURCE_CONFIG;
+            } else if (DB_TYPE == DBDriverManager.DB_RUNTIME) {
+                dbVersion = AS2ServerVersion.getRequiredDBVersionRuntime();
+                createResource = SQLScriptExecutor.SCRIPT_RESOURCE_RUNTIME;
+            } else if (DB_TYPE != DBDriverManager.DB_DEPRICATED) {
+                throw new RuntimeException("Unknown DB type requested in DBDriverManager.");
+            }
+            Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).info(rb.getResourceString("creating.database." + DB_TYPE));
+            Connection connection = null;
+            try {
+                connection = DriverManager.getConnection(
+                        "jdbc:hsqldb:" + DBDriverManager.getDBName(DB_TYPE),
+                        "sa", "");
+                Statement statement = null;
                 try {
+                    statement = connection.createStatement();
+                    statement.execute("ALTER USER " + DB_USER_NAME.toUpperCase() + " SET PASSWORD '" + DB_PASSWORD + "'");
+                } finally {
+                    if (statement != null) {
+                        statement.close();
+                    }
+                }
+                SQLScriptExecutor executor = new SQLScriptExecutor();
+                executor.create(connection, createResource, dbVersion);
+            } catch (Exception e) {
+                throw new Exception(rb.getResourceString("database.creation.failed." + DB_TYPE)
+                        + " [" + e.getMessage() + "]");
+            } finally {
+                if (connection != null) {
                     connection.close();
-                } catch (Exception e) {
-                    Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).severe("Database creation failed: " + e.getMessage());
-                    e.printStackTrace();
                 }
             }
+            Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).info(rb.getResourceString("database.creation.success." + DB_TYPE));
+            SystemEvent event = new SystemEvent(
+                    SystemEvent.SEVERITY_INFO,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_DATABASE_CREATION);
+            event.setSubject(rb.getResourceString("database.creation.success." + DB_TYPE));
+            SystemEventManagerImplAS2.newEvent(event);
+        } catch (Throwable e) {
+            Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).severe(rb.getResourceString("database.creation.failed." + DB_TYPE)
+                    + " [" + e.getMessage() + "]");
+            SystemEvent event = new SystemEvent(
+                    SystemEvent.SEVERITY_ERROR,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_DATABASE_CREATION);
+            event.setSubject(
+                    rb.getResourceString("database.creation.failed." + DB_TYPE));
+            String message = e.getMessage();
+            if (message == null) {
+                message = "[" + e.getClass().getSimpleName() + "]";
+            }
+            event.setBody(message);
+            SystemEventManagerImplAS2.newEvent(event);
+            throw e;
         }
         return (true);
     }

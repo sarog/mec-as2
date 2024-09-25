@@ -1,7 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ModuleLockReleaseController.java 1     7.08.14 17:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ModuleLockReleaseController.java 2     4/03/18 12:27p Heller $
 package de.mendelson.comm.as2.server;
 
-import de.mendelson.comm.as2.modulelock.ModuleLock;
+import de.mendelson.util.modulelock.ModuleLock;
 import java.sql.Connection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -19,7 +19,7 @@ import java.util.logging.Logger;
  * is detected by this class the exclusive lock is deleted in the server. This might be necessary if a client has been shut down
  * without deleteting it's exclusive lock on a module (or a connection has been cut or something else)
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ModuleLockReleaseController {
 

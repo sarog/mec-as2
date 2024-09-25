@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 7     9/01/15 11:48a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 9     4/06/18 12:22p Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -15,10 +16,11 @@ import java.io.Serializable;
  * be send to the server
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class LoginRequest extends ClientServerMessage implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private String username = null;
     private char[] password = null;
     /**

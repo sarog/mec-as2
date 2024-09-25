@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestResponse.java 2     4/06/17 2:49p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestResponse.java 3     4/06/18 12:22p Heller $
 package de.mendelson.util.clientserver.connectiontest.clientserver;
 
 import de.mendelson.util.clientserver.connectiontest.ConnectionTestResult;
@@ -19,10 +19,11 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ConnectionTestResponse extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private ConnectionTestResult result = null;
     private List<LoggingHandlerLogEntryArray.LogEntry> logEntries = new ArrayList<LoggingHandlerLogEntryArray.LogEntry>();
 

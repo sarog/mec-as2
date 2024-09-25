@@ -1,14 +1,19 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 10    20.09.11 17:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 11    14.12.18 13:12 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.message.AS2Info;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
-import javax.swing.*;
-import java.util.*;
-import java.text.*;
 import de.mendelson.util.MecResourceBundle;
+import java.awt.image.BaseMultiResolutionImage;
+import java.text.DateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
 
 
@@ -22,15 +27,45 @@ import javax.swing.table.AbstractTableModel;
 /**
  * Model to display the message overview
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class TableModelMessageDetails extends AbstractTableModel {
 
-    public static final ImageIcon ICON_IN = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in16x16.gif"));
-    public static final ImageIcon ICON_OUT = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out16x16.gif"));
-    public static final ImageIcon ICON_MESSAGE = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message16x16.gif"));
-    public static final ImageIcon ICON_SIGNAL_OK = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok16x16.gif"));
-    public static final ImageIcon ICON_SIGNAL_FAILURE = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure16x16.gif"));
+    public static final ImageIcon ICON_IN = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in64x64.gif")).getImage()
+    ));
+    public static final ImageIcon ICON_OUT = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out64x64.gif")).getImage()            
+    ));
+    public static final ImageIcon ICON_MESSAGE = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message64x64.gif")).getImage()            
+    ));
+    public static final ImageIcon ICON_SIGNAL_OK = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok64x64.gif")).getImage()            
+    ));
+    public static final ImageIcon ICON_SIGNAL_FAILURE = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure64x64.gif")).getImage()            
+    ));
     /**ResourceBundle to localize the headers*/
     private MecResourceBundle rb = null;
     /**ResourceBundle to localize the headers*/

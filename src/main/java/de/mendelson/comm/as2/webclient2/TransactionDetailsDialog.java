@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 10    18.09.12 14:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 11    7.11.18 10:40 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.data.Property;
@@ -22,7 +22,8 @@ import de.mendelson.comm.as2.message.AS2Payload;
 import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.util.MecResourceBundle;
-import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -43,7 +44,7 @@ import java.util.ResourceBundle;
 /**
  * The about dialog for the as2 server web ui
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class TransactionDetailsDialog extends OkDialog {
 
@@ -205,30 +206,30 @@ public class TransactionDetailsDialog extends OkDialog {
             @Override
             public void valueChange(ValueChangeEvent event) {
                 AS2Info info = (AS2Info) TransactionDetailsDialog.this.detailsTable.getValue();
-                File rawFile = null;
+                Path rawFile = null;
                 if (!info.isMDN()) {
                     AS2MessageInfo messageInfo = (AS2MessageInfo) info;
                     if (messageInfo.getRawFilenameDecrypted() != null) {
-                        rawFile = new File(messageInfo.getRawFilenameDecrypted());
+                        rawFile = Paths.get(messageInfo.getRawFilenameDecrypted());
                     } else if (messageInfo.getRawFilename() != null) {
-                        rawFile = new File(messageInfo.getRawFilename());
+                        rawFile = Paths.get(messageInfo.getRawFilename());
                     }
                 } else if (info.isMDN()) {
                     AS2MDNInfo mdnInfo = (AS2MDNInfo) info;
                     if (mdnInfo.getRawFilename() != null) {
-                        rawFile = new File(mdnInfo.getRawFilename());
+                        rawFile = Paths.get(mdnInfo.getRawFilename());
                     }
                 }                
                 TransactionDetailsDialog.this.rawMessageDecryptedPanel.displayFile(rawFile);
-                File headerFile = null;
+                Path headerFile = null;
                 if (info.getHeaderFilename() != null) {
-                    headerFile = new File(info.getHeaderFilename());
+                    headerFile = Paths.get(info.getHeaderFilename());
                 }
                 TransactionDetailsDialog.this.messageHeaderPanel.displayFile(headerFile);
                 try {
                     if (TransactionDetailsDialog.this.payload.size() > 0) {
                         for (int i = 0; i < TransactionDetailsDialog.this.payload.size(); i++) {
-                            File payloadFile = new File(TransactionDetailsDialog.this.payload.get(i).getPayloadFilename());
+                            Path payloadFile = Paths.get(TransactionDetailsDialog.this.payload.get(i).getPayloadFilename());
                             TransactionDetailsDialog.this.payloadPanel[i].displayFile(payloadFile);
                         }
                     }

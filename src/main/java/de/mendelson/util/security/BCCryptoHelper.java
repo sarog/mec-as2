@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/util/security/BCCryptoHelper.java 108   7/24/17 1:17p Heller $
+//$Header: /as2/de/mendelson/util/security/BCCryptoHelper.java 116   5.11.18 9:59 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -7,11 +7,10 @@ import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
 import java.security.DigestInputStream;
 import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
@@ -53,6 +52,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.smime.SMIMECapabilitiesAttribute;
 import org.bouncycastle.asn1.smime.SMIMECapability;
 import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
@@ -122,7 +122,7 @@ import org.bouncycastle.util.encoders.Base64;
  * Utility class to handle bouncycastle cryptography
  *
  * @author S.Heller
- * @version $Revision: 108 $
+ * @version $Revision: 116 $
  */
 public class BCCryptoHelper {
 
@@ -134,27 +134,31 @@ public class BCCryptoHelper {
     public static final String ALGORITHM_AES_192 = "aes192";
     public static final String ALGORITHM_AES_256 = "aes256";
     /**
-     * AES 128 with PKCS#1v2.1 RSAES_OAEP key encryption using SHA-256 as hash algorithm,
-     * MGF1 as mask generation function
+     * AES 128 with PKCS#1v2.1 RSAES_OAEP key encryption using SHA-256 as hash
+     * algorithm, MGF1 as mask generation function
      */
     public static final String ALGORITHM_AES_128_RSAES_OAEP = "aes128-rsaes-oaep";
     /**
-     * AES 192 with PKCS#1v2.1 RSAES_OAEP key encryption using SHA-256 as hash algorithm,
-     * MGF1 as mask generation function
+     * AES 192 with PKCS#1v2.1 RSAES_OAEP key encryption using SHA-256 as hash
+     * algorithm, MGF1 as mask generation function
      */
     public static final String ALGORITHM_AES_192_RSAES_OAEP = "aes192-rsaes-oaep";
     /**
-     * AES 256 with PKCS#1v2.1 RSAES_OAEP key encryption using SHA-256 as hash algorithm,
-     * MGF1 as mask generation function
+     * AES 256 with PKCS#1v2.1 RSAES_OAEP key encryption using SHA-256 as hash
+     * algorithm, MGF1 as mask generation function
      */
     public static final String ALGORITHM_AES_256_RSAES_OAEP = "aes256-rsaes-oaep";
-    
+
     public static final String ALGORITHM_MD5 = "md5";
     public static final String ALGORITHM_SHA1 = "sha1";
     public static final String ALGORITHM_SHA224 = "sha-224";
     public static final String ALGORITHM_SHA256 = "sha-256";
     public static final String ALGORITHM_SHA384 = "sha-384";
     public static final String ALGORITHM_SHA512 = "sha-512";
+    public static final String ALGORITHM_SHA3_224 = "sha3-224";
+    public static final String ALGORITHM_SHA3_256 = "sha3-256";
+    public static final String ALGORITHM_SHA3_384 = "sha3-384";
+    public static final String ALGORITHM_SHA3_512 = "sha3-512";
     /**
      * PKCS#1v2.1 RSASSA-PSS signature scheme using SHA-1 as hash algorithm,
      * MGF1 as mask generation function
@@ -179,7 +183,27 @@ public class BCCryptoHelper {
      * PKCS#1v2.1 RSASSA-PSS signature scheme using SHA-512 as hash algorithm,
      * MGF1 as mask generation function
      */
-    public static final String ALGORITHM_SHA_512_RSASSA_PSS = "sha-512-rsassa-pss";    
+    public static final String ALGORITHM_SHA_512_RSASSA_PSS = "sha-512-rsassa-pss";
+    /**
+     * PKCS#1v2.1 RSASSA-PSS signature scheme using SHA-3-224 as hash algorithm,
+     * MGF1 as mask generation function SHA3-224withRSAandMGF1
+     */
+    public static final String ALGORITHM_SHA3_224_RSASSA_PSS = "sha3-224-rsassa-pss";
+    /**
+     * PKCS#1v2.1 RSASSA-PSS signature scheme using SHA-3-256 as hash algorithm,
+     * MGF1 as mask generation function SHA3-256withRSAandMGF1
+     */
+    public static final String ALGORITHM_SHA3_256_RSASSA_PSS = "sha3-256-rsassa-pss";
+    /**
+     * PKCS#1v2.1 RSASSA-PSS signature scheme using SHA-3-384 as hash algorithm,
+     * MGF1 as mask generation function SHA3-384withRSAandMGF1
+     */
+    public static final String ALGORITHM_SHA3_384_RSASSA_PSS = "sha3-384-rsassa-pss";
+    /**
+     * PKCS#1v2.1 RSASSA-PSS signature scheme using SHA-3-512 as hash algorithm,
+     * MGF1 as mask generation function SHA3-512withRSAandMGF1
+     */
+    public static final String ALGORITHM_SHA3_512_RSASSA_PSS = "sha3-512-rsassa-pss";
     public static final String ALGORITHM_IDEA = "idea";
     public static final String ALGORITHM_CAST5 = "cast5";
     public static final String KEYSTORE_PKCS12 = "PKCS12";
@@ -442,6 +466,8 @@ public class BCCryptoHelper {
 
     public void initialize() {
         Security.addProvider(new BouncyCastleProvider());
+        //set BC properties to deal with incorrects certificates RSA structures
+        System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "true");
         MailcapCommandMap mc = (MailcapCommandMap) CommandMap.getDefaultCommandMap();
         mc.addMailcap("application/pkcs7-signature;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_signature");
         mc.addMailcap("application/pkcs7-mime;; x-java-content-handler=org.bouncycastle.mail.smime.handlers.pkcs7_mime");
@@ -564,7 +590,7 @@ public class BCCryptoHelper {
             } else {
                 algorithm = "SHA224withRSAandMGF1";
             }
-        }else if (digest.equalsIgnoreCase(ALGORITHM_SHA_384_RSASSA_PSS)) {
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA_384_RSASSA_PSS)) {
             if (isECKey) {
                 throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
             } else {
@@ -581,6 +607,56 @@ public class BCCryptoHelper {
                 throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
             } else {
                 algorithm = "SHA512withRSAandMGF1";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_224)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                //algorithm = "SHA3-224withRSA";
+                //rsassa-pkcs1-v1-5-with-sha3-224 has OID 2.16.840.1.101.3.4.3.13
+                algorithm = "SHA3-224withRSA";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_256)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                algorithm = "SHA3-256withRSA";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_384)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                algorithm = "SHA3-384withRSA";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_512)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                algorithm = "SHA3-512withRSA";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_224_RSASSA_PSS)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                algorithm = "SHA3-224withRSAandMGF1";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_256_RSASSA_PSS)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                algorithm = "SHA3-256withRSAandMGF1";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_384_RSASSA_PSS)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                algorithm = "SHA3-384withRSAandMGF1";
+            }
+        } else if (digest.equalsIgnoreCase(ALGORITHM_SHA3_512_RSASSA_PSS)) {
+            if (isECKey) {
+                throw new Exception("sign: Signing digest " + digest + " is not supported for non RSA keys.");
+            } else {
+                algorithm = "SHA3-512withRSAandMGF1";
             }
         } else {
             throw new Exception("sign: Signing digest " + digest + " is not supported.");
@@ -732,9 +808,9 @@ public class BCCryptoHelper {
             }
             SMIMESigned signed = new SMIMESigned(signedMultiPart);
             SignerInformationStore signerStore = signed.getSignerInfos();
-            Iterator iterator = signerStore.getSigners().iterator();
+            Iterator<SignerInformation> iterator = signerStore.getSigners().iterator();
             while (iterator.hasNext()) {
-                SignerInformation signerInfo = (SignerInformation) iterator.next();
+                SignerInformation signerInfo = iterator.next();
                 return (signerInfo.getDigestAlgOID());
             }
             throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Unable to identify signature algorithm.");
@@ -743,8 +819,9 @@ public class BCCryptoHelper {
     }
 
     /**
-     * Returns the encryption OID algorithm from a signature that signs the passed
-     * message part The return value for RSASSA-PSS is for example 1.2.840.113549.1.1.10
+     * Returns the encryption OID algorithm from a signature that signs the
+     * passed message part The return value for RSASSA-PSS is for example
+     * 1.2.840.113549.1.1.10
      */
     public String getEncryptionAlgOIDFromSignature(Part part) throws Exception {
         if (part == null) {
@@ -760,7 +837,7 @@ public class BCCryptoHelper {
             }
             SMIMESigned signed = new SMIMESigned(signedMultiPart);
             SignerInformationStore signerStore = signed.getSignerInfos();
-            Iterator iterator = signerStore.getSigners().iterator();
+            Iterator<SignerInformation> iterator = signerStore.getSigners().iterator();
             while (iterator.hasNext()) {
                 SignerInformation signerInfo = (SignerInformation) iterator.next();
                 return (signerInfo.getEncryptionAlgOID());
@@ -769,8 +846,7 @@ public class BCCryptoHelper {
         }
         throw new GeneralSecurityException("Content-Type indicates data isn't signed");
     }
-    
-    
+
     /**
      * Returns the digest OID algorithm from a pkcs7 signature The return value
      * for sha1 is e.g. "1.3.14.3.2.26".
@@ -782,9 +858,9 @@ public class BCCryptoHelper {
         CMSSignedData signedData = new CMSSignedData(signature);
         SignerInformationStore signers = signedData.getSignerInfos();
         Collection signerCollection = signers.getSigners();
-        Iterator iterator = signerCollection.iterator();
+        Iterator<SignerInformation> iterator = signerCollection.iterator();
         while (iterator.hasNext()) {
-            SignerInformation signerInfo = (SignerInformation) iterator.next();
+            SignerInformation signerInfo = iterator.next();
             return (signerInfo.getDigestAlgOID());
         }
         throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Unable to identify signature algorithm.");
@@ -798,13 +874,13 @@ public class BCCryptoHelper {
         CMSSignedDataParser parser = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), signed);
         parser.getSignedContent().drain();
         SignerInformationStore signers = parser.getSignerInfos();
-        Collection signerCollection = signers.getSigners();
-        Iterator it = signerCollection.iterator();
+        Collection<SignerInformation> signerCollection = signers.getSigners();
+        Iterator<SignerInformation> it = signerCollection.iterator();
         boolean verified = false;
         X509CertificateHolder certHolder = new X509CertificateHolder(cert.getEncoded());
         SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder);
         while (it.hasNext()) {
-            SignerInformation signerInformation = (SignerInformation) it.next();
+            SignerInformation signerInformation = it.next();
             if (!verified) {
                 verified = signerInformation.verify(verifier);
                 if (verified) {
@@ -899,14 +975,16 @@ public class BCCryptoHelper {
                 signed = new SMIMESigned(signedMultiPart, contentTransferEncoding);
             }
             if (!ignoreSignatureVerificationError) {
-                //perform the signature verification - or not
+                //perform the signature verification - this will be successful or not
                 X509Certificate x509Cert = this.castCertificate(cert);
                 X509CertificateHolder certHolder = new X509CertificateHolder(cert.getEncoded());
-                SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(certHolder);
+                SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(new BouncyCastleProvider()).build(certHolder);
                 SignerInformationStore signerStore = signed.getSignerInfos();
                 Iterator<SignerInformation> iterator = signerStore.getSigners().iterator();
                 while (iterator.hasNext()) {
                     SignerInformation signerInfo = iterator.next();
+                    //System.out.println("DEBUG Found digest algorithm: " + signerInfo.getDigestAlgorithmID().getAlgorithm().getId());                    
+                    //System.out.println("DEBUG Found encryption algorithm: " + signerInfo.toASN1Structure().getDigestEncryptionAlgorithm().getAlgorithm().getId());
                     if (!signerInfo.verify(verifier)) {
                         StringBuilder signatureCertInfo = new StringBuilder();
                         //try to gain more information about the problem
@@ -1002,6 +1080,14 @@ public class BCCryptoHelper {
             return (CMSSignedGenerator.DIGEST_SHA384);
         } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA512) || algorithm.equalsIgnoreCase("sha512")) {
             return (CMSSignedGenerator.DIGEST_SHA512);
+        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_224)) {
+            return (NISTObjectIdentifiers.id_sha3_224.getId());
+        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_256)) {
+            return (NISTObjectIdentifiers.id_sha3_256.getId());
+        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_384)) {
+            return (NISTObjectIdentifiers.id_sha3_384.getId());
+        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_512)) {
+            return (NISTObjectIdentifiers.id_sha3_512.getId());
         } else if (algorithm.equalsIgnoreCase(ALGORITHM_3DES)) {
             return ("1.2.840.113549.3.7");
         } else if (algorithm.equalsIgnoreCase(ALGORITHM_DES)) {
@@ -1043,6 +1129,14 @@ public class BCCryptoHelper {
             return (ALGORITHM_SHA384);
         } else if (oid.equalsIgnoreCase(CMSSignedGenerator.DIGEST_SHA512)) {
             return (ALGORITHM_SHA512);
+        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_224.getId())) {
+            return (ALGORITHM_SHA3_224);
+        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_256.getId())) {
+            return (ALGORITHM_SHA3_256);
+        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_384.getId())) {
+            return (ALGORITHM_SHA3_384);
+        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_512.getId())) {
+            return (ALGORITHM_SHA3_512);
         } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.CAST5_CBC)) {
             return (ALGORITHM_CAST5);
         } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.DES_EDE3_CBC)) {
@@ -1117,9 +1211,9 @@ public class BCCryptoHelper {
             dataStreamGenerator.addRecipientInfoGenerator(recipientGenerator);
         } else {
             X509Certificate x509Cert = this.castCertificate(cert);
-            if( keyTransportScheme != null ){
+            if (keyTransportScheme != null) {
                 dataStreamGenerator.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(x509Cert, keyTransportScheme).setProvider("BC"));
-            }else{
+            } else {
                 dataStreamGenerator.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(x509Cert).setProvider("BC"));
             }
         }
@@ -1150,10 +1244,10 @@ public class BCCryptoHelper {
             encryptedStream.write(memBuffer.toByteArray());
         } else {
             File tempFile = File.createTempFile("encrypt", ".temp");
-            FileOutputStream fileBuffer = null;
+            OutputStream fileBuffer = null;
             OutputStream cmsEnveloped = null;
             try {
-                fileBuffer = new FileOutputStream(tempFile);
+                fileBuffer = Files.newOutputStream(tempFile.toPath());
                 ASN1ObjectIdentifier objectIdentifier = new ASN1ObjectIdentifier(oid);
                 OutputEncryptor outputEncryptor = new JceCMSContentEncryptorBuilder(objectIdentifier).build();
                 cmsEnveloped = dataStreamGenerator.open(fileBuffer, outputEncryptor);
@@ -1168,16 +1262,20 @@ public class BCCryptoHelper {
                     fileBuffer.close();
                 }
             }
-            FileInputStream fileIn = null;
+            InputStream fileIn = null;
             try {
-                fileIn = new FileInputStream(tempFile);
+                fileIn = Files.newInputStream(tempFile.toPath());
                 this.copyStreams(fileIn, encryptedStream);
             } finally {
                 if (fileIn != null) {
                     fileIn.close();
                 }
             }
-            boolean deleted = tempFile.delete();
+            try {
+                Files.delete(tempFile.toPath());
+            } catch (IOException e) {
+                //nop
+            }
         }
     }
 
@@ -1266,9 +1364,9 @@ public class BCCryptoHelper {
             compressed.write(memBuffer.toByteArray());
         } else {
             File tempFile = File.createTempFile("compress", ".temp");
-            FileOutputStream fileBuffer = null;
+            OutputStream fileBuffer = null;
             try {
-                fileBuffer = new FileOutputStream(tempFile);
+                fileBuffer = Files.newOutputStream(tempFile.toPath());
                 OutputStream cOut = generator.open(fileBuffer, new ZlibCompressor());
                 this.copyStreams(uncompressed, cOut);
                 cOut.flush();
@@ -1279,16 +1377,20 @@ public class BCCryptoHelper {
                     fileBuffer.close();
                 }
             }
-            FileInputStream fileIn = null;
+            InputStream fileIn = null;
             try {
-                fileIn = new FileInputStream(tempFile);
+                fileIn = Files.newInputStream(tempFile.toPath());
                 this.copyStreams(fileIn, compressed);
             } finally {
                 if (fileIn != null) {
                     fileIn.close();
                 }
             }
-            boolean deleted = tempFile.delete();
+            try {
+                Files.delete(tempFile.toPath());
+            } catch (IOException e) {
+                //nop
+            }
         }
     }
 
@@ -1310,10 +1412,10 @@ public class BCCryptoHelper {
             signed.write(memBuffer.toByteArray());
         } else {
             File tempFile = File.createTempFile("sign", ".temp");
-            FileOutputStream fileBuffer = null;
+            OutputStream fileBuffer = null;
             OutputStream signedOut = null;
             try {
-                fileBuffer = new FileOutputStream(tempFile);
+                fileBuffer = Files.newOutputStream(tempFile.toPath());
                 signedOut = generator.open(fileBuffer, true);
                 this.copyStreams(unsigned, signedOut);
             } finally {
@@ -1326,16 +1428,20 @@ public class BCCryptoHelper {
                     fileBuffer.close();
                 }
             }
-            FileInputStream fileIn = null;
+            InputStream fileIn = null;
             try {
-                fileIn = new FileInputStream(tempFile);
+                fileIn = Files.newInputStream(tempFile.toPath());
                 this.copyStreams(fileIn, signed);
             } finally {
                 if (fileIn != null) {
                     fileIn.close();
                 }
             }
-            boolean deleted = tempFile.delete();
+            try {
+                Files.delete(tempFile.toPath());
+            } catch (IOException e) {
+                //nop
+            }
         }
     }
 

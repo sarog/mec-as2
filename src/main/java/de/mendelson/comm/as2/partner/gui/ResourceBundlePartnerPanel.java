@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel.java 48    4/21/17 1:50p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel.java 54    22.08.18 11:59 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,10 +13,12 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 48 $
+ * @version $Revision: 54 $
  */
 public class ResourceBundlePartnerPanel extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -75,8 +77,7 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
         {"hint.replacement.send1", "Replacements: $'{'filename}, $'{'fullstoragefilename}, $'{'log}, $'{'subject},"},        
         {"hint.replacement.send2", "$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'mdntext}, $'{'userdefinedid}."},
         {"hint.subject.replacement", "The pattern $'{'filename} will be replaced by the send filename."},
-        {"hint.keepfilenameonreceipt", "Please ensure your partner sends unique file names before enabling this option!"},
-        {"label.url.hint", "Please start this URL with the protocol \"http://\" or \"https://\"."},
+        {"hint.keepfilenameonreceipt", "Please ensure your partner sends unique file names before enabling this option!"},        
         {"label.notify.send", "Notify if send message quota exceeds" },
         {"label.notify.receive", "Notify if receive message quota exceeds" },
         {"label.notify.sendreceive", "Notify if receive and send message quota exceeds" },
@@ -94,5 +95,13 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
         {"partnersystem.noinfo", "No info available - has there been already a transaction?" },
         {"label.httpversion", "HTTP protocol version:" },
         {"label.test.connection", "Test connection" },
+        {"label.url.hint", "<HTML>Please start this URL with the protocol \"http://\" or \"https://\".</HTML>"},
+        {"label.url.hint.mdn", "<HTML>Please start this URL with the protocol \"http://\" or \"https://\". This is the URL your partner will use for inbound async MDN to this local station.</HTML>"},
+        {"label.mdn.description", "<HTML>The MDN (message delivery notification) is the acknowledgement message for the AS2 message. This section defines the behavior your partner has to follow for your outbound AS2 messages.</HTML>" },
+        {"label.mdn.sync.description", "<HTML>The partner sends the acknowledgement (MDN) on the backchannel of your outbound connection</HTML>" },
+        {"label.mdn.async.description", "<HTML>The partner establishs a new connection to your system to send the acknowledgement for your outbound message</HTML>" },
+        {"label.mdn.sign.description", "<HTML>The AS2 protocol does not define how to deal with a MDN if the signature does not match - mendelson AS2 will just display a warning</HTML>" },
+        {"label.algorithmidentifierprotection", "<HTML>Use \"Algorithm Identifier Protection Attribute\" in signature (recommended), please refer to RFC 6211</HTML>" },
+        {"label.enabledirpoll", "Enable directory poll for this partner" }
     };
 }

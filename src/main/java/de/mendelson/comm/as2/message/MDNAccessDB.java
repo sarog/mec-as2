@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MDNAccessDB.java 10    12.10.12 10:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MDNAccessDB.java 15    7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.message;
 
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -25,12 +26,12 @@ import java.util.logging.Logger;
  * Access MDN
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 15 $
  */
 public class MDNAccessDB {
 
     /**
-     * Logger to log inforamtion to
+     * Logger to log information to
      */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
@@ -51,16 +52,16 @@ public class MDNAccessDB {
     }
 
     /**
-     * Returns all overview rows from the datase
+     * Returns all overview rows from the database
      */
     public List<AS2MDNInfo> getMDN(String relatedMessageId) {
         List<AS2MDNInfo> messageList = new ArrayList<AS2MDNInfo>();
         ResultSet result = null;
-        PreparedStatement preparedStatement = null;
+        PreparedStatement statement = null;
         try {
-            preparedStatement = this.runtimeConnection.prepareStatement("SELECT * FROM mdn WHERE relatedmessageid=? ORDER BY initdateutc ASC");
-            preparedStatement.setString(1, relatedMessageId);
-            result = preparedStatement.executeQuery();
+            statement = this.runtimeConnection.prepareStatement("SELECT * FROM mdn WHERE relatedmessageid=? ORDER BY initdateutc ASC");
+            statement.setString(1, relatedMessageId);
+            result = statement.executeQuery();
             while (result.next()) {
                 AS2MDNInfo info = new AS2MDNInfo();
                 info.setMessageId(result.getString("messageid"));
@@ -75,6 +76,7 @@ public class MDNAccessDB {
                 info.setHeaderFilename(result.getString("headerfilename"));
                 info.setSenderHost(result.getString("senderhost"));
                 info.setUserAgent(result.getString("useragent"));
+                info.setDispositionState(result.getString( "dispositionstate"));
                 Object mdnTextObj = result.getObject("mdntext");
                 if (!result.wasNull() && mdnTextObj instanceof String) {
                     info.setRemoteMDNText((String) mdnTextObj);
@@ -86,21 +88,21 @@ public class MDNAccessDB {
             return (messageList);
         } catch (Exception e) {
             this.logger.severe("MDNAccessDB.getMDN: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             return (null);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
-            if (preparedStatement != null) {
+            if (statement != null) {
                 try {
-                    preparedStatement.close();
+                    statement.close();
                 } catch (Exception e) {
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
                 }
             }
         }
@@ -125,14 +127,14 @@ public class MDNAccessDB {
     }
 
     /**
-     * Adds a MDN to the datasbase
+     * Adds a MDN to the database
      */
     private void updateMDN(AS2MDNInfo info) {
         PreparedStatement statement = null;
         try {
             statement = this.runtimeConnection.prepareStatement(
                     "UPDATE mdn SET rawfilename=?,receiverid=?,senderid=?,signature=?,state=?,headerfilename=?,"
-                    + "mdntext=? WHERE messageid=?");
+                    + "mdntext=?,dispositionstate=? WHERE messageid=?");
             statement.setString(1, info.getRawFilename());
             statement.setString(2, info.getReceiverId());
             statement.setString(3, info.getSenderId());
@@ -144,18 +146,19 @@ public class MDNAccessDB {
             } else {
                 statement.setObject(7, info.getRemoteMDNText());
             }
+            statement.setString(8,info.getDispositionState());
             //condition
-            statement.setString(8, info.getMessageId());
+            statement.setString(9, info.getMessageId());
             statement.execute();
         } catch (SQLException e) {
             this.logger.severe("MDNAccessDB.updateMDN: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -185,14 +188,14 @@ public class MDNAccessDB {
         } catch (SQLException e) {
             //keep a SQL exception here, do not catch the runtime exception
             this.logger.severe("MDNAccessDB.checkForUniqueMDNMessageId: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MDNAccessDB.checkForUniqueMDNMessageId: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -200,22 +203,22 @@ public class MDNAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MDNAccessDB.checkForUniqueMDNMessageId: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
     }
 
     /**
-     * Adds a MDN to the datasbase
+     * Adds a MDN to the database
      */
     private void initializeMDN(AS2MDNInfo info) {
         this.checkForUniqueMDNMessageId(info);
         PreparedStatement statement = null;
         try {
             statement = this.runtimeConnection.prepareStatement(
-                    "INSERT INTO mdn(messageid,relatedmessageid,initdateutc,direction,rawfilename,receiverid,senderid,signature,state,headerfilename,senderhost,useragent,mdntext)"
-                    + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    "INSERT INTO mdn(messageid,relatedmessageid,initdateutc,direction,rawfilename,receiverid,senderid,signature,state,headerfilename,senderhost,useragent,mdntext,dispositionstate)"
+                    + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             statement.setString(1, info.getMessageId());
             statement.setString(2, info.getRelatedMessageId());
             statement.setTimestamp(3, new java.sql.Timestamp(info.getInitDate().getTime()), this.calendarUTC);
@@ -233,17 +236,18 @@ public class MDNAccessDB {
             } else {
                 statement.setObject(13, info.getRemoteMDNText());
             }
+            statement.setString(14,info.getDispositionState());
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("MDNAccessDB.initializeMDN: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MDNAccessDB.initializeMDN: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -274,14 +278,14 @@ public class MDNAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("MDNAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("MDNAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -289,7 +293,7 @@ public class MDNAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("MDNAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

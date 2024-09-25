@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/store/ResourceBundleMessageStoreHandler_fr.java 4     1.12.10 12:50 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/store/ResourceBundleMessageStoreHandler_fr.java 6     7.12.18 9:45 Heller $
 package de.mendelson.comm.as2.message.store;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,22 +13,24 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleMessageStoreHandler_fr extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"message.error.stored", "{0}: Contenu du message stocké vers \"{1}\"." },
-        {"message.error.raw.stored", "{0}: Message sortant brut stocké vers \"{1}\"." },
+    static final Object[][] CONTENTS = {
+        {"message.error.stored", "Contenu du message stocké vers \"{0}\"." },
+        {"message.error.raw.stored", "Message sortant brut stocké vers \"{0}\"." },
         {"dir.createerror", "Création impossible du répertoire \"{0}\"." },
-        {"comm.success", "{0}: Succès de la communication AS2, le contenu {1} a été déplacé vers \"{2}\"." },
-        {"outboundstatus.written", "{0}: Fichier d''état sortant écrit \"{1}\"."},
+        {"comm.success", "Succès de la communication AS2, le contenu {0} a été déplacé vers \"{1}\"." },
+        {"outboundstatus.written", "Fichier d''état sortant écrit \"{0}\"."},
     };
     
 }

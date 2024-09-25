@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewRequest.java 3     23.03.15 17 $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewRequest.java 5     15.11.18 11:59 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -14,17 +14,18 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class FileSystemViewRequest extends ClientServerMessage implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     public static final int TYPE_LIST_ROOTS = 1;
     public static final int TYPE_LIST_CHILDREN = 2;
-    public static final int TYPE_GET_PATH_STR = 3;
-    public static final int TYPE_GET_PATH_ELEMENTS = 4;
+    public static final int TYPE_GET_ABSOLUTE_PATH_STR = 3;
+    public static final int TYPE_GET_PATH_ELEMENTS = 4;    
+    public static final int TYPE_GET_FILE_SEPARATOR = 5;    
     private int requestType = TYPE_LIST_ROOTS;
-    private FileObject parameterFile = null;
-    private String parameterString = null;
+    private String requestFilePath = null;
     private FileFilter fileFilter = new FileFilter();
 
     public FileSystemViewRequest( int requestType ){
@@ -47,38 +48,24 @@ public class FileSystemViewRequest extends ClientServerMessage implements Serial
     }
 
     /**
-     * @return the parameterFile
-     */
-    public FileObject getParameterFile() {
-        return parameterFile;
-    }
-
-    /**
-     * @param parameterFile the parameterFile to set
-     */
-    public void setParameterFile(FileObject parameterFile) {
-        this.parameterFile = parameterFile;
-    }
-
-    /**
-     * @return the parameterString
-     */
-    public String getParameterString() {
-        return parameterString;
-    }
-
-    /**
-     * @param parameterString the parameterString to set
-     */
-    public void setParameterString(String parameterString) {
-        this.parameterString = parameterString;
-    }
-
-    /**
      * @return the fileFilter
      */
     public FileFilter getFileFilter() {
         return fileFilter;
+    }
+
+    /**
+     * @return the requestFilePath
+     */
+    public String getRequestFilePath() {
+        return requestFilePath;
+    }
+
+    /**
+     * @param requestFilePath the requestFilePath to set
+     */
+    public void setRequestFilePath(String requestFilePath) {
+        this.requestFilePath = requestFilePath;
     }
 
 }

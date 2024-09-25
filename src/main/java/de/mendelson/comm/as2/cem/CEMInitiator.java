@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 27    14.05.13 16:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 32    6.11.18 16:59 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -10,25 +10,31 @@ import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageCreation;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
+import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.message.UniqueId;
 import de.mendelson.comm.as2.partner.Partner;
-import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.partner.PartnerSystem;
 import de.mendelson.comm.as2.partner.PartnerSystemAccessDB;
 import de.mendelson.comm.as2.sendorder.SendOrder;
 import de.mendelson.comm.as2.sendorder.SendOrderSender;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
+import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /*
@@ -42,12 +48,12 @@ import java.util.logging.Logger;
  * Initiates a CEM request
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 32 $
  */
 public class CEMInitiator {
 
     /**
-     * Logger to log inforamtion to
+     * Logger to log information to
      */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
@@ -60,6 +66,7 @@ public class CEMInitiator {
     private CertificateAccessDB certificateAccess;
     private Connection configConnection;
     private Connection runtimeConnection;
+    private MecResourceBundle rb;
 
     /**
      * Creates new message I/O log and connects to localhost
@@ -68,6 +75,13 @@ public class CEMInitiator {
      */
     public CEMInitiator(Connection configConnection,
             Connection runtimeConnection, CertificateManager certificateManagerEncSign) {
+        //load resource bundle
+        try {
+            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCEM.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
         this.configConnection = configConnection;
         this.runtimeConnection = runtimeConnection;
         this.certificateManagerEncSign = certificateManagerEncSign;
@@ -75,37 +89,30 @@ public class CEMInitiator {
     }
 
     /**
-     * Returns a list of partners that have bee informed by the requests
+     * Returns a list of partners that have been informed by the requests
      */
-    public List<Partner> sendRequests(Partner initiator, KeystoreCertificate certificate,
+    public List<Partner> sendRequests(Partner initiator, List<Partner> receiver,
+            KeystoreCertificate certificate,
             boolean encryptionUsage, boolean signatureUsage, boolean sslUsage, Date respondByDate)
             throws Exception {
         //get all partner that are CEM enabled
         List<Partner> cemPartnerList = new ArrayList<Partner>();
-        PartnerAccessDB partnerAccess = new PartnerAccessDB(this.configConnection, this.runtimeConnection);
         PartnerSystemAccessDB systemAccess = new PartnerSystemAccessDB(this.configConnection, this.runtimeConnection);
-        List<Partner> remotePartnerList = partnerAccess.getNonLocalStations();
-        for (Partner partner : remotePartnerList) {
+        //check again if this partner supports CEM...
+        for (Partner partner : receiver) {
             PartnerSystem partnerSystem = systemAccess.getPartnerSystem(partner);
             if (partnerSystem != null && partnerSystem.supportsCEM()) {
                 cemPartnerList.add(partner);
             }
         }
         List<SendOrder> orderList = new ArrayList<SendOrder>();
-        for (Partner receiver : cemPartnerList) {
-            SendOrder sendOrder = this.createRequest(initiator, receiver, certificate, encryptionUsage, signatureUsage, sslUsage, respondByDate);
+        for (Partner singleReceiver : cemPartnerList) {
+            SendOrder sendOrder = this.createRequest(initiator, singleReceiver, certificate, encryptionUsage, signatureUsage, sslUsage, respondByDate);
             orderList.add(sendOrder);
         }
         for (SendOrder order : orderList) {
             SendOrderSender orderSender = new SendOrderSender(this.configConnection, this.runtimeConnection);
             orderSender.send(order);
-            //set the certificates as fallback to the partner
-            if (encryptionUsage) {
-                this.setCertificateToPartner(initiator, certificate, CEMEntry.CATEGORY_CRYPT, 2);
-            }
-            if (signatureUsage) {
-                this.setCertificateToPartner(initiator, certificate, CEMEntry.CATEGORY_SIGN, 2);
-            }
         }
         return (cemPartnerList);
     }
@@ -116,6 +123,7 @@ public class CEMInitiator {
     private SendOrder createRequest(Partner initiator, Partner receiver, KeystoreCertificate certificate,
             boolean encryptionUsage, boolean signatureUsage, boolean sslUsage, Date respondByDate)
             throws Exception {
+        StringBuilder logPurpose = new StringBuilder();
         EDIINTCertificateExchangeRequest request = new EDIINTCertificateExchangeRequest();
         String requestId = UniqueId.createId();
         String requestContentId = UniqueId.createId();
@@ -132,24 +140,33 @@ public class CEMInitiator {
         trustRequest.setResponseURL(initiator.getMdnURL());
         trustRequest.setRespondByDate(respondByDate);
         trustRequest.setCertUsageEncryption(encryptionUsage);
+        if (encryptionUsage) {
+            logPurpose.append("Encryption ");
+        }
         trustRequest.setCertUsageSSL(sslUsage);
+        if (sslUsage) {
+            logPurpose.append("SSL/TLS ");
+        }
         trustRequest.setCertUsageSignature(signatureUsage);
+        if (signatureUsage) {
+            logPurpose.append("Signature ");
+        }
         trustRequest.setEndEntity(endEntity);
         request.addTrustRequest(trustRequest);
         //export the certificate to a file and create a payload
-        File certFile = this.exportCertificate(certificate, certContentId);
+        Path certFile = this.exportCertificate(certificate, certContentId);
         AS2Payload[] payloads = new AS2Payload[2];
-        File descriptionFile = this.storeRequest(request);
+        Path descriptionFile = this.storeRequest(request);
         //build up the XML description as payload
         AS2Payload payloadXML = new AS2Payload();
-        payloadXML.setPayloadFilename(descriptionFile.getAbsolutePath());
+        payloadXML.setPayloadFilename(descriptionFile.toAbsolutePath().toString());
         payloadXML.loadDataFromPayloadFile();
         payloadXML.setContentId(requestContentId);
         payloadXML.setContentType("application/ediint-cert-exchange+xml");
         payloads[0] = payloadXML;
         //build up the certificate as payload
         AS2Payload payloadCert = new AS2Payload();
-        payloadCert.setPayloadFilename(certFile.getAbsolutePath());
+        payloadCert.setPayloadFilename(certFile.toAbsolutePath().toString());
         payloadCert.loadDataFromPayloadFile();
         payloadCert.setContentId(certContentId);
         payloadCert.setContentType("application/pkcs7-mime; smime-type=certs-only");
@@ -161,37 +178,44 @@ public class CEMInitiator {
         order.setReceiver(receiver);
         order.setMessage(message);
         order.setSender(initiator);
+        AS2MessageInfo messageInfo = (AS2MessageInfo) order.getMessage().getAS2Info();
         //enter the request to the CEM table in the db
         CEMAccessDB cemAccess = new CEMAccessDB(this.configConnection, this.runtimeConnection);
         cemAccess.insertRequest((AS2MessageInfo) order.getMessage().getAS2Info(), initiator, order.getReceiver(), request);
+        MessageAccessDB messageAccess = new MessageAccessDB(this.configConnection, this.runtimeConnection);
+        messageAccess.initializeOrUpdateMessage(messageInfo);
+        this.logger.log(Level.INFO, this.rb.getResourceString("cem.created.request",
+                new Object[]{
+                    messageInfo.getMessageId(),
+                    initiator.getName(),
+                    receiver.getName(),
+                    certificate.getIssuerDN(),
+                    certificate.getSerialNumberDEC(),
+                    logPurpose,}), messageInfo);
         return (order);
     }
 
-    /**
-     * Sets a certificate to a partner
-     */
-    private void setCertificateToPartner(Partner partner, KeystoreCertificate certificate, int category, int prio) {
-        partner.getPartnerCertificateInformationList().insertNewCertificate(certificate.getFingerPrintSHA1(), category, prio);
-        this.certificateAccess.storePartnerCertificateInformationList(partner);
-        //display the changes in the certificates for the user in the log
-        this.logger.fine(partner.getPartnerCertificateInformationList().getCertificatePurposeDescription(this.certificateManagerEncSign, partner, category));
-    }
-
-    private File exportCertificate(KeystoreCertificate certificate, String certContentId)
+    private Path exportCertificate(KeystoreCertificate certificate, String certContentId)
             throws Exception {
         KeyStoreUtil util = new KeyStoreUtil();
         String tempDir = System.getProperty("java.io.tmpdir");
-        File[] exportFile = util.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
+        Path[] exportFile = util.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
                 certificate.getAlias(), tempDir + certContentId + ".p7c");
         return (exportFile[0]);
     }
 
-    private File storeRequest(EDIINTCertificateExchangeRequest request) throws Exception {
-        File descriptionFile = AS2Tools.createTempFile("request", ".xml");
-        OutputStreamWriter writer = new OutputStreamWriter(new FileOutputStream(descriptionFile), "UTF-8");
-        writer.write(request.toXML());
-        writer.flush();
-        writer.close();
+    private Path storeRequest(EDIINTCertificateExchangeRequest request) throws Exception {
+        Path descriptionFile = AS2Tools.createTempFile("request", ".xml");
+        Writer writer = null;
+        try {
+            writer = Files.newBufferedWriter(descriptionFile, StandardCharsets.UTF_8);
+            writer.write(request.toXML());
+        } finally {
+            if (writer != null) {
+                writer.flush();
+                writer.close();
+            }
+        }
         return (descriptionFile);
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogImportKeyJKS.java 2     23.07.10 15:24 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogImportKeyJKS.java 3     6/05/18 11:13a Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.MecFileChooser;
@@ -6,9 +6,9 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.JKSKeys2PKCS12;
 import de.mendelson.util.security.KeyStoreUtil;
 import java.security.KeyStore;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.Vector;
 import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -27,7 +27,7 @@ import javax.swing.SwingUtilities;
 /**
  * Import a JKS key into the PCKS#12 keystore
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class JDialogImportKeyJKS extends JDialog {
     
@@ -75,7 +75,7 @@ public class JDialogImportKeyJKS extends JDialog {
             KeyStore sourceKeystore = KeyStore.getInstance( "JKS", "SUN" );
             util.loadKeyStore( sourceKeystore, this.jTextFieldImportJKSFile.getText(), 
                     this.jPasswordFieldPassphrase.getPassword());
-            Vector<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
+            List<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
             String selectedAlias = null;
             if( keyAliasesList.isEmpty() ){
                 throw new Exception( this.rb.getResourceString( "keystore.contains.nokeys" ));

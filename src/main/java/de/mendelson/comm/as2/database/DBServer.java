@@ -1,4 +1,4 @@
-//$Header: /as2_cluster/de/mendelson/comm/as2/database/DBServer.java 24    5/03/17 1:29p Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/DBServer.java 35    7.11.18 14:54 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -6,12 +6,19 @@ import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.server.UpgradeRequiredException;
 import de.mendelson.util.MecResourceBundle;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
@@ -28,6 +35,7 @@ import java.util.logging.Logger;
 import org.hsqldb.Server;
 import org.hsqldb.persist.HsqlProperties;
 import org.hsqldb.server.ServerConstants;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -35,12 +43,11 @@ import org.hsqldb.server.ServerConstants;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Class to start a dedicated SQL database server
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 35 $
  * @since build 70
  */
 public class DBServer {
@@ -80,15 +87,15 @@ public class DBServer {
     }
 
     private void checkDBUpgradeRequired() throws UpgradeRequiredException, Exception {
-        File propertiesFileConfig = new File(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG) + ".properties");
-        File propertiesFileRuntime = new File(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME) + ".properties");
+        Path propertiesFileConfig = Paths.get(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG) + ".properties");
+        Path propertiesFileRuntime = Paths.get(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME) + ".properties");
         String versionConfig = "";
         String versionRuntime = "";
-        if (propertiesFileConfig.exists()) {
+        if (Files.exists(propertiesFileConfig)) {
             Properties dbProperties = new Properties();
-            FileInputStream inStream = null;
+            InputStream inStream = null;
             try {
-                inStream = new FileInputStream(propertiesFileConfig.getAbsolutePath());
+                inStream = Files.newInputStream(propertiesFileConfig);
                 dbProperties.load(inStream);
             } finally {
                 if (inStream != null) {
@@ -97,11 +104,11 @@ public class DBServer {
             }
             versionConfig = dbProperties.getProperty("version");
         }
-        if (propertiesFileRuntime.exists()) {
+        if (Files.exists(propertiesFileRuntime)) {
             Properties dbProperties = new Properties();
-            FileInputStream inStream = null;
+            InputStream inStream = null;
             try {
-                inStream = new FileInputStream(propertiesFileRuntime.getAbsolutePath());
+                inStream = Files.newInputStream(propertiesFileRuntime);
                 dbProperties.load(inStream);
             } finally {
                 if (inStream != null) {
@@ -118,7 +125,13 @@ public class DBServer {
     /**
      * Starts an internal DB server with default parameter
      */
-    private void startDBServer() throws Exception {
+    private String startDBServer() throws Exception {
+        SystemEventManagerImplAS2.newEvent(
+                SystemEvent.SEVERITY_INFO,
+                SystemEvent.ORIGIN_SYSTEM,
+                SystemEvent.TYPE_DATABASE_SERVER_STARTUP_BEGIN,
+                this.rb.getResourceString("dbserver.startup"),
+                "");
         this.server = new Server();
         //start an internal server
         int dbPort = this.preferences.getInt(PreferencesAS2.SERVER_DB_PORT);
@@ -132,12 +145,18 @@ public class DBServer {
         hsqlProperties.setProperty("hsqldb.write_delay", false);
         hsqlProperties.setProperty("hsqldb.write_delay_millis", 0);
         this.server.setProperties(hsqlProperties);
-        this.server.setLogWriter(null);
+        ByteArrayOutputStream memStream = new ByteArrayOutputStream();
+        PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(memStream, StandardCharsets.UTF_8));        
+        this.server.setLogWriter(printWriter);        
         this.server.start();
+        memStream.flush();
+        memStream.close();
+        this.server.setLogWriter(null);
+        return( memStream.toString(StandardCharsets.UTF_8.name()));
     }
 
     public void ensureServerIsRunning() throws Exception {
-        this.startDBServer();
+        String startupLog = this.startDBServer();
         try {
             this.createCheck();
         } catch (Exception e) {
@@ -148,11 +167,13 @@ public class DBServer {
             DBServer.defragDB(DBDriverManager.DB_CONFIG);
         } catch (Exception e) {
             this.logger.warning(e.getMessage());
+            startupLog = startupLog + "\n" + "[" + e.getClass().getSimpleName() + "]: " + e.getMessage();
         }
         try {
             DBServer.defragDB(DBDriverManager.DB_RUNTIME);
         } catch (Exception e) {
             this.logger.warning(e.getMessage());
+            startupLog = startupLog + "\n" + "[" + e.getClass().getSimpleName() + "]: " + e.getMessage();
         }
         try {
             Connection configConnection = DBDriverManager.getLocalConnection(DBDriverManager.DB_CONFIG);
@@ -175,10 +196,28 @@ public class DBServer {
             //check if a runtime DB update is necessary. If so, update the runtime DB
             this.updateDB(runtimeConnection, DBDriverManager.DB_RUNTIME);
             DatabaseMetaData data = runtimeConnection.getMetaData();
-            this.logger.info(rb.getResourceString("server.started",
+            this.logger.info(rb.getResourceString("dbserver.running",
                     new Object[]{data.getDatabaseProductName() + " " + data.getDatabaseProductVersion()}));
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_INFO,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_DATABASE_SERVER_RUNNING,
+                    this.rb.getResourceString("dbserver.running",
+                            new Object[]{
+                                data.getDatabaseProductName()
+                                + " "
+                                + data.getDatabaseProductVersion()
+                            }),
+                    startupLog );
             runtimeConnection.close();
         } catch (Exception e) {
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_ERROR,
+                    SystemEvent.ORIGIN_SYSTEM,
+                    SystemEvent.TYPE_DATABASE_SERVER_RUNNING,
+                    this.rb.getResourceString("dbserver.startup"),
+                    startupLog + "\n"
+                    + "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
             this.logger.severe("DBServer.startup: " + e.getMessage());
         }
         DBDriverManager.setupConnectionPool();
@@ -231,7 +270,7 @@ public class DBServer {
     /**
      * Check if db exists and create a new one if it doesnt exist
      */
-    private void createCheck() throws Exception{
+    private void createCheck() throws Exception {
         if (!this.databaseExists(DBDriverManager.DB_CONFIG)) {
             //new installation
             DBDriverManager.createDatabase(DBDriverManager.DB_CONFIG);
@@ -320,16 +359,16 @@ public class DBServer {
         int requiredDBVersion = -1;
         String dbName = null;
         if (DB_TYPE == DBDriverManager.DB_CONFIG) {
-            dbName = "config";
+            dbName = rb.getResourceString("database." + DBDriverManager.DB_CONFIG);
             requiredDBVersion = AS2ServerVersion.getRequiredDBVersionConfig();
         } else if (DB_TYPE == DBDriverManager.DB_RUNTIME) {
-            dbName = "runtime";
+            dbName = rb.getResourceString("database." + DBDriverManager.DB_RUNTIME);
             requiredDBVersion = AS2ServerVersion.getRequiredDBVersionRuntime();
         } else if (DB_TYPE != DBDriverManager.DB_DEPRICATED) {
             throw new RuntimeException("Unknown DB type requested in DBServer:updateDB.");
         }
         int foundVersion = this.getActualDBVersion(connection);
-        //check if this is smaller than the required version!
+        //check if the found version is lesser than the required version!
         if (foundVersion != -1 && foundVersion < requiredDBVersion) {
             this.logger.info(rb.getResourceString("update.versioninfo",
                     new Object[]{
@@ -341,8 +380,16 @@ public class DBServer {
                 this.logger.info(rb.getResourceString("update.progress.version.start",
                         new Object[]{String.valueOf(i + 1), dbName}));
                 if (!this.startDBUpdate(i, connection, DB_TYPE)) {
-                    this.logger.info(rb.getResourceString("update.error",
+                    this.logger.severe(rb.getResourceString("update.error",
                             new Object[]{String.valueOf(i), String.valueOf(i + 1)}));
+                    SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR,
+                            SystemEvent.ORIGIN_SYSTEM,
+                            SystemEvent.TYPE_DATABASE_UPDATE);
+                    event.setSubject(
+                            rb.getResourceString("database." + DB_TYPE));
+                    event.setBody(rb.getResourceString("update.error",
+                            new Object[]{String.valueOf(i), String.valueOf(i + 1)}));
+                    SystemEventManagerImplAS2.newEvent(event);
                     System.exit(-1);
                 }
                 //set new version to the database
@@ -350,6 +397,13 @@ public class DBServer {
                 int newActualVersion = this.getActualDBVersion(connection);
                 this.logger.info(rb.getResourceString("update.progress.version.end",
                         new Object[]{String.valueOf(newActualVersion), dbName}));
+                SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO,
+                        SystemEvent.ORIGIN_SYSTEM,
+                        SystemEvent.TYPE_DATABASE_UPDATE);
+                event.setSubject(rb.getResourceString("update.successfully", dbName));
+                event.setBody(rb.getResourceString("update.progress.version.end",
+                        new Object[]{String.valueOf(newActualVersion), dbName}));
+                SystemEventManagerImplAS2.newEvent(event);
             }
             this.logger.info((rb.getResourceString("update.successfully", dbName)));
         }
@@ -482,11 +536,11 @@ public class DBServer {
      * version where only a single database exists (< end of 2011)
      */
     private void createDeprecatedCheck() throws Exception {
-        File deprecatedFile = new File(DBDriverManager.getDBName(DBDriverManager.DB_DEPRICATED) + ".script");
-        File configFile = new File(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG) + ".script");
-        File runtimeFile = new File(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME) + ".script");
+        Path deprecatedFile = Paths.get(DBDriverManager.getDBName(DBDriverManager.DB_DEPRICATED) + ".script");
+        Path configFile = Paths.get(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG) + ".script");
+        Path runtimeFile = Paths.get(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME) + ".script");
         //create new Database
-        if (deprecatedFile.exists() && !configFile.exists() && !runtimeFile.exists()) {
+        if (Files.exists(deprecatedFile) && !Files.exists(configFile) && !Files.exists(runtimeFile)) {
             this.logger.info("Performing database split into config/runtime database.");
             //update issue, performed on 11/2011: split up deprecated database
             this.copyDeprecatedDatabaseTo(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG));
@@ -496,8 +550,8 @@ public class DBServer {
     }
 
     /**
-     * Splits up the depricated database into 2 separate databases. The version
-     * of these splitted databases could be any from 0 to 50.
+     * Splits up the deprecated database into 2 separate databases. The version
+     * of these split databases could be any from 0 to 50.
      */
     private void copyDeprecatedDatabaseTo(String targetBase) throws IOException {
         String sourceBase = DBDriverManager.getDBName(DBDriverManager.DB_DEPRICATED);
@@ -523,14 +577,11 @@ public class DBServer {
     }
 
     private void copyFile(String source, String target) throws IOException {
-        File sourceFile = new File(source);
-        if (!sourceFile.exists()) {
+        Path sourceFile = Paths.get(source);
+        Path targetFile = Paths.get(target);
+        if( !Files.exists(sourceFile)){
             return;
         }
-        FileInputStream inStream = new FileInputStream(sourceFile);
-        FileOutputStream outStream = new FileOutputStream(target);
-        this.copyStreams(inStream, outStream);
-        inStream.close();
-        outStream.close();
+        Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
     }
 }

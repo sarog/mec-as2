@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/csr/CSRUtil.java 12    6/01/17 2:09p Heller $
+//$Header: /oftp2/de/mendelson/util/security/csr/CSRUtil.java 13    2.11.18 17:06 Heller $
 package de.mendelson.util.security.csr;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,6 +11,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
+import java.nio.file.Files;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -59,7 +60,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
  * Handles csr related activities on a certificate
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class CSRUtil {
 
@@ -205,7 +206,7 @@ public class CSRUtil {
         List<X509Certificate> responseCertList = new ArrayList<X509Certificate>();
         InputStream inputStream = null;
         try {
-            inputStream = new FileInputStream(csrResponseFile);
+            inputStream = Files.newInputStream(csrResponseFile.toPath());
             for (Certificate responseCert : CertificateFactory.getInstance("X509").generateCertificates(inputStream)) {
                 responseCertList.add((X509Certificate) responseCert);
             }

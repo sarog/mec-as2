@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerHttpHeader.java 3     10.01.13 13:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerHttpHeader.java 4     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.partner;
 
 import java.io.Serializable;
@@ -13,10 +13,11 @@ import java.io.Serializable;
 /**
  * Stores all information about a single user defined http header of a partner
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class PartnerHttpHeader implements Serializable{
 
+    public static final long serialVersionUID = 1L;
     private String key = "";
     private String value = "";
 

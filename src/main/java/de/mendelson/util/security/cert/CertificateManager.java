@@ -1,7 +1,8 @@
-//$Header: /as4/de/mendelson/util/security/cert/CertificateManager.java 36    4/11/17 10:24a Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/CertificateManager.java 40    1.10.18 16:15 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.security.Base64;
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyStore;
@@ -30,12 +31,11 @@ import javax.security.auth.x500.X500Principal;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Helper class to store
  *
  * @author S.Heller
- * @version $Revision: 36 $
+ * @version $Revision: 40 $
  */
 public class CertificateManager {
 
@@ -137,6 +137,32 @@ public class CertificateManager {
      */
     public PublicKey getPublicKey(String alias) throws Exception {
         return (this.storage.getCertificate(alias).getPublicKey());
+    }
+
+    /**
+     * Returns the private key for a passed public key. If the passed public key
+     * does not exist an exception is thrown
+     *
+     * @param publicKey
+     * @return
+     */
+    public PrivateKey getPrivateKeyByPublicKey(PublicKey publicKey) throws Exception {
+        try {
+            String lookupKeyEncoded = Base64.encode(publicKey.getEncoded());
+            synchronized (this.keyStoreCertificateList) {
+                for (KeystoreCertificate keystoreCertificate : this.keyStoreCertificateList) {
+                    if (keystoreCertificate.getIsKeyPair()) {
+                        String foundKeyEncoded = Base64.encode(keystoreCertificate.getX509Certificate().getPublicKey().getEncoded());
+                        if (foundKeyEncoded.equals(lookupKeyEncoded)) {
+                            return (this.getPrivateKey(keystoreCertificate.getAlias()));
+                        }
+                    }
+                }
+            }
+            throw new Exception();
+        } catch (Exception e) {
+            throw new Exception("The private key for the passed public key does not exist.");
+        }
     }
 
     /**
@@ -276,7 +302,7 @@ public class CertificateManager {
      * Wrapper function for the underlaying keystore storage implementation
      */
     public String getKeystoreType() {
-        return (this.storage.getKeystoreType());
+        return (this.storage.getKeystoreStorageType());
     }
 
     /**
@@ -381,33 +407,15 @@ public class CertificateManager {
         }
         return (foundCert);
     }
-
+    
     /**
      * returns null if a certificate with the issuerDN and the serial does not
      * exist
      */
     public KeystoreCertificate getKeystoreCertificateByIssuerDNAndSerial(String issuerDN, String serialDEC) {
-        //it could happen that a cert and a key with the same fingerprint are in the keystore.
-        //Always return the key in this case.
-        KeystoreCertificate foundCert = null;
-        synchronized (this.keyStoreCertificateList) {
-            for (KeystoreCertificate cert : this.keyStoreCertificateList) {
-                if (cert.getSerialNumberDEC().equals(serialDEC) && cert.getX509Certificate().getIssuerDN().toString().equals(issuerDN)) {
-                    //no entry found so far: always store the found one
-                    if (foundCert == null) {
-                        foundCert = cert;
-                    } else {
-                        //entry already found: overwrite it only if the found entry is a key
-                        if (cert.getIsKeyPair()) {
-                            foundCert = cert;
-                        }
-                    }
-                }
-            }
-        }
-        return (foundCert);
+        return( this.getKeystoreCertificateByIssuerAndSerial(new X500Principal(issuerDN), serialDEC));
     }
-
+    
     /**
      * returns null if a certificate with the issuerDN and the serial does not
      * exist

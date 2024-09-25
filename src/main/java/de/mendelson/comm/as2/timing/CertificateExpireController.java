@@ -1,11 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 16    7.05.15 11:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 21    7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.util.Calendar;
 import java.util.Date;
@@ -27,7 +28,7 @@ import java.util.logging.Logger;
  * Controlles the certificates and checks if they will expire soon
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 21 $
  */
 public class CertificateExpireController {
 
@@ -127,25 +128,26 @@ public class CertificateExpireController {
                 //The certificate has not been expired so far
                 for (int expireDuration : daysToExpire) {
                     if (certificateExpireDuration == expireDuration) {
-                        Notification notification = new Notification(this.configConnection, this.runtimeConnection);
+                        SystemEventManagerImplAS2 manager
+                                = new SystemEventManagerImplAS2();
                         try {
-                            notification.sendCertificateWillExpire(certificate, certificateExpireDuration);
+                            manager.newEventCertificateWillExpire(certificate, certificateExpireDuration);
                         } catch (Exception e) {
-                            String exceptionClass = "[" + e.getClass().getName() + "]";                            
+                            String exceptionClass = "[" + e.getClass().getName() + "]";
                             logger.severe("CertificationExpireThread: " + exceptionClass + " " + e.getMessage());
-                            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                         }
                     }
                 }
                 //The certificate has been already expired
                 if (certificateExpireDuration <= 0) {
-                    Notification notification = new Notification(this.configConnection, this.runtimeConnection);
+                    SystemEventManagerImplAS2 manager = new SystemEventManagerImplAS2();
                     try {
-                        notification.sendCertificateWillExpire(certificate, certificateExpireDuration);
+                        manager.newEventCertificateWillExpire(certificate, certificateExpireDuration);
                     } catch (Exception e) {
-                        String exceptionClass = "[" + e.getClass().getName() + "]";                            
+                        String exceptionClass = "[" + e.getClass().getName() + "]";
                         logger.severe("CertificationExpireThread: " + exceptionClass + " " + e.getMessage());
-                        Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                     }
                 }
             }

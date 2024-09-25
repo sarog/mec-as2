@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult.java 6     7/06/17 11:10a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult.java 8     10.12.18 12:46 Heller $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,10 +15,12 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleDialogConnectionTestResult extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -41,7 +43,7 @@ public class ResourceBundleDialogConnectionTestResult extends MecResourceBundle 
         {"label.connection.established", "The connection has been established"},
         {"label.certificates.downloaded", "The certificates have been downloaded"},
         {"label.running.oftpservice", "A running OFTP service has been found"},
-        {"used.cipher", "The used cipher for this test is \"{0}\"" },        
+        {"used.cipher", "The used cipher for this test is \"{0}\"" },           
     };
 
 }

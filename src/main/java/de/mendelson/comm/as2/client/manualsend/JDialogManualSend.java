@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 19    2/15/17 11:26a Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 24    8.01.19 11:58 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -13,13 +13,13 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClientWithProgress;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
-import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreStorage;
-import de.mendelson.util.security.cert.clientserver.KeystoreStorageImplClientServer;
-import java.io.File;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -42,7 +42,7 @@ import javax.swing.SwingUtilities;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 24 $
  */
 public class JDialogManualSend extends JDialog {
 
@@ -54,7 +54,7 @@ public class JDialogManualSend extends JDialog {
     private MecResourceBundle rb = null;
     private Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private List<Partner> localStations = null;
-    private CertificateManager certificateManager = null;
+    private CertificateManager certificateManagerEncSign = null;
     //DB connection for the partner access
     private BaseClient baseClient;
     private AS2StatusBar statusbar;
@@ -71,10 +71,12 @@ public class JDialogManualSend extends JDialog {
      * data to the server to send
      */
     public JDialogManualSend(JFrame parent, BaseClient baseClient,
-            AS2StatusBar statusbar, String uploadDisplay) {
+            AS2StatusBar statusbar, String uploadDisplay,
+            CertificateManager certificateManagerEncSign) {
         super(parent, true);
         this.statusbar = statusbar;
         this.uploadDisplay = uploadDisplay;
+        this.certificateManagerEncSign = certificateManagerEncSign;
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -99,15 +101,7 @@ public class JDialogManualSend extends JDialog {
                 this.jComboBoxPartner.addItem(partner);
             }
             response = (PartnerListResponse) baseClient.sendSync(new PartnerListRequest(PartnerListRequest.LIST_LOCALSTATION));
-            this.localStations = response.getList();
-            this.certificateManager = new CertificateManager(this.logger);
-            //ask the server for the password
-            PreferencesClient client = new PreferencesClient(baseClient);
-            char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-            String keystoreName = client.get(PreferencesAS2.KEYSTORE);
-            KeystoreStorage storage = new KeystoreStorageImplClientServer(
-                    baseClient, keystoreName, keystorePass, BCCryptoHelper.KEYSTORE_PKCS12);
-            this.certificateManager.loadKeystoreCertificates(storage);
+            this.localStations = response.getList();            
         } catch (Exception e) {
             this.logger.severe("JDialogManualSend: " + e.getMessage());
         }
@@ -180,22 +174,23 @@ public class JDialogManualSend extends JDialog {
         request.setSender(sender);
         ManualSendResponse response = null;
         List<String> uploadHashs = new ArrayList<String>();
-        List<File> files = new ArrayList<File>();
-        files.add(new File(this.jTextFieldFilename1.getText()));
+        List<Path> files = new ArrayList<Path>();
+        files.add(Paths.get(this.jTextFieldFilename1.getText()));
         if (this.jTextFieldFilename2.isVisible() && this.jTextFieldFilename2.getText().trim().length() > 0) {
-            files.add(new File(this.jTextFieldFilename2.getText()));
+            files.add(Paths.get(this.jTextFieldFilename2.getText()));
         }
-        for (File uploadFile : files) {
+        for (Path uploadFile : files) {
             InputStream inStream = null;
             try {
                 //perform the upload to the server, chunked
                 TransferClientWithProgress transferClient = new TransferClientWithProgress(
                         this.baseClient,
                         this.statusbar.getProgressPanel());
-                inStream = new FileInputStream(uploadFile);
-                String uploadHash = transferClient.uploadChunkedWithProgress(inStream, this.uploadDisplay, (int) uploadFile.length());
+                inStream = Files.newInputStream(uploadFile);
+                String uploadHash = transferClient.uploadChunkedWithProgress(inStream, this.uploadDisplay,
+                        (int) Files.size(uploadFile));
                 uploadHashs.add(uploadHash);
-                request.addFilename(uploadFile.getName());
+                request.addFilename(uploadFile.getFileName().toString());
             } finally {
                 if (inStream != null) {
                     inStream.close();
@@ -222,16 +217,20 @@ public class JDialogManualSend extends JDialog {
      * @throws Throwable
      */
     public ManualSendResponse performResend(String resendMessageId, Partner sender, Partner receiver,
-            File dataFile, String originalFilename) throws Throwable {
+            Path dataFile, String originalFilename) throws Throwable {
         InputStream inStream = null;
         ManualSendResponse response = null;
         try {
+            if( dataFile == null ){
+                throw new FileNotFoundException();
+            }
             TransferClientWithProgress transferClient = new TransferClientWithProgress(
                     this.baseClient,
                     this.statusbar.getProgressPanel());
-            inStream = new FileInputStream(dataFile);
+            inStream = Files.newInputStream(dataFile);
             //perform the upload to the server, chunked
-            String uploadHash = transferClient.uploadChunkedWithProgress(inStream, this.uploadDisplay, (int) dataFile.length());
+            String uploadHash = transferClient.uploadChunkedWithProgress(inStream, this.uploadDisplay,
+                    (int) Files.size(dataFile));
             ManualSendRequest request = new ManualSendRequest();
             request.setResendMessageId(resendMessageId);
             request.setUploadHash(uploadHash);

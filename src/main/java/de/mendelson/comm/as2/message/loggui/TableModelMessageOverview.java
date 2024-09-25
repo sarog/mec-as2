@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 23    10.07.15 16:44 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 24    14.12.18 13:12 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -8,6 +8,7 @@ import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.ImageUtil;
 import de.mendelson.util.MecResourceBundle;
+import java.awt.image.BaseMultiResolutionImage;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,16 +33,53 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class TableModelMessageOverview extends AbstractTableModel {
 
-    public static final ImageIcon ICON_IN = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in16x16.gif"));
-    public static final ImageIcon ICON_OUT = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out16x16.gif"));
-    public static final ImageIcon ICON_PENDING = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending16x16.gif"));
-    public static final ImageIcon ICON_STOPPED = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped16x16.gif"));
-    public static final ImageIcon ICON_FINISHED = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished16x16.gif"));
-    public static final ImageIcon ICON_RESEND_OVERLAY = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/resend_overlay16x16.gif"));
+    public static final ImageIcon ICON_IN = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in64x64.gif")).getImage()
+    ));
+    public static final ImageIcon ICON_OUT = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out64x64.gif")).getImage()            
+    ));
+    public static final ImageIcon ICON_PENDING = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending64x64.gif")).getImage()            
+    ));
+    public static final ImageIcon ICON_STOPPED = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped64x64.gif")).getImage()            
+    ));
+    public static final ImageIcon ICON_FINISHED = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished64x64.gif")).getImage()            
+    ));
+    public static final ImageIcon ICON_RESEND_OVERLAY = new ImageIcon(new BaseMultiResolutionImage(
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/resend_overlay16x16.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/resend_overlay24x24.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/resend_overlay32x32.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/resend_overlay48x48.gif")).getImage(),
+            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/resend_overlay64x64.gif")).getImage()            
+    ));
+
     /**
      * ResourceBundle to localize the headers
      */
@@ -280,7 +318,7 @@ public class TableModelMessageOverview extends AbstractTableModel {
                     return (Boolean.TRUE);
                 } else {
                     return (Boolean.FALSE);
-                }            
+                }
         }
         return (null);
     }
@@ -316,9 +354,9 @@ public class TableModelMessageOverview extends AbstractTableModel {
             case 10:
                 return (this.rb.getResourceString("header.userdefinedid"));
             case 11:
-                return (this.rb.getResourceString("header.subject"));    
+                return (this.rb.getResourceString("header.subject"));
             case 12:
-                return (this.rb.getResourceString("header.compression"));               
+                return (this.rb.getResourceString("header.compression"));
         }
         return (null);
     }
@@ -343,7 +381,6 @@ public class TableModelMessageOverview extends AbstractTableModel {
             String.class,
             String.class,
             String.class,
-            Boolean.class,
-        }[col]);
+            Boolean.class,}[col]);
     }
 }

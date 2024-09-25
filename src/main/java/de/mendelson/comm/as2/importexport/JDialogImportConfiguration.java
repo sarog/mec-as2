@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/importexport/JDialogImportConfiguration.java 12    18.09.12 14:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/importexport/JDialogImportConfiguration.java 13    7.11.18 10:39 Heller $
 package de.mendelson.comm.as2.importexport;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -7,7 +7,8 @@ import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClient;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.sql.Connection;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -28,7 +29,7 @@ import javax.swing.table.TableColumn;
 /**
  * Dialog to configure a single partner
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class JDialogImportConfiguration extends JDialog {
 
@@ -60,7 +61,7 @@ public class JDialogImportConfiguration extends JDialog {
         InputStream inStream = null;
         List<Partner> partnerList = new ArrayList<Partner>();
         try {
-            inStream = new FileInputStream(filename);            
+            inStream = Files.newInputStream(Paths.get(filename));            
             ConfigurationImport configImport = new ConfigurationImport();
             partnerList.addAll(configImport.readPartner(inStream));
             if (partnerList == null || partnerList.isEmpty()) {
@@ -97,7 +98,7 @@ public class JDialogImportConfiguration extends JDialog {
         InputStream inStream = null;
         try {
             TransferClient transferClient = new TransferClient(this.baseClient);
-            inStream = new FileInputStream(this.filename);
+            inStream = Files.newInputStream(Paths.get(this.filename));
             //upload the data first, chunked
             String uploadHash = transferClient.uploadChunked(inStream);           
             //..then perform the import process

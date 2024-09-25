@@ -1,11 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 6     5/03/17 10:09a Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 11    7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.partner;
 
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.logging.Logger;
 
 /*
@@ -16,17 +18,22 @@ import java.util.logging.Logger;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Database access wrapper for partner system information. This is the information that is
- * collected if the AS2 system connects to an other AS2 system, it will be displayed in the
- * partner panel
+ * Database access wrapper for partner system information. This is the
+ * information that is collected if the AS2 system connects to an other AS2
+ * system, it will be displayed in the partner panel
+ *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 11 $
  */
 public class PartnerSystemAccessDB {
 
-    /**Logger to log inforamtion to*/
+    /**
+     * Logger to log information to
+     */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    /**Connection to the database*/
+    /**
+     * Connection to the database
+     */
     private Connection configConnection;
     private Connection runtimeConnection;
 
@@ -53,9 +60,13 @@ public class PartnerSystemAccessDB {
                 system.setMa(result.getInt("ma") == 1);
                 return (system);
             }
+        } catch (SQLException e) {
+            this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            return (null);
         } catch (Exception e) {
             this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             return (null);
         } finally {
             if (statement != null) {
@@ -63,7 +74,7 @@ public class PartnerSystemAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (result != null) {
@@ -71,14 +82,16 @@ public class PartnerSystemAccessDB {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
         return (null);
     }
 
-    /**Updates a single partnersystem in the db*/
+    /**
+     * Updates a single partnersystem in the db
+     */
     private void updatePartnerSystem(PartnerSystem system) {
         PreparedStatement statement = null;
         try {
@@ -92,9 +105,12 @@ public class PartnerSystemAccessDB {
             statement.setInt(5, system.supportsCEM() ? 1 : 0);
             statement.setInt(6, system.getPartner().getDBId());
             statement.execute();
+        } catch (SQLException e) {
+            this.logger.severe("PartnerSystemAccessDB.updatePartnerSystem: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } catch (Exception e) {
             this.logger.severe("PartnerSystemAccessDB.updatePartnerSystem: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {
@@ -106,7 +122,8 @@ public class PartnerSystemAccessDB {
         }
     }
 
-    /**Deletes a single partnersystem from the database
+    /**
+     * Deletes a single partnersystem from the database
      */
     public void deletePartnerSystem(Partner partner) {
         PreparedStatement statement = null;
@@ -115,22 +132,27 @@ public class PartnerSystemAccessDB {
             statement.setEscapeProcessing(true);
             statement.setInt(1, partner.getDBId());
             statement.execute();
+        } catch (SQLException e) {
+            this.logger.severe("PartnerSystemAccessDB.deletePartnerSystem: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } catch (Exception e) {
             this.logger.severe("PartnerSystemAccessDB.deletePartnerSystem: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerSystemAccessDB.deletePartnerSystem: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
     }
 
-    /**Inserts a new entry into the database or updates an existing one*/
+    /**
+     * Inserts a new entry into the database or updates an existing one
+     */
     public synchronized void insertOrUpdatePartnerSystem(PartnerSystem partnerSystem) {
         PartnerSystem system = this.getPartnerSystem(partnerSystem.getPartner());
         if (system == null) {
@@ -140,7 +162,8 @@ public class PartnerSystemAccessDB {
         }
     }
 
-    /**Inserts a new partnersystem into the database
+    /**
+     * Inserts a new partner system into the database
      */
     private void insertPartnerSystem(PartnerSystem partnerSystem) {
         PreparedStatement statement = null;
@@ -155,9 +178,12 @@ public class PartnerSystemAccessDB {
             statement.setInt(5, partnerSystem.supportsMA() ? 1 : 0);
             statement.setInt(6, partnerSystem.supportsCEM() ? 1 : 0);
             statement.execute();
+        } catch (SQLException e) {
+            this.logger.severe("PartnerSystemAccessDB.insertPartnerSystem: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } catch (Exception e) {
             this.logger.severe("PartnerSystemAccessDB.insertPartnerSystem: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {

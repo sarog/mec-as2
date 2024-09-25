@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/KeystoreCertificate.java 21    11/29/17 1:40p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/KeystoreCertificate.java 25    6/21/18 11:06a Heller $
 package de.mendelson.util.security.cert;
 
 import java.io.Serializable;
@@ -62,13 +62,24 @@ import org.bouncycastle.asn1.x509.KeyUsage;
  * Object that stores a single configuration certificate/key
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 25 $
  */
 public class KeystoreCertificate implements Comparable, Serializable {
 
+    public static final long serialVersionUID = 1L;
     private String alias = "";
     private X509Certificate certificate = null;
     private boolean isKeyPair = false;
+
+    /**
+     * The SHA-1 fingerprints of the public available mendelson test keys
+     */
+    public static final String[] TEST_KEYS_FINGERPRINTS_SHA1 = new String[]{
+        "6D:9A:2C:79:02:0B:F1:6B:20:78:E4:A3:BE:DF:93:DD:2A:AD:B7:40", //key2
+        "3D:A0:27:42:4D:92:6D:04:BB:74:66:1D:48:3E:61:6A:46:2A:05:B7", //key1
+        "08:FF:33:83:DF:8B:2F:9F:40:BB:F7:88:FE:FD:9C:15:40:E4:FE:C6", //key4
+        "DC:99:5A:83:60:A4:37:C4:30:3B:10:AC:31:4E:D9:21:16:61:36:77" //key3  
+    };
 
     public KeystoreCertificate() {
     }
@@ -133,10 +144,20 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (extendedKeyUsage);
     }
 
+    /**
+     * OID 2.5.29.35 - Authority Key Identifier This extension may be used
+     * either as a certificate or CRL extension. It identifies the public key to
+     * be used to verify the signature on this certificate or CRL. It enables
+     * distinct keys used by the same CA to be distinguished (e.g., as key
+     * updating occurs).
+     *
+     * @return
+     */
     public List<String> getAuthorityKeyIdentifier() {
         List<String> authorityKeyIdentifierList = new ArrayList<String>();
         byte[] extensionValue = this.certificate.getExtensionValue("2.5.29.35");
         if (extensionValue == null) {
+            //there is no such extension: return empty list
             return (authorityKeyIdentifierList);
         }
         try {
@@ -160,10 +181,18 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (authorityKeyIdentifierList);
     }
 
+    /**
+     * OID 2.5.29.14 - Subject Key Identifier This extension identifies the
+     * public key being certified. It enables distinct keys used by the same
+     * subject to be differentiated (e.g., as key updating occurs).
+     *
+     * @return
+     */
     public List<String> getSubjectKeyIdentifier() {
         List<String> subjectKeyIdentifierList = new ArrayList<String>();
         byte[] extensionValue = this.certificate.getExtensionValue("2.5.29.14");
         if (extensionValue == null) {
+            //there is no such extension: return empty list
             return (subjectKeyIdentifierList);
         }
         try {
@@ -184,6 +213,7 @@ public class KeystoreCertificate implements Comparable, Serializable {
         List<String> keyUsages = new ArrayList<String>();
         byte[] extensionValue = this.certificate.getExtensionValue("2.5.29.15");
         if (extensionValue == null) {
+            //there is no such extension: return empty list
             return (keyUsages);
         }
         try {
@@ -232,6 +262,13 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (keyUsages);
     }
 
+    /**
+     * In fact whenever we say key we mean a pair of numbers comprising the key;
+     * a key number to use in the raising of powers and another number that is
+     * the modulus of the arithmetic to be used for the work.
+     *
+     * @return
+     */
     public BigInteger getModulus() {
         PublicKey key = this.certificate.getPublicKey();
         if (key instanceof RSAPublicKey) {
@@ -241,6 +278,13 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (BigInteger.ZERO);
     }
 
+    /**
+     * In fact whenever we say key we mean a pair of numbers comprising the key;
+     * a key number to use in the raising of powers and another number that is
+     * the modulus of the arithmetic to be used for the work.
+     *
+     * @return
+     */
     public BigInteger getPublicExponent() {
         PublicKey key = this.certificate.getPublicKey();
         if (key instanceof RSAPublicKey) {
@@ -515,6 +559,10 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (this.getFingerPrintBytes("MD5"));
     }
 
+    public byte[] getFingerPrintBytesSHA256() {
+        return (this.getFingerPrintBytes("SHA-256"));
+    }
+
     public String getFingerPrintSHA1() {
         return (this.getFingerPrint("SHA1"));
     }
@@ -523,11 +571,18 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (this.getFingerPrint("MD5"));
     }
 
+    public String getFingerPrintSHA256() {
+        return (this.getFingerPrint("SHA-256"));
+    }
+
     /**
      * Deserializes a fingerprint string to a byte array It is assumed that the
      * fingerprint string has the format hex:hex:hex
      */
     public static byte[] fingerprintStrToBytes(String fingerprintStr) {
+        if (fingerprintStr == null || !fingerprintStr.contains(":")) {
+            throw new IllegalArgumentException("KeystoreCertificate.fingerprintStrToBytes: The certificate fingerprint \"" + fingerprintStr + "\" is not a valid fingerprint");
+        }
         String[] token = fingerprintStr.split(":");
         byte[] bytes = new byte[token.length];
         for (int i = 0; i < token.length; i++) {
@@ -543,7 +598,6 @@ public class KeystoreCertificate implements Comparable, Serializable {
         if ((encoded.length() % 2) != 0) {
             throw new IllegalArgumentException("KeystoreCertificate.fromHexString: Input string must contain an even number of characters");
         }
-
         final byte result[] = new byte[encoded.length() / 2];
         final char enc[] = encoded.toCharArray();
         try {
@@ -711,6 +765,7 @@ public class KeystoreCertificate implements Comparable, Serializable {
         try {
             infoText.append("Fingerprint (MD5): ").append(this.getFingerPrintMD5()).append("\n");
             infoText.append("Fingerprint (SHA-1): ").append(this.getFingerPrintSHA1()).append("\n");
+            infoText.append("Fingerprint (SHA-256): ").append(this.getFingerPrintSHA256()).append("\n");
         } catch (Exception e) {
             infoText.append("Fingerprint processing failed: ").append(e.getMessage());
         }

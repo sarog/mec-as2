@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewResponse.java 1     2.12.11 16:11 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewResponse.java 5     6.11.18 16:59 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
+import java.nio.file.FileSystems;
 import java.util.List;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,16 +16,21 @@ import java.util.List;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 5 $
  */
 public class FileSystemViewResponse extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private FileObject parameterFile = null;
     private List<FileObject> parameterFileArray = null;
     private String parameterString = null;
+    /**As this object is always created on the server side this gives additional information about the server side
+     * path separator*/
+    private final String serverSideFileSeparator;
 
     public FileSystemViewResponse(FileSystemViewRequest request) {
         super(request);
+        this.serverSideFileSeparator = FileSystems.getDefault().getSeparator();
     }
 
     /**
@@ -67,5 +73,12 @@ public class FileSystemViewResponse extends ClientServerResponse implements Seri
      */
     public void setParameterString(String parameterString) {
         this.parameterString = parameterString;
+    }
+
+    /**
+     * @return the serverSideFileSeparator
+     */
+    public String getServerSideFileSeparator() {
+        return serverSideFileSeparator;
     }
 }

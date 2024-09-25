@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpSendManager.java 3     20.08.12 14:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpSendManager.java 4     4/06/18 1:35p Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,16 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleHttpSendManager extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
+    @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"queue.started", "Http send queue started." },    
     };
     

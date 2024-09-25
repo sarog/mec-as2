@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 8     17.09.12 16:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 9     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -14,10 +14,12 @@ import java.io.Serializable;
 /**
  * Filter to apply for the message overview
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class MessageOverviewFilter implements Serializable{
 
+    public static final long serialVersionUID = 1L;
+    
     public static final int DIRECTION_ALL = 0;
     public static final int DIRECTION_IN = AS2MessageInfo.DIRECTION_IN;
     public static final int DIRECTION_OUT = AS2MessageInfo.DIRECTION_OUT;

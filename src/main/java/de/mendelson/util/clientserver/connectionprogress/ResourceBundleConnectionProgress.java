@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectionprogress/ResourceBundleConnectionProgress.java 1     13.01.11 12:36 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectionprogress/ResourceBundleConnectionProgress.java 2     4/06/18 1:35p Heller $
 package de.mendelson.util.clientserver.connectionprogress;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,22 +11,25 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-
-/** 
+/**
  * Localize a mandelson product
- * @author  S.Heller
- * @version $Revision: 1 $
+ *
+ * @author S.Heller
+ * @version $Revision: 2 $
  */
-public class ResourceBundleConnectionProgress extends MecResourceBundle{
+public class ResourceBundleConnectionProgress extends MecResourceBundle {
+
+    public static final long serialVersionUID = 1L;
 
     @Override
-  public Object[][] getContents() {
-    return contents;
-  }
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
 
-   /**List of messages in the specific language*/
-  static final Object[][] contents = {
-    {"connecting.to", "Connecting to {0}..." },
-  };		
-  
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"connecting.to", "Connecting to {0}..."},};
+
 }

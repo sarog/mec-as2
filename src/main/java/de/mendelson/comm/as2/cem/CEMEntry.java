@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMEntry.java 7     20.09.12 12:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMEntry.java 9     19.09.18 14:30 Heller $
 package de.mendelson.comm.as2.cem;
 
+import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.util.MecResourceBundle;
 import java.io.Serializable;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 /*
@@ -16,10 +18,12 @@ import java.util.ResourceBundle;
 /**
  * Container that stores certificate information where the respond by date requests to change a certificate
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class CEMEntry implements Serializable{
 
+    public static final long serialVersionUID = 1L;
+    
     public static final int CATEGORY_CRYPT = 1;
     public static final int CATEGORY_SIGN = 2;
     public static final int CATEGORY_SSL = 3;
@@ -287,4 +291,44 @@ public class CEMEntry implements Serializable{
     public void setReasonForRejection(String reasonForRejection) {
         this.reasonForRejection = reasonForRejection;
     }
+    
+    /**
+     * Overwrite the equal method of object
+     *
+     * @param anObject object ot compare
+     */
+    @Override
+    public boolean equals(Object anObject) {
+        if (anObject == this) {
+            return (true);
+        }
+        if (anObject != null && anObject instanceof CEMEntry) {
+            CEMEntry entry = (CEMEntry) anObject;
+            return (entry != null && this.requestId != null && this.requestId.equals(entry.requestId)
+                    && this.category == entry.category);
+        }
+        return (false);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 41 * hash + Objects.hashCode(this.initiatorAS2Id);
+        hash = 41 * hash + Objects.hashCode(this.receiverAS2Id);
+        hash = 41 * hash + this.category;
+        hash = 41 * hash + (int) (this.respondByDate ^ (this.respondByDate >>> 32));
+        hash = 41 * hash + Objects.hashCode(this.serialId);
+        hash = 41 * hash + Objects.hashCode(this.requestId);
+        hash = 41 * hash + Objects.hashCode(this.requestMessageid);
+        hash = 41 * hash + Objects.hashCode(this.responseMessageid);
+        hash = 41 * hash + (int) (this.requestMessageOriginated ^ (this.requestMessageOriginated >>> 32));
+        hash = 41 * hash + (int) (this.responseMessageOriginated ^ (this.responseMessageOriginated >>> 32));
+        hash = 41 * hash + this.cemState;
+        hash = 41 * hash + Objects.hashCode(this.issuername);
+        hash = 41 * hash + (this.processed ? 1 : 0);
+        hash = 41 * hash + (int) (this.processDate ^ (this.processDate >>> 32));
+        hash = 41 * hash + Objects.hashCode(this.reasonForRejection);
+        return hash;
+    }
+    
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 18    27-05-16 9:10a Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 20    4/05/18 2:07p Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -6,6 +6,7 @@ import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadRequestFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadResponseFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClient;
+import de.mendelson.util.xmleditorkit.XMLEditorKit;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
@@ -31,7 +32,7 @@ import javax.swing.JPanel;
  * Panel to display the content of a file
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 20 $
  */
 public class JPanelFileDisplay extends JPanel {
 
@@ -41,7 +42,7 @@ public class JPanelFileDisplay extends JPanel {
     /**
      * Max filesize for the display of data in the panel, actual 350kB
      */
-    private final static long MAX_FILESIZE = (long) (350 * Math.pow(2, 10));
+    private final static long MAX_FILESIZE = (long) (500 * Math.pow(2, 10));
     /**
      * Resourcebundle to localize the GUI
      */
@@ -64,6 +65,8 @@ public class JPanelFileDisplay extends JPanel {
         this.initComponents();
         //this is just displayed if it is an image
         this.jPanelImage.setVisible(false);
+        this.jEditorPaneXML.setEditorKit(new XMLEditorKit());
+        this.jSplitPaneTextAndXML.setVisible( false );
     }
 
     /**
@@ -71,11 +74,11 @@ public class JPanelFileDisplay extends JPanel {
      */
     public void displayFile(String filename) {
         this.jLabelImage.setIcon(null);
-        this.jPanelImage.setVisible(false);        
-        this.jScrollPaneEditor.setVisible(true);
+        this.jPanelImage.setVisible(false);
+        this.jScrollPaneTextEditor.setVisible(true);
         if (filename == null) {
             this.jTextFieldFilename.setText("");
-            this.jEditorPane.setText(this.rb.getResourceString("no.file"));
+            this.jEditorPaneRawText.setText(this.rb.getResourceString("no.file"));            
             return;
         }
         TransferClient transferClient = new TransferClient(this.baseClient);
@@ -87,7 +90,7 @@ public class JPanelFileDisplay extends JPanel {
             DownloadResponseFileLimited response = (DownloadResponseFileLimited) transferClient.download(request);
             this.jTextFieldFilename.setText(response.getFullFilename());
             if (response.isSizeExceeded()) {
-                this.jEditorPane.setText(this.rb.getResourceString("file.tolarge",
+                this.jEditorPaneRawText.setText(this.rb.getResourceString("file.tolarge",
                         new Object[]{filename}));
             } else {
                 inStream = response.getDataStream();
@@ -95,23 +98,33 @@ public class JPanelFileDisplay extends JPanel {
                 this.copyStreams(inStream, memOut);
                 memOut.close();
                 byte[] data = memOut.toByteArray();
-                if (this.isImage(new ByteArrayInputStream(data))) {                    
+                if (this.isImage(new ByteArrayInputStream(data))) {
                     ImageIcon icon = new ImageIcon(ImageIO.read(new ByteArrayInputStream(data)));
-                    this.jLabelImage.setIcon(icon);                  
+                    this.jLabelImage.setIcon(icon);
                     this.getToolkit().sync();
-                    this.jScrollPaneEditor.setVisible(false);
+                    this.jScrollPaneTextEditor.setVisible(false);
                     this.jPanelImage.setVisible(true);
                 } else {
                     inStream = new ByteArrayInputStream(data);
-                    this.jEditorPane.read(inStream, null);
+                    this.jEditorPaneRawText.read(inStream, null);
+                    try{
+                        this.jEditorPaneXML.read(new ByteArrayInputStream(data), data);
+                        //the XML data is parsable and could be displayed: move the raw text editor to the split pane
+                        this.jScrollPaneTextEditor.getParent().remove(this.jScrollPaneTextEditor);
+                        this.jSplitPaneTextAndXML.setTopComponent(this.jScrollPaneTextEditor);
+                        this.jSplitPaneTextAndXML.setVisible(true);
+                    }
+                    catch( Throwable e ){
+                        //its no parsable XML data: no action required
+                    }
                 }
             }
         } catch (Throwable e) {
             if (e instanceof FileNotFoundException) {
-                this.jEditorPane.setText(this.rb.getResourceString("file.notfound",
+                this.jEditorPaneRawText.setText(this.rb.getResourceString("file.notfound",
                         filename));
             } else {
-                this.jEditorPane.setText(e.getMessage());
+                this.jEditorPaneRawText.setText(e.getMessage());
             }
             return;
         } finally {
@@ -169,35 +182,18 @@ public class JPanelFileDisplay extends JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jScrollPaneEditor = new javax.swing.JScrollPane();
-        jEditorPane = new javax.swing.JEditorPane();
-        jTextFieldFilename = new javax.swing.JTextField();
         jPanelImage = new javax.swing.JPanel();
         jScrollPaneImage = new javax.swing.JScrollPane();
         jLabelImage = new javax.swing.JLabel();
+        jScrollPaneTextEditor = new javax.swing.JScrollPane();
+        jEditorPaneRawText = new javax.swing.JEditorPane();
+        jSplitPaneTextAndXML = new javax.swing.JSplitPane();
+        jPanelXMLStructure = new javax.swing.JPanel();
+        jScrollPaneXML = new javax.swing.JScrollPane();
+        jEditorPaneXML = new javax.swing.JEditorPane();
+        jTextFieldFilename = new javax.swing.JTextField();
 
         setLayout(new java.awt.GridBagLayout());
-
-        jEditorPane.setEditable(false);
-        jScrollPaneEditor.setViewportView(jEditorPane);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 1.0;
-        add(jScrollPaneEditor, gridBagConstraints);
-
-        jTextFieldFilename.setEditable(false);
-        jTextFieldFilename.setBackground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        add(jTextFieldFilename, gridBagConstraints);
 
         jPanelImage.setLayout(new java.awt.GridBagLayout());
 
@@ -216,13 +212,61 @@ public class JPanelFileDisplay extends JPanel {
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
         add(jPanelImage, gridBagConstraints);
+
+        jEditorPaneRawText.setEditable(false);
+        jScrollPaneTextEditor.setViewportView(jEditorPaneRawText);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        add(jScrollPaneTextEditor, gridBagConstraints);
+
+        jSplitPaneTextAndXML.setDividerLocation(200);
+        jSplitPaneTextAndXML.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
+
+        jPanelXMLStructure.setLayout(new java.awt.GridBagLayout());
+
+        jScrollPaneXML.setViewportView(jEditorPaneXML);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        jPanelXMLStructure.add(jScrollPaneXML, gridBagConstraints);
+
+        jSplitPaneTextAndXML.setBottomComponent(jPanelXMLStructure);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        add(jSplitPaneTextAndXML, gridBagConstraints);
+
+        jTextFieldFilename.setEditable(false);
+        jTextFieldFilename.setBackground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.weightx = 1.0;
+        add(jTextFieldFilename, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JEditorPane jEditorPane;
+    private javax.swing.JEditorPane jEditorPaneRawText;
+    private javax.swing.JEditorPane jEditorPaneXML;
     private javax.swing.JLabel jLabelImage;
     private javax.swing.JPanel jPanelImage;
-    private javax.swing.JScrollPane jScrollPaneEditor;
+    private javax.swing.JPanel jPanelXMLStructure;
     private javax.swing.JScrollPane jScrollPaneImage;
+    private javax.swing.JScrollPane jScrollPaneTextEditor;
+    private javax.swing.JScrollPane jScrollPaneXML;
+    private javax.swing.JSplitPane jSplitPaneTextAndXML;
     private javax.swing.JTextField jTextFieldFilename;
     // End of variables declaration//GEN-END:variables
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponseFileLimited.java 1     17.01.11 10:36 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponseFileLimited.java 2     4/06/18 12:21p Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import java.io.Serializable;
@@ -13,10 +13,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class DownloadResponseFileLimited extends DownloadResponseFile implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private boolean sizeExceeded = false;
 
     public DownloadResponseFileLimited(DownloadRequestFileLimited request) {

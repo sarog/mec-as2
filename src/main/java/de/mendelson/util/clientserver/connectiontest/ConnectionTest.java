@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 6     7/06/17 11:10a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 8     10.12.18 12:46 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -9,10 +9,12 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
+import java.net.Proxy;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSession;
@@ -31,7 +33,7 @@ import javax.net.ssl.X509TrustManager;
  * Performs a connection test and returns information about the results
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ConnectionTest {
 
@@ -42,6 +44,7 @@ public class ConnectionTest {
     private InetSocketAddress remoteAddress = null;
     private MecResourceBundle rb = null;
     private int testType = -1;
+    private ConnectionTestProxy proxy = null;
 
     public ConnectionTest(Logger logger, final int TEST_TYPE) {
         this.logger = logger;
@@ -56,7 +59,7 @@ public class ConnectionTest {
     }
 
     private String getLogTag() {
-        return (this.rb.getResourceString("tag", this.remoteAddress.toString()));
+        return ("[" + this.rb.getResourceString("tag", this.remoteAddress.toString()) + "] ");
     }
 
     /**
@@ -72,7 +75,27 @@ public class ConnectionTest {
         Socket socket = null;
         try {
             try {
-                socket = new Socket();
+                Proxy proxy = null;
+                if (this.proxy == null) {
+                    //direct socket connection
+                    socket = new Socket();
+                    this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.direct"));
+                } else {
+                    proxy = this.proxy.asProxy();
+                    //proxy connected socket
+                    socket = new Socket(proxy);
+                    if (this.proxy.usesAuthentication()) {
+                        this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.proxy.auth",
+                                new Object[]{
+                                    this.proxy.getAddress() + ":" + this.proxy.getPort(),
+                                    this.proxy.getUserName()
+                                }));
+                    } else {
+                        this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.proxy.noauth",
+                                this.proxy.getAddress() + ":" + this.proxy.getPort()));
+                    }
+                }
+
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("test.start.plain", this.remoteAddress.toString()));
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("timeout.set", String.valueOf(timeout)));
                 socket.setSoTimeout((int) timeout);
@@ -82,6 +105,8 @@ public class ConnectionTest {
             } catch (Exception exception) {
                 testResult.setException(exception);
                 testResult.setConnectionIsPossible(false);
+                 this.logger.severe(this.getLogTag() + this.rb.getResourceString("result.exception",
+                    "[" + exception.getClass().getSimpleName() + "]: " + exception.getMessage()));                
                 this.logger.severe(this.getLogTag() + this.rb.getResourceString("connection.problem", this.remoteAddress.toString()));
                 return (testResult);
             }
@@ -169,8 +194,25 @@ public class ConnectionTest {
                 }};
             sslContext.init(null, trustManagerTrustAll, null);
             socketFactory = sslContext.getSocketFactory();
-            //create a unconnected socket
-            sslSocket = (SSLSocket) socketFactory.createSocket();
+            if (this.proxy == null) {
+                //create a unconnected socket            
+                sslSocket = (SSLSocket) socketFactory.createSocket();
+                this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.direct"));
+            } else {
+                Proxy proxy = this.proxy.asProxy();
+                //create a unconnected socket            
+                sslSocket = (SSLSocket) socketFactory.createSocket(new Socket(proxy), this.proxy.getAddress(), this.proxy.getPort(), true);
+                if (this.proxy.usesAuthentication()) {
+                    this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.proxy.auth",
+                                new Object[]{
+                                    this.proxy.getAddress() + ":" + this.proxy.getPort(),
+                                    this.proxy.getUserName()
+                                }));
+                } else {
+                    this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.proxy.noauth",
+                                this.proxy.getAddress() + ":" + this.proxy.getPort()));
+                }
+            }
             sslSocket.setSoTimeout((int) timeout);
             try {
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("test.start.ssl", this.remoteAddress.toString()));
@@ -291,6 +333,20 @@ public class ConnectionTest {
             }
         }
         return (testResult);
+    }
+
+    /**
+     * @return the proxy
+     */
+    public ConnectionTestProxy getProxy() {
+        return proxy;
+    }
+
+    /**
+     * @param proxy the proxy to set
+     */
+    public void setProxy(ConnectionTestProxy proxy) {
+        this.proxy = proxy;
     }
 
 }

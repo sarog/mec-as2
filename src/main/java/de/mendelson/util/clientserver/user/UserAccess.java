@@ -1,12 +1,11 @@
-//$Header: /mbi_webclient/de/mendelson/util/clientserver/user/UserAccess.java 5     10/21/15 11:33a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/UserAccess.java 6     1.11.18 12:36 Heller $
 package de.mendelson.util.clientserver.user;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
 import java.io.RandomAccessFile;
-import java.io.Reader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.logging.Logger;
 
 /*
@@ -20,7 +19,7 @@ import java.util.logging.Logger;
  * Contains several utilities for the user access
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class UserAccess {
 
@@ -46,13 +45,19 @@ public class UserAccess {
         for (int i = 0; i < 3; i++) {
             user.setPermission(i, "");
         }
-        RandomAccessFile file = new RandomAccessFile(this.passwdFile, "rw");
-        file.seek(this.passwdFile.length());
-        String newLine = User.serialize(user);
-        file.writeBytes("\n");
-        file.writeBytes(newLine);
-        file.writeBytes("\n");
-        file.close();
+        RandomAccessFile file = null;
+        try {
+            file = new RandomAccessFile(this.passwdFile, "rw");
+            file.seek(this.passwdFile.length());
+            String newLine = User.serialize(user);
+            file.writeBytes("\n");
+            file.writeBytes(newLine);
+            file.writeBytes("\n");
+        } finally {
+            if (file != null) {
+                file.close();
+            }
+        }
         return (user);
     }
 
@@ -76,8 +81,7 @@ public class UserAccess {
     public String readUserLine(String userName) {
         BufferedReader bufferedReader = null;
         try {
-            Reader reader = new InputStreamReader(new FileInputStream(this.passwdFile), "UTF-8");
-            bufferedReader = new BufferedReader(reader);
+            bufferedReader = Files.newBufferedReader(this.passwdFile.toPath(), StandardCharsets.UTF_8);
             String line = "";
             while (line != null) {
                 line = bufferedReader.readLine();

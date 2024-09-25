@@ -1,7 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/PerformNotificationTestRequest.java 1     24.11.11 16:42 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/PerformNotificationTestRequest.java 3     19.09.18 11:23 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
-import de.mendelson.comm.as2.notification.NotificationData;
+import de.mendelson.util.systemevents.notification.NotificationData;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.Serializable;
 /*
@@ -14,10 +14,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class PerformNotificationTestRequest extends ClientServerMessage implements Serializable{
     
+    public static final long serialVersionUID = 1L;
     private NotificationData notificationData;
     
     public PerformNotificationTestRequest(NotificationData notificationData){

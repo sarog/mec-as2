@@ -1,29 +1,27 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/Base64.java 3     12.08.08 12:09 Heller $
+//$Header: /as2/de/mendelson/util/security/Base64.java 4     7.11.18 10:40 Heller $
 package de.mendelson.util.security;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /**
- * This class provides encode/decode for RFC 2045 Base64 as
- * defined by RFC 2045, N. Freed and N. Borenstein.
- * RFC 2045: Multipurpose Internet Mail Extensions (MIME)
- * Part One: Format of Internet Message Bodies. Reference
- * 1996 Available at: http://www.ietf.org/rfc/rfc2045.txt
+ * This class provides encode/decode for RFC 2045 Base64 as defined by RFC 2045,
+ * N. Freed and N. Borenstein. RFC 2045: Multipurpose Internet Mail Extensions
+ * (MIME) Part One: Format of Internet Message Bodies. Reference 1996 Available
+ * at: http://www.ietf.org/rfc/rfc2045.txt
  *
- * This implementation does not encode/decode streaming
- * data. You need the data that you will encode/decode
- * already on a byte arrray.
+ * This implementation does not encode/decode streaming data. You need the data
+ * that you will encode/decode already on a byte arrray.
  *
- * Authors: Jeffrey Rodriguez
- *          Sandy Gao
+ * Authors: Jeffrey Rodriguez Sandy Gao
  */
 public final class Base64 {
 
@@ -39,7 +37,6 @@ public final class Base64 {
     static private final boolean fDebug = false;
     static final private byte[] base64Alphabet = new byte[BASELENGTH];
     static final private char[] lookUpBase64Alphabet = new char[LOOKUPLENGTH];
-    
 
     static {
 
@@ -254,10 +251,10 @@ public final class Base64 {
 
         for (; i < numberQuadruple - 1; i++) {
 
-            if (!isData((d1 = base64Data[dataIndex++])) ||
-                    !isData((d2 = base64Data[dataIndex++])) ||
-                    !isData((d3 = base64Data[dataIndex++])) ||
-                    !isData((d4 = base64Data[dataIndex++]))) {
+            if (!isData((d1 = base64Data[dataIndex++]))
+                    || !isData((d2 = base64Data[dataIndex++]))
+                    || !isData((d3 = base64Data[dataIndex++]))
+                    || !isData((d4 = base64Data[dataIndex++]))) {
                 return null;//if found "no data" just return null
             }
             b1 = base64Alphabet[d1];
@@ -270,8 +267,8 @@ public final class Base64 {
             decodedData[encodedIndex++] = (byte) (b3 << 6 | b4);
         }
 
-        if (!isData((d1 = base64Data[dataIndex++])) ||
-                !isData((d2 = base64Data[dataIndex++]))) {
+        if (!isData((d1 = base64Data[dataIndex++]))
+                || !isData((d2 = base64Data[dataIndex++]))) {
             return null;//if found "no data" just return null
         }
 
@@ -280,8 +277,8 @@ public final class Base64 {
 
         d3 = base64Data[dataIndex++];
         d4 = base64Data[dataIndex++];
-        if (!isData((d3)) ||
-                !isData((d4))) {//Check if they are PAD characters
+        if (!isData((d3))
+                || !isData((d4))) {//Check if they are PAD characters
             if (isPad(d3) && isPad(d4)) {               //Two PAD e.g. 3c[Pad][Pad]
                 if ((b2 & 0xf) != 0)//last 4 bits should be zero
                 {
@@ -320,8 +317,8 @@ public final class Base64 {
     /**
      * remove WhiteSpace from MIME containing encoded Base64 data.
      *
-     * @param data  the byte array of base64 data (with WS)
-     * @return      the new length
+     * @param data the byte array of base64 data (with WS)
+     * @return the new length
      */
     protected static int removeWhiteSpace(char[] data) {
         if (data == null) {
@@ -337,7 +334,8 @@ public final class Base64 {
         return newSize;
     }
 
-    /**Displays a usage of how to use this class
+    /**
+     * Displays a usage of how to use this class
      */
     public static void printUsage() {
         System.out.println("java " + Base64.class.getName() + " <options>");
@@ -348,7 +346,9 @@ public final class Base64 {
         System.out.println("-fileout <string>: Output file.");
     }
 
-    /**Copies all data from one stream to another*/
+    /**
+     * Copies all data from one stream to another
+     */
     public final void copyStreams(InputStream in, OutputStream out)
             throws IOException {
         BufferedInputStream inStream = new BufferedInputStream(in);
@@ -367,18 +367,28 @@ public final class Base64 {
         outStream.flush();
     }
 
-    /**Reads data into a byte array */
+    /**
+     * Reads data into a byte array
+     */
     public byte[] readFile(String inFile) throws IOException {
-        FileInputStream inStream = new FileInputStream(inFile);
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        this.copyStreams(inStream, outStream);
+        InputStream inStream = null;
+        try {
+            inStream = Files.newInputStream(Paths.get(inFile));
+            this.copyStreams(inStream, outStream);
+        } finally {
+            if (inStream != null) {
+                inStream.close();
+            }
+        }
         outStream.flush();
         outStream.close();
-        inStream.close();
         return (outStream.toByteArray());
     }
 
-    /**Method to start the server on from the command line*/
+    /**
+     * Method to start the server on from the command line
+     */
     public static void main(String args[]) {
         String operation = null;
         String filein = null;
@@ -422,7 +432,7 @@ public final class Base64 {
                 data = Base64.decode(new String(data));
             }
             ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-            FileOutputStream outStream = new FileOutputStream(fileout);
+            OutputStream outStream = Files.newOutputStream(Paths.get(fileout));
             base64.copyStreams(inStream, outStream);
             inStream.close();
             outStream.flush();

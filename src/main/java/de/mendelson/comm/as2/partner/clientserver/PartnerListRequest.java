@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListRequest.java 3     19.09.12 15:16 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListRequest.java 5     6/22/18 2:14p Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -15,15 +15,17 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class PartnerListRequest extends ClientServerMessage implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     public static final int LIST_ALL = 1;
     public static final int LIST_LOCALSTATION = 2;
     public static final int LIST_NON_LOCALSTATIONS = 3;
     public static final int LIST_BY_AS2_ID = 4;
     public static final int LIST_BY_DB_ID = 5;
+    public static final int LIST_NON_LOCALSTATIONS_SUPPORTING_CEM = 6;
     private int listOption = LIST_ALL;
 
     private String additionalListOptionStr = null;

@@ -1,17 +1,16 @@
-//$Header: /as2/de/mendelson/util/security/PKCS122JKS.java 1     31.08.12 12:56 Heller $
+//$Header: /oftp2/de/mendelson/util/security/PKCS122JKS.java 3     7.11.18 15:33 Heller $
 package de.mendelson.util.security;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyStore;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.util.logging.Logger;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PasswordFinder;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -19,34 +18,42 @@ import org.bouncycastle.openssl.PasswordFinder;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
- * This class allows to import a key that exist in pkcs#12 keystore into an other JKS keystore
+ * This class allows to import a key that exist in pkcs#12 keystore into an
+ * other JKS keystore
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class PKCS122JKS implements PasswordFinder {
 
     private Logger logger = Logger.getAnonymousLogger();
-    /**Keystore to use, if this is not set a new one will be created
+    /**
+     * Keystore to use, if this is not set a new one will be created
      */
     private KeyStore keystore = null;
-    /**Default pass for a new created keystore, overwrite this by using the
-     *setKeyStore() method
+    /**
+     * Default pass for a new created keystore, overwrite this by using the
+     * setKeyStore() method
      */
     private char[] keystorePass = "test".toCharArray();
 
-    /** Creates a new instance of PEMUtil
-     *@param logger Logger to log the information to
+    /**
+     * Creates a new instance of PEMUtil
+     *
+     * @param logger Logger to log the information to
      */
     public PKCS122JKS(Logger logger) {
         this.logger = logger;
         //forget it to work without BC at this point, the SUN JCE provider
         //could not handle pcks12
-        Security.addProvider(new BouncyCastleProvider());
+        // performs "Security.addProvider(new BouncyCastleProvider());" and adds some BC related system properties
+        new BCCryptoHelper().initialize();
     }
 
-    /**@param importKeystoreStream Stream that contains a keystore in pkcs12 format
+    /**
+     * @param importKeystoreStream Stream that contains a keystore in pkcs12
+     * format
      */
     public void importKey(KeyStore sourceKeyStore, String alias) throws Exception {
         if (sourceKeyStore.isKeyEntry(alias)) {
@@ -65,7 +72,9 @@ public class PKCS122JKS implements PasswordFinder {
         }
     }
 
-    /**@param importKeystoreStream Stream that contains a keystore in pkcs12 format
+    /**
+     * @param importKeystoreStream Stream that contains a keystore in pkcs12
+     * format
      */
     public void importKey(InputStream sourceKeystoreStream, char[] sourceKeypass,
             String alias) throws Exception {
@@ -75,7 +84,8 @@ public class PKCS122JKS implements PasswordFinder {
         this.importKey(sourceKeystore, alias);
     }
 
-    /**Loads ore creates a keystore to import the keys to
+    /**
+     * Loads ore creates a keystore to import the keys to
      */
     private KeyStore generateKeyStore() throws Exception {
         //do not remove the BC paramter, SUN cannot handle the format proper
@@ -84,28 +94,38 @@ public class PKCS122JKS implements PasswordFinder {
         return (localKeystore);
     }
 
-    /**Sets an already existing keystore to this class. Without an existing keystore
-     *a new one is created
+    /**
+     * Sets an already existing keystore to this class. Without an existing
+     * keystore a new one is created
      */
     public void setTargetKeyStore(KeyStore keystore, char[] keystorePass) {
         this.keystore = keystore;
         this.keystorePass = keystorePass;
     }
 
-    /**Saves the passed keystore
-     *@param keystorePass Password for the keystore
-     *@param filename Filename where to save the keystore to
+    /**
+     * Saves the passed keystore
+     *
+     * @param keystorePass Password for the keystore
+     * @param filename Filename where to save the keystore to
      */
-    public void saveKeyStore(KeyStore keystore, char[] keystorePass,
-            File file) throws Exception {
-        OutputStream out = new FileOutputStream(file);
-        keystore.store(out, keystorePass);
-        out.close();
+    public void saveKeyStore(KeyStore keystore, char[] keystorePass, Path file) throws Exception {
+        OutputStream out = null;
+        try {
+            out = Files.newOutputStream(file);
+            keystore.store(out, keystorePass);
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
     }
 
-    /**makes this a PasswordFinder*/
+    /**
+     * makes this a PasswordFinder
+     */
     @Override
     public char[] getPassword() {
-        return( this.keystorePass );
+        return (this.keystorePass);
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/HTTPAuthentication.java 6     23.10.09 11:13 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/HTTPAuthentication.java 7     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.partner;
 
 import java.io.Serializable;
@@ -16,10 +16,11 @@ import org.w3c.dom.NodeList;
 /**
  * Object that stores the information for a HTTP authentication used by a partner
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class HTTPAuthentication implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private String user = "";
     private String password = "";
     /**Use it or dont use it?*/

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/clientserver/RefreshKeystoreCertificates.java 2     7.01.11 15:43 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/clientserver/RefreshKeystoreCertificates.java 3     4/06/18 12:22p Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -13,10 +13,10 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class RefreshKeystoreCertificates extends ClientServerMessage implements Serializable{
-    
+    public static final long serialVersionUID = 1L;
     
     @Override
     public String toString(){

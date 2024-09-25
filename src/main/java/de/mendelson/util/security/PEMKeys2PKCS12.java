@@ -1,15 +1,16 @@
-//$Header: /mec_as2/de/mendelson/util/security/PEMKeys2PKCS12.java 10    26.02.14 11:33 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/security/PEMKeys2PKCS12.java 12    8.11.18 15:43 Heller $
 package de.mendelson.util.security;
 
 import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.KeyStore;
 import java.security.PrivateKey;
@@ -26,6 +27,7 @@ import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.PasswordFinder;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -33,7 +35,6 @@ import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * This class allows to import keys that exist in PEM encoding (human readable
  * format), e.g. created by openssl, into a PKCS#12 keystore. Please remember
@@ -47,7 +48,7 @@ import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
  * PRIVATE KEY-----
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class PEMKeys2PKCS12 implements PasswordFinder {
 
@@ -120,11 +121,20 @@ public class PEMKeys2PKCS12 implements PasswordFinder {
      */
     public void importKey(File pemKeyFile, char[] keypass,
             File certificateFile, String alias) throws Exception {
-        FileReader fileReader = new FileReader(pemKeyFile);
-        InputStream certStream = new FileInputStream(certificateFile);
-        this.importKey(fileReader, keypass, certStream, alias);
-        fileReader.close();
-        certStream.close();
+        FileReader fileReader = null;
+        InputStream certStream = null;
+        try {
+            fileReader = new FileReader(pemKeyFile);
+            certStream = Files.newInputStream(certificateFile.toPath());
+            this.importKey(fileReader, keypass, certStream, alias);
+        } finally {
+            if (fileReader != null) {
+                fileReader.close();
+            }
+            if (certStream != null) {
+                certStream.close();
+            }
+        }
     }
 
     /**
@@ -168,10 +178,16 @@ public class PEMKeys2PKCS12 implements PasswordFinder {
      * @param filename Filename where to save the keystore to
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass,
-            File file) throws Exception {
-        OutputStream out = new FileOutputStream(file);
-        keystore.store(out, keystorePass);
-        out.close();
+            Path file) throws Exception {
+        OutputStream out = null;
+        try {
+            out = Files.newOutputStream(file);
+            keystore.store(out, keystorePass);
+        } finally {
+            if (out != null) {
+                out.close();
+            }
+        }
     }
 
     /**

@@ -1,5 +1,6 @@
-///$Header: /as2/de/mendelson/comm/as2/client/JDialogIssuesList.java 3     3/23/17 11:19a Heller $
+///$Header: /as2/de/mendelson/comm/as2/client/JDialogIssuesList.java 6     1.10.18 10:33 Heller $
 package de.mendelson.comm.as2.client;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -7,7 +8,6 @@ package de.mendelson.comm.as2.client;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckRequest;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckResponse;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
@@ -37,7 +37,7 @@ import javax.swing.JFrame;
  * List of functions, useful for auto complete
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class JDialogIssuesList extends JDialog implements FocusListener, MouseMotionListener {
 
@@ -69,11 +69,22 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
     }
 
     public int getRowHeight() {
+        synchronized (this.issues) {
+            if (this.issues.isEmpty()) {
+                return (0);
+            }
+        }
         int height = (int) this.jList.getCellBounds(0, 0).getHeight();
         return (height);
     }
 
     private void setBounds() {
+        synchronized (this.issues) {
+            if (this.issues.isEmpty()) {
+                this.setBounds(0, 0, 0, 0);
+                return;
+            }
+        }
         //compute max width
         String longestEntry = "";
         int entryCount = this.jList.getModel().getSize();
@@ -101,21 +112,23 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
     }
 
     private void populateList() {
-        ConfigurationCheckResponse response = (ConfigurationCheckResponse) this.baseClient.sendSync(new ConfigurationCheckRequest());
-        Vector<String> listData = new Vector<String>();
-        List<ConfigurationIssue> responseIssues = response.getIssues();
-        for (ConfigurationIssue issue : responseIssues) {
-            StringBuilder entry = new StringBuilder();
-            entry.append(this.rb.getResourceString(String.valueOf(issue.getIssueId())));
-            if (issue.getDetails() != null) {
-                entry.append(" (").append(issue.getDetails()).append(")");
+        if (this.baseClient != null) {
+            ConfigurationCheckResponse response = (ConfigurationCheckResponse) this.baseClient.sendSync(new ConfigurationCheckRequest());
+            Vector<String> listData = new Vector<String>();
+            List<ConfigurationIssue> responseIssues = response.getIssues();
+            for (ConfigurationIssue issue : responseIssues) {
+                StringBuilder entry = new StringBuilder();
+                entry.append(this.rb.getResourceString(String.valueOf(issue.getIssueId())));
+                if (issue.getDetails() != null) {
+                    entry.append(" (").append(issue.getDetails()).append(")");
+                }
+                listData.add(entry.toString());
             }
-            listData.add(entry.toString());
-        }
-        this.jList.setListData(listData);
-        synchronized (this.issues) {
-            this.issues.clear();
-            this.issues.addAll(responseIssues);
+            this.jList.setListData(listData);
+            synchronized (this.issues) {
+                this.issues.clear();
+                this.issues.addAll(responseIssues);
+            }
         }
     }
 
@@ -146,7 +159,7 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
         synchronized (this.issues) {
             if (index >= 0 && index < this.issues.size()) {
                 ConfigurationIssue selectedIssue = this.issues.get(index);
-                switch (selectedIssue.getIssueId()) {                    
+                switch (selectedIssue.getIssueId()) {
                     case ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN:
                         this.moduleStarter.displayCertificateManagerEncSign(selectedIssue.getDetails());
                         break;
@@ -158,22 +171,25 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
                         break;
                     case ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE:
                         this.moduleStarter.displayCertificateManagerSSL(null);
-                        break;    
+                        break;
+                    case ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL:
+                        this.moduleStarter.displayCertificateManagerSSL(selectedIssue.getDetails());
+                        break;
                     case ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE:
                         this.moduleStarter.displayPreferences("tab.maintenance");
                         break;
                     case ConfigurationIssue.CERTIFICATE_MISSING_ENC_REMOTE_PARTNER:
                         this.moduleStarter.displayPartnerManager(selectedIssue.getDetails());
-                        break;    
+                        break;
                     case ConfigurationIssue.CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER:
                         this.moduleStarter.displayPartnerManager(selectedIssue.getDetails());
-                        break;        
+                        break;
                     case ConfigurationIssue.KEY_MISSING_ENC_LOCAL_STATION:
                         this.moduleStarter.displayPartnerManager(selectedIssue.getDetails());
-                        break;            
+                        break;
                     case ConfigurationIssue.KEY_MISSING_SIGN_LOCAL_STATION:
                         this.moduleStarter.displayPartnerManager(selectedIssue.getDetails());
-                        break;                
+                        break;
                 }
             }
         }

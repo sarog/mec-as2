@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/ResourceBundleKeystoreStorage_de.java 1     30.05.11 14:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleKeystoreStorage_de.java 2     4/06/18 1:35p Heller $
 package de.mendelson.util.security.cert;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,17 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleKeystoreStorage_de extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {                
+    static final Object[][] CONTENTS = {                
         {"error.save.notloaded", "Keystore kann nicht gespeichert werden, er wurde noch nicht geladen." },
         {"error.delete.notloaded", "Der Eintrag konnte nicht gelöscht werden, der unterliegende Keystore wurde noch nicht geladen." },
         {"error.readaccess", "Der Keystore konnte nicht gelesen werden: Kein Lesezugriff möglich auf \"{0}\"." },

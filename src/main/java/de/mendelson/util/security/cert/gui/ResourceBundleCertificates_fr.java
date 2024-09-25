@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 15    6/28/17 3:07p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 18    4/06/18 1:35p Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,10 +15,12 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 15 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleCertificates_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -35,7 +37,7 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"button.export", "Exporter certificat"},
         {"menu.file", "Fichier"},
         {"menu.file.close", "Fermer"},
-        {"menu.import", "Import"},
+        {"menu.import", "Importer"},
         {"menu.export", "Export"},
         {"menu.tools", "Tools"},
         {"menu.tools.generatekey", "Générer une nouvelle clé (Self signed)"},
@@ -62,7 +64,7 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"certificate.import.error.message", "Une erreur a eu lieu lors du processus d''import.\n{0}"},
         {"certificate.import.error.title", "Erreur"},
         {"certificate.import.alias", "Alias de certificat à utiliser:"},
-        {"keystore.readonly.message", "Le porte-clef est en lecture seule.\nCette opération n''est pas permise."},
+        {"keystore.readonly.message", "Le porte-clef est en lecture seule.\nToute opération d'écriture de certificat (modifier/éditer) n'est pas possible dans cet état."},
         {"keystore.readonly.title", "Porte-clef r/o"},
         {"modifications.notalllowed.message", "Modifications ne sont pas possibles"},
         {"generatekey.error.message", "{0}"},
@@ -75,5 +77,11 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"title.cert.in.use", "Le certificat est en cours d'utilisation"},
         {"cert.delete.impossible", "Il est impossible de supprimer l''entrée:"},
         {"module.locked", "Cette gestion des certificats est verrouillé par un autre client, vous n'êtes pas autorisé à valider vos modifications!"},
+        {"label.trustanchor", "Trust anchor:" },
+        {"warning.testkey", "Touche de test mendelson accessible au public - ne l''utilisez pas en mode productif!" },        
+        {"label.key.valid", "Cette clé est invalide" },
+        {"label.key.invalid", "Cette clé est valide" },
+        {"label.cert.valid", "Ce certificat est valid" },
+        {"label.cert.invalid", "Ce certificat est invalid" },
     };
 }

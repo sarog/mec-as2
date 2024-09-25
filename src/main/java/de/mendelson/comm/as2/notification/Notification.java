@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/notification/Notification.java 38    13-07-16 9:52a Heller $
+//$Header: /as2/de/mendelson/comm/as2/notification/Notification.java 40    6/21/18 5:22p Heller $
 package de.mendelson.comm.as2.notification;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -57,7 +57,7 @@ import javax.mail.internet.MimeMessage;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 38 $
+ * @version $Revision: 40 $
  */
 public class Notification {
 
@@ -174,6 +174,37 @@ public class Notification {
     }
 
     /**
+     * The system has imported a new certificate into the SSL keystore. The SSL
+     * connector has to be restarted before these changes are taken
+     */
+    public void sendEncSignCertificateAddedByCEM(Partner partner, KeystoreCertificate cert) throws Exception {
+        //do only notify if this is requested by the config
+        if (!this.data.notifyCEM()) {
+            return;
+        }
+        String filename = this.getLocalizedTemplateFilename("template_notification_cem_enc_sign_cert_added");
+        Properties replacement = new Properties();
+        replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
+        replacement.setProperty("${HOST}", this.getHostname());
+        replacement.setProperty("${PARTNER}", partner.getName());
+        StringBuilder techInfo = new StringBuilder();
+        String alias = cert.getAlias();
+        techInfo.append(alias).append(":\n");
+        for (int i = 0; i < alias.length() + 1; i++) {
+            techInfo.append("-");
+        }
+        techInfo.append("\n");
+        techInfo.append(cert.getInfo());
+        techInfo.append("\n");
+        replacement.setProperty("${CERTIFICATETECHDETAILS}", techInfo.toString());
+        NotificationMail mail = new NotificationMail();
+        mail.read(filename, replacement);
+        this.sendMail(mail);
+        this.logger.fine(this.rb.getResourceString("misc.message.send", this.data.getNotificationMail()));
+    }
+    
+    
+    /**
      * Sends a notification if the send quota has been exceeded
      *
      * @param partner
@@ -230,21 +261,27 @@ public class Notification {
     }
 
     /**
-     * Convinience method to send a notification to the administrator that
+     * Convenience method to send a notification to the administrator that
      * something unexpected happened to the system. This is for a SQL related
      * problem and will display additional information about SQL parameters of
      * the query of a statement
      */
     public static void systemFailure(Connection configConnection, Connection runtimeConnection, Throwable exception, PreparedStatement statement) {
+        if( AS2Server.inShutdownProcess){
+            return;
+        }
         Notification notification = new Notification(configConnection, runtimeConnection);
         notification.sendSystemFailure(exception, statement);
     }
 
     /**
-     * Convinience method to send a notification to the administrator that
+     * Convenience method to send a notification to the administrator that
      * something unexpected happened to the system
      */
     public static void systemFailure(Connection configConnection, Connection runtimeConnection, Throwable exception) {
+        if( AS2Server.inShutdownProcess){
+            return;
+        }
         systemFailure(configConnection, runtimeConnection, exception, null);
     }
 
@@ -253,6 +290,9 @@ public class Notification {
      * happened to the system
      */
     private void sendSystemFailure(Throwable exception, PreparedStatement statement) {
+        if( AS2Server.inShutdownProcess){
+            return;
+        }
         //do only notify if this is requested by the config
         if (!this.data.notifySystemFailure()) {
             return;
@@ -387,7 +427,7 @@ public class Notification {
     /**
      * Sends an email that a CEM has been received
      */
-    public void sendCEMRequestReceived(Partner initiator) throws Exception {
+    public void sendCEMRequestReceived(Partner initiator, String requestId) throws Exception {
         //do only notify if this is requested by the config
         if (!this.data.notifyCEM()) {
             return;
@@ -397,6 +437,7 @@ public class Notification {
         replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
         replacement.setProperty("${HOST}", this.getHostname());
         replacement.setProperty("${PARTNER}", initiator.getName());
+        replacement.setProperty("${REQUEST_ID}", requestId);
         NotificationMail mail = new NotificationMail();
         mail.read(filename, replacement);
         this.sendMail(mail);
@@ -405,9 +446,9 @@ public class Notification {
     }
 
     /**
-     * Sends an email that a CEM has been received
+     * Sends an email that a the date of a certificate change event happens
      */
-    public void sendCertificateChangedByCEM(CertificateManager manager, Partner partner, int category) throws Exception {
+    public void sendCertificateChangeShouldHappenNowByCEM(CertificateManager manager, Partner partner, int category) throws Exception {
         //do only notify if this is requested by the config
         if (!this.data.notifyCEM()) {
             return;
@@ -416,14 +457,14 @@ public class Notification {
         Properties replacement = new Properties();
         replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
         replacement.setProperty("${HOST}", this.getHostname());
+        replacement.setProperty("${PARTNER}", partner.getName());
         String description = partner.getPartnerCertificateInformationList().getCertificatePurposeDescription(
                 manager, partner, category);
         replacement.setProperty("${CERTIFICATEDESCRIPTION}", description);
         StringBuilder techInfo = new StringBuilder();
-        PartnerCertificateInformation info1 = partner.getCertificateInformation(category, 1);
-        PartnerCertificateInformation info2 = partner.getCertificateInformation(category, 2);
-        if (info1 != null) {
-            KeystoreCertificate certificate = manager.getKeystoreCertificateByFingerprintSHA1(info1.getFingerprintSHA1());
+        PartnerCertificateInformation info = partner.getCertificateInformation(category);
+        if (info != null) {
+            KeystoreCertificate certificate = manager.getKeystoreCertificateByFingerprintSHA1(info.getFingerprintSHA1());
             if (certificate != null) {
                 String alias = certificate.getAlias();
                 techInfo.append(alias).append(":\n");
@@ -434,20 +475,7 @@ public class Notification {
                 techInfo.append(certificate.getInfo());
                 techInfo.append("\n");
             }
-        }
-        if (info2 != null) {
-            KeystoreCertificate certificate = manager.getKeystoreCertificateByFingerprintSHA1(info2.getFingerprintSHA1());
-            if (certificate != null) {
-                String alias = certificate.getAlias();
-                techInfo.append(alias).append(":\n");
-                for (int i = 0; i < alias.length() + 1; i++) {
-                    techInfo.append("-");
-                }
-                techInfo.append("\n");
-                techInfo.append(certificate.getInfo());
-                techInfo.append("\n");
-            }
-        }
+        }       
         replacement.setProperty("${CERTIFICATETECHDETAILS}", techInfo.toString());
         NotificationMail mail = new NotificationMail();
         mail.read(filename, replacement);

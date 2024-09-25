@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSystemMaintenance.java 11    15.07.15 10:28 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSystemMaintenance.java 12    24.09.18 17:35 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit;
 /**
  *Panel to define the inbox settings
  * @author S.Heller
- * @version: $Revision: 11 $
+ * @version: $Revision: 12 $
  */
 public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
 
@@ -130,7 +130,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         add(jCheckBoxDeleteMsgOlderThan, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -138,7 +138,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         add(jTextFieldDeleteMsgOlderThan, gridBagConstraints);
 
         jCheckBoxDeleteStatsOlderThan.setText(this.rb.getResourceString( "label.deletestatsolderthan"));
@@ -165,7 +165,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelDays2, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         add(jComboBoxTimeUnit, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 

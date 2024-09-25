@@ -1,20 +1,22 @@
-//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationExport.java 17    19.09.12 15:16 Heller $
+//$Header: /as2/de/mendelson/comm/as2/importexport/ConfigurationExport.java 22    2.11.18 15:58 Heller $
 package de.mendelson.comm.as2.importexport;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
-import de.mendelson.comm.as2.notification.NotificationAccessDB;
-import de.mendelson.comm.as2.notification.NotificationData;
+import de.mendelson.util.systemevents.notification.NotificationAccessDB;
+import de.mendelson.util.systemevents.notification.NotificationData;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
+import de.mendelson.util.systemevents.notification.NotificationAccessDBImplAS2;
+import de.mendelson.util.systemevents.notification.NotificationDataImplAS2;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.util.List;
 import java.util.logging.Logger;
@@ -29,7 +31,7 @@ import java.util.logging.Logger;
 /**
  * Exports configuration data to a file
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 22 $
  */
 public class ConfigurationExport {
 
@@ -47,7 +49,9 @@ public class ConfigurationExport {
         try {
             KeystoreStorage storage = new KeystoreStorageImplFile("certificates.p12",
                     this.preferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray(),
-                    BCCryptoHelper.KEYSTORE_PKCS12);
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12                    
+            );
             this.certificateManager.loadKeystoreCertificates(storage);
         } catch (Exception e) {
             this.logger.severe(e.getMessage());
@@ -56,7 +60,7 @@ public class ConfigurationExport {
 
     /**Writes the configuration to a file*/
     public void export(OutputStream outStream) throws Exception {
-        OutputStreamWriter writer = new OutputStreamWriter(outStream, "UTF-8");
+        OutputStreamWriter writer = new OutputStreamWriter(outStream, StandardCharsets.UTF_8);
         writer.write("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
         writer.write("<configuration>\n");
         writer.write("\t<product>");
@@ -69,9 +73,9 @@ public class ConfigurationExport {
         for (Partner partner : allPartner) {
             writer.write(partner.toXML(this.certificateManager, 1));
         }
-        NotificationAccessDB access = new NotificationAccessDB(this.configConnection);
+        NotificationAccessDB access = new NotificationAccessDBImplAS2(this.configConnection, this.runtimeConnection);
         NotificationData notificationData = access.getNotificationData();
-        writer.write(notificationData.toXML(1));
+        writer.write(((NotificationDataImplAS2)notificationData).toXML(1));
         writer.write("</configuration>\n");
         writer.flush();
     }

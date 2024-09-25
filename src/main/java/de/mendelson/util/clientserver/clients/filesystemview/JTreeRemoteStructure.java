@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 4     17.01.12 13:18 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 7     15.11.18 12:59 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -24,11 +24,11 @@ import javax.swing.tree.TreePath;
 /**
  * Tree to display remote file structure
  * @author  S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class JTreeRemoteStructure extends JTree {
 
-    private DefaultMutableTreeNode root;
+    private final DefaultMutableTreeNode root;
     private final Map<FileObject, DefaultMutableTreeNode> map = Collections.synchronizedMap(new HashMap<FileObject, DefaultMutableTreeNode>());
     private boolean directoriesOnly = false;
     private MecResourceBundle rb;
@@ -49,10 +49,13 @@ public class JTreeRemoteStructure extends JTree {
         }
         this.setRootVisible(false);
         this.root = (DefaultMutableTreeNode) this.getModel().getRoot();
-        this.setCellRenderer(new TreeCellRendererFileBrowser());
+        TreeCellRendererFileBrowser treeCellRenderer = new TreeCellRendererFileBrowser();
+        this.setCellRenderer(treeCellRenderer);
+        int iconHeight = treeCellRenderer.getDefaultLeafIcon().getIconHeight();
+        this.setRowHeight(Math.max(this.getRowHeight(), iconHeight+5));
     }
 
-    public void addRoots(List<FileObject> roots) {
+    public void addRoots(List<FileObjectRoot> roots) {
         synchronized (this.map) {
             this.map.clear();
             this.root.removeAllChildren();
@@ -99,12 +102,12 @@ public class JTreeRemoteStructure extends JTree {
             parentNode.removeAllChildren();
             ((DefaultTreeModel) this.getModel()).nodeStructureChanged(parentNode);
             for (FileObject child : children) {
-                if (child.getType() == FileObject.TYPE_DIR
+                if (child instanceof FileObjectDir
                         || !this.directoriesOnly) {
                     DefaultMutableTreeNode node = new DefaultMutableTreeNode(child);
                     parentNode.add(node);
                     this.map.put(child, node);
-                    if (child.getType() == FileObject.TYPE_DIR) {
+                    if (child instanceof FileObjectDir) {
                         node.add(new DefaultMutableTreeNode(this.rb.getResourceString("wait")));
                     }
                 }

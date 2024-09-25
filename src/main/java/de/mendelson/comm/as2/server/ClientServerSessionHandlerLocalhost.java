@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ClientServerSessionHandlerLocalhost.java 6     24.09.12 15:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ClientServerSessionHandlerLocalhost.java 7     6/07/18 1:29p Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -19,18 +19,18 @@ import org.apache.mina.core.session.IoSession;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Session handler for the server implemetation
+ * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ClientServerSessionHandlerLocalhost extends ClientServerSessionHandler {
 
     private MecResourceBundle rb;
     private boolean allowAllClients = false;
 
-    public ClientServerSessionHandlerLocalhost(Logger logger, String[] validClientIds, boolean allowAllClients) {
-        super(logger, validClientIds);
+    public ClientServerSessionHandlerLocalhost(Logger logger, String[] validClientIds, boolean allowAllClients, int maxClients) {
+        super(logger, validClientIds, maxClients);
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(

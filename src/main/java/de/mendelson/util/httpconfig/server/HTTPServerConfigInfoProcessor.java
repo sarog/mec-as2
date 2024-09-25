@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 6     12/15/17 11:33a Heller $
+//$Header: /as4/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 8     9.10.18 12:29 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -27,12 +27,15 @@ import org.apache.mina.core.session.IoSession;
  * Processes a http config request on the server side
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class HTTPServerConfigInfoProcessor {
 
     private HTTPServerConfigInfo httpServerConfigInfo;
     private MecResourceBundle rb;
+    private String miscConfigurationText = null;
+    private String protocolConfigurationText = null;
+    private String cipherConfigurationText = null;
 
     public HTTPServerConfigInfoProcessor(HTTPServerConfigInfo httpServerConfigInfo) {
         this.httpServerConfigInfo = httpServerConfigInfo;
@@ -44,26 +47,20 @@ public class HTTPServerConfigInfoProcessor {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        this.miscConfigurationText = this.generateMiscConfigurationText();
+        this.protocolConfigurationText = this.generateProtocolConfigurationText();
+        this.cipherConfigurationText = this.generateCipherConfigurationText();
     }
 
-    /**
-     * Async request from a client to display information about the server
-     */
-    public void processDisplayServerConfigurationRequest(IoSession session, DisplayHTTPServerConfigurationRequest request) {
-        DisplayHTTPServerConfigurationResponse response = new DisplayHTTPServerConfigurationResponse(request);
-        Path httpServerConfigFile = Paths.get("./jetty9/etc/jetty.xml");
-        response.setHttpServerConfigFile(httpServerConfigFile.normalize().toAbsolutePath().toString());
-        StringBuilder logBuilder = new StringBuilder();
+    private String generateMiscConfigurationText(){
         List<HTTPServerConfigInfo.Listener> listenerList = this.httpServerConfigInfo.getListener();
         List<String> receiptURLList = new ArrayList<String>();
         List<String> serverStateURLList = new ArrayList<String>();
-        boolean sslEnabled = false;
-        response.setEmbeddedHTTPServerStarted(this.httpServerConfigInfo.isEmbeddedHTTPServerStarted());
+        StringBuilder logBuilder = new StringBuilder();
         for (HTTPServerConfigInfo.Listener listener : listenerList) {
             String protocol = "NON-SSL";
             if (listener.getProtocol() != null && listener.getProtocol().toLowerCase().contains("ssl")) {
                 protocol = "SSL";
-                sslEnabled = true;
                 receiptURLList.add("https://<HOST>:" + listener.getPort() + this.httpServerConfigInfo.getReceiptURLPath());
                 serverStateURLList.add("https://<HOST>:" + listener.getPort() + this.httpServerConfigInfo.getServerStatePath());
             } else {
@@ -82,7 +79,71 @@ public class HTTPServerConfigInfoProcessor {
                             })
             );
             logBuilder.append("\n");
+        }        
+        StringBuilder hostName = new StringBuilder();
+        StringBuilder ip = new StringBuilder();
+        //find out WAN IP
+        logBuilder.append( this.generatePublicWANText(ip, hostName));
+        //build receipt URLS to display
+        List<String> tempList = new ArrayList<String>();
+        if (hostName.length() > 0) {
+            for (String receiptURL : receiptURLList) {
+                String fullReceiptURL = this.replace(receiptURL, "<HOST>", hostName.toString());
+                tempList.add(fullReceiptURL);
+            }
+            receiptURLList.clear();
+            receiptURLList.addAll(tempList);
         }
+        logBuilder.append("\n");
+        logBuilder.append("\n");
+        logBuilder.append(this.rb.getResourceString("http.receipturls"));
+        logBuilder.append("\n");
+        for (String receiptURL : receiptURLList) {
+            logBuilder.append(receiptURL);
+            logBuilder.append("\n");
+        }
+        if (!serverStateURLList.isEmpty()) {
+            logBuilder.append("\n");
+            logBuilder.append(this.rb.getResourceString("http.serverstateurl"));
+            logBuilder.append("\n");
+            logBuilder.append(this.replace(serverStateURLList.get(0), "<HOST>", hostName.toString()));
+            logBuilder.append("\n");
+            logBuilder.append("\n");
+        }        
+        if (this.httpServerConfigInfo.isSSLEnabled()) {
+            if (this.httpServerConfigInfo.getKeystorePath() != null) {
+                //normalize this path, may contain "/./" parts
+                Path keystoreFile = Paths.get(this.httpServerConfigInfo.getKeystorePath());
+                logBuilder.append(this.rb.getResourceString("http.server.config.keystorepath",
+                        keystoreFile.normalize().toAbsolutePath()));
+                logBuilder.append("\n");
+            }
+            logBuilder.append(this.rb.getResourceString("http.server.config.clientauthentication",
+                    String.valueOf(this.httpServerConfigInfo.needsClientAuthentication())));            
+        }
+        //add the deployed WAR info
+        logBuilder.append("\n");
+        logBuilder.append("\n");
+        logBuilder.append(this.rb.getResourceString("http.deployedwars"));
+        logBuilder.append("\n");
+        List<String> deployedWars = this.httpServerConfigInfo.getDeployedWars();
+        if( deployedWars.isEmpty()){
+            logBuilder.append("--\n");
+        }
+        for (String deployedWARPath : deployedWars) {
+            Path path = Paths.get( deployedWARPath );            
+            logBuilder.append( "[");
+            String filename = path.getFileName().toString();
+            logBuilder.append( this.rb.getResourceString( "webapp." + filename));
+            logBuilder.append( "] ");
+            logBuilder.append(deployedWARPath);
+            logBuilder.append("\n");
+        }
+        return( logBuilder.toString());
+    }
+    
+    private String generatePublicWANText(StringBuilder ipBuilder, StringBuilder hostNameBuilder){
+        StringBuilder logBuilder = new StringBuilder();
         //find out WAN IP
         String hostname = null;
         BufferedReader in = null;
@@ -101,6 +162,8 @@ public class HTTPServerConfigInfoProcessor {
             } catch (Exception e) {
                 //nop
             }
+            ipBuilder.append( ip );
+            hostNameBuilder.append( hostname );
             logBuilder.append(this.rb.getResourceString("external.ip",
                     new Object[]{ip, hostname}));
         } catch (Exception e) {
@@ -114,53 +177,61 @@ public class HTTPServerConfigInfoProcessor {
                 }
             }
         }
-        //build receipt URLS to display
-        List<String> tempList = new ArrayList<String>();
-        if (hostname != null) {
-            for (String receiptURL : receiptURLList) {
-                String fullReceiptURL = this.replace(receiptURL, "<HOST>", hostname);
-                tempList.add(fullReceiptURL);
-            }
-            receiptURLList.clear();
-            receiptURLList.addAll(tempList);
+        return( logBuilder.toString());
+    }
+    
+    private String generateProtocolConfigurationText(){
+        StringBuilder protocolBuilder = new StringBuilder();
+        protocolBuilder.append(this.rb.getResourceString("info.protocols",
+                new Object[]{
+                    this.httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString(),
+                    this.httpServerConfigInfo.getJavaVersion()
+                }));
+        protocolBuilder.append("\n\n");
+        for (String protocol : this.httpServerConfigInfo.getPossibleProtocols()) {
+            protocolBuilder.append(protocol);
+            protocolBuilder.append("\n");
         }
-        logBuilder.append("\n");
-        logBuilder.append("\n");
-        logBuilder.append(this.rb.getResourceString("http.receipturls"));
-        logBuilder.append("\n");
-        for (String receiptURL : receiptURLList) {
-            logBuilder.append(receiptURL);
-            logBuilder.append("\n");
+        return( protocolBuilder.toString());
+    }
+    
+    private String generateCipherConfigurationText(){
+        StringBuilder cipherBuilder = new StringBuilder();
+        cipherBuilder.append(this.rb.getResourceString("info.cipher",
+                new Object[]{
+                    this.httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString(),
+                    this.httpServerConfigInfo.getJavaVersion()
+                }));
+        cipherBuilder.append("\n\n");
+        for (String cipher : this.httpServerConfigInfo.getPossibleCipher()) {
+            cipherBuilder.append(cipher);
+            cipherBuilder.append("\n");
         }
-        if (!serverStateURLList.isEmpty()) {
-            logBuilder.append("\n");
-            logBuilder.append(this.rb.getResourceString("http.serverstateurl"));
-            logBuilder.append("\n");
-            logBuilder.append( this.replace(serverStateURLList.get(0), "<HOST>", hostname));
-            logBuilder.append("\n");
-            logBuilder.append("\n");
-        }
-        response.setSSLEnabled(sslEnabled);
-        if (sslEnabled) {
-            if (this.httpServerConfigInfo.getKeystorePath() != null) {
-                //normalize this path, may contain "/./" parts
-                Path keystoreFile = Paths.get(this.httpServerConfigInfo.getKeystorePath());
-                logBuilder.append(this.rb.getResourceString("http.server.config.keystorepath",
-                        keystoreFile.normalize().toAbsolutePath()));
-                logBuilder.append("\n");
-            }
-            logBuilder.append(this.rb.getResourceString("http.server.config.clientauthentication",
-                    String.valueOf(this.httpServerConfigInfo.needsClientAuthentication())));
-            logBuilder.append("\n");
+        return (cipherBuilder.toString());
+    }
+    
+    
+    /**
+     * Async request from a client to display information about the server
+     */
+    public void processDisplayServerConfigurationRequest(IoSession session, DisplayHTTPServerConfigurationRequest request) {
+        DisplayHTTPServerConfigurationResponse response = new DisplayHTTPServerConfigurationResponse(request);
+        response.setHttpServerConfigFile(this.httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString());
+        response.setEmbeddedJettyServerVersion(this.httpServerConfigInfo.getJettyHTTPServerVersion());        
+        response.setEmbeddedHTTPServerStarted(this.httpServerConfigInfo.isEmbeddedHTTPServerStarted());
+        response.setSSLEnabled(this.httpServerConfigInfo.isSSLEnabled());
+        response.setJavaVersion(this.httpServerConfigInfo.getJavaVersion());        
+        if (this.httpServerConfigInfo.isSSLEnabled()) {
             for (String protocol : this.httpServerConfigInfo.getPossibleProtocols()) {
                 response.addProtocol(protocol);
             }
             for (String cipher : this.httpServerConfigInfo.getPossibleCipher()) {
                 response.addCipher(cipher);
             }
-        }
-        response.setConfigurationStr(logBuilder.toString());
-        response.setJavaVersion(System.getProperty("java.version"));
+        }                               
+        response.setMiscConfigurationText(this.getMiscConfigurationText());   
+        response.setProtocolConfigurationText(this.getProtocolConfigurationText());
+        response.setCipherConfigurationText(this.getCipherConfigurationText());
         //its a sync request
         session.write(response);
     }
@@ -188,6 +259,34 @@ public class HTTPServerConfigInfoProcessor {
             buffer.append(replacement);
             source = source.substring(index + tag.length());
         }
+    }
+
+    /**
+     * @return the miscConfigurationText
+     */
+    public String getMiscConfigurationText() {
+        return miscConfigurationText;
+    }
+
+    /**
+     * @param miscConfigurationText the miscConfigurationText to set
+     */
+    public void setMiscConfigurationText(String miscConfigurationText) {
+        this.miscConfigurationText = miscConfigurationText;
+    }
+
+    /**
+     * @return the protocolConfigurationText
+     */
+    public String getProtocolConfigurationText() {
+        return protocolConfigurationText;
+    }
+
+    /**
+     * @return the cipherConfigurationText
+     */
+    public String getCipherConfigurationText() {
+        return cipherConfigurationText;
     }
 
 }

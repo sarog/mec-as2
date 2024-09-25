@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/notification/NotificationData.java 9     28.06.12 12:36 Heller $
+//$Header: /as2/de/mendelson/comm/as2/notification/NotificationData.java 10    4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.notification;
 
 import java.io.Serializable;
@@ -16,10 +16,12 @@ import org.w3c.dom.NodeList;
 /**
  * Implementation of a server log for the as2 server database
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class NotificationData implements Serializable{
 
+    public static final long serialVersionUID = 1L;
+    
     public static final int SECURITY_PLAIN = 0;
     public static final int SECURITY_START_SSL = 1;
     public static final int SECURITY_SSL = 2;

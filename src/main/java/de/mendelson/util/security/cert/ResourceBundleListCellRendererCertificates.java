@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleListCellRendererCertificates.java 1     3.06.11 11:21 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleListCellRendererCertificates.java 2     4/06/18 1:35p Heller $
 package de.mendelson.util.security.cert;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,17 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleListCellRendererCertificates extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {                
+    static final Object[][] CONTENTS = {                
         {"certificate.not.assigned", "Key or certificate not found" },
     };
     

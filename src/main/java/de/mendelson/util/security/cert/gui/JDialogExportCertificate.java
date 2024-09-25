@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 8     26-01-16 3:10p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 9     6.11.18 16:59 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecFileChooser;
@@ -7,6 +7,7 @@ import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.io.File;
+import java.nio.file.Path;
 import java.security.cert.CertPath;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.X509Certificate;
@@ -24,7 +25,7 @@ import javax.swing.SwingUtilities;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class JDialogExportCertificate extends JDialog {
 
@@ -146,7 +147,7 @@ public class JDialogExportCertificate extends JDialog {
                 List<X509Certificate> list = this.computeTrustChain(alias);
                 X509Certificate[] certArray = new X509Certificate[list.size()];
                 list.toArray(certArray);
-                File[] files = util.exportX509CertificatePKCS7(certArray, exportFilename);
+                Path[] files = util.exportX509CertificatePKCS7(certArray, exportFilename);
             }
             String exportFilenameDisplay = new File(exportFilename).getCanonicalPath();
             JOptionPane.showMessageDialog(this,

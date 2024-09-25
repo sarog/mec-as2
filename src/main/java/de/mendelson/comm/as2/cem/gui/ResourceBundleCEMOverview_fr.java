@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleCEMOverview_fr.java 4     5.03.10 11:44 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleCEMOverview_fr.java 6     6/21/18 12:48p Heller $
 package de.mendelson.comm.as2.cem.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,19 +12,21 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleCEMOverview_fr extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
 
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"title", "Certificat d'échange présentation" },
-        {"button.sendcem", "Nouveau certificat Exchange" },
+        {"button.sendcem", "Noveau Exchange" },
         {"button.requestdetails", "Détails de la demande" },
         {"button.responsedetails", "Détails de la réponse" },
         {"button.exit", "Fermer" },

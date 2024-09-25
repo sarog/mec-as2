@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleExecuteShellCommand_fr.java 3     11.11.08 16:05 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleExecuteShellCommand_fr.java 5     7.12.18 9:45 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,21 +13,23 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleExecuteShellCommand_fr extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
-        {"executing.receipt", "{0}: Exécution de la commande système sur réception d''un contenu." },
-        {"executing.send", "{0}: Exécution de la commande système sur envoyer d''un contenu." },
-        {"executing.command", "{0}: Commande système: \"{1}\"." },
-        {"executed.command", "{0}: Commande système a exporté, returncode={1}." },
+    static final Object[][] CONTENTS = {
+        {"executing.receipt", "Exécution de la commande système sur réception d''un contenu." },
+        {"executing.send", "Exécution de la commande système sur envoyer d''un contenu." },
+        {"executing.command", "Commande système: \"{0}\"." },
+        {"executed.command", "Commande système a exporté, returncode={0}." },
     };
     
 }

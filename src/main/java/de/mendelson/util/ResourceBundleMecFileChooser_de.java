@@ -1,5 +1,6 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/ResourceBundleMecFileChooser_de.java 3     19.02.01 11:32 Rothus $
+//$Header: /as2/de/mendelson/util/ResourceBundleMecFileChooser_de.java 4     4/06/18 1:35p Heller $
 package de.mendelson.util;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -8,22 +9,26 @@ package de.mendelson.util;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-
-/** 
- * ResourceBundle to localize the file chooser GUI - if you want to localize 
+/**
+ * ResourceBundle to localize the file chooser GUI - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
- * @author  S.Heller
- * @version $Revision: 3 $
+ *
+ * @author S.Heller
+ * @version $Revision: 4 $
  */
-public class ResourceBundleMecFileChooser_de extends MecResourceBundle{
+public class ResourceBundleMecFileChooser_de extends MecResourceBundle {
 
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-   /**List of messages in the specific language*/
-  static final Object[][] contents = {
-    {"button.select", "Auswählen"},   
-  };		
-  
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"button.select", "Auswählen"},};
+
 }

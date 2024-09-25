@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 41    11/20/17 11:27a Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 47    6.12.18 17:57 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,10 +13,12 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 41 $
+ * @version $Revision: 47 $
  */
 public class ResourceBundleAS2Gui_de extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -40,6 +42,8 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"menu.file.statistic", "Statistik"},
         {"menu.file.quota", "Kontingente"},
         {"menu.file.serverinfo", "HTTP Server Konfiguration anzeigen"},
+        {"menu.file.systemevents", "Systemereignisse"},
+        {"menu.file.searchinserverlog", "Serverlog durchsuchen"},        
         {"menu.help", "Hilfe"},
         {"menu.help.about", "Über"},
         {"menu.help.supportrequest", "Support Anfrage"},
@@ -64,7 +68,7 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"dialog.msg.delete.title", "Löschen von Nachrichten"},
         {"stoprefresh.msg", "Aktualisierung an/aus"},
         {"welcome", "Willkommen, {0}"},
-        {"warning.eval", "Dies ist eine Evaluierungsversion."},
+        {"fatal.error", "Fehler"},
         {"warning.refreshstopped", "Die Aktualisierung der Oberfläche ist abgeschaltet."},
         {"tab.welcome", "News und Updates"},
         {"tab.transactions", "Transaktionen"},
@@ -77,11 +81,11 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"login.failed.client.incompatible.title", "Login wurde zurückgewiesen"},
         {"uploading.to.server", "Übertrage zum Server"},
         {"refresh.overview", "Aktualisiere Transaktionsliste"},
-        {"resend.performed", "Diese Transaktion wurde manuell als neue Transaktion erneut verschickt ([{0}])"},
         {"dialog.resend.message", "Wollen Sie die selektierte Transaktion wirklich erneut senden?"},
         {"dialog.resend.message.multiple", "Wollen Sie die {0} selektierten Transaktionen wirklich erneut senden?"},
         {"dialog.resend.title", "Daten erneut senden"},
         {"logputput.disabled", "** Die Logausgabe wurde unterdrückt **"},
         {"logputput.enabled", "** Die Logausgabe wurde aktiviert **"},
+        {"resend.failed.nopayload", "Erneuter Versand als neue Transaktion ist fehlgeschlagen: Die selektierte Transaktion {0} hat keine Nutzdaten." },
     };
 }

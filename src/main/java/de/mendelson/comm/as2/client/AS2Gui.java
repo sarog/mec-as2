@@ -1,15 +1,12 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 19    12/14/17 11:26a Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 29    9.01.19 11:49 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.client.about.AboutDialog;
 import de.mendelson.comm.as2.client.manualsend.JDialogManualSend;
 import de.mendelson.comm.as2.clientserver.message.DeleteMessageRequest;
-import de.mendelson.comm.as2.clientserver.message.ModuleLockRequest;
-import de.mendelson.comm.as2.clientserver.message.ModuleLockResponse;
 import de.mendelson.comm.as2.clientserver.message.RefreshClientCEMDisplay;
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
-import de.mendelson.util.security.cert.clientserver.RefreshKeystoreCertificates;
 import de.mendelson.comm.as2.clientserver.message.RefreshTablePartnerData;
 import de.mendelson.comm.as2.datasheet.gui.JDialogCreateDataSheet;
 import de.mendelson.comm.as2.importexport.ConfigurationExportRequest;
@@ -25,14 +22,12 @@ import de.mendelson.comm.as2.message.clientserver.MessagePayloadRequest;
 import de.mendelson.comm.as2.message.clientserver.MessagePayloadResponse;
 import de.mendelson.comm.as2.message.loggui.DialogMessageDetails;
 import de.mendelson.comm.as2.message.loggui.TableModelMessageOverview;
-import de.mendelson.comm.as2.modulelock.AllowConfigurationModificationCallback;
-import de.mendelson.comm.as2.modulelock.LockRefreshThread;
-import de.mendelson.comm.as2.modulelock.ModuleLock;
 import de.mendelson.comm.as2.partner.CertificateUsedByPartnerChecker;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.gui.JDialogPartnerConfig;
+import de.mendelson.comm.as2.partner.gui.ListCellRendererPartner;
 import de.mendelson.comm.as2.preferences.JDialogPreferences;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.preferences.PreferencesPanel;
@@ -56,17 +51,20 @@ import de.mendelson.util.clientserver.clients.datatransfer.DownloadResponseFile;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClient;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClientWithProgress;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
+import de.mendelson.util.clientserver.log.search.gui.JDialogSearchLogfile;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.clientserver.messages.ServerInfo;
 import de.mendelson.util.httpconfig.gui.JDialogDisplayHTTPConfiguration;
 import de.mendelson.util.log.panel.LogConsolePanel;
-import de.mendelson.util.security.BCCryptoHelper;
+import de.mendelson.util.modulelock.AllowConfigurationModificationCallback;
+import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreStorage;
-import de.mendelson.util.security.cert.clientserver.KeystoreStorageImplClientServer;
+import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import de.mendelson.util.security.cert.gui.ResourceBundleCertificates;
+import de.mendelson.util.systemevents.gui.JDialogSystemEvents;
 import de.mendelson.util.tables.JTableColumnResizer;
 import de.mendelson.util.tables.TableCellRendererDate;
 import de.mendelson.util.tables.hideablecolumns.HideableColumn;
@@ -89,6 +87,8 @@ import java.net.InetSocketAddress;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,7 +135,7 @@ import org.apache.http.Header;
  * Main GUI for the control of the mendelson AS2 server
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 29 $
  */
 public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorterListener, ClientsideMessageProcessor, MouseListener, PopupMenuListener,
         ModuleStarter, TableColumnHiddenStateListener {
@@ -181,26 +181,15 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     private String host;
     private ImageIcon iconBaseFilter = null;
     private LogConsolePanel consolePanel = null;
+    /**
+     * This dialog is just hidden, never closed
+     */
+    private JDialogSystemEvents dialogSystemEvents = null;
 
     /**
      * Creates new form NewJFrame
      */
     public AS2Gui(Splash splash, String host, String dummy1, String dummy2) {
-//        final CountDownLatch latch = new CountDownLatch(1);
-//        SwingUtilities.invokeLater(new Runnable() {
-//            @Override
-//            public void run() {
-//                // initializes JavaFX environment
-//                new JFXPanel(); 
-//                latch.countDown();
-//            }
-//        });
-//        try{
-//            latch.await();
-//        }
-//        catch( Exception nop){
-//            //nop
-//        }
         this.host = host;
         //Set System default look and feel
         try {
@@ -253,6 +242,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         this.initializeJavaHelp();
         this.jTableMessageOverview.getSelectionModel().addListSelectionListener(this);
         this.jTableMessageOverview.getTableHeader().setReorderingAllowed(false);
+        this.jComboBoxFilterPartner.setRenderer(new ListCellRendererPartner());
         //icon columns
         TableColumn column = this.jTableMessageOverview.getColumnModel().getColumn(0);
         column.setMaxWidth(20);
@@ -507,30 +497,25 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 JDialogCertificates dialog = null;
                 //display wait indicator
                 AS2Gui.this.as2StatusBar.startProgressIndeterminate(AS2Gui.this.rb.getResourceString("menu.file.certificate"), uniqueId);
-                //try to set an exclusive lock on this module
-                ModuleLockRequest request = new ModuleLockRequest(ModuleLock.MODULE_SSL_KEYSTORE, ModuleLockRequest.TYPE_SET);
-                ModuleLockResponse response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
-                boolean hasLock = response.wasSuccessful();
-                LockRefreshThread lockRefresher = null;
                 try {
-                    if (hasLock) {
-                        lockRefresher = new LockRefreshThread(AS2Gui.this.getBaseClient(), ModuleLock.MODULE_SSL_KEYSTORE);
-                        Executors.newSingleThreadExecutor().submit(lockRefresher);
-                    }
                     //ask the server for the password
                     PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
                     char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-                    String filename = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
+                    String keystoreFilename = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
                     try {
-                        dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this, AS2Gui.this.rbCertGui.getResourceString("title.ssl"),
-                                AS2ServerVersion.getFullProductName(), !hasLock);
+                        dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this,
+                                AS2Gui.this.rbCertGui.getResourceString("title.ssl"),
+                                AS2ServerVersion.getFullProductName(), false,
+                                ModuleLock.MODULE_SSL_KEYSTORE, null);
                         dialog.setSelectionByAlias(selectedAlias);
-                        KeystoreStorage storage = new KeystoreStorageImplClientServer(
-                                AS2Gui.this.getBaseClient(), filename, keystorePass, BCCryptoHelper.KEYSTORE_JKS);
+                        KeystoreStorage storage = new KeystoreStorageImplFile(
+                                keystoreFilename, keystorePass, KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
+                                KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+                        );
                         dialog.initialize(storage);
                         dialog.addAllowModificationCallback(new AllowConfigurationModificationCallback((JFrame) AS2Gui.this,
                                 AS2Gui.this.getBaseClient(),
-                                ModuleLock.MODULE_SSL_KEYSTORE, hasLock));
+                                ModuleLock.MODULE_SSL_KEYSTORE, true));
                     } catch (Exception e) {
                         AS2Gui.this.getLogger().severe(e.getMessage());
                     }
@@ -539,15 +524,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     if (dialog != null) {
                         dialog.setVisible(true);
                     }
-                }
-                //we had the lock: stop the refresher thread and release the lock. If this doesnt work somehow because the connection is lost
-                //there is a watchdog in the server that will kill locks that are not refreshed for some time
-                if (hasLock) {
-                    if (lockRefresher != null) {
-                        lockRefresher.pleaseStop();
-                    }
-                    request = new ModuleLockRequest(ModuleLock.MODULE_SSL_KEYSTORE, ModuleLockRequest.TYPE_RELEASE);
-                    response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
                 }
             }
         };
@@ -563,31 +539,27 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 JDialogCertificates dialog = null;
                 //display wait indicator
                 AS2Gui.this.as2StatusBar.startProgressIndeterminate(AS2Gui.this.rb.getResourceString("menu.file.certificate"), uniqueId);
-                //try to set an exclusive lock on this module
-                ModuleLockRequest request = new ModuleLockRequest(ModuleLock.MODULE_ENCSIGN_KEYSTORE, ModuleLockRequest.TYPE_SET);
-                ModuleLockResponse response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
-                boolean hasLock = response.wasSuccessful();
-                LockRefreshThread lockRefresher = null;
                 try {
-                    if (hasLock) {
-                        lockRefresher = new LockRefreshThread(AS2Gui.this.getBaseClient(), ModuleLock.MODULE_ENCSIGN_KEYSTORE);
-                        Executors.newSingleThreadExecutor().submit(lockRefresher);
-                    }
                     //ask the server for the password
                     PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
                     char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-                    String keystoreName = client.get(PreferencesAS2.KEYSTORE);
+                    String keystoreFileame = client.get(PreferencesAS2.KEYSTORE);
                     try {
-                        dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this, AS2Gui.this.rbCertGui.getResourceString("title.signencrypt"),
-                                AS2ServerVersion.getFullProductName(), !hasLock);
-                        KeystoreStorage storage = new KeystoreStorageImplClientServer(
-                                AS2Gui.this.getBaseClient(), keystoreName, keystorePass, BCCryptoHelper.KEYSTORE_PKCS12);
+                        dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this,
+                                AS2Gui.this.rbCertGui.getResourceString("title.signencrypt"),
+                                AS2ServerVersion.getFullProductName(), false,
+                                ModuleLock.MODULE_ENCSIGN_KEYSTORE, null
+                        );
+                        KeystoreStorage storage = new KeystoreStorageImplFile(
+                                keystoreFileame, keystorePass, KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                                KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+                        );
                         dialog.initialize(storage);
                         CertificateUsedByPartnerChecker checker = new CertificateUsedByPartnerChecker(AS2Gui.this.getBaseClient());
                         dialog.addCertificateInUseChecker(checker);
                         dialog.addAllowModificationCallback(new AllowConfigurationModificationCallback((JFrame) AS2Gui.this,
                                 AS2Gui.this.getBaseClient(),
-                                ModuleLock.MODULE_ENCSIGN_KEYSTORE, hasLock));
+                                ModuleLock.MODULE_ENCSIGN_KEYSTORE, true));
                     } catch (Exception e) {
                         AS2Gui.this.getLogger().severe(e.getMessage());
                     }
@@ -596,15 +568,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     if (dialog != null) {
                         dialog.setVisible(true);
                     }
-                }
-                //we had the lock: stop the refresher thread and release the lock. If this doesnt work somehow because the connection is lost
-                //there is a watchdog in the server that will kill locks that are not refreshed for some time
-                if (hasLock) {
-                    if (lockRefresher != null) {
-                        lockRefresher.pleaseStop();
-                    }
-                    request = new ModuleLockRequest(ModuleLock.MODULE_ENCSIGN_KEYSTORE, ModuleLockRequest.TYPE_RELEASE);
-                    response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
                 }
             }
         };
@@ -663,8 +626,8 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                         AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                         dialog.setVisible(true);
                     }
-                } catch (Exception e) {
-                    //nop
+                } catch (Throwable e) {
+                    e.printStackTrace();
                 } finally {
                     AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                     AS2Gui.this.setButtonState();
@@ -748,10 +711,24 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
      * Starts a dialog that allows to send files manual to a partner
      */
     private void sendFileManual() {
-        JDialogManualSend dialog = new JDialogManualSend(this,
-                this.getBaseClient(), this.as2StatusBar,
-                this.rb.getResourceString("uploading.to.server"));
-        dialog.setVisible(true);
+        CertificateManager certificateManagerEncSign = new CertificateManager(this.logger);
+        try {
+            char[] keystorePass = this.clientPreferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
+            String keystoreFilename = this.clientPreferences.get(PreferencesAS2.KEYSTORE);
+            KeystoreStorage storage = new KeystoreStorageImplFile(
+                    keystoreFilename, keystorePass,
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+            );
+            certificateManagerEncSign.loadKeystoreCertificates(storage);
+            JDialogManualSend dialog = new JDialogManualSend(this,
+                    this.getBaseClient(), this.as2StatusBar,
+                    this.rb.getResourceString("uploading.to.server"),
+                    certificateManagerEncSign);
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            this.logger.severe("[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+        }
     }
 
     /**
@@ -892,15 +869,25 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                File tempFile = null;
+                Path tempFile = null;
                 try {
                     AS2Gui.this.as2StatusBar.startProgressIndeterminate(AS2Gui.this.rb.getResourceString("menu.file.resend"), uniqueId);
                     int selectedRow = AS2Gui.this.jTableMessageOverview.getSelectedRow();
                     if (selectedRow >= 0) {
+                        CertificateManager certificateManagerEncSign = new CertificateManager(AS2Gui.this.logger);
+                        char[] keystorePass = AS2Gui.this.clientPreferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
+                        String keystoreFilename = AS2Gui.this.clientPreferences.get(PreferencesAS2.KEYSTORE);
+                        KeystoreStorage storage = new KeystoreStorageImplFile(
+                                keystoreFilename, keystorePass,
+                                KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                                KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+                        );
+                        certificateManagerEncSign.loadKeystoreCertificates(storage);
                         //download the payload for the selected message
                         JDialogManualSend dialog = new JDialogManualSend(AS2Gui.this,
                                 AS2Gui.this.getBaseClient(), AS2Gui.this.as2StatusBar,
-                                AS2Gui.this.rb.getResourceString("uploading.to.server"));
+                                AS2Gui.this.rb.getResourceString("uploading.to.server"),
+                                certificateManagerEncSign);
                         AS2Message message = ((TableModelMessageOverview) AS2Gui.this.jTableMessageOverview.getModel()).getRow(selectedRow);
                         if (message != null) {
                             AS2MessageInfo info = (AS2MessageInfo) message.getAS2Info();
@@ -933,7 +920,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                                         originalFilename = payload.getOriginalFilename();
                                     }
                                     tempFile = AS2Tools.createTempFile(originalFilename, "");
-                                    outStream = new FileOutputStream(tempFile);
+                                    outStream = Files.newOutputStream(tempFile);
                                     inStream = response.getDataStream();
                                     AS2Gui.this.copyStreams(inStream, outStream);
                                     outStream.flush();
@@ -954,7 +941,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                                         }
                                     }
                                 }
-                                dialog.initialize(sender, receiver, tempFile.getAbsolutePath());
+                                dialog.initialize(sender, receiver, tempFile.toAbsolutePath().toString());
                             }
                             dialog.performResend(info.getMessageId(), sender, receiver, tempFile, originalFilename);
                             info.setResendCounter(info.getResendCounter() + 1);
@@ -967,7 +954,11 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 } finally {
                     AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                     if (tempFile != null) {
-                        tempFile.delete();
+                        try {
+                            Files.delete(tempFile);
+                        } catch (Exception e) {
+                            //nop
+                        }
                     }
                 }
 
@@ -987,19 +978,30 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 //display wait indicator
                 AS2Gui.this.as2StatusBar.startProgressIndeterminate(
                         AS2Gui.this.rb.getResourceString("menu.file.partner"), uniqueId);
-                //try to set an exclusive lock on this module
-                ModuleLockRequest request = new ModuleLockRequest(ModuleLock.MODULE_PARTNER, ModuleLockRequest.TYPE_SET);
-                ModuleLockResponse response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
-                boolean hasLock = response.wasSuccessful();
-                LockRefreshThread lockRefresher = null;
                 try {
-                    if (hasLock) {
-                        lockRefresher = new LockRefreshThread(AS2Gui.this.getBaseClient(), ModuleLock.MODULE_PARTNER);
-                        Executors.newSingleThreadExecutor().submit(lockRefresher);
-                    }
+                    CertificateManager certificateManagerEncSign = new CertificateManager(AS2Gui.this.logger);
+                    char[] keystorePass = AS2Gui.this.clientPreferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
+                    String keystoreFilename = AS2Gui.this.clientPreferences.get(PreferencesAS2.KEYSTORE);
+                    KeystoreStorage storage = new KeystoreStorageImplFile(
+                            keystoreFilename, keystorePass,
+                            KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                            KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+                    );
+                    certificateManagerEncSign.loadKeystoreCertificates(storage);
+                    CertificateManager certificateManagerSSL = new CertificateManager(AS2Gui.this.logger);
+                    keystorePass = AS2Gui.this.clientPreferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
+                    keystoreFilename = AS2Gui.this.clientPreferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
+                    storage = new KeystoreStorageImplFile(
+                            keystoreFilename, keystorePass,
+                            KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
+                            KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+                    );
+                    certificateManagerSSL.loadKeystoreCertificates(storage);
                     dialog = new JDialogPartnerConfig(AS2Gui.this,
                             AS2Gui.this,
-                            AS2Gui.this.as2StatusBar, hasLock);
+                            AS2Gui.this.as2StatusBar, true,
+                            null, certificateManagerEncSign, certificateManagerSSL
+                    );
                     if (partnername != null) {
                         dialog.setPreselectedPartner(partnername);
                     }
@@ -1007,22 +1009,13 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     dialog.setDisplayHttpHeaderPanel(false);
                     dialog.addAllowModificationCallback(new AllowConfigurationModificationCallback((JFrame) AS2Gui.this,
                             AS2Gui.this.getBaseClient(),
-                            ModuleLock.MODULE_PARTNER, hasLock));
+                            ModuleLock.MODULE_PARTNER, true));
                 } catch (Exception e) {
                     e.printStackTrace();
                 } finally {
                     AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                     if (dialog != null) {
                         dialog.setVisible(true);
-                    }
-                    //we had the lock: stop the refresher thread and release the lock. If this doesnt work somehow because the connection is lost
-                    //there is a watchdog in the server that will kill locks that are not refreshed for some time
-                    if (hasLock) {
-                        if (lockRefresher != null) {
-                            lockRefresher.pleaseStop();
-                        }
-                        request = new ModuleLockRequest(ModuleLock.MODULE_PARTNER, ModuleLockRequest.TYPE_RELEASE);
-                        response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
                     }
                 }
             }
@@ -1088,13 +1081,19 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         try {
             PreferencesAS2 preferences = new PreferencesAS2();
             char[] keystorePassEncSign = preferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-            String keystoreNameEncSign = preferences.get(PreferencesAS2.KEYSTORE);
+            String keystoreFilenameEncSign = preferences.get(PreferencesAS2.KEYSTORE);
             char[] keystorePassSSL = preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-            String keystoreNameSSL = preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
-            KeystoreStorage storageEncSign = new KeystoreStorageImplClientServer(
-                    this.getBaseClient(), keystoreNameEncSign, keystorePassEncSign, BCCryptoHelper.KEYSTORE_PKCS12);
-            KeystoreStorage storageSSL = new KeystoreStorageImplClientServer(
-                    this.getBaseClient(), keystoreNameSSL, keystorePassSSL, BCCryptoHelper.KEYSTORE_JKS);
+            String keystoreFilenameSSL = preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
+            KeystoreStorage storageEncSign = new KeystoreStorageImplFile(
+                    keystoreFilenameEncSign, keystorePassEncSign,
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+            );
+            KeystoreStorage storageSSL = new KeystoreStorageImplFile(
+                    keystoreFilenameSSL, keystorePassSSL,
+                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
+                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+            );
             CertificateManager certificateManagerEncSign = new CertificateManager(this.getLogger());
             certificateManagerEncSign.loadKeystoreCertificates(storageEncSign);
             CertificateManager certificateManagerSSL = new CertificateManager(this.getLogger());
@@ -1180,7 +1179,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         jMenuBar = new javax.swing.JMenuBar();
         jMenuFile = new javax.swing.JMenu();
         jMenuItemManualSend = new javax.swing.JMenuItem();
-        jMenuItemKeyRefresh = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JSeparator();
         jMenuItemFilePreferences = new javax.swing.JMenuItem();
         jMenuItemPartner = new javax.swing.JMenuItem();
@@ -1190,6 +1188,8 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         jMenuItemCertificatesSignCrypt = new javax.swing.JMenuItem();
         jMenuItemCertificatesSSL = new javax.swing.JMenuItem();
         jMenuItemServerInfo = new javax.swing.JMenuItem();
+        jMenuItemSystemEvents = new javax.swing.JMenuItem();
+        jMenuItemSearchInServerLog = new javax.swing.JMenuItem();
         jSeparator6 = new javax.swing.JSeparator();
         jMenuItemFileExit = new javax.swing.JMenuItem();
         jMenuHelp = new javax.swing.JMenu();
@@ -1535,6 +1535,8 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         jPanelInfo.add(browserLinkedPanel, gridBagConstraints);
+
+        as2StatusBar.setMinimumSize(new java.awt.Dimension(565, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
@@ -1562,15 +1564,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
             }
         });
         jMenuFile.add(jMenuItemManualSend);
-
-        jMenuItemKeyRefresh.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keyrefresh16x16.gif"))); // NOI18N
-        jMenuItemKeyRefresh.setText(this.rb.getResourceString( "keyrefresh" ));
-        jMenuItemKeyRefresh.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItemKeyRefreshActionPerformed(evt);
-            }
-        });
-        jMenuFile.add(jMenuItemKeyRefresh);
         jMenuFile.add(jSeparator2);
 
         jMenuItemFilePreferences.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/preferences16x16.gif"))); // NOI18N
@@ -1632,6 +1625,24 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
             }
         });
         jMenuFile.add(jMenuItemServerInfo);
+
+        jMenuItemSystemEvents.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/sysinfo16x16.gif"))); // NOI18N
+        jMenuItemSystemEvents.setText(this.rb.getResourceString( "menu.file.systemevents"));
+        jMenuItemSystemEvents.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSystemEventsActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemSystemEvents);
+
+        jMenuItemSearchInServerLog.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/log/search/gui/magnifying_glass16x16.png"))); // NOI18N
+        jMenuItemSearchInServerLog.setText(this.rb.getResourceString( "menu.file.searchinserverlog"));
+        jMenuItemSearchInServerLog.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemSearchInServerLogActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemSearchInServerLog);
         jMenuFile.add(jSeparator6);
 
         jMenuItemFileExit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/close16x16.gif"))); // NOI18N
@@ -1792,12 +1803,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         this.setButtonState();
     }//GEN-LAST:event_jComboBoxFilterPartnerActionPerformed
 
-private void jMenuItemKeyRefreshActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemKeyRefreshActionPerformed
-    //inform the server that the keystore should be reloaded, it has been changed outside
-    RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
-    this.sendAsync(signal);
-}//GEN-LAST:event_jMenuItemKeyRefreshActionPerformed
-
 private void jButtonNewVersionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonNewVersionActionPerformed
     try {
         URI uri = new URI(new URL(this.downloadURLNewVersion).toExternalForm());
@@ -1853,6 +1858,18 @@ private void jMenuItemHelpShopActionPerformed(java.awt.event.ActionEvent evt) {/
         dialog.setVisible(true);
     }//GEN-LAST:event_jMenuItemServerInfoActionPerformed
 
+    private void jMenuItemSystemEventsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSystemEventsActionPerformed
+        if (this.dialogSystemEvents == null) {
+            this.dialogSystemEvents = new JDialogSystemEvents(this, this.getBaseClient(), this.as2StatusBar);
+        }
+        this.dialogSystemEvents.setVisible(true);
+    }//GEN-LAST:event_jMenuItemSystemEventsActionPerformed
+
+    private void jMenuItemSearchInServerLogActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSearchInServerLogActionPerformed
+        JDialogSearchLogfile dialog = new JDialogSearchLogfile(this, this.getBaseClient(), this.as2StatusBar);
+        dialog.setVisible(true);
+    }//GEN-LAST:event_jMenuItemSearchInServerLogActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private de.mendelson.comm.as2.client.AS2StatusBar as2StatusBar;
     private de.mendelson.comm.as2.client.BrowserLinkedPanel browserLinkedPanel;
@@ -1886,13 +1903,14 @@ private void jMenuItemHelpShopActionPerformed(java.awt.event.ActionEvent evt) {/
     private javax.swing.JMenuItem jMenuItemHelpForum;
     private javax.swing.JMenuItem jMenuItemHelpShop;
     private javax.swing.JMenuItem jMenuItemHelpSystem;
-    private javax.swing.JMenuItem jMenuItemKeyRefresh;
     private javax.swing.JMenuItem jMenuItemManualSend;
     private javax.swing.JMenuItem jMenuItemPartner;
     private javax.swing.JMenuItem jMenuItemPopupDeleteMessage;
     private javax.swing.JMenuItem jMenuItemPopupMessageDetails;
     private javax.swing.JMenuItem jMenuItemPopupSendAgain;
+    private javax.swing.JMenuItem jMenuItemSearchInServerLog;
     private javax.swing.JMenuItem jMenuItemServerInfo;
+    private javax.swing.JMenuItem jMenuItemSystemEvents;
     private javax.swing.JPanel jPanelFilterOverview;
     private javax.swing.JPanel jPanelInfo;
     private javax.swing.JPanel jPanelLog;
@@ -1966,7 +1984,9 @@ private void jMenuItemHelpShopActionPerformed(java.awt.event.ActionEvent evt) {/
         this.jComboBoxFilterPartner.removeAllItems();
         this.jComboBoxFilterPartner.addItem(this.rb.getResourceString("filter.none"));
         for (Partner singlePartner : partner) {
-            this.jComboBoxFilterPartner.addItem(singlePartner);
+            if (!singlePartner.isLocalStation()) {
+                this.jComboBoxFilterPartner.addItem(singlePartner);
+            }
         }
         if (selectedPartner != null) {
             this.jComboBoxFilterPartner.setSelectedItem(selectedPartner);
@@ -1978,6 +1998,10 @@ private void jMenuItemHelpShopActionPerformed(java.awt.event.ActionEvent evt) {/
 
     @Override
     public void processSyncResponseFromServer(ClientServerResponse response) {
+    }
+
+    @Override
+    public void clientIsIncompatible(String errorMessage) {
     }
 
     /**

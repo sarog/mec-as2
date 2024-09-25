@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestChunk.java 1     16.05.11 15:06 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestChunk.java 2     4/06/18 12:21p Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -16,10 +16,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class UploadRequestChunk extends ClientServerMessage implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private byte[] data = null;
     private String targetHash = null;
 

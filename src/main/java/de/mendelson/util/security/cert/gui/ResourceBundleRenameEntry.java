@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry.java 1     23.07.10 13:19 Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry.java 2     4/06/18 1:35p Heller $ 
 package de.mendelson.util.security.cert.gui;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,25 +11,30 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-/** 
+/**
  * ResourceBundle to localize gui entries
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public class ResourceBundleRenameEntry extends MecResourceBundle{
+public class ResourceBundleRenameEntry extends MecResourceBundle {
 
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-  /**List of messages in the specific language*/
-  static final Object[][] contents = {
-        
-    {"button.ok", "Ok" },
-    {"button.cancel", "Cancel" },
-    {"label.newalias", "New alias:" },
-    {"label.keypairpass", "Key password:" },    
-    {"title", "Rename existing certificate entry ({0})" }
-  };		
-  
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"button.ok", "Ok"},
+        {"button.cancel", "Cancel"},
+        {"label.newalias", "New alias:"},
+        {"label.keypairpass", "Key password:"},
+        {"title", "Rename existing certificate entry ({0})"}
+    };
+
 }

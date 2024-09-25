@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/gui/ResourceBundleLogin.java 2     17.01.11 15:42 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/gui/ResourceBundleLogin.java 3     4/06/18 1:35p Heller $
 package de.mendelson.util.clientserver.gui;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,28 +11,30 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-
-/** 
- * ResourceBundle to localize the mendelson products - if you want to localize 
- * eagle to your language, please contact us: localize@mendelson.de
- * @author  S.Heller
- * @version $Revision: 2 $
+/**
+ * ResourceBundle to localize the mendelson products
+ *
+ * @author S.Heller
+ * @version $Revision: 3 $
  */
-public class ResourceBundleLogin extends MecResourceBundle{
+public class ResourceBundleLogin extends MecResourceBundle {
 
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-   /**List of messages in the specific language*/
-  static final Object[][] contents = {
-    //dialog
-    {"button.ok", "Ok" },    
-    {"button.cancel", "Cancel" },    
-    {"label.user", "User:" },
-    {"label.passwd", "Password:" },
-      {"title.login", "Login" },
-    
-  };		
-  
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        //dialog
+        {"button.ok", "Ok"},
+        {"button.cancel", "Cancel"},
+        {"label.user", "User:"},
+        {"label.passwd", "Password:"},
+        {"title.login", "Login"},};
+
 }

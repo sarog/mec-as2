@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ProgressPanel.java 10    7-01-16 1:07p Heller $
+//$Header: /oftp2/de/mendelson/util/ProgressPanel.java 11    1/26/18 2:00p Heller $
 package de.mendelson.util;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import javax.swing.SwingUtilities;
  * Progress panel to display status informations.
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class ProgressPanel extends JPanel {
 
@@ -29,8 +29,20 @@ public class ProgressPanel extends JPanel {
      */
     public ProgressPanel() {
         this.initComponents();
+        this.disableProgressDisplay();        
     }
 
+    private void disableProgressDisplay(){
+        this.jProgressBar.setIndeterminate(false);
+        this.jProgressBar.setMinimum(0);
+        this.jProgressBar.setMaximum(0);
+        this.jProgressBar.setValue(0);
+        this.jProgressBar.setStringPainted(false);
+        this.jLabelProgressDetails.setText(null);
+        this.jProgressBar.setVisible(false);
+    }
+
+    
     /**
      * Adds a new progress to display to the progress bar. Its possible to add
      * several requests, just use unique ids for each request
@@ -130,14 +142,7 @@ public class ProgressPanel extends JPanel {
                 this.progressList.remove(foundRequest);
                 //no more progress entries?
                 if (this.progressList.isEmpty()) {
-                    //disable the progress display
-                    this.jProgressBar.setIndeterminate(false);
-                    this.jProgressBar.setMinimum(0);
-                    this.jProgressBar.setMaximum(0);
-                    this.jProgressBar.setValue(0);
-                    this.jProgressBar.setStringPainted(false);
-                    this.jLabelProgressDetails.setText(null);
-                    this.jProgressBar.setVisible(false);
+                    this.disableProgressDisplay();
                 } else {
                     //get last entry and display its progress text
                     ProgressRequest progressToDisplay = this.progressList.get(this.progressList.size() - 1);

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig.java 9     27.05.14 9:59 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig.java 12    20.09.18 13:41 Heller $
 package de.mendelson.comm.as2.partner.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,17 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundlePartnerConfig extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"title", "Partner configuration" },
         {"button.ok", "Ok" },
         {"button.cancel", "Cancel" },
@@ -41,10 +43,16 @@ public class ResourceBundlePartnerConfig extends MecResourceBundle{
         {"dialog.partner.renamedir.title", "Rename partner message directory" },
         {"directory.rename.failure", "Unable to rename \"{0}\" to \"{1}\"." },
         {"directory.rename.success", "The directory \"{0}\" has been renamed to \"{1}\"." },
-        {"directory.delete.failure", "Unable to delete \"{0}\"." },
+        {"directory.delete.failure", "Unable to delete \"{0}\": [\"{1}\"]" },
         {"directory.delete.success", "The directory \"{0}\" has been deleted." },
         {"saving", "Saving..." },
         {"module.locked", "The partner management is locked by another client, you are not allowed to commit your changes!" },
+        {"event.partner.deleted.subject", "The partner {0} has been deleted by the user" },
+        {"event.partner.deleted.body", "Key data of this partner:\n\n{0}" },
+        {"event.partner.added.subject", "The partner {0} has been added by the user" },
+        {"event.partner.added.body", "Key data of the new partner:\n\n{0}" },
+        {"event.partner.modified.subject", "The partner {0} has been modified by the user" },
+        {"event.partner.modified.body", "Key data of the formerly configuration:\n\n{0}\n\nKey data of the new configuration:\n\n{1}" },
     };
     
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/notification/ResourceBundleNotification_de.java 8     28.08.12 15:48 Heller $
+//$Header: /as2/de/mendelson/comm/as2/notification/ResourceBundleNotification_de.java 9     4/06/18 1:35p Heller $
 package de.mendelson.comm.as2.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,15 +14,18 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize 
  * eagle to your language, please contact us: localize@mendelson.de
  * @author  S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleNotification_de extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
+    @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         //dialog
         {"test.message.send", "Eine Testnachricht wurde geschickt an {0}."},
         {"test.message.debug", "\nDer Mailversandprozess schlug fehlt, die folgenden Zusatzinformationen könnten Ihnen helfen, das Problem einzugrenzen:\n" },

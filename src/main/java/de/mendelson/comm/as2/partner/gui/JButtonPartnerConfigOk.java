@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 1     9/09/15 2:43p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 2     4/03/18 11:50a Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -19,7 +19,7 @@ import javax.swing.UIManager;
  * Ok Button for the partner config
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class JButtonPartnerConfigOk extends JButton {
 
@@ -29,12 +29,14 @@ public class JButtonPartnerConfigOk extends JButton {
     private JTextField jTextFieldURL;
     private JTextField jTextFieldMDNURL;
     private JTextField jTextFieldAS2Id;
+    private boolean changesAllowed;
 
     private Partner remotePartner;
 
     public void initialize(JTreePartner tree, JTextField jTextFieldName, JTextField jTextFieldAS2Id,
-            JTextField jTextFieldURL, JTextField jTextFieldMDNURL) {
+            JTextField jTextFieldURL, JTextField jTextFieldMDNURL, boolean changesAllowed) {
         this.tree = tree;
+        this.changesAllowed = changesAllowed;
         this.jTextFieldName = jTextFieldName;
         this.jTextFieldAS2Id = jTextFieldAS2Id;
         this.jTextFieldURL = jTextFieldURL;
@@ -88,7 +90,7 @@ public class JButtonPartnerConfigOk extends JButton {
     /**
      * Checks if new name is unique and changes color in textfield if not
      */
-    private boolean checkForNonUniqueValues(Partner checkPartner) {        
+    private boolean checkForNonUniqueValues(Partner checkPartner) {
         boolean error = false;
         String newName = checkPartner.getName();
         int nameCount = this.tree.getPartnerCountByName(newName);
@@ -132,20 +134,25 @@ public class JButtonPartnerConfigOk extends JButton {
     }
 
     public void computeErrorState() {
-        boolean errorInConfig = false;
-        List<Partner> partnerList = this.tree.getAllPartner();
-        for (Partner checkPartner : partnerList) {
-            boolean error = this.checkForNonUniqueOrInvalidValues(checkPartner);
-            boolean hasErrorBefore = checkPartner.hasConfigError();
-            if (error != hasErrorBefore) {
-                checkPartner.setConfigError(error);
-                this.tree.partnerChanged(checkPartner);
+        if (!this.changesAllowed) {
+            this.setEnabled(false);
+            return;
+        } else {
+            boolean errorInConfig = false;
+            List<Partner> partnerList = this.tree.getAllPartner();
+            for (Partner checkPartner : partnerList) {
+                boolean error = this.checkForNonUniqueOrInvalidValues(checkPartner);
+                boolean hasErrorBefore = checkPartner.hasConfigError();
+                if (error != hasErrorBefore) {
+                    checkPartner.setConfigError(error);
+                    this.tree.partnerChanged(checkPartner);
+                }
+                if (error) {
+                    errorInConfig = true;
+                }
             }
-            if (error) {
-                errorInConfig = true;
-            }
+            this.setEnabled(!errorInConfig);
         }
-        this.setEnabled(!errorInConfig);
     }
 
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 5     7/06/17 11:10a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 8     10.12.18 12:46 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,10 +15,12 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleConnectionTest_de extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -28,7 +30,7 @@ public class ResourceBundleConnectionTest_de extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"tag", "[Verbindungstest zu {0}] "},
+        {"tag", "Verbindungstest zu {0}"},
         {"timeout.set", "Setze Timeout auf {0}ms"},
         {"test.start.ssl", "Starte Verbindungsprüfung zu {0}, SSL/TLS. Bitte beachten Sie, dass dieser Test jedem Serverzertifikat vertraut - auch wenn dieser Test erfolgreich verläuft, bedeutet dies also nicht, dass Ihr SSL/TLS Keystore korrekt konfiguriert ist."},
         {"test.start.plain", "Starte Verbindungsprüfung zu {0}, PLAIN..."},
@@ -51,6 +53,10 @@ public class ResourceBundleConnectionTest_de extends MecResourceBundle {
         {"certificate.selfsigned", "Self Signed" },        
         {"certificate.does.not.exist.local", "Dieses Zertifikat existiert noch nicht in Ihrem lokalen SSL/TLS Keystore - bitte importieren Sie es" },
         {"certificate.does.exist.local", "Dieses Zertifikat exisitert bereits in Ihrem lokalen SSL/TLS Keystore, der Alias ist \"{0}\"" },
+        {"test.connection.direct", "Eine direkte IP Verbindung wird verwendet" },
+        {"test.connection.proxy.auth", "Die Verbindung verwendet den Proxy {0} mit Authentifikation (Benutzer \"{1}\")" },
+        {"test.connection.proxy.noauth", "Die Verbindung verwendet den Proxy {0} ohne Authentifikation" },
+        {"result.exception", "Der folgende Fehler trat beim Test auf: {0}." },        
     };
 
 }

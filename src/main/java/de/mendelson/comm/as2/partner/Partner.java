@@ -1,16 +1,20 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/Partner.java 67    6/08/17 12:25p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 77    24.10.18 11:30 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.comm.as2.message.AS2Message;
+import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
+import de.mendelson.comm.as2.partner.gui.ResourceBundlePartnerPanel;
 import de.mendelson.comm.as2.send.HttpConnectionParameter;
+import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.cert.KeystoreCertificate;
-import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.StringTokenizer;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -23,15 +27,15 @@ import org.w3c.dom.NodeList;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Stores all information about a business partner
  *
  * @author S.Heller
- * @version $Revision: 67 $
+ * @version $Revision: 77 $
  */
 public class Partner implements Serializable, Comparable, Cloneable {
 
+    public static final long serialVersionUID = 1L;
     /**
      * Unique id in the database for this partner
      */
@@ -64,6 +68,11 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * Max number of files to pick up for a single poll process
      */
     private int maxPollFiles = 100;
+    /**
+     * Allows to disable the dir poll - the send orders have to be placed using
+     * the command line interface if enabled
+     */
+    private boolean enableDirPoll = true;
     /**
      * Compression type for this partner, used if you send messages to the
      * partner
@@ -187,14 +196,14 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * Expected is a comma separated list of poll ignores
      */
     public void setPollIgnoreListString(String pollIgnoreStr) {
-        if (pollIgnoreStr == null) {
+        if (pollIgnoreStr == null || pollIgnoreStr.trim().length() == 0) {
             this.pollIgnoreList = null;
-            return;
-        }
-        StringTokenizer tokenizer = new StringTokenizer(pollIgnoreStr, ",");
-        this.pollIgnoreList = new String[tokenizer.countTokens()];
-        for (int i = 0; tokenizer.hasMoreTokens(); i++) {
-            this.pollIgnoreList[i] = tokenizer.nextToken();
+        } else {
+            StringTokenizer tokenizer = new StringTokenizer(pollIgnoreStr, ",");
+            this.pollIgnoreList = new String[tokenizer.countTokens()];
+            for (int i = 0; tokenizer.hasMoreTokens(); i++) {
+                this.pollIgnoreList[i] = tokenizer.nextToken();
+            }
         }
     }
 
@@ -220,16 +229,18 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * Returns the default URL where to connect to
      */
     public String getDefaultURL() {
-        return ("http://as2.mendelson-e-c.com:8080/as2/HttpReceiver");
+        return ("http://testas2.mendelson-e-c.com:8080/as2/HttpReceiver");
     }
 
     /**
      * Returns the path on the harddisk where the messages are stored in
      */
-    public String getMessagePath(String messageDir) {
+    public String getMessagePath(String absolutePathOnServerSideMessageDir, String serverSideFileSeparator) {
         StringBuilder messagePath = new StringBuilder();
-        messagePath.append(new File(messageDir).getAbsolutePath());
-        messagePath.append(File.separator);
+        messagePath.append(absolutePathOnServerSideMessageDir);
+        if (!messagePath.toString().endsWith(serverSideFileSeparator)) {
+            messagePath.append(serverSideFileSeparator);
+        }
         messagePath.append(MessageStoreHandler.convertToValidFilename(this.getName()));
         return (messagePath.toString());
     }
@@ -269,8 +280,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
         this.name = name;
     }
 
-    public PartnerCertificateInformation getCertificateInformation(int category, int prio) {
-        return (this.partnerCertificateList.getPartnerCertificate(category, prio));
+    public PartnerCertificateInformation getCertificateInformation(int category) {
+        return (this.partnerCertificateList.getPartnerCertificate(category));
     }
 
     /**
@@ -306,19 +317,11 @@ public class Partner implements Serializable, Comparable, Cloneable {
     }
 
     /**
-     * Returns the alias used for signing messages. This returns the cert with
-     * prio 1, status accepted, category SIGN
+     * Returns the alias used for signing messages. This returns the cert
+     * category SIGN
      */
     public String getSignFingerprintSHA1() {
-        return (this.getSignFingerprintSHA1(1));
-    }
-
-    /**
-     * Returns the fingerprint (SHA1) used for signing messages. This returns
-     * the cert with prio "prio", status accepted, category SIGN
-     */
-    public String getSignFingerprintSHA1(int prio) {
-        PartnerCertificateInformation signInfo = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN, prio);
+        PartnerCertificateInformation signInfo = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN);
         if (signInfo != null) {
             return (signInfo.getFingerprintSHA1());
         } else {
@@ -327,19 +330,11 @@ public class Partner implements Serializable, Comparable, Cloneable {
     }
 
     /**
-     * Returns the cert used for signing messages. This returns the cert with
-     * prio 1, status accepted, category SIGN
+     * Returns the cert used for signing messages. This returns the cert
+     * category SIGN
      */
     public String getCryptFingerprintSHA1() {
-        return (this.getCryptFingerprintSHA1(1));
-    }
-
-    /**
-     * Returns the alias used for signing messages. This returns the cert with
-     * prio "prio", status accepted, category SIGN
-     */
-    public String getCryptFingerprintSHA1(int prio) {
-        PartnerCertificateInformation cryptInfo = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT, prio);
+        PartnerCertificateInformation cryptInfo = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT);
         if (cryptInfo != null) {
             return (cryptInfo.getFingerprintSHA1());
         } else {
@@ -674,6 +669,95 @@ public class Partner implements Serializable, Comparable, Cloneable {
     }
 
     /**
+     * Displays key data of this partner in a localized form - mainly for the
+     * log
+     */
+    public String toDisplay(CertificateManager certificateManagerEncSign) {
+        MecResourceBundle rbPartnerPanel = null;
+        MecResourceBundle rbMessage = null;
+        try {
+            rbPartnerPanel = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundlePartnerPanel.class.getName());
+            rbMessage = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleAS2Message.class.getName());
+        } //load up  resourcebundle
+        catch (MissingResourceException e) {
+            return ("Unable to resolve localization resource");
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append(rbPartnerPanel.getResourceString("label.name")).append(" ");
+        builder.append(this.getName()).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.id")).append(" ");
+        builder.append(this.getAS2Identification()).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.url")).append(" ");
+        builder.append(this.getURL()).append("\n");
+        String fingerPrintSign = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN).getFingerprintSHA1();
+        String aliasSign = certificateManagerEncSign.getAliasByFingerprint(fingerPrintSign);
+        if (aliasSign == null) {
+            aliasSign = "--";
+        }
+        builder.append(rbPartnerPanel.getResourceString("label.signalias.cert")).append(" ");
+        builder.append(aliasSign).append("\n");
+        String fingerPrintCrypt = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT).getFingerprintSHA1();
+        String aliasCrypt = certificateManagerEncSign.getAliasByFingerprint(fingerPrintCrypt);
+        if (aliasCrypt == null) {
+            aliasCrypt = "--";
+        }
+        builder.append(rbPartnerPanel.getResourceString("label.cryptalias.cert")).append(" ");
+        builder.append(aliasCrypt).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.signtype")).append(" ");
+        builder.append(rbMessage.getResourceString("signature." + this.signType)).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.encryptiontype")).append(" ");
+        builder.append(rbMessage.getResourceString("encryption." + this.encryptionType)).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.compression")).append(": ");
+        builder.append(this.compressionType == AS2Message.COMPRESSION_ZLIB ? Boolean.toString(true) : Boolean.toString(false)).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.syncmdn")).append(": ");
+        builder.append(Boolean.toString(this.syncMDN)).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.signedmdn")).append(": ");
+        builder.append(Boolean.toString(this.signedMDN)).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.httpversion")).append(" ");
+        builder.append(this.httpProtocolVersion).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.subject")).append(" ");
+        builder.append(this.subject).append("\n");
+        builder.append(rbPartnerPanel.getResourceString("label.contenttype")).append(" ");
+        builder.append(this.contentType).append("\n");
+        if (this.useCommandOnReceipt) {
+            builder.append(rbPartnerPanel.getResourceString("label.usecommandonreceipt")).append(" ");
+            builder.append(this.commandOnReceipt).append("\n");
+        }
+        if (this.useCommandOnSendError) {
+            builder.append(rbPartnerPanel.getResourceString("label.usecommandonsenderror")).append(" ");
+            builder.append(this.commandOnSendError).append("\n");
+        }
+        if (this.useCommandOnSendSuccess) {
+            builder.append(rbPartnerPanel.getResourceString("label.usecommandonsendsuccess")).append(" ");
+            builder.append(this.commandOnSendSuccess).append("\n");
+        }
+        if (this.enableDirPoll) {
+            builder.append(rbPartnerPanel.getResourceString("label.pollinterval")).append(" ");
+            builder.append(this.pollInterval + "s").append("\n");
+            builder.append(rbPartnerPanel.getResourceString("label.pollignore")).append(" ");
+            if (this.pollIgnoreList != null) {
+                for (String entry : this.pollIgnoreList) {
+                    builder.append(entry + " ");
+                }
+            }
+            builder.append("\n");
+            builder.append(rbPartnerPanel.getResourceString("label.maxpollfiles")).append(" ");
+            builder.append(String.valueOf(this.maxPollFiles)).append("\n");
+        }
+        if (this.authentication.isEnabled()) {
+            builder.append(rbPartnerPanel.getResourceString("label.usehttpauth")).append(": ");
+            builder.append(this.authentication.getUser() + "/" + this.authentication.getPassword()).append("\n");
+        }
+        if (this.authenticationAsyncMDN.isEnabled()) {
+            builder.append(rbPartnerPanel.getResourceString("label.usehttpauth.asyncmdn")).append(": ");
+            builder.append(this.authenticationAsyncMDN.getUser() + "/" + this.authenticationAsyncMDN.getPassword()).append("\n");
+        }
+        return (builder.toString());
+    }
+
+    /**
      * Serializes this partner to XML
      *
      * @param level level in the XML hierarchie for the xml beautifying
@@ -704,7 +788,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
         }
         builder.append(offset).append("\t<contenttype>").append(this.toCDATA(this.contentType)).append("</contenttype>\n");
         //no longer used but for compatibility of older versions: write down the crypt alias
-        PartnerCertificateInformation cryptInfo = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT, 1);
+        PartnerCertificateInformation cryptInfo = this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT);
         if (cryptInfo != null) {
             String cryptAlias = certmanagerEncSign.getAliasByFingerprint(this.getCryptFingerprintSHA1());
             builder.append(offset).append("\t<cryptalias>").append(this.toCDATA(cryptAlias)).append("</cryptalias>\n");
@@ -731,11 +815,13 @@ public class Partner implements Serializable, Comparable, Cloneable {
         builder.append(offset).append("\t<pollinterval>").append(String.valueOf(this.pollInterval)).append("</pollinterval>\n");
         if (this.pollIgnoreList != null) {
             builder.append(offset).append("\t<pollignorelist>").append(this.toCDATA(this.getPollIgnoreListAsString())).append("</pollignorelist>\n");
+            builder.append(offset).append("\t<maxpollfiles>").append(String.valueOf(this.getMaxPollFiles())).append("</maxpollfiles>\n");
         }
         builder.append(offset).append("\t<signtype>").append(String.valueOf(this.signType)).append("</signtype>\n");
         builder.append(offset).append("\t<signedmdn>").append(String.valueOf(this.signedMDN)).append("</signedmdn>\n");
         builder.append(offset).append("\t<syncmdn>").append(String.valueOf(this.syncMDN)).append("</syncmdn>\n");
         builder.append(offset).append("\t<algorithmidentifierprotectionattribute>").append(String.valueOf(this.useAlgorithmIdentifierProtectionAttribute)).append("</algorithmidentifierprotectionattribute>\n");
+        builder.append(offset).append("\t<enabledirpoll>").append(String.valueOf(this.isEnableDirPoll())).append("</enabledirpoll>\n");
         if (this.authentication != null) {
             builder.append(this.authentication.toXML(level + 1, "standard"));
         }
@@ -834,6 +920,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
                     partner.setNotifySendReceiveEnabled(value.equalsIgnoreCase("true"));
                 } else if (key.equals("pollinterval")) {
                     partner.setPollInterval(Integer.valueOf(value).intValue());
+                }else if (key.equals("maxpollfiles")) {
+                    partner.setMaxPollFiles(Integer.valueOf(value).intValue());
                 } else if (key.equals("pollignorelist")) {
                     partner.setPollIgnoreListString(value);
                 } else if (key.equals("signtype")) {
@@ -844,6 +932,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
                     partner.setSyncMDN(value.equalsIgnoreCase("true"));
                 } else if (key.equals("algorithmidentifierprotectionattribute")) {
                     partner.setUseAlgorithmIdentifierProtectionAttribute(value.equalsIgnoreCase("true"));
+                } else if (key.equals("enabledirpoll")) {
+                    partner.setEnableDirPoll(value.equalsIgnoreCase("true"));
                 } else if (key.equals("httpheader")) {
                     NodeList httpHeaderNodeList = property.getChildNodes();
                     PartnerHttpHeader httpHeader = new PartnerHttpHeader();
@@ -1028,6 +1118,20 @@ public class Partner implements Serializable, Comparable, Cloneable {
      */
     public void setUseAlgorithmIdentifierProtectionAttribute(boolean useAlgorithmIdentifierProtectionAttribute) {
         this.useAlgorithmIdentifierProtectionAttribute = useAlgorithmIdentifierProtectionAttribute;
+    }
+
+    /**
+     * @return the enableDirPoll
+     */
+    public boolean isEnableDirPoll() {
+        return enableDirPoll;
+    }
+
+    /**
+     * @param enableDirPoll the enableDirPoll to set
+     */
+    public void setEnableDirPoll(boolean enableDirPoll) {
+        this.enableDirPoll = enableDirPoll;
     }
 
 }

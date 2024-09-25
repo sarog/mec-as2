@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/clientserver/UploadResponseKeystore.java 1     9.02.11 17:03 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/clientserver/UploadResponseKeystore.java 2     4/06/18 12:22p Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.clientserver.clients.datatransfer.UploadResponseFile;
@@ -14,10 +14,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class UploadResponseKeystore extends UploadResponseFile implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     public UploadResponseKeystore(UploadRequestKeystore request) {
         super(request);
     }

@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/ResourceBundleMDNParser_fr.java 4     3-03-16 1:47p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleMDNParser_fr.java 5     4/06/18 1:35p Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,17 +13,19 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleMDNParser_fr extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         {"invalid.mdn.nocontenttype", "Un MDN entrant est invalide: Aucun type de contenu trouvé" },
         {"structure.failure.mdn", "Un MDN entrant a été analysé et il y a un échec de structure dans le MDN (\"{0}\"). Le MDN est inadmissible et ne pourrait pas être traité, le statut du message AS2/de transaction référencés ne sera pas changé." },
     };

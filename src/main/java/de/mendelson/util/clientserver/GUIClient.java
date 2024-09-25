@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/GUIClient.java 29    7/05/17 2:29p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/GUIClient.java 32    31.10.18 10:38 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -38,7 +38,7 @@ import javax.swing.SwingUtilities;
  * GUI Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 32 $
  */
 public abstract class GUIClient extends JFrame implements ClientSessionHandlerCallback {
 
@@ -91,7 +91,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
         Executors.newSingleThreadExecutor().submit(progress);
         boolean connected = false;
         try {
-            connected = client.connect(address, timeout);
+            connected = this.client.connect(address, timeout);
         } finally {
             progress.stopRunning();
         }
@@ -113,10 +113,13 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
             throw new RuntimeException("GUIClient.loggedIn: No logger set.");
         }
         while (state.getState() != LoginState.STATE_AUTHENTICATION_SUCCESS
-                && state.getState() != LoginState.STATE_INCOMPATIBLE_CLIENT) {
+                && state.getState() != LoginState.STATE_INCOMPATIBLE_CLIENT
+                && state.getState() != LoginState.STATE_REJECTED) {
             state = this.performLogin(user);
         }
         if (state.getState() == LoginState.STATE_INCOMPATIBLE_CLIENT) {
+            this.log(Level.SEVERE, state.getStateDetails());
+        } else if (state.getState() == LoginState.STATE_REJECTED) {
             this.log(Level.SEVERE, state.getStateDetails());
         } else {
             User returnedLoginUser = state.getUser();

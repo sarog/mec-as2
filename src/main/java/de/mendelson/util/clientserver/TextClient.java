@@ -1,4 +1,4 @@
-//$Header: /mbi_webclient/de/mendelson/util/clientserver/TextClient.java 17    10/20/15 2:48p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/TextClient.java 19    31.10.18 10:38 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -24,7 +24,7 @@ import java.util.logging.Level;
  * Sends a command to the OFTP2 server
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class TextClient extends BaseTextClient implements ClientsideMessageProcessor {
 
@@ -33,7 +33,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
     private ConnectThread connectionThread = null;
     private String clientId = "undefined";
 
-    public TextClient(){
+    public TextClient() {
         super();
         super.addMessageProcessor(this);
     }
@@ -93,6 +93,12 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
             }
             Exception e = new Exception(state.getStateDetails());
             this.connectionThread.signalFailure(e);
+        } else if (state.getState() == LoginState.STATE_REJECTED) {
+            if (this.getLogger() == null) {
+                throw new RuntimeException("TextClient: No logger set.");
+            }
+            Exception e = new Exception(state.getStateDetails());
+            this.connectionThread.signalFailure(e);
         }
         return (state);
     }
@@ -131,7 +137,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 17 $";
+        String revision = "$Revision: 19 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }

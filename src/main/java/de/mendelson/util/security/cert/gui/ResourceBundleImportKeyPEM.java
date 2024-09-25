@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyPEM.java 1     23.07.10 13:19 Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyPEM.java 2     4/06/18 1:35p Heller $ 
 package de.mendelson.util.security.cert.gui;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,38 +11,38 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-/** 
+/**
  * ResourceBundle to localize gui entries
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public class ResourceBundleImportKeyPEM extends MecResourceBundle{
+public class ResourceBundleImportKeyPEM extends MecResourceBundle {
 
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-  /**List of messages in the specific language*/
-  static final Object[][] contents = {
-        
-    {"button.ok", "Ok" },
-    {"button.cancel", "Cancel" },
-    {"button.browse", "Browse" },        
-            
-    {"label.importkey", "Import key file (PEM):" },
-    {"label.importcert", "Import certificate file:" },        
-    {"label.alias", "New alias to use:" },
-    {"label.keypass", "Key password for importing key:" },            
-            
-    {"title", "Import keys (PEM format)" },     
-    {"filechooser.cert.import", "Please select the certificate file for the import" },
-    {"filechooser.key.import", "Please select the key file for the import (PEM format)" }, 
-            
-    {"key.import.success.message", "The key has been imported successfully." },
-    {"key.import.success.title", "Success" },
-    {"key.import.error.message", "There occured an error during the import process.\n{0}" },
-    {"key.import.error.title", "Error" },        
-            
-  };		
-  
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"button.ok", "Ok"},
+        {"button.cancel", "Cancel"},
+        {"button.browse", "Browse"},
+        {"label.importkey", "Import key file (PEM):"},
+        {"label.importcert", "Import certificate file:"},
+        {"label.alias", "New alias to use:"},
+        {"label.keypass", "Key password for importing key:"},
+        {"title", "Import keys (PEM format)"},
+        {"filechooser.cert.import", "Please select the certificate file for the import"},
+        {"filechooser.key.import", "Please select the key file for the import (PEM format)"},
+        {"key.import.success.message", "The key has been imported successfully."},
+        {"key.import.success.title", "Success"},
+        {"key.import.error.message", "There occured an error during the import process.\n{0}"},
+        {"key.import.error.title", "Error"},};
+
 }

@@ -1,6 +1,8 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyJKS_de.java 2     24-06-16 3:43p Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyJKS_de.java 3     4/06/18 1:35p Heller $ 
 package de.mendelson.util.security.cert.gui;
+
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,41 +11,39 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-/** 
+/**
  * ResourceBundle to localize gui entries
+ *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
-public class ResourceBundleImportKeyJKS_de extends MecResourceBundle{
+public class ResourceBundleImportKeyJKS_de extends MecResourceBundle {
 
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-  /**List of messages in the specific language*/
-  static final Object[][] contents = {
-        
-    {"button.ok", "Ok" },
-    {"button.cancel", "Abbruch" },
-    {"button.browse", "Durchsuchen" },        
-            
-    {"keystore.contains.nokeys", "Diese Keystore beinhaltet keine privaten Schlüssel." },
-    
-    {"label.importkey", "Import Keystore Datei (JKS):" },
-    {"label.keypass", "Passwort des Keystores:" },            
-            
-    {"title", "Schlüssel aus Keystore importieren (JKS Format)" },     
-    {"filechooser.key.import", "Bitte wählen Sie eine JKS Keystore Datei für den Import" }, 
-            
-    {"multiple.keys.message", "Bitte wählen Sie den zu importierenden Schlüssel" },
-    {"multiple.keys.title", "Mehrere Schlüssel enthalten" },
-    
-    {"key.import.success.message", "Der Schlüssel wurde erfolgreich importiert." },
-    {"key.import.success.title", "Erfolg" },
-    {"key.import.error.message", "Es trat ein Fehler während des Importprozesses auf.\n{0}" },
-    {"key.import.error.title", "Fehler" },  
-    
-    {"enter.keypassword", "Geben Sie das Schlüsselpasswort für \"{0}\" ein" },
-  };		
-  
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"button.ok", "Ok"},
+        {"button.cancel", "Abbruch"},
+        {"button.browse", "Durchsuchen"},
+        {"keystore.contains.nokeys", "Diese Keystore beinhaltet keine privaten Schlüssel."},
+        {"label.importkey", "Import Keystore Datei (JKS):"},
+        {"label.keypass", "Passwort des Keystores:"},
+        {"title", "Schlüssel aus Keystore importieren (JKS Format)"},
+        {"filechooser.key.import", "Bitte wählen Sie eine JKS Keystore Datei für den Import"},
+        {"multiple.keys.message", "Bitte wählen Sie den zu importierenden Schlüssel"},
+        {"multiple.keys.title", "Mehrere Schlüssel enthalten"},
+        {"key.import.success.message", "Der Schlüssel wurde erfolgreich importiert."},
+        {"key.import.success.title", "Erfolg"},
+        {"key.import.error.message", "Es trat ein Fehler während des Importprozesses auf.\n{0}"},
+        {"key.import.error.title", "Fehler"},
+        {"enter.keypassword", "Geben Sie das Schlüsselpasswort für \"{0}\" ein"},};
+
 }

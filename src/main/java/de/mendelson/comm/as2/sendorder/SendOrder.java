@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrder.java 4     8/08/17 11:08a Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrder.java 5     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -15,10 +15,11 @@ import java.io.Serializable;
 /**
  * Send order that will be enqueued into the as2 server message queue
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class SendOrder implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     public static final int STATE_WAITING = 0;
     public static final int STATE_PROCESSING = 1;
     

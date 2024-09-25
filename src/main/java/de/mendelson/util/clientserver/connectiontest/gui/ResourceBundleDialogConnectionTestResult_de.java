@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_de.java 7     7/06/17 12:00p Hel $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_de.java 9     10.12.18 12:46 Helle $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,10 +15,12 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDialogConnectionTestResult_de extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -35,13 +37,13 @@ public class ResourceBundleDialogConnectionTestResult_de extends MecResourceBund
         {"FAILED", "FEHLER"},
         {"state.ssl", "Ergebnis des Verbindungstests (TLS):"},
         {"state.plain", "Ergebnis des Verbindungstests (PLAIN):"},
-        {"no.certificate.plain", "Nicht verfügbar (Ungesicherte Verbindung))"},
+        {"no.certificate.plain", "Nicht verfügbar (Ungesicherte Verbindung)"},
         {"button.viewcert", "Zertifikat(e) ansehen"},
         {"button.close", "Schliessen"},
         {"label.connection.established", "Die Verbindung wurde hergestellt"},
         {"label.certificates.downloaded", "Die Zertifikate wurden heruntergeladen"},
         {"label.running.oftpservice", "Es wurde ein laufender OFTP Service gefunden"},
-        {"used.cipher", "Für den Test wurde der folgende Verschlüsselungsalgorithmus verwendet: \"{0}\"" },         
+        {"used.cipher", "Für den Test wurde der folgende Verschlüsselungsalgorithmus verwendet: \"{0}\"" },          
     };
 
 }

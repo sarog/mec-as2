@@ -1,26 +1,33 @@
-//$Header: /mec_oftp2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 3     19.11.10 10:35 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 6     6/21/18 5:22p Heller $
 package de.mendelson.util.security.cert;
 
-import javax.swing.*;
-import javax.swing.table.*;
 import java.awt.Component;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.security.PrivateKey;
+import javax.swing.JTable;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.TableCellRenderer;
 
-/** 
- * Renders a certificater in a JTable column
+/**
+ * Renders a certificate in a JTable column
+ *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class TableCellRendererCertificates extends DefaultTableCellRenderer implements TableCellRenderer {
 
-    /**Stores the certificates*/
+    /**
+     * Stores the certificates
+     */
     private CertificateManager manager = null;
     public static final int TYPE_FINGERPRINT_SHA1 = 1;
     public static final int TYPE_ALIAS = 2;
     public static final int TYPE_CERTIFICATE = 3;
-    /**Sets the value that is expected in the column*/
+    public static final int TYPE_ISSUER_SERIAL = 4;
+    /**
+     * Sets the value that is expected in the column
+     */
     private int type = TYPE_CERTIFICATE;
 
     /**
@@ -38,12 +45,12 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
      *
      * Returns the default table cell renderer.
      *
-     * @param table  the <code>JTable</code>
-     * @param value  the value to assign to the cell at
-     *			<code>[row, column]</code>
+     * @param table the <code>JTable</code>
+     * @param value the value to assign to the cell at
+     * <code>[row, column]</code>
      * @param isSelected true if cell is selected
      * @param hasFocus true if cell has focus
-     * @param row  the row of the cell to render
+     * @param row the row of the cell to render
      * @param column the column of the cell to render
      * @return the default table cell renderer
      */
@@ -63,10 +70,24 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
         this.setFont(table.getFont());
         String alias = null;
         if (value instanceof String) {
-            if (this.type == TYPE_FINGERPRINT_SHA1) {
-                alias = this.manager.getAliasByFingerprint((String) value);
-            } else if (this.type == TYPE_ALIAS) {
-                alias = (String) value;
+            try {
+                if (this.type == TYPE_FINGERPRINT_SHA1) {
+                    alias = this.manager.getAliasByFingerprint((String) value);
+                } else if (this.type == TYPE_ALIAS) {
+                    alias = (String) value;
+                }
+            } catch (Exception e) {
+                alias = "[" + e.getClass().getSimpleName() + "]: " + e.getMessage();
+            }
+        } else if (value instanceof String[]) {
+            if (this.type == TYPE_ISSUER_SERIAL) {
+                String[] issuerSerial = (String[]) value;
+                if (issuerSerial.length == 2) {
+                    KeystoreCertificate certificate = this.manager.getKeystoreCertificateByIssuerDNAndSerial(issuerSerial[0], issuerSerial[1]);
+                    if (certificate != null) {
+                        alias = certificate.getAlias();
+                    }
+                }
             }
         } else if (value instanceof KeystoreCertificate) {
             alias = ((KeystoreCertificate) value).getAlias();
@@ -82,6 +103,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
                 } else {
                     this.setIcon(TableModelCertificates.ICON_CERTIFICATE);
                 }
+            } else {
+                this.setIcon(TableModelCertificates.ICON_CERTIFICATE_MISSING);
             }
         }
         this.setText(alias);
@@ -97,8 +120,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
      * drawbacks of overriding methods like these.
      */
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -116,8 +139,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -125,8 +148,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -134,8 +157,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -143,8 +166,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -152,8 +175,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -165,13 +188,11 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
     public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {
     }
 }
-
-

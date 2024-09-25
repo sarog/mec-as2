@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_fr.java 27    4-03-16 12:29p Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_fr.java 31    25.09.18 13:32 Heller $
 package de.mendelson.comm.as2.preferences;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,9 +13,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 27 $
+ * @version $Revision: 31 $
  */
 public class ResourceBundlePreferences_fr extends MecResourceBundle{
+    
+    public static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -108,6 +110,11 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle{
         {"maintenancemultiplier.minute", "minute(s)"},
         {"label.logpollprocess", "Affichage d''informations sur le processus de vote dans le journal (Énorme quantité d'entrées - ne pas utiliser dans la production)" },
         {"label.max.outboundconnections", "Connexions sortantes parallèles (max)" },
+        {"event.preferences.modified.subject", "La valeur {0} du paramètre serveur a été modifiée" },
+        {"event.preferences.modified.body", "Valeur précédente: {0}\n\nNouvelle valeur: {1}" },        
+        {"event.notificationdata.modified.subject", "Les paramètres de notification ont été modifiés." },
+        {"event.notificationdata.modified.body", "Les données d''avis sont passées de\n\n{0}\n\nà\n\n{1}" },
+        {"label.maxmailspermin", "Nombre maximum de notifications/min:"},
     };
     
 }

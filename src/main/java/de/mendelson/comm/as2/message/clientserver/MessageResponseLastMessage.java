@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageResponseLastMessage.java 1     20.09.12 10:49 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageResponseLastMessage.java 3     6/22/18 4:21p Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -16,11 +16,12 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class MessageResponseLastMessage extends ClientServerResponse implements Serializable {
 
-    private AS2MessageInfo info = null;
+    public static final long serialVersionUID = 1L;
+    private AS2MessageInfo messageInfo = null;
 
     public MessageResponseLastMessage(MessageRequestLastMessage request) {
         super(request);
@@ -35,14 +36,14 @@ public class MessageResponseLastMessage extends ClientServerResponse implements 
      * @return the list
      */
     public AS2MessageInfo getInfo() {
-        return info;
+        return messageInfo;
     }
 
     /**
      * @param list the list to set
      */
-    public void setInfo(AS2MessageInfo list) {
-        this.info = info;
+    public void setInfo(AS2MessageInfo messageInfo) {
+        this.messageInfo = messageInfo;
     }
 
     

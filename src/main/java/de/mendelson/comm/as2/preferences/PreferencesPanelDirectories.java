@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 15    18.09.12 14:51 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 16    24.09.18 17:35 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -23,7 +23,7 @@ import javax.swing.SwingUtilities;
 /**
  *Panel to define the directory preferences
  * @author S.Heller
- * @version: $Revision: 15 $
+ * @version: $Revision: 16 $
  */
 public class PreferencesPanelDirectories extends PreferencesPanel {
 
@@ -119,7 +119,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        gridBagConstraints.insets = new java.awt.Insets(20, 10, 10, 10);
         add(jCheckBoxReceiverSubdirectory, gridBagConstraints);
 
         jPanelDirSelection.setLayout(new java.awt.GridBagLayout());

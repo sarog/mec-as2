@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/user/PermissionDescription.java 2     10.09.10 16:44 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/PermissionDescription.java 3     4/06/18 12:27p Heller $
 package de.mendelson.util.clientserver.user;
 
 import java.io.Serializable;
@@ -12,10 +12,10 @@ import java.io.Serializable;
 /**
  * Describe all permissions
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public interface PermissionDescription extends Serializable{
-
+    
     public String getDescription( int permissionIndex );
     
 }

@@ -1,11 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemResponse.java 2     18.09.12 17:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemResponse.java 3     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
-import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerSystem;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
-import java.util.List;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -18,10 +16,11 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class PartnerSystemResponse extends ClientServerResponse implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private PartnerSystem partnerSystem = null;
 
     public PartnerSystemResponse(PartnerSystemRequest request) {

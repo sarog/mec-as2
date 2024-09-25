@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/csr/ResourceBundleCSRUtil_de.java 2     31.05.11 14:33 Heller $
+//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSRUtil_de.java 3     4/06/18 1:35p Heller $
 package de.mendelson.util.security.csr;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,17 +12,19 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleCSRUtil_de extends MecResourceBundle{
     
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] contents = {                
+    static final Object[][] CONTENTS = {                
         {"verification.failed", "Operation fehlgeschlagen - Die Überprüfung des erstellten Certificate Sign Requests (CSR) ist fehlgeschlagen." },
         {"no.certificates.in.reply", "Operation fehlgeschlagen - Der Schlüssel konnte nicht gepatcht werden, es wurden in der CA Antwort keine Zertifikate gefunden." },
         {"missing.cert.in.trustchain", "Operation fehlgeschlagen - Es fehlen für diese Operation Zertifikate im System.\nBitte importieren Sie zunächst das Zertifikat mit den Eckdaten (issuer)\n{0}." },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences.java 35    4-03-16 12:29p Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences.java 39    25.09.18 13:32 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,16 +13,18 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 39 $
  */
 public class ResourceBundlePreferences extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
-        return contents;
+        return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] contents = {
+    static final Object[][] CONTENTS = {
         //preferences localized
         {PreferencesAS2.SERVER_HOST, "Server host"},
         {PreferencesAS2.DIR_MSG, "Message storage"},
@@ -99,5 +101,10 @@ public class ResourceBundlePreferences extends MecResourceBundle {
         {"maintenancemultiplier.minute", "minute(s)"},
         {"label.logpollprocess", "Log poll process (Huge amount of entries - do not use in production)" },
         {"label.max.outboundconnections", "Max outbound parallel connections" },
+        {"event.preferences.modified.subject", "The server settings entry {0} has been modified" },
+        {"event.preferences.modified.body", "Old value: {0}\nNew value: {1}" },
+        {"event.notificationdata.modified.subject", "The notification data has been modified" },
+        {"event.notificationdata.modified.body", "The notification data has been modified from \n\n{0}\n\nto\n\n{1}" },
+        {"label.maxmailspermin", "Max number of notifications/min:" },
     };
 }

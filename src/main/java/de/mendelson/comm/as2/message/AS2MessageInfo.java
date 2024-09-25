@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 54    7/24/17 11:47a Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 58    7/03/18 9:35a Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -17,10 +17,14 @@ import java.util.Properties;
  * Stores all information about a as2 message
  *
  * @author S.Heller
- * @version $Revision: 54 $
+ * @version $Revision: 58 $
  */
 public class AS2MessageInfo implements AS2Info {
 
+    /**
+     * AS2Info extends Serializable
+     */
+    public static final long serialVersionUID = 1L;
     public static final int DIRECTION_UNKNOWN = 0;
     public static final int DIRECTION_IN = 1;
     public static final int DIRECTION_OUT = 2;
@@ -170,7 +174,7 @@ public class AS2MessageInfo implements AS2Info {
      */
     @Override
     public String getSenderId() {
-        return senderId;
+        return this.senderId;
     }
 
     /**
@@ -289,8 +293,24 @@ public class AS2MessageInfo implements AS2Info {
             this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA_384_RSASSA_PSS);
         } else if (signType == AS2Message.SIGNATURE_SHA512) {
             this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA512);
-        }else if (signType == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
+        } else if (signType == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
             this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA_512_RSASSA_PSS);
+        } else if (signType == AS2Message.SIGNATURE_SHA3_224) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_224);
+        } else if (signType == AS2Message.SIGNATURE_SHA3_256) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_256);
+        } else if (signType == AS2Message.SIGNATURE_SHA3_384) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_384);
+        } else if (signType == AS2Message.SIGNATURE_SHA3_512) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_512);
+        }else if (signType == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_224_RSASSA_PSS);
+        } else if (signType == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_256_RSASSA_PSS);
+        } else if (signType == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_384_RSASSA_PSS);
+        } else if (signType == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
+            this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_512_RSASSA_PSS);
         }
     }
 

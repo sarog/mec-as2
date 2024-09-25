@@ -1,8 +1,9 @@
-//$Header: /mbi_webclient/de/mendelson/util/clientserver/messages/LoginState.java 13    10/20/15 2:48p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginState.java 17    31.10.18 10:38 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import de.mendelson.util.clientserver.user.User;
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -15,14 +16,17 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 17 $
  */
 public class LoginState extends ClientServerResponse implements Serializable {
 
-    public static final int STATE_AUTHENTICATION_FAILURE = 1;
-    public static final int STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED = 2;
-    public static final int STATE_INCOMPATIBLE_CLIENT = 3;
-    public static final int STATE_AUTHENTICATION_SUCCESS = 99;
+    public static final long serialVersionUID = 1L;
+    public static final int STATE_AUTHENTICATION_SUCCESS = 1;
+    public static final int STATE_AUTHENTICATION_FAILURE = 2;
+    public static final int STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED = 3;
+    public static final int STATE_INCOMPATIBLE_CLIENT = 4;
+    public static final int STATE_REJECTED = 5;
+    
     /**
      * Stores the users rights, this is returned by the server
      */
@@ -59,28 +63,30 @@ public class LoginState extends ClientServerResponse implements Serializable {
 
     @Override
     public String toString() {
-        StringBuilder buffer = new StringBuilder();
+        StringBuilder builder = new StringBuilder();
         if (this.user != null) {
-            buffer.append("Login state for user ");
-            buffer.append(this.user.getName());
-            buffer.append(": ");
+            builder.append("Login state for user ");
+            builder.append(this.user.getName());
+            builder.append(": ");
         } else {
-            buffer.append("Login state: ");
+            builder.append("Login state: ");
         }
         if (this.state == STATE_AUTHENTICATION_FAILURE) {
-            buffer.append("FAILURE");
+            builder.append("FAILURE");
         } else if (this.state == STATE_AUTHENTICATION_SUCCESS) {
-            buffer.append("SUCCESS");
+            builder.append("SUCCESS");
         } else if (this.state == STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED) {
-            buffer.append("PASSWORD_REQUIRED");
+            builder.append("PASSWORD_REQUIRED");
         } else if (this.state == STATE_AUTHENTICATION_SUCCESS) {
-            buffer.append("AUTHENTICATION SUCCESS");
+            builder.append("AUTHENTICATION SUCCESS");
         } else if (this.state == STATE_INCOMPATIBLE_CLIENT) {
-            buffer.append("INCOMPATIBLE CLIENT");
+            builder.append("INCOMPATIBLE CLIENT");
+        } else if (this.state == STATE_REJECTED) {
+            builder.append("REJECTED");
         } else {
-            buffer.append("UNKNOWN");
+            builder.append("UNKNOWN");
         }
-        return (buffer.toString());
+        return (builder.toString());
     }
 
     /**

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_fr.java 7     12/06/17 11:41a Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_fr.java 12    7.12.18 9:51 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,10 +14,12 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleAS2ServerProcessing_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -29,7 +31,10 @@ public class ResourceBundleAS2ServerProcessing_fr extends MecResourceBundle {
         {"send.failed", "Send a échoué"},
         {"unable.to.process", "Impossible de traiter sur serveur : {0}"},
         {"server.shutdown", "L''utilisateur {0} demande l''arrêt du serveur."},
-        {"sync.mdn.sent", "{0}: MDN synchrone envoyé comme réponse au message {1}." },
+        {"sync.mdn.sent", "MDN synchrone envoyé comme réponse au message {0}." },
         {"info.mdn.inboundfiles", "Pour le MDN a reçu il n'a pas été possible de déterminer le message AS2 référencé.\n[Commentaires reçus MDN: {0}]\n[Commentaires reçus MDN (Header): {1}]"},
+        {"message.resend.oldtransaction", "Cette transaction a été envoyée à nouveau manuellement avec le nouveau numéro de transaction [{0}]." },
+        {"message.resend.newtransaction", "Cette transaction est un renvoi de la transaction [{0}]." },    
+        {"message.resend.title", "Envoi manuel des données dans la nouvelle transaction" },    
     };
 }

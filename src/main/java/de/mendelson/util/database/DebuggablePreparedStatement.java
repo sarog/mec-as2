@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/database/DebuggablePreparedStatement.java 1     3.01.13 17:01 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggablePreparedStatement.java 2     7.12.18 11:55 Heller $
 package de.mendelson.util.database;
 
 import java.io.InputStream;
@@ -24,6 +24,7 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -31,17 +32,19 @@ import java.util.Map;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Database statement that could be debugged
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class DebuggablePreparedStatement extends DebuggableStatement implements PreparedStatement {
 
     private PreparedStatement statement;
     private String query;
-    /**Map that contains parameter for the prepared statement*/
+    /**
+     * Map that contains parameter for the prepared statement
+     */
     private Map<Integer, String> map = new HashMap<Integer, String>();
 
     public DebuggablePreparedStatement(String query, PreparedStatement statement) {
@@ -50,7 +53,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
         this.query = query;
     }
 
-    public String getQueryWithParameter() throws SQLException {        
+    public String getQueryWithParameter() throws SQLException {
         StringBuilder builder = new StringBuilder();
         builder.append("Query:\n");
         builder.append(query);
@@ -219,17 +222,30 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
     @Override
     public void setObject(int param, Object obj) throws SQLException {
         String className = "null";
-        if( obj != null ){
+        if (obj != null) {
             className = obj.getClass().getName();
         }
         StringBuilder builder = new StringBuilder();
-        builder.append("<obj> (" );
-        builder.append( className );        
-        if( obj instanceof List){
-            builder.append( " size=");
-            builder.append(((List)obj).size());
+        builder.append("<obj> (");
+        builder.append(className);
+        if (obj instanceof List) {
+            builder.append(" size=");
+            builder.append(((List) obj).size());
+        } else if (obj instanceof String) {            
+            String strValue = obj.toString();
+            if (strValue != null) {
+                builder.append("\"");
+                if (strValue.length() > 80) {
+                    strValue = strValue.substring(0, 80);
+                    builder.append(strValue);
+                    builder.append("[..]");
+                } else {
+                    builder.append(strValue);
+                }
+                builder.append( "\"");
+            }
         }
-        builder.append( ")");
+        builder.append(")");
         this.map.put(new Integer(param), builder.toString());
         this.statement.setObject(param, obj);
     }
@@ -237,17 +253,30 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
     @Override
     public void setObject(int param, Object obj, int param2) throws SQLException {
         String className = "null";
-        if( obj != null ){
+        if (obj != null) {
             className = obj.getClass().getName();
         }
         StringBuilder builder = new StringBuilder();
-        builder.append("<obj> (" );
-        builder.append( className );        
-        if( obj instanceof List){
-            builder.append( " size=");
-            builder.append(((List)obj).size());
+        builder.append("<obj> (");
+        builder.append(className);
+        if (obj instanceof List) {
+            builder.append(" size=");
+            builder.append(((List) obj).size());
+        }else if (obj instanceof String) {            
+            String strValue = obj.toString();
+            if (strValue != null) {
+                builder.append("\"");
+                if (strValue.length() > 80) {
+                    strValue = strValue.substring(0, 80);
+                    builder.append(strValue);
+                    builder.append("[..]");
+                } else {
+                    builder.append(strValue);
+                }
+                builder.append( "\"");
+            }
         }
-        builder.append( ")");
+        builder.append(")");
         this.map.put(new Integer(param), builder.toString());
         this.statement.setObject(param, obj, param2);
     }
@@ -255,17 +284,30 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
     @Override
     public void setObject(int param, Object obj, int param2, int param3) throws SQLException {
         String className = "null";
-        if( obj != null ){
+        if (obj != null) {
             className = obj.getClass().getName();
         }
         StringBuilder builder = new StringBuilder();
-        builder.append("<obj> (" );
-        builder.append( className );        
-        if( obj instanceof List){
-            builder.append( " size=");
-            builder.append(((List)obj).size());
+        builder.append("<obj> (");
+        builder.append(className);
+        if (obj instanceof List) {
+            builder.append(" size=");
+            builder.append(((List) obj).size());
+        }else if (obj instanceof String) {            
+            String strValue = obj.toString();
+            if (strValue != null) {
+                builder.append("\"");
+                if (strValue.length() > 80) {
+                    strValue = strValue.substring(0, 80);
+                    builder.append(strValue);
+                    builder.append("[..]");
+                } else {
+                    builder.append(strValue);
+                }
+                builder.append( "\"");
+            }
         }
-        builder.append( ")");
+        builder.append(")");
         this.map.put(new Integer(param), builder.toString());
         this.statement.setObject(param, obj, param2, param3);
     }

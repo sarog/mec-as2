@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerMessage.java 5     20.08.14 15:35 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerMessage.java 8     31.10.18 13:55 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.Serializable;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -12,16 +14,19 @@ import java.io.Serializable;
 /**
  * Superclass of all messages for the client server protocol
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class ClientServerMessage implements Serializable{
-   
+       
+    public static final long serialVersionUID = 1L;
     private static long referenceIdCounter = 0;
     private long referenceId = 0;
     private boolean _syncRequest = false;
+    private String pid;
 
     public ClientServerMessage(){
         this.referenceId = getNextReferenceId();
+        this.pid = ManagementFactory.getRuntimeMXBean().getName();        
     }
 
     /**Returns the next unique reference id, thread safe*/
@@ -54,6 +59,13 @@ public class ClientServerMessage implements Serializable{
      */
     protected void _setReferenceId(long referenceId) {
         this.referenceId = referenceId;
+    }
+    
+    /**
+     * @return the pid
+     */
+    public String getPID() {
+        return pid;
     }
 
 }

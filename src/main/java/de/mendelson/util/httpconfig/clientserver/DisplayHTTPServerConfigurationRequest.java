@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationRequest.java 1     12/06/17 11:03a Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationRequest.java 2     4/06/18 12:22p Heller $
 package de.mendelson.util.httpconfig.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -13,10 +13,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class DisplayHTTPServerConfigurationRequest extends ClientServerMessage implements Serializable{
 
+    public static final long serialVersionUID = 1L;
     public DisplayHTTPServerConfigurationRequest(){
     }
     

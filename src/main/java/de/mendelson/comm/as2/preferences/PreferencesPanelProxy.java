@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 11    18.09.12 14:51 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 12    24.09.18 17:35 Heller $
 package de.mendelson.comm.as2.preferences;
 import java.util.*;
 import de.mendelson.util.*;
@@ -16,7 +16,7 @@ import java.sql.Connection;
 /**
  *Panel to define the proxy settings
  * @author S.Heller
- * @version: $Revision: 11 $
+ * @version: $Revision: 12 $
  */
 public class PreferencesPanelProxy extends PreferencesPanel {
     
@@ -174,7 +174,7 @@ public class PreferencesPanelProxy extends PreferencesPanel {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         add(jCheckBoxUseProxy, gridBagConstraints);
 
         jCheckBoxUseProxyAuthentification.setText(this.rb.getResourceString( "label.proxy.useauthentification"));

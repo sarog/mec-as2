@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMAccessDB.java 18    18.01.12 15:27 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMAccessDB.java 23    7.11.18 17:14 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -6,9 +6,10 @@ import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeResponse;
 import de.mendelson.comm.as2.cem.messages.TrustRequest;
 import de.mendelson.comm.as2.cem.messages.TrustResponse;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
-import de.mendelson.comm.as2.notification.Notification;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -26,26 +27,35 @@ import java.util.logging.Logger;
  */
 /**
  * Access the certificate lists in the database
+ *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 23 $
  */
 public class CEMAccessDB {
 
-    /**Logger to log inforamtion to*/
+    /**
+     * Logger to log information to
+     */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    /**Connection to the database*/
+    /**
+     * Connection to the database
+     */
     private Connection runtimeConnection;
     private Connection configConnection;
 
-    /** Creates new message I/O log and connects to localhost
-     *@param host host to connect to
+    /**
+     * Creates new message I/O log and connects to localhost
+     *
+     * @param host host to connect to
      */
     public CEMAccessDB(Connection configConnection, Connection runtimeConnection) {
         this.configConnection = configConnection;
         this.runtimeConnection = runtimeConnection;
     }
 
-    /**For debug purpose*/
+    /**
+     * For debug purpose
+     */
     public static String convertCategory(int category) {
         if (category == CEMEntry.CATEGORY_CRYPT) {
             return ("encryption");
@@ -58,7 +68,9 @@ public class CEMAccessDB {
         }
     }
 
-    /**Returns if a request with the passed request id exists in the system*/
+    /**
+     * Returns if a request with the passed request id exists in the system
+     */
     public boolean requestExists(String requestId) {
         PreparedStatement statement = null;
         ResultSet result = null;
@@ -66,7 +78,6 @@ public class CEMAccessDB {
             //get SSL and sign certificates
             String query = "SELECT COUNT(1) AS counter FROM cem WHERE requestid=?";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setString(1, requestId);
             result = statement.executeQuery();
             if (result.next()) {
@@ -74,14 +85,14 @@ public class CEMAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.requestExists: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.requestExists: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -89,21 +100,22 @@ public class CEMAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.requestExists: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
         return (false);
     }
 
-    /**Marks a request as processed, it will no longer be processed by the CertificateCEMController*/
+    /**
+     * Marks a request as processed, it will no longer be processed by the CertificateCEMController
+     */
     public void markAsProcessed(String requestId, int category) {
         PreparedStatement statement = null;
         try {
             //get SSL and sign certificates
             String query = "UPDATE cem SET processed=?,processdate=? WHERE requestid=? AND category=?";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setInt(1, 1);
             statement.setLong(2, System.currentTimeMillis());
             statement.setString(3, requestId);
@@ -111,20 +123,21 @@ public class CEMAccessDB {
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.markAsProcessed: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.markAsProcessed: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
     }
 
-    /**Returns all available CEM entries that have the state pending
+    /**
+     * Returns all available CEM entries that have the state pending
      */
     public List<CEMEntry> getCEMEntriesPending() {
         List<CEMEntry> entryList = new ArrayList<CEMEntry>();
@@ -134,7 +147,6 @@ public class CEMAccessDB {
             //get SSL and sign certificates
             String query = "SELECT * FROM cem WHERE cemstate=? ORDER BY id";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setInt(1, CEMEntry.STATUS_PENDING_INT);
             result = statement.executeQuery();
             while (result.next()) {
@@ -158,20 +170,20 @@ public class CEMAccessDB {
                 cemEntry.setProcessDate(result.getLong("processdate"));
                 Object reasonForRejectionObj = result.getObject("reasonforrejection");
                 if (!result.wasNull() && reasonForRejectionObj instanceof String) {
-                    cemEntry.setReasonForRejection((String)reasonForRejectionObj);
+                    cemEntry.setReasonForRejection((String) reasonForRejectionObj);
                 }
                 entryList.add(cemEntry);
             }
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.getCEMEntriesPending: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.getCEMEntriesPending: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -179,14 +191,15 @@ public class CEMAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.getCEMEntriesPending: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             return (entryList);
         }
     }
 
-    /**Returns all available CEM entries
+    /**
+     * Returns all available CEM entries
      */
     public List<CEMEntry> getCEMEntries() {
         List<CEMEntry> entryList = new ArrayList<CEMEntry>();
@@ -196,7 +209,6 @@ public class CEMAccessDB {
             //get SSL and sign certificates
             String query = "SELECT * FROM cem ORDER BY id";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             result = statement.executeQuery();
             while (result.next()) {
                 CEMEntry cemEntry = new CEMEntry();
@@ -219,20 +231,20 @@ public class CEMAccessDB {
                 cemEntry.setProcessDate(result.getLong("processdate"));
                 Object reasonForRejectionObj = result.getObject("reasonforrejection");
                 if (!result.wasNull() && reasonForRejectionObj instanceof String) {
-                    cemEntry.setReasonForRejection((String)reasonForRejectionObj);
+                    cemEntry.setReasonForRejection((String) reasonForRejectionObj);
                 }
                 entryList.add(cemEntry);
             }
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.getCEMEntries: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.getCEMEntries: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -240,15 +252,17 @@ public class CEMAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.getCEMEntries: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             return (entryList);
         }
     }
 
-    /**If a CEM is a SSL or signature request it contains a respondByDate entry. This is the date where this
-     * entry should be set as sssl or signature cert
+    /**
+     * If a CEM is a SSL or signature request it contains a respondByDate entry.
+     * This is the date where this entry should be set as ssl or signature cert
+     *
      * @return
      */
     public List<CEMEntry> getCertificatesToChange() {
@@ -260,7 +274,6 @@ public class CEMAccessDB {
             //get SSL and sign certificates where the date is set
             String query = "SELECT * FROM cem WHERE (category=? OR category=?) AND (cemstate=? OR cemstate=?) AND respondbydate IS NOT NULL AND respondbydate < ? AND processed=?";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setInt(1, CEMEntry.CATEGORY_SIGN);
             statement.setInt(2, CEMEntry.CATEGORY_SSL);
             statement.setInt(3, CEMEntry.STATUS_ACCEPTED_INT);
@@ -285,7 +298,6 @@ public class CEMAccessDB {
             //get crypt certificates and sign/ssl certificates where respondbydate is not set and the partner has answered
             query = "SELECT * FROM cem WHERE (category=? OR ((category=? OR category=?) AND respondbydate IS NULL)) AND cemstate=? AND processed=?";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setInt(1, CEMEntry.CATEGORY_CRYPT);
             statement.setInt(2, CEMEntry.CATEGORY_SIGN);
             statement.setInt(3, CEMEntry.CATEGORY_SSL);
@@ -308,14 +320,14 @@ public class CEMAccessDB {
             }
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (resultSign != null) {
                 try {
                     resultSign.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (resultCrypt != null) {
@@ -323,7 +335,7 @@ public class CEMAccessDB {
                     resultCrypt.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -331,14 +343,16 @@ public class CEMAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             return (responseList);
         }
     }
 
-    /**Inserts a new CEM response into the database*/
+    /**
+     * Inserts a new CEM response into the database
+     */
     public void insertResponse(AS2MessageInfo info, Partner initiator, Partner receiver, EDIINTCertificateExchangeResponse response) {
         List<TrustResponse> responseList = response.getTrustResponseList();
         for (TrustResponse trustResponse : responseList) {
@@ -346,7 +360,9 @@ public class CEMAccessDB {
         }
     }
 
-    /**Inserts a new CEM response into the database*/
+    /**
+     * Inserts a new CEM response into the database
+     */
     public void insertResponse(AS2MessageInfo info, Partner initiator, Partner receiver, EDIINTCertificateExchangeResponse response,
             TrustResponse trustResponse) {
         PreparedStatement statement = null;
@@ -354,7 +370,6 @@ public class CEMAccessDB {
             String query = "UPDATE cem SET cemstate=?, responsemessageid=?,responsemessageoriginated=?,reasonforrejection=? WHERE "
                     + "requestid=? AND initiatoras2id=? AND receiveras2id=? AND serialid=?";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setInt(1, trustResponse.getState());
             statement.setString(2, info.getMessageId());
             statement.setLong(3, response.getTradingPartnerInfo().getMessageOriginated().getTime());
@@ -370,20 +385,22 @@ public class CEMAccessDB {
             statement.execute();
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.insertResponse: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.insertResponse: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
     }
 
-    /**Inserts a new request into the cem database*/
+    /**
+     * Inserts a new request into the cem database
+     */
     public void insertRequest(AS2MessageInfo info, Partner initiator, Partner receiver, EDIINTCertificateExchangeRequest request) {
         List<TrustRequest> trustRequestList = request.getTrustRequestList();
         for (TrustRequest trustRequest : trustRequestList) {
@@ -399,7 +416,9 @@ public class CEMAccessDB {
         }
     }
 
-    /**Inserts a new request into the cem database*/
+    /**
+     * Inserts a new request into the cem database
+     */
     private void insertTrustRequest(AS2MessageInfo info, Partner initiator, Partner receiver, EDIINTCertificateExchangeRequest request,
             TrustRequest trustRequest, int category) {
         //cancel old entries with the same parameter
@@ -409,7 +428,6 @@ public class CEMAccessDB {
             String query = "INSERT INTO cem(initiatoras2id,receiveras2id,requestid,requestmessageid,respondbydate,requestmessageoriginated,category,cemstate,serialid,issuername)"
                     + "VALUES(?,?,?,?,?,?,?,?,?,?)";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setString(1, initiator.getAS2Identification());
             statement.setString(2, receiver.getAS2Identification());
             statement.setString(3, request.getRequestId());
@@ -428,25 +446,30 @@ public class CEMAccessDB {
             statement.execute();
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.insertTrustRequest: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.insertTrustRequest: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
     }
 
-    /**Updates a cem entry to a new state if its pending*/
+    /**
+     * Updates a cem entry to a new state if its pending
+     */
     public void setAllPendingRequestsToState(String initiatorAS2Id, String receiverAS2Id, int category, int newState) {
         this.setPendingRequestsToState(initiatorAS2Id, receiverAS2Id, category, null, newState);
     }
 
-    /**A new request for a chance came in. Update existing ones for this relationship and category to canceled if they exist*/
+    /**
+     * A new request for a chance came in. Update existing ones for this
+     * relationship and category to canceled if they exist
+     */
     public void setPendingRequestsToState(String initiatorAS2Id, String receiverAS2Id, int category, String requestId, int newState) {
         PreparedStatement statement = null;
         try {
@@ -455,7 +478,6 @@ public class CEMAccessDB {
                 query += " AND requestId=?";
             }
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setInt(1, newState);
             statement.setString(2, initiatorAS2Id);
             statement.setString(3, receiverAS2Id);
@@ -469,26 +491,27 @@ public class CEMAccessDB {
             statement.execute();
         } catch (Exception e) {
             this.logger.severe(e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe(e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
     }
 
-    /**Remove an entry from the cem table*/
+    /**
+     * Remove an entry from the cem table
+     */
     public void removeEntry(String initiatorAS2Id, String receiverAS2Id, int category, String requestId) {
         PreparedStatement statement = null;
         try {
             String query = "DELETE FROM cem WHERE initiatoras2id=? AND receiveras2id=? AND category=? AND requestId=?";
             statement = this.runtimeConnection.prepareStatement(query);
-            statement.setEscapeProcessing(true);
             statement.setString(1, initiatorAS2Id);
             statement.setString(2, receiverAS2Id);
             statement.setInt(3, category);
@@ -496,14 +519,14 @@ public class CEMAccessDB {
             statement.execute();
         } catch (Exception e) {
             this.logger.severe("CEMAccessDB.removeEntry: " + e.getMessage());
-            Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.removeEntry: " + e.getMessage());
-                    Notification.systemFailure(this.configConnection, this.runtimeConnection, e);
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

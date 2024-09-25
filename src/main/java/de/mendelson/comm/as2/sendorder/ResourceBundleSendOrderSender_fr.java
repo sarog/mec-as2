@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderSender_fr.java 3     8/08/17 11:08a Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderSender_fr.java 6     6.12.18 16:26 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,9 +13,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleSendOrderSender_fr extends MecResourceBundle{
+    
+    public static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -24,8 +26,8 @@ public class ResourceBundleSendOrderSender_fr extends MecResourceBundle{
     
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
-        {"message.packed", "{0}: Message AS2 sortant créé avec \"{1}\" du destinataire \"{2}\" dans {4}, taille brute du message: {3}, id défini par l''utilisateur: \"{5}\"" },
-        {"sendoder.sendfailed", "Un problème s'est produit lors du traitement d'une commande d'envoi: [{0}] \"{1}\" - les données n''ont pas été transmises au partenaire." },
+        {"message.packed", "Message AS2 sortant créé avec \"{0}\" du destinataire \"{1}\" dans {3}, taille brute du message: {2}, id défini par l''utilisateur: \"{4}\"" },
+        {"sendoder.sendfailed", "Un problème s'est produit lors du traitement d'une commande d'envoi: [{0}] \"{1}\" - les données n''ont pas été transmises au partenaire." },        
     };
     
 }

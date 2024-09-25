@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 4     28-04-16 3:20p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 6     7.11.18 10:40 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -8,11 +8,11 @@ import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.JKSKeys2PKCS12;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.PKCS122PKCS12;
-import java.io.File;
+import java.nio.file.Paths;
 import java.security.KeyStore;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.Vector;
 import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -32,7 +32,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Export a private key into a pkcs#12 keystore
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class JDialogExportKeyPKCS12 extends JDialog {
 
@@ -71,7 +71,7 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         this.jComboBoxAlias.removeAllItems();
         KeyStoreUtil util = new KeyStoreUtil();
         KeyStore sourceKeystore = this.manager.getKeystore();
-        Vector<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
+        List<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
         if (keyAliasesList.isEmpty()) {
             throw new Exception(this.rb.getResourceString("keystore.contains.nokeys"));
         } else {
@@ -111,13 +111,13 @@ public class JDialogExportKeyPKCS12 extends JDialog {
                 exporter.setTargetKeyStore(targetKeystore, this.jPasswordFieldPassphrase.getPassword());
                 exporter.importKey(sourceKeystore, selectedAlias);
                 exporter.saveKeyStore(targetKeystore, this.jPasswordFieldPassphrase.getPassword(),
-                        new File(this.jTextFieldExportPKCS12File.getText()));
+                        Paths.get(this.jTextFieldExportPKCS12File.getText()));
             } else if (keystoreFormat.equals(BCCryptoHelper.KEYSTORE_JKS)) {
                 JKSKeys2PKCS12 exporter = new JKSKeys2PKCS12(this.logger);
                 exporter.setTargetKeyStore(targetKeystore);
                 exporter.exportKey(sourceKeystore, this.manager.getKeystorePass(), selectedAlias);
                 exporter.saveKeyStore(targetKeystore, this.jPasswordFieldPassphrase.getPassword(),
-                        new File(this.jTextFieldExportPKCS12File.getText()));
+                        Paths.get(this.jTextFieldExportPKCS12File.getText()));
             }
             JOptionPane.showMessageDialog(this,
                     this.rb.getResourceString("key.export.success.message"),
@@ -126,7 +126,7 @@ public class JDialogExportKeyPKCS12 extends JDialog {
             this.logger.fine(this.rb.getResourceString("key.exported.to.file",
                     new Object[]{
                         selectedAlias,
-                        new File(this.jTextFieldExportPKCS12File.getText()).getAbsolutePath()
+                        Paths.get(this.jTextFieldExportPKCS12File.getText()).toAbsolutePath().toString()
                     }));
         } catch (Exception e) {
             JOptionPane.showMessageDialog(this,

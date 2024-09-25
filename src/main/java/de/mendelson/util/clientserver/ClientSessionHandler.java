@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/ClientSessionHandler.java 21    1-04-16 11:26a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandler.java 22    4/06/18 10:56a Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -25,7 +25,7 @@ import org.apache.mina.core.session.IoSession;
  * Client side protocol handler
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 22 $
  */
 public class ClientSessionHandler extends IoHandlerAdapter {
 
@@ -49,6 +49,10 @@ public class ClientSessionHandler extends IoHandlerAdapter {
         this.callback = callback;
     }
 
+    public ClientSessionHandlerCallback getCallback(){
+        return( this.callback);
+    }
+    
     /**
      * Indicates if server log messages should be displayed in the client or
      * simply ignored

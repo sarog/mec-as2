@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemRequest.java 1     18.09.12 17:01 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemRequest.java 2     4/06/18 12:21p Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -16,10 +16,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class PartnerSystemRequest extends ClientServerMessage implements Serializable {
 
+    public static final long serialVersionUID = 1L;
     private Partner partner;
 
     public PartnerSystemRequest(Partner partner) {

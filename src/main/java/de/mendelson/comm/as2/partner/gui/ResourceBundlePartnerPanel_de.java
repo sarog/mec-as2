@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel_de.java 50    4/21/17 1:50p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel_de.java 56    22.08.18 11:59 Heller $
 package de.mendelson.comm.as2.partner.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,9 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 56 $
  */
 public class ResourceBundlePartnerPanel_de extends MecResourceBundle{
+    
+    public static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -75,8 +77,7 @@ public class ResourceBundlePartnerPanel_de extends MecResourceBundle{
         {"hint.replacement.send1", "Ersetzungen: $'{'filename}, $'{'fullstoragefilename}, $'{'log}, $'{'subject}," },        
         {"hint.replacement.send2", "$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'mdntext}, $'{'userdefinedid}."},
         {"hint.subject.replacement", "$'{'filename} wird durch den Sendedateinamen ersetzt."},
-        {"hint.keepfilenameonreceipt", "Empfangene Dateinamen müssen eindeutig sein, wenn diese Option eingeschaltet ist!"},
-        {"label.url.hint", "Bitte setzen Sie vor die URL das Protokoll (\"http://\" oder \"https://\")."},
+        {"hint.keepfilenameonreceipt", "Empfangene Dateinamen müssen eindeutig sein, wenn diese Option eingeschaltet ist!"},        
         {"label.notify.send", "Benachrichtigen, wenn das Sendekontingent folgenden Wert übersteigt:" },
         {"label.notify.receive", "Benachrichtigen, wenn das Empfangskontingent folgenden Wert übersteigt:" },
         {"label.notify.sendreceive", "Benachrichtigen, wenn das Sende/Empfangskontingent folgenden Wert übersteigt:" },
@@ -94,6 +95,14 @@ public class ResourceBundlePartnerPanel_de extends MecResourceBundle{
         {"partnersystem.noinfo", "Keine Information verfügbar - gab es schon eine Transaktion?" },
         {"label.httpversion", "HTTP Protokollversion:" },
         {"label.test.connection", "Verbindung prüfen" },
+        {"label.url.hint", "<HTML>Bitte setzen Sie vor die URL das Protokoll (\"http://\" oder \"https://\").</HTML>"},
+        {"label.url.hint.mdn", "<HTML>Bitte setzen Sie vor die URL das Protokoll (\"http://\" oder \"https://\"). Dies ist die URL, die Ihr Partner für die eingehende asynchrone MDN zu dieser lokalen Station verwenden wird.</HTML>"},
+        {"label.mdn.description", "<HTML>Die MDN (Message Delivery Notification) ist die Bestätigung für die AS2 Nachricht. Dieser Abschnitt definiert das Verhalten Ihres Partners für Ihre ausgehenden AS2-Nachrichten.</HTML>" },
+        {"label.mdn.sync.description", "<HTML>Der Partner sendet die Bestätigung (MDN) auf dem Rückkanal Ihrer ausgehenden Verbindung.</HTML>" },
+        {"label.mdn.async.description", "<HTML>Der Partner baut eine neue Verbindung zu Ihrem System auf, um die Bestätigung für Ihre ausgehende Nachricht zu senden.</HTML>" },
+        {"label.mdn.sign.description", "<HTML>Das AS2-Protokoll definiert nicht, wie man mit einer MDN umgeht, wenn die Signatur nicht verifiziert werden kann - mendelson AS2 zeigt in diesem Fall eine Warnung an.</HTML>" },
+        {"label.algorithmidentifierprotection", "<HTML>\"Algorithm Identifier Protection Attribute\" in der Signatur verwenden (empfohlen), weitere Informationen unter RFC 6211</HTML>" },
+        {"label.enabledirpoll", "Verzeichnisüberwachung für diesen Partner einschalten" }
     };
     
 }

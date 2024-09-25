@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration_fr.java 4     12/11/17 1:29p Heller $ 
+//$Header: /as4/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration_fr.java 7     9.10.18 12:29 Heller $ 
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,10 +13,12 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleDisplayHTTPConfiguration_fr extends MecResourceBundle {
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public Object[][] getContents() {
         return CONTENTS;
@@ -26,13 +28,11 @@ public class ResourceBundleDisplayHTTPConfiguration_fr extends MecResourceBundle
         {"title", "Configuration HTTP côté serveur"},
         {"reading.configuration", "Lire la configuration HTTP..."},
         {"button.ok", "Fermer" },
-        {"label.info.configfile", "Cette boîte de dialogue vous montre la configuration HTTP/S côté serveur. Vous pouvez configurer les ports, les codes et les protocoles dans le fichier \"{0}\" du serveur. Veuillez redémarrer le serveur pour les modifications à appliquer." },
+        {"label.info.configfile", "Cette boîte de dialogue vous montre la configuration HTTP/S côté serveur. Le serveur HTTP fourni a la version <strong>jetty {1}</strong>. Vous pouvez configurer les ports, les codes et les protocoles dans le fichier \"{0}\" du serveur. Veuillez redémarrer le serveur pour les modifications à appliquer." },
         {"tab.misc", "General"},
         {"tab.cipher", "Chiffrement SSL/TLS"},
         {"tab.protocols", "Protocoles SSL/TLS"},
-        {"no.ssl.enabled", "La prise en charge TLS/SSL n''était pas activée dans le serveur HTTP sous-jacent.\nVeuillez modifier le fichier de configuration {0}\nselon la documentation et redémarrer le serveur." },
-        {"info.cipher", "Les codes suivants sont pris en charge par le serveur HTTP sous-jacent.\nLes modèles supportés dépendent de votre Java VM ({1}).\nVous pouvez désactiver les différents chiffres dans le fichier de configuration\n(\"{0}\")." },
-        {"info.protocols", "Les protocoles suivants sont pris en charge par le serveur HTTP sous-jacent.\nLes protocoles pris en charge dépendent de votre VM Java utilisé ({1}).\nVous pouvez désactiver les protocoles individuels dans le fichier de configuration\n(\"{0}\")." },
-        {"no.embedded.httpserver", "Vous n''avez pas démarré le serveur HTTP sous-jacent.\nAucune information n'est disponible." },
+        {"no.ssl.enabled", "La prise en charge TLS/SSL n''était pas activée dans le serveur HTTP sous-jacent.\nVeuillez modifier le fichier de configuration {0}\nselon la documentation et redémarrer le serveur." },        
+        {"no.embedded.httpserver", "Vous n''avez pas démarré le serveur HTTP sous-jacent.\nAucune information n'est disponible." },                
     };
 }

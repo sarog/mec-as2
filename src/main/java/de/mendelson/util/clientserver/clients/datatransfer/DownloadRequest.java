@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadRequest.java 3     17.01.11 10:42 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadRequest.java 4     4/06/18 12:21p Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -13,10 +13,12 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public abstract class DownloadRequest extends ClientServerMessage implements Serializable{
 
+    public static final long serialVersionUID = 1L;
+    
     @Override
     public String toString(){
         return( "Download request" );

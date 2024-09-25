@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/AS2.java 23    5/29/17 1:12p Heller $
+//$Header: /as2/de/mendelson/comm/as2/AS2.java 26    16.10.18 11:40 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -9,6 +9,8 @@ import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.server.UpgradeRequiredException;
 import de.mendelson.util.Splash;
 import de.mendelson.util.security.BCCryptoHelper;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.geom.AffineTransform;
@@ -27,7 +29,7 @@ import javax.swing.JOptionPane;
  * Start the AS2 server and the configuration GUI
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 26 $
  */
 public class AS2 {
 
@@ -107,12 +109,23 @@ public class AS2 {
             AS2Server as2Server = new AS2Server(startHTTP, allowAllClients);
             AS2Agent agent = new AS2Agent(as2Server);
         } catch (UpgradeRequiredException e) {
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_ERROR, 
+                    SystemEvent.ORIGIN_SYSTEM, 
+                    SystemEvent.TYPE_DATABASE_UPDATE, 
+                    "Manual DB upgrade required", e.getMessage());
             //an upgrade to HSQLDB 2.x is required, delete the lock file
             Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).warning(e.getMessage());
             JOptionPane.showMessageDialog(null, e.getClass().getName() + ": " + e.getMessage());
             AS2Server.deleteLockFile();
             System.exit(1);
         } catch (Throwable e) {
+            SystemEventManagerImplAS2.newEvent(
+                    SystemEvent.SEVERITY_ERROR, 
+                    SystemEvent.ORIGIN_SYSTEM, 
+                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN, 
+                    "[" + e.getClass().getSimpleName() + "]", 
+                    e.getMessage());
             if (splash != null) {
                 splash.destroy();
             }

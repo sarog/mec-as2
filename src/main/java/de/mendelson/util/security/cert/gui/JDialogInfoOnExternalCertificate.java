@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 12    9/22/17 11:54a Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 13    2.11.18 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -10,7 +10,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -35,7 +36,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * or a passed object
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class JDialogInfoOnExternalCertificate extends JDialog {
 
@@ -164,10 +165,10 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
 
     private List<String> loadCertsFromFileAndGetInfo(File certFile, List<X509Certificate> certListToFill) {
         List<String> infoList = null;
-        FileInputStream inStream = null;
+        InputStream inStream = null;
         try {
             Provider provBC = new BouncyCastleProvider();
-            inStream = new FileInputStream(certFile);
+            inStream = Files.newInputStream(certFile.toPath());
             KeyStoreUtil util = new KeyStoreUtil();
             List<X509Certificate> certList = util.readCertificates(inStream, provBC);
             certListToFill.addAll(certList);
