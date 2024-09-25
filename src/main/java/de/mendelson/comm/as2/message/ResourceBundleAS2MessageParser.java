@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 45    7.12.18 12:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 47    26.08.21 11:30 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 45 $
+ * @version $Revision: 47 $
  */
 public class ResourceBundleAS2MessageParser extends MecResourceBundle{
     
@@ -24,13 +24,18 @@ public class ResourceBundleAS2MessageParser extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
-        {"mdn.incoming", "Inbound transmission is a MDN." },
+    static final Object[][] CONTENTS = {        
         {"mdn.answerto", "The inbound MDN with the message id \"{0}\" is the answer to the outbound AS2 message \"{1}\"." },  
         {"mdn.state", "Inbound MDN state is [{0}]." },          
         {"mdn.details", "Inbound MDN details received from {0}: \"{1}\"" },
+        {"mdn.incoming.ha", "Inbound transmission is a MDN, processed by [{0}]." }, 
+        {"mdn.incoming", "Inbound transmission is a MDN." },
+        {"mdn.incoming.relationship", "Inbound transmission is a MDN [{0}]" },
+        {"mdn.incoming.relationship.ha", "Inbound transmission is a MDN [{0}], processed by [{1}]" },
         {"msg.incoming", "Inbound transmission is a AS2 message [{0}], raw message size: {1}." },   
+        {"msg.incoming.ha", "Inbound transmission is a AS2 message [{0}], raw message size: {1}, processed by [{2}]." },
         {"msg.incoming.identproblem", "Inbound transmission is a AS2 message. It has not been processed because of a trading partner identification problem." },   
+        {"msg.already.processed", "A message with the message id [{0}] has been already processed" },
         {"mdn.signed", "Inbound MDN is signed ({0})." },
         {"mdn.unsigned.error", "Inbound MDN is not signed. The partner configuration defines MDN from the partner \"{0}\" to be signed." },
         {"mdn.signed.error", "Inbound MDN is signed. The partner configuration defines MDN from the partner \"{0}\" to be not signed." },

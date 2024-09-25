@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_de.java 44    20.09.19 16:37 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_de.java 46    26.08.21 11:30 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 46 $
  */
 public class ResourceBundleAS2MessageParser_de extends MecResourceBundle {
 
@@ -24,13 +24,18 @@ public class ResourceBundleAS2MessageParser_de extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
-        {"mdn.incoming", "Eingegangene Übertragung ist eine Empfangsbestätigung (MDN)."},
+    static final Object[][] CONTENTS = {        
         {"mdn.answerto", "Die eingegangene Empfangsbestätigung (MDN) mit der Nachrichtennummer \"{0}\" ist die Antwort auf die ausgegangene AS2 Nachricht \"{1}\"."},
         {"mdn.state", "Status der eingegangenen Empfangsbestätigung (MDN) ist [{0}]."},
         {"mdn.details", "Details der eingegangenen Empfangsbestätigung (MDN) von {0}: \"{1}\""},
+        {"mdn.incoming", "Eingegangene Übertragung ist eine Empfangsbestätigung (MDN)."},
+        {"mdn.incoming.ha", "Eingegangene Übertragung ist eine Empfangsbestätigung (MDN), verarbeitet von [{0}]." }, 
+        {"mdn.incoming.relationship", "Eingegangene Übertragung ist eine Empfangsbestätigung (MDN) [{0}]" },
+        {"mdn.incoming.relationship.ha", "Eingegangene Übertragung ist eine Empfangsbestätigung (MDN) [{0}], verarbeitet von [{1}]." }, 
         {"msg.incoming", "Eingehende Übertragung ist eine AS2 Nachricht [{0}], Rohdatengrösse: {1}"},
+        {"msg.incoming.ha", "Eingehende Übertragung ist eine AS2 Nachricht [{0}], Rohdatengrösse: {1}, verarbeitet von [{2}]." }, 
         {"msg.incoming.identproblem", "Eingehende Übertragung ist eine AS2 Nachricht. Sie wurde nicht verarbeitet, weil es ein Problem mit der Partneridentifikation gab." },   
+        {"msg.already.processed", "Eine Nachricht mit der Nachrichtennummer [{0}] wurde bereits verarbeitet" },
         {"mdn.signed", "Empfangsbestätigung (MDN) ist digital signiert ({0})."},
         {"mdn.unsigned.error", "Eingegangene Empfangsbestätigung (MDN) ist entgegen der Partnerkonfiguration \"{0}\" NICHT digital signiert."},
         {"mdn.signed.error", "Eingegangene Empfangsbestätigung (MDN) ist entgegen der Partnerkonfiguration \"{0}\" digital signiert."},

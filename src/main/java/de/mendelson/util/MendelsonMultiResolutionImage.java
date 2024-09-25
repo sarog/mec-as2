@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/MendelsonMultiResolutionImage.java 27    6.11.20 10:54 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/MendelsonMultiResolutionImage.java 28    29.11.21 15:57 Heller $
 package de.mendelson.util;
 
 import java.awt.Graphics;
@@ -12,10 +12,10 @@ import java.io.Serializable;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.ImageIcon;
 import org.apache.batik.anim.dom.SAXSVGDocumentFactory;
 import org.apache.batik.bridge.BridgeContext;
@@ -44,7 +44,7 @@ import org.w3c.dom.Element;
  * Mendelson implementation of the MultiResolution image
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 28 $
  */
 public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage implements Serializable {
 
@@ -57,13 +57,14 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
      * Stores the global list of image operations that could be performed while
      * creating a rasted image from a SVG, e.g. darken the icon etc
      */
-    private static final List<BufferedImageOp> svgImageOperations = Collections.synchronizedList(new ArrayList<BufferedImageOp>());
+    private static final List<BufferedImageOp> svgImageOperations 
+            = Collections.synchronizedList(new ArrayList<BufferedImageOp>());
     /**
      * Stores a list of overlays for special SVG resources. The overlay is
      * displayed always in front if a resource is loaded Useful to address color
      * blindness UI design
      */
-    private static final Map<String, String> svgImageOverlaysMap = Collections.synchronizedMap(new HashMap<String, String>());
+    private static final Map<String, String> svgImageOverlaysMap = new ConcurrentHashMap<String, String>();
 
     public static enum SVGScalingOption {
         KEEP_HEIGHT, KEEP_WIDTH
@@ -214,12 +215,10 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
     public static MendelsonMultiResolutionImage fromSVG(String svgURLStr, int initialSize, int maxSize, SVGScalingOption scale) {
         //check if an overlay is defined for this SVG resource
         String svgResourceFilename = extractSVGFilenameFromSVGURLStr(svgURLStr);
-        MendelsonMultiResolutionImage overlayImage = null;
-        synchronized (svgImageOverlaysMap) {
-            if (svgImageOverlaysMap.containsKey(svgResourceFilename)) {
-                //load overlay image in all required resolutions
-                overlayImage = fromSVG(svgImageOverlaysMap.get(svgResourceFilename), initialSize, maxSize, scale);
-            }
+        MendelsonMultiResolutionImage overlayImage = null;        
+        if (svgImageOverlaysMap.containsKey(svgResourceFilename)) {
+            //load overlay image in all required resolutions
+            overlayImage = fromSVG(svgImageOverlaysMap.get(svgResourceFilename), initialSize, maxSize, scale);
         }
         if (initialSize > maxSize) {
             System.out.println("MendelsonMultiResolutionImage:fromSVG(..): minWidth must be smaller than maxWidth");
@@ -323,9 +322,7 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
     }
 
     public static void addSVGOverlay(String svgOriginalResource, String svgOverlayResource) {
-        synchronized (svgImageOverlaysMap) {
-            svgImageOverlaysMap.put(svgOriginalResource, svgOverlayResource);
-        }
+        svgImageOverlaysMap.put(svgOriginalResource, svgOverlayResource);
     }
 
     /**
@@ -348,7 +345,7 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
             return (this);
         } else {
             MendelsonMultiResolutionImage newImage
-                    = new MendelsonMultiResolutionImage(newBaseImageIndex, 
+                    = new MendelsonMultiResolutionImage(newBaseImageIndex,
                             new ArrayList<Image>(this.resolutionVariants));
             return (newImage);
         }

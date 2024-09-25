@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/SystemEvent.java 42    20.09.19 10:32 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/SystemEvent.java 45    3.12.21 14:22 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -36,7 +36,7 @@ import javax.swing.ImageIcon;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 42 $
+ * @version $Revision: 45 $
  */
 public class SystemEvent implements Serializable {
 
@@ -181,10 +181,10 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_PRE_PROCESSING = 1001;
     public static final int TYPE_POST_PROCESSING = 1002;
     /**
-     * Activation
+     * License issues
      */
-    public static final int CATEGORY_ACTIVATION = 1100;
-    public static final int TYPE_ACTIVATION_ANY = 1100;
+    public static final int CATEGORY_LICENSE = 1100;
+    public static final int TYPE_LICENSE_ANY = 1100;
     /**
      * File operation
      */
@@ -426,7 +426,7 @@ public class SystemEvent implements Serializable {
      * Serializes this system event to the passed filename
      */
     public void store(Path storageDir, String storageFilePrefix, String storageFileSuffix) throws Exception {
-        if (!Files.exists(storageDir)) {
+        if (!storageDir.toFile().exists()) {
             Files.createDirectories(storageDir);
         }
         Path uniqueStorageFile = Files.createTempFile(storageDir, storageFilePrefix, storageFileSuffix);

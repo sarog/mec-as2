@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 7     10.09.20 12:57 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 10    27/01/22 11:35 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.clientserver.ClientServer;
+import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import java.sql.Connection;
 import java.util.ArrayList;
@@ -22,11 +23,10 @@ import java.util.logging.Logger;
  * a partner
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 10 $
  */
 public class SystemEventNotificationControllerImplAS2 extends SystemEventNotificationController {
 
-    private PreferencesAS2 preferences = new PreferencesAS2();
     private Notification notification;
 
     /**
@@ -36,14 +36,15 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
      */
     public SystemEventNotificationControllerImplAS2(Logger logger, PreferencesAS2 preferences,
             ClientServer clientserver,
+            IDBDriverManager dbDriverManager,
             Connection configConnection, Connection runtimeConnection) {
         super(logger, clientserver, configConnection, runtimeConnection);
-        this.notification = new NotificationImplAS2(configConnection, runtimeConnection);
+        this.notification = new NotificationImplAS2(dbDriverManager, configConnection, runtimeConnection);
     }
 
     @Override
     public String getStorageDir() {
-        return (this.preferences.get(PreferencesAS2.DIR_LOG));
+        return (AS2Server.LOG_DIR.toAbsolutePath().toString());
     }
 
     @Override
@@ -52,19 +53,19 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
         if (!AS2Server.inShutdownProcess) {
             NotificationDataImplAS2 notificationData = (NotificationDataImplAS2) this.notification.getNotificationData(true);
             for (SystemEvent event : foundSystemEvents) {
-                if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION 
+                if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION
                         && event.getType() == SystemEvent.TYPE_TRANSACTION_ERROR) {
                     //Transaction failures
                     if (notificationData.notifyTransactionError()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION 
+                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION
                         && event.getType() == SystemEvent.TYPE_CONNECTIVITY_ANY) {
                     //connection problem
                     if (notificationData.notifyConnectionProblem()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION                         
+                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION
                         && event.getType() == SystemEvent.TYPE_POST_PROCESSING) {
                     //postprocessing problem
                     if (notificationData.notifyPostprocessingProblem()) {
@@ -101,8 +102,7 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
      * Finally inform the user..
      */
     @Override
-    public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf
-    ) {
+    public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) {
         this.notification.sendNotification(systemEventsToNotifyUserOf);
     }
 

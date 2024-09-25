@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_fr.java 30    11.09.19 14:46 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_fr.java 32    26.08.21 11:30 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 30 $
+ * @version $Revision: 32 $
  */
 public class ResourceBundleAS2MessageParser_fr extends MecResourceBundle{
     
@@ -25,13 +25,18 @@ public class ResourceBundleAS2MessageParser_fr extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
-        {"mdn.incoming", "La transmission entrante est un MDN." },
+    static final Object[][] CONTENTS = {        
         {"mdn.answerto", "Le MDN \"{1}\" est la réponse au message AS2 \"{1}\"." },
         {"mdn.state", "L''état du MDN est [{0}]." },
         {"mdn.details", "Détails du MDN reçu ({0}): \"{1}\"" },
+        {"mdn.incoming", "La transmission entrante est un MDN." },
+        {"mdn.incoming.ha", "La transmission entrante est un MDN, traitée par [{0}]." }, 
+        {"mdn.incoming.relationship", "La transmission entrante est un MDN [{0}]" },
+        {"mdn.incoming.relationship.ha", "La transmission entrante est un MDN [{0}], traitée par [{1}]" },
         {"msg.incoming", "La transmission entrante est un message AS2 [{0}], taille du message brut: {1}." },
+        {"msg.incoming.ha", "La transmission entrante est un message AS2 [{0}], taille du message brut: {1}, , traitée par [{2}]." },   
         {"msg.incoming.identproblem", "La transmission entrante est un message AS2. Il n''a pas été traitée en raison d''un problème d''identification de partenaire." },   
+        {"msg.already.processed", "Un message portant le numéro [{0}] a déjà été traité" },
         {"mdn.signed", "Le MDN est signé ({0})." },
         {"mdn.unsigned.error", "Le MDN n''est pas signé. La configuration stipule que le MDN du partenaire \"{0}\" doit être signé." },
         {"mdn.signed.error", "Le MDN est signé. La configuration stipule que le MDN du partenaire \"{0}\" ne doit pas être signé." },

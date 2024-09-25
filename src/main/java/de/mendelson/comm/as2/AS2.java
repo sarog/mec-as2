@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/AS2.java 6     14.01.21 9:39 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2.java 7     3/02/22 14:35 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -9,6 +9,7 @@ import de.mendelson.comm.as2.server.ServerAlreadyRunningException;
 import de.mendelson.comm.as2.server.UpgradeRequiredException;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.Splash;
+import de.mendelson.util.font.FontUtil;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
@@ -31,7 +32,7 @@ import javax.swing.JOptionPane;
  * Start the AS2 server and the configuration GUI
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class AS2 {
 
@@ -117,11 +118,11 @@ public class AS2 {
         }
         Splash splash = new Splash("/de/mendelson/comm/as2/client/splash_mendelson_opensource_as2.svg", 330);
         splash.setTextAntiAliasing(false);
-        //dark green
-        Color textColor = Color.decode("#A8A8A8");
-        splash.addDisplayString(new Font("Verdana", Font.BOLD, 12),
+        //dark grey
+        Color textColor = FontUtil.getFontColor(FontUtil.PRODUCT_OFTP2_COMMUNITY);
+        splash.addDisplayString(FontUtil.getProductFont(FontUtil.STYLE_PRODUCT_BOLD, 10),
                 12, 285, AS2ServerVersion.getFullProductName(),
-                textColor);
+                textColor);  
         splash.setVisible(true);
         splash.toFront();
         //start server
