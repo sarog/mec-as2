@@ -1,6 +1,7 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 5     4-03-16 10:47a Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 6     7.05.19 14:12 Heller $
 package de.mendelson.comm.as2.preferences;
 
+import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 /*
@@ -13,7 +14,7 @@ import javax.swing.JPanel;
 /**
  *Abstract class for all preferences panels
  * @author S.Heller
- * @version: $Revision: 5 $
+ * @version: $Revision: 6 $
  */
 public abstract class PreferencesPanel extends JPanel{
 
@@ -24,7 +25,7 @@ public abstract class PreferencesPanel extends JPanel{
     public abstract void savePreferences();
 
     /**Returns the icon resource string for the button bar*/
-    public abstract String getIconResource();
+    public abstract ImageIcon getIcon();
 
     /**Returns the resource string for the tab name of the panel*/
     public abstract String getTabResource();

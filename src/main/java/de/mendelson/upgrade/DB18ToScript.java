@@ -1,8 +1,8 @@
-//$Header: /as2/de/mendelson/upgrade/DB18ToScript.java 6     7.11.18 10:40 Heller $
+//$Header: /as2/de/mendelson/upgrade/DB18ToScript.java 8     20.08.20 15:47 Heller $
 package de.mendelson.upgrade;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
-import de.mendelson.comm.as2.database.DBDriverManager;
+import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
 import de.mendelson.util.ConsoleProgressBar;
 import java.io.BufferedWriter;
 import java.io.File;
@@ -21,6 +21,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.Properties;
 import org.hsqldb.Server;
+import de.mendelson.comm.as2.database.IDBDriverManager;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -33,10 +34,24 @@ import org.hsqldb.Server;
  * Update as2, must be applied for versions < 2012
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class DB18ToScript {
 
+    private DBDriverManagerHSQL dbDriverManager = new DBDriverManagerHSQL();
+    
+    private void performUpdate()throws Throwable{
+        boolean updateRequired = this.upgradeIsRequired();
+            if (updateRequired) {
+                System.out.println("Performing upgrade 1/2, please wait...");
+                this.startUpdate(this.dbDriverManager.getDBName(DBDriverManagerHSQL.DB_CONFIG));
+                this.startUpdate(this.dbDriverManager.getDBName(DBDriverManagerHSQL.DB_RUNTIME));
+                System.out.println("Upgrade 1/2 complete.");
+            } else {
+                System.out.println("No upgrade required.");
+            }        
+    }
+    
     private Connection createConnection(String hostName, String dbName) {
         if (hostName.toLowerCase().equals("localhost")) {
             hostName = "127.0.0.1";
@@ -66,7 +81,6 @@ public class DB18ToScript {
         if (!dbFile.exists()) {
             return;
         }
-        DBDriverManager.registerDriver();
         StringBuilder builder = new StringBuilder();
         builder.append("port=3336;");
         builder.append("database.0=file:").append(dbName).append(";");
@@ -163,8 +177,8 @@ public class DB18ToScript {
      * checks if any of the databases requires an upgrade
      */
     public boolean upgradeIsRequired() throws Exception {
-        return (this.upgradeIsRequired(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG))
-                || this.upgradeIsRequired(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME)));
+        return (this.upgradeIsRequired(dbDriverManager.getDBName(IDBDriverManager.DB_CONFIG))
+                || this.upgradeIsRequired(dbDriverManager.getDBName(IDBDriverManager.DB_RUNTIME)));
     }
 
     /**
@@ -504,15 +518,7 @@ public class DB18ToScript {
     public static final void main(String args[]) {
         DB18ToScript updater = new DB18ToScript();
         try {
-            boolean updateRequired = updater.upgradeIsRequired();
-            if (updateRequired) {
-                System.out.println("Performing upgrade 1/2, please wait...");
-                updater.startUpdate(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG));
-                updater.startUpdate(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME));
-                System.out.println("Upgrade 1/2 complete.");
-            } else {
-                System.out.println("No upgrade required.");
-            }
+            updater.performUpdate();
         } catch (Throwable e) {
             System.out.println((new StringBuilder()).append("Unable to upgrade ").append(AS2ServerVersion.getProductName()).append(": ").append(e.getMessage()).toString());
         }

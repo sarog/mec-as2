@@ -1,12 +1,15 @@
-//$Header: /mec_as4/de/mendelson/util/security/cert/gui/JDialogCertificates.java 69    3.01.19 10:35 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogCertificates.java 89    11.11.20 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
 
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.gui.keygeneration.JDialogGenerateKey;
 import de.mendelson.util.LayoutManagerJToolbar;
+import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecFileChooser;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.AllowModificationCallback;
 import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.modulelock.LockClientInformation;
@@ -14,30 +17,37 @@ import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateInUseChecker;
 import de.mendelson.util.security.cert.KeystoreStorage;
+import de.mendelson.util.security.cert.clientserver.RefreshKeystoreCertificates;
 import de.mendelson.util.security.csr.CSRUtil;
 import de.mendelson.util.security.csr.ResourceBundleCSR;
 import de.mendelson.util.security.keygeneration.KeyGenerationResult;
 import de.mendelson.util.security.keygeneration.KeyGenerationValues;
 import de.mendelson.util.security.keygeneration.KeyGenerator;
+import de.mendelson.util.uinotification.UINotification;
+import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -49,14 +59,10 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.protocol.HTTP;
-import org.apache.http.protocol.HttpContext;
+import java.net.http.HttpClient;
+import java.net.http.HttpClient.Redirect;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 
@@ -72,9 +78,33 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
  * Certificate manager UI
  *
  * @author S.Heller
- * @version $Revision: 69 $
+ * @version $Revision: 89 $
  */
 public class JDialogCertificates extends JDialog implements ListSelectionListener {
+
+    /**
+     * Image size for the popup menus
+     */
+    protected static final int IMAGE_SIZE_POPUP = 18;
+    protected static final int IMAGE_SIZE_MENUITEM = 18;
+    protected static final int IMAGE_SIZE_TOOLBAR = 24;
+
+    protected final static MendelsonMultiResolutionImage IMAGE_DELETE_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/delete.svg", IMAGE_SIZE_MENUITEM, 64);
+    protected final static MendelsonMultiResolutionImage IMAGE_DELETE_EXPIRED_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/delete_expired.svg", IMAGE_SIZE_MENUITEM, 64);
+    protected final static MendelsonMultiResolutionImage IMAGE_IMPORT_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/import.svg", IMAGE_SIZE_MENUITEM, 64);
+    protected final static MendelsonMultiResolutionImage IMAGE_EXPORT_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/export.svg", IMAGE_SIZE_MENUITEM, 64);
+    protected final static MendelsonMultiResolutionImage IMAGE_EDIT_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/edit.svg", IMAGE_SIZE_MENUITEM, 64);
+    protected final static MendelsonMultiResolutionImage IMAGE_ADD_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/add.svg", IMAGE_SIZE_MENUITEM, IMAGE_SIZE_MENUITEM * 2);
+    protected final static MendelsonMultiResolutionImage IMAGE_CA_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/ca.svg", IMAGE_SIZE_MENUITEM, IMAGE_SIZE_MENUITEM * 2);
+    protected final static MendelsonMultiResolutionImage IMAGE_CERTIFICATE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_SIZE_MENUITEM, IMAGE_SIZE_MENUITEM * 2);
 
     /**
      * Resource to localize the GUI
@@ -89,6 +119,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     private List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
     private LockClientInformation lockKeeper;
     private String moduleName;
+    private Color colorOk = Color.green.darker().darker();
+    private Color colorWarning = Color.red.darker();
 
     /**
      * Creates new form JDialogMessageMapping
@@ -112,9 +144,12 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         this.initComponents();
+        this.colorOk = ColorUtil.getBestContrastColorAroundForeground(this.jLabelWarnings.getBackground(), colorOk);
+        this.colorWarning = ColorUtil.getBestContrastColorAroundForeground(this.jLabelWarnings.getBackground(), colorWarning);
+        this.jLabelWarnings.setForeground(colorWarning);
         this.setJMenuBar(this.jMenuBar);
         this.getRootPane().setDefaultButton(this.jButtonOk);
-        this.panelCertificates = new JPanelCertificates(this.logger, this);
+        this.panelCertificates = new JPanelCertificates(this.logger, this, this.guiClient);
         this.panelCertificates.setButtons(this.jButtonEditCertificate, this.jButtonDeleteCertificate);
         this.panelCertificates.setMenuItems(this.jMenuItemFileEdit, this.jMenuItemFileDelete);
         //if no certificate is in the keystore a value should be displayed that shows this..
@@ -138,6 +173,38 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     }
 
     /**
+     * Overwrite the designers icons by multi resolution icons
+     */
+    private void setMultiresolutionIcons() {
+        this.jButtonAddCertificate.setIcon(new ImageIcon(IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jButtonExportCertificate.setIcon(new ImageIcon(IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jMenuItemImportCertificate.setIcon(new ImageIcon(IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemImportKeyJKS.setIcon(new ImageIcon(IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemImportKeyPEM.setIcon(new ImageIcon(IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemImportKeyPKCS12.setIcon(new ImageIcon(IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemExportCertificate.setIcon(new ImageIcon(IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemExportKeyPKCS12.setIcon(new ImageIcon(IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jButtonDeleteCertificate.setIcon(new ImageIcon(IMAGE_DELETE_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jButtonEditCertificate.setIcon(new ImageIcon(IMAGE_EDIT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jMenuItemFileDelete.setIcon(new ImageIcon(IMAGE_DELETE_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemFileDeleteAllExpired.setIcon(new ImageIcon(IMAGE_DELETE_EXPIRED_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemFileEdit.setIcon(new ImageIcon(IMAGE_EDIT_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemGenerateKey.setIcon(new ImageIcon(IMAGE_ADD_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemGenerateCSRInitial.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemGenerateCSRRenew.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemImportCSRResponseInitial.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemImportCSRResponseRenew.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+    }
+
+    @Override
+    public void setVisible(boolean flag) {
+        if (flag) {
+            this.setMultiresolutionIcons();
+        }
+        super.setVisible(flag);
+    }
+
+    /**
      * Allows the integration of the components of this dialog into other
      * components
      *
@@ -154,6 +221,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
      * @return
      */
     public JMenu getMenuExport() {
+        //ensure to set the HiDPI icons before exporting the toolbar
+        this.setMultiresolutionIcons();
         return (this.jMenuExport);
     }
 
@@ -164,6 +233,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
      * @return
      */
     public JMenu getMenuTools() {
+        //ensure to set the HiDPI icons before exporting the toolbar
+        this.setMultiresolutionIcons();
         return (this.jMenuTools);
     }
 
@@ -174,6 +245,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
      * @return
      */
     public JPanel getMainPanel() {
+        //ensure to set the HiDPI icons before exporting the toolbar
+        this.setMultiresolutionIcons();
         return (this.jPanelMain);
     }
 
@@ -184,6 +257,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
      * @return
      */
     public JToolBar getToolbar() {
+        //ensure to set the HiDPI icons before exporting the toolbar
+        this.setMultiresolutionIcons();
         return (this.jToolBar);
     }
 
@@ -232,10 +307,10 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         boolean readWrite = true;
         readWrite = readWrite && this.manager.canWrite();
         if (!readWrite) {
-            JOptionPane.showMessageDialog(this,
-                    this.rb.getResourceString("keystore.readonly.message"),
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_ERROR,
                     this.rb.getResourceString("keystore.readonly.title"),
-                    JOptionPane.ERROR_MESSAGE);
+                    this.rb.getResourceString("keystore.readonly.message"));
         }
         return (readWrite);
     }
@@ -256,8 +331,9 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         if (importFilename == null) {
             return;
         }
-        JDialogInfoOnExternalCertificate infoDialog = new JDialogInfoOnExternalCertificate(parent, new File(importFilename),
-                this.manager);
+        JDialogInfoOnExternalCertificate infoDialog
+                = new JDialogInfoOnExternalCertificate(parent, Paths.get(importFilename),
+                        this.manager);
         infoDialog.setVisible(true);
         while (infoDialog.importPressed()) {
             //it is possible that there are more than a single certificate in the passed file (e.g. p7b). Get the index
@@ -278,6 +354,9 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 util.importX509Certificate(this.manager.getKeystore(), importFilename, alias, selectedCertificateIndex, provBC);
                 this.manager.saveKeystore();
                 this.manager.rereadKeystoreCertificates();
+                //inform the server that there are changes in the keystore
+                RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+                JDialogCertificates.this.guiClient.sendAsync(signal);
                 this.panelCertificates.refreshData();
                 this.panelCertificates.certificateAdded(alias);
                 KeystoreCertificate keystoreCertificate = this.manager.getKeystoreCertificate(alias);
@@ -285,10 +364,10 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 if (keystoreCertificate.isCACertificate()) {
                     messageKey = "certificate.ca.import.success.message";
                 }
-                JOptionPane.showMessageDialog(this,
-                        this.rb.getResourceString(messageKey, alias),
+                UINotification.instance().addNotification(null,
+                        UINotification.TYPE_SUCCESS,
                         this.rb.getResourceString("certificate.import.success.title"),
-                        JOptionPane.INFORMATION_MESSAGE);
+                        this.rb.getResourceString(messageKey, alias));
                 //multiple certificates: show the import dialog again
                 if (certList.size() > 1) {
                     infoDialog.setVisible(true);
@@ -297,10 +376,10 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 }
             } catch (Throwable e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this,
-                        this.rb.getResourceString("certificate.import.error.message", e.getMessage()),
+                UINotification.instance().addNotification(null,
+                        UINotification.TYPE_ERROR,
                         this.rb.getResourceString("certificate.import.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                        this.rb.getResourceString("certificate.import.error.message", e.getMessage()));
             } finally {
                 if (inStream != null) {
                     try {
@@ -327,6 +406,9 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         dialog.setVisible(true);
         try {
             this.manager.saveKeystore();
+            //signal the server that there are changes in the keystore
+            RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+            JDialogCertificates.this.guiClient.sendAsync(signal);
             this.panelCertificates.refreshData();
             this.panelCertificates.certificateAdded(dialog.getNewAlias());
         } catch (Throwable e) {
@@ -347,6 +429,9 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         dialog.setVisible(true);
         try {
             this.manager.saveKeystore();
+            //signal the server that there are changes in the keystore
+            RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+            JDialogCertificates.this.guiClient.sendAsync(signal);
             this.panelCertificates.refreshData();
             this.panelCertificates.certificateAdded(dialog.getNewAlias());
         } catch (Throwable e) {
@@ -369,6 +454,9 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             this.manager.saveKeystore();
             this.panelCertificates.refreshData();
             this.panelCertificates.certificateAdded(dialog.getNewAlias());
+            //signal the server that there are changes in the keystore
+            RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+            JDialogCertificates.this.guiClient.sendAsync(signal);
         } catch (Throwable e) {
             this.logger.severe(e.getMessage());
         }
@@ -383,77 +471,95 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             String storequestion = this.rbCSR.getResourceString("csr.message.storequestion.renew");
             String[] options = new String[]{
                 this.rbCSR.getResourceString("csr.option.1.renew"),
-                this.rbCSR.getResourceString("csr.option.2"),};
+                this.rbCSR.getResourceString("csr.option.2"),
+                this.rbCSR.getResourceString("cancel"),};
             if (initial) {
                 title = this.rbCSR.getResourceString("csr.title");
                 storequestion = this.rbCSR.getResourceString("csr.message.storequestion");
                 options = new String[]{
                     this.rbCSR.getResourceString("csr.option.1"),
-                    this.rbCSR.getResourceString("csr.option.2"),};
+                    this.rbCSR.getResourceString("csr.option.2"),
+                    this.rbCSR.getResourceString("cancel"),};
             }
             //ask the user if the partner should be really deleted, all data is lost
             int requestValue = JOptionPane.showOptionDialog(this,
                     storequestion,
                     title, JOptionPane.YES_NO_OPTION,
                     JOptionPane.QUESTION_MESSAGE, null,
-                    options, options[0]);
+                    options, options[2]);
             if (requestValue == 0) {
                 this.buyKeyAtMendelson(csr);
-            } else {
+            } else if (requestValue == 1) {
                 //take the main panel as anchor because it might be integrated in another swing program
                 JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this.jPanelMain);
                 MecFileChooser chooser = new MecFileChooser(parent,
                         this.rbCSR.getResourceString("label.selectcsrfile"));
                 String outFilename = chooser.browseFilename();
                 if (outFilename != null) {
-                    File outFile = new File(outFilename);
+                    Path outFile = Paths.get(outFilename);
                     util.storeCSRPEM(csr, outFile);
-                    JOptionPane.showMessageDialog(this,
-                            this.rbCSR.getResourceString("csr.generation.success.message",
-                                    outFile.getAbsolutePath()),
+                    UINotification.instance().addNotification(null,
+                            UINotification.TYPE_SUCCESS,
                             this.rbCSR.getResourceString("csr.generation.success.title"),
-                            JOptionPane.INFORMATION_MESSAGE);
+                            this.rbCSR.getResourceString("csr.generation.success.message",
+                                    outFile.toAbsolutePath().toString()));
                 }
             }
         } catch (Exception e) {
             this.logger.severe(e.getMessage());
             e.printStackTrace();
             String errorDetails = "[" + e.getClass().getSimpleName() + "] " + e.getMessage();
-            JOptionPane.showMessageDialog(this,
-                    this.rbCSR.getResourceString("csr.generation.failure.message", errorDetails),
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_ERROR,
                     this.rbCSR.getResourceString("csr.generation.failure.title"),
-                    JOptionPane.WARNING_MESSAGE);
+                    this.rbCSR.getResourceString("csr.generation.failure.message",
+                            errorDetails));
         }
+    }
+
+    /**
+     * Generates a body publisher for the java.net.http client that contains the
+     * form data that should be transferred
+     *
+     * @param formDataMap A map that contains all form variables as key/value
+     * pair
+     * @return
+     */
+    private HttpRequest.BodyPublisher generateFormData(Map<Object, Object> formDataMap) {
+        StringBuilder builder = new StringBuilder();
+        for (Map.Entry<Object, Object> entry : formDataMap.entrySet()) {
+            if (builder.length() > 0) {
+                builder.append("&");
+            }
+            builder.append(URLEncoder.encode(entry.getKey().toString(), StandardCharsets.UTF_8));
+            builder.append("=");
+            builder.append(URLEncoder.encode(entry.getValue().toString(), StandardCharsets.UTF_8));
+        }
+        return HttpRequest.BodyPublishers.ofString(builder.toString());
     }
 
     private void buyKeyAtMendelson(PKCS10CertificationRequest csr) throws Exception {
         CSRUtil util = new CSRUtil();
         String csrStr = util.storeCSRPEM(csr);
-        DefaultHttpClient httpClient = new DefaultHttpClient();
-        try {
-            HttpContext localContext = new BasicHttpContext();
-            HttpPost httpPost = new HttpPost("http://ca.mendelson-e-c.com/csr2session.php");
-            httpPost.setHeader("Content-Type", "application/x-www-form-urlencoded");
-            BasicNameValuePair[] params = {
-                new BasicNameValuePair("csrpem", csrStr),
-                new BasicNameValuePair("source", this.productName),};
-            UrlEncodedFormEntity urlEncodedFormEntity = new UrlEncodedFormEntity(Arrays.asList(params));
-            urlEncodedFormEntity.setContentEncoding(HTTP.UTF_8);
-            httpPost.setEntity(urlEncodedFormEntity);
-            HttpResponse response = httpClient.execute(httpPost, localContext);
-            ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-            response.getEntity().writeTo(memOut);
-            memOut.close();
-            String sessionId = new String(memOut.toByteArray());
-            URI uri = new URI("http://ca.mendelson-e-c.com?area=buy&stage=checkcsr&sid=" + sessionId);
-            Desktop.getDesktop().browse(uri);
-        } finally {
-            if (httpClient != null && httpClient.getConnectionManager() != null) {
-                //shutdown the HTTPClient to release the resources
-                httpClient.getConnectionManager().shutdown();
-            }
+        Map<Object, Object> formDataMap = new HashMap<>();
+        formDataMap.put("csrpem", csrStr);
+        formDataMap.put("source", this.productName);
+        HttpClient client = HttpClient.newBuilder().
+                followRedirects(Redirect.ALWAYS).build();
+        HttpRequest request = HttpRequest.newBuilder()
+                .POST(this.generateFormData(formDataMap))
+                .uri(URI.create("http://ca.mendelson-e-c.com/csr2session.php"))
+                .setHeader("Content-Type", "application/x-www-form-urlencoded")
+                .build();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        int statusCode = response.statusCode();
+        if (statusCode != HttpURLConnection.HTTP_OK
+                && statusCode != HttpURLConnection.HTTP_ACCEPTED) {
+            throw new Exception(this.rbCSR.getResourceString("ca.connection.problem", String.valueOf(statusCode)));
         }
-
+        String sessionId = response.body();
+        URI uri = new URI("http://ca.mendelson-e-c.com?area=buy&stage=checkcsr&sid=" + sessionId);
+        Desktop.getDesktop().browse(uri);
     }
 
     private void generateKeypair() {
@@ -476,14 +582,17 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                     this.manager.getKeystorePass(), new X509Certificate[]{result.getCertificate()});
             this.manager.saveKeystore();
             this.manager.rereadKeystoreCertificates();
+            //inform the server that there are changes in the keystore
+            RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+            JDialogCertificates.this.guiClient.sendAsync(signal);
             this.panelCertificates.refreshData();
             this.panelCertificates.certificateAdded(alias);
         } catch (Throwable e) {
             String message = e.getClass().getName() + ": " + e.getMessage();
-            JOptionPane.showMessageDialog(this,
-                    this.rb.getResourceString("generatekey.error.message", message),
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_ERROR,
                     this.rb.getResourceString("generatekey.error.title"),
-                    JOptionPane.ERROR_MESSAGE);
+                    this.rb.getResourceString("generatekey.error.message", message));
             e.printStackTrace();
         }
     }
@@ -508,18 +617,23 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                         throw new Exception("Processing failure: Unable to set new key alias");
                     }
                 }
-                util.importCSRReply(this.manager, selectedCertAlias, new File(inFilename));
-                JOptionPane.showMessageDialog(this,
-                        this.rbCSR.getResourceString("csrresponse.import.success.message"),
+                util.importCSRReply(this.manager, selectedCertAlias, Paths.get(inFilename));
+                this.manager.saveKeystore();
+                this.manager.rereadKeystoreCertificates();
+                //inform the server that there are changes in the keystore
+                RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+                JDialogCertificates.this.guiClient.sendAsync(signal);
+                UINotification.instance().addNotification(null,
+                        UINotification.TYPE_SUCCESS,
                         this.rbCSR.getResourceString("csrresponse.import.success.title"),
-                        JOptionPane.INFORMATION_MESSAGE);
+                        this.rbCSR.getResourceString("csrresponse.import.success.message"));
             }
         } catch (Throwable e) {
             this.logger.severe(e.getMessage());
-            JOptionPane.showMessageDialog(this,
-                    this.rbCSR.getResourceString("csrresponse.import.failure.message", e.getMessage()),
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_SUCCESS,
                     this.rbCSR.getResourceString("csrresponse.import.failure.title"),
-                    JOptionPane.ERROR_MESSAGE);
+                    this.rbCSR.getResourceString("csrresponse.import.failure.message", e.getMessage()));
         }
     }
 
@@ -529,12 +643,10 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 this.manager.saveKeystore();
             } catch (Throwable e) {
                 e.printStackTrace();
-                //take the main panel as anchor because it might be integrated in another swing program
-                JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this.jPanelMain);
-                String message = "[" + e.getClass().getSimpleName() + "] " + e.getMessage();
-                JOptionPane.showMessageDialog(parent, message);
+                UINotification.instance().addNotification(e);
                 return;
             }
+
         }
         this.setVisible(false);
         this.dispose();
@@ -592,7 +704,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         }
         return (newAlias);
     }
-
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -606,6 +718,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuFile = new javax.swing.JMenu();
         jMenuItemFileEdit = new javax.swing.JMenuItem();
         jMenuItemFileDelete = new javax.swing.JMenuItem();
+        jMenuItemFileDeleteAllExpired = new javax.swing.JMenuItem();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
         jMenuItemFileClose = new javax.swing.JMenuItem();
         jMenuImport = new javax.swing.JMenu();
@@ -628,6 +741,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuItemImportCSRResponseRenew = new javax.swing.JMenuItem();
         jToolBar = new javax.swing.JToolBar();
         jButtonAddCertificate = new javax.swing.JButton();
+        jButtonExportCertificate = new javax.swing.JButton();
         jButtonEditCertificate = new javax.swing.JButton();
         jButtonDeleteCertificate = new javax.swing.JButton();
         jPanelMain = new javax.swing.JPanel();
@@ -650,7 +764,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
 
         jMenuFile.setText(this.rb.getResourceString( "menu.file"));
 
-        jMenuItemFileEdit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/edit_16x16.gif"))); // NOI18N
+        jMenuItemFileEdit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemFileEdit.setText(this.rb.getResourceString( "button.edit"));
         jMenuItemFileEdit.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -659,7 +773,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         });
         jMenuFile.add(jMenuItemFileEdit);
 
-        jMenuItemFileDelete.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/delete_16x16.gif"))); // NOI18N
+        jMenuItemFileDelete.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemFileDelete.setText(this.rb.getResourceString( "button.delete"));
         jMenuItemFileDelete.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -667,6 +781,15 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             }
         });
         jMenuFile.add(jMenuItemFileDelete);
+
+        jMenuItemFileDeleteAllExpired.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
+        jMenuItemFileDeleteAllExpired.setText(this.rb.getResourceString( "button.delete.all.expired"));
+        jMenuItemFileDeleteAllExpired.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemFileDeleteAllExpiredActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemFileDeleteAllExpired);
         jMenuFile.add(jSeparator3);
 
         jMenuItemFileClose.setText(this.rb.getResourceString( "menu.file.close"));
@@ -681,7 +804,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
 
         jMenuImport.setText(this.rb.getResourceString( "menu.import" ));
 
-        jMenuItemImportKeyPEM.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/key16x16.gif"))); // NOI18N
+        jMenuItemImportKeyPEM.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemImportKeyPEM.setText(this.rb.getResourceString( "label.key.import.pem" ));
         jMenuItemImportKeyPEM.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -690,7 +813,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         });
         jMenuImport.add(jMenuItemImportKeyPEM);
 
-        jMenuItemImportKeyPKCS12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/key16x16.gif"))); // NOI18N
+        jMenuItemImportKeyPKCS12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemImportKeyPKCS12.setText(this.rb.getResourceString( "label.key.import.pkcs12" ));
         jMenuItemImportKeyPKCS12.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -699,7 +822,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         });
         jMenuImport.add(jMenuItemImportKeyPKCS12);
 
-        jMenuItemImportKeyJKS.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/key16x16.gif"))); // NOI18N
+        jMenuItemImportKeyJKS.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemImportKeyJKS.setText(this.rb.getResourceString( "label.key.import.jks" ));
         jMenuItemImportKeyJKS.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -709,7 +832,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuImport.add(jMenuItemImportKeyJKS);
         jMenuImport.add(jSeparator1);
 
-        jMenuItemImportCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/certificate16x16.gif"))); // NOI18N
+        jMenuItemImportCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemImportCertificate.setText(this.rb.getResourceString( "label.cert.import" ));
         jMenuItemImportCertificate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -722,7 +845,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
 
         jMenuExport.setText(this.rb.getResourceString( "menu.export" ));
 
-        jMenuItemExportKeyPKCS12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/key16x16.gif"))); // NOI18N
+        jMenuItemExportKeyPKCS12.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemExportKeyPKCS12.setText(this.rb.getResourceString( "label.key.export.pkcs12" ));
         jMenuItemExportKeyPKCS12.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -732,7 +855,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuExport.add(jMenuItemExportKeyPKCS12);
         jMenuExport.add(jSeparator2);
 
-        jMenuItemExportCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/certificate16x16.gif"))); // NOI18N
+        jMenuItemExportCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemExportCertificate.setText(this.rb.getResourceString( "label.cert.export" ));
         jMenuItemExportCertificate.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -745,7 +868,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
 
         jMenuTools.setText(this.rb.getResourceString( "menu.tools"));
 
-        jMenuItemGenerateKey.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/keygen16x16.gif"))); // NOI18N
+        jMenuItemGenerateKey.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemGenerateKey.setText(this.rb.getResourceString( "menu.tools.generatekey"));
         jMenuItemGenerateKey.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -755,7 +878,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuTools.add(jMenuItemGenerateKey);
         jMenuTools.add(jSeparator4);
 
-        jMenuItemGenerateCSRInitial.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/ca16x16.gif"))); // NOI18N
+        jMenuItemGenerateCSRInitial.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemGenerateCSRInitial.setText(this.rb.getResourceString( "menu.tools.generatecsr"));
         jMenuItemGenerateCSRInitial.setEnabled(false);
         jMenuItemGenerateCSRInitial.addActionListener(new java.awt.event.ActionListener() {
@@ -765,7 +888,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         });
         jMenuTools.add(jMenuItemGenerateCSRInitial);
 
-        jMenuItemImportCSRResponseInitial.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/ca16x16.gif"))); // NOI18N
+        jMenuItemImportCSRResponseInitial.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemImportCSRResponseInitial.setText(this.rb.getResourceString( "menu.tools.importcsr"));
         jMenuItemImportCSRResponseInitial.setEnabled(false);
         jMenuItemImportCSRResponseInitial.addActionListener(new java.awt.event.ActionListener() {
@@ -776,7 +899,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuTools.add(jMenuItemImportCSRResponseInitial);
         jMenuTools.add(jSeparator5);
 
-        jMenuItemGenerateCSRRenew.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/ca16x16.gif"))); // NOI18N
+        jMenuItemGenerateCSRRenew.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemGenerateCSRRenew.setText(this.rb.getResourceString( "menu.tools.generatecsr.renew"));
         jMenuItemGenerateCSRRenew.setEnabled(false);
         jMenuItemGenerateCSRRenew.addActionListener(new java.awt.event.ActionListener() {
@@ -786,7 +909,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         });
         jMenuTools.add(jMenuItemGenerateCSRRenew);
 
-        jMenuItemImportCSRResponseRenew.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/ca16x16.gif"))); // NOI18N
+        jMenuItemImportCSRResponseRenew.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemImportCSRResponseRenew.setText(this.rb.getResourceString( "menu.tools.importcsr.renew"));
         jMenuItemImportCSRResponseRenew.setEnabled(false);
         jMenuItemImportCSRResponseRenew.addActionListener(new java.awt.event.ActionListener() {
@@ -807,7 +930,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jToolBar.setFloatable(false);
         jToolBar.setRollover(true);
 
-        jButtonAddCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/add_24x24.gif"))); // NOI18N
+        jButtonAddCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
         jButtonAddCertificate.setText(this.rb.getResourceString( "button.newcertificate"));
         jButtonAddCertificate.setFocusable(false);
         jButtonAddCertificate.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -820,7 +943,20 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         });
         jToolBar.add(jButtonAddCertificate);
 
-        jButtonEditCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/edit24x24.gif"))); // NOI18N
+        jButtonExportCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
+        jButtonExportCertificate.setText(this.rb.getResourceString( "button.export"));
+        jButtonExportCertificate.setFocusable(false);
+        jButtonExportCertificate.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonExportCertificate.setMaximumSize(new java.awt.Dimension(99, 41));
+        jButtonExportCertificate.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonExportCertificate.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonExportCertificateActionPerformed(evt);
+            }
+        });
+        jToolBar.add(jButtonExportCertificate);
+
+        jButtonEditCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
         jButtonEditCertificate.setText(this.rb.getResourceString( "button.edit"));
         jButtonEditCertificate.setFocusable(false);
         jButtonEditCertificate.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -833,7 +969,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         });
         jToolBar.add(jButtonEditCertificate);
 
-        jButtonDeleteCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/delete_24x24.gif"))); // NOI18N
+        jButtonDeleteCertificate.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
         jButtonDeleteCertificate.setText(this.rb.getResourceString( "button.delete"));
         jButtonDeleteCertificate.setFocusable(false);
         jButtonDeleteCertificate.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -936,7 +1072,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 2);
         jPanelStatusBar.add(jTextFieldCertFileInfo, gridBagConstraints);
 
         jLabelTrustAnchor.setText(this.rb.getResourceString( "label.trustanchor"));
@@ -944,7 +1081,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 0);
+        gridBagConstraints.insets = new java.awt.Insets(5, 2, 5, 0);
         jPanelStatusBar.add(jLabelTrustAnchor, gridBagConstraints);
 
         jLabelTrustAnchorValue.setText("jLabelTrustAnchorValue");
@@ -952,7 +1089,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 2);
         jPanelStatusBar.add(jLabelTrustAnchorValue, gridBagConstraints);
 
         jLabelWarnings.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
@@ -962,7 +1099,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 2, 5, 5);
         jPanelStatusBar.add(jLabelWarnings, gridBagConstraints);
 
         jPanelSep1.setLayout(new java.awt.GridBagLayout());
@@ -997,7 +1134,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
 
         getContentPane().add(jPanelStatusBar, java.awt.BorderLayout.SOUTH);
 
-        setSize(new java.awt.Dimension(991, 736));
+        setSize(new java.awt.Dimension(1035, 764));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -1138,10 +1275,22 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         ModuleLock.displayDialogModuleLocked(parent, this.lockKeeper, this.moduleName);
     }//GEN-LAST:event_jButtonModuleLockInfoActionPerformed
 
+    private void jButtonExportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonExportCertificateActionPerformed
+        if (!isOperationAllowed(false)) {
+            return;
+        }
+        this.panelCertificates.exportSelectedCertificate();
+    }//GEN-LAST:event_jButtonExportCertificateActionPerformed
+
+    private void jMenuItemFileDeleteAllExpiredActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemFileDeleteAllExpiredActionPerformed
+        this.panelCertificates.deleteAllUnusedExpiredEntries();
+    }//GEN-LAST:event_jMenuItemFileDeleteAllExpiredActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonAddCertificate;
     private javax.swing.JButton jButtonDeleteCertificate;
     private javax.swing.JButton jButtonEditCertificate;
+    private javax.swing.JButton jButtonExportCertificate;
     private javax.swing.JButton jButtonModuleLockInfo;
     private javax.swing.JButton jButtonOk;
     private javax.swing.JLabel jLabelKeystore;
@@ -1157,6 +1306,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     private javax.swing.JMenuItem jMenuItemExportKeyPKCS12;
     private javax.swing.JMenuItem jMenuItemFileClose;
     private javax.swing.JMenuItem jMenuItemFileDelete;
+    private javax.swing.JMenuItem jMenuItemFileDeleteAllExpired;
     private javax.swing.JMenuItem jMenuItemFileEdit;
     private javax.swing.JMenuItem jMenuItemGenerateCSRInitial;
     private javax.swing.JMenuItem jMenuItemGenerateCSRRenew;
@@ -1193,5 +1343,15 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     @Override
     public void valueChanged(ListSelectionEvent e) {
         this.setButtonState();
+    }
+
+    /**
+     * Sets the image size for the images of every popup menu of the certificate
+     * manager
+     *
+     * @param imageSizePopup the imageSizePopup to set
+     */
+    public void setImageSizePopup(int imageSizePopup) {
+        this.panelCertificates.setImageSizePopup(imageSizePopup);
     }
 }

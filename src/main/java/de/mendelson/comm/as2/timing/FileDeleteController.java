@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 9     6.11.18 17:50 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 13    24.04.20 9:52 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -8,7 +8,6 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.io.File;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -35,7 +34,7 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class FileDeleteController {
 
@@ -76,8 +75,6 @@ public class FileDeleteController {
     public class FileDeleteThread implements Runnable {
 
         private boolean stopRequested = false;
-        //wait this time between checks
-        private final long WAIT_TIME = TimeUnit.HOURS.toMillis(6);
         //DB connection
         private Connection configConnection;
         private Connection runtimeConnection;
@@ -91,22 +88,29 @@ public class FileDeleteController {
         public void run() {
             Thread.currentThread().setName("Contol auto AS2 file delete");
             while (!stopRequested) {
-                try {
-                    Thread.sleep(WAIT_TIME);
+                try {                    
+                    //executed all 30 minutes - even if the delete is set to minute this is just to cleanup files and not
+                    //delete files from the transaction overview - means this has no high priority
+                    Thread.sleep(TimeUnit.MINUTES.toMillis(30));
                 } catch (InterruptedException e) {
-                    //nop
-                }
+                }            
                 if (preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE)) {
-                    Path rawIncomingDir 
+                    Path rawIncomingDir
                             = Paths.get(Paths.get(preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString()
                                     + FileSystems.getDefault().getSeparator() + "_rawincoming");
                     //delete all files that are older than MDN wait time + delete log time
                     long maxAgeInS = (preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN)
                             * preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S))
                             + TimeUnit.MINUTES.toSeconds(preferences.getInt(PreferencesAS2.ASYNC_MDN_TIMEOUT));
-                    long olderThanTime = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(maxAgeInS);
+                    long olderThanTimeAbsolute = System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(maxAgeInS);
+                    //substract one additional day as buffer. There is another thread that deletes the transmissions which has priority to this file cleanup process.
+                    //This is to ensure that this task will not delete
+                    //any transmission file if it runs first and the second task runs directly afterwards. 
+                    //In this case the other thread would complain about
+                    //missing files for transmissions and throw system event errors
+                    olderThanTimeAbsolute = olderThanTimeAbsolute - TimeUnit.DAYS.toMillis(1);
                     int eventSeverity = SystemEvent.SEVERITY_INFO;
-                    IOFileFilterCreationDate fileFilter = new IOFileFilterCreationDate(IOFileFilterCreationDate.MODE_OLDER_THAN, olderThanTime);
+                    IOFileFilterCreationDate fileFilter = new IOFileFilterCreationDate(IOFileFilterCreationDate.MODE_OLDER_THAN, olderThanTimeAbsolute);
                     StringBuilder deleteLog = new StringBuilder();
                     AtomicInteger foundEntries = new AtomicInteger(0);
                     try {

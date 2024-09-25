@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ListCellRendererPartner.java 5     9/09/15 2:43p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ListCellRendererPartner.java 10    15.08.19 10:46 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.Component;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
@@ -15,19 +16,27 @@ import javax.swing.SwingConstants;
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 10 $
  */
 public class ListCellRendererPartner extends JLabel implements ListCellRenderer {
 
+    public static final MendelsonMultiResolutionImage IMAGE_LOCALSTATION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/partner/gui/localstation.svg", 16, 32);
+    public static final MendelsonMultiResolutionImage IMAGE_REMOTESTATION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/partner/gui/singlepartner.svg", 16, 32);
+    public static final MendelsonMultiResolutionImage IMAGE_REMOTESTATION_CONFIGERROR
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/partner/gui/singlepartner_error.svg", 16, 32);
+    public static final MendelsonMultiResolutionImage IMAGE_LOCALSTATION_CONFIGERROR
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/partner/gui/localstation_error.svg", 16, 32);
+
     public static final ImageIcon ICON_LOCALSTATION
-            = new ImageIcon(ListCellRendererPartner.class.getResource(
-                            "/de/mendelson/comm/as2/partner/gui/localstation16x16.gif"));
+            = new ImageIcon(IMAGE_LOCALSTATION.toMinResolution(16));
     public static final ImageIcon ICON_REMOTESTATION
-            = new ImageIcon(ListCellRendererPartner.class.getResource(
-                            "/de/mendelson/comm/as2/partner/gui/singlepartner16x16.gif"));
-    public static final ImageIcon ICON_CONFIGERROR =
-            new ImageIcon(ListCellRendererPartner.class.getResource(
-            "/de/mendelson/comm/as2/partner/gui/partner_configerror16x16.gif"));
+            = new ImageIcon(IMAGE_REMOTESTATION.toMinResolution(16));
 
     /**
      * Constructs a default renderer object for an item in a list.

@@ -1,16 +1,18 @@
-//$Header: /as2/de/mendelson/util/systemevents/SystemEvent.java 34    13.11.18 11:58 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/SystemEvent.java 42    20.09.19 10:32 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
+import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.File;
 import java.io.FileReader;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -34,25 +36,30 @@ import javax.swing.ImageIcon;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 34 $
+ * @version $Revision: 42 $
  */
 public class SystemEvent implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
-    private static final ImageIcon ICON_SEVERITY_WARNING_16x16 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/state_pending16x16.gif"));
-    private static final ImageIcon ICON_SEVERITY_WARNING_24x24 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/state_pending24x24.gif"));
-    private static final ImageIcon ICON_SEVERITY_ERROR_16x16 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/state_stopped16x16.gif"));
-    private static final ImageIcon ICON_SEVERITY_ERROR_24x24 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/state_stopped24x24.gif"));
-    private static final ImageIcon ICON_SEVERITY_INFO_16x16 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/state_finished16x16.gif"));
-    private static final ImageIcon ICON_SEVERITY_INFO_24x24 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/state_finished24x24.gif"));
-    private static final ImageIcon ICON_ORIGIN_TRANSACTION_16x16 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/messagedetails16x16.gif"));
-    private static final ImageIcon ICON_ORIGIN_TRANSACTION_24x24 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/messagedetails24x24.gif"));
-    private static final ImageIcon ICON_ORIGIN_SYSTEM_16x16 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/originsystem16x16.gif"));
-    private static final ImageIcon ICON_ORIGIN_SYSTEM_24x24 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/originsystem24x24.gif"));
-    private static final ImageIcon ICON_ORIGIN_USER_16x16 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/originuser16x16.gif"));
-    private static final ImageIcon ICON_ORIGIN_USER_24x24 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/originuser24x24.gif"));
-
+    public static final MendelsonMultiResolutionImage ICON_SEVERITY_ERROR_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/state_stopped.svg", 11, 32);
+    public static final MendelsonMultiResolutionImage ICON_SEVERITY_WARNING_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/state_pending.svg", 11, 32);
+    public static final MendelsonMultiResolutionImage ICON_SEVERITY_INFO_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/severity_info.svg", 11, 32);
+    public static final MendelsonMultiResolutionImage ICON_ORIGIN_SYSTEM_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/origin_system.svg", 11, 32);
+    public static final MendelsonMultiResolutionImage ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/messagedetails.svg", 11, 32);
+    public static final MendelsonMultiResolutionImage ICON_ORIGIN_USER_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/origin_user.svg", 11, 32);
     /**
      * Its a system shutdown, restart etc
      */
@@ -103,11 +110,17 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_SCHEDULER_SERVER_RUNNING = 114;
     public static final int TYPE_SCHEDULER_SERVER_SHUTDOWN = 115;
     public static final int TYPE_DIRECTORY_MONITORING_STATE_CHANGED = 116;
-
+    public static final int TYPE_PORT_LISTENER = 117;
+    
+    /**
+     * Connectivity
+     */
     public static final int CATEGORY_CONNECTIVITY = 200;
     public static final int TYPE_CONNECTIVITY_ANY = 200;
     public static final int TYPE_CONNECTIVITY_TEST = 201;
-
+    /**
+     * Transactions
+     */
     public static final int CATEGORY_TRANSACTION = 300;
     public static final int TYPE_TRANSACTION_ANY = 300;
     public static final int TYPE_TRANSACTION_ERROR = 301;
@@ -116,7 +129,9 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_TRANSACTION_DELETE = 304;
     public static final int TYPE_TRANSACTION_CANCEL = 305;
     public static final int TYPE_TRANSACTION_RESEND = 306;
-
+    /**
+     * Certificates
+     */
     public static final int CATEGORY_CERTIFICATE = 400;
     public static final int TYPE_CERTIFICATE_ANY = 400;
     public static final int TYPE_CERTIFICATE_ADD = 401;
@@ -125,13 +140,17 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_CERTIFICATE_EXCHANGE_ANY = 404;
     public static final int TYPE_CERTIFICATE_EXPIRE = 405;
     public static final int TYPE_CERTIFICATE_EXCHANGE_REQUEST_RECEIVED = 406;
-
+    /**
+     * Database
+     */
     public static final int CATEGORY_DATABASE = 500;
     public static final int TYPE_DATABASE_ANY = 500;
     public static final int TYPE_DATABASE_CREATION = 501;
     public static final int TYPE_DATABASE_UPDATE = 502;
     public static final int TYPE_DATABASE_INITIALIZATION = 503;
-
+    /**
+     * Configuration
+     */
     public static final int CATEGORY_CONFIGURATION = 700;
     public static final int TYPE_SERVER_CONFIGURATION_ANY = 700;
     public static final int TYPE_SERVER_CONFIGURATION_CHANGED = 701;
@@ -139,33 +158,53 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_PARTNER_MODIFY = 703;
     public static final int TYPE_PARTNER_DEL = 704;
     public static final int TYPE_PARTNER_ADD = 705;
-
+    /**
+     * Quota
+     */
     public static final int CATEGORY_QUOTA = 800;
     public static final int TYPE_QUOTA_ANY = 800;
     public static final int TYPE_QUOTA_SEND_EXCEEDED = 801;
     public static final int TYPE_QUOTA_RECEIVE_EXCEEDED = 802;
     public static final int TYPE_QUOTA_SEND_RECEIVE_EXCEEDED = 803;
-
+    /**
+     * Notification
+     */
     public static final int CATEGORY_NOTIFICATION = 900;
     public static final int TYPE_NOTIFICATION_ANY = 900;
     public static final int TYPE_NOTIFICATION_SEND_SUCCESS = 901;
     public static final int TYPE_NOTIFICATION_SEND_FAILED = 902;
-
+    /**
+     * Processing
+     */
     public static final int CATEGORY_PROCESSING = 1000;
     public static final int TYPE_PROCESSING_ANY = 1000;
     public static final int TYPE_PRE_PROCESSING = 1001;
     public static final int TYPE_POST_PROCESSING = 1002;
-
+    /**
+     * Activation
+     */
     public static final int CATEGORY_ACTIVATION = 1100;
     public static final int TYPE_ACTIVATION_ANY = 1100;
-
+    /**
+     * File operation
+     */
     public static final int CATEGORY_FILE_OPERATION = 1200;
     public static final int TYPE_FILE_OPERATION_ANY = 1200;
     public static final int TYPE_FILE_DELETE = 1201;
     public static final int TYPE_MKDIR = 1202;
     public static final int TYPE_FILE_MOVE = 1203;
     public static final int TYPE_FILE_COPY = 1204;
-
+    /**
+     * Client-Server related operation
+     */
+    public static final int CATEGORY_CLIENT_OPERATION = 1300;
+    public static final int TYPE_CLIENT_ANY = 1300;
+    public static final int TYPE_CLIENT_LOGIN_SUCCESS = 1301;
+    public static final int TYPE_CLIENT_LOGIN_FAILURE = 1302;
+    public static final int TYPE_CLIENT_LOGOFF = 1303;
+    /**
+     * Other
+     */
     public static final int CATEGORY_OTHER = 100000;
     public static final int TYPE_OTHER = 100000;
 
@@ -311,7 +350,7 @@ public class SystemEvent implements Serializable {
     private String getLocalizedTemplateFilename(String templateName) {
         String language = Locale.getDefault().getLanguage();
         //select language specific template
-        if (new File(this.notificationTemplateDir + templateName + "_" + language).exists()) {
+        if (Files.exists(Paths.get(this.notificationTemplateDir + templateName + "_" + language))) {
             templateName = this.notificationTemplateDir + templateName + "_" + language;
         } else {
             templateName = this.notificationTemplateDir + templateName;
@@ -542,40 +581,34 @@ public class SystemEvent implements Serializable {
         return (this.rb.getResourceString("category." + this.getCategory()));
     }
 
-    public ImageIcon getSeverityIcon16p() {
+    /**
+     * Contains a multi resolution image that displays the severity of the event
+     */
+    public ImageIcon getSeverityIconMultiResolution(int minResolution) {
         if (this.getSeverity() == SEVERITY_ERROR) {
-            return (ICON_SEVERITY_ERROR_16x16);
+            return (new ImageIcon(
+                    ICON_SEVERITY_ERROR_MULTIRESOLUTION.toMinResolution(minResolution)));
         } else if (this.getSeverity() == SEVERITY_INFO) {
-            return (ICON_SEVERITY_INFO_16x16);
+            return (new ImageIcon(
+                    ICON_SEVERITY_INFO_MULTIRESOLUTION.toMinResolution(minResolution)));
         }
-        return (ICON_SEVERITY_WARNING_16x16);
+        return (new ImageIcon(
+                ICON_SEVERITY_WARNING_MULTIRESOLUTION.toMinResolution(minResolution)));
     }
 
-    public ImageIcon getSeverityIcon24p() {
-        if (this.getSeverity() == SEVERITY_ERROR) {
-            return (ICON_SEVERITY_ERROR_24x24);
-        } else if (this.getSeverity() == SEVERITY_INFO) {
-            return (ICON_SEVERITY_INFO_24x24);
-        }
-        return (ICON_SEVERITY_WARNING_24x24);
-    }
-
-    public ImageIcon getOriginIcon16p() {
+    /**
+     * Contains a multi resolution image that displays the origin of the event
+     */
+    public ImageIcon getOriginIconMultiResolution(int minResolution) {
         if (this.getOrigin() == ORIGIN_SYSTEM) {
-            return (ICON_ORIGIN_SYSTEM_16x16);
+            return (new ImageIcon(
+                    ICON_ORIGIN_SYSTEM_MULTIRESOLUTION.toMinResolution(minResolution)));
         } else if (this.getOrigin() == ORIGIN_TRANSACTION) {
-            return (ICON_ORIGIN_TRANSACTION_16x16);
+            return (new ImageIcon(
+                    ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION.toMinResolution(minResolution)));
         }
-        return (ICON_ORIGIN_USER_16x16);
-    }
-
-    public ImageIcon getOriginIcon24p() {
-        if (this.getOrigin() == ORIGIN_SYSTEM) {
-            return (ICON_ORIGIN_SYSTEM_24x24);
-        } else if (this.getOrigin() == ORIGIN_TRANSACTION) {
-            return (ICON_ORIGIN_TRANSACTION_24x24);
-        }
-        return (ICON_ORIGIN_USER_24x24);
+        return (new ImageIcon(
+                ICON_ORIGIN_USER_MULTIRESOLUTION.toMinResolution(minResolution)));
     }
 
     /**

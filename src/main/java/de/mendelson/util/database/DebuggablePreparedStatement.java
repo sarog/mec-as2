@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/DebuggablePreparedStatement.java 2     7.12.18 11:55 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggablePreparedStatement.java 4     20.10.20 10:09 Heller $
 package de.mendelson.util.database;
 
 import java.io.InputStream;
@@ -20,10 +20,13 @@ import java.sql.SQLException;
 import java.sql.SQLXML;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Logger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -36,21 +39,34 @@ import java.util.Map;
  * Database statement that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class DebuggablePreparedStatement extends DebuggableStatement implements PreparedStatement {
 
     private PreparedStatement statement;
     private String query;
+    private Logger connectionLogger = null;
+    private String connectionName = null;
+    /**
+     * Counter for the unique query ids
+     */
+    private static long currentId = System.currentTimeMillis();
+
     /**
      * Map that contains parameter for the prepared statement
      */
     private Map<Integer, String> map = new HashMap<Integer, String>();
 
     public DebuggablePreparedStatement(String query, PreparedStatement statement) {
-        super(statement);
+        this(query, statement, null, null);
+    }
+
+    public DebuggablePreparedStatement(String query, PreparedStatement statement, Logger connectionLogger, String connectionName) {
+        super(statement, connectionLogger, connectionName);
         this.statement = statement;
         this.query = query;
+        this.connectionLogger = connectionLogger;
+        this.connectionName = connectionName;
     }
 
     public String getQueryWithParameter() throws SQLException {
@@ -73,6 +89,24 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
         return (builder.toString());
     }
 
+    public String getQueryWithParameterSingleLine() throws SQLException {
+        StringBuilder builder = new StringBuilder();
+        builder.append(query);
+        builder.append("; ");
+        ParameterMetaData parameterMeta = this.statement.getParameterMetaData();
+        for (int i = 0; i < parameterMeta.getParameterCount(); i++) {
+            Integer key = Integer.valueOf(i + 1);
+            if (this.map.containsKey(key)) {
+                builder.append("(").append(key).append(")");
+                builder.append(" [").append(parameterMeta.getParameterTypeName(key.intValue())).append("]");
+                builder.append(":");
+                builder.append(this.map.get(key));
+                builder.append("; ");
+            }
+        }
+        return (builder.toString());
+    }
+
     @Override
     public void addBatch() throws SQLException {
         this.statement.addBatch();
@@ -85,23 +119,74 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
 
     @Override
     public boolean execute() throws SQLException {
-        boolean result = this.statement.execute();
-        //SystemActivityHandler.logSQLQueryParameter(this);
-        return (result);
+        String uniqueQueryName = null;
+        if (this.connectionLogger != null) {
+            uniqueQueryName = createId();
+            this.connectionLogger.info("[" + this.connectionName + "] [execute prep statement " + uniqueQueryName + "] "
+                    + this.getQueryWithParameterSingleLine());
+        }
+        try {
+            boolean result = this.statement.execute();
+            return (result);
+        } catch (SQLException e) {
+            if (this.connectionLogger != null) {
+                String errorMessage = "[" + this.connectionName + "] [problem in " + uniqueQueryName + "] "
+                        + e.getClass().getSimpleName()
+                        + " SQLState: " + e.getSQLState()
+                        + " - " + e.getMessage();
+                errorMessage = errorMessage.replace("\n", "; ");
+                this.connectionLogger.info(errorMessage);
+            }
+            throw e;
+        }
     }
 
     @Override
     public ResultSet executeQuery() throws SQLException {
-        ResultSet result = this.statement.executeQuery();
-        //SystemActivityHandler.logSQLQueryParameter(this);
-        return (result);
+        String uniqueQueryName = null;
+        if (this.connectionLogger != null) {
+            uniqueQueryName = createId();
+            this.connectionLogger.info("[" + this.connectionName + "] [executeQuery prep statement " + uniqueQueryName + "] "
+                    + this.getQueryWithParameterSingleLine());
+        }
+        try {
+            ResultSet result = this.statement.executeQuery();
+            return (result);
+        } catch (SQLException e) {
+            if (this.connectionLogger != null) {
+                String errorMessage = "[" + this.connectionName + "] [problem in " + uniqueQueryName + "] "
+                        + e.getClass().getSimpleName()
+                        + " SQLState: " + e.getSQLState()
+                        + " - " + e.getMessage();
+                errorMessage = errorMessage.replace("\n", "; ");
+                this.connectionLogger.info(errorMessage);
+            }
+            throw e;
+        }
     }
 
     @Override
     public int executeUpdate() throws SQLException {
-        int updatedRows = this.statement.executeUpdate();
-        //SystemActivityHandler.logSQLQueryParameter(this);
-        return (updatedRows);
+        String uniqueQueryName = null;
+        if (this.connectionLogger != null) {
+            uniqueQueryName = createId();
+            this.connectionLogger.info("[" + this.connectionName + "] [executeUpdate prep statement " + uniqueQueryName + "] "
+                    + this.getQueryWithParameterSingleLine());
+        }
+        try {
+            int updatedRows = this.statement.executeUpdate();
+            return (updatedRows);
+        } catch (SQLException e) {
+            if (this.connectionLogger != null) {
+                String errorMessage = "[" + this.connectionName + "] [problem in " + uniqueQueryName + "] "
+                        + e.getClass().getSimpleName()
+                        + " SQLState: " + e.getSQLState()
+                        + " - " + e.getMessage();
+                errorMessage = errorMessage.replace("\n", "; ");
+                this.connectionLogger.info(errorMessage);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -231,7 +316,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
         if (obj instanceof List) {
             builder.append(" size=");
             builder.append(((List) obj).size());
-        } else if (obj instanceof String) {            
+        } else if (obj instanceof String) {
             String strValue = obj.toString();
             if (strValue != null) {
                 builder.append("\"");
@@ -242,7 +327,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
                 } else {
                     builder.append(strValue);
                 }
-                builder.append( "\"");
+                builder.append("\"");
             }
         }
         builder.append(")");
@@ -262,7 +347,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
         if (obj instanceof List) {
             builder.append(" size=");
             builder.append(((List) obj).size());
-        }else if (obj instanceof String) {            
+        } else if (obj instanceof String) {
             String strValue = obj.toString();
             if (strValue != null) {
                 builder.append("\"");
@@ -273,7 +358,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
                 } else {
                     builder.append(strValue);
                 }
-                builder.append( "\"");
+                builder.append("\"");
             }
         }
         builder.append(")");
@@ -293,7 +378,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
         if (obj instanceof List) {
             builder.append(" size=");
             builder.append(((List) obj).size());
-        }else if (obj instanceof String) {            
+        } else if (obj instanceof String) {
             String strValue = obj.toString();
             if (strValue != null) {
                 builder.append("\"");
@@ -304,7 +389,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
                 } else {
                     builder.append(strValue);
                 }
-                builder.append( "\"");
+                builder.append("\"");
             }
         }
         builder.append(")");
@@ -498,11 +583,25 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
         this.statement.setNClob(parameterIndex, reader);
     }
 
+    @Override
     public void closeOnCompletion() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean isCloseOnCompletion() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * Creates a new id in the format yyyyMMddHHmm-nn
+     */
+    private static synchronized String createId() {
+        StringBuilder idBuffer = new StringBuilder();
+        DateFormat format = new SimpleDateFormat("HHmmss");
+        idBuffer.append("PREP_STATEMENT" + format.format(new java.util.Date()));
+        idBuffer.append("-");
+        idBuffer.append(currentId++);
+        return (idBuffer.toString());
     }
 }

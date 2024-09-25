@@ -1,13 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/FilePanel.java 4     7.11.18 10:40 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/FilePanel.java 6     4.12.20 9:11 Heller $
 package de.mendelson.comm.as2.webclient2;
 
+import com.vaadin.server.Page;
+import com.vaadin.ui.Notification;
 import com.vaadin.ui.TextArea;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.ByteArrayOutputStream;
+import de.mendelson.comm.as2.message.loggui.JPanelFileDisplay;
+import de.mendelson.util.FileEncodingDetection;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -22,47 +22,27 @@ import java.nio.file.Path;
  * Dialog that display a file content
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class FilePanel extends TextArea {
 
     private String displayedFilename = "";
     /**
-     * Max filesize for the display of data in the panel, actual 100kB
+     * Max filesize for the display of data in the panel
      */
-    private final static double MAX_FILESIZE = 100 * Math.pow(2, 10);
+    private final static double MAX_FILESIZE = JPanelFileDisplay.MAX_FILESIZE;
 
     public FilePanel() {
-        this.setRows(15);
-        this.setSizeFull();
+        this.setRows(16);
+        this.setWidth(100, Unit.PERCENTAGE);
     }
 
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[1024];
-        int read = 1024;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
-    }
-
-    public void displayFile(Path file) {
+    public void displayFile(Path file, boolean detectEncoding) {
         long filesize = 0;
         try {
             filesize = Files.size(file);
-        } catch (IOException e) {
-            //nop
+        } catch (Exception e) {
+            //could be also a NullPointer Exception if the file is null
         }
         boolean readOnlyStateOld = this.isReadOnly();
         //there will be displayed a new value to the panel
@@ -78,22 +58,16 @@ public class FilePanel extends TextArea {
             filename = file.toAbsolutePath().toString();
         } else {
             try {
-                ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-                InputStream inStream = null;
-                try {
-                    inStream = Files.newInputStream(file);
-                    this.copyStreams(inStream, outStream);
-                } finally {
-                    if (inStream != null) {
-                        inStream.close();
-                    }
+                if( detectEncoding ){
+                    this.displayRawTextDetectEncoding(file);
+                }else{
+                    this.displayRawTextIgnoreEncoding(file);
                 }
-                outStream.flush();
-                this.setValue(new String(outStream.toByteArray()));
-                outStream.close();
                 filename = file.toAbsolutePath().toString();
             } catch (Exception e) {
-                e.printStackTrace();
+                new Notification("Problem", e.getMessage(),
+                    Notification.Type.ERROR_MESSAGE, true)
+                    .show(Page.getCurrent());
             }
         }
         this.displayedFilename = filename;
@@ -104,4 +78,24 @@ public class FilePanel extends TextArea {
         return displayedFilename;
     }
 
+    /**
+     * Displays a byte array as raw text and tries to detect the encoding
+     */
+    private void displayRawTextDetectEncoding(Path file) throws Exception {
+        FileEncodingDetection detection = new FileEncodingDetection();
+        Charset encoding = detection.guessBestCharset(file);
+        byte[] data = Files.readAllBytes(file);
+        String dataStr = new String(data, encoding);   
+        this.setValue(dataStr);
+    }
+
+    /**
+     * Displays a byte array as raw text and tries to detect the encoding
+     */
+    private void displayRawTextIgnoreEncoding(Path file) throws Exception {
+        byte[] data = Files.readAllBytes(file);
+        String dataStr = new String(data);   
+        this.setValue(dataStr);
+    }
+    
 }

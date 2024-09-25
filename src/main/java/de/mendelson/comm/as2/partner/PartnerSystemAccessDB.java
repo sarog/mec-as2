@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 11    7.11.18 17:14 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 13    18.12.20 14:25 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -8,6 +8,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 /*
@@ -23,7 +25,7 @@ import java.util.logging.Logger;
  * system, it will be displayed in the partner panel
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 13 $
  */
 public class PartnerSystemAccessDB {
 
@@ -36,24 +38,82 @@ public class PartnerSystemAccessDB {
      */
     private Connection configConnection;
     private Connection runtimeConnection;
+    private PartnerAccessDB partnerAccess;
 
     public PartnerSystemAccessDB(Connection configConnection, Connection runtimeConnection) {
         this.configConnection = configConnection;
         this.runtimeConnection = runtimeConnection;
+        this.partnerAccess = new PartnerAccessDB(configConnection, runtimeConnection);
     }
 
+    /**
+     * Returns a list of all available partner system information
+     *
+     * @return
+     */
+    public List<PartnerSystem> getAllPartnerSystems() {
+        List<PartnerSystem> list = new ArrayList<PartnerSystem>();
+        PreparedStatement statement = null;
+        ResultSet result = null;
+        try {
+            statement = this.configConnection.prepareStatement("SELECT * FROM partnersystem");
+            result = statement.executeQuery();
+            while (result.next()) {                
+                Partner relatedPartner = this.partnerAccess.getPartner(result.getInt("partnerid"));
+                if (relatedPartner != null) {
+                    PartnerSystem system = new PartnerSystem();
+                    system.setPartner(relatedPartner);
+                    system.setAS2Version(result.getString("as2version"));
+                    system.setProductName(result.getString("productname"));
+                    system.setCEM(result.getInt("cem") == 1);
+                    system.setCompression(result.getInt("msgcompression") == 1);
+                    system.setMa(result.getInt("ma") == 1);
+                    list.add( system);
+                }
+            }
+            return( list );
+        } catch (SQLException e) {
+            this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            return (null);
+        } catch (Exception e) {
+            this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            return (null);
+        } finally {
+            if (result != null) {
+                try {
+                    result.close();
+                } catch (Exception e) {
+                    this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                }
+            }
+            if (statement != null) {
+                try {
+                    statement.close();
+                } catch (Exception e) {
+                    this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns information about the system of a single partner
+     */
     public PartnerSystem getPartnerSystem(Partner partner) {
         PreparedStatement statement = null;
         ResultSet result = null;
         try {
             statement = this.configConnection.prepareStatement("SELECT * FROM partnersystem WHERE partnerid=?");
-            statement.setEscapeProcessing(true);
             statement.setInt(1, partner.getDBId());
             result = statement.executeQuery();
             if (result.next()) {
                 PartnerSystem system = new PartnerSystem();
                 system.setPartner(partner);
-                system.setAs2Version(result.getString("as2version"));
+                system.setAS2Version(result.getString("as2version"));
                 system.setProductName(result.getString("productname"));
                 system.setCEM(result.getInt("cem") == 1);
                 system.setCompression(result.getInt("msgcompression") == 1);
@@ -69,17 +129,17 @@ public class PartnerSystemAccessDB {
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             return (null);
         } finally {
-            if (statement != null) {
+            if (result != null) {
                 try {
-                    statement.close();
+                    result.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
-            if (result != null) {
+            if (statement != null) {
                 try {
-                    result.close();
+                    statement.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
@@ -97,14 +157,13 @@ public class PartnerSystemAccessDB {
         try {
             statement = this.configConnection.prepareStatement(
                     "UPDATE partnersystem SET as2version=?,productname=?,msgcompression=?,ma=?,cem=? WHERE partnerid=?");
-            statement.setEscapeProcessing(true);
-            statement.setString(1, system.getAs2Version());
+            statement.setString(1, system.getAS2Version());
             statement.setString(2, system.getProductName());
             statement.setInt(3, system.supportsCompression() ? 1 : 0);
             statement.setInt(4, system.supportsMA() ? 1 : 0);
             statement.setInt(5, system.supportsCEM() ? 1 : 0);
             statement.setInt(6, system.getPartner().getDBId());
-            statement.execute();
+            statement.executeUpdate();
         } catch (SQLException e) {
             this.logger.severe("PartnerSystemAccessDB.updatePartnerSystem: " + e.getMessage());
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
@@ -129,7 +188,6 @@ public class PartnerSystemAccessDB {
         PreparedStatement statement = null;
         try {
             statement = this.configConnection.prepareStatement("DELETE FROM partnersystem WHERE partnerid=?");
-            statement.setEscapeProcessing(true);
             statement.setInt(1, partner.getDBId());
             statement.execute();
         } catch (SQLException e) {
@@ -170,9 +228,8 @@ public class PartnerSystemAccessDB {
         try {
             statement = this.configConnection.prepareStatement(
                     "INSERT INTO partnersystem(partnerid,as2version,productname,msgcompression,ma,cem)VALUES(?,?,?,?,?,?)");
-            statement.setEscapeProcessing(true);
             statement.setInt(1, partnerSystem.getPartner().getDBId());
-            statement.setString(2, partnerSystem.getAs2Version());
+            statement.setString(2, partnerSystem.getAS2Version());
             statement.setString(3, partnerSystem.getProductName());
             statement.setInt(4, partnerSystem.supportsCompression() ? 1 : 0);
             statement.setInt(5, partnerSystem.supportsMA() ? 1 : 0);

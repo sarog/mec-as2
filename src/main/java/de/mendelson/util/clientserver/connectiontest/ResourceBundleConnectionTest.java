@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest.java 8     10.12.18 12:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest.java 10    4.11.20 15:50 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleConnectionTest extends MecResourceBundle {
 
@@ -40,7 +40,8 @@ public class ResourceBundleConnectionTest extends MecResourceBundle {
         {"remote.service.identification", "Remote service identification: \"{0}\"" },
         {"service.found.success", "Success: Running OFTP service found at {0}" },
         {"service.found.failure", "Failure: No running OFTP service found at {0}" },
-        {"wrong.protocol", "The found protocol is \"{0}\", this is not a secured connection. You tried to connect via SSL/TLS to this address but this is not provided by the remote server at this address and port." },
+        {"wrong.protocol", "The found protocol is \"{0}\", this is not a secured connection. "
+            + "You tried to connect via one of [{1}] to this address but this is not provided by the remote server at this address and port or the system was unable to negotiate the protocol." },
         {"wrong.protocol.hint", "Either there is a plain connection expected by your partner, your partner uses the wrong protocol or client authentication is required" },
         {"protocol.information", "The used protocol has been identified as \"{0}\"" },
         {"requesting.certificates", "Requesting certificate(s) from remote host" },
@@ -55,7 +56,9 @@ public class ResourceBundleConnectionTest extends MecResourceBundle {
         {"test.connection.direct", "A direct IP connection is used" },
         {"test.connection.proxy.auth", "The connection uses the proxy at {0} with authentication (user \"{1}\")" },
         {"test.connection.proxy.noauth", "The connection uses the proxy at {0} without authentication" },
-        {"result.exception", "The following exception happened on the server during the test: {0}" },        
+        {"result.exception", "The following exception happened on the server during the test: {0}" },     
+        {"info.protocols", "The client allows the following TLS protocols to be negotiated: {0}" },
+        {"sni.extension.set", "TLS SNI Extension host name set to \"{0}\"" },
     };
 
 }

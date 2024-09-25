@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_fr.java 20    13.11.18 11:58 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_fr.java 22    20.09.19 10:32 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 22 $
  */
 public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
 
@@ -90,7 +90,12 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_FILE_COPY, "Fichier (copie)"},
         {"type." + SystemEvent.TYPE_MKDIR, "Répertoire (créer)"},
         {"type." + SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED, "Surveillance du répertoire (statut modifié)"},
+        {"type." + SystemEvent.TYPE_CLIENT_ANY, "Interface utilisateur"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGIN_FAILURE, "Connexion utilisateur (échec)"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGIN_SUCCESS, "Connexion utilisateur (succès)"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Déconnexion utilisateur"},
         {"type." + SystemEvent.TYPE_OTHER, "Autre"},
+        {"type." + SystemEvent.TYPE_PORT_LISTENER, "L''auditeur du port"},
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "Système" },
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaction" },
         {"origin." + SystemEvent.ORIGIN_USER, "Utilisateur" },
@@ -109,5 +114,6 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_SERVER_COMPONENTS, "Composant Serveur" },
         {"category." + SystemEvent.CATEGORY_TRANSACTION, "Transaction"},
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "Opération sur fichier" },
+        {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Opération interface utilisateur" },
     };
 }

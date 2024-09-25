@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 39    6.12.18 17:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 42    21.08.20 17:59 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 39 $
+ * @version $Revision: 42 $
  */
 public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
 
@@ -45,6 +45,7 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"menu.file.send", "Envoyer un fichier à un partenaire"},
         {"menu.file.resend", "Envoyer en tant que nouvelle transaction"},
         {"menu.file.resend.multiple", "Envoyer en tant que nouvelles transactions"},
+        {"menu.file.migrate.hsqldb", "Migrer de la HSQLDB"},
         {"menu.help", "Aide"},
         {"menu.help.about", "A propos"},
         {"menu.help.supportrequest", "Demande de soutien"},
@@ -62,12 +63,17 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"filter.direction.inbound", "Entrer"},
         {"filter.direction.outbound", "Sortant"},
         {"filter", "Filtrer"},
+        {"filter.use", "Utiliser le filtre de temps" },
+        {"filter.from", "De:" },
+        {"filter.to", "Jusqu''à:" },
         {"keyrefresh", "Recharger clés"},
         {"configurecolumns", "Colonnes" },
         {"delete.msg", "Suppression"},
         {"stoprefresh.msg", "Figer le rafraîchissement"},
         {"dialog.msg.delete.message", "Voulez-vous vraiment supprimer de manière permanente les messages sélectionnés ?"},
         {"dialog.msg.delete.title", "Suppression"},
+        {"msg.delete.success.single", "{0} message a été supprimé avec succès" },
+        {"msg.delete.success.multiple", "{0} messages ont été supprimés avec succès" },
         {"welcome", "Bienvenue, {0}"},
         {"fatal.error", "Erreur"},
         {"warning.refreshstopped", "Le rafraîchissement de l''interface a été arrêté."},

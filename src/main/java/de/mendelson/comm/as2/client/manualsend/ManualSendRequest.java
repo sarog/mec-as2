@@ -1,7 +1,6 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendRequest.java 8     6/13/18 2:03p Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendRequest.java 11    11.12.20 14:57 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
-import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.clientserver.clients.datatransfer.UploadRequestFile;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -18,32 +17,21 @@ import java.util.List;
  * Message for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 11 $
  */
 public class ManualSendRequest extends UploadRequestFile implements Serializable {
 
-    /**
-     * @return the subject
-     */
-    public String getSubject() {
-        return subject;
-    }
-
-    /**
-     * @param subject the subject to set
-     */
-    public void setSubject(String subject) {
-        this.subject = subject;
-    }
-
+    
     public static final long serialVersionUID = 1L;
-    private Partner sender;
-    private Partner receiver;
+    private String senderAS2Id;
+    private String receiverAS2Id;
     private List<String> filenames = new ArrayList<String>();
     private String resendMessageId = null;
     private String userdefinedId = null;
     private List<String> uploadHashs = new ArrayList<String>();
     private String subject = null;
+    private boolean sendTestdata = false;
+    private List<String> payloadContentTypes = new ArrayList<String>();
 
     @Override
     public String toString() {
@@ -53,29 +41,29 @@ public class ManualSendRequest extends UploadRequestFile implements Serializable
     /**
      * @return the sender
      */
-    public Partner getSender() {
-        return sender;
+    public String getSenderAS2Id() {
+        return this.senderAS2Id;
     }
 
     /**
      * @param sender the sender to set
      */
-    public void setSender(Partner sender) {
-        this.sender = sender;
+    public void setSenderAS2Id(String senderAS2Id) {
+        this.senderAS2Id = senderAS2Id;
     }
 
     /**
      * @return the receiver
      */
-    public Partner getReceiver() {
-        return receiver;
+    public String getReceiverAS2Id() {
+        return this.receiverAS2Id;
     }
 
     /**
      * @param receiver the receiver to set
      */
-    public void setReceiver(Partner receiver) {
-        this.receiver = receiver;
+    public void setReceiverAS2Id(String receiverAS2Id) {
+        this.receiverAS2Id = receiverAS2Id;
     }
 
     /**
@@ -86,10 +74,13 @@ public class ManualSendRequest extends UploadRequestFile implements Serializable
     }
 
     /**
-     * @param filename the filename to set
+     * @param filename the filename of a payload
+     * @param payloadContentType The content type of this payload as set in the outbound AS2 message - may be null for the
+     * default value or the value defined in the receiver
      */
-    public void addFilename(String filename) {
+    public void addFilename(String filename, String payloadContentType) {
         this.filenames.add(filename);
+        this.payloadContentTypes.add( payloadContentType );
     }
 
     /**
@@ -150,4 +141,41 @@ public class ManualSendRequest extends UploadRequestFile implements Serializable
         throw new IllegalArgumentException("ManualSendRequest: Use the method getUploadHashs() to get the uploaded file hashs");
     }
 
+    /**
+     * Indicates that no file should be send but test data that is generated on the server
+     */
+    public boolean getSendTestdata() {
+        return sendTestdata;
+    }
+
+   /**
+     * Indicates that no file should be send but test data that is generated on the server
+     */
+    public void setSendTestdata(boolean sendTestdata) {
+        this.sendTestdata = sendTestdata;
+    }
+
+    /**
+     * @return the payloadContentType
+     */
+    public List<String> getPayloadContentTypes() {
+        return this.payloadContentTypes;
+    }
+
+    /**
+     * @return the subject
+     */
+    public String getSubject() {
+        return subject;
+    }
+
+    /**
+     * @param subject the subject to set
+     */
+    public void setSubject(String subject) {
+        this.subject = subject;
+    }
+
+    
+    
 }

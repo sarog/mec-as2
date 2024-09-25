@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_fr.java 29    7.12.18 10:07 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_fr.java 30    11.09.19 14:46 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 29 $
+ * @version $Revision: 30 $
  */
 public class ResourceBundleAS2MessageParser_fr extends MecResourceBundle{
     
@@ -31,7 +31,7 @@ public class ResourceBundleAS2MessageParser_fr extends MecResourceBundle{
         {"mdn.state", "L''état du MDN est [{0}]." },
         {"mdn.details", "Détails du MDN reçu ({0}): \"{1}\"" },
         {"msg.incoming", "La transmission entrante est un message AS2 [{0}], taille du message brut: {1}." },
-        {"msg.incoming.identproblem", "La transmission entrante est un message AS2. Il n'a pas été traitée en raison d''un problème d''identification de partenaire." },   
+        {"msg.incoming.identproblem", "La transmission entrante est un message AS2. Il n''a pas été traitée en raison d''un problème d''identification de partenaire." },   
         {"mdn.signed", "Le MDN est signé ({0})." },
         {"mdn.unsigned.error", "Le MDN n''est pas signé. La configuration stipule que le MDN du partenaire \"{0}\" doit être signé." },
         {"mdn.signed.error", "Le MDN est signé. La configuration stipule que le MDN du partenaire \"{0}\" ne doit pas être signé." },
@@ -60,8 +60,8 @@ public class ResourceBundleAS2MessageParser_fr extends MecResourceBundle{
         {"contentmic.failure", "Le Message Integrity Code (MIC) n'assortit pas le message AS2 envoyé (requis: {0}, reçu: {1})." },
         {"found.cem", "Le message reçu est est un message d'échange de certificat (CEM)." },
         {"data.unable.to.process.content.transfer.encoding", "Les données ont été reçues qui n''ont pas pu être traitées. Le codage de transfert de contenu \"{0}\" est inconnue."},
-        {"original.filename.found", "Le nom de fichier original a été défini par l'expéditeur comme \"{0}\"." },
-        {"original.filename.undefined", "Le nom de fichier original n'a pas été transmis par le canal de message." },
+        {"original.filename.found", "Le nom de fichier original a été défini par l''expéditeur comme \"{0}\"." },
+        {"original.filename.undefined", "Le nom de fichier original n''a pas été transmis par le canal de message." },
         {"data.not.compressed", "Les données AS2 reçues sont non compressées." },
     };
     

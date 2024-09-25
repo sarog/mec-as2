@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 39    8.01.19 11:58 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 42    14.10.19 15:54 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -17,10 +17,12 @@ import de.mendelson.comm.as2.message.loggui.DialogMessageDetails;
 import de.mendelson.comm.as2.partner.gui.TableCellRendererPartner;
 import de.mendelson.util.LayoutManagerJToolbar;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.ClientsideMessageProcessor;
 import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
+import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.TableCellRendererCertificates;
@@ -29,6 +31,7 @@ import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.ListSelectionModel;
@@ -47,10 +50,19 @@ import javax.swing.event.ListSelectionListener;
  * Gives an overview on all CEM messages
  *
  * @author S.Heller
- * @version $Revision: 39 $
+ * @version $Revision: 42 $
  */
 public class DialogCEMOverview extends JDialog implements ListSelectionListener, ClientsideMessageProcessor {
 
+    private final static MendelsonMultiResolutionImage ICON_EXIT
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/exit.svg", 24, 48);
+    private final static MendelsonMultiResolutionImage ICON_DELETE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/delete.svg", 24, 48);
+    private final static MendelsonMultiResolutionImage ICON_MESSAGEDETAILS
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/messagedetails.svg", 24, 48);
+    private final static MendelsonMultiResolutionImage ICON_CEM
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg", 24, 48);
+    
     /**
      * Manages all internal certificates
      */
@@ -61,12 +73,15 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
     private MecResourceBundle rb;
     private GUIClient guiClient;
     private Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private JTextPaneLoggingHandler handler;
 
     /**
      * Creates new form DialogCEMOverview
      */
-    public DialogCEMOverview(JFrame parent, GUIClient guiClient, CertificateManager certificateManagerEncSign) {
+    public DialogCEMOverview(JFrame parent, GUIClient guiClient, CertificateManager certificateManagerEncSign,
+            JTextPaneLoggingHandler handler) {
         super(parent, true);
+        this.handler = handler;
         this.guiClient = guiClient;
         this.certificateManagerEncSign = certificateManagerEncSign;
         //load resource bundle
@@ -78,6 +93,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         initComponents();
+        this.setMultiresolutionIcons();
         this.jToolBar.setLayout(new LayoutManagerJToolbar());
         List<CEMEntry> cemEntries = ((CEMListResponse) this.guiClient.getBaseClient().sendSync(new CEMListRequest())).getList();
         ((TableModelCEMOverview) (this.jTable.getModel())).passNewData(cemEntries);
@@ -96,6 +112,15 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
         this.setButtonState();
     }
 
+    private void setMultiresolutionIcons() {
+        this.jButtonExit.setIcon(new ImageIcon(ICON_EXIT));
+        this.jButtonSendCEM.setIcon(new ImageIcon(ICON_CEM));
+        this.jButtonDisplayRequestDetails.setIcon(new ImageIcon(ICON_MESSAGEDETAILS));
+        this.jButtonDisplayResponseDetails.setIcon(new ImageIcon(ICON_MESSAGEDETAILS));
+        this.jButtonRemove.setIcon(new ImageIcon(ICON_DELETE));
+        this.jButtonCancel.setIcon(new ImageIcon(ICON_DELETE));
+    }
+    
     private void setButtonState() {
         int selectedRow = this.jTable.getSelectedRow();
         boolean responseExists = false;
@@ -162,11 +187,9 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
 
         jToolBar = new javax.swing.JToolBar();
         jButtonExit = new javax.swing.JButton();
-        jSeparator1 = new javax.swing.JToolBar.Separator();
         jButtonSendCEM = new javax.swing.JButton();
         jButtonDisplayRequestDetails = new javax.swing.JButton();
         jButtonDisplayResponseDetails = new javax.swing.JButton();
-        jSeparator2 = new javax.swing.JToolBar.Separator();
         jButtonRemove = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
         jPanelMain = new javax.swing.JPanel();
@@ -188,7 +211,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
         jToolBar.setFloatable(false);
         jToolBar.setRollover(true);
 
-        jButtonExit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/close24x24.gif"))); // NOI18N
+        jButtonExit.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/missing_image24x24.gif"))); // NOI18N
         jButtonExit.setText(this.rb.getResourceString( "button.exit"));
         jButtonExit.setFocusable(false);
         jButtonExit.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -199,9 +222,8 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
             }
         });
         jToolBar.add(jButtonExit);
-        jToolBar.add(jSeparator1);
 
-        jButtonSendCEM.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/cem24x24.gif"))); // NOI18N
+        jButtonSendCEM.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/missing_image24x24.gif"))); // NOI18N
         jButtonSendCEM.setText(this.rb.getResourceString( "button.sendcem"));
         jButtonSendCEM.setFocusable(false);
         jButtonSendCEM.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -213,7 +235,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
         });
         jToolBar.add(jButtonSendCEM);
 
-        jButtonDisplayRequestDetails.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/messagedetails24x24.gif"))); // NOI18N
+        jButtonDisplayRequestDetails.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/missing_image24x24.gif"))); // NOI18N
         jButtonDisplayRequestDetails.setText(this.rb.getResourceString( "button.requestdetails"));
         jButtonDisplayRequestDetails.setFocusable(false);
         jButtonDisplayRequestDetails.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -225,7 +247,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
         });
         jToolBar.add(jButtonDisplayRequestDetails);
 
-        jButtonDisplayResponseDetails.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/messagedetails24x24.gif"))); // NOI18N
+        jButtonDisplayResponseDetails.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/missing_image24x24.gif"))); // NOI18N
         jButtonDisplayResponseDetails.setText(this.rb.getResourceString( "button.responsedetails"));
         jButtonDisplayResponseDetails.setFocusable(false);
         jButtonDisplayResponseDetails.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -236,9 +258,8 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
             }
         });
         jToolBar.add(jButtonDisplayResponseDetails);
-        jToolBar.add(jSeparator2);
 
-        jButtonRemove.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/delete_24x24.gif"))); // NOI18N
+        jButtonRemove.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/missing_image24x24.gif"))); // NOI18N
         jButtonRemove.setText(this.rb.getResourceString( "button.remove"));
         jButtonRemove.setFocusable(false);
         jButtonRemove.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -250,7 +271,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
         });
         jToolBar.add(jButtonRemove);
 
-        jButtonCancel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/delete_24x24.gif"))); // NOI18N
+        jButtonCancel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/missing_image24x24.gif"))); // NOI18N
         jButtonCancel.setText(this.rb.getResourceString( "button.cancel"));
         jButtonCancel.setFocusable(false);
         jButtonCancel.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -356,7 +377,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
                 if (cemInfo != null) {
                     List<AS2Payload> payloads = ((MessagePayloadResponse) this.guiClient.getBaseClient().sendSync(new MessagePayloadRequest(entry.getRequestMessageid()))).getList();
                     DialogMessageDetails dialog = new DialogMessageDetails(parent,
-                            this.guiClient.getBaseClient(), cemInfo, payloads);
+                            this.guiClient.getBaseClient(), cemInfo, payloads, this.handler);
                     dialog.setVisible(true);
                 } else {
                     throw new Exception("Unable to get information about CEM process for unknown reason.");
@@ -378,7 +399,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
                 List<AS2Payload> payloads = ((MessagePayloadResponse) this.guiClient.getBaseClient().sendSync(new MessagePayloadRequest(entry.getResponseMessageid()))).getList();
                 JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
                 DialogMessageDetails dialog = new DialogMessageDetails(parent,
-                        this.guiClient.getBaseClient(), cemInfo, payloads);
+                        this.guiClient.getBaseClient(), cemInfo, payloads, this.handler);
                 dialog.setVisible(true);
             }
         }
@@ -434,8 +455,6 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
     private javax.swing.JScrollPane jScrollPaneDetails;
     private javax.swing.JScrollPane jScrollPaneReasonForRejection;
     private javax.swing.JScrollPane jScrollPaneTable;
-    private javax.swing.JToolBar.Separator jSeparator1;
-    private javax.swing.JToolBar.Separator jSeparator2;
     private javax.swing.JSplitPane jSplitPane;
     private javax.swing.JTabbedPane jTabbedPane;
     private javax.swing.JTable jTable;

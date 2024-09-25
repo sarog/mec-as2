@@ -1,4 +1,4 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 50    6.11.18 16:59 Heller $
+///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 53    10.03.20 14:53 Heller $
 package de.mendelson.comm.as2.servlet;
 
 import de.mendelson.Copyright;
@@ -11,10 +11,7 @@ import de.mendelson.util.AS2Tools;
 import de.mendelson.util.clientserver.AnonymousTextClient;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -23,6 +20,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -45,7 +43,7 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet to receive AS2 messages via HTTP
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 53 $
  */
 public class HttpReceiver extends HttpServlet {
 
@@ -63,21 +61,22 @@ public class HttpReceiver extends HttpServlet {
         PrintWriter out = res.getWriter();
         res.setContentType("text/html");
         out.println("<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">");
-        out.println("<html>");
-        out.println("    <head>");
+        out.println("<HTML>");
+        out.println("    <HEAD>");
         out.println("        <META NAME=\"description\" CONTENT=\"mendelson-e-commerce GmbH: Your EAI partner\">");
         out.println("        <META NAME=\"copyright\" CONTENT=\"mendelson-e-commerce GmbH\">");
+        out.println("        <META NAME=\"robots\" CONTENT=\"NOINDEX,NOFOLLOW,NOARCHIVE,NOSNIPPET\">");
         out.println("        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
         out.println("        <title>" + AS2ServerVersion.getProductName() + "</title>");
         out.println("        <link rel=\"shortcut icon\" href=\"images/mendelson_favicon.png\" type=\"image/x-icon\" />");
-        out.println("    </head>");
-        out.println("    <body>");
+        out.println("    </HEAD>");
+        out.println("    <BODY>");
         out.println("<H2>" + AS2ServerVersion.getProductName() + " " + AS2ServerVersion.getVersion() + " " + AS2ServerVersion.getBuild() + "</H2>");
         out.println("<BR> " + Copyright.getCopyrightMessage());
         out.println("<BR><br>You have performed an HTTP GET on this URL. <BR>");
         out.println("To submit an AS2 message, you must POST the message to this URL <BR>");
-        out.println("    </body>");
-        out.println("</html>");
+        out.println("    </BODY>");
+        out.println("</HTML>");
     }
 
     /**
@@ -93,16 +92,7 @@ public class HttpReceiver extends HttpServlet {
             //store the data in a file to process it later. This may be useful
             //for a huge data request that may lead to a out of memory fairly easy.
             dataFile = AS2Tools.createTempFile("as2", "request");
-            OutputStream fileStream = null;
-            try {
-                fileStream = Files.newOutputStream(dataFile);
-                this.copyStreams(inStream, fileStream);
-            } finally {
-                if (fileStream != null) {
-                    fileStream.flush();
-                    fileStream.close();
-                }
-            }
+            Files.copy(inStream, dataFile, StandardCopyOption.REPLACE_EXISTING);
             //extract header
             LinkedHashMap<String, String> headerMap = new LinkedHashMap<String, String>();
             Enumeration enumeration = request.getHeaderNames();
@@ -195,7 +185,7 @@ public class HttpReceiver extends HttpServlet {
                     }
                     ByteArrayInputStream inStream = new ByteArrayInputStream(messageResponse.getMDNData());
                     ServletOutputStream outStream = response.getOutputStream();
-                    this.copyStreams(inStream, outStream);
+                    inStream.transferTo(outStream);
                     inStream.close();
                     outStream.flush();
                 }
@@ -230,27 +220,6 @@ public class HttpReceiver extends HttpServlet {
         } catch (UnknownHostException ignore) {
         }
         return (false);
-    }
-
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out)
-            throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[1024];
-        int read = 1024;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
     }
 
     /**

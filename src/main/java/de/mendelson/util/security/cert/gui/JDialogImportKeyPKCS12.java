@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogImportKeyPKCS12.java 4     6/05/18 11:13a Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImportKeyPKCS12.java 10    11.11.20 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.MecFileChooser;
@@ -7,11 +7,13 @@ import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.PKCS122JKS;
 import de.mendelson.util.security.PKCS122PKCS12;
+import de.mendelson.util.uinotification.UINotification;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -28,7 +30,7 @@ import javax.swing.SwingUtilities;
 /**
  * Dialog to configure a single partner
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 10 $
  */
 public class JDialogImportKeyPKCS12 extends JDialog {
     
@@ -53,6 +55,7 @@ public class JDialogImportKeyPKCS12 extends JDialog {
         }
         this.setTitle( this.rb.getResourceString( "title" ));
         initComponents();
+        this.jLabelIcon.setIcon( new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(32)));
         this.manager = manager;
         this.getRootPane().setDefaultButton( this.jButtonOk );
     }
@@ -107,15 +110,15 @@ public class JDialogImportKeyPKCS12 extends JDialog {
                 importer.importKey( sourceKeystore, selectedAlias );
             }
             this.newAlias = selectedAlias;
-            JOptionPane.showMessageDialog( this,
-                    this.rb.getResourceString( "key.import.success.message" ),
-                    this.rb.getResourceString( "key.import.success.title" ),
-                    JOptionPane.INFORMATION_MESSAGE );            
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_SUCCESS,
+                    this.rb.getResourceString("key.import.success.title"),
+                    this.rb.getResourceString("key.import.success.message"));
         } catch( Exception e ){
-            JOptionPane.showMessageDialog( this,
-                    this.rb.getResourceString( "key.import.error.message", e.getMessage()),
-                    this.rb.getResourceString( "key.import.error.title" ),
-                    JOptionPane.ERROR_MESSAGE );
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_ERROR,
+                    this.rb.getResourceString("key.import.error.title"),
+                    this.rb.getResourceString("key.import.error.message", e.getMessage()));            
         }
     }
     
@@ -147,7 +150,7 @@ public class JDialogImportKeyPKCS12 extends JDialog {
         jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelEdit.setLayout(new java.awt.GridBagLayout());
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/key32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
@@ -180,9 +183,9 @@ public class JDialogImportKeyPKCS12 extends JDialog {
         gridBagConstraints.weighty = 1.0;
         jPanelEdit.add(jPanel3, gridBagConstraints);
 
-        jButtonBrowseImportFile.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/folder.gif"))); // NOI18N
+        jButtonBrowseImportFile.setText("..");
         jButtonBrowseImportFile.setToolTipText(this.rb.getResourceString( "button.browse"));
-        jButtonBrowseImportFile.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonBrowseImportFile.setMargin(new java.awt.Insets(2, 8, 2, 8));
         jButtonBrowseImportFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonBrowseImportFileActionPerformed(evt);
@@ -252,8 +255,8 @@ public class JDialogImportKeyPKCS12 extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds((screenSize.width-409)/2, (screenSize.height-245)/2, 409, 245);
+        setSize(new java.awt.Dimension(409, 245));
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
     
     private void jPasswordFieldPassphraseKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldPassphraseKeyReleased

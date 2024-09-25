@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableCellRendererPartner.java 3     18.09.12 14:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableCellRendererPartner.java 4     6.05.19 11:16 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import java.awt.Color;
 import java.awt.Component;
@@ -17,16 +18,16 @@ import javax.swing.table.TableCellRenderer;
 /** 
  * Renders a partner in a JTable column
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class TableCellRendererPartner extends DefaultTableCellRenderer implements TableCellRenderer {
 
-    private final ImageIcon ICON_REMOTE =
-            new ImageIcon(Partner.class.getResource(
-            "/de/mendelson/comm/as2/partner/gui/singlepartner16x16.gif"));
-    private final ImageIcon ICON_LOCAL =
-            new ImageIcon(Partner.class.getResource(
-            "/de/mendelson/comm/as2/partner/gui/localstation16x16.gif"));
+    private static final ImageIcon ICON_LOCAL
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/localstation.svg", 16, 32));
+    private static final ImageIcon ICON_REMOTE
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", 16, 32));
     private BaseClient baseClient;
 
     /**

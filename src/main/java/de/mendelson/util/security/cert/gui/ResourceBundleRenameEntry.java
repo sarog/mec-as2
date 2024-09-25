@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry.java 2     4/06/18 1:35p Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry.java 3     1.07.19 12:05 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleRenameEntry extends MecResourceBundle {
 
@@ -34,7 +34,9 @@ public class ResourceBundleRenameEntry extends MecResourceBundle {
         {"button.cancel", "Cancel"},
         {"label.newalias", "New alias:"},
         {"label.keypairpass", "Key password:"},
-        {"title", "Rename existing certificate entry ({0})"}
+        {"title", "Rename existing certificate entry ({0})"},
+        {"alias.exists.title", "Alias rename failed" },
+        {"alias.exists.message", "The alias \"{0}\" does already exist in that keystore." },
     };
 
 }

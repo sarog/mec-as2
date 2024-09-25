@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ResourceBundleManualSend_de.java 4     4/06/18 1:35p Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ResourceBundleManualSend_de.java 5     13.09.19 12:28 Heller $ 
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleManualSend_de extends MecResourceBundle {
 
@@ -33,9 +33,10 @@ public class ResourceBundleManualSend_de extends MecResourceBundle {
         {"button.ok", "Ok"},
         {"button.cancel", "Abbrechen"},
         {"button.browse", "Durchsuchen"},
-        {"label.filename", "Dateiname:"},
+        {"label.filename", "Datei senden"},
+        {"label.testdata", "Testdaten senden"},
         {"label.partner", "Empfänger:"},
-        {"label.localstation", "Lokale Station:"},
+        {"label.localstation", "Sender:"},
         {"label.selectfile", "Bitte wählen Sie die zu versendene Datei"},
         {"title", "Manueller Dateiversand"},
         {"send.success", "Die Datei wurde erfolgreich an den Versandprozess übergeben."},

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/ListCellRendererCertificates.java 6     14-04-16 4:37p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ListCellRendererCertificates.java 7     6.05.19 14:29 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -8,6 +8,7 @@ import java.awt.Rectangle;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
@@ -24,7 +25,7 @@ import javax.swing.SwingConstants;
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ListCellRendererCertificates extends JLabel implements ListCellRenderer {
 
@@ -203,7 +204,7 @@ public class ListCellRendererCertificates extends JLabel implements ListCellRend
             if (value instanceof KeystoreCertificate) {
                 KeystoreCertificate certificate = (KeystoreCertificate) value;
                 if (certificate.getIsKeyPair()) {
-                    this.setIcon(TableModelCertificates.ICON_KEY);
+                    this.setIcon(new ImageIcon(TableModelCertificates.ICON_KEY_MULTIRESOLUTION.toMinResolution(16)));
                 } else if (certificate.isRootCertificate()) {
                     this.setIcon(TableModelCertificates.ICON_CERTIFICATE_ROOT);
                 } else {

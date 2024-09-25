@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver_fr.java 6     6.12.18 16:26 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver_fr.java 7     12.03.19 13:36 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleSendOrderReceiver_fr extends MecResourceBundle{
     
@@ -27,7 +27,7 @@ public class ResourceBundleSendOrderReceiver_fr extends MecResourceBundle{
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
         {"async.mdn.wait", "Attente du MDN asynchrone jusqu''à {0}." },
-        {"max.retry.reached", "Le maximum a été atteint réessayer, la transmission annulée." },
+        {"max.retry.reached", "Le maximum a été atteint réessayer ({0}), la transmission annulée." },
         {"retry", "Va réessayer d''envoyer transmission après {0}s, réessayez {1}/{2}." },
         {"as2.send.disabled", "** Le système ne sera pas envoyer de message AS2/MDN parce que le nombre de connexions sortantes parallèles est mis à 0. S''il vous plaît modifier ces paramètres dans la boîte de dialogue de configuration du serveur pour permettre l''envoi de nouveau **" },        
         {"outbound.connection.prepare.mdn", "Préparer la connexion MDN sortante vers \"{0}\", connexions actives: {1}/{2}." },

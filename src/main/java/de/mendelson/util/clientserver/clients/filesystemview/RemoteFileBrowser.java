@@ -1,11 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 15    15.11.18 12:17 Heller $Revision: 1 $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 17    29.10.19 11:25 Heller $Revision: 1 $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
 import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -28,7 +26,7 @@ import javax.swing.tree.TreePath;
  * Browser widget for remote files/directories
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class RemoteFileBrowser extends JDialog {
 
@@ -57,6 +55,9 @@ public class RemoteFileBrowser extends JDialog {
         //generate a gap to the scroll pane
         this.jTreeRemoteStructure.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         this.fileView = new FileSystemViewClientServer(client);
+        List<FileObjectRoot> rootList = this.fileView.listRoots();
+        this.jTreeRemoteStructure.addRoots(rootList);
+        this.getRootPane().setDefaultButton(RemoteFileBrowser.this.jButtonOk);
     }
 
     public void setFileFilter(FileFilter fileFilter) {
@@ -68,15 +69,12 @@ public class RemoteFileBrowser extends JDialog {
     @Override
     public void setVisible(boolean flag) {
         if (flag) {
-            List<FileObjectRoot> rootList = this.fileView.listRoots();
-            this.jTreeRemoteStructure.addRoots(rootList);
-            this.getRootPane().setDefaultButton(this.jButtonOk);
             this.treeChangeListener = new TreeSelectionListener() {
                 @Override
                 public void valueChanged(javax.swing.event.TreeSelectionEvent evt) {
-                    DefaultMutableTreeNode selectedNode = jTreeRemoteStructure.getSelectedNode();
+                    DefaultMutableTreeNode selectedNode = RemoteFileBrowser.this.jTreeRemoteStructure.getSelectedNode();
                     if (selectedNode != null && selectedNode.getUserObject() instanceof FileObject) {
-                        jTextFieldActualPath.setText(
+                        RemoteFileBrowser.this.jTextFieldActualPath.setText(
                                 ((FileObject) selectedNode.getUserObject()).getAbsolutePathDisplayOnServerSide());
                     }
                 }
@@ -131,7 +129,6 @@ public class RemoteFileBrowser extends JDialog {
                 }
             };
             SwingUtilities.invokeLater(lazyLoad);
-
         }
     }
 

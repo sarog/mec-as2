@@ -1,10 +1,13 @@
-//$Header: /mbi_webclient/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 11    22.10.18 10:55 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 12    25.01.19 10:34 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.KeyStoreUtil;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
@@ -24,7 +27,7 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a keystore file
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class KeystoreStorageImplFile implements KeystoreStorage {
 
@@ -117,14 +120,14 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
 
     @Override
     public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {
-        File keystoreFile = new File(this.keystoreFilename);
-        if (!keystoreFile.canRead()) {
+        Path keystoreFile = Paths.get(this.keystoreFilename);
+        if (!Files.isReadable(keystoreFile)) {
             throw new Exception(this.rb.getResourceString("error.readaccess", this.keystoreFilename));
         }
-        if (!keystoreFile.exists()) {
+        if (!Files.exists(keystoreFile)) {
             throw new Exception(this.rb.getResourceString("error.filexists", this.keystoreFilename));
         }
-        if (!keystoreFile.isFile()) {
+        if (!Files.isRegularFile(keystoreFile)) {
             throw new Exception(this.rb.getResourceString("error.notafile", this.keystoreFilename));
         }
         //recreate keystore object
@@ -145,7 +148,7 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
 
     @Override
     public boolean canWrite() {
-        return (new File(this.keystoreFilename).canWrite());
+        return (Files.isWritable(Paths.get(this.keystoreFilename)));
     }
 
     @Override

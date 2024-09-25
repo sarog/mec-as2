@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystem.java 5     4/06/18 12:21p Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/PartnerSystem.java 6     18.12.20 9:54 Heller $
 package de.mendelson.comm.as2.partner;
 
 import java.io.Serializable;
@@ -13,7 +13,7 @@ import java.io.Serializable;
 /**
  * Container that stores information about the system of a partner
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class PartnerSystem implements Serializable{
 
@@ -42,14 +42,14 @@ public class PartnerSystem implements Serializable{
     /**
      * @return the as2Version
      */
-    public String getAs2Version() {
+    public String getAS2Version() {
         return as2Version;
     }
 
     /**
      * @param as2Version the as2Version to set
      */
-    public void setAs2Version(String as2Version) {
+    public void setAS2Version(String as2Version) {
         this.as2Version = as2Version;
     }
 

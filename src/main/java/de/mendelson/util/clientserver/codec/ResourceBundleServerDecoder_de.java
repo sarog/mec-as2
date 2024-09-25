@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder_de.java 2     4/06/18 1:35p Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder_de.java 3     9.06.20 10:40 Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleServerDecoder_de extends MecResourceBundle {
 
@@ -28,5 +28,7 @@ public class ResourceBundleServerDecoder_de extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"client.incompatible", "Eine Client-Server Verbindung ist nicht möglich, Client und Server haben einen unterschiedlichen Softwarestand. Bitte verwenden Sie die richtige Clientversion."},};
+        {"client.incompatible", "Eine Client-Server Verbindung konnte nicht hergestellt werden. "
+            + "Der Server ist nicht in der Lage, eingehende Daten des Client zu deserialisieren. "
+            + "Die hauptsächliche Ursache sind unterschiedliche Versionsstände von Client und Server."},};
 }

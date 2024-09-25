@@ -1,10 +1,12 @@
-//$Header: /converteride/de/mendelson/util/tables/JTableColumnResizer.java 6     3.09.12 15:16 Heller $
+//$Header: /converteride/de/mendelson/util/tables/JTableColumnResizer.java 7     22.11.19 13:00 Heller $
 package de.mendelson.util.tables;
 
 import java.awt.Component;
 import javax.swing.JTable;
 import javax.swing.SwingUtilities;
-import javax.swing.table.*;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -14,44 +16,51 @@ import javax.swing.table.*;
  */
 
 /**
- * Looks at the content of the columns of a JTable and sets the prefered widths
+ * Looks at the content of the columns of a JTable and sets the preferred widths
  * JTableColumnResizer.adjustColumnWidthByContent(myJTableObject);
+ * JTableColumnResizer.adjustColumnWidthByContent(myJTableObject, new int[]{1,3});
  *
  */
 public class JTableColumnResizer {
 
+    /**
+     * Resizes the columns of a table by their content
+     */
     public static void adjustColumnWidthByContent(final JTable table) {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 synchronized (table.getModel()) {
-                    for (int column = 0; column < table.getColumnCount(); column++) {
+                    for (int columnIndex = 0; columnIndex < table.getColumnCount(); columnIndex++) {
+                        if( !table.getColumnModel().getColumn(columnIndex).getResizable()){
+                            continue;
+                        }
                         int maxWidth = 0;
                         for (int row = 0; row < table.getRowCount(); row++) {
-                            TableCellRenderer renderer = table.getCellRenderer(row, column);
-                            Object value = table.getValueAt(row, column);
-                            Component comp =
-                                    renderer.getTableCellRendererComponent(table,
-                                    value,
-                                    false,
-                                    false,
-                                    row,
-                                    column);
+                            TableCellRenderer renderer = table.getCellRenderer(row, columnIndex);
+                            Object value = table.getValueAt(row, columnIndex);
+                            Component comp
+                                    = renderer.getTableCellRendererComponent(table,
+                                            value,
+                                            false,
+                                            false,
+                                            row,
+                                            columnIndex);
                             maxWidth = Math.max(comp.getPreferredSize().width, maxWidth);
                         }
-                        TableColumn tableColumn = table.getColumnModel().getColumn(column);
+                        TableColumn tableColumn = table.getColumnModel().getColumn(columnIndex);
                         TableCellRenderer headerRenderer = tableColumn.getHeaderRenderer();
                         if (headerRenderer == null) {
                             headerRenderer = table.getTableHeader().getDefaultRenderer();
                         }
                         Object headerValue = tableColumn.getHeaderValue();
-                        Component headerComponent =
-                                headerRenderer.getTableCellRendererComponent(table,
-                                headerValue,
-                                false,
-                                false,
-                                0,
-                                column);
+                        Component headerComponent
+                                = headerRenderer.getTableCellRendererComponent(table,
+                                        headerValue,
+                                        false,
+                                        false,
+                                        0,
+                                        columnIndex);
                         maxWidth = Math.max(maxWidth, headerComponent.getPreferredSize().width);
                         tableColumn.setPreferredWidth(maxWidth);
                     }
@@ -64,4 +73,5 @@ public class JTableColumnResizer {
             e.printStackTrace();
         }
     }
+    
 }

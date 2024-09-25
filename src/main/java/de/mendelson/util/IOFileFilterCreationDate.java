@@ -1,11 +1,15 @@
- //$Header: /as2/de/mendelson/util/IOFileFilterCreationDate.java 2     23.10.18 17:02 Heller $
+ //$Header: /mendelson_business_integration/de/mendelson/util/IOFileFilterCreationDate.java 3     11.02.20 9:48 Heller $
 package de.mendelson.util;
 
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.time.Instant;
+import java.util.concurrent.TimeUnit;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -18,7 +22,7 @@ import java.nio.file.attribute.BasicFileAttributes;
  * File filter that filters the directory entries by their age
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class IOFileFilterCreationDate implements DirectoryStream.Filter {
 
@@ -26,15 +30,17 @@ public class IOFileFilterCreationDate implements DirectoryStream.Filter {
     public static final int MODE_NOT_OLDER_THAN = 2;
 
     private int mode = MODE_OLDER_THAN;
-    private long absoluteTime;
     private boolean includeDirecories = false;
+    private Instant instantToCompare;
 
     /**
      * Creates a new instance of the creation date File filter
+     * @param MODE accept mode for this filter as defined in the constants of this class - either MODE_OLDER_THAN or MODE_NOT_OLDER_THAN
+     * @param absoluteCreationTime The absolute creation time for the accept process in ms
      */
-    public IOFileFilterCreationDate(final int MODE, long absoluteTime) {
+    public IOFileFilterCreationDate(final int MODE, long absoluteCreationTime) {
         this.mode = MODE;
-        this.absoluteTime = absoluteTime;
+        this.instantToCompare = Instant.ofEpochMilli(absoluteCreationTime);
     }
 
     /**
@@ -57,11 +63,14 @@ public class IOFileFilterCreationDate implements DirectoryStream.Filter {
         }
         try {
             BasicFileAttributes view = Files.getFileAttributeView(path, BasicFileAttributeView.class).readAttributes();
-            if (this.mode == MODE_OLDER_THAN) {
-                return (view.creationTime().toMillis() < this.absoluteTime);
+            FileTime fileTime = view.creationTime();
+            boolean acceptEntry = false;
+            if (this.mode == MODE_OLDER_THAN) {                
+                acceptEntry = fileTime.toInstant().isBefore(this.instantToCompare);
             } else {
-                return (view.creationTime().toMillis() > this.absoluteTime);
+                acceptEntry = fileTime.toInstant().isAfter(this.instantToCompare);
             }
+            return( acceptEntry );
         } catch (Exception e) {
             return (false);
         }
@@ -85,9 +94,8 @@ public class IOFileFilterCreationDate implements DirectoryStream.Filter {
 //        IOFileFilterCreationDate fileFilter 
 //                = new IOFileFilterCreationDate(MODE_OLDER_THAN, System.currentTimeMillis()
 //                        - TimeUnit.DAYS.toMillis(1));
-//        fileFilter.setIncludeDirecories(false);
-//        File dir = new File("c:/temp");
-//        Path dirPath = dir.toPath();
+//        fileFilter.setIncludeDirecories(true);
+//        Path dirPath = Paths.get("c:/temp");
 //        try {
 //            DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath, fileFilter);
 //            for (Path entry : stream) {

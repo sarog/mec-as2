@@ -1,10 +1,12 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 13    2.11.18 17:06 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 17    11.10.19 9:44 Heller $
 package de.mendelson.util.security.cert.gui;
 
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import de.mendelson.util.security.cert.TableModelCertificates;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,12 +14,14 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -36,13 +40,12 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * or a passed object
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 17 $
  */
 public class JDialogInfoOnExternalCertificate extends JDialog {
 
-    private final Color colorOk = Color.green.darker();
-    private final Color colorWarning = Color.red.darker();
-
+    private Color colorOk = Color.green.darker().darker();
+    private Color colorWarning = Color.red.darker();
     /**
      * ResourceBundle to localize the GUI
      */
@@ -60,7 +63,18 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
      * @param parameter Parameter to edit, null for a new one
      * @param parameterList List of available parameter
      */
+    @Deprecated (since="2019")
     public JDialogInfoOnExternalCertificate(JFrame parent, File certFile, CertificateManager certificateManager) {
+        this( parent, certFile.toPath(), certificateManager);
+    }
+    
+    /**
+     * Creates new form JDialogPartnerConfig
+     *
+     * @param parameter Parameter to edit, null for a new one
+     * @param parameterList List of available parameter
+     */
+    public JDialogInfoOnExternalCertificate(JFrame parent, Path certFile, CertificateManager certificateManager) {
         super(parent, true);
         this.certificateManager = certificateManager;
         //load resource bundle
@@ -71,6 +85,9 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         initComponents();
+        colorOk = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorOk);
+        colorWarning = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorWarning);
+        this.setMultiresolutionIcons();
         this.getRootPane().setDefaultButton(this.jButtonImport);
         this.infoTextList = this.loadCertsFromFileAndGetInfo(certFile, this.certList);
         if (this.infoTextList.size() == 1) {
@@ -89,7 +106,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         this.getRootPane().registerKeyboardAction(actionListenerESC, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
-
+    
     /**
      * Creates new form JDialogPartnerConfig
      *
@@ -108,6 +125,9 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         initComponents();
+        colorOk = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorOk);
+        colorWarning = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorWarning);
+        this.setMultiresolutionIcons();
         this.getRootPane().setDefaultButton(this.jButtonImport);
         this.infoTextList = this.getInfo(certs);
         if (this.infoTextList.size() == 1) {
@@ -117,6 +137,11 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         }
         this.displayCertificateInformationAndSetButtonState(certs);
     }
+    
+    private void setMultiresolutionIcons() {
+        this.jLabelIcon.setIcon(new ImageIcon(TableModelCertificates.ICON_CERTIFICATE_MULTIRESOLUTION.toMinResolution(32)));
+    }
+    
     
     private void displayCertificateInformationAndSetButtonState(List<X509Certificate> certList) {
         this.jTextAreaInfo.setText(this.infoTextList.get(this.getCertificateIndex()));
@@ -132,16 +157,16 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
             String fingerprintSHA1 = certificate.getFingerPrintSHA1();
             String foundAlias = this.certificateManager.getAliasByFingerprint(fingerprintSHA1);
             if (foundAlias != null) {
-                this.jLabelAlias.setForeground(this.colorWarning);
-                this.jLabelAlias.setText(this.rb.getResourceString("certificate.exists", foundAlias));
+                this.jLabelAliasExistsIndicator.setForeground(this.colorWarning);
+                this.jLabelAliasExistsIndicator.setText(this.rb.getResourceString("certificate.exists", foundAlias));
                 certificateAlreadyImported = true;
             } else {
-                this.jLabelAlias.setForeground(this.colorOk);
-                this.jLabelAlias.setText(this.rb.getResourceString("certificate.doesnot.exist"));
+                this.jLabelAliasExistsIndicator.setForeground(this.colorOk);
+                this.jLabelAliasExistsIndicator.setText(this.rb.getResourceString("certificate.doesnot.exist"));
             }
         } else {
-            this.jLabelAlias.setForeground(this.colorWarning);
-            this.jLabelAlias.setText(this.rb.getResourceString("no.certificate"));
+            this.jLabelAliasExistsIndicator.setForeground(this.colorWarning);
+            this.jLabelAliasExistsIndicator.setText(this.rb.getResourceString("no.certificate"));
         }
         this.jButtonImport.setEnabled(this.certificateIsOk && !certificateAlreadyImported);
         this.jButtonIndexUp.setVisible(this.infoTextList.size() > 1);
@@ -163,19 +188,19 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         return (infoList);
     }
 
-    private List<String> loadCertsFromFileAndGetInfo(File certFile, List<X509Certificate> certListToFill) {
+    private List<String> loadCertsFromFileAndGetInfo(Path certFile, List<X509Certificate> certListToFill) {
         List<String> infoList = null;
         InputStream inStream = null;
         try {
             Provider provBC = new BouncyCastleProvider();
-            inStream = Files.newInputStream(certFile.toPath());
+            inStream = Files.newInputStream(certFile);
             KeyStoreUtil util = new KeyStoreUtil();
             List<X509Certificate> certList = util.readCertificates(inStream, provBC);
             certListToFill.addAll(certList);
             infoList = this.getInfo(certList);
             //add file info to info text
             StringBuilder fileInfoText = new StringBuilder();
-            fileInfoText.append(this.rb.getResourceString("certinfo.certfile", certFile.getAbsolutePath()));
+            fileInfoText.append(this.rb.getResourceString("certinfo.certfile", certFile.toAbsolutePath().toString()));
             fileInfoText.append("\n---\n");
             for (int i = 0; i < infoList.size(); i++) {
                 infoList.set(i, fileInfoText.toString() + infoList.get(i));
@@ -220,7 +245,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         jButtonIndexDown = new javax.swing.JButton();
         jButtonIndexUp = new javax.swing.JButton();
         jLabelIcon = new javax.swing.JLabel();
-        jLabelAlias = new javax.swing.JLabel();
+        jLabelAliasExistsIndicator = new javax.swing.JLabel();
         jPanelButtons = new javax.swing.JPanel();
         jButtonImport = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
@@ -277,7 +302,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 20);
         jPanelHeader.add(jButtonIndexUp, gridBagConstraints);
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/certificate32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -286,14 +311,14 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelHeader.add(jLabelIcon, gridBagConstraints);
 
-        jLabelAlias.setText("<Alias (if already imported)>");
+        jLabelAliasExistsIndicator.setText("<Alias (if already imported)>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 10, 5);
-        jPanelHeader.add(jLabelAlias, gridBagConstraints);
+        jPanelHeader.add(jLabelAliasExistsIndicator, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
@@ -370,7 +395,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     private javax.swing.JButton jButtonImport;
     private javax.swing.JButton jButtonIndexDown;
     private javax.swing.JButton jButtonIndexUp;
-    private javax.swing.JLabel jLabelAlias;
+    private javax.swing.JLabel jLabelAliasExistsIndicator;
     private javax.swing.JLabel jLabelIcon;
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelEdit;

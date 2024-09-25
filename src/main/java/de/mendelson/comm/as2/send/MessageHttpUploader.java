@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 166   7.12.18 10:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 177   26.10.20 12:22 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
@@ -25,13 +25,16 @@ import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.net.ConnectException;
+import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.file.Files;
@@ -50,8 +53,12 @@ import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSocket;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.http.Header;
 import org.apache.http.HttpException;
 import org.apache.http.HttpHost;
@@ -67,26 +74,21 @@ import org.apache.http.auth.Credentials;
 import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.ClientContext;
-import org.apache.http.conn.ClientConnectionManager;
 import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.params.ConnRoutePNames;
-import org.apache.http.conn.params.ConnRouteParams;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
+import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.InputStreamEntity;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicCredentialsProvider;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
@@ -103,7 +105,7 @@ import org.apache.http.protocol.HttpContext;
  * Class to allow HTTP multipart uploads
  *
  * @author S.Heller
- * @version $Revision: 166 $
+ * @version $Revision: 177 $
  */
 public class MessageHttpUploader {
 
@@ -206,7 +208,8 @@ public class MessageHttpUploader {
     /**
      * Returns the created header for the sent data
      */
-    public Properties upload(HttpConnectionParameter connectionParameter, AS2Message message, Partner sender, Partner receiver) throws Exception {
+    public Properties upload(HttpConnectionParameter connectionParameter, AS2Message message,
+            Partner sender, Partner receiver) throws Exception {
         NumberFormat formatter = new DecimalFormat("0.00");
         AS2Info as2Info = message.getAS2Info();
         MessageAccessDB messageAccess = null;
@@ -249,27 +252,29 @@ public class MessageHttpUploader {
                                     formatter.format(kbPerSec),}), as2Info);
             }
         } else {
-            //the system was unable to connect the partner
-            if (returnCode < 0) {
-                throw new NoConnectionException(this.rb.getResourceString("error.noconnection"));
-            } else if (returnCode == HttpServletResponse.SC_BAD_GATEWAY) {
-                //HTTP 502                
-                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode));
-            } else if (returnCode == HttpServletResponse.SC_SERVICE_UNAVAILABLE) {
-                //HTTP 503                
-                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode));
-            } else if (returnCode == HttpServletResponse.SC_GATEWAY_TIMEOUT) {
-                //HTTP 504
-                throw new NoConnectionException(this.rb.getResourceString("error.http" + returnCode));
-            }
-            if (this.runtimeConnection != null) {
-                if (messageAccess == null) {
-                    messageAccess = new MessageAccessDB(this.configConnection, this.runtimeConnection);
+            //If the returncode is -1 here, this has been already handled by the upload routine 
+            //- its a SSL Problem or a timeout problem
+            if (returnCode > 0) {
+                //no connection
+                new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                        this.rb.getResourceString("error.noconnection"),
+                        this.rb.getResourceString("hint.httpcode.signals.problem",
+                                String.valueOf(returnCode)));
+                if (this.logger != null) {
+                    this.logger.log(Level.SEVERE, this.rb.getResourceString("hint.httpcode.signals.problem",
+                            String.valueOf(returnCode)), message.getAS2Info());
                 }
-                messageAccess.setMessageState(as2Info.getMessageId(), AS2Message.STATE_STOPPED);
+                throw new NoConnectionException("[" + receiver.getURL() + "]: HTTP " + returnCode);
+            } else {
+                throw new NoConnectionException("");
             }
-            throw new Exception(as2Info.getMessageId() + ": HTTP " + returnCode);
         }
+        //store the sent data and assign the payload to the message
+        if (this.configConnection != null) {
+            MessageStoreHandler messageStoreHandler = new MessageStoreHandler(this.configConnection, this.runtimeConnection);
+            messageStoreHandler.storeSentMessage(message, sender, receiver, this.getRequestHeader());
+        }
+        //perform some statistic entries
         if (this.configConnection != null) {
             //inc the sent data size, this is for new connections (as2 messages, async mdn)
             AS2Server.incRawSentData(size);
@@ -279,10 +284,6 @@ public class MessageHttpUploader {
                 QuotaAccessDB.incReceivedMessages(this.configConnection, this.runtimeConnection, mdnInfo.getSenderId(),
                         mdnInfo.getReceiverId(), mdnInfo.getState(), mdnInfo.getRelatedMessageId());
             }
-        }
-        if (this.configConnection != null) {
-            MessageStoreHandler messageStoreHandler = new MessageStoreHandler(this.configConnection, this.runtimeConnection);
-            messageStoreHandler.storeSentMessage(message, sender, receiver, this.getRequestHeader());
         }
         //inform the server of the result if a sync MDN has been requested
         if (!message.isMDN()) {
@@ -313,7 +314,7 @@ public class MessageHttpUploader {
                         responseDataStr = new String(responseData, 0, 1024);
                     }
                     throw new Exception(this.rb.getResourceString("answer.no.sync.mdn",
-                            new Object[]{as2Info.getMessageId(),
+                            new Object[]{
                                 missingHeaderList.toString(),
                                 responseDataStr}));
                 }
@@ -331,7 +332,7 @@ public class MessageHttpUploader {
                     tempFile = AS2Tools.createTempFile("SYNCMDN_received", ".bin");
                     outStream = Files.newOutputStream(tempFile);
                     ByteArrayInputStream memIn = new ByteArrayInputStream(this.responseData);
-                    this.copyStreams(memIn, outStream);
+                    memIn.transferTo(outStream);
                     memIn.close();
                     messageRequest.setMessageDataFilename(tempFile.toAbsolutePath().toString());
                     for (int i = 0; i < this.getResponseHeader().length; i++) {
@@ -387,32 +388,6 @@ public class MessageHttpUploader {
     }
 
     /**
-     * Sets necessary HTTP authentication for this partner, depending on if it
-     * is an asny MDN that will be sent or an AS2 message. If the partner is not
-     * configured to use HTTP authentication in any kind nothing will happen in
-     * here
-     */
-    private void setHTTPAuthentication(DefaultHttpClient client, Partner receiver, boolean isMDN) {
-        HTTPAuthentication authentication = null;
-        if (isMDN) {
-            authentication = receiver.getAuthenticationAsyncMDN();
-        } else {
-            authentication = receiver.getAuthentication();
-        }
-        if (authentication.isEnabled()) {
-            Credentials userPassCredentials = new UsernamePasswordCredentials(authentication.getUser(), authentication.getPassword());
-            client.getCredentialsProvider().setCredentials(AuthScope.ANY, userPassCredentials);
-            BasicHttpContext localcontext = new BasicHttpContext();
-            // Generate BASIC scheme object and stick it to the local
-            // execution context
-            BasicScheme basicAuth = new BasicScheme();
-            localcontext.setAttribute("preemptive-auth", basicAuth);
-            // Add as the first request interceptor
-            client.addRequestInterceptor(new PreemptiveAuth(), 0);
-        }
-    }
-
-    /**
      * Builds a proxy object from the actual preferences, returns null if no
      * proxy is requested
      */
@@ -432,31 +407,6 @@ public class MessageHttpUploader {
     }
 
     /**
-     * Sets the proxy authentification for the client
-     */
-    private void setProxyToConnection(DefaultHttpClient client, AS2Message message, ProxyObject proxy) {
-        //is a proxy requested?
-        if (proxy.getHost() == null) {
-            return;
-        }
-        HttpHost proxyHost = new HttpHost(proxy.getHost(), proxy.getPort(), "http");
-        client.getParams().setParameter(ConnRoutePNames.DEFAULT_PROXY, proxyHost);
-        if (proxy.getUser() != null) {
-            CredentialsProvider credsProvider = new BasicCredentialsProvider();
-            credsProvider.setCredentials(
-                    new AuthScope(proxy.getHost(), proxy.getPort()),
-                    new UsernamePasswordCredentials(proxy.getUser(), String.valueOf(proxy.getPassword())));
-            client.setCredentialsProvider(credsProvider);
-        }
-        if (this.logger != null) {
-            this.logger.log(Level.INFO,
-                    this.rb.getResourceString("using.proxy",
-                            new Object[]{
-                                proxy.getHost(), String.valueOf(proxy.getPort()),}), message.getAS2Info());
-        }
-    }
-
-    /**
      * Uploads the data, returns the HTTP result code
      */
     public int performUpload(HttpConnectionParameter connectionParameter, AS2Message message, Partner sender, Partner receiver) {
@@ -464,42 +414,81 @@ public class MessageHttpUploader {
     }
 
     /**
+     * Creates a request config to be passed to the HttpPost - it contains basic
+     * HTTP settings
+     */
+    private RequestConfig generateRequestConfig(HttpConnectionParameter connectionParameter) {
+        RequestConfig.Builder requestConfigBuilder = RequestConfig.custom();
+
+        if (connectionParameter.getConnectionTimeoutMillis() != -1) {
+            requestConfigBuilder.setConnectionRequestTimeout(connectionParameter.getConnectionTimeoutMillis());
+        }
+        if (connectionParameter.getSoTimeoutMillis() != -1) {
+            requestConfigBuilder.setSocketTimeout(connectionParameter.getConnectionTimeoutMillis());
+        }
+        requestConfigBuilder.setStaleConnectionCheckEnabled(connectionParameter.isStaleConnectionCheck());
+        requestConfigBuilder.setExpectContinueEnabled(connectionParameter.isUseExpectContinue());
+        requestConfigBuilder.setContentCompressionEnabled(false);
+        if (connectionParameter.getLocalAddress() != null) {
+            requestConfigBuilder.setLocalAddress(connectionParameter.getLocalAddress());
+        }
+        return (requestConfigBuilder.build());
+    }
+
+    private void addHTTPAuth(CredentialsProvider credsProvider, HTTPAuthentication authentication) {
+        credsProvider.setCredentials(
+                AuthScope.ANY,
+                new UsernamePasswordCredentials(authentication.getUser(), authentication.getPassword()));
+    }
+
+    /**
+     * Adds a proxy route to the client builder
+     *
+     * @param proxy
+     * @param clientBuilder
+     * @param credentialsProvider
+     * @throws Exception
+     */
+    private void addProxy(ProxyObject proxy, HttpClientBuilder clientBuilder, CredentialsProvider credentialsProvider) throws Exception {
+        HttpHost proxyHost = new HttpHost(proxy.getHost(), proxy.getPort(), HttpHost.DEFAULT_SCHEME_NAME);
+        DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxyHost);
+        //proxy authentication
+        if (proxy.getUser() != null) {
+            credentialsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
+                    new UsernamePasswordCredentials(proxy.getUser(), String.valueOf(proxy.getPassword())));
+        }
+        clientBuilder.setRoutePlanner(routePlanner);
+    }
+
+    /**
      * Uploads the data, returns the HTTP result code
      */
     public int performUpload(HttpConnectionParameter connectionParameter, AS2Message message, Partner sender, Partner receiver, URL receiptURL) {
-        //set the http connection/routing/protocol parameter
-        HttpParams httpParams = new BasicHttpParams();
-        if (connectionParameter.getConnectionTimeoutMillis() != -1) {
-            HttpConnectionParams.setConnectionTimeout(httpParams, connectionParameter.getConnectionTimeoutMillis());
-        }
-        if (connectionParameter.getSoTimeoutMillis() != -1) {
-            HttpConnectionParams.setSoTimeout(httpParams, connectionParameter.getSoTimeoutMillis());
-        }
-        HttpConnectionParams.setStaleCheckingEnabled(httpParams, connectionParameter.isStaleConnectionCheck());
-        if (connectionParameter.getHttpProtocolVersion() == null) {
-            //default settings: HTTP 1.1
-            HttpProtocolParams.setVersion(httpParams, HttpVersion.HTTP_1_1);
-        } else if (connectionParameter.getHttpProtocolVersion().equals(HttpConnectionParameter.HTTP_1_0)) {
-            HttpProtocolParams.setVersion(httpParams, HttpVersion.HTTP_1_0);
-        } else if (connectionParameter.getHttpProtocolVersion().equals(HttpConnectionParameter.HTTP_1_1)) {
-            HttpProtocolParams.setVersion(httpParams, HttpVersion.HTTP_1_1);
-        }
-        HttpProtocolParams.setUseExpectContinue(httpParams, connectionParameter.isUseExpectContinue());
-        HttpProtocolParams.setUserAgent(httpParams, connectionParameter.getUserAgent());
-        if (connectionParameter.getLocalAddress() != null) {
-            ConnRouteParams.setLocalAddress(httpParams, connectionParameter.getLocalAddress());
-        }
-        int status = -1;
+        int statusCode = -1;
         HttpPost filePost = null;
-        DefaultHttpClient httpClient = null;
+        CloseableHttpClient httpClient = null;
         try {
-            ClientConnectionManager clientConnectionManager = this.createClientConnectionManager(httpParams);
-            httpClient = new DefaultHttpClient(clientConnectionManager, httpParams);
-            //some ssl implementations have problems with a session/connection reuse
-            httpClient.setReuseStrategy(new NoConnectionReuseStrategy());
-            //disable SSL hostname verification. Do not confuse this with SSL trust verification!
-            SSLSocketFactory sslFactory = (SSLSocketFactory) httpClient.getConnectionManager().getSchemeRegistry().get("https").getSocketFactory();
-            sslFactory.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
+            //create the http client
+            HttpClientBuilder clientBuilder = HttpClients.custom();
+            //clientBuilder.setUserAgent(connectionParameter.getUserAgent());
+            clientBuilder.setSSLSocketFactory(this.generateSSLFactory());
+            clientBuilder.setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE);
+            boolean credentialAuthUsed = false;
+            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            if (receiver.getAuthentication().isEnabled()) {
+                credentialAuthUsed = true;
+                this.addHTTPAuth(credentialsProvider, receiver.getAuthentication());
+            }
+            ProxyObject proxy = connectionParameter.getProxy();
+            if (proxy != null && proxy.getHost() != null) {
+                credentialAuthUsed = true;
+                this.addProxy(proxy, clientBuilder, credentialsProvider);
+            }
+            if (credentialAuthUsed) {
+                clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            }
+            httpClient = clientBuilder.build();
+
             //determine the receipt URL if it is not set
             if (receiptURL == null) {
                 //async MDN requested?
@@ -515,6 +504,15 @@ public class MessageHttpUploader {
                 }
             }
             filePost = new HttpPost(receiptURL.toExternalForm());
+            filePost.setConfig(this.generateRequestConfig(connectionParameter));
+            if (connectionParameter.getHttpProtocolVersion() == null) {
+                //default settings: HTTP 1.1
+                filePost.setProtocolVersion(HttpVersion.HTTP_1_1);
+            } else if (connectionParameter.getHttpProtocolVersion().equals(HttpConnectionParameter.HTTP_1_0)) {
+                filePost.setProtocolVersion(HttpVersion.HTTP_1_0);
+            } else if (connectionParameter.getHttpProtocolVersion().equals(HttpConnectionParameter.HTTP_1_1)) {
+                filePost.setProtocolVersion(HttpVersion.HTTP_1_1);
+            }
             filePost.addHeader("as2-version", "1.2");
             filePost.addHeader("ediint-features", ediintFeatures);
             filePost.addHeader("mime-version", "1.0");
@@ -527,8 +525,7 @@ public class MessageHttpUploader {
                 originalFilename = message.getPayloads().get(0).getOriginalFilename();
             }
             if (originalFilename != null) {
-                String subject = this.replace(message.getAS2Info().getSubject(),
-                        "${filename}", originalFilename);
+                String subject = this.replaceSubject(message.getAS2Info().getSubject(), originalFilename);
                 filePost.addHeader("subject", subject);
                 //update the message infos subject with the actual content
                 if (!message.isMDN()) {
@@ -632,6 +629,7 @@ public class MessageHttpUploader {
                 port = receiptURL.getDefaultPort();
             }
             filePost.addHeader("host", receiptURL.getHost() + ":" + port);
+            filePost.addHeader("user-agent", connectionParameter.getUserAgent());
             HttpResponse httpResponse = null;
             InputStream rawDataInputStream = null;
             try {
@@ -639,11 +637,7 @@ public class MessageHttpUploader {
                 InputStreamEntity postEntity = new InputStreamEntity(rawDataInputStream, message.getRawDataSize());
                 postEntity.setContentType(contentType);
                 filePost.setEntity(postEntity);
-                if (connectionParameter.getProxy() != null) {
-                    this.setProxyToConnection(httpClient, message, connectionParameter.getProxy());
-                }
-                this.setHTTPAuthentication(httpClient, receiver, message.getAS2Info().isMDN());
-                this.updateUploadHttpHeader(filePost, receiver);
+                this.updateUploadHTTPHeader(filePost, receiver);
                 HttpHost targetHost = new HttpHost(receiptURL.getHost(), receiptURL.getPort(), receiptURL.getProtocol());
                 BasicHttpContext localcontext = new BasicHttpContext();
                 // Generate BASIC scheme object and stick it to the local
@@ -659,12 +653,12 @@ public class MessageHttpUploader {
             if (httpResponse != null) {
                 this.responseData = this.readEntityData(httpResponse);
                 this.responseStatusLine = httpResponse.getStatusLine();
-                status = this.responseStatusLine.getStatusCode();
+                statusCode = this.responseStatusLine.getStatusCode();
                 this.responseHeader = httpResponse.getAllHeaders();
             }
             for (Header singleHeader : filePost.getAllHeaders()) {
                 if (singleHeader.getValue() != null) {
-                    this.getRequestHeader().setProperty(singleHeader.getName(), singleHeader.getValue());
+                    this.requestHeader.setProperty(singleHeader.getName(), singleHeader.getValue());
                 }
             }
             //accept all 2xx answers
@@ -675,64 +669,97 @@ public class MessageHttpUploader {
             //SC_OK Status code (200) indicating the request succeeded normally.
             //SC_RESET_CONTENT Status code (205) indicating that the agent SHOULD reset the document view which caused the request to be sent.
             //SC_PARTIAL_CONTENT Status code (206) indicating that the server has fulfilled the partial GET request for the resource.
-            if (status != HttpServletResponse.SC_OK && status != HttpServletResponse.SC_ACCEPTED && status != HttpServletResponse.SC_CREATED && status != HttpServletResponse.SC_NO_CONTENT && status != HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION && status != HttpServletResponse.SC_RESET_CONTENT && status != HttpServletResponse.SC_PARTIAL_CONTENT) {
+            if (statusCode != HttpServletResponse.SC_OK
+                    && statusCode != HttpServletResponse.SC_ACCEPTED
+                    && statusCode != HttpServletResponse.SC_CREATED
+                    && statusCode != HttpServletResponse.SC_NO_CONTENT
+                    && statusCode != HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION
+                    && statusCode != HttpServletResponse.SC_RESET_CONTENT
+                    && statusCode != HttpServletResponse.SC_PARTIAL_CONTENT) {
                 if (this.logger != null) {
-                    this.logger.severe(
+                    this.logger.log(Level.SEVERE,
                             this.rb.getResourceString("error.httpupload",
-                                    new Object[]{message.getAS2Info().getMessageId(),
-                                        URLDecoder.decode(this.responseStatusLine == null ? "" : this.responseStatusLine.getReasonPhrase(), "UTF-8")
-                                    }));
+                                    new Object[]{
+                                        String.valueOf(statusCode) + " "
+                                        + URLDecoder.decode(this.responseStatusLine == null ? ""
+                                                : this.responseStatusLine.getReasonPhrase(), "UTF-8")
+                                    }), message.getAS2Info());
                 }
             }
         } catch (Exception ex) {
             if (this.logger != null) {
-                StringBuilder errorMessage = new StringBuilder(message.getAS2Info().getMessageId());
-                errorMessage.append(": MessageHTTPUploader.performUpload: [");
+                StringBuilder errorMessage = new StringBuilder();
+                errorMessage.append("MessageHTTPUploader.performUpload: [");
                 errorMessage.append(ex.getClass().getSimpleName());
                 errorMessage.append("]");
                 if (ex.getMessage() != null) {
                     errorMessage.append(": ").append(ex.getMessage());
                 }
+                //missing certificate on one of the sides
                 if (ex instanceof SSLPeerUnverifiedException) {
-                    errorMessage.append("\n").append(this.rb.getResourceString("hint.SSLPeerUnverifiedException"));
-                }
-                if (ex instanceof ConnectTimeoutException) {
-                    errorMessage.append("\n").append(this.rb.getResourceString("hint.ConnectTimeoutException"));
-                }
-                if (ex instanceof ClientProtocolException) {
                     if (ex.getCause() != null) {
                         Throwable causeEx = ex.getCause();
-                        errorMessage.append("[Caused by: ");
+                        errorMessage.append("[");
                         errorMessage.append(causeEx.getClass().getSimpleName());
                         if (causeEx.getMessage() != null) {
                             errorMessage.append("/").append(causeEx.getMessage());
                         }
                         errorMessage.append("]");
                     }
+                    new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                            errorMessage.toString(), this.rb.getResourceString("hint.SSLPeerUnverifiedException"));
+                    errorMessage.append("\n").append(this.rb.getResourceString("hint.SSLPeerUnverifiedException"));
+                }
+                //Remote server does not answer or is not reachable, java.net exception. Same reason for both expections
+                //no idea why one of them is thrown sometimes instead of the other. 
+                //Perhaps it depends on the java version or the apache client version.
+                if (ex instanceof ConnectTimeoutException || ex instanceof ConnectException) {
+                    if (ex.getCause() != null) {
+                        Throwable causeEx = ex.getCause();
+                        errorMessage.append("[");
+                        errorMessage.append(causeEx.getClass().getSimpleName());
+                        if (causeEx.getMessage() != null) {
+                            errorMessage.append("/").append(causeEx.getMessage());
+                        }
+                        errorMessage.append("]");
+                    }
+                    new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                            errorMessage.toString(), this.rb.getResourceString("hint.ConnectTimeoutException"));
+                    errorMessage.append("\n").append(this.rb.getResourceString("hint.ConnectTimeoutException"));
+                }
+
+                //any other generic SSL problem - no idea why both may be thrown
+                if (ex instanceof SSLException || ex instanceof ClientProtocolException) {
+                    if (ex.getCause() != null) {
+                        Throwable causeEx = ex.getCause();
+                        errorMessage.append("[");
+                        errorMessage.append(causeEx.getClass().getSimpleName());
+                        if (causeEx.getMessage() != null) {
+                            errorMessage.append("/").append(causeEx.getMessage());
+                        }
+                        errorMessage.append("]");
+                    }
+                    new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                            errorMessage.toString(), this.rb.getResourceString("hint.SSLException"));
+                    errorMessage.append("\n").append(this.rb.getResourceString("hint.SSLException"));
                 }
                 this.logger.log(Level.SEVERE, errorMessage.toString(), message.getAS2Info());
             }
         } finally {
-            if (httpClient != null && httpClient.getConnectionManager() != null) {
+            if (httpClient != null) {
                 //shutdown the HTTPClient to release the resources
-                httpClient.getConnectionManager().shutdown();
+                try {
+                    httpClient.close();
+                } catch (IOException e) {
+                    //nop
+                }
             }
         }
-        return (status);
+        return (statusCode);
     }
 
-    private ClientConnectionManager createClientConnectionManager(HttpParams httpParams) throws Exception {
-        //register protocols
-        SchemeRegistry registry = new SchemeRegistry();
-        Scheme http = new Scheme("http", PlainSocketFactory.getSocketFactory(), 80);
-        registry.register(http);
-        registry.register(this.createHTTPSScheme());
-        ClientConnectionManager manager = new ThreadSafeClientConnManager(httpParams, registry);
-        return (manager);
-    }
-
-    private Scheme createHTTPSScheme() throws Exception {
-        //cert store not set so far: take the preferences data
+    private SSLConnectionSocketFactory generateSSLFactory() throws Exception {
+        //TLS key stores not set so far: take the preferences data from the server
         if (this.certStore == null) {
             this.certStore = new KeystoreStorageImplFile(
                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND),
@@ -745,18 +772,81 @@ public class MessageHttpUploader {
                     KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
                     KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS);
         }
-        SSLSocketFactory socketFactory = new SSLSocketFactory(this.certStore.getKeystore(),
-                new String(this.certStore.getKeystorePass()),
-                this.trustStore.getKeystore());
-        socketFactory.setHostnameVerifier(SSLSocketFactory.ALLOW_ALL_HOSTNAME_VERIFIER);
-        return (new Scheme("https", socketFactory, 443));
+        SSLContext sslcontext = org.apache.http.ssl.SSLContexts.custom()
+                .loadTrustMaterial(new File(this.trustStore.getOriginalKeystoreFilename()), this.trustStore.getKeystorePass(),
+                        new TrustSelfSignedStrategy())
+                .loadKeyMaterial(new File(this.certStore.getOriginalKeystoreFilename()), this.certStore.getKeystorePass(),
+                        this.certStore.getKeystorePass())
+                .build();
+        // Allowed SSL/TLS protocols as client
+        String[] allowedProtocols
+                = new String[]{
+                    "SSLv3",
+                    "TLSv1",
+                    "TLSv1.1",
+                    "TLSv1.2",
+                    "TLSv1.3"};
+        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslcontext,
+                allowedProtocols,
+                null,
+                //this is the AllowAllHostnameVerifier
+                new NoopHostnameVerifier()) {
+            @Override
+            /**
+             * This is required to support SNI (Server Name Indication)
+             * - this is more a hack as it makes use of Commons BeanUtils to invoke Oracle private 
+             * method via reflection
+             */
+            public Socket connectSocket(
+                    int connectTimeout,
+                    Socket socket,
+                    HttpHost host,
+                    InetSocketAddress remoteAddress,
+                    InetSocketAddress localAddress,
+                    HttpContext context) throws IOException, ConnectTimeoutException {
+                if (socket instanceof SSLSocket) {
+                    try {
+                        PropertyUtils.setProperty(socket, "host", host.getHostName());
+                    } catch (NoSuchMethodException ex) {
+                    } catch (IllegalAccessException ex) {
+                    } catch (InvocationTargetException ex) {
+                    }
+                }
+                return super.connectSocket(connectTimeout, socket, host, remoteAddress,
+                        localAddress, context);
+            }
+
+        };
+        return (sslConnectionFactory);
+    }
+
+    /**
+     * Replaces the subject set for the partner. The encoding must be
+     * ISO-8859-1, only printable characters, CR, LF and TAB are replaced
+     */
+    private String replaceSubject(String definedSubject, String originalFilename) {
+        String subjectStr = this.replace(definedSubject, "${filename}", originalFilename);
+        StringBuilder subjectBuilder = new StringBuilder();
+        for (int i = 0; i < subjectStr.length(); i++) {
+            char testChar = subjectStr.charAt(i);
+            if (testChar == '\n') {
+                subjectBuilder.append("\\").append("n");
+            } else if (testChar == '\r') {
+                subjectBuilder.append("\\").append("r");
+            } else if (testChar == '\t') {
+                subjectBuilder.append("\\").append("t");
+            } else {
+                subjectBuilder.append(testChar);
+            }
+        }
+        return (subjectBuilder.toString());
     }
 
     /**
      * Updates the passed post HTTP headers with the headers defined for the
      * sender
      */
-    private void updateUploadHttpHeader(HttpPost post, Partner receiver) {
+    private void updateUploadHTTPHeader(HttpPost post, Partner receiver) {
         List<String> usedHeaderKeys = new ArrayList<String>();
         for (Header singleHeader : post.getAllHeaders()) {
             PartnerHttpHeader headerReplacement = receiver.getHttpHeader(singleHeader.getName());
@@ -810,30 +900,9 @@ public class MessageHttpUploader {
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 166 $";
+        String revision = "$Revision: 177 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
-    }
-
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out)
-            throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[1024];
-        int read = 1024;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
     }
 
     /**

@@ -1,18 +1,20 @@
-//$Header: /as4/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 8     9.10.18 12:29 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 11    25.02.20 14:20 Heller $
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationRequest;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationResponse;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
 
 /*
@@ -26,7 +28,7 @@ import javax.swing.SwingUtilities;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 11 $
  */
 public class JDialogDisplayHTTPConfiguration extends JDialog {
 
@@ -36,6 +38,8 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
     private MecResourceBundle rb = null;
     private BaseClient baseClient;
     private IStatusBar statusbar;
+    private final MendelsonMultiResolutionImage ICON_PORTS
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/httpconfig/gui/ports.svg", 32, 64);
 
     /**
      * Creates new form JDialogPartnerConfig
@@ -56,6 +60,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         this.baseClient = baseClient;
         this.setTitle(this.rb.getResourceString("title"));
         initComponents();
+        this.jLabelIcon.setIcon(new ImageIcon(ICON_PORTS));
     }
 
     /**
@@ -90,7 +95,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                     JDialogDisplayHTTPConfiguration.this.statusbar.startProgressIndeterminate(
                             JDialogDisplayHTTPConfiguration.this.rb.getResourceString("reading.configuration"), uniqueId);
                     DisplayHTTPServerConfigurationResponse response
-                            = (DisplayHTTPServerConfigurationResponse) JDialogDisplayHTTPConfiguration.this.baseClient.sendSyncWaitInfinite(new DisplayHTTPServerConfigurationRequest());                    
+                            = (DisplayHTTPServerConfigurationResponse) JDialogDisplayHTTPConfiguration.this.baseClient.sendSyncWaitInfinite(new DisplayHTTPServerConfigurationRequest());
                     JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(response.getMiscConfigurationText());
                     JDialogDisplayHTTPConfiguration.this.jLabelConfigFileInfo.setText("<HTML>"
                             + JDialogDisplayHTTPConfiguration.this.rb.getResourceString("label.info.configfile",
@@ -98,14 +103,14 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                                         "<strong>" + response.getHttpServerConfigFile() + "</strong>",
                                         response.getEmbeddedJettyServerVersion()})
                             + "</HTML>");
-                    if (!response.isEmbeddedHTTPServerStarted()) {                        
+                    if (!response.isEmbeddedHTTPServerStarted()) {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(
                                 JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
                         JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(
                                 JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
                         JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(
                                 JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
-                    } else if (response.isSSLEnabled()) {                                                 
+                    } else if (response.isSSLEnabled()) {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(response.getCipherConfigurationText());
                         JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(response.getProtocolConfigurationText());
                     } else {
@@ -119,8 +124,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                 } catch (Exception e) {
                     JDialogDisplayHTTPConfiguration.this.unlock();
                     JDialogDisplayHTTPConfiguration.this.statusbar.stopProgressIfExists(uniqueId);
-                    JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, JDialogDisplayHTTPConfiguration.this);
-                    JOptionPane.showMessageDialog(parent, e.getMessage());
+                    UINotification.instance().addNotification(e);
                 } finally {
                     JDialogDisplayHTTPConfiguration.this.unlock();
                     JDialogDisplayHTTPConfiguration.this.statusbar.stopProgressIfExists(uniqueId);
@@ -159,7 +163,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelEdit.setLayout(new java.awt.GridBagLayout());
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/httpconfig/gui/ports32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/httpconfig/gui/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(15, 10, 10, 10);

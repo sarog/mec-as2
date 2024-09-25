@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_fr.java 13    6/25/18 2:33p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_fr.java 14    5.03.20 17:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleMessageDetails_fr extends MecResourceBundle{
     
@@ -37,8 +37,8 @@ public class ResourceBundleMessageDetails_fr extends MecResourceBundle{
         {"transactionstate.error.unknown", "Une erreur inconnue s'est produite." },
         {"transactionstate.error.out", "<HTML>Vous avez transmis avec succès le message {0} à votre partenaire \"{1}\" - mais il n''a pas été en mesure de le traiter et a répondu par l''erreur [{2}]</HTML>." },
         {"transactionstate.error.in", "<HTML>Vous avez reçu avec succès le message {0} de votre partenaire \"{1}\" - mais votre système n''a pas été en mesure de le traiter et a répondu avec l''erreur [{2}]</HTML>." },
-        {"transactionstate.error.unknown-trading-partner", "<HTML>Vous et votre partenaire avez différents identifiants AS2 pour les deux partenaires de transfert dans la configuration. Les identificateurs suivants ont été utilisés: {\" {0}\\Nous avons utilisé les identificateurs suivants (Message Channel), \\\"{1}\\\" (récepteurs de messages)</HTML> (sélecteurs de messages)" },
-        {"transactionstate.error.authentication-failed", "<HTML>Le destinataire du message n' a pas pu vérifier avec succès la signature de l''expéditeur dans les données. C''est généralement un problème de configuration, puisque l''expéditeur et le destinataire doivent utiliser le même certificat ici.</HTML>" },
+        {"transactionstate.error.unknown-trading-partner", "<HTML>Vous et votre partenaire avez des identificateurs AS2 différents pour les deux partenaires de transmission dans la configuration. Les identificateurs suivants ont été utilisés : \"{0}\" (lecteur de nouvelles), \"{1}\" (destinataire du message)</HTML>" },
+        {"transactionstate.error.authentication-failed", "<HTML>Le destinataire du message n' a pas pu vérifier avec succès la signature de l''expéditeur dans les données. C''est généralement un problème de configuration, puisque l''expéditeur et le destinataire doivent utiliser le même certificat ici. Veuillez également consulter les détails du MDN qui se trouvent dans le journal - celui-ci peut contenir des informations supplémentaires.</HTML>" },
         {"transactionstate.error.decompression-failed", "<HTML>Le destinataire du message ne pouvait pas décompresser le message reçu</HTML>" },
         {"transactionstate.error.insufficient-message-security", "<HTML>Le destinataire du message s''attendait à un niveau de sécurité plus élevé pour les données reçues (par exemple, données chiffrées au lieu de données non chiffrées)</HTML>" },
         {"transactionstate.error.unexpected-processing-error", "<HTML>Ceci est un message d''erreur très générique. Pour une raison inconnue, le destinataire n''a pas pu traiter le message.</HTML>" },

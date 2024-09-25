@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 7     6.11.18 17:00 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 8     17.09.19 12:07 Heller $
 package de.mendelson.util.systemevents.search;
 
 import de.mendelson.util.systemevents.SystemEvent;
@@ -57,7 +57,7 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ServerSideEventSearch {
 
@@ -167,7 +167,7 @@ public class ServerSideEventSearch {
             //finally perform the search
             TopDocs hits = searcher.search(query, filter.getMaxResults(), sortByTimestamp);
             //System.out.println("Searched in " + (System.currentTimeMillis()-startTime) + "ms");
-            if (hits.totalHits > 0) {
+            if (hits.totalHits.value > 0) {
                 for (ScoreDoc scoreDoc : hits.scoreDocs) {
                     Document doc = multiReader.document(scoreDoc.doc);
                     try {

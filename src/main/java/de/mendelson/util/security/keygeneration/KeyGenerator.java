@@ -1,25 +1,24 @@
-//$Header: /oftp2/de/mendelson/util/security/keygeneration/KeyGenerator.java 7     6/01/17 11:59a Heller $
+//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerator.java 12    8.10.19 16:43 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.util.Date;
-import java.util.Hashtable;
-import java.util.Vector;
 import java.util.concurrent.TimeUnit;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.X509Extensions;
-import org.bouncycastle.asn1.x509.X509Name;
-import org.bouncycastle.jce.X509Principal;
-import org.bouncycastle.x509.X509V3CertificateGenerator;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -32,17 +31,13 @@ import org.bouncycastle.x509.X509V3CertificateGenerator;
  * This class allows to generate a private key
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 12 $
  */
 public class KeyGenerator {
 
-    public static final String KEYTYPE_DSA = "DSA";
-    public static final String KEYTYPE_RSA = "RSA";
-    public static final String KEYTYPE_ECDSA = "ECDSA";
-    public static final String SIGNATUREALGORITHM_MD5_WITH_RSA_OID = PKCSObjectIdentifiers.md5WithRSAEncryption.getId();
-    public final static String SIGNATUREALGORITHM_SHA1_WITH_RSA_OID = PKCSObjectIdentifiers.sha1WithRSAEncryption.getId();
-    public final static String SIGNATUREALGORITHM_SHA256_WITH_RSA_OID = PKCSObjectIdentifiers.sha256WithRSAEncryption.getId();
-    public final static String SIGNATUREALGORITHM_SHA256_WITH_ECDSA_OID = "1.2.840.10045.4.3.2";
+    public static final String KEYALGORITHM_DSA = "DSA";
+    public static final String KEYALGORITHM_RSA = "RSA";
+    public static final String KEYALGORITHM_ECDSA = "ECDSA";
 
     /**
      * Creates a new instance of KeyGenerator
@@ -60,73 +55,79 @@ public class KeyGenerator {
         //generation keypair
         KeyPairGenerator keyPairGen = null;
         SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
-        keyPairGen = KeyPairGenerator.getInstance(generationValues.getKeyType());
+        //intialize with DSA/RSA/etc
+        keyPairGen = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm(), BouncyCastleProvider.PROVIDER_NAME);
         keyPairGen.initialize(generationValues.getKeySize(), rand);
         KeyPair keyPair = keyPairGen.generateKeyPair();
-        X509Certificate certificate = this.generateCertificate(keyPair.getPublic(),
-                keyPair.getPrivate(), generationValues);
+        X509Certificate certificate = this.generateCertificate(generationValues, keyPair);
         KeyGenerationResult result = new KeyGenerationResult(keyPair, certificate);
         return (result);
     }
 
-    /**
-     * Generates a self-signed X509 Version 3 certificate
-     *
-     */
-    private X509Certificate generateCertificate(PublicKey publicKey, PrivateKey privateKey,
-            KeyGenerationValues generationValues) throws Exception {
-        //Stores certificate attributes
-        Hashtable<ASN1ObjectIdentifier, String> attributes = new Hashtable<ASN1ObjectIdentifier, String>();
-        Vector<ASN1ObjectIdentifier> order = new Vector<ASN1ObjectIdentifier>();
-        attributes.put(X509Name.CN, generationValues.getCommonName());
-        order.add(0, X509Name.CN);
-        attributes.put(X509Name.OU, generationValues.getOrganisationUnit());
-        order.add(0, X509Name.OU);
-        attributes.put(X509Name.O, generationValues.getOrganisationName());
-        order.add(0, X509Name.O);
-        attributes.put(X509Name.L, generationValues.getLocalityName());
-        order.add(0, X509Name.L);
-        attributes.put(X509Name.ST, generationValues.getStateName());
-        order.add(0, X509Name.ST);
-        attributes.put(X509Name.C, generationValues.getCountryCode());
-        order.add(0, X509Name.C);
-        attributes.put(X509Name.E, generationValues.getEmailAddress());
-        order.add(0, X509Name.E);
-        X509V3CertificateGenerator certificateGenerator = new X509V3CertificateGenerator();
-        // Set the issuer distinguished name
-        certificateGenerator.setIssuerDN(new X509Principal(order, attributes));
-        //add a key extension if this is requested
-        if (generationValues.getKeyExtension() != null) {
-            certificateGenerator.addExtension(X509Extensions.KeyUsage, true, generationValues.getKeyExtension());
-        }
-        //add a extended key extension if this is requested
-        if (generationValues.getExtendedKeyExtension() != null) {
-            certificateGenerator.addExtension(X509Extensions.ExtendedKeyUsage, false,
-                    generationValues.getExtendedKeyExtension());
-        }
-        //add a subjectAlternativeName if requested
-        if (!generationValues.getSubjectAlternativeNames().isEmpty()) {
-            GeneralName[] generalNamesArray = new GeneralName[generationValues.getSubjectAlternativeNames().size()];
-            generationValues.getSubjectAlternativeNames().toArray(generalNamesArray);
-            certificateGenerator.addExtension(X509Extensions.SubjectAlternativeName, false,
-                    new GeneralNames(generalNamesArray));
-        }
-
-        // Valid before and after dates now to iValidity days in the future
+    private X509Certificate generateCertificate(KeyGenerationValues generationValues, KeyPair keyPair) throws Exception {
+        SubjectPublicKeyInfo publicKeyInformation = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
+        ContentSigner signer = new JcaContentSignerBuilder(generationValues.getSignatureAlgorithm())
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(keyPair.getPrivate());
+        StringBuilder nameBuilder = new StringBuilder();
+        nameBuilder.append("CN=").append(replace(generationValues.getCommonName(), ",", "\\,"));
+        nameBuilder.append(",OU=").append(replace(generationValues.getOrganisationUnit(), ",", "\\,"));
+        nameBuilder.append(",O=").append(replace(generationValues.getOrganisationName(), ",", "\\,"));
+        nameBuilder.append(",L=").append(replace(generationValues.getLocalityName(), ",", "\\,"));
+        nameBuilder.append(",ST=").append(replace(generationValues.getStateName(), ",", "\\,"));
+        nameBuilder.append(",C=").append(replace(generationValues.getCountryCode(), ",", "\\,"));
+        nameBuilder.append(",E=").append(replace(generationValues.getEmailAddress(), ",", "\\,"));
+        X500Name issuerName = new X500Name(nameBuilder.toString());
+        X500Name subjectName = new X500Name(nameBuilder.toString());
         Date startDate = new Date(System.currentTimeMillis());
         long duration = TimeUnit.DAYS.toMillis(generationValues.getKeyValidInDays());
         Date endDate = new Date(startDate.getTime() + duration);
-        certificateGenerator.setNotBefore(startDate);
-        certificateGenerator.setNotAfter(endDate);
-        certificateGenerator.setSubjectDN(new X509Principal(order, attributes));
-        certificateGenerator.setPublicKey(publicKey);
-        certificateGenerator.setSignatureAlgorithm(generationValues.getSignatureAlgorithm());
         BigInteger serialNumber = new BigInteger(Long.toString(System.currentTimeMillis() / 1000));
-        certificateGenerator.setSerialNumber(serialNumber);
-        // Generate an X.509 certificate, based on the current issuer and subject
-        X509Certificate certificate = certificateGenerator.generate(privateKey, "BC");
-        // Return the certificate
-        return certificate;
+        X509v3CertificateBuilder certificateBuilder = new X509v3CertificateBuilder(
+                issuerName, serialNumber, startDate, endDate, subjectName, publicKeyInformation);
+        //add a key extension if this is requested
+        if (generationValues.getKeyExtension() != null) {
+            certificateBuilder.addExtension(Extension.keyUsage, true, generationValues.getKeyExtension());
+        }
+        //add a extended key extension if this is requested
+        if (generationValues.getExtendedKeyExtension() != null) {
+            certificateBuilder.addExtension(Extension.extendedKeyUsage, false, generationValues.getExtendedKeyExtension());
+        }
+        if (!generationValues.getSubjectAlternativeNames().isEmpty()) {
+            GeneralName[] generalNamesArray = new GeneralName[generationValues.getSubjectAlternativeNames().size()];
+            generationValues.getSubjectAlternativeNames().toArray(generalNamesArray);
+            certificateBuilder.addExtension(Extension.subjectAlternativeName, false, new GeneralNames(generalNamesArray));
+        }
+        X509CertificateHolder certificateHolder = certificateBuilder.build(signer);
+        X509Certificate certificate = new JcaX509CertificateConverter()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .getCertificate(certificateHolder);
+        return( certificate );
+    }
+
+    /**
+     * Replaces the string tag by the string replacement in the sourceString
+     *
+     * @param source Source string
+     * @param tag	String that will be replaced
+     * @param replacement String that will replace the tag
+     * @return String that contains the replaced values
+     */
+    private static String replace(String source, String tag, String replacement) {
+        if (source == null) {
+            return null;
+        }
+        StringBuilder buffer = new StringBuilder();
+        while (true) {
+            int index = source.indexOf(tag);
+            if (index == -1) {
+                buffer.append(source);
+                return (buffer.toString());
+            }
+            buffer.append(source.substring(0, index));
+            buffer.append(replacement);
+            source = source.substring(index + tag.length());
+        }
     }
 
 }

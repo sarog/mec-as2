@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 18    4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 20    11.11.20 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 18 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleCertificates_fr extends MecResourceBundle {
 
@@ -31,6 +31,7 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
     static final Object[][] CONTENTS = {
         {"display.ca.certs", "Afficher les certificats CA"},
         {"button.delete", "Suppression clef/certificat"},
+        {"button.delete.all.expired", "Supprimer toutes les clés/certificats expirés" },
         {"button.edit", "Renommer l''alias"},
         {"button.newkey", "Importer clef"},
         {"button.newcertificate", "Importer certificat"},
@@ -54,7 +55,7 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"label.key.export.pkcs12", "Exporter votre propre clef privée (PKCS#12) (pour sauvegarde seulement !)"},
         {"label.keystore", "Dossier de keystore:"},
         {"title.signencrypt", "Certificats et clefs disponibles (encryption, signature)"},
-        {"title.ssl", "Certificats et clefs disponibles (SSL)"},
+        {"title.ssl", "Certificats et clefs disponibles (SSL/TLS)"},
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"filechooser.certificate.import", "Merci de sélectionner le fichier certificat pour l''import"},
@@ -83,5 +84,13 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"label.key.invalid", "Cette clé est valide" },
         {"label.cert.valid", "Ce certificat est valid" },
         {"label.cert.invalid", "Ce certificat est invalid" },
+        {"warning.deleteallexpired.text", "Voulez-vous vraiment supprimer les entrées expirées et inutilisées {0}?" },
+        {"warning.deleteallexpired.title", "Supprimer toutes les clés/certificats expirés et non utilisés" },
+        {"warning.deleteallexpired.noneavailable.title", "Aucun disponible" },
+        {"warning.deleteallexpired.noneavailable.text", "Il n''y a pas d'entrées expirées et inutilisées à supprimer" },
+        {"success.deleteallexpired.title", "Il n''y a pas d'entrées expirées et inutilisées à supprimer" },
+        {"success.deleteallexpired.text", "{0} clés/certificats expirés et non utilisés ont été retirés" },
+        {"warning.deleteallexpired.expired.but.used.title", "Clés/certificats utilisés non effacés" },
+        {"warning.deleteallexpired.expired.but.used.text", "Les clés/certificats sont expirés mais toujours utilisés - le système les conservera" },
     };
 }

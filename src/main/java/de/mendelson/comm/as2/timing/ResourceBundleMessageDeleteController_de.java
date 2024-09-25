@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMessageDeleteController_de.java 5     24.10.18 10:13 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMessageDeleteController_de.java 7     18.02.19 11:09 Heller $
 package de.mendelson.comm.as2.timing;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleMessageDeleteController_de extends MecResourceBundle{
     
@@ -29,6 +29,10 @@ public class ResourceBundleMessageDeleteController_de extends MecResourceBundle{
         {"transaction.deleted.user", "Transaktionen gelöscht durch Benutzerinteraktion" },
         {"transaction.deleted.system", "Transaktionen gelöscht durch Systempflegeprozess" },
         {"transaction.deleted.transactiondate", "Transaktionsdatum: {0}" },
+        {"transaction.delete.setting.olderthan", "Der Prozess ist konfiguriert, Transaktionen mit grünem Status zu löschen, die älter sind als {0}." },
+        {"delete.ok", "LÖSCHEN ERFOLGREICH" },
+        {"delete.failed", "LÖSCHEN FEHLGESCHLAGEN" }, 
+        {"delete.skipped", "LÖSCHEN ÜBERSPRUNGEN" },  
     };
     
 }

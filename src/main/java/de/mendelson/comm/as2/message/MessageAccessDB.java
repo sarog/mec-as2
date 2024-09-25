@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MessageAccessDB.java 107   7.11.18 17:14 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MessageAccessDB.java 111   9.09.19 10:45 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * Implementation of a server log for the as2 server database
  *
  * @author S.Heller
- * @version $Revision: 107 $
+ * @version $Revision: 111 $
  */
 public class MessageAccessDB {
 
@@ -358,7 +358,8 @@ public class MessageAccessDB {
         ResultSet result = null;
         PreparedStatement statement = null;
         try {
-            statement = this.runtimeConnection.prepareStatement("SELECT * FROM messages WHERE messageid=? ORDER BY initdateutc ASC");
+            String query = "SELECT * FROM messages WHERE messageid=? ORDER BY initdateutc ASC";
+            statement = this.runtimeConnection.prepareStatement(query);
             statement.setString(1, messageId);
             result = statement.executeQuery();
             while (result.next()) {
@@ -488,11 +489,46 @@ public class MessageAccessDB {
                 queryCondition.append(" messagetype=?");
                 parameterList.add(Integer.valueOf(filter.getShowMessageType()));
             }
-            String query = "SELECT * FROM messages" + queryCondition.toString() + " ORDER BY initdateutc ASC";
+            boolean useTimeFilter = filter.getStartTime() != 0L && filter.getEndTime() != 0L;
+            if (useTimeFilter) {
+                if (queryCondition.length() == 0) {
+                    queryCondition.append(" WHERE");
+                } else {
+                    queryCondition.append(" AND");
+                }
+                queryCondition.append(" CAST(initdateutc AS DATE)>=? AND CAST(initdateutc AS DATE)<=?");
+                Calendar calendar = Calendar.getInstance();
+                calendar.setTimeInMillis(filter.getStartTime());
+                calendar.set( Calendar.HOUR_OF_DAY, 0);
+                calendar.set( Calendar.MINUTE, 0);
+                calendar.set( Calendar.SECOND, 0);
+                calendar.set( Calendar.MILLISECOND, 0);
+                parameterList.add(new Timestamp(calendar.getTimeInMillis()));
+                calendar.setTimeInMillis(filter.getEndTime());
+                calendar.add( Calendar.DAY_OF_YEAR, 1);
+                calendar.set( Calendar.HOUR_OF_DAY, 0);
+                calendar.set( Calendar.MINUTE, 0);
+                calendar.set( Calendar.SECOND, 0);
+                calendar.set( Calendar.MILLISECOND, 0);
+                parameterList.add(new Timestamp(calendar.getTimeInMillis()));
+            }
+            //Hint: This is the wrong order! It should be ordered using "ASC". But the HSQLDB LIMIT clause
+            //just takes the n first rows of the result set and returns them. Means the first n results are taken now 
+            //in the wrong order and then the returned list of transactions is built in the wrong order again 
+            //(add every row to the pos 0 of the list)
+            //- then the result is as if the LIMIT has been taken from the other side of the result set
+            String query = "SELECT * FROM messages" + queryCondition.toString()
+                    + " ORDER BY initdateutc DESC";
+            if( !useTimeFilter){
+                //do NOT use the limit if a time filter is set as the user want to see all transactions in range
+                query = query + " LIMIT " + String.valueOf(filter.getLimit());
+            }
             statement = this.runtimeConnection.prepareStatement(query);
             for (int i = 0; i < parameterList.size(); i++) {
                 if (parameterList.get(i) instanceof Integer) {
                     statement.setInt(i + 1, ((Integer) parameterList.get(i)).intValue());
+                } else if (parameterList.get(i) instanceof Timestamp) {
+                    statement.setTimestamp(i + 1, (Timestamp) parameterList.get(i));
                 } else {
                     statement.setString(i + 1, (String) parameterList.get(i));
                 }
@@ -521,7 +557,8 @@ public class MessageAccessDB {
                 info.setSubject(result.getString("msgsubject"));
                 info.setResendCounter(result.getInt("resendcounter"));
                 info.setUserdefinedId(result.getString("userdefinedid"));
-                messageList.add(info);
+                //change the order of the list. This is required because of the LIMIT clause of HSQLDB
+                messageList.add(0,info);
             }
         } catch (Exception e) {
             this.logger.severe("MessageAccessDB.getMessageOverview: " + e.getMessage());

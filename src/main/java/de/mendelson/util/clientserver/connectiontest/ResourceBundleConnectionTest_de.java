@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 8     10.12.18 12:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 10    4.11.20 15:50 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleConnectionTest_de extends MecResourceBundle {
 
@@ -41,7 +41,8 @@ public class ResourceBundleConnectionTest_de extends MecResourceBundle {
         {"remote.service.identification", "Service Identifikation des entfernten Servers: \"{0}\""},
         {"service.found.success", "Erfolg: Es wurde ein laufender OFTP Service gefunden an {0}"},
         {"service.found.failure", "Fehler: Es wurde kein laufender OFTP Service gefunden an {0}"},
-        {"wrong.protocol", "Das gefundene Protokol ist \"{0}\", dies ist keine gesicherte Verbindung. Sie haben versucht, sich per SSL/TLS zu diesem Partner zu verbinden. Auf dem gegebenen Port und der gegebenen Adresse bietet Ihr Partner jedoch keine Leitungssicherung an."},
+        {"wrong.protocol", "Das gefundene Protokol ist \"{0}\", dies ist keine gesicherte Verbindung. "
+            + "Sie haben versucht, sich mit einem der Protokoll(e) [{1}] zu diesem Partner zu verbinden. Auf dem gegebenen Port und der gegebenen Adresse bietet Ihr Partner jedoch keine dieser Leitungssicherungsprotokolle an."},
         {"wrong.protocol.hint", "Entweder Ihr Partner erwartet eine ungesicherte Verbindung, es liegt ein Protokollproblem vor oder er benötigt eine Client Authentication"},
         {"protocol.information", "Das verwendete Protokoll wurde als \"{0}\" identifiziert"},
         {"requesting.certificates", "Es werden die Zertifikate des entfernten Servers heruntergeladen"},
@@ -57,6 +58,8 @@ public class ResourceBundleConnectionTest_de extends MecResourceBundle {
         {"test.connection.proxy.auth", "Die Verbindung verwendet den Proxy {0} mit Authentifikation (Benutzer \"{1}\")" },
         {"test.connection.proxy.noauth", "Die Verbindung verwendet den Proxy {0} ohne Authentifikation" },
         {"result.exception", "Der folgende Fehler trat beim Test auf: {0}." },        
+        {"info.protocols", "Der Client lässt eine Verhandlung über folgende TLS Protokolle zu: {0}" },
+        {"sni.extension.set", "Der Hostname für die TLS SNI Erweiterung wurde auf \"{0}\" gesetzt" },
     };
 
 }

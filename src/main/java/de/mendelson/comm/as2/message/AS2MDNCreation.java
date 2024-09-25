@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 40    7/03/18 9:35a Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 43    14.12.20 14:54 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
@@ -43,7 +43,7 @@ import javax.mail.util.ByteArrayDataSource;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 43 $
  */
 public class AS2MDNCreation {
 
@@ -140,7 +140,6 @@ public class AS2MDNCreation {
         if (this.logger != null) {
             this.logger.log(Level.SEVERE, this.rb.getResourceString("mdn.details",
                     new Object[]{
-                        messageInfoOfException.getMessageId(),
                         exception.getMessage()
                     }), messageInfoOfException);
         }
@@ -231,14 +230,14 @@ public class AS2MDNCreation {
             if (this.logger != null) {
                 this.logger.log(Level.SEVERE, this.rb.getResourceString("mdn.created",
                         new Object[]{
-                            mdnInfo.getMessageId(), mdnInfo.getRelatedMessageId(), dispositionState
+                            mdnInfo.getRelatedMessageId(), dispositionState
                         }), mdnInfo);
             }
         } else {
             if (this.logger != null) {
                 this.logger.log(Level.FINE, this.rb.getResourceString("mdn.created",
                         new Object[]{
-                            mdnInfo.getMessageId(), mdnInfo.getRelatedMessageId(), dispositionState
+                            mdnInfo.getRelatedMessageId(), dispositionState
                         }), mdnInfo);
             }
         }
@@ -378,7 +377,7 @@ public class AS2MDNCreation {
             if (this.logger != null) {
                 this.logger.log(Level.INFO, this.rb.getResourceString("mdn.signed",
                         new Object[]{
-                            as2Message.getAS2Info().getMessageId(), digestStr.toUpperCase()
+                            digestStr.toUpperCase()
                         }), as2Message.getAS2Info());
             }
             return (signedMimeMessage);

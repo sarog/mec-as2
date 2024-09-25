@@ -1,12 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 18    6.12.18 16:26 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 21    25.04.19 14:32 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
 import de.mendelson.comm.as2.message.AS2MDNInfo;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
-import de.mendelson.comm.as2.message.ExecuteShellCommand;
+import de.mendelson.comm.as2.message.postprocessingevent.ExecuteShellCommand;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.send.HttpConnectionParameter;
@@ -39,7 +40,7 @@ import java.util.logging.Logger;
  * Receiver class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 21 $
  */
 public class SendOrderReceiver implements Runnable {
 
@@ -260,9 +261,8 @@ public class SendOrderReceiver implements Runnable {
                         this.messageStoreHandler.movePayloadToInbox(relatedMessageInfo.getMessageType(), mdnInfo.getRelatedMessageId(),
                                 order.getSender(), order.getReceiver());
                         //execute a shell command after send SUCCESS
-                        ExecuteShellCommand executeCommand = new ExecuteShellCommand(this.configConnection, this.runtimeConnection);
-                        //switch sender and receiver because its the MDN sender that is requested, not the message sender
-                        executeCommand.executeShellCommandOnReceipt(order.getReceiver(), order.getSender(), relatedMessageInfo);
+                        ProcessingEvent.enqueueEventIfRequired(this.configConnection, this.runtimeConnection,
+                                relatedMessageInfo, null);
                     }
                     //set the transaction state to the MDN state
                     messageAccess.setMessageState(mdnInfo.getRelatedMessageId(), mdnInfo.getState());
@@ -290,11 +290,16 @@ public class SendOrderReceiver implements Runnable {
             int maxRetryCount = this.preferences.getInt(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT);
             //to many retries: cancel the transaction
             if (retryCount > maxRetryCount) {
-                logger.log(Level.SEVERE, e.getMessage(), order.getMessage().getAS2Info());
-                logger.log(Level.SEVERE, rb.getResourceString("max.retry.reached"), order.getMessage().getAS2Info());
+                if( e.getMessage() != null && e.getMessage().trim().length() > 0 ){
+                    logger.log(Level.WARNING, e.getMessage(), order.getMessage().getAS2Info());
+                }
+                logger.log(Level.SEVERE, rb.getResourceString("max.retry.reached",
+                        String.valueOf( maxRetryCount )), order.getMessage().getAS2Info());
                 this.processUploadError(order);
             } else {
-                logger.log(Level.WARNING, e.getMessage(), order.getMessage().getAS2Info());
+                if( e.getMessage() != null && e.getMessage().trim().length() > 0 ){
+                    logger.log(Level.WARNING, e.getMessage(), order.getMessage().getAS2Info());
+                }
                 logger.log(Level.WARNING, rb.getResourceString("retry",
                         new Object[]{
                             String.valueOf(this.preferences.getInt(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S)),
@@ -336,9 +341,8 @@ public class SendOrderReceiver implements Runnable {
                 //for pending messages
                 order.getMessage().getAS2Info().setState(AS2Message.STATE_STOPPED);
                 messageAccess.updateFilenames((AS2MessageInfo) order.getMessage().getAS2Info());
-                //execute a shell command after send ERROR if this is configured (sync MDN, async MDN)
-                ExecuteShellCommand executor = new ExecuteShellCommand(this.configConnection, this.runtimeConnection);
-                executor.executeShellCommandOnSend((AS2MessageInfo) order.getMessage().getAS2Info(), null);
+                ProcessingEvent.enqueueEventIfRequired(this.configConnection, this.runtimeConnection, 
+                        (AS2MessageInfo) order.getMessage().getAS2Info(), null);
                 //write status file
                 this.messageStoreHandler.writeOutboundStatusFile((AS2MessageInfo) order.getMessage().getAS2Info());
             } else {

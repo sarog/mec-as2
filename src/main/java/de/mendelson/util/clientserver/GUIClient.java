@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/GUIClient.java 32    31.10.18 10:38 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/GUIClient.java 33    14.06.19 8:36 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -38,7 +38,7 @@ import javax.swing.SwingUtilities;
  * GUI Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 33 $
  */
 public abstract class GUIClient extends JFrame implements ClientSessionHandlerCallback {
 
@@ -130,14 +130,14 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
     }
 
     /**
-     * Overwrite this to change the login dialogs color
+     * Overwrite this to change the login dialog color
      */
     public Color getLoginDialogColorBackground() {
-        return (Color.decode("#3F7017"));
+        return (Color.decode("#556b4C"));
     }
 
     /**
-     * Overwrite this to change the login dialogs color
+     * Overwrite this to change the login dialog color
      */
     public Color getLoginDialogColorForeground() {
         return (Color.WHITE);

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/xmleditorkit/XMLEditorKitXMLReader.java 4     4/05/18 1:55p Heller $
+//$Header: /as4/de/mendelson/util/xmleditorkit/XMLEditorKitXMLReader.java 5     16.10.19 11:30 Heller $
 package de.mendelson.util.xmleditorkit;
 
 import java.io.IOException;
@@ -27,7 +27,7 @@ import org.w3c.dom.NodeList;
  * XML Editor Kit - based on code from Stanislav Lapitsky
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class XMLEditorKitXMLReader {
 
@@ -69,7 +69,6 @@ public class XMLEditorKitXMLReader {
             } else {
                 writeNode(xmlDocument, dom.getDocumentElement(), pos, specsList);
             }
-
             DefaultStyledDocument.ElementSpec[] data = new DefaultStyledDocument.ElementSpec[specsList.size()];
             specsList.toArray(data);
             xmlDocument.insert(pos, data);

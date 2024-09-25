@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ListCellRendererDirection.java 2     6/18/18 4:10p Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ListCellRendererDirection.java 3     10.05.19 13:12 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.Component;
 import java.awt.Rectangle;
 import java.util.MissingResourceException;
@@ -17,16 +18,14 @@ import javax.swing.SwingConstants;
  * Renderer to render the direction of a transaction to be selected
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ListCellRendererDirection extends JLabel implements ListCellRenderer {
 
-    public static final ImageIcon ICON_DIRECTION_INBOUND
-            = new ImageIcon(ListCellRendererDirection.class.getResource(
-                    "/de/mendelson/comm/as2/client/in16x16.gif"));
-    public static final ImageIcon ICON_DIRECTION_OUTBOUND
-            = new ImageIcon(ListCellRendererDirection.class.getResource(
-                    "/de/mendelson/comm/as2/client/out16x16.gif"));
+    private final static MendelsonMultiResolutionImage ICON_DIRECTION_INBOUND
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/message/loggui/in.svg", 16, 32);
+    private final static MendelsonMultiResolutionImage ICON_DIRECTION_OUTBOUND
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/message/loggui/out.svg", 16, 32);
     private MecResourceBundle rb = null;
 
     /**
@@ -189,10 +188,10 @@ public class ListCellRendererDirection extends JLabel implements ListCellRendere
             if (value instanceof String) {
                 String valueStr = (String) value;
                 if (valueStr.equals(this.rb.getResourceString("filter.direction.inbound"))) {
-                    this.setIcon(ICON_DIRECTION_INBOUND);
+                    this.setIcon(new ImageIcon(ICON_DIRECTION_INBOUND));
                     this.setText(valueStr);
                 } else if (valueStr.equals(this.rb.getResourceString("filter.direction.outbound"))) {
-                    this.setIcon(ICON_DIRECTION_OUTBOUND);
+                    this.setIcon(new ImageIcon(ICON_DIRECTION_OUTBOUND));
                     this.setText(valueStr);
                 } else {
                     this.setIcon(null);

@@ -1,12 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 29    7.12.18 11:55 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 32    21.08.20 13:22 Heller $
 package de.mendelson.comm.as2.log;
 
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Timestamp;
 import java.sql.Types;
@@ -28,7 +31,7 @@ import java.util.logging.Logger;
  * Access to the AS2 log that stores log messages for every transaction
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 32 $
  */
 public class LogAccessDB {
 
@@ -50,6 +53,10 @@ public class LogAccessDB {
      * and to prevent daylight saving problems
      */
     private Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    /**HSQLDB supports Java_Objects, PostgreSQL does not support it. Means there are
+     * different access methods required for Object access
+     */
+    private boolean databaseSupportsJavaObjects = true;
 
     /**
      * @param host host to connect to
@@ -57,8 +64,74 @@ public class LogAccessDB {
     public LogAccessDB(Connection configConnection, Connection runtimeConnection) {
         this.runtimeConnection = runtimeConnection;
         this.configConnection = configConnection;
+        this.analyzeDatabaseMetadata(configConnection);
     }
 
+    private void analyzeDatabaseMetadata(Connection connection) {
+        try {
+            DatabaseMetaData data = connection.getMetaData();
+            ResultSet result = null;
+            try {
+                result = data.getTypeInfo();
+                while (result.next()) {
+                    if( result.getString( "TYPE_NAME").equalsIgnoreCase("bytea")){
+                        databaseSupportsJavaObjects = false;
+                    }
+                }
+            } finally {
+                if (result != null) {
+                    result.close();
+                }
+            }
+        } catch (Exception e) {
+            //ignore
+        }
+    }
+    
+    /**
+     * Reads a binary object from the database and returns a byte array that
+     * contains it. Will return null if the read data was null. Reading and
+     * writing binary objects differs relating the used database system
+     */
+    private String readTextStoredAsJavaObject(ResultSet result, String columnName) throws Exception {
+        if( this.databaseSupportsJavaObjects){
+            Object object = result.getObject(columnName);
+            if (!result.wasNull()) {
+                if (object instanceof String) {
+                    return (((String) object));
+                } else if (object instanceof byte[]) {
+                    return (new String((byte[]) object));
+                }
+            }
+        }else{
+            byte[] bytes = result.getBytes(columnName);
+            if (result.wasNull()) {
+                return (null);
+            }
+            return (new String( bytes, StandardCharsets.UTF_8));
+        }
+        return (null);
+    }
+
+    /**Sets text data as parameter to a stored procedure. The handling depends if the database supports java objects
+     * 
+     */
+    private void setTextParameterAsJavaObject(PreparedStatement statement, int index, String text) throws SQLException{        
+        if( this.databaseSupportsJavaObjects ){
+            if (text == null) {
+                statement.setNull(index, Types.JAVA_OBJECT);
+            } else {
+                statement.setObject(index, text);
+            }
+        }else{
+            if (text == null) {
+                statement.setNull(index, Types.BINARY);
+            } else {
+                statement.setBytes(index, text.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+    }
+    
     private int convertLevel(Level level) {
         if (level.equals(Level.WARNING)) {
             return (this.LEVEL_WARNING);
@@ -88,8 +161,8 @@ public class LogAccessDB {
     /**
      * Adds a log line to the db
      */
-    public void log(Level level, long millis, String message, String messageId) {
-        if (message == null) {
+    public void log(Level level, long millis, String logMessage, String messageId) {
+        if (logMessage == null) {
             return;
         }
         PreparedStatement statement = null;
@@ -99,18 +172,19 @@ public class LogAccessDB {
             statement.setTimestamp(1, new Timestamp(millis), this.calendarUTC);
             statement.setString(2, messageId);
             statement.setInt(3, this.convertLevel(level));
-            if (message == null) {
-                statement.setNull(4, Types.JAVA_OBJECT);
-            } else {
-                statement.setObject(4, message);
-            }
+            this.setTextParameterAsJavaObject(statement, 4, logMessage);
             statement.execute();
         } catch (SQLIntegrityConstraintViolationException e) {
-            this.logger.severe("LogAccessDB.log "
+            String errorMessage = "LogAccessDB.log "
                     + "(" + e.getClass().getSimpleName() + "): "
                     + " The system tries to store a log entry for the message id \"" + messageId
-                    + "\", but this message seems not to exist in the system.");
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                    + "\", but this message seems not to exist in the system.\n"
+                    + "The reason might be an unreferenced MDN or a bad inbound AS2 message structure.";
+            this.logger.severe(errorMessage);
+            SystemEvent event = new SystemEvent( SystemEvent.SEVERITY_ERROR, SystemEvent.ORIGIN_TRANSACTION, SystemEvent.TYPE_TRANSACTION_ANY );
+            event.setBody(errorMessage + "\n\nLog message: \"" + logMessage + "\"");
+            event.setSubject("Unreferenced MDN or bad message structure");
+            SystemEventManagerImplAS2.newEvent(event);
         } catch (Exception e) {
             this.logger.severe("LogAccessDB.log: " + e.getMessage());
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
@@ -138,14 +212,9 @@ public class LogAccessDB {
             while (result.next()) {
                 LogEntry entry = new LogEntry();
                 entry.setLevel(this.convertLevel(result.getInt("loglevel")));
-                Object detailsObj = result.getObject("details");
-                if (!result.wasNull()) {
-                    if (detailsObj instanceof String) {
-                        entry.setMessage((String) detailsObj);
-                    } else if (detailsObj instanceof byte[]) {
-                        //just for compatibility reasons for an update to hsqldb 2.x
-                        entry.setMessage(new String((byte[]) detailsObj));
-                    }
+                String detailsStr = this.readTextStoredAsJavaObject(result, "details");
+                if( detailsStr != null ){
+                    entry.setMessage(detailsStr);
                 }
                 entry.setMessageId(messageId);
                 entry.setMillis(result.getTimestamp("timestamputc", this.calendarUTC).getTime());

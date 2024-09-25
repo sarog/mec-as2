@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2StatusBar_fr.java 4     4/06/18 1:35p Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2StatusBar_fr.java 5     4.06.19 12:46 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleAS2StatusBar_fr extends MecResourceBundle {
 
@@ -31,7 +31,8 @@ public class ResourceBundleAS2StatusBar_fr extends MecResourceBundle {
      */
     static final Object[][] CONTENTS = {
         {"count.ok", "Transactions sans fautes"},
-        {"count.all", "Nombre des transactions"},
+        {"count.all.served", "Toutes les transactions servies"},
+        {"count.all.available", "Toutes les transactions disponibles"},
         {"count.pending", "Transactions attendant"},
         {"count.failure", "Transactions defectueuses"},
         {"count.selected", "Transactions choisies"},

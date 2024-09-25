@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestRequest.java 3     23.10.18 9:34 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestRequest.java 4     19.09.19 12:26 Heller $
 package de.mendelson.util.clientserver.connectiontest.clientserver;
 
+import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
@@ -16,20 +17,40 @@ import java.util.concurrent.TimeUnit;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ConnectionTestRequest extends ClientServerMessage implements Serializable {
     
     public static final long serialVersionUID = 1L;
-    private boolean ssl = false;
+    private String[] protocols = ConnectionTest.DEFAULT_TLS_PROTOCOL_LIST;
     private String host = null;
     private int port;
     private long timeout = TimeUnit.SECONDS.toMillis(2);
     /**Some additional information for the log etc*/
     private String partnerName = null;
 
+    
+    public ConnectionTestRequest(String host, int port, String[] protocols) {        
+        this.protocols = protocols;
+        if( this.protocols == null ){
+            this.protocols = new String[0];
+        }
+        this.host = host;
+        this.port = port;
+    }
+    
+    /**Performs a TLS connection test with the default TLS protocols if ssl is set.
+     * To specify the used protocols use the other constructor
+     * @param host
+     * @param port
+     * @param ssl 
+     */
     public ConnectionTestRequest(String host, int port, boolean ssl) {
-        this.ssl = ssl;
+        if( ssl ){
+            this.protocols = ConnectionTest.DEFAULT_TLS_PROTOCOL_LIST;
+        }else{
+            this.protocols = new String[0];
+        }
         this.host = host;
         this.port = port;
     }
@@ -54,12 +75,16 @@ public class ConnectionTestRequest extends ClientServerMessage implements Serial
     }
 
     /**
-     * @return the ssl
+     * @return an empty array if this is a non SSL request
      */
-    public boolean getSSL() {
-        return ssl;
+    public String[] getTLSProtocols() {
+        return( this.protocols );
     }
 
+    public boolean getSSL(){
+        return( this.protocols != null && this.protocols.length > 0);
+    }
+    
     /**
      * @return the host
      */

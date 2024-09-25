@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 53    6.12.18 16:48 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 59    30.06.20 9:13 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
@@ -9,13 +9,9 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -67,7 +63,7 @@ import org.bouncycastle.operator.jcajce.JcaAlgorithmParametersConverter;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 53 $
+ * @version $Revision: 59 $
  */
 public class AS2MessageCreation {
 
@@ -296,71 +292,84 @@ public class AS2MessageCreation {
         message.setDecryptedRawData(signedOut.toByteArray());
     }
 
-    /**Converts a file array to a path array*/
-    private Path[] fileToPath( File[] files ){
+    /**
+     * Converts a file array to a path array
+     */
+    private Path[] fileToPath(File[] files) {
         Path[] path = new Path[files.length];
-        for( int i = 0; i < files.length; i++){
+        for (int i = 0; i < files.length; i++) {
             path[i] = files[i].toPath();
         }
-        return( path );
-    }
-    
-    
-    /**
-     * Builds up a new message from the passed message parts. The original
-     * filenames are taken from the payload files
-     * @deprecated Use the same method with Path[] parameter instead
-     */
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles) throws Exception {
-        return( this.createMessage( sender, receiver, this.fileToPath(payloadFiles)));
+        return (path);
     }
 
     /**
      * Builds up a new message from the passed message parts. The original
      * filenames are taken from the payload files
+     *
+     * @deprecated Use the same method with Path[] parameter instead
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles) throws Exception {
+    @Deprecated(since = "2020")
+    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles) throws Exception {
+        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), null));
+    }
+
+    /**
+     * Builds up a new message from the passed message parts. The original
+     * filenames are taken from the payload files
+     *
+     * @param payloadContentTypes If this is null the receivers content type
+     * will be taken
+     */
+    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] payloadContentTypes) throws Exception {
         String[] originalFilenames = new String[payloadFiles.length];
         for (int i = 0; i < originalFilenames.length; i++) {
             originalFilenames[i] = payloadFiles[i].getFileName().toString().replace(' ', '_');
         }
-        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, null, receiver.getSubject()));
-    }
-    
-    
-    /**
-     * Builds up a new message from the passed message parts
-     * @deprecated Use the same method with Path[] parameter instead
-     */
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames) throws Exception {
-        return( this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames ));
+        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, null,
+                receiver.getSubject(), payloadContentTypes));
     }
 
-     /**
-     * Builds up a new message from the passed message parts
-     */
-    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] originalFilenames) throws Exception {
-        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, null, receiver.getSubject()));
-    }
-    
-    
     /**
      * Builds up a new message from the passed message parts
+     *
      * @deprecated Use the same method with Path[] parameter instead
      */
+    @Deprecated(since = "2020")
+    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames) throws Exception {
+        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, null));
+    }
+
+    /**
+     * Builds up a new message from the passed message parts
+     */
+    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] originalFilenames,
+            String[] payloadContentTypes) throws Exception {
+        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, null,
+                receiver.getSubject(), payloadContentTypes));
+    }
+
+    /**
+     * Builds up a new message from the passed message parts
+     *
+     * @deprecated Use the same method with Path[] parameter instead
+     */
+    @Deprecated(since = "2020")
     public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames, String userdefinedId,
             String subject) throws Exception {
-        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, userdefinedId, subject ));
+        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, userdefinedId, subject,
+                null));
     }
 
     /**
      * Builds up a new message from the passed message parts
      */
     public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] originalFilenames, String userdefinedId,
-            String subject) throws Exception {
-        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, userdefinedId, subject));
+            String subject, String[] payloadContentTypes) throws Exception {
+        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, userdefinedId, subject,
+                payloadContentTypes));
     }
-    
+
     /**
      * Builds up a new message from the passed payload files - the original
      * filenames are taken from the passed payload files
@@ -369,7 +378,8 @@ public class AS2MessageCreation {
      * AS2Message
      * @deprecated Use the same method with Path[] parameter instead
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, int messageType, String subject) throws Exception {        
+    @Deprecated(since = "2020")
+    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, int messageType, String subject) throws Exception {
         return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), messageType, subject));
     }
 
@@ -385,19 +395,8 @@ public class AS2MessageCreation {
         for (int i = 0; i < originalFilenames.length; i++) {
             originalFilenames[i] = payloadFiles[i].getFileName().toString().replace(' ', '_');
         }
-        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, messageType, null, subject));
-    }
-    
-    /**
-     * Builds up a new message from the passed message parts
-     *
-     * @param messageType one of the message types defined in the class
-     * AS2Message
-     * @deprecated Use the same method with Path[] parameter instead
-     */
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames,
-            int messageType, String userdefinedId, String subject) throws Exception {        
-        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, messageType, userdefinedId, subject));
+        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, messageType, null, subject,
+                null));
     }
 
     /**
@@ -405,17 +404,54 @@ public class AS2MessageCreation {
      *
      * @param messageType one of the message types defined in the class
      * AS2Message
+     * @deprecated Use the same method with Path[] parameter instead
+     */
+    @Deprecated(since = "2020")
+    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames,
+            int messageType, String userdefinedId, String subject) throws Exception {
+        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, messageType, userdefinedId,
+                subject, null));
+    }
+
+    /**
+     * Builds up a new message from the passed message parts
+     *
+     * @param messageType one of the message types defined in the class
+     * @param originalFilenames Original filenames for the passed payloads - the
+     * array length must match the array length of the payloadFiles
+     * @param payloadContentTypes Payload Content Types for the passed payloads
+     * - the array length must match the array length of the payloadFiles
+     * AS2Message
      */
     public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] originalFilenames,
-            int messageType, String userdefinedId, String subject) throws Exception {
+            int messageType, String userdefinedId, String subject, String[] payloadContentTypes) throws Exception {
+        if (payloadFiles == null || payloadFiles.length == 0) {
+            throw new IllegalArgumentException("AS2MessageCreation.createMessage(): No payload files");
+        }
         if (payloadFiles.length > 0 && originalFilenames != null && originalFilenames.length != payloadFiles.length) {
             throw new IllegalArgumentException("AS2MessageCreation.createMessage(): The number of passed payloadfiles and originalfilenames must match");
+        }
+        if (payloadFiles.length > 0 && payloadContentTypes != null && payloadContentTypes.length != payloadFiles.length) {
+            throw new IllegalArgumentException("AS2MessageCreation.createMessage(): The number of passed payloadfiles and payloadContentTypes must match");
         }
         //build the original filenames from the passed payload files as they are not passed to the method
         if (originalFilenames == null) {
             originalFilenames = new String[payloadFiles.length];
             for (int i = 0; i < originalFilenames.length; i++) {
                 originalFilenames[i] = payloadFiles[i].getFileName().toString().replace(' ', '_');
+            }
+        }
+        //Build up content types from receiver information if this is not passed
+        if (payloadContentTypes == null) {
+            payloadContentTypes = new String[payloadFiles.length];
+            for (int i = 0; i < payloadFiles.length; i++) {
+                payloadContentTypes[i] = receiver.getContentType();
+            }
+        }
+        //fill up content type data from receiver if there are null values in the passed array
+        for (int i = 0; i < payloadFiles.length; i++) {
+            if (payloadContentTypes[i] == null) {
+                payloadContentTypes[i] = receiver.getContentType();
             }
         }
         //create payloads from the payload files
@@ -426,13 +462,14 @@ public class AS2MessageCreation {
             try {
                 inStream = Files.newInputStream(payloadFile);
                 ByteArrayOutputStream payloadOut = new ByteArrayOutputStream();
-                this.copyStreams(inStream, payloadOut);
+                inStream.transferTo(payloadOut);
                 payloadOut.flush();
                 payloadOut.close();
                 //add payload
                 AS2Payload payload = new AS2Payload();
                 payload.setData(payloadOut.toByteArray());
                 payload.setOriginalFilename(originalFilenames[i]);
+                payload.setContentType(payloadContentTypes[i]);
                 payloads[i] = payload;
             } finally {
                 inStream.close();
@@ -440,8 +477,7 @@ public class AS2MessageCreation {
         }
         return (this.createMessage(sender, receiver, payloads, messageType, null, userdefinedId, subject));
     }
-    
-    
+
     /**
      * Builds up a new message from the passed message parts
      *
@@ -642,7 +678,7 @@ public class AS2MessageCreation {
         } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_256 || info.getSignType() == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
             info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_256);
         } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_384 || info.getSignType() == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_256);
+            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_384);
         } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_512 || info.getSignType() == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
             info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_512);
         } else {
@@ -748,7 +784,7 @@ public class AS2MessageCreation {
             InputStream in = null;
             try {
                 in = message.getDecryptedRawDataInputStream();
-                this.copyStreams(in, out);
+                in.transferTo(out);
             } finally {
                 if (in != null) {
                     in.close();
@@ -947,23 +983,4 @@ public class AS2MessageCreation {
         return (signedMultipart);
     }
 
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[1024];
-        int read = 1024;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
-    }
 }

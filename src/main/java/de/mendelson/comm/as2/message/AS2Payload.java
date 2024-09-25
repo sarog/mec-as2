@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 13    7.11.18 10:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 16    19.03.20 18:51 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.BufferedInputStream;
@@ -24,7 +24,7 @@ import java.nio.file.Paths;
  * have multiple attachments in as2 transmission
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public class AS2Payload implements Serializable {
 

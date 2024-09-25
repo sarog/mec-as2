@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 57    1.11.18 14:20 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 59    19.03.20 18:51 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.BufferedInputStream;
@@ -17,7 +17,7 @@ import java.util.Properties;
  * Stores a AS2 message
  *
  * @author S.Heller
- * @version $Revision: 57 $
+ * @version $Revision: 59 $
  */
 public class AS2Message implements Serializable {
 

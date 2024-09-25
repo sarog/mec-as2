@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 4     22.10.18 13:03 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 6     10.09.20 12:57 Heller $
 package de.mendelson.util.systemevents.notification;
 
+import java.io.Serializable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -15,10 +16,10 @@ import org.w3c.dom.NodeList;
 /**
  * Implementation of a server log for the as2 server database
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
-public class NotificationDataImplAS2 extends NotificationData{
-
+public class NotificationDataImplAS2 extends NotificationData implements Serializable{
+   
     public static final long serialVersionUID = 1L;
     
     private String notificationMail = null;
@@ -29,6 +30,8 @@ public class NotificationDataImplAS2 extends NotificationData{
     private boolean notifyCEM = false;
     private boolean notifySystemFailure = false;
     private boolean notifyResendDetected = true;
+    private boolean notifyConnectionProblem = false;
+    private boolean notifyPostprocessingProblem = false;
     /**Makes no sense but some mail servers require this to be a valid email from the same host to prevent SPAM sending*/
     private String replyTo = null;
     private boolean useSMTHAuth = false;
@@ -108,6 +111,7 @@ public class NotificationDataImplAS2 extends NotificationData{
         builder.append(offset).append("\t<notifytransactionerror>").append(String.valueOf(this.notifyTransactionError)).append("</notifytransactionerror>\n");
         builder.append(offset).append("\t<notifysystemfailure>").append(String.valueOf(this.notifySystemFailure)).append("</notifysystemfailure>\n");
         builder.append(offset).append("\t<notifycem>").append(String.valueOf(this.notifyCEM)).append("</notifycem>\n");
+        builder.append(offset).append("\t<notifyconnectionproblem>").append(String.valueOf(this.notifyConnectionProblem)).append("</notifyconnectionproblem>\n");
         builder.append(offset).append("\t<replyto>").append(this.toCDATA(this.replyTo)).append("</replyto>\n");
         builder.append(offset).append("\t<maxnotificationspermin>").append(this.toCDATA(String.valueOf(this.maxNotificationsPerMin))).append("</maxnotificationspermin>\n");
         builder.append(offset).append("</notification>\n");
@@ -140,6 +144,8 @@ public class NotificationDataImplAS2 extends NotificationData{
                     notification.setNotifyTransactionError(value.equalsIgnoreCase("true"));
                 }else if (key.equals("notifysystemfailure")) {
                     notification.setNotifySystemFailure(value.equalsIgnoreCase("true"));
+                }else if (key.equals("notifyconnectionproblem")) {
+                    notification.setNotifyConnectionProblem(value.equalsIgnoreCase("true"));
                 }else if (key.equals("notifycem")) {
                     notification.setNotifyCEM(value.equalsIgnoreCase("true"));
                 } else if (key.equals("replyto")) {
@@ -259,6 +265,7 @@ public class NotificationDataImplAS2 extends NotificationData{
     /**
      * @return the maxNotificationsPerMin
      */
+    @Override
     public int getMaxNotificationsPerMin() {
         return maxNotificationsPerMin;
     }
@@ -269,5 +276,35 @@ public class NotificationDataImplAS2 extends NotificationData{
     public void setMaxNotificationsPerMin(int maxNotificationsPerMin) {
         this.maxNotificationsPerMin = maxNotificationsPerMin;
     }
+    
+    /**
+     * @return the notifyConnectionProblems
+     */
+    public boolean notifyConnectionProblem() {
+        return notifyConnectionProblem;
+    }
 
+    /**
+     * @param notifyConnectionProblems the notifyConnectionProblems to set
+     */
+    public void setNotifyConnectionProblem(boolean notifyConnectionProblem) {
+        this.notifyConnectionProblem = notifyConnectionProblem;
+    }
+
+     /**
+     * @return the notifyPostprocessingProblem
+     */
+    public boolean notifyPostprocessingProblem() {
+        return notifyPostprocessingProblem;
+    }
+
+    /**
+     * @param notifyPostprocessingProblem the notifyPostprocessingProblem to set
+     */
+    public void setNotifyPostprocessingProblem(boolean notifyPostprocessingProblem) {
+        this.notifyPostprocessingProblem = notifyPostprocessingProblem;
+    }
+
+    
+    
 }

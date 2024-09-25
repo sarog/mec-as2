@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/StateDialog.java 12    1-11-16 12:19p Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/StateDialog.java 14    4.12.20 9:11 Heller $
 package de.mendelson.comm.as2.webclient2;
 
+import com.vaadin.shared.ui.ContentMode;
 import com.vaadin.ui.AbstractComponent;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
+import com.vaadin.ui.VerticalLayout;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
 import de.mendelson.util.clientserver.about.ServerInfoResponse;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -22,14 +24,14 @@ import java.text.DateFormat;
  * Displays the state of the receipt unit
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class StateDialog extends OkDialog {
 
     public StateDialog() {
-        super(670, 410, "Server state");
-        this.setResizable(false);
-        this.setClosable(false);
+        super(850, 550, "Server state");
+        this.setResizable(true);
+        this.setClosable(true);
     }
 
     /**
@@ -38,7 +40,9 @@ public class StateDialog extends OkDialog {
     @Override
     public AbstractComponent getContentPanel() {
         DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-        Panel panel = new Panel();
+        Panel statePanel = new Panel();
+        VerticalLayout statePanelLayout = new VerticalLayout();
+        statePanelLayout.setSizeFull();
         StringBuilder sourceBuffer = new StringBuilder();
         boolean processingUnitUp = false;
         AnonymousTextClient client = null;
@@ -47,12 +51,12 @@ public class StateDialog extends OkDialog {
             PreferencesAS2 preferences = new PreferencesAS2();
             client.connect("localhost", preferences.getInt(PreferencesAS2.CLIENTSERVER_COMM_PORT), 30000);
             ServerInfoResponse response = (ServerInfoResponse) client.sendSync(new ServerInfoRequest(), 30000);
-            long startTime = new Long(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME)).longValue();
+            long startTime = Long.valueOf(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME)).longValue();
             sourceBuffer.append("<p>The AS2 processing unit <strong>"
                     + response.getProperties().getProperty(ServerInfoResponse.SERVER_PRODUCT_NAME) + " "
                     + response.getProperties().getProperty(ServerInfoResponse.SERVER_VERSION) + " "
-                    + response.getProperties().getProperty(ServerInfoResponse.SERVER_BUILD) + "</strong> is up and running since <strong>"
-                    + format.format(startTime) + "</strong></p>.");
+                    + response.getProperties().getProperty(ServerInfoResponse.SERVER_BUILD) + "</strong> is up<br>and running since <strong>"
+                    + format.format(startTime) + "</strong>.</p>");
             processingUnitUp = true;
         } catch (Exception e) {
             sourceBuffer.append("Error connecting to AS2 processing unit: ");
@@ -68,9 +72,10 @@ public class StateDialog extends OkDialog {
         } else {
             sourceBuffer.append("<strong><font color='red'>Errors encounted.</font></strong><br>Please fix them before sending messages to <a href=\"/as2/HttpReceiver\" target=\"_new\"><strong>HttpReceiver</strong></a>.");
         }
-        sourceBuffer.append("<br><br><br><hr><p>If you are running into any problem please visit the forum at <a href=\"http://community.mendelson-e-c.com\"><strong>community.mendelson-e-c.com</strong></a> or contact the mendelson team by sending a mail to <a href=\"mailto: info@mendelson.de\"><strong>info@mendelson.de</strong></a>.</p>");
-        Label label = new Label(sourceBuffer.toString(), Label.CONTENT_XHTML);
-        panel.addComponent(label);
-        return (panel);
+        sourceBuffer.append("<br><br><br><hr><p>If you are running into any problem please visit the forum at <a href=\"http://mendelson-e-c.com/community\"><strong>community.mendelson-e-c.com</strong></a><br>or contact the mendelson team by sending a mail to <a href=\"mailto: service@mendelson.de\"><strong>service@mendelson.de</strong></a>.</p>");
+        Label label = new Label(sourceBuffer.toString(), ContentMode.HTML);
+        statePanelLayout.addComponent(label);
+        statePanel.setContent(statePanelLayout);
+        return (statePanel);
     }
 }

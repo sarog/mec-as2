@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationAccessDBImplAS2.java 4     7.11.18 17:14 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationAccessDBImplAS2.java 6     10.09.20 12:57 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.systemevents.SystemEvent;
@@ -19,7 +19,7 @@ import java.sql.Types;
  * Stores the notification data for the AS2
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
 
@@ -53,7 +53,7 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
                 data.setNotifyTransactionError(result.getInt("notifytransactionerror") == 1 ? true : false);
                 data.setNotifyCEM(result.getInt("notifycem") == 1 ? true : false);
                 data.setNotifySystemFailure(result.getInt("notifysystemfailure") == 1 ? true : false);
-                data.setNotifyResendDetected(result.getInt("notifyresend") == 1 ? true : false);
+                data.setNotifyResendDetected(result.getInt("notifyresend") == 1 ? true : false);                
                 data.setReplyTo(result.getString("replyto"));
                 data.setUsesSMTHAuth(result.getInt("usesmtpauth") == 1 ? true : false);
                 data.setSMTPUser(result.getString("smtpauthuser"));
@@ -63,6 +63,8 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
                 }
                 data.setConnectionSecurity(result.getInt("security"));
                 data.setMaxNotificationsPerMin(result.getInt("maxnotificationspermin"));
+                data.setNotifyConnectionProblem(result.getInt("notifyconnectionproblem") == 1 ? true : false);
+                data.setNotifyPostprocessingProblem(result.getInt("notifypostprocessing") == 1 ? true : false);
                 return (data);
             }
         } catch (Exception e) {
@@ -93,14 +95,14 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
      */
     @Override
     public void updateNotification(NotificationData notificationData) {
-        NotificationDataImplAS2 data = (NotificationDataImplAS2)notificationData;
+        NotificationDataImplAS2 data = (NotificationDataImplAS2) notificationData;
         PreparedStatement statement = null;
         try {
             statement = this.configConnection.prepareStatement(
                     "UPDATE notification SET mailhost=?,mailhostport=?,notificationemailaddress=?,"
                     + "notifycertexpire=?,notifytransactionerror=?,notifycem=?,notifysystemfailure=?,replyto=?,usesmtpauth=?,"
-                    + "smtpauthuser=?,smtpauthpass=?,notifyresend=?,security=?,maxnotificationspermin=?");
-            statement.setEscapeProcessing(true);
+                    + "smtpauthuser=?,smtpauthpass=?,notifyresend=?,security=?,maxnotificationspermin=?,notifyconnectionproblem=?,"
+                    + "notifypostprocessing=?");
             statement.setString(1, data.getMailServer());
             statement.setInt(2, data.getMailServerPort());
             statement.setString(3, data.getNotificationMail());
@@ -123,6 +125,8 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
             statement.setInt(12, data.notifyResendDetected() ? 1 : 0);
             statement.setInt(13, data.getConnectionSecurity());
             statement.setInt(14, data.getMaxNotificationsPerMin());
+            statement.setInt(15, data.notifyConnectionProblem() ? 1 : 0);
+            statement.setInt(16, data.notifyPostprocessingProblem() ? 1 : 0);
             statement.execute();
         } catch (Exception e) {
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);

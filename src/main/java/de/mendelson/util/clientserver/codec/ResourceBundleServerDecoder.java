@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder.java 2     4/06/18 1:35p Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder.java 3     9.06.20 10:40 Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleServerDecoder extends MecResourceBundle {
 
@@ -28,5 +28,7 @@ public class ResourceBundleServerDecoder extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"client.incompatible", "Unable to establish the client-server connection. The client is not compatible to the server, please use the proper client version."},};
+        {"client.incompatible", "Unable to establish the client-server connection. "
+            + "The server is not able to deserialize the client messages. "
+            + "The main reason for this is different versions of client and server."},};
 }

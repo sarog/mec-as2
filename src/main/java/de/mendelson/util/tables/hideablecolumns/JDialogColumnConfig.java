@@ -1,13 +1,15 @@
-//$Header: /as2/de/mendelson/util/tables/hideablecolumns/JDialogColumnConfig.java 4     14.07.15 10:01 Heller $
+//$Header: /mec_as4/de/mendelson/util/tables/hideablecolumns/JDialogColumnConfig.java 6     9.01.20 13:20 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.Arrays;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -25,15 +27,17 @@ import javax.swing.table.TableColumn;
  * Dialog to configure the visibility of columns
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class JDialogColumnConfig extends JDialog {
-
 
     /**
      * Localize your GUI!
      */
     private MecResourceBundle rb = null;
+    
+    private final MendelsonMultiResolutionImage ICON_COLUMN
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/tables/hideablecolumns/column.svg", 32, 64);
 
     /**
      * Creates new form JDialogRowInfo
@@ -52,6 +56,7 @@ public class JDialogColumnConfig extends JDialog {
                     + e.getClassName() + " not found.");
         }
         this.initComponents();
+        this.setMultiresolutionIcons();                
         //hide dialog on esc
         ActionListener actionListenerESC = new ActionListener() {
             @Override
@@ -75,6 +80,10 @@ public class JDialogColumnConfig extends JDialog {
         ((TableModelHideableColumns)this.jTable.getModel()).addColumnHiddenStateListener(tableColumnHiddenStateListener);
     }
 
+    private void setMultiresolutionIcons() {
+        this.jLabelIcon.setIcon(new ImageIcon(ICON_COLUMN));
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -103,7 +112,7 @@ public class JDialogColumnConfig extends JDialog {
         jPanelMain.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelMain.setLayout(new java.awt.GridBagLayout());
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/tables/hideablecolumns/column32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/tables/hideablecolumns/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 20, 10);
@@ -149,7 +158,7 @@ public class JDialogColumnConfig extends JDialog {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelButton.add(jButtonOk, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -159,7 +168,7 @@ public class JDialogColumnConfig extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(426, 384));
+        setSize(new java.awt.Dimension(449, 415));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

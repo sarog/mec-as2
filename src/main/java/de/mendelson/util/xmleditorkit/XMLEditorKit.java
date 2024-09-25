@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/xmleditorkit/XMLEditorKit.java 1     4/05/18 10:58a Heller $
+//$Header: /as4/de/mendelson/util/xmleditorkit/XMLEditorKit.java 2     16.10.19 11:30 Heller $
 package de.mendelson.util.xmleditorkit;
 
 import java.awt.Cursor;
@@ -45,11 +45,11 @@ import javax.swing.text.ViewFactory;
  * XML Editor Kit - based on code from Stanislav Lapitsky
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class XMLEditorKit extends StyledEditorKit {
 
-    ViewFactory defaultFactory = new XMLEditorKitViewFactory();
+    private ViewFactory defaultFactory = new XMLEditorKitViewFactory();
 
     @Override
     public ViewFactory getViewFactory() {
@@ -67,50 +67,49 @@ public class XMLEditorKit extends StyledEditorKit {
     }
 
     @Override
-    public void read(Reader in, Document doc, int pos) throws IOException, BadLocationException {
-        BufferedReader br = new BufferedReader(in);
-        String s = br.readLine();
-        StringBuilder buff = new StringBuilder();
-        while (s != null) {
-            buff.append(s);
-            s = br.readLine();
+    public void read(Reader in, Document document, int position) throws IOException, BadLocationException {
+        BufferedReader bufferedReader = new BufferedReader(in);
+        String line = bufferedReader.readLine();
+        StringBuilder stringBuilder = new StringBuilder();
+        while (line != null) {
+            stringBuilder.append(line);
+            line = bufferedReader.readLine();
         }
-
-        int p = getInsertPosition(pos, doc);
-        XMLEditorKitXMLReader.getInstance().read(new ByteArrayInputStream(buff.toString().getBytes()), doc, p);
+        int insertPosition = getInsertPosition(position, document);
+        XMLEditorKitXMLReader.getInstance().read(new ByteArrayInputStream(stringBuilder.toString().getBytes()), document, insertPosition);
     }
 
     @Override
-    public void read(InputStream in, Document doc, int pos) throws IOException, BadLocationException {
-        int p = getInsertPosition(pos, doc);
-        XMLEditorKitXMLReader.getInstance().read(in, doc, p);
+    public void read(InputStream in, Document document, int position) throws IOException, BadLocationException {
+        int insertPosition = getInsertPosition(position, document);
+        XMLEditorKitXMLReader.getInstance().read(in, document, insertPosition);
     }
 
     @Override
-    public void write(OutputStream out, Document doc, int pos, int len) throws IOException, BadLocationException {
+    public void write(OutputStream out, Document document, int position, int len) throws IOException, BadLocationException {
+        int[] selection = new int[2];
+        selection[0] = position;
+        selection[1] = position + len;
+        correctSelectionBounds(selection, document);
+        position = selection[0];
+        len = selection[1] - position;
+        super.write(out, document, position, len);
+    }
+
+    @Override
+    public void write(Writer out, Document document, int position, int len) throws IOException, BadLocationException {
         int[] sel = new int[2];
-        sel[0] = pos;
-        sel[1] = pos + len;
-        correctSelectionBounds(sel, doc);
-        pos = sel[0];
-        len = sel[1] - pos;
-        super.write(out, doc, pos, len);
+        sel[0] = position;
+        sel[1] = position + len;
+        correctSelectionBounds(sel, document);
+        position = sel[0];
+        len = sel[1] - position;
+        super.write(out, document, position, len);
     }
 
-    @Override
-    public void write(Writer out, Document doc, int pos, int len) throws IOException, BadLocationException {
-        int[] sel = new int[2];
-        sel[0] = pos;
-        sel[1] = pos + len;
-        correctSelectionBounds(sel, doc);
-        pos = sel[0];
-        len = sel[1] - pos;
-        super.write(out, doc, pos, len);
-    }
-
-    public static void correctSelectionBounds(int[] selection, Document d) {
-        if (d instanceof XMLStyledDocument && d.getLength() > 0) {
-            XMLStyledDocument doc = (XMLStyledDocument) d;
+    public static void correctSelectionBounds(int[] selection, Document xmlDocument) {
+        if (xmlDocument instanceof XMLStyledDocument && xmlDocument.getLength() > 0) {
+            XMLStyledDocument doc = (XMLStyledDocument) xmlDocument;
             int start = selection[0];
             Element root = doc.getDefaultRootElement();
             int i = root.getElementIndex(start);
@@ -133,7 +132,6 @@ public class XMLEditorKit extends StyledEditorKit {
                     && commonParent.getEndOffset() >= endTag.getEndOffset())) {
                 commonParent = commonParent.getParentElement();
             }
-
             if (commonParent != null) {
                 selection[0] = commonParent.getStartOffset();
                 selection[1] = commonParent.getEndOffset();
@@ -141,30 +139,30 @@ public class XMLEditorKit extends StyledEditorKit {
         }
     }
 
-    protected int getInsertPosition(int pos, Document d) {
-        if (d instanceof XMLStyledDocument && d.getLength() > 0) {
-            XMLStyledDocument doc = (XMLStyledDocument) d;
+    protected int getInsertPosition(int position, Document document) {
+        if (document instanceof XMLStyledDocument && document.getLength() > 0) {
+            XMLStyledDocument doc = (XMLStyledDocument) document;
             Element root = doc.getDefaultRootElement();
-            int i = root.getElementIndex(pos);
+            int i = root.getElementIndex(position);
             while (i >= 0 && root.getElement(i).getName().equals(XMLStyledDocument.TAG_ELEMENT)) {
                 root = root.getElement(i);
-                i = root.getElementIndex(pos);
+                i = root.getElementIndex(position);
             }
             while (root.getElementCount() < 3) {
                 root = root.getParentElement();
             }
             return root.getElement(0).getEndOffset();
         }
-
-        return pos;
+        return position;
     }
 
-    MouseListener lstCollapse = new MouseAdapter() {
+    
+    private MouseListener lstCollapse = new MouseAdapter() {
         @Override
-        public void mouseClicked(MouseEvent e) {
-            JEditorPane src = (JEditorPane) e.getSource();
+        public void mouseClicked(MouseEvent evt) {
+            JEditorPane src = (JEditorPane) evt.getSource();
 
-            int pos = src.viewToModel(e.getPoint());
+            int pos = src.viewToModel(evt.getPoint());
             View v = src.getUI().getRootView(src);
             boolean insideTagView = false;
             while (v != null && !(v instanceof XMLTagView)) {
@@ -186,7 +184,7 @@ public class XMLEditorKit extends StyledEditorKit {
                     r.width = XMLTagView.AREA_SHIFT;
                     r.height = XMLTagView.AREA_SHIFT;
 
-                    if (r.contains(e.getPoint())) {
+                    if (r.contains(evt.getPoint())) {
                         deepest.setExpanded(!deepest.isExpanded());
 
                         XMLStyledDocument doc = (XMLStyledDocument) src.getDocument();
@@ -208,13 +206,13 @@ public class XMLEditorKit extends StyledEditorKit {
     Cursor oldCursor;
     MouseMotionListener lstMoveCollapse = new MouseMotionAdapter() {
         @Override
-        public void mouseMoved(MouseEvent e) {
-            JEditorPane src = (JEditorPane) e.getSource();
+        public void mouseMoved(MouseEvent evt) {
+            JEditorPane src = (JEditorPane) evt.getSource();
             if (oldCursor == null) {
                 oldCursor = src.getCursor();
             }
 
-            int pos = src.viewToModel(e.getPoint());
+            int pos = src.viewToModel(evt.getPoint());
             View v = src.getUI().getRootView(src);
             while (v != null && !(v instanceof XMLTagView)) {
                 int i = v.getViewIndex(pos, Position.Bias.Forward);
@@ -235,29 +233,28 @@ public class XMLEditorKit extends StyledEditorKit {
                     r.width = XMLTagView.AREA_SHIFT;
                     r.height = XMLTagView.AREA_SHIFT;
 
-                    if (r.contains(e.getPoint())) {
+                    if (r.contains(evt.getPoint())) {
                         src.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
                         return;
                     }
                 }
             }
-
             src.setCursor(oldCursor);
         }
     };
 
     @Override
-    public void install(JEditorPane c) {
-        super.install(c);
-        c.addMouseListener(lstCollapse);
-        c.addMouseMotionListener(lstMoveCollapse);
+    public void install(JEditorPane editorPane) {
+        super.install(editorPane);
+        editorPane.addMouseListener(lstCollapse);
+        editorPane.addMouseMotionListener(lstMoveCollapse);
     }
 
     @Override
-    public void deinstall(JEditorPane c) {
-        c.removeMouseListener(lstCollapse);
-        c.removeMouseMotionListener(lstMoveCollapse);
-        super.deinstall(c);
+    public void deinstall(JEditorPane editorPane) {
+        editorPane.removeMouseListener(lstCollapse);
+        editorPane.removeMouseMotionListener(lstMoveCollapse);
+        super.deinstall(editorPane);
     }
 
     protected static Shape getAllocation(View v, JEditorPane edit) {
@@ -295,8 +292,7 @@ public class XMLEditorKit extends StyledEditorKit {
         return res;
     }
 
-    public class XMLCopyAction extends TextAction {
-
+    private static class XMLCopyAction extends TextAction {
         /**
          * Create this object with the appropriate identifier.
          */
@@ -307,24 +303,24 @@ public class XMLEditorKit extends StyledEditorKit {
         /**
          * The operation to perform when this action is triggered.
          *
-         * @param e the action event
+         * @param evt the action event
          */
         @Override
-        public void actionPerformed(ActionEvent e) {
-            JTextComponent target = getTextComponent(e);
-            if (target != null) {
+        public void actionPerformed(ActionEvent evt) {
+            JTextComponent targetComponent = getTextComponent(evt);
+            if (targetComponent != null) {
                 //adapt selection
-                int start = target.getSelectionStart();
-                int end = target.getSelectionEnd();
+                int start = targetComponent.getSelectionStart();
+                int end = targetComponent.getSelectionEnd();
                 if (start != end) {
-                    int[] sel = new int[2];
-                    sel[0] = start;
-                    sel[1] = end;
-                    XMLEditorKit.correctSelectionBounds(sel, target.getDocument());
-                    target.setSelectionStart(sel[0]);
-                    target.setSelectionEnd(sel[1]);
+                    int[] selection = new int[2];
+                    selection[0] = start;
+                    selection[1] = end;
+                    XMLEditorKit.correctSelectionBounds(selection, targetComponent.getDocument());
+                    targetComponent.setSelectionStart(selection[0]);
+                    targetComponent.setSelectionEnd(selection[1]);
                 }
-                target.copy();
+                targetComponent.copy();
             }
         }
     }

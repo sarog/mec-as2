@@ -1,7 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 15    6.12.18 17:31 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 17    20.08.20 15:47 Heller $
 package de.mendelson.comm.as2.log;
 
-import de.mendelson.comm.as2.database.DBDriverManager;
+import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
 import de.mendelson.comm.as2.message.AS2MDNInfo;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.server.AS2Server;
@@ -11,6 +11,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
+import de.mendelson.comm.as2.database.IDBDriverManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -22,19 +23,19 @@ import java.util.logging.Logger;
 /**
  * Handler to log logger data to a data base
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class DBLoggingHandler extends Handler {
 
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private LogAccessDB access;
 
-    public DBLoggingHandler() {
+    public DBLoggingHandler(IDBDriverManager dbDriverManager) {
         try {
             Connection runtimeConnection 
-                    = DBDriverManager.getConnectionWithoutErrorHandling(DBDriverManager.DB_RUNTIME, "localhost");
+                    = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME, "localhost");
             Connection configConnection 
-                    = DBDriverManager.getConnectionWithoutErrorHandling(DBDriverManager.DB_CONFIG, "localhost");
+                    = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG, "localhost");
             this.access = new LogAccessDB(configConnection, runtimeConnection);
         } catch (Exception e) {
             this.logger.severe("DBLoggingHandler: " + e.getMessage());

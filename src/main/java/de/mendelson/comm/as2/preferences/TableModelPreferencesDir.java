@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/TableModelPreferencesDir.java 4     1.12.11 14:06 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/TableModelPreferencesDir.java 5     4.06.19 13:38 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -17,19 +18,26 @@ import javax.swing.table.AbstractTableModel;
  */
 /**
  * Table model to display the properties to set
+ *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class TableModelPreferencesDir extends AbstractTableModel {
-    
+
+    public static final int ROW_HEIGHT = 20;
+    protected static final int IMAGE_HEIGHT = ROW_HEIGHT - 3;
+
     /*Actual data to display, list of directory prefs*/
-    private List<PreferencesObjectKeyValue> array = new ArrayList<PreferencesObjectKeyValue>();
-  
+    private final List<PreferencesObjectKeyValue> array
+            = Collections.synchronizedList(new ArrayList<PreferencesObjectKeyValue>());
+
     /*ResourceBundle to localize the headers*/
     private MecResourceBundle rb = null;
-    
-    /** Creates new preferences table model
-     *@param rb Resourcebundle to localize the header rows
+
+    /**
+     * Creates new preferences table model
+     *
+     * @param rb Resourcebundle to localize the header rows
      */
     public TableModelPreferencesDir() {
         //load resource bundle
@@ -41,59 +49,79 @@ public class TableModelPreferencesDir extends AbstractTableModel {
         }
     }
 
-    /**Passes data to the model and fires a table data update
-     *@param newData data array, may be null to delete the actual data contents
+    /**
+     * Passes data to the model and fires a table data update
+     *
+     * @param newData data array, may be null to delete the actual data contents
      */
-    public void passNewData( List<PreferencesObjectKeyValue> newData ) {
-        if( newData == null )
-            this.array.clear();
-        else
-            this.array = newData;
-        ((AbstractTableModel)this).fireTableDataChanged();
+    public void passNewData(List<PreferencesObjectKeyValue> newData) {
+        synchronized (this.array) {
+            if (newData == null) {
+                this.array.clear();
+            } else {
+                this.array.addAll(newData);
+            }
+        }
+        ((AbstractTableModel) this).fireTableDataChanged();
     }
-        
-    /**return one value defined by row and column
-     *@param row row that contains value
-     *@param col column that contains value
+
+    /**
+     * return one value defined by row and column
+     *
+     * @param row row that contains value
+     * @param col column that contains value
      */
     @Override
     public Object getValueAt(int row, int col) {
-        PreferencesObjectKeyValue keyValue = this.array.get( row );
-       
-        //preferences name
-        if( col == 0 )
-            return( keyValue.getName() );
-        //assigned value
-        if( col == 1 )
-            return( keyValue.getValue());
-        return( null );
+        synchronized (this.array) {
+            PreferencesObjectKeyValue keyValue = this.array.get(row);
+            //preferences name
+            if (col == 0) {
+                return (keyValue.getName());
+            }
+            //assigned value
+            if (col == 1) {
+                return (keyValue.getValue());
+            }
+        }
+        return (null);
     }
-    
-    /**Returns the preference object at a special row position
-     *@param row row to get the preference directory for
+
+    /**
+     * Returns the preference object at a special row position
+     *
+     * @param row row to get the preference directory for
      */
-    public PreferencesObjectKeyValue getPreference( int row ){
-        return( (PreferencesObjectKeyValue)this.array.get(row) );
+    public PreferencesObjectKeyValue getPreference(int row) {
+        return ((PreferencesObjectKeyValue) this.array.get(row));
     }
-    
-    /**returns the number of rows in the table*/
+
+    /**
+     * returns the number of rows in the table
+     */
     @Override
     public int getRowCount() {
-        return array.size();
+        synchronized (this.array) {
+            return array.size();
+        }
     }
-    
-    /**returns the number of columns in the table. should be const for a table*/
-    @Override
-    public int getColumnCount() {
-        return(2);
-    }
-    
-    /**Returns the name of every column
-     *@param col Column to get the header name of
+
+    /**
+     * returns the number of columns in the table. should be const for a table
      */
     @Override
-    public String getColumnName( int col ){
-        
+    public int getColumnCount() {
+        return (2);
+    }
+
+    /**
+     * Returns the name of every column
+     *
+     * @param col Column to get the header name of
+     */
+    @Override
+    public String getColumnName(int col) {
+
         switch (col) {
             case 0:
                 return this.rb.getResourceString("header.dirname");
@@ -103,5 +131,5 @@ public class TableModelPreferencesDir extends AbstractTableModel {
                 return "";
         }
     }
-                
+
 }

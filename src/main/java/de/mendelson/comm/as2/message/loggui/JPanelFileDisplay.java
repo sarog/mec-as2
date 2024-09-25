@@ -1,20 +1,24 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 20    4/05/18 2:07p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 27    15.12.20 11:39 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
+import de.mendelson.util.AS2Tools;
+import de.mendelson.util.FileEncodingDetection;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadRequestFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadResponseFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClient;
 import de.mendelson.util.xmleditorkit.XMLEditorKit;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
@@ -32,7 +36,7 @@ import javax.swing.JPanel;
  * Panel to display the content of a file
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 27 $
  */
 public class JPanelFileDisplay extends JPanel {
 
@@ -40,9 +44,9 @@ public class JPanelFileDisplay extends JPanel {
     public static final int EDITOR_TYPE_RAW = 0;
 
     /**
-     * Max filesize for the display of data in the panel, actual 350kB
+     * Max filesize for the display of data in the panel, actual 1000kB
      */
-    private final static long MAX_FILESIZE = (long) (500 * Math.pow(2, 10));
+    public final static long MAX_FILESIZE = (long) (1024 * Math.pow(2, 10));
     /**
      * Resourcebundle to localize the GUI
      */
@@ -65,24 +69,25 @@ public class JPanelFileDisplay extends JPanel {
         this.initComponents();
         //this is just displayed if it is an image
         this.jPanelImage.setVisible(false);
+        this.jScrollPaneImage.getVerticalScrollBar().setUnitIncrement(16);
         this.jEditorPaneXML.setEditorKit(new XMLEditorKit());
-        this.jSplitPaneTextAndXML.setVisible( false );
+        this.jSplitPaneTextAndXML.setVisible(false);
     }
 
     /**
      * Loads a file to the editor and displays it
      */
-    public void displayFile(String filename) {
+    public void displayFile(String filename, boolean detectEncoding) {
         this.jLabelImage.setIcon(null);
         this.jPanelImage.setVisible(false);
+        this.jLabelEncoding.setVisible(false);
         this.jScrollPaneTextEditor.setVisible(true);
         if (filename == null) {
             this.jTextFieldFilename.setText("");
-            this.jEditorPaneRawText.setText(this.rb.getResourceString("no.file"));            
+            this.jEditorPaneRawText.setText(this.rb.getResourceString("no.file"));
             return;
         }
         TransferClient transferClient = new TransferClient(this.baseClient);
-        InputStream inStream = null;
         try {
             DownloadRequestFileLimited request = new DownloadRequestFileLimited();
             request.setMaxSize(MAX_FILESIZE);
@@ -93,11 +98,7 @@ public class JPanelFileDisplay extends JPanel {
                 this.jEditorPaneRawText.setText(this.rb.getResourceString("file.tolarge",
                         new Object[]{filename}));
             } else {
-                inStream = response.getDataStream();
-                ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-                this.copyStreams(inStream, memOut);
-                memOut.close();
-                byte[] data = memOut.toByteArray();
+                byte[] data = response.getDataStream().readAllBytes();
                 if (this.isImage(new ByteArrayInputStream(data))) {
                     ImageIcon icon = new ImageIcon(ImageIO.read(new ByteArrayInputStream(data)));
                     this.jLabelImage.setIcon(icon);
@@ -105,16 +106,18 @@ public class JPanelFileDisplay extends JPanel {
                     this.jScrollPaneTextEditor.setVisible(false);
                     this.jPanelImage.setVisible(true);
                 } else {
-                    inStream = new ByteArrayInputStream(data);
-                    this.jEditorPaneRawText.read(inStream, null);
-                    try{
+                    if( detectEncoding ){
+                        this.displayRawTextDetectEncoding(data);
+                    }else{
+                        this.displayRawTextIgnoreEncoding(data);
+                    }
+                    try {
                         this.jEditorPaneXML.read(new ByteArrayInputStream(data), data);
                         //the XML data is parsable and could be displayed: move the raw text editor to the split pane
                         this.jScrollPaneTextEditor.getParent().remove(this.jScrollPaneTextEditor);
                         this.jSplitPaneTextAndXML.setTopComponent(this.jScrollPaneTextEditor);
                         this.jSplitPaneTextAndXML.setVisible(true);
-                    }
-                    catch( Throwable e ){
+                    } catch (Throwable e) {
                         //its no parsable XML data: no action required
                     }
                 }
@@ -127,17 +130,71 @@ public class JPanelFileDisplay extends JPanel {
                 this.jEditorPaneRawText.setText(e.getMessage());
             }
             return;
+        } 
+    }
+
+    /**
+     * Displays a byte array as raw text and tries to detect the encoding
+     */
+    private void displayRawTextDetectEncoding(byte[] data) throws Exception {
+        Charset encoding = null;
+        CharsetDecoder decoder = null;
+        InputStream inStream = null;
+        Reader reader = null;
+        Path testFile = null;
+        try {
+            testFile = AS2Tools.createTempFile("encoding_testdata", ".txt");
+            Files.write(testFile, data);
+            FileEncodingDetection detection = new FileEncodingDetection();
+            encoding = detection.guessBestCharset(testFile);
+            this.jLabelEncoding.setVisible(true);
+            this.jLabelEncoding.setText("[" + encoding.displayName() + "]");
+            decoder = encoding.newDecoder().reset();
+            inStream = new ByteArrayInputStream(data);
+            reader = new InputStreamReader(inStream, decoder);
+            this.jEditorPaneRawText.read(reader, null);
+        } catch (CharacterCodingException e) {
+            //ignore
         } finally {
             if (inStream != null) {
+                inStream.close();
+            }
+            if (testFile != null) {
                 try {
-                    inStream.close();
+                    Files.delete(testFile);
                 } catch (Exception e) {
-                    //nop
+                    //NOP
                 }
             }
         }
     }
 
+    /**
+     * Displays a byte array as raw text and tries to detect the encoding
+     */
+    private void displayRawTextIgnoreEncoding(byte[] data) throws Exception {
+        Charset encoding = Charset.defaultCharset();
+        InputStream inStream = null;
+        Path testFile = null;
+        try {
+            this.jLabelEncoding.setVisible(true);
+            this.jLabelEncoding.setText("[" + encoding.displayName() + "]");
+            inStream = new ByteArrayInputStream(data);
+            this.jEditorPaneRawText.read(inStream, null);
+        } finally {
+            if (inStream != null) {
+                inStream.close();
+            }
+            if (testFile != null) {
+                try {
+                    Files.delete(testFile);
+                } catch (Exception e) {
+                    //NOP
+                }
+            }
+        }
+    }
+    
     /**
      * Checks if the passed stream is an image
      *
@@ -151,26 +208,6 @@ public class JPanelFileDisplay extends JPanel {
         } else {
             return (true);
         }
-    }
-
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[2048];
-        int read = 0;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
     }
 
     /**
@@ -192,6 +229,7 @@ public class JPanelFileDisplay extends JPanel {
         jScrollPaneXML = new javax.swing.JScrollPane();
         jEditorPaneXML = new javax.swing.JEditorPane();
         jTextFieldFilename = new javax.swing.JTextField();
+        jLabelEncoding = new javax.swing.JLabel();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -208,6 +246,7 @@ public class JPanelFileDisplay extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -219,6 +258,7 @@ public class JPanelFileDisplay extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -242,6 +282,7 @@ public class JPanelFileDisplay extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -256,10 +297,18 @@ public class JPanelFileDisplay extends JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         add(jTextFieldFilename, gridBagConstraints);
+
+        jLabelEncoding.setText("[enc]");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        add(jLabelEncoding, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JEditorPane jEditorPaneRawText;
     private javax.swing.JEditorPane jEditorPaneXML;
+    private javax.swing.JLabel jLabelEncoding;
     private javax.swing.JLabel jLabelImage;
     private javax.swing.JPanel jPanelImage;
     private javax.swing.JPanel jPanelXMLStructure;

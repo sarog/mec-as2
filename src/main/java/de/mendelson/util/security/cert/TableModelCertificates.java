@@ -1,14 +1,13 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 8     10.09.14 10:17 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 16    11.11.20 17:06 Heller $
 package de.mendelson.util.security.cert;
 
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -26,31 +25,37 @@ import java.util.List;
  * table model to display a configuration grid
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 16 $
  */
 public class TableModelCertificates extends AbstractTableModel {
 
-    public static final ImageIcon ICON_CERTIFICATE =
-            new ImageIcon(TableModelCertificates.class.getResource(
-            "/de/mendelson/util/security/cert/certificate16x16.gif"));
-    public static final ImageIcon ICON_KEY =
-            new ImageIcon(TableModelCertificates.class.getResource(
-            "/de/mendelson/util/security/cert/key16x16.gif"));
-    public static final ImageIcon ICON_VALID =
-            new ImageIcon(TableModelCertificates.class.getResource(
-            "/de/mendelson/util/security/cert/cert_valid16x16.gif"));
-    public static final ImageIcon ICON_INVALID =
-            new ImageIcon(TableModelCertificates.class.getResource(
-            "/de/mendelson/util/security/cert/cert_invalid16x16.gif"));
-    public static final ImageIcon ICON_CERTIFICATE_ROOT =
-            new ImageIcon(TableModelCertificates.class.getResource(
-            "/de/mendelson/util/security/cert/cert_root16x16.gif"));
-    public static final ImageIcon ICON_CERTIFICATE_MISSING =
-            new ImageIcon(TableModelCertificates.class.getResource(
-            "/de/mendelson/util/security/cert/gui/cert_missing16x16.gif"));
+    public static final int ROW_HEIGHT = 20;
+    protected static final int IMAGE_HEIGHT = ROW_HEIGHT-3;
+    
+    /**
+     * Icons, multi resolution
+     */
+    public final static MendelsonMultiResolutionImage ICON_CERTIFICATE_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
+    public final static MendelsonMultiResolutionImage ICON_KEY_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);    
+    public final static MendelsonMultiResolutionImage ICON_INVALID_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_invalid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
+    public final static MendelsonMultiResolutionImage ICON_VALID_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_valid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
+    public final static MendelsonMultiResolutionImage ICON_ROOT_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_root.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
+    public final static MendelsonMultiResolutionImage ICON_UNTRUSTED_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_untrusted.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
+
+    public static final ImageIcon ICON_CERTIFICATE = new ImageIcon(ICON_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_KEY = new ImageIcon(ICON_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_VALID = new ImageIcon(ICON_VALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_INVALID = new ImageIcon(ICON_INVALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE_ROOT = new ImageIcon(ICON_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE_MISSING = new ImageIcon(ICON_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     /*ResourceBundle to localize the headers*/
     private MecResourceBundle rb = null;
-    private DateFormat format = SimpleDateFormat.getDateInstance(DateFormat.SHORT);
     private final List<KeystoreCertificate> data = Collections.synchronizedList(new ArrayList<KeystoreCertificate>());
 
     /**
@@ -79,6 +84,15 @@ public class TableModelCertificates extends AbstractTableModel {
         ((AbstractTableModel) this).fireTableDataChanged();
     }
 
+    public List<KeystoreCertificate> getCurrentCertificateList(){
+        List<KeystoreCertificate> copyList = new ArrayList<KeystoreCertificate>();
+        synchronized( this.data ){
+            copyList.addAll(this.data);
+        }
+        return( copyList );
+    }
+    
+    
     /**
      * returns the number of rows in the table
      */
@@ -193,13 +207,13 @@ public class TableModelCertificates extends AbstractTableModel {
     @Override
     public Class getColumnClass(int col) {
         return (new Class[]{
-                    ImageIcon.class,
-                    ImageIcon.class,
-                    String.class,
-                    Date.class,
-                    String.class,
-                    String.class,
-                    String.class,}[col]);
+            ImageIcon.class,
+            ImageIcon.class,
+            String.class,
+            Date.class,
+            String.class,
+            String.class,
+            String.class,}[col]);
     }
 
     /**

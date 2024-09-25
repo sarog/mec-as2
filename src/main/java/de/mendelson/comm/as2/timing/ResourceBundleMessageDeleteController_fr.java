@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMessageDeleteController_fr.java 4     24.10.18 10:13 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMessageDeleteController_fr.java 6     18.02.19 11:09 Heller $
 package de.mendelson.comm.as2.timing;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleMessageDeleteController_fr extends MecResourceBundle{
     
@@ -30,6 +30,10 @@ public class ResourceBundleMessageDeleteController_fr extends MecResourceBundle{
         {"transaction.deleted.user", "Transactions supprimées par l''interaction de l''utilisateur" },
         {"transaction.deleted.system", "Transactions supprimées par le processus de gestion du système" },
         {"transaction.deleted.transactiondate", "Date de la transaction: {0}" },
+        {"transaction.delete.setting.olderthan", "Le processus est configuré pour supprimer les transactions de statut vert plus anciennes que {0}." },
+        {"delete.ok", "SUPPRIMER AVEC SUCCES" },
+        {"delete.failed", "SUPPRIMER ECHOUE" }, 
+        {"delete.skipped", "SUPPRIMER SAUTE" },  
     };
     
 }

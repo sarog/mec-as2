@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer.java 9     9.10.18 12:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer.java 13    3.09.20 9:38 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  * to localize eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleDBServer extends MecResourceBundle {
 
@@ -31,23 +31,34 @@ public class ResourceBundleDBServer extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"database." + DBDriverManager.DB_CONFIG, "configuration database" },
-        {"database." + DBDriverManager.DB_RUNTIME, "runtime database" },
+        {"database." + IDBDriverManager.DB_CONFIG, "configuration database" },
+        {"database." + IDBDriverManager.DB_RUNTIME, "runtime database" },
         {"dbserver.startup", "Starting embedded DB server.." },
-        {"dbserver.running", "Embedded DB server {0} is running"},
+        {"dbserver.running.embedded", "Embedded DB server {0} is running"},
+        {"dbserver.running.external", "External DB server {0} is available"},
         {"update.versioninfo", "Automatic database updater: Found database version is {0}"
             + ", the required database version is {1}."},
         {"update.progress", "Incremental updating database ..."},
         {"update.progress.version.start", "Starting {1} update to version {0}..."},
         {"update.progress.version.end", "Updated {1} to version {0}."},
-        {"update.error", "FATAL: impossible to update database "
+        {"update.error.hsqldb", "FATAL: Impossible to update database "
             + " from version {0} to {1}.\n"
             + "Please delete the entire database by deleting"
             + " the related AS2_DB_*.* database files in the install directory.\n"
             + "After this all your user defined data will be lost."},
+        {"update.error.postgres", "FATAL: Impossible to update database "
+            + " from version {0} to {1}.\n"
+            + "Please enter pgAdmin and delete the database. An update seems to be impossible."},
         {"update.successfully", "{0}: Update to the necessary version has been finished successfully."},
         {"update.notfound", "For the update, the file update{0}to{1}.sql and/or "
             + "Update{0}to{1}.class must exists in the (resource)directory {2}."},
-        {"upgrade.required", "An upgrade is required.\nPlease execute as2upgrade.bat or as2upgrade.sh before starting the server."},};
+        {"upgrade.required", "An upgrade is required.\nPlease execute as2upgrade.bat or as2upgrade.sh before starting the server."},
+        {"dbserver.shutdown", "Database server shut down" },
+        {"info.serveridentification", "Server identification: {0}"},
+        {"info.jdbc", "JDBC: {0}"},
+        {"info.host", "Host: {0}"},
+        {"info.clientdriver", "Client driver: {0}"},
+        {"info.user", "User: {0}"},
+    };
 
 }

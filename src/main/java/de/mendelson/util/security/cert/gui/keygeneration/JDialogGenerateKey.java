@@ -1,17 +1,21 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/gui/keygeneration/JDialogGenerateKey.java 14    11/24/17 10:03a He $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/JDialogGenerateKey.java 24    23.04.20 10:02 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.security.keygeneration.KeyGenerationValues;
 import de.mendelson.util.security.keygeneration.KeyGenerator;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
-import java.util.Vector;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -33,21 +37,36 @@ import org.bouncycastle.asn1.x509.KeyUsage;
  * Dialog to work with certificates
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 24 $
  */
 public class JDialogGenerateKey extends JDialog {
 
     public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = "SHA256WithRSA";
+    //http://www.w3.org/2007/05/xmldsig-more#sha256-rsa-MGF1
+    //SHA256withRSA/PSS
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS = "SHA256withRSAAndMGF1";
     public static final String SIGNATUREALGORITHM_SHA1_WITH_RSA = "SHA1WithRSA";
     public static final String SIGNATUREALGORITHM_MD5_WITH_RSA = "MD5WithRSA";
     public static final String SIGNATUREALGORITHM_SHA256_WITH_ECDSA = "SHA256WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA = "SHA3-256withRSA";
+    //http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1
+    //SHA3-256withRSA/PSS
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS = "SHA3-256withRSAAndMGF1";
 
+    //EC only
     private static final String KEY_SIZE_256 = "256";
+    //EC only
     private static final String KEY_SIZE_384 = "384";
+    //EC only
     private static final String KEY_SIZE_512 = "512";
     private static final String KEY_SIZE_1024 = "1024";
     private static final String KEY_SIZE_2048 = "2048";
     private static final String KEY_SIZE_4096 = "4096";
+
+    private final static MendelsonMultiResolutionImage IMAGE_EDIT
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/edit.svg", 16, 32);
+    private final static MendelsonMultiResolutionImage IMAGE_KEY
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", 32, 64);
 
     /**
      * ResourceBundle to localize the GUI
@@ -75,47 +94,81 @@ public class JDialogGenerateKey extends JDialog {
         }
         this.setTitle(this.rb.getResourceString("title"));
         initComponents();
+        this.setMultiresolutionIcons();
         this.manager = manager;
         //populate combo boxes
         this.jComboBoxKeyType.removeAllItems();
-        this.jComboBoxKeyType.addItem(KeyGenerator.KEYTYPE_RSA);
-        this.jComboBoxKeyType.addItem(KeyGenerator.KEYTYPE_DSA);
-        this.jComboBoxKeyType.addItem(KeyGenerator.KEYTYPE_ECDSA);
-        this.jComboBoxKeyType.setSelectedItem(KeyGenerator.KEYTYPE_RSA);
+        this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_DSA);
+        this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_RSA);
+        this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_ECDSA);
+        this.jComboBoxKeyType.setSelectedItem(KeyGenerator.KEYALGORITHM_RSA);
         this.displayValues();
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setViewMode();
+        this.addWindowListener(
+                new WindowAdapter() {
+                    //Windows closing is called when the user closes the window using a OS button, e.g. "X"
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        values = null;
+                    }
+        });
+    }
+
+    /**
+     * Overwrite the designers icons by multi resolution icons
+     */
+    private void setMultiresolutionIcons() {
+        this.jLabelIcon.setIcon(new ImageIcon(IMAGE_KEY));
+        this.jButtonSubjectAlternativeNames.setIcon(new ImageIcon(IMAGE_EDIT));
     }
 
     private void setKeyRelatedValuesToCombobox() {
         String keyType = (String) this.jComboBoxKeyType.getSelectedItem();
         String keySizePreselection = (String) this.jComboBoxSize.getSelectedItem();
-        String signatureAlgorithmPreselection = (String) this.jComboBoxSignature.getSelectedItem();
+        SignatureDisplayValue signatureAlgorithmPreselection = null;
+        if( jComboBoxSignature.getSelectedItem() != null){
+            signatureAlgorithmPreselection = (SignatureDisplayValue)this.jComboBoxSignature.getSelectedItem();
+        }
         if (keyType == null) {
             return;
         }
         this.jComboBoxSize.removeAllItems();
         this.jComboBoxSignature.removeAllItems();
-        if (keyType.equals(KeyGenerator.KEYTYPE_ECDSA)) {
+        if (keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
             this.jComboBoxSize.addItem(KEY_SIZE_256);
             this.jComboBoxSize.addItem(KEY_SIZE_384);
-            this.jComboBoxSize.addItem(KEY_SIZE_512);
-            this.jComboBoxSignature.addItem(SIGNATUREALGORITHM_SHA256_WITH_ECDSA);
+            // 10/2019: a key size of 512 will result in an invalid key size error
+            // - this is the same as an asymmetric key size of 15360 bit which seems
+            // not to be supported now
+            // this.jComboBoxSize.addItem(KEY_SIZE_512);
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_ECDSA));
         } else {
             this.jComboBoxSize.addItem(KEY_SIZE_1024);
             this.jComboBoxSize.addItem(KEY_SIZE_2048);
             this.jComboBoxSize.addItem(KEY_SIZE_4096);
-            this.jComboBoxSignature.addItem(SIGNATUREALGORITHM_SHA1_WITH_RSA);
-            this.jComboBoxSignature.addItem(SIGNATUREALGORITHM_MD5_WITH_RSA);
-            this.jComboBoxSignature.addItem(SIGNATUREALGORITHM_SHA256_WITH_RSA);
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_MD5_WITH_RSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA1_WITH_RSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_RSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA3_256_WITH_RSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS));
         }
         this.jComboBoxSize.setSelectedItem(keySizePreselection);
         if (this.jComboBoxSize.getSelectedItem() == null) {
-            this.jComboBoxSize.setSelectedIndex(0);
+            if (keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
+                this.jComboBoxSize.addItem(KEY_SIZE_256);
+            } else {
+                this.jComboBoxSize.setSelectedItem(KEY_SIZE_2048);
+            }
         }
         this.jComboBoxSignature.setSelectedItem(signatureAlgorithmPreselection);
         if (this.jComboBoxSignature.getSelectedItem() == null) {
-            this.jComboBoxSignature.setSelectedIndex(0);
+            if (keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
+                this.jComboBoxSignature.setSelectedItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_ECDSA));
+            } else {
+                this.jComboBoxSignature.setSelectedItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_RSA));
+            }
         }
     }
 
@@ -128,20 +181,22 @@ public class JDialogGenerateKey extends JDialog {
         this.getValues().setCountryCode(this.jTextFieldCountryCode.getText().trim());
         this.getValues().setEmailAddress(this.jTextFieldMailAddress.getText().trim());
         this.getValues().setKeySize(Integer.valueOf(this.jComboBoxSize.getSelectedItem().toString()));
-        this.getValues().setKeyType(this.jComboBoxKeyType.getSelectedItem().toString());
+        this.getValues().setKeyAlgorithm(this.jComboBoxKeyType.getSelectedItem().toString());
         this.getValues().setKeyValidInDays(Integer.valueOf(this.jTextFieldValidity.getText().trim()));
         this.getValues().setLocalityName(this.jTextFieldLocality.getText().trim());
         this.getValues().setOrganisationName(this.jTextFieldOrganisationName.getText().trim());
         this.getValues().setOrganisationUnit(this.jTextFieldOrganisationUnit.getText().trim());
-        this.getValues().setSignatureAlgorithm(this.signature2OID(this.jComboBoxSignature.getSelectedItem().toString()));
+        SignatureDisplayValue selectedsignature = (SignatureDisplayValue)this.jComboBoxSignature.getSelectedItem();
+        this.getValues().setSignatureAlgorithm(selectedsignature.getSignatureAlgorithm());
         this.getValues().setStateName(this.jTextFieldState.getText().trim());
         if (this.jCheckBoxPurposeSignEncrypt.isSelected() || this.jCheckBoxPurposeSSL.isSelected()) {
             this.getValues().setKeyExtension(new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
         }
         if (this.jCheckBoxPurposeSSL.isSelected()) {
-            Vector<KeyPurposeId> extKeyUsage = new Vector<KeyPurposeId>();
-            extKeyUsage.add(KeyPurposeId.id_kp_serverAuth);
-            extKeyUsage.add(KeyPurposeId.id_kp_clientAuth);
+            KeyPurposeId[] extKeyUsage = new KeyPurposeId[]{
+                KeyPurposeId.id_kp_serverAuth,
+                KeyPurposeId.id_kp_clientAuth
+            };
             this.getValues().setExtendedKeyExtension(new ExtendedKeyUsage(extKeyUsage));
         }
         //Subject Alternative Name (German: Alternativer Antragstellername)
@@ -160,34 +215,8 @@ public class JDialogGenerateKey extends JDialog {
         this.jTextFieldState.setText(this.getValues().getStateName());
         this.jTextFieldValidity.setText(String.valueOf(this.getValues().getKeyValidInDays()));
         this.jComboBoxSize.setSelectedItem(String.valueOf(this.getValues().getKeySize()));
-        this.jComboBoxKeyType.setSelectedItem(this.getValues().getKeyType());
-        this.jComboBoxSignature.setSelectedItem(this.oid2Signature(this.getValues().getSignatureAlgorithm()));
-    }
-
-    private String signature2OID(String signature) {
-        if (signature.equals(SIGNATUREALGORITHM_MD5_WITH_RSA)) {
-            return (KeyGenerator.SIGNATUREALGORITHM_MD5_WITH_RSA_OID);
-        } else if (signature.equals(SIGNATUREALGORITHM_SHA1_WITH_RSA)) {
-            return (KeyGenerator.SIGNATUREALGORITHM_SHA1_WITH_RSA_OID);
-        } else if (signature.equals(SIGNATUREALGORITHM_SHA256_WITH_RSA)) {
-            return (KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA_OID);
-        } else if (signature.equals(SIGNATUREALGORITHM_SHA256_WITH_ECDSA)) {
-            return (KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA_OID);
-        }
-        throw new IllegalArgumentException("signature2OID: Unsupported signature algorithm " + signature);
-    }
-
-    private String oid2Signature(String oid) {
-        if (oid.equals(KeyGenerator.SIGNATUREALGORITHM_MD5_WITH_RSA_OID)) {
-            return (SIGNATUREALGORITHM_MD5_WITH_RSA);
-        } else if (oid.equals(KeyGenerator.SIGNATUREALGORITHM_SHA1_WITH_RSA_OID)) {
-            return (SIGNATUREALGORITHM_SHA1_WITH_RSA);
-        } else if (oid.equals(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA_OID)) {
-            return (SIGNATUREALGORITHM_SHA256_WITH_RSA);
-        } else if (oid.equals(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA_OID)) {
-            return (SIGNATUREALGORITHM_SHA256_WITH_ECDSA);
-        }
-        throw new IllegalArgumentException("signature2OID: Unsupported signature algorithm " + oid);
+        this.jComboBoxKeyType.setSelectedItem(this.getValues().getKeyAlgorithm());
+        this.jComboBoxSignature.setSelectedItem(this.getValues().getSignatureAlgorithm());
     }
 
     public String getAlias() {
@@ -357,7 +386,6 @@ public class JDialogGenerateKey extends JDialog {
         jToggleButtonBasic = new javax.swing.JToggleButton();
         jToggleButtonExpert = new javax.swing.JToggleButton();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         getContentPane().setLayout(new java.awt.GridBagLayout());
 
         jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
@@ -365,7 +393,7 @@ public class JDialogGenerateKey extends JDialog {
 
         jPanelEditInner.setLayout(new java.awt.GridBagLayout());
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/key32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 10, 10);
@@ -380,7 +408,8 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jLabelOrganisationUnit, gridBagConstraints);
 
-        jComboBoxSize.setPreferredSize(new java.awt.Dimension(80, 20));
+        jComboBoxSize.setMinimumSize(new java.awt.Dimension(40, 22));
+        jComboBoxSize.setPreferredSize(new java.awt.Dimension(70, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 4;
@@ -389,7 +418,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jComboBoxSize, gridBagConstraints);
 
-        jComboBoxSignature.setPreferredSize(new java.awt.Dimension(80, 20));
+        jComboBoxSignature.setPreferredSize(new java.awt.Dimension(70, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 3;
@@ -398,7 +427,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jComboBoxSignature, gridBagConstraints);
 
-        jComboBoxKeyType.setPreferredSize(new java.awt.Dimension(80, 20));
+        jComboBoxKeyType.setPreferredSize(new java.awt.Dimension(70, 20));
         jComboBoxKeyType.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBoxKeyTypeActionPerformed(evt);
@@ -720,7 +749,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelCountryCode1.add(jTextFieldSubjectAlternativeNames, gridBagConstraints);
 
-        jButtonSubjectAlternativeNames.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/edit_16x16.gif"))); // NOI18N
+        jButtonSubjectAlternativeNames.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/missing_image16x16.gif"))); // NOI18N
         jButtonSubjectAlternativeNames.setMargin(new java.awt.Insets(2, 5, 2, 5));
         jButtonSubjectAlternativeNames.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -833,7 +862,6 @@ public class JDialogGenerateKey extends JDialog {
     private void jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCancelActionPerformed
         this.values = null;
         this.setVisible(false);
-        this.dispose();
     }//GEN-LAST:event_jButtonCancelActionPerformed
 
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
@@ -842,7 +870,6 @@ public class JDialogGenerateKey extends JDialog {
         }
         this.captureGUIValues();
         this.setVisible(false);
-        this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
 
     private void jTextFieldValidityKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldValidityKeyReleased
@@ -951,5 +978,67 @@ public class JDialogGenerateKey extends JDialog {
      */
     public KeyGenerationValues getValues() {
         return values;
+    }
+
+    private static class SignatureDisplayValue {
+
+        private String signatureAlgorithm = null;
+
+        public SignatureDisplayValue(String signatureAlgorithm) {
+            this.signatureAlgorithm = signatureAlgorithm;
+        }
+
+        /**
+         * Overwrite the equal method of object
+         *
+         * @param anObject object to compare
+         */
+        @Override
+        public boolean equals(Object anObject) {
+            if (anObject == this) {
+                return (true);
+            }
+            if (anObject != null && anObject instanceof SignatureDisplayValue) {
+                SignatureDisplayValue value = (SignatureDisplayValue) anObject;
+                return (value.signatureAlgorithm.equalsIgnoreCase(this.signatureAlgorithm));
+            }
+            return (false);
+        }
+
+        @Override
+        public String toString() {
+            switch (this.signatureAlgorithm) {
+                case JDialogGenerateKey.SIGNATUREALGORITHM_MD5_WITH_RSA:
+                    return ("MD5");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA1_WITH_RSA:
+                    return ("SHA-1");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA256_WITH_ECDSA:
+                    return ("Elliptic Curve");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA256_WITH_RSA:
+                    return ("SHA-2 256");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS:
+                    return ("SHA-2 256 (RSASSA-PSS)");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA3_256_WITH_RSA:
+                    return ("SHA-3 256");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS:
+                    return ("SHA-3 256 (RSASSA-PSS)");
+                default:
+                    return (this.signatureAlgorithm);
+            }
+        }
+
+        @Override
+        public int hashCode() {
+            int hash = 5;
+            hash = 59 * hash + Objects.hashCode(this.signatureAlgorithm);
+            return hash;
+        }
+
+        /**
+         * @return the signatureAlgorithm
+         */
+        public String getSignatureAlgorithm() {
+            return signatureAlgorithm;
+        }
     }
 }

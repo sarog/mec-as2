@@ -1,10 +1,12 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 15    30.10.18 10:26 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 30    23.01.20 9:27 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import com.toedter.calendar.JDateChooser;
+import de.mendelson.util.DateChooserUI;
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.systemevents.ResourceBundleSystemEvent;
 import de.mendelson.util.systemevents.SystemEvent;
@@ -12,7 +14,8 @@ import de.mendelson.util.systemevents.clientserver.SystemEventSearchRequest;
 import de.mendelson.util.systemevents.clientserver.SystemEventSearchResponse;
 import de.mendelson.util.systemevents.search.ServerSideEventFilter;
 import de.mendelson.util.tables.TableCellRendererDate;
-import java.awt.BorderLayout;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -21,9 +24,12 @@ import java.beans.PropertyChangeListener;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -45,6 +51,10 @@ import javax.swing.table.TableColumn;
  */
 public class JDialogSystemEvents extends JDialog implements ListSelectionListener {
 
+    private static final MendelsonMultiResolutionImage IMAGE_MAGNIFYING_GLASS
+            = MendelsonMultiResolutionImage.fromSVG( "/de/mendelson/util/systemevents/gui/magnifying_glass.svg", 24, 48);
+    private static final MendelsonMultiResolutionImage IMAGE_RESET_FILTER
+            = MendelsonMultiResolutionImage.fromSVG( "/de/mendelson/util/systemevents/gui/refresh.svg", 24, 48);
     private BaseClient baseClient;
     private Date currentStartDate = new Date();
     private Date currentEndDate = new Date();
@@ -71,19 +81,22 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         this.baseClient = baseClient;
         initComponents();
         this.setTitle(this.rb.getResourceString("title"));
+        this.jTableSystemEvents.setRowHeight(TableModelSystemEvents.ROW_HEIGHT);
         this.jTableSystemEvents.getSelectionModel().addListSelectionListener(this);
         this.jTableSystemEvents.getTableHeader().setReorderingAllowed(false);
-        this.jTableSystemEvents.setDefaultRenderer(Date.class,
-                new TableCellRendererDate(DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM)));
+        //just put the country information into the format locale
+        DateFormat localizedDateFormat = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+        this.jTableSystemEvents.setDefaultRenderer(Date.class, new TableCellRendererDate(localizedDateFormat));
         this.jTableSystemEvents.getSelectionModel().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         //icon columns
         TableColumn column = this.jTableSystemEvents.getColumnModel().getColumn(0);
-        column.setMaxWidth(20);
+        column.setMaxWidth(TableModelSystemEvents.ROW_HEIGHT + this.jTableSystemEvents.getRowMargin()*2);
         column.setResizable(false);
         column = this.jTableSystemEvents.getColumnModel().getColumn(1);
-        column.setMaxWidth(20);
+        column.setMaxWidth(TableModelSystemEvents.ROW_HEIGHT + this.jTableSystemEvents.getRowMargin()*2);
         column.setResizable(false);
         this.setupDateChooser();
+        this.setMultiresolutionIcons();                
         //setup localized event label
         this.jLabelSeverityError.setText(this.rbSystemEvent.getResourceString("severity." + SystemEvent.SEVERITY_ERROR));
         this.jLabelSeverityWarning.setText(this.rbSystemEvent.getResourceString("severity." + SystemEvent.SEVERITY_WARNING));
@@ -95,7 +108,7 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         this.jComboBoxCategory.addItem(this.rb.getResourceString("category.all"));
         for (UIEventCategory category : categoryList) {
             this.jComboBoxCategory.addItem(category);
-        }
+        }                
         //hide dialog on esc
         ActionListener actionListenerESC = new ActionListener() {
             @Override
@@ -106,9 +119,40 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         this.getRootPane().registerKeyboardAction(actionListenerESC, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
         this.getRootPane().setDefaultButton(this.jButtonSearch);
+        this.jButtonSearch.requestFocusInWindow();
     }
 
+    private void setMultiresolutionIcons() {
+        this.jButtonSearch.setIcon(new ImageIcon(IMAGE_MAGNIFYING_GLASS.toMinResolution(24)));
+        this.jButtonResetFilter.setIcon(new ImageIcon(IMAGE_RESET_FILTER.toMinResolution(24)));
+        this.jLabelSeverityError.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_ERROR_MULTIRESOLUTION.toMinResolution(18)));
+        this.jLabelSeverityInfo.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_INFO_MULTIRESOLUTION.toMinResolution(18)));
+        this.jLabelSeverityWarning.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_WARNING_MULTIRESOLUTION.toMinResolution(18)));
+        this.jLabelOriginSystem.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_SYSTEM_MULTIRESOLUTION.toMinResolution(18)));
+        this.jLabelOriginTransaction.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION.toMinResolution(18)));
+        this.jLabelOriginUser.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_USER_MULTIRESOLUTION.toMinResolution(18)));
+    }        
+    
+    /**Resets the filter to the default values*/
+    private void resetFilter(){        
+        this.currentStartDate = new Date();
+        this.jDateChooserStartDate.setDate(this.currentStartDate);
+        this.currentEndDate = new Date();
+        this.jDateChooserEndDate.setDate(this.currentEndDate);
+        this.jCheckBoxOriginSystem.setSelected(true);
+        this.jCheckBoxOriginTransaction.setSelected(true);
+        this.jCheckBoxOriginUser.setSelected(true);
+        this.jCheckBoxSeverityError.setSelected(true);
+        this.jCheckBoxSeverityInfo.setSelected(true);
+        this.jCheckBoxSeverityWarning.setSelected(true);
+        this.jTextFieldFreeTextSearch.setText( "" );
+        this.jComboBoxCategory.setSelectedIndex(0);
+    }
+    
+    /**Defines the date chooser and the used colors*/
     private void setupDateChooser() {
+        this.jDateChooserStartDate.setUI(new DateChooserUI());            
+        this.jDateChooserStartDate.setLocale(Locale.getDefault());
         this.jDateChooserStartDate.setDate(this.currentStartDate);
         this.jDateChooserStartDate.getDateEditor().addPropertyChangeListener(
                 new PropertyChangeListener() {
@@ -119,6 +163,8 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
                 }
             }
         });
+        this.jDateChooserEndDate.setUI(new DateChooserUI());    
+        this.jDateChooserEndDate.setLocale(Locale.getDefault());
         this.jDateChooserEndDate.setDate(this.currentEndDate);
         this.jDateChooserEndDate.getDateEditor().addPropertyChangeListener(
                 new PropertyChangeListener() {
@@ -136,12 +182,15 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         if (visibleFlag) {
             //the date chose does not recognize daily date change..
             //reinitialize it if this dialog becomes visible
-            this.jPanelDateChooserStart.remove(this.jDateChooserStartDate);
+            GridBagLayout layout =  (GridBagLayout) this.jPanelDateFilter.getLayout();
+            GridBagConstraints gridStart = layout.getConstraints(this.jDateChooserStartDate);
+            GridBagConstraints gridEnd = layout.getConstraints(this.jDateChooserEndDate);            
+            this.jPanelDateFilter.remove(this.jDateChooserStartDate);
             this.jDateChooserStartDate = new JDateChooser(this.currentStartDate);
-            this.jPanelDateChooserStart.add(this.jDateChooserStartDate, BorderLayout.CENTER);
-            this.jPanelDateChooserEnd.remove(this.jDateChooserEndDate);
+            this.jPanelDateFilter.add(this.jDateChooserStartDate, gridStart);
+            this.jPanelDateFilter.remove(this.jDateChooserEndDate);
             this.jDateChooserEndDate = new JDateChooser(this.currentEndDate);
-            this.jPanelDateChooserEnd.add(this.jDateChooserEndDate, BorderLayout.CENTER);
+            this.jPanelDateFilter.add(this.jDateChooserEndDate, gridEnd);
             this.setupDateChooser();
             this.performSearch();
         }
@@ -209,7 +258,9 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         final String uniqueId = this.getClass().getName() + ".performSearch." + System.currentTimeMillis();
         final SystemEventSearchRequest request = new SystemEventSearchRequest(this.generateFilterFromGUI());
         this.displayNoSelection();
-        
+        //this could take some time as indicies might be first created
+        final long SEARCH_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
+
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
@@ -217,7 +268,7 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
                 //display wait indicator
                 JDialogSystemEvents.this.statusBar.startProgressIndeterminate(rb.getResourceString("label.search"), uniqueId);
                 try {
-                    SystemEventSearchResponse response = (SystemEventSearchResponse) baseClient.sendSync(request);
+                    SystemEventSearchResponse response = (SystemEventSearchResponse) baseClient.sendSync(request, SEARCH_TIMEOUT);
                     List<SystemEvent> resultList = response.getSearchResults();
                     ((TableModelSystemEvents) jTableSystemEvents.getModel()).passNewData(resultList);
                     jPanelEmptyTable.setVisible(resultList.isEmpty());
@@ -272,34 +323,37 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         jButtonClose = new javax.swing.JButton();
         jPanelTodaysEvents = new javax.swing.JPanel();
         jPanelFilterEvents = new javax.swing.JPanel();
-        jCheckBoxSeverityError = new javax.swing.JCheckBox();
-        jCheckBoxSeverityWarning = new javax.swing.JCheckBox();
-        jCheckBoxSeverityInfo = new javax.swing.JCheckBox();
-        jCheckBoxOriginSystem = new javax.swing.JCheckBox();
-        jCheckBoxOriginUser = new javax.swing.JCheckBox();
-        jCheckBoxOriginTransaction = new javax.swing.JCheckBox();
+        jSeparator1 = new javax.swing.JSeparator();
+        jSeparator2 = new javax.swing.JSeparator();
+        jSeparator3 = new javax.swing.JSeparator();
+        jPanelDateFilter = new javax.swing.JPanel();
+        jLabelStartDate = new javax.swing.JLabel();
+        jDateChooserStartDate = new com.toedter.calendar.JDateChooser();
+        jLabelEndDate = new javax.swing.JLabel();
+        jDateChooserEndDate = new com.toedter.calendar.JDateChooser();
+        jPanelSearchTextCategory = new javax.swing.JPanel();
+        jLabelCategory = new javax.swing.JLabel();
+        jLabelFreeText = new javax.swing.JLabel();
+        jLabelSearchHint = new javax.swing.JLabel();
+        jTextFieldFreeTextSearch = new javax.swing.JTextField();
+        jComboBoxCategory = new javax.swing.JComboBox<>();
+        jPanelButtons = new javax.swing.JPanel();
+        jButtonResetFilter = new javax.swing.JButton();
+        jButtonSearch = new javax.swing.JButton();
+        jPanelSeverity = new javax.swing.JPanel();
         jLabelSeverityError = new javax.swing.JLabel();
         jLabelSeverityWarning = new javax.swing.JLabel();
         jLabelSeverityInfo = new javax.swing.JLabel();
+        jCheckBoxSeverityInfo = new javax.swing.JCheckBox();
+        jCheckBoxSeverityWarning = new javax.swing.JCheckBox();
+        jCheckBoxSeverityError = new javax.swing.JCheckBox();
+        jPanelOrigin = new javax.swing.JPanel();
+        jCheckBoxOriginSystem = new javax.swing.JCheckBox();
         jLabelOriginSystem = new javax.swing.JLabel();
+        jCheckBoxOriginUser = new javax.swing.JCheckBox();
         jLabelOriginUser = new javax.swing.JLabel();
+        jCheckBoxOriginTransaction = new javax.swing.JCheckBox();
         jLabelOriginTransaction = new javax.swing.JLabel();
-        jPanelSpace = new javax.swing.JPanel();
-        jSeparator1 = new javax.swing.JSeparator();
-        jSeparator2 = new javax.swing.JSeparator();
-        jPanelDateChooserStart = new javax.swing.JPanel();
-        jDateChooserStartDate = new com.toedter.calendar.JDateChooser();
-        jPanelDateChooserEnd = new javax.swing.JPanel();
-        jDateChooserEndDate = new com.toedter.calendar.JDateChooser();
-        jSeparator3 = new javax.swing.JSeparator();
-        jComboBoxCategory = new javax.swing.JComboBox<>();
-        jLabelCategory = new javax.swing.JLabel();
-        jButtonSearch = new javax.swing.JButton();
-        jTextFieldFreeTextSearch = new javax.swing.JTextField();
-        jLabelStartDate = new javax.swing.JLabel();
-        jLabelEndDate = new javax.swing.JLabel();
-        jLabel1 = new javax.swing.JLabel();
-        jLabelFreeText = new javax.swing.JLabel();
         jPanelMainEvents = new javax.swing.JPanel();
         jSplitPaneEvents = new javax.swing.JSplitPane();
         jPanelUpper = new javax.swing.JPanel();
@@ -324,7 +378,7 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelButton.add(jButtonClose, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -337,63 +391,194 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         jPanelTodaysEvents.setLayout(new java.awt.GridBagLayout());
 
         jPanelFilterEvents.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+        jPanelFilterEvents.setMinimumSize(new java.awt.Dimension(563, 145));
+        jPanelFilterEvents.setPreferredSize(new java.awt.Dimension(658, 145));
         jPanelFilterEvents.setLayout(new java.awt.GridBagLayout());
 
-        jCheckBoxSeverityError.setSelected(true);
+        jSeparator1.setOrientation(javax.swing.SwingConstants.VERTICAL);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanelFilterEvents.add(jCheckBoxSeverityError, gridBagConstraints);
+        gridBagConstraints.gridheight = 7;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.insets = new java.awt.Insets(10, 15, 10, 15);
+        jPanelFilterEvents.add(jSeparator1, gridBagConstraints);
 
-        jCheckBoxSeverityWarning.setSelected(true);
+        jSeparator2.setOrientation(javax.swing.SwingConstants.VERTICAL);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanelFilterEvents.add(jCheckBoxSeverityWarning, gridBagConstraints);
-
-        jCheckBoxSeverityInfo.setSelected(true);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanelFilterEvents.add(jCheckBoxSeverityInfo, gridBagConstraints);
-
-        jCheckBoxOriginSystem.setSelected(true);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 9;
+        gridBagConstraints.gridx = 11;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanelFilterEvents.add(jCheckBoxOriginSystem, gridBagConstraints);
+        gridBagConstraints.gridheight = 7;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.insets = new java.awt.Insets(10, 15, 10, 15);
+        jPanelFilterEvents.add(jSeparator2, gridBagConstraints);
 
-        jCheckBoxOriginUser.setSelected(true);
+        jSeparator3.setOrientation(javax.swing.SwingConstants.VERTICAL);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 9;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanelFilterEvents.add(jCheckBoxOriginUser, gridBagConstraints);
+        gridBagConstraints.gridx = 6;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridheight = 7;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.insets = new java.awt.Insets(10, 15, 10, 15);
+        jPanelFilterEvents.add(jSeparator3, gridBagConstraints);
 
-        jCheckBoxOriginTransaction.setSelected(true);
+        jPanelDateFilter.setMinimumSize(new java.awt.Dimension(206, 80));
+        jPanelDateFilter.setPreferredSize(new java.awt.Dimension(220, 80));
+        jPanelDateFilter.setLayout(new java.awt.GridBagLayout());
+
+        jLabelStartDate.setText(this.rb.getResourceString( "label.startdate"));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 9;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
-        jPanelFilterEvents.add(jCheckBoxOriginTransaction, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
+        jPanelDateFilter.add(jLabelStartDate, gridBagConstraints);
 
-        jLabelSeverityError.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/state_stopped16x16.gif"))); // NOI18N
+        jDateChooserStartDate.setMinimumSize(new java.awt.Dimension(120, 20));
+        jDateChooserStartDate.setPreferredSize(new java.awt.Dimension(120, 20));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
+        jPanelDateFilter.add(jDateChooserStartDate, gridBagConstraints);
+
+        jLabelEndDate.setText(this.rb.getResourceString("label.enddate"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelDateFilter.add(jLabelEndDate, gridBagConstraints);
+
+        jDateChooserEndDate.setMinimumSize(new java.awt.Dimension(120, 20));
+        jDateChooserEndDate.setPreferredSize(new java.awt.Dimension(120, 20));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelDateFilter.add(jDateChooserEndDate, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridheight = 7;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 0);
+        jPanelFilterEvents.add(jPanelDateFilter, gridBagConstraints);
+
+        jPanelSearchTextCategory.setPreferredSize(new java.awt.Dimension(350, 100));
+        jPanelSearchTextCategory.setLayout(new java.awt.GridBagLayout());
+
+        jLabelCategory.setText(this.rb.getResourceString( "label.category"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        jPanelSearchTextCategory.add(jLabelCategory, gridBagConstraints);
+
+        jLabelFreeText.setText(this.rb.getResourceString( "label.freetext")
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        jPanelSearchTextCategory.add(jLabelFreeText, gridBagConstraints);
+
+        jLabelSearchHint.setFont(new java.awt.Font("Tahoma", 2, 11)); // NOI18N
+        jLabelSearchHint.setText(this.rb.getResourceString( "label.freetext.hint"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
+        jPanelSearchTextCategory.add(jLabelSearchHint, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 5;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        jPanelSearchTextCategory.add(jTextFieldFreeTextSearch, gridBagConstraints);
+
+        jComboBoxCategory.setPreferredSize(new java.awt.Dimension(140, 20));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(7, 5, 5, 15);
+        jPanelSearchTextCategory.add(jComboBoxCategory, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 13;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.gridheight = 7;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(0, 10, 0, 10);
+        jPanelFilterEvents.add(jPanelSearchTextCategory, gridBagConstraints);
+
+        jPanelButtons.setLayout(new java.awt.GridBagLayout());
+
+        jButtonResetFilter.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image24x24.gif"))); // NOI18N
+        jButtonResetFilter.setText(this.rb.getResourceString( "label.resetfilter"));
+        jButtonResetFilter.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonResetFilter.setMargin(new java.awt.Insets(5, 14, 2, 14));
+        jButtonResetFilter.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonResetFilter.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonResetFilterActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 6;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 10);
+        jPanelButtons.add(jButtonResetFilter, gridBagConstraints);
+
+        jButtonSearch.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image24x24.gif"))); // NOI18N
+        jButtonSearch.setText(this.rb.getResourceString( "label.search"));
+        jButtonSearch.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonSearch.setMargin(new java.awt.Insets(5, 14, 2, 14));
+        jButtonSearch.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonSearch.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonSearchActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 6;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 7, 10);
+        jPanelButtons.add(jButtonSearch, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 17;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridheight = 7;
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelFilterEvents.add(jPanelButtons, gridBagConstraints);
+
+        jPanelSeverity.setLayout(new java.awt.GridBagLayout());
+
+        jLabelSeverityError.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image16x16.gif"))); // NOI18N
         jLabelSeverityError.setText("Error");
         jLabelSeverityError.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -405,10 +590,10 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 15);
-        jPanelFilterEvents.add(jLabelSeverityError, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 5, 0);
+        jPanelSeverity.add(jLabelSeverityError, gridBagConstraints);
 
-        jLabelSeverityWarning.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/state_pending16x16.gif"))); // NOI18N
+        jLabelSeverityWarning.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image16x16.gif"))); // NOI18N
         jLabelSeverityWarning.setText("Warning");
         jLabelSeverityWarning.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -420,10 +605,10 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 5;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 15);
-        jPanelFilterEvents.add(jLabelSeverityWarning, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 15);
+        jPanelSeverity.add(jLabelSeverityWarning, gridBagConstraints);
 
-        jLabelSeverityInfo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/state_finished16x16.gif"))); // NOI18N
+        jLabelSeverityInfo.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image16x16.gif"))); // NOI18N
         jLabelSeverityInfo.setText("Info");
         jLabelSeverityInfo.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -435,10 +620,56 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 7;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 15);
-        jPanelFilterEvents.add(jLabelSeverityInfo, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 15);
+        jPanelSeverity.add(jLabelSeverityInfo, gridBagConstraints);
 
-        jLabelOriginSystem.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/originsystem16x16.gif"))); // NOI18N
+        jCheckBoxSeverityInfo.setSelected(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
+        jPanelSeverity.add(jCheckBoxSeverityInfo, gridBagConstraints);
+
+        jCheckBoxSeverityWarning.setSelected(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
+        jPanelSeverity.add(jCheckBoxSeverityWarning, gridBagConstraints);
+
+        jCheckBoxSeverityError.setSelected(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 5, 0);
+        jPanelSeverity.add(jCheckBoxSeverityError, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridheight = 7;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelFilterEvents.add(jPanelSeverity, gridBagConstraints);
+
+        jPanelOrigin.setLayout(new java.awt.GridBagLayout());
+
+        jCheckBoxOriginSystem.setSelected(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 9;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 5, 0);
+        jPanelOrigin.add(jCheckBoxOriginSystem, gridBagConstraints);
+
+        jLabelOriginSystem.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image16x16.gif"))); // NOI18N
         jLabelOriginSystem.setText("System");
         jLabelOriginSystem.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -450,10 +681,19 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 15);
-        jPanelFilterEvents.add(jLabelOriginSystem, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 5, 0);
+        jPanelOrigin.add(jLabelOriginSystem, gridBagConstraints);
 
-        jLabelOriginUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/originuser16x16.gif"))); // NOI18N
+        jCheckBoxOriginUser.setSelected(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 9;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
+        jPanelOrigin.add(jCheckBoxOriginUser, gridBagConstraints);
+
+        jLabelOriginUser.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image16x16.gif"))); // NOI18N
         jLabelOriginUser.setText("User");
         jLabelOriginUser.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -465,10 +705,19 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 5;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 15);
-        jPanelFilterEvents.add(jLabelOriginUser, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 15);
+        jPanelOrigin.add(jLabelOriginUser, gridBagConstraints);
 
-        jLabelOriginTransaction.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/messagedetails16x16.gif"))); // NOI18N
+        jCheckBoxOriginTransaction.setSelected(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 9;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
+        jPanelOrigin.add(jCheckBoxOriginTransaction, gridBagConstraints);
+
+        jLabelOriginTransaction.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image16x16.gif"))); // NOI18N
         jLabelOriginTransaction.setText("Transaction");
         jLabelOriginTransaction.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
@@ -480,158 +729,16 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.gridy = 7;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 15);
-        jPanelFilterEvents.add(jLabelOriginTransaction, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 15;
-        gridBagConstraints.gridy = 10;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.gridheight = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.weighty = 1.0;
-        jPanelFilterEvents.add(jPanelSpace, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 15);
+        jPanelOrigin.add(jLabelOriginTransaction, gridBagConstraints);
 
-        jSeparator1.setOrientation(javax.swing.SwingConstants.VERTICAL);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 7;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 11;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 15);
-        jPanelFilterEvents.add(jSeparator1, gridBagConstraints);
-
-        jSeparator2.setOrientation(javax.swing.SwingConstants.VERTICAL);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 11;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 11;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 15);
-        jPanelFilterEvents.add(jSeparator2, gridBagConstraints);
-
-        jPanelDateChooserStart.setMinimumSize(new java.awt.Dimension(110, 20));
-        jPanelDateChooserStart.setPreferredSize(new java.awt.Dimension(110, 20));
-        jPanelDateChooserStart.setLayout(new java.awt.BorderLayout());
-
-        jDateChooserStartDate.setPreferredSize(new java.awt.Dimension(110, 20));
-        jPanelDateChooserStart.add(jDateChooserStartDate, java.awt.BorderLayout.CENTER);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(7, 5, 10, 10);
-        jPanelFilterEvents.add(jPanelDateChooserStart, gridBagConstraints);
-
-        jPanelDateChooserEnd.setMinimumSize(new java.awt.Dimension(110, 20));
-        jPanelDateChooserEnd.setLayout(new java.awt.BorderLayout());
-
-        jDateChooserEndDate.setPreferredSize(new java.awt.Dimension(110, 20));
-        jPanelDateChooserEnd.add(jDateChooserEndDate, java.awt.BorderLayout.CENTER);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 6;
-        gridBagConstraints.gridheight = 6;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(7, 5, 10, 10);
-        jPanelFilterEvents.add(jPanelDateChooserEnd, gridBagConstraints);
-
-        jSeparator3.setOrientation(javax.swing.SwingConstants.VERTICAL);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 6;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 11;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 15);
-        jPanelFilterEvents.add(jSeparator3, gridBagConstraints);
-
-        jComboBoxCategory.setPreferredSize(new java.awt.Dimension(140, 20));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 13;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.gridheight = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(7, 5, 5, 15);
-        jPanelFilterEvents.add(jComboBoxCategory, gridBagConstraints);
-
-        jLabelCategory.setText(this.rb.getResourceString( "label.category"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 12;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
-        jPanelFilterEvents.add(jLabelCategory, gridBagConstraints);
-
-        jButtonSearch.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/magnifying_glass24x24.png"))); // NOI18N
-        jButtonSearch.setText(this.rb.getResourceString( "label.search"));
-        jButtonSearch.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
-        jButtonSearch.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
-        jButtonSearch.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonSearchActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 17;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 9;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.gridheight = 7;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelFilterEvents.add(jButtonSearch, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 13;
-        gridBagConstraints.gridy = 6;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelFilterEvents.add(jTextFieldFreeTextSearch, gridBagConstraints);
-
-        jLabelStartDate.setText(this.rb.getResourceString( "label.startdate"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(10, 15, 10, 5);
-        jPanelFilterEvents.add(jLabelStartDate, gridBagConstraints);
-
-        jLabelEndDate.setText(this.rb.getResourceString("label.enddate"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
-        gridBagConstraints.gridheight = 6;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(10, 15, 0, 5);
-        jPanelFilterEvents.add(jLabelEndDate, gridBagConstraints);
-
-        jLabel1.setFont(new java.awt.Font("Tahoma", 2, 11)); // NOI18N
-        jLabel1.setText(this.rb.getResourceString( "label.freetext.hint"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 13;
-        gridBagConstraints.gridy = 8;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
-        jPanelFilterEvents.add(jLabel1, gridBagConstraints);
-
-        jLabelFreeText.setText(this.rb.getResourceString( "label.freetext")
-        );
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 12;
-        gridBagConstraints.gridy = 6;
-        gridBagConstraints.gridheight = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(7, 5, 5, 5);
-        jPanelFilterEvents.add(jLabelFreeText, gridBagConstraints);
+        jPanelFilterEvents.add(jPanelOrigin, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -706,7 +813,7 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.weighty = 1.0;
         getContentPane().add(jPanelTodaysEvents, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(1113, 819));
+        setSize(new java.awt.Dimension(1213, 865));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -744,9 +851,14 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         this.performSearch();
     }//GEN-LAST:event_jButtonSearchActionPerformed
 
+    private void jButtonResetFilterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonResetFilterActionPerformed
+        this.resetFilter();
+    }//GEN-LAST:event_jButtonResetFilterActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonClose;
+    private javax.swing.JButton jButtonResetFilter;
     private javax.swing.JButton jButtonSearch;
     private javax.swing.JCheckBox jCheckBoxOriginSystem;
     private javax.swing.JCheckBox jCheckBoxOriginTransaction;
@@ -757,7 +869,6 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
     private javax.swing.JComboBox<Object> jComboBoxCategory;
     private com.toedter.calendar.JDateChooser jDateChooserEndDate;
     private com.toedter.calendar.JDateChooser jDateChooserStartDate;
-    private javax.swing.JLabel jLabel1;
     private javax.swing.JLabel jLabelCategory;
     private javax.swing.JLabel jLabelEmptyTable;
     private javax.swing.JLabel jLabelEndDate;
@@ -765,19 +876,22 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
     private javax.swing.JLabel jLabelOriginSystem;
     private javax.swing.JLabel jLabelOriginTransaction;
     private javax.swing.JLabel jLabelOriginUser;
+    private javax.swing.JLabel jLabelSearchHint;
     private javax.swing.JLabel jLabelSeverityError;
     private javax.swing.JLabel jLabelSeverityInfo;
     private javax.swing.JLabel jLabelSeverityWarning;
     private javax.swing.JLabel jLabelStartDate;
     private javax.swing.JPanel jPanelButton;
-    private javax.swing.JPanel jPanelDateChooserEnd;
-    private javax.swing.JPanel jPanelDateChooserStart;
+    private javax.swing.JPanel jPanelButtons;
+    private javax.swing.JPanel jPanelDateFilter;
     private de.mendelson.util.systemevents.gui.JPanelDisplaySingleSystemEvent jPanelDisplaySingleSystemEventTodaysEvents;
     private javax.swing.JPanel jPanelEmptyTable;
     private javax.swing.JPanel jPanelFilterEvents;
     private javax.swing.JPanel jPanelLower;
     private javax.swing.JPanel jPanelMainEvents;
-    private javax.swing.JPanel jPanelSpace;
+    private javax.swing.JPanel jPanelOrigin;
+    private javax.swing.JPanel jPanelSearchTextCategory;
+    private javax.swing.JPanel jPanelSeverity;
     private javax.swing.JPanel jPanelTodaysEvents;
     private javax.swing.JPanel jPanelUpper;
     private javax.swing.JScrollPane jScrollPaneTableEvents;

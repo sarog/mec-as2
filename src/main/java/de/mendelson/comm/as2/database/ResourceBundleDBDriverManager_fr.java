@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_fr.java 1     21.09.18 9:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_fr.java 2     20.08.20 15:47 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleDBDriverManager_fr extends MecResourceBundle {
 
@@ -29,12 +29,12 @@ public class ResourceBundleDBDriverManager_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"creating.database." + DBDriverManager.DB_RUNTIME, "Créer une base de données d'exécution"},
-        {"creating.database." + DBDriverManager.DB_CONFIG, "Créer une base de données de configuration"},
-        {"database.creation.success." + DBDriverManager.DB_RUNTIME, "La base de données d'exécution a été créée avec succès" },
-        {"database.creation.success." + DBDriverManager.DB_CONFIG, "La base de données de configuration a été créée avec succès" },
-        {"database.creation.failed." + DBDriverManager.DB_RUNTIME, "Une erreur est survenue lors de la création de la base de données d''exécution" },
-        {"database.creation.failed." + DBDriverManager.DB_CONFIG, "Une erreur est survenue lors de la création de la base de données de configuration." },
+        {"creating.database." + IDBDriverManager.DB_RUNTIME, "Créer une base de données d'exécution"},
+        {"creating.database." + IDBDriverManager.DB_CONFIG, "Créer une base de données de configuration"},
+        {"database.creation.success." + IDBDriverManager.DB_RUNTIME, "La base de données d'exécution a été créée avec succès" },
+        {"database.creation.success." + IDBDriverManager.DB_CONFIG, "La base de données de configuration a été créée avec succès" },
+        {"database.creation.failed." + IDBDriverManager.DB_RUNTIME, "Une erreur est survenue lors de la création de la base de données d''exécution" },
+        {"database.creation.failed." + IDBDriverManager.DB_CONFIG, "Une erreur est survenue lors de la création de la base de données de configuration." },
     };
 
 }

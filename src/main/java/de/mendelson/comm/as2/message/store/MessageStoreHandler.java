@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/store/MessageStoreHandler.java 71    7.12.18 9:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/store/MessageStoreHandler.java 77    23.12.20 11:48 Heller $
 package de.mendelson.comm.as2.message.store;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * Stores messages in specified directories
  *
  * @author S.Heller
- * @version $Revision: 71 $
+ * @version $Revision: 77 $
  */
 public class MessageStoreHandler {
 
@@ -77,7 +77,8 @@ public class MessageStoreHandler {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
-
+    
+    
     /**
      * Stores incoming data for the server without analyzing it, raw Returns the
      * raw filename and the header filename
@@ -104,16 +105,17 @@ public class MessageStoreHandler {
             }
         }
         DateFormat format = new SimpleDateFormat("yyyyMMddHHmmssSSS");
-        StringBuilder rawFileName = new StringBuilder();
-        rawFileName.append(format.format(new Date())).append("_");
+        StringBuilder rawFilename = new StringBuilder();
+        rawFilename.append(format.format(new Date())).append("_");
         if (remoteHost != null) {
-            rawFileName.append(remoteHost);
+            rawFilename.append(remoteHost);
         } else {
-            rawFileName.append("unknownhost");
+            rawFilename.append("unknownhost");
         }
-        rawFileName.append("_");
+        rawFilename.append("_");
+        String validFilename = MessageStoreHandler.convertToValidFilename(rawFilename.toString());
         //create unique filename
-        Path rawDataFile = Files.createTempFile(inRawDir, rawFileName.toString(), ".as2");
+        Path rawDataFile = Files.createTempFile(inRawDir, validFilename, ".as2");
         //write raw data
         OutputStream outStream = null;
         ByteArrayInputStream inStream = null;
@@ -477,7 +479,7 @@ public class MessageStoreHandler {
         }
         as2Info.setHeaderFilename(headerFile.toAbsolutePath().toString());
         Path rawFile = Paths.get(rawFilename.toString());
-        InputStream inStream = null;        
+        InputStream inStream = null;
         outStream = null;
         try {
             outStream = Files.newOutputStream(rawFile);
@@ -547,12 +549,12 @@ public class MessageStoreHandler {
      * if as2 ids contain chars that are not allowed in the current file system
      */
     public static String convertToValidFilename(String filename) {
-        Path file = Paths.get(filename);
-        //no trouble, file already exists on the file system
-        if (Files.exists(file)) {
-            return (filename);
+        //replace everything that may be a problem, e.g. pathes etc
+        String invalidChars = "\\/:*?\"<>|";
+        for (int i = 0; i < invalidChars.length(); i++) {
+            filename = filename.replace(invalidChars.charAt(i), '_');
         }
-        //seems not to be a valid filename, replace some chars
+        //replace some additional chars
         StringBuilder buffer = new StringBuilder();
         for (int i = 0, length = filename.length(); i < length; i++) {
             char c = filename.charAt(i);
@@ -655,4 +657,6 @@ public class MessageStoreHandler {
                     statusFile.toAbsolutePath().toString()
                 }), messageInfo);
     }
+    
+    
 }

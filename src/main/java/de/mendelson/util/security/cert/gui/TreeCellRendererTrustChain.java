@@ -1,8 +1,9 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/TreeCellRendererTrustChain.java 3     27-01-16 8:58a Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/gui/TreeCellRendererTrustChain.java 5     3.06.19 13:15 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.DNUtil;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import de.mendelson.util.security.cert.TableModelCertificates;
 import java.awt.Component;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
@@ -21,22 +22,21 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * TreeCellRenderer that will display the icons of the trust chain tree
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class TreeCellRendererTrustChain extends DefaultTreeCellRenderer {
 
+    public static final int ROW_HEIGHT = TableModelCertificates.ROW_HEIGHT;
+    protected static final int IMAGE_HEIGHT = TableModelCertificates.ROW_HEIGHT-3;
+    
     public static final ImageIcon ICON_ROOT
-            = new ImageIcon(TreeCellRendererTrustChain.class.getResource(
-                            "/de/mendelson/util/security/cert/gui/cert_root16x16.gif"));
+            = new ImageIcon( TableModelCertificates.ICON_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_CERT
-            = new ImageIcon(TreeCellRendererTrustChain.class.getResource(
-                            "/de/mendelson/util/security/cert/gui/certificate16x16.gif"));
+            = new ImageIcon( TableModelCertificates.ICON_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_KEY
-            = new ImageIcon(TreeCellRendererTrustChain.class.getResource(
-                            "/de/mendelson/util/security/cert/gui/key16x16.gif"));
+            = new ImageIcon( TableModelCertificates.ICON_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_CERTIFICATE_UNTRUSTED
-            = new ImageIcon(TreeCellRendererTrustChain.class.getResource(
-                            "/de/mendelson/util/security/cert/gui/cert_untrusted16x16.gif"));
+            = new ImageIcon( TableModelCertificates.ICON_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
 
     /**
      * Stores the selected node

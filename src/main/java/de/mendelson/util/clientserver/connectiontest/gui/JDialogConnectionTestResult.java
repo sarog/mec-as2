@@ -1,7 +1,9 @@
 package de.mendelson.util.clientserver.connectiontest.gui;
 
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.clientserver.connectiontest.ConnectionTestResult;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.LogFormatter;
@@ -11,12 +13,13 @@ import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_BLUE;
 import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_BROWN;
 import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_DARK_GREEN;
 import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_LIGHT_GRAY;
-import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_OLIVE;
 import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_RED;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.gui.JDialogInfoOnExternalCertificate;
 import de.mendelson.util.security.cert.gui.ResourceBundleCertificates;
+import de.mendelson.util.uinotification.UINotification;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -30,10 +33,10 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -49,17 +52,23 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Dialog to display the test result of a connection test
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 22 $
  */
 public class JDialogConnectionTestResult extends JDialog {
 
     public static final int CONNECTION_TEST_OFTP2 = ConnectionTest.CONNECTION_TEST_OFTP2;
     public static final int CONNECTION_TEST_AS2 = ConnectionTest.CONNECTION_TEST_AS2;
+    public static final int CONNECTION_TEST_AS4 = ConnectionTest.CONNECTION_TEST_AS4;
 
     private ConnectionTestResult result;
     private MecResourceBundle rb = null;
     private CertificateManager certManagerSSL;
     private MecResourceBundle rbCerts;
+
+    private static final MendelsonMultiResolutionImage IMAGE_CONNECTIONTEST
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/testconnection.svg", 24, 48);
+    private static final MendelsonMultiResolutionImage IMAGE_IMPORT
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/import.svg", 24, 48);
 
     /**
      * Creates new form JDialogTestResult
@@ -85,60 +94,78 @@ public class JDialogConnectionTestResult extends JDialog {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         initComponents();
-        this.jLabelOFTPService.setVisible(false);
+        this.setMultiresolutionIcons();
+        Color errorColor = Color.red.darker();
+        Color okColor = Color.green.darker().darker();
+        Color labelBackground = this.jLabelConnectionState.getBackground();
+        errorColor = ColorUtil.getBestContrastColorAroundForeground(labelBackground, errorColor);
+        okColor = ColorUtil.getBestContrastColorAroundForeground(labelBackground, okColor);
+        this.jLabelRemoteOFTPService.setVisible(false);
         this.jLabelOFTPServiceState.setVisible(false);
         if (CONNECTION_TYPE_TEST == CONNECTION_TEST_OFTP2) {
-            this.jLabelOFTPService.setVisible(true);
+            this.jLabelRemoteOFTPService.setVisible(true);
             this.jLabelOFTPServiceState.setVisible(true);
         }
         this.certManagerSSL = certManagerSSL;
         this.result = result;
-        this.setTitle(this.rb.getResourceString("title", result.getTestedRemoteAddress()));
+        this.setTitle(this.rb.getResourceString("title"));
         if (result.wasSSLTest()) {
-            this.jLabelHeader.setText(this.rb.getResourceString("state.ssl"));
+            this.jLabelHeader.setText(this.rb.getResourceString("header.ssl", result.getTestedRemoteAddress()));
         } else {
-            this.jLabelHeader.setText(this.rb.getResourceString("state.plain"));
+            this.jLabelHeader.setText(this.rb.getResourceString("header.plain", result.getTestedRemoteAddress()));
         }
         if (result.isConnectionIsPossible()) {
-            this.jLabelConnectionState.setForeground(Color.green.darker().darker());
+            this.jLabelConnectionState.setForeground(okColor);
             this.jLabelConnectionState.setText(this.rb.getResourceString("OK"));
         } else {
-            this.jLabelConnectionState.setForeground(Color.red.darker());
+            this.jLabelConnectionState.setForeground(errorColor);
             this.jLabelConnectionState.setText(this.rb.getResourceString("FAILED"));
         }
         if (!result.wasSSLTest()) {
-            this.jButtonViewCertificates.setEnabled(false);
-            this.jLabelCertificate.setEnabled(false);
+            this.jButtonImportCertificates.setEnabled(false);
+            this.jLabelRemoteCertificatesAvailableLocal.setEnabled(false);
             this.jLabelCertificateState.setEnabled(false);
             this.jLabelCertificateState.setText(this.rb.getResourceString("no.certificate.plain"));
         } else {
-            if (result.getFoundCertificates() != null && result.getFoundCertificates().length > 0) {
-                this.jLabelCertificateState.setForeground(Color.green.darker().darker());
-                this.jLabelCertificateState.setText(this.rb.getResourceString("OK"));
-            } else {
-                this.jLabelCertificateState.setForeground(Color.red.darker());
+            if (result.getFoundCertificates() == null || result.getFoundCertificates().length == 0) {
+                this.jLabelCertificateState.setForeground(errorColor);
                 this.jLabelCertificateState.setText(this.rb.getResourceString("FAILED"));
-                this.jButtonViewCertificates.setEnabled(false);
+                this.jButtonImportCertificates.setEnabled(false);
+            } else if (result.getFoundCertificates() != null && result.getFoundCertificates().length > 0
+                    && this.remoteCertificatesAreAvailable(certManagerSSL, result.getFoundCertificates())) {
+                this.jLabelCertificateState.setForeground(okColor);
+                this.jLabelCertificateState.setText(this.rb.getResourceString("AVAILABLE"));
+                this.jButtonImportCertificates.setEnabled(true);
+            } else {
+                this.jLabelCertificateState.setForeground(errorColor);
+                this.jLabelCertificateState.setText(this.rb.getResourceString("NOT_AVAILABLE"));
+                this.jButtonImportCertificates.setEnabled(true);
             }
         }
         if (result.isOftpServiceFound()) {
-            this.jLabelOFTPServiceState.setForeground(Color.green.darker().darker());
+            this.jLabelOFTPServiceState.setForeground(okColor);
             this.jLabelOFTPServiceState.setText(this.rb.getResourceString("OK"));
         } else {
-            this.jLabelOFTPServiceState.setForeground(Color.red.darker());
+            this.jLabelOFTPServiceState.setForeground(errorColor);
             this.jLabelOFTPServiceState.setText(this.rb.getResourceString("FAILED"));
         }
-        this.jLabelDescription.setText(this.rb.getResourceString("description." + CONNECTION_TYPE_TEST,
-                new Object[]{result.getTestedRemoteAddress().getHostString(),
-                    String.valueOf(result.getTestedRemoteAddress().getPort())}));
         //display the log if there is any
         Logger testLogger = Logger.getAnonymousLogger();
         testLogger.setUseParentHandlers(false);
         JTextPaneLoggingHandler handler = new JTextPaneLoggingHandler(this.jTextPaneLog,
                 new LogFormatter(LogFormatter.FORMAT_CONSOLE));
         this.setDefaultLogColors(handler);
+        handler.adjustColorsByContrast();
         testLogger.setLevel(Level.ALL);
         testLogger.addHandler(handler);
+        testLogger.log(Level.FINE,
+                this.rb.getResourceString("description." + CONNECTION_TYPE_TEST,
+                        new Object[]{
+                            result.getTestedRemoteAddress().getHostString(),
+                            String.valueOf(result.getTestedRemoteAddress().getPort())
+                        }));
+        testLogger.log(Level.INFO, "");
+        testLogger.log(Level.INFO, "");
         for (LoggingHandlerLogEntryArray.LogEntry logEntry : logEntries) {
             testLogger.log(logEntry.getLevel(), logEntry.getMessage());
         }
@@ -161,6 +188,31 @@ public class JDialogConnectionTestResult extends JDialog {
         this.getRootPane().registerKeyboardAction(actionListenerESC, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
+    private void setMultiresolutionIcons() {
+        this.jLabelIcon.setIcon(new ImageIcon(IMAGE_CONNECTIONTEST.toMinResolution(32)));
+        this.jButtonImportCertificates.setIcon(new ImageIcon(IMAGE_IMPORT.toMinResolution(24)));
+    }
+
+    /**
+     * Checks if the downloaded certificates are available in the local TLS
+     * keystore
+     *
+     */
+    private boolean remoteCertificatesAreAvailable(CertificateManager certManagerSSL,
+            X509Certificate[] remoteCertificates) {
+        boolean exists = true;
+        for (X509Certificate remoteCertificate : remoteCertificates) {
+            KeystoreCertificate testCert = new KeystoreCertificate();
+            testCert.setCertificate(remoteCertificate);
+            String fingerPrint = testCert.getFingerPrintSHA1();
+            if (certManagerSSL.getKeystoreCertificateByFingerprintSHA1(fingerPrint) == null) {
+                exists = false;
+                break;
+            }
+        }
+        return (exists);
+    }
+
     /**
      * Sets some default colors for the logger levels. Overwrite these colors
      * using the setColor method
@@ -172,7 +224,7 @@ public class JDialogConnectionTestResult extends JDialog {
         handler.setColor(Level.INFO, COLOR_BLACK);
         handler.setColor(Level.CONFIG, COLOR_DARK_GREEN);
         handler.setColor(Level.FINE, COLOR_BLUE);
-        handler.setColor(Level.FINER, COLOR_OLIVE);
+        handler.setColor(Level.FINER, COLOR_BLUE);
         handler.setColor(Level.FINEST, COLOR_LIGHT_GRAY);
     }
 
@@ -192,16 +244,16 @@ public class JDialogConnectionTestResult extends JDialog {
                 String alias = util.importX509Certificate(this.certManagerSSL.getKeystore(), importCertificate, provBC);
                 this.certManagerSSL.saveKeystore();
                 this.certManagerSSL.rereadKeystoreCertificates();
-                JOptionPane.showMessageDialog(this,
-                        this.rbCerts.getResourceString("certificate.import.success.message", alias),
+                UINotification.instance().addNotification(null,
+                        UINotification.TYPE_SUCCESS,
                         this.rbCerts.getResourceString("certificate.import.success.title"),
-                        JOptionPane.INFORMATION_MESSAGE);
+                        this.rbCerts.getResourceString("certificate.import.success.message", alias));
             } catch (Throwable e) {
                 e.printStackTrace();
-                JOptionPane.showMessageDialog(this,
-                        this.rbCerts.getResourceString("certificate.import.error.message", e.getMessage()),
+                UINotification.instance().addNotification(null,
+                        UINotification.TYPE_SUCCESS,
                         this.rbCerts.getResourceString("certificate.import.error.title"),
-                        JOptionPane.ERROR_MESSAGE);
+                        this.rbCerts.getResourceString("certificate.import.error.message", e.getMessage()));
             }
             if (certList.size() > 1) {
                 infoDialog.setVisible(true);
@@ -223,113 +275,137 @@ public class JDialogConnectionTestResult extends JDialog {
 
         jSplitPane = new javax.swing.JSplitPane();
         jPanelOverview = new javax.swing.JPanel();
+        jLabelIcon = new javax.swing.JLabel();
         jLabelHeader = new javax.swing.JLabel();
-        jLabelConnection = new javax.swing.JLabel();
-        jLabelCertificate = new javax.swing.JLabel();
-        jLabelOFTPService = new javax.swing.JLabel();
+        jLabelIPConnection = new javax.swing.JLabel();
+        jLabelRemoteCertificatesAvailableLocal = new javax.swing.JLabel();
+        jLabelRemoteOFTPService = new javax.swing.JLabel();
         jLabelConnectionState = new javax.swing.JLabel();
         jLabelCertificateState = new javax.swing.JLabel();
         jLabelOFTPServiceState = new javax.swing.JLabel();
-        jLabelDescription = new javax.swing.JLabel();
         jPanelSpace = new javax.swing.JPanel();
+        jButtonImportCertificates = new javax.swing.JButton();
         jPanelLog = new javax.swing.JPanel();
         jScrollPane = new javax.swing.JScrollPane();
         jTextPaneLog = new javax.swing.JTextPane();
         jPanelButton = new javax.swing.JPanel();
-        jButtonViewCertificates = new javax.swing.JButton();
         jButtonClose = new javax.swing.JButton();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         getContentPane().setLayout(new java.awt.GridBagLayout());
 
-        jSplitPane.setDividerLocation(220);
+        jSplitPane.setDividerLocation(235);
         jSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
         jPanelOverview.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelOverview.setLayout(new java.awt.GridBagLayout());
 
-        jLabelHeader.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
-        jLabelHeader.setText("<STATE>");
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/connectiontest/gui/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.insets = new java.awt.Insets(15, 10, 10, 10);
+        jPanelOverview.add(jLabelIcon, gridBagConstraints);
+
+        jLabelHeader.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jLabelHeader.setText("<Header with URL>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 15, 5);
+        gridBagConstraints.insets = new java.awt.Insets(15, 5, 10, 5);
         jPanelOverview.add(jLabelHeader, gridBagConstraints);
 
-        jLabelConnection.setText(this.rb.getResourceString("label.connection.established"));
+        jLabelIPConnection.setText(this.rb.getResourceString("label.connection.established"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
-        jPanelOverview.add(jLabelConnection, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        jPanelOverview.add(jLabelIPConnection, gridBagConstraints);
 
-        jLabelCertificate.setText(this.rb.getResourceString("label.certificates.downloaded"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
-        jPanelOverview.add(jLabelCertificate, gridBagConstraints);
-
-        jLabelOFTPService.setText(this.rb.getResourceString("label.running.oftpservice"));
+        jLabelRemoteCertificatesAvailableLocal.setText(this.rb.getResourceString("label.certificates.available.local"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 15, 5);
-        jPanelOverview.add(jLabelOFTPService, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        jPanelOverview.add(jLabelRemoteCertificatesAvailableLocal, gridBagConstraints);
 
-        jLabelConnectionState.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelConnectionState.setText("<STATE>");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
-        jPanelOverview.add(jLabelConnectionState, gridBagConstraints);
-
-        jLabelCertificateState.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelCertificateState.setText("<STATE>");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
-        jPanelOverview.add(jLabelCertificateState, gridBagConstraints);
-
-        jLabelOFTPServiceState.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelOFTPServiceState.setText("<STATE>");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 15, 5);
-        jPanelOverview.add(jLabelOFTPServiceState, gridBagConstraints);
-
-        jLabelDescription.setText("<HTML>The system performed a ip connection to the ip address ..., port ... The following result shows if this connection was successful and if a ..product type... server listens to this address. If a TLS connection has been requested and was successful it is possible to download the certificate(s), they will be stored in your TLS keystore.</HTML>");
+        jLabelRemoteOFTPService.setText(this.rb.getResourceString("label.running.oftpservice"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 7;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelOverview.add(jLabelDescription, gridBagConstraints);
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        jPanelOverview.add(jLabelRemoteOFTPService, gridBagConstraints);
+
+        jLabelConnectionState.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabelConnectionState.setText("<STATE>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        jPanelOverview.add(jLabelConnectionState, gridBagConstraints);
+
+        jLabelCertificateState.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabelCertificateState.setText("<STATE>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        jPanelOverview.add(jLabelCertificateState, gridBagConstraints);
+
+        jLabelOFTPServiceState.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
+        jLabelOFTPServiceState.setText("<STATE>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        jPanelOverview.add(jLabelOFTPServiceState, gridBagConstraints);
+
+        jPanelSpace.setMinimumSize(new java.awt.Dimension(0, 0));
+        jPanelSpace.setPreferredSize(new java.awt.Dimension(0, 0));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 10;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
         jPanelOverview.add(jPanelSpace, gridBagConstraints);
+
+        jButtonImportCertificates.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/connectiontest/gui/missing_image24x24.gif"))); // NOI18N
+        jButtonImportCertificates.setText(this.rb.getResourceString( "button.viewcert"));
+        jButtonImportCertificates.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonImportCertificates.setVerticalAlignment(javax.swing.SwingConstants.BOTTOM);
+        jButtonImportCertificates.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonImportCertificates.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonImportCertificatesActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 20, 0, 0);
+        jPanelOverview.add(jButtonImportCertificates, gridBagConstraints);
 
         jSplitPane.setLeftComponent(jPanelOverview);
 
@@ -350,23 +426,10 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         getContentPane().add(jSplitPane, gridBagConstraints);
 
         jPanelButton.setLayout(new java.awt.GridBagLayout());
-
-        jButtonViewCertificates.setText(this.rb.getResourceString( "button.viewcert"));
-        jButtonViewCertificates.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonViewCertificatesActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelButton.add(jButtonViewCertificates, gridBagConstraints);
 
         jButtonClose.setText(this.rb.getResourceString( "button.close"));
         jButtonClose.addActionListener(new java.awt.event.ActionListener() {
@@ -396,22 +459,22 @@ public class JDialogConnectionTestResult extends JDialog {
         this.dispose();
     }//GEN-LAST:event_jButtonCloseActionPerformed
 
-    private void jButtonViewCertificatesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonViewCertificatesActionPerformed
+    private void jButtonImportCertificatesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonImportCertificatesActionPerformed
         this.viewCertificates();
-    }//GEN-LAST:event_jButtonViewCertificatesActionPerformed
+    }//GEN-LAST:event_jButtonImportCertificatesActionPerformed
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonClose;
-    private javax.swing.JButton jButtonViewCertificates;
-    private javax.swing.JLabel jLabelCertificate;
+    private javax.swing.JButton jButtonImportCertificates;
     private javax.swing.JLabel jLabelCertificateState;
-    private javax.swing.JLabel jLabelConnection;
     private javax.swing.JLabel jLabelConnectionState;
-    private javax.swing.JLabel jLabelDescription;
     private javax.swing.JLabel jLabelHeader;
-    private javax.swing.JLabel jLabelOFTPService;
+    private javax.swing.JLabel jLabelIPConnection;
+    private javax.swing.JLabel jLabelIcon;
     private javax.swing.JLabel jLabelOFTPServiceState;
+    private javax.swing.JLabel jLabelRemoteCertificatesAvailableLocal;
+    private javax.swing.JLabel jLabelRemoteOFTPService;
     private javax.swing.JPanel jPanelButton;
     private javax.swing.JPanel jPanelLog;
     private javax.swing.JPanel jPanelOverview;

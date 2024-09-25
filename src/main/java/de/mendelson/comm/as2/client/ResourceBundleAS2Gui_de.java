@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 47    6.12.18 17:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 51    21.08.20 17:59 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 47 $
+ * @version $Revision: 51 $
  */
 public class ResourceBundleAS2Gui_de extends MecResourceBundle {
 
@@ -39,11 +39,12 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"menu.file.send", "Datei an Partner versenden"},
         {"menu.file.resend", "Als neue Transaktion versenden"},
         {"menu.file.resend.multiple", "Als neue Transaktionen versenden"},
+        {"menu.file.migrate.hsqldb", "Von HSQLDB migrieren"},
         {"menu.file.statistic", "Statistik"},
         {"menu.file.quota", "Kontingente"},
         {"menu.file.serverinfo", "HTTP Server Konfiguration anzeigen"},
         {"menu.file.systemevents", "Systemereignisse"},
-        {"menu.file.searchinserverlog", "Serverlog durchsuchen"},        
+        {"menu.file.searchinserverlog", "Serverprotokoll durchsuchen"},        
         {"menu.help", "Hilfe"},
         {"menu.help.about", "Über"},
         {"menu.help.supportrequest", "Support Anfrage"},
@@ -61,11 +62,16 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"filter.direction.inbound", "Eingehend"},
         {"filter.direction.outbound", "Ausgehend"},
         {"filter", "Filter"},
+        {"filter.use", "Zeitliche Einschränkung" },
+        {"filter.from", "Von:" },
+        {"filter.to", "Bis:" },
         {"keyrefresh", "Zertifikate aktualisieren"},
         {"configurecolumns", "Spalten" },
         {"delete.msg", "Löschen"},
         {"dialog.msg.delete.message", "Wollen Sie die selektierten Nachrichten wirklich permanent löschen?"},
         {"dialog.msg.delete.title", "Löschen von Nachrichten"},
+        {"msg.delete.success.single", "{0} Nachricht wurde gelöscht" },
+        {"msg.delete.success.multiple", "{0} Nachrichten wurden gelöscht" },
         {"stoprefresh.msg", "Aktualisierung an/aus"},
         {"welcome", "Willkommen, {0}"},
         {"fatal.error", "Fehler"},
@@ -84,8 +90,8 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"dialog.resend.message", "Wollen Sie die selektierte Transaktion wirklich erneut senden?"},
         {"dialog.resend.message.multiple", "Wollen Sie die {0} selektierten Transaktionen wirklich erneut senden?"},
         {"dialog.resend.title", "Daten erneut senden"},
-        {"logputput.disabled", "** Die Logausgabe wurde unterdrückt **"},
-        {"logputput.enabled", "** Die Logausgabe wurde aktiviert **"},
+        {"logputput.disabled", "** Die Protokollausgabe wurde unterdrückt **"},
+        {"logputput.enabled", "** Die Protokollausgabe wurde aktiviert **"},
         {"resend.failed.nopayload", "Erneuter Versand als neue Transaktion ist fehlgeschlagen: Die selektierte Transaktion {0} hat keine Nutzdaten." },
     };
 }

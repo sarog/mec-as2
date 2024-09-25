@@ -1,8 +1,7 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JTreeTrustChain.java 3     9/22/17 11:54a Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JTreeTrustChain.java 6     3.06.19 15:31 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.DNUtil;
-import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.tree.SortableTreeNode;
 import java.util.List;
@@ -21,7 +20,7 @@ import javax.swing.tree.TreePath;
  * Tree to display the trust chain of a certificate
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class JTreeTrustChain extends JTree {
 
@@ -38,6 +37,7 @@ public class JTreeTrustChain extends JTree {
         this.setRootVisible(true);
         this.root = (SortableTreeNode) this.getModel().getRoot();
         this.setCellRenderer(new TreeCellRendererTrustChain());
+        this.setRowHeight(TreeCellRendererTrustChain.ROW_HEIGHT);
     }
 
     /**

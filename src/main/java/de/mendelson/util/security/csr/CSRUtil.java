@@ -1,17 +1,15 @@
-//$Header: /oftp2/de/mendelson/util/security/csr/CSRUtil.java 13    2.11.18 17:06 Heller $
+//$Header: /as2/de/mendelson/util/security/csr/CSRUtil.java 14    20.05.20 10:42 Heller $
 package de.mendelson.util.security.csr;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.StringWriter;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.Principal;
 import java.security.PrivateKey;
 import java.security.PublicKey;
@@ -60,7 +58,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
  * Handles csr related activities on a certificate
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class CSRUtil {
 
@@ -96,7 +94,7 @@ public class CSRUtil {
             if (list.size() == 2) {
                 int tagNo = ((Integer) list.get(0)).intValue();
                 if (list.get(1) instanceof byte[]) {
-                    GeneralName newName = new GeneralName(tagNo, this.toDERObject((byte[])list.get(1)));
+                    GeneralName newName = new GeneralName(tagNo, this.toDERObject((byte[]) list.get(1)));
                     namesList.add(newName);
                 } else if (list.get(1) instanceof String) {
                     GeneralName newName = new GeneralName(tagNo, list.get(1).toString());
@@ -118,7 +116,7 @@ public class CSRUtil {
         AsymmetricKeyParameter privateKeyAsymKeyParam = PrivateKeyFactory.createKey(key.getEncoded());
         ContentSigner sigGen = new BcRSAContentSignerBuilder(sigAlgId, digAlgId).build(privateKeyAsymKeyParam);
         SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(cert.getPublicKey().getEncoded());
-        PKCS10CertificationRequestBuilder builder = new PKCS10CertificationRequestBuilder(x500DNName, subPubKeyInfo);        
+        PKCS10CertificationRequestBuilder builder = new PKCS10CertificationRequestBuilder(x500DNName, subPubKeyInfo);
         /*
          * Add SubjectAlternativeNames (SANs) using the ExtensionsGenerator
          */
@@ -180,10 +178,10 @@ public class CSRUtil {
     /**
      * Writes a csr to a file, PEM encoded
      */
-    public void storeCSRPEM(PKCS10CertificationRequest csr, File outFile) throws Exception {
+    public void storeCSRPEM(PKCS10CertificationRequest csr, Path outFile) throws Exception {
         JcaPEMWriter pemWriter = null;
         try {
-            pemWriter = new JcaPEMWriter(new FileWriter(outFile));
+            pemWriter = new JcaPEMWriter(Files.newBufferedWriter(outFile));
             pemWriter.writeObject(csr);
             pemWriter.flush();
         } finally {
@@ -199,14 +197,14 @@ public class CSRUtil {
      * returned signed certificate.
      *
      */
-    public boolean importCSRReply(CertificateManager manager, String alias, File csrResponseFile) throws Throwable {
+    public boolean importCSRReply(CertificateManager manager, String alias, Path csrResponseFile) throws Throwable {
         PrivateKey key = manager.getPrivateKey(alias);
         PublicKey publicKey = manager.getPublicKey(alias);
         // Load certificates found in the PEM(!) encoded answer
         List<X509Certificate> responseCertList = new ArrayList<X509Certificate>();
         InputStream inputStream = null;
         try {
-            inputStream = Files.newInputStream(csrResponseFile.toPath());
+            inputStream = Files.newInputStream(csrResponseFile);
             for (Certificate responseCert : CertificateFactory.getInstance("X509").generateCertificates(inputStream)) {
                 responseCertList.add((X509Certificate) responseCert);
             }

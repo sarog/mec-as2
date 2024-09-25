@@ -1,14 +1,16 @@
-//$Header: /oftp2/de/mendelson/util/ImageButtonBar.java 9     19-02-16 9:01a Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/ImageButtonBar.java 12    9.12.19 10:34 Heller $
 package de.mendelson.util;
 
 import com.l2fprod.common.swing.JButtonBar;
-import com.l2fprod.common.swing.plaf.blue.BlueishButtonBarUI;
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ButtonGroup;
@@ -24,20 +26,24 @@ import javax.swing.JPanel;
  * Other product and brand names are trademarks of their respective owners.
  */
 import javax.swing.JToggleButton;
+import javax.swing.SwingConstants;
 
 /**
  * Panel that contains image buttons and could be used to group panels. Use it
  * the following way: 1.initialize it 2.Add panels to it by addButton()
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class ImageButtonBar extends JPanel {
 
     public static final int VERTICAL = JButtonBar.VERTICAL;
     public static final int HORIZONTAL = JButtonBar.HORIZONTAL;
     private JButtonBar bar;
-    private List<ImageButtonComponents> componentsList = new ArrayList<ImageButtonComponents>();
+    private final List<ImageButtonComponent> componentsList
+            = Collections.synchronizedList(new ArrayList<ImageButtonComponent>());
+    private final Map<String, JToggleButton> internalButtonMap
+            = Collections.synchronizedMap(new HashMap<String, JToggleButton>());
 
     private int preferredButtonWidth = -1;
     private int preferredButtonHeight = -1;
@@ -47,7 +53,7 @@ public class ImageButtonBar extends JPanel {
             throw new IllegalArgumentException("ImageButtonBar: unsupported direction");
         }
         this.bar = new JButtonBar(DIRECTION);
-        bar.setUI(new BlueishButtonBarUI());
+        bar.setUI(new ImageButtonBarUI());
     }
 
     public void setPreferredButtonSize(int width, int height) {
@@ -55,16 +61,45 @@ public class ImageButtonBar extends JPanel {
         this.preferredButtonWidth = width;
     }
 
+    /**Allows to select a button of the button bar that has been given an internal name before. If the
+     * button with the name does not exist nothing happens
+     */
+    public void setSelectedButton( String internalButtonName ){
+        synchronized( this.internalButtonMap ){
+            if( this.internalButtonMap.containsKey(internalButtonName)){
+                JToggleButton button = this.internalButtonMap.get(internalButtonName);
+                button.doClick();
+            }
+        }
+    }
+    
     /**
      * Add a panel that is controlled by the passed icon
      *
      * @param icon Icon to display
-     * @param text Text taht is assigned to the icon
+     * @param text Text that is assigned to the icon
+     * @param panel Assigned component
+     * @param initialSelected selects the component initial if set
+     * @param internalName Name that should be used for the button if you would
+     * like to select it later using the setSelectedButton method, might be null
+     */
+    public void addButton(ImageIcon icon, String text, String internalName, JComponent[] components, boolean initialSelected) {
+        synchronized (this.componentsList) {
+            ImageButtonComponent imageButton = new ImageButtonComponent(icon, text, internalName, components, initialSelected);
+            this.componentsList.add(imageButton);
+        }
+    }
+
+    /**
+     * Add a panel that is controlled by the passed icon
+     *
+     * @param icon Icon to display
+     * @param text Text that is assigned to the icon
      * @param panel Assigned component
      * @param initialSelected selects the component initial if set
      */
     public void addButton(ImageIcon icon, String text, JComponent[] components, boolean initialSelected) {
-        this.componentsList.add(new ImageButtonComponents(icon, text, components, initialSelected));
+        this.addButton(icon, text, null, components, initialSelected);
     }
 
     /**
@@ -76,7 +111,7 @@ public class ImageButtonBar extends JPanel {
      * @param initialSelected selects the component initial if set
      */
     public void addButton(ImageIcon icon, String text, JComponent component, boolean initialSelected) {
-        this.addButton(icon, text, new JComponent[]{component}, initialSelected);
+        this.addButton(icon, text, null, new JComponent[]{component}, initialSelected);
     }
 
     /**
@@ -86,13 +121,15 @@ public class ImageButtonBar extends JPanel {
     private int computeButtonMinWidth() {
         int gapX = 5;
         int buttonMinWidth = this.preferredButtonWidth;
-        for (ImageButtonComponents component : this.componentsList) {
-            JToggleButton button = new JToggleButton(component.getText());
-            int textWidth = button.getFontMetrics(button.getFont()).stringWidth(button.getText());
-            buttonMinWidth = Math.max(buttonMinWidth, textWidth+(2*gapX));
-            if (component.getIcon() != null) {
-                int iconWidth = component.getIcon().getIconWidth()+(2*gapX);
-                buttonMinWidth = Math.max(buttonMinWidth, iconWidth);
+        synchronized (this.componentsList) {
+            for (ImageButtonComponent component : this.componentsList) {
+                JToggleButton button = new JToggleButton(component.getText());
+                int textWidth = button.getFontMetrics(button.getFont()).stringWidth(button.getText());
+                buttonMinWidth = Math.max(buttonMinWidth, textWidth + (2 * gapX));
+                if (component.getIcon() != null) {
+                    int iconWidth = component.getIcon().getIconWidth() + (2 * gapX);
+                    buttonMinWidth = Math.max(buttonMinWidth, iconWidth);
+                }
             }
         }
         return (buttonMinWidth);
@@ -100,36 +137,52 @@ public class ImageButtonBar extends JPanel {
 
     public void build() {
         int buttonMinWidth = this.computeButtonMinWidth();
-        ButtonGroup group = new ButtonGroup();
-        for (ImageButtonComponents singlePanel : this.componentsList) {
-            Action action = new ImageButtonBarAbstractActionImpl(singlePanel, this.componentsList);
-            JToggleButton button = new JToggleButton(action);
-            if (this.preferredButtonHeight != -1 && this.preferredButtonWidth != -1) {
-                button.setPreferredSize(new Dimension(buttonMinWidth, this.preferredButtonHeight));
+        ButtonGroup buttonGroup = new ButtonGroup();
+        synchronized (this.componentsList) {
+            for (ImageButtonComponent imageButtonComponent : this.componentsList) {
+                Action action = new ImageButtonBarAbstractActionImpl(imageButtonComponent, this.componentsList);
+                JToggleButton button = new JToggleButton(action);
+                button.setHorizontalAlignment(SwingConstants.CENTER);
+                button.setVerticalAlignment(SwingConstants.CENTER);
+                button.setHorizontalTextPosition(SwingConstants.CENTER);
+                button.setVerticalTextPosition(SwingConstants.BOTTOM);
+                if (this.preferredButtonHeight != -1 && this.preferredButtonWidth != -1) {
+                    button.setPreferredSize(new Dimension(buttonMinWidth, this.preferredButtonHeight));
+                }
+                this.bar.add(button);
+                buttonGroup.add(button);
+                for (JComponent component : imageButtonComponent.getComponents()) {
+                    component.setVisible(imageButtonComponent.getInitialSelected());
+                }
+                button.setSelected(imageButtonComponent.getInitialSelected());
+                //allow to select the component by name
+                if (imageButtonComponent.getInternalName() != null) {
+                    synchronized (this.internalButtonMap) {
+                        this.internalButtonMap.put( imageButtonComponent.getInternalName(), button);
+                    }
+                }
             }
-            this.bar.add(button);
-            group.add(button);
-            for (JComponent component : singlePanel.getComponents()) {
-                component.setVisible(singlePanel.getInitialSelected());
-            }
-            button.setSelected(singlePanel.getInitialSelected());
         }
-        this.setLayout(new BorderLayout());
-        this.add(bar, BorderLayout.CENTER);
+        BorderLayout layout = new BorderLayout();
+        this.setLayout(layout);
+        this.add(this.bar, BorderLayout.CENTER);
     }
 
-    private static class ImageButtonComponents {
+    private final static class ImageButtonComponent {
 
-        private ImageIcon icon;
-        private String text;
-        private JComponent[] components;
+        private final ImageIcon icon;
+        private final String text;
+        private final JComponent[] components;
         private boolean initialSelected = false;
+        private String internalName = null;
 
-        public ImageButtonComponents(ImageIcon icon, String text, JComponent[] components, boolean initialSelected) {
+        public ImageButtonComponent(ImageIcon icon, String text, String internalName,
+                JComponent[] components, boolean initialSelected) {
             this.icon = icon;
             this.text = text;
             this.components = components;
             this.initialSelected = initialSelected;
+            this.internalName = internalName;
         }
 
         /**
@@ -142,8 +195,8 @@ public class ImageButtonBar extends JPanel {
             if (anObject == this) {
                 return (true);
             }
-            if (anObject != null && anObject instanceof ImageButtonComponents) {
-                ImageButtonComponents otherComponent = (ImageButtonComponents) anObject;
+            if (anObject != null && anObject instanceof ImageButtonComponent) {
+                ImageButtonComponent otherComponent = (ImageButtonComponent) anObject;
                 boolean componentsAreEqual = this.components.length == otherComponent.components.length;
                 for (int i = 0; componentsAreEqual && i < this.components.length; i++) {
                     componentsAreEqual = componentsAreEqual && this.components[i].equals(otherComponent.components[i]);
@@ -189,14 +242,21 @@ public class ImageButtonBar extends JPanel {
             }
 
         }
+
+        /**
+         * @return the internalName
+         */
+        public String getInternalName() {
+            return internalName;
+        }
     }
 
     private static class ImageButtonBarAbstractActionImpl extends AbstractAction {
 
-        private ImageButtonComponents ownComponents;
-        private List<ImageButtonComponents> componentList;
+        private ImageButtonComponent ownComponents;
+        private List<ImageButtonComponent> componentList;
 
-        public ImageButtonBarAbstractActionImpl(ImageButtonComponents ownComponents, List<ImageButtonComponents> componentList) {
+        public ImageButtonBarAbstractActionImpl(ImageButtonComponent ownComponents, List<ImageButtonComponent> componentList) {
             super(ownComponents.getText(), ownComponents.getIcon());
             this.ownComponents = ownComponents;
             this.componentList = componentList;
@@ -205,8 +265,9 @@ public class ImageButtonBar extends JPanel {
         /**
          * Invisible all added panels but own panel
          */
+        @Override
         public void actionPerformed(ActionEvent e) {
-            for (ImageButtonComponents singleComponents : this.componentList) {
+            for (ImageButtonComponent singleComponents : this.componentList) {
                 singleComponents.setVisible(ownComponents.equals(singleComponents));
             }
         }

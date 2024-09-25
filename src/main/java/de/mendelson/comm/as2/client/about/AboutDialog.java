@@ -1,12 +1,20 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/about/AboutDialog.java 7     19.01.09 14:39 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/about/AboutDialog.java 9     17.12.20 15:48 Heller $
 package de.mendelson.comm.as2.client.about;
 import javax.swing.*;
 import de.mendelson.Copyright;
 import de.mendelson.comm.as2.AS2ServerVersion;
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.util.MecResourceBundle;
-import java.io.File;
+import java.awt.Cursor;
+import java.awt.Desktop;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.FileReader;
 import java.io.StringWriter;
+import java.net.URI;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 /*
@@ -19,7 +27,7 @@ import java.util.*;
 /**
  * Dialog to show the about info
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class AboutDialog extends JDialog {
     
@@ -40,6 +48,7 @@ public class AboutDialog extends JDialog {
         }
         this.setTitle( this.rb.getResourceString( "title" ));
         this.initComponents();
+        this.setMultiresolutionIcons();        
         this.getRootPane().setDefaultButton( this.jButtonOk );
         this.jLabelProductName.setText( "<HTML><b>"
                 + AS2ServerVersion.getProductName()
@@ -52,28 +61,47 @@ public class AboutDialog extends JDialog {
         this.jLabelCopyright.setText( Copyright.getCopyrightMessage() );
         this.jLabelStreet.setText( AS2ServerVersion.getStreet() );
         this.jLabelZip.setText( AS2ServerVersion.getZip());
-        this.jLabelTel.setText( AS2ServerVersion.getTelephone() );
         this.jLabelEMail.setText( AS2ServerVersion.getInfoEmail() );
+        //create hyperlinks - or not if this is not supported by the OS       
+        if (Desktop.isDesktopSupported()) {
+            this.jLabelWebsiteGerman.setText("<html><a href=\"\">http://www.mendelson.de/</a></html>");
+            this.jLabelWebsiteGerman.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            this.jLabelWebsiteGerman.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    try {
+                        Desktop.getDesktop().browse(new URI("http://www.mendelson.de"));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                }
+            });
+            this.jLabelWebSiteInternational.setText("<html><a href=\"\">http://www.mendelson-e-c.com/</a></html>");
+            this.jLabelWebSiteInternational.setCursor(new Cursor(Cursor.HAND_CURSOR));
+            this.jLabelWebSiteInternational.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    try {
+                        Desktop.getDesktop().browse(new URI("http://www.mendelson-e-c.com"));
+                    } catch (Exception ex) {
+                        //ignore
+                    }
+                }
+            });
+        }
         this.displayLicense();
+    }
+    
+    private void setMultiresolutionIcons() {
+        this.jLabelImage.setIcon(new ImageIcon(AS2Gui.IMAGE_PRODUCT_LOGO_WITH_TEXT.toMinResolution(120)));
     }
     
     /**Displays the license text in the GUI*/
     private void displayLicense(){
         try{
-            File file = new File( "license/LICENSE.gpl.txt" );
-            FileReader reader = new FileReader( file );
-            StringWriter writer = new StringWriter();
-            int read = 0;
-            char[] buffer = new char[4096];
-            while( read != -1 ){
-                read = reader.read( buffer );
-                if( read > 0 )
-                    writer.write( buffer, 0, read );
-            }
-            reader.close();
-            writer.flush();
-            writer.close();
-            this.jTextAreaLicense.setText( writer.getBuffer().toString() );
+            Path file = Paths.get( "license/LICENSE.gpl.txt" );
+            String text = Files.readString(file);
+            this.jTextAreaLicense.setText( text );
             this.jTextAreaLicense.setCaretPosition( 0 );
         } catch( Exception e ){
             this.jTextAreaLicense.setText( "License agreement not found." );
@@ -93,10 +121,10 @@ public class AboutDialog extends JDialog {
         jTabbedPane = new javax.swing.JTabbedPane();
         jPanelMain = new javax.swing.JPanel();
         jPanelInfo = new javax.swing.JPanel();
+        jPanelSpace = new javax.swing.JPanel();
         jLabelProductName = new javax.swing.JLabel();
         jLabelCopyright = new javax.swing.JLabel();
         jLabelImage = new javax.swing.JLabel();
-        jLabelTel = new javax.swing.JLabel();
         jLabelStreet = new javax.swing.JLabel();
         jLabelZip = new javax.swing.JLabel();
         jLabelEMail = new javax.swing.JLabel();
@@ -105,8 +133,6 @@ public class AboutDialog extends JDialog {
         jLabelWebSiteInternational = new javax.swing.JLabel();
         jPanelSep = new javax.swing.JPanel();
         jSeparator1 = new javax.swing.JSeparator();
-        jPanelSeparator = new javax.swing.JPanel();
-        jSeparator = new javax.swing.JSeparator();
         jPanelLicense = new javax.swing.JPanel();
         jScrollPaneLicense = new javax.swing.JScrollPane();
         jTextAreaLicense = new javax.swing.JTextArea();
@@ -125,8 +151,17 @@ public class AboutDialog extends JDialog {
         jPanelMain.setLayout(new java.awt.GridBagLayout());
 
         jPanelInfo.setLayout(new java.awt.GridBagLayout());
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridheight = 9;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        jPanelInfo.add(jPanelSpace, gridBagConstraints);
 
-        jLabelProductName.setFont(new java.awt.Font("Dialog", 1, 14));
+        jLabelProductName.setFont(new java.awt.Font("Dialog", 1, 14)); // NOI18N
         jLabelProductName.setText("<productName>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -148,25 +183,14 @@ public class AboutDialog extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 5);
         jPanelInfo.add(jLabelCopyright, gridBagConstraints);
 
-        jLabelImage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/about/logocommprotocols.gif"))); // NOI18N
-        jLabelImage.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0)));
+        jLabelImage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/about/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridheight = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(20, 5, 10, 5);
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 10, 15);
         jPanelInfo.add(jLabelImage, gridBagConstraints);
-
-        jLabelTel.setText("<Tel>");
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 9;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 5);
-        jPanelInfo.add(jLabelTel, gridBagConstraints);
 
         jLabelStreet.setText("<street>");
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -191,7 +215,7 @@ public class AboutDialog extends JDialog {
         jLabelEMail.setText("<email>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridy = 9;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
@@ -209,7 +233,7 @@ public class AboutDialog extends JDialog {
         jLabelWebsiteGerman.setText("http://www.mendelson-e-c.com");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 13;
+        gridBagConstraints.gridy = 20;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
@@ -219,7 +243,7 @@ public class AboutDialog extends JDialog {
         jLabelWebSiteInternational.setText("http://www.mendelson.de");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridy = 19;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
@@ -238,26 +262,8 @@ public class AboutDialog extends JDialog {
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 10, 5);
         jPanelInfo.add(jPanelSep, gridBagConstraints);
-
-        jPanelSeparator.setLayout(new java.awt.GridBagLayout());
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
-        jPanelSeparator.add(jSeparator, gridBagConstraints);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 11;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelInfo.add(jPanelSeparator, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -265,7 +271,7 @@ public class AboutDialog extends JDialog {
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelMain.add(jPanelInfo, gridBagConstraints);
 
         jTabbedPane.addTab(this.rb.getResourceString( "tab.about" ), jPanelMain);
@@ -273,7 +279,7 @@ public class AboutDialog extends JDialog {
         jPanelLicense.setLayout(new java.awt.GridBagLayout());
 
         jTextAreaLicense.setColumns(20);
-        jTextAreaLicense.setFont(new java.awt.Font("Arial", 0, 12));
+        jTextAreaLicense.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
         jTextAreaLicense.setRows(5);
         jScrollPaneLicense.setViewportView(jTextAreaLicense);
 
@@ -293,14 +299,18 @@ public class AboutDialog extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         getContentPane().add(jTabbedPane, gridBagConstraints);
 
-        jButtonOk.setFont(new java.awt.Font("Dialog", 0, 12));
+        jPanelButton.setLayout(new java.awt.GridBagLayout());
+
+        jButtonOk.setFont(new java.awt.Font("Dialog", 0, 12)); // NOI18N
         jButtonOk.setText(this.rb.getResourceString( "button.ok" ));
         jButtonOk.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonOkActionPerformed(evt);
             }
         });
-        jPanelButton.add(jButtonOk);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelButton.add(jButtonOk, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -309,8 +319,8 @@ public class AboutDialog extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds((screenSize.width-461)/2, (screenSize.height-407)/2, 461, 407);
+        setSize(new java.awt.Dimension(598, 558));
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
     
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
@@ -333,7 +343,6 @@ public class AboutDialog extends JDialog {
     private javax.swing.JLabel jLabelImage;
     private javax.swing.JLabel jLabelProductName;
     private javax.swing.JLabel jLabelStreet;
-    private javax.swing.JLabel jLabelTel;
     private javax.swing.JLabel jLabelWebSiteInternational;
     private javax.swing.JLabel jLabelWebsiteGerman;
     private javax.swing.JLabel jLabelZip;
@@ -342,9 +351,8 @@ public class AboutDialog extends JDialog {
     private javax.swing.JPanel jPanelLicense;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JPanel jPanelSep;
-    private javax.swing.JPanel jPanelSeparator;
+    private javax.swing.JPanel jPanelSpace;
     private javax.swing.JScrollPane jScrollPaneLicense;
-    private javax.swing.JSeparator jSeparator;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JTabbedPane jTabbedPane;
     private javax.swing.JTextArea jTextAreaLicense;

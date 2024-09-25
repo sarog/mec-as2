@@ -1,9 +1,10 @@
-//$Header: /oftp2/de/mendelson/util/ProgressPanel.java 11    1/26/18 2:00p Heller $
+//$Header: /as2/de/mendelson/util/ProgressPanel.java 15    12.02.20 14:44 Heller $
 package de.mendelson.util;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import javax.swing.BoundedRangeModel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
@@ -15,10 +16,10 @@ import javax.swing.SwingUtilities;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Progress panel to display status informations.
+ * Progress panel to display status information.
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 15 $
  */
 public class ProgressPanel extends JPanel {
 
@@ -29,20 +30,18 @@ public class ProgressPanel extends JPanel {
      */
     public ProgressPanel() {
         this.initComponents();
-        this.disableProgressDisplay();        
+        this.disableProgressDisplay();
     }
 
-    private void disableProgressDisplay(){
+    private void disableProgressDisplay() {
         this.jProgressBar.setIndeterminate(false);
-        this.jProgressBar.setMinimum(0);
-        this.jProgressBar.setMaximum(0);
-        this.jProgressBar.setValue(0);
+        BoundedRangeModel progressModel = ProgressPanel.this.jProgressBar.getModel();
+        progressModel.setRangeProperties( 0, 0, 0, 0, false);
         this.jProgressBar.setStringPainted(false);
         this.jLabelProgressDetails.setText(null);
         this.jProgressBar.setVisible(false);
     }
 
-    
     /**
      * Adds a new progress to display to the progress bar. Its possible to add
      * several requests, just use unique ids for each request
@@ -61,24 +60,40 @@ public class ProgressPanel extends JPanel {
 
             @Override
             public void run() {
-                ProgressPanel.this.jLabelProgressDetails.setText(request.getDisplay());
-                ProgressPanel.this.jProgressBar.setIndeterminate(request.isIndeterminate());
-                if (request.isIndeterminate()) {
-                    ProgressPanel.this.jProgressBar.setStringPainted(false);
-                } else {
-                    ProgressPanel.this.jProgressBar.setMinimum(request.getMinValue());
-                    ProgressPanel.this.jProgressBar.setMaximum(request.getMaxValue());
-                    ProgressPanel.this.jProgressBar.setValue(request.getActualValue());
+                //ensure that no progress bar stop or delete is written to the synchronized list
+                //during the progress bar creation and display
+                //check if the progress bar display is still required if the swing graphic threads executes it. 
+                //If this was a really short action it might be faster deleted than displayed. 
+                //In this case just do nothing
+                boolean progressBarDisplayRequestIsStillValid = false;
+                synchronized (ProgressPanel.this.progressList) {
+                    for (ProgressRequest singleRequest : ProgressPanel.this.progressList) {
+                        if (request.getUniqueId().equals(singleRequest.getUniqueId())) {
+                            progressBarDisplayRequestIsStillValid = true;
+                            break;
+                        }
+                    }
                 }
-                ProgressPanel.this.jProgressBar.setVisible(true);
+                if (progressBarDisplayRequestIsStillValid) {
+                    ProgressPanel.this.jLabelProgressDetails.setText(request.getDisplay());
+                    ProgressPanel.this.jProgressBar.setIndeterminate(request.isIndeterminate());
+                    if (request.isIndeterminate()) {
+                        ProgressPanel.this.jProgressBar.setStringPainted(false);
+                    } else {
+                        BoundedRangeModel progressModel = ProgressPanel.this.jProgressBar.getModel();
+                        progressModel.setRangeProperties(
+                                request.getActualValue(), 0,
+                                request.getMinValue(), request.getMaxValue(), false);
+                    }
+                    ProgressPanel.this.jProgressBar.setVisible(true);
+                }
             }
         };
         try {
-            SwingUtilities.invokeAndWait(runnable);
+            SwingUtilities.invokeLater(runnable);
         } catch (Exception e) {
             e.printStackTrace();
         }
-
     }
 
     /**

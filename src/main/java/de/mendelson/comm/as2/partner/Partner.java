@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 77    24.10.18 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 81    2.09.20 15:38 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -31,7 +31,7 @@ import org.w3c.dom.NodeList;
  * Stores all information about a business partner
  *
  * @author S.Heller
- * @version $Revision: 77 $
+ * @version $Revision: 81 $
  */
 public class Partner implements Serializable, Comparable, Cloneable {
 
@@ -83,14 +83,6 @@ public class Partner implements Serializable, Comparable, Cloneable {
      */
     private boolean signedMDN = true;
     /**
-     * Command that should be executed on message receipt for this partner
-     */
-    private String commandOnReceipt = "c:/mendelson/mbi/SendToMBI.exe -file ${filename} -media as2";
-    /**
-     * Indicates if the command should be executed on receipt of a message
-     */
-    private boolean useCommandOnReceipt = false;
-    /**
      * Stores an async MDN HTTP authentication if requested
      */
     private HTTPAuthentication authenticationAsyncMDN = new HTTPAuthentication();
@@ -110,25 +102,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
     private boolean notifySendReceiveEnabled = false;
     private String contactCompany = null;
     private String contactAS2 = null;
-    /**
-     * Command that should be executed on message send for this partner / error
-     */
-    private String commandOnSendError = "c:/mendelson/mbi/SendToLog.exe -tid ${filename} -title \"AS2 sending process failed\" -details \"The AS2 message has NOT been sent:\\n${log}\" -state ERROR";
-    /**
-     * Indicates if the command should be executed on send of a message / error
-     */
-    private boolean useCommandOnSendError = false;
-    /**
-     * Command that should be executed on message send for this partner /
-     * success
-     */
-    private String commandOnSendSuccess = "c:/mendelson/mbi/SendToLog.exe -tid ${filename} -title \"AS2 message sent\" -details \"Success.\\nThe AS2 message has been sent:\\n${log}\" -state SUCCESS";
-    /**
-     * Indicates if the command should be executed on send of a message /
-     * success
-     */
-    private boolean useCommandOnSendSuccess = false;
     private int contentTransferEncoding = AS2Message.CONTENT_TRANSFER_ENCODING_BINARY;
+    private PartnerEventInformation partnerEvents = new PartnerEventInformation();
     /**
      * Partner specific http headers
      */
@@ -497,22 +472,6 @@ public class Partner implements Serializable, Comparable, Cloneable {
         this.signedMDN = signedMDN;
     }
 
-    public String getCommandOnReceipt() {
-        return commandOnReceipt;
-    }
-
-    public void setCommandOnReceipt(String commandOnReceipt) {
-        this.commandOnReceipt = commandOnReceipt;
-    }
-
-    public boolean useCommandOnReceipt() {
-        return useCommandOnReceipt;
-    }
-
-    public void setUseCommandOnReceipt(boolean useCommandOnReceipt) {
-        this.useCommandOnReceipt = useCommandOnReceipt;
-    }
-
     public HTTPAuthentication getAuthenticationAsyncMDN() {
         return authenticationAsyncMDN;
     }
@@ -609,47 +568,11 @@ public class Partner implements Serializable, Comparable, Cloneable {
         this.notifySendReceiveEnabled = notifySendReceiveEnabled;
     }
 
-    public String getCommandOnSendError() {
-        return commandOnSendError;
-    }
-
-    public void setCommandOnSendError(String commandOnSendError) {
-        this.commandOnSendError = commandOnSendError;
-    }
-
-    public boolean useCommandOnSendError() {
-        return useCommandOnSendError;
-    }
-
-    public void setUseCommandOnSendError(boolean useCommandOnSendError) {
-        this.useCommandOnSendError = useCommandOnSendError;
-    }
-
-    public String getCommandOnSendSuccess() {
-        return commandOnSendSuccess;
-    }
-
-    public void setCommandOnSendSuccess(String commandOnSendSuccess) {
-        this.commandOnSendSuccess = commandOnSendSuccess;
-    }
-
-    public boolean useCommandOnSendSuccess() {
-        return useCommandOnSendSuccess;
-    }
-
-    public void setUseCommandOnSendSuccess(boolean useCommandOnSendSuccess) {
-        this.useCommandOnSendSuccess = useCommandOnSendSuccess;
-    }
-
     public String getDebugDisplay() {
         StringBuilder buffer = new StringBuilder();
         buffer.append("Name:\t\t").append(this.getName());
         buffer.append(" (local station: ").append(this.isLocalStation()).append(")\n");
         buffer.append("AS2 id:\t\t").append(this.getAS2Identification()).append("\n");
-        buffer.append("UseCommandOnSendError:\t\t").append(this.useCommandOnSendError).append("\n");
-        buffer.append("CommandOnSendError:\t\t").append(this.getCommandOnSendError()).append("\n");
-        buffer.append("UseCommandOnSendSuccess:\t\t").append(this.useCommandOnSendSuccess).append("\n");
-        buffer.append("CommandOnSendSuccess:\t\t").append(this.getCommandOnSendSuccess()).append("\n");
         buffer.append("Max poll files:\t\t").append(this.getMaxPollFiles()).append("\n");
         return (buffer.toString());
     }
@@ -721,18 +644,6 @@ public class Partner implements Serializable, Comparable, Cloneable {
         builder.append(this.subject).append("\n");
         builder.append(rbPartnerPanel.getResourceString("label.contenttype")).append(" ");
         builder.append(this.contentType).append("\n");
-        if (this.useCommandOnReceipt) {
-            builder.append(rbPartnerPanel.getResourceString("label.usecommandonreceipt")).append(" ");
-            builder.append(this.commandOnReceipt).append("\n");
-        }
-        if (this.useCommandOnSendError) {
-            builder.append(rbPartnerPanel.getResourceString("label.usecommandonsenderror")).append(" ");
-            builder.append(this.commandOnSendError).append("\n");
-        }
-        if (this.useCommandOnSendSuccess) {
-            builder.append(rbPartnerPanel.getResourceString("label.usecommandonsendsuccess")).append(" ");
-            builder.append(this.commandOnSendSuccess).append("\n");
-        }
         if (this.enableDirPoll) {
             builder.append(rbPartnerPanel.getResourceString("label.pollinterval")).append(" ");
             builder.append(this.pollInterval + "s").append("\n");
@@ -760,7 +671,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
     /**
      * Serializes this partner to XML
      *
-     * @param level level in the XML hierarchie for the xml beautifying
+     * @param level level in the XML hierarchy for the xml beautifying
      */
     public String toXML(CertificateManager certmanagerEncSign, int level) {
         String offset = "";
@@ -771,20 +682,17 @@ public class Partner implements Serializable, Comparable, Cloneable {
         builder.append(offset).append("<partner>\n");
         builder.append(offset).append("\t<name>").append(this.toCDATA(this.name)).append("</name>\n");
         builder.append(offset).append("\t<as2ident>").append(this.toCDATA(this.as2Identification)).append("</as2ident>\n");
-        builder.append(offset).append("\t<usecommandonreceipt>").append(String.valueOf(this.useCommandOnReceipt)).append("</usecommandonreceipt>\n");
-        if (this.commandOnReceipt != null) {
-            builder.append(offset).append("\t<commandonreceipt>").append(this.toCDATA(this.commandOnReceipt)).append("</commandonreceipt>\n");
-        }
-        builder.append(offset).append("\t<usecommandonsenderror>").append(String.valueOf(this.useCommandOnSendError)).append("</usecommandonsenderror>\n");
-        if (this.commandOnSendError != null) {
-            builder.append(offset).append("\t<commandonsenderror>").append(this.toCDATA(this.commandOnSendError)).append("</commandonsenderror>\n");
-        }
-        builder.append(offset).append("\t<usecommandonsendsuccess>").append(String.valueOf(this.useCommandOnSendSuccess)).append("</usecommandonsendsuccess>\n");
-        if (this.commandOnSendSuccess != null) {
-            builder.append(offset).append("\t<commandonsendsuccess>").append(this.toCDATA(this.commandOnSendSuccess)).append("</commandonsendsuccess>\n");
-        }
+        builder.append( this.partnerEvents.toXML(level+1));        
+        //partner comments:
+        //comment, contactAS2, contactCompany
         if (this.comment != null) {
             builder.append(offset).append("\t<comment>").append(this.toCDATA(this.comment)).append("</comment>\n");
+        }
+        if (this.contactAS2 != null) {
+            builder.append(offset).append("\t<commentcontact>").append(this.toCDATA(this.contactAS2)).append("</commentcontact>\n");
+        }
+        if (this.contactCompany != null) {
+            builder.append(offset).append("\t<commentcompany>").append(this.toCDATA(this.contactCompany)).append("</commentcompany>\n");
         }
         builder.append(offset).append("\t<contenttype>").append(this.toCDATA(this.contentType)).append("</contenttype>\n");
         //no longer used but for compatibility of older versions: write down the crypt alias
@@ -851,6 +759,10 @@ public class Partner implements Serializable, Comparable, Cloneable {
 
     /**
      * Deserializes a partner from an XML node
+     *
+     * @param manager The certificate manager to get the assigned certificates
+     * from - may be null, then there is no certificate/key assigned to the
+     * partner
      */
     public static Partner fromXML(CertificateManager manager, Element element) {
         Partner partner = new Partner();
@@ -864,35 +776,33 @@ public class Partner implements Serializable, Comparable, Cloneable {
                     partner.setName(value);
                 } else if (key.equals("as2ident")) {
                     partner.setAS2Identification(value);
-                } else if (key.equals("usecommandonreceipt")) {
-                    partner.setUseCommandOnReceipt(value.equalsIgnoreCase("true"));
-                } else if (key.equals("commandonreceipt")) {
-                    partner.setCommandOnReceipt(value);
-                } else if (key.equals("usecommandonsenderror")) {
-                    partner.setUseCommandOnSendError(value.equalsIgnoreCase("true"));
-                } else if (key.equals("commandonsenderror")) {
-                    partner.setCommandOnSendError(value);
-                } else if (key.equals("usecommandonsendsuccess")) {
-                    partner.setUseCommandOnSendSuccess(value.equalsIgnoreCase("true"));
-                } else if (key.equals("commandonsendsuccess")) {
-                    partner.setCommandOnSendSuccess(value);
-                } else if (key.equals("comment")) {
+                } else if (key.equals("events")) {
+                    PartnerEventInformation.fromXML( partner, property );
+                }  else if (key.equals("comment")) {
                     partner.setComment(value);
+                } else if (key.equals("commentcontact")) {
+                    partner.setContactAS2(value);
+                } else if (key.equals("commentcompany")) {
+                    partner.setContactCompany(value);
                 } else if (key.equals("contenttype")) {
                     partner.setContentType(value);
                 } else if (key.equals("cryptalias")) {
-                    KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
-                    if (certificate != null) {
-                        partner.setCryptFingerprintSHA1(manager.getKeystoreCertificate(value).getFingerPrintSHA1());
+                    if (manager != null) {
+                        KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
+                        if (certificate != null) {
+                            partner.setCryptFingerprintSHA1(manager.getKeystoreCertificate(value).getFingerPrintSHA1());
+                        }
                     }
                 } else if (key.equals("email")) {
                     partner.setEmail(value);
                 } else if (key.equals("mdnurl")) {
                     partner.setMdnURL(value);
                 } else if (key.equals("signalias")) {
-                    KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
-                    if (certificate != null) {
-                        partner.setSignFingerprintSHA1(manager.getKeystoreCertificate(value).getFingerPrintSHA1());
+                    if (manager != null) {
+                        KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
+                        if (certificate != null) {
+                            partner.setSignFingerprintSHA1(manager.getKeystoreCertificate(value).getFingerPrintSHA1());
+                        }
                     }
                 } else if (key.equals("subject")) {
                     partner.setSubject(value);
@@ -920,7 +830,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
                     partner.setNotifySendReceiveEnabled(value.equalsIgnoreCase("true"));
                 } else if (key.equals("pollinterval")) {
                     partner.setPollInterval(Integer.valueOf(value).intValue());
-                }else if (key.equals("maxpollfiles")) {
+                } else if (key.equals("maxpollfiles")) {
                     partner.setMaxPollFiles(Integer.valueOf(value).intValue());
                 } else if (key.equals("pollignorelist")) {
                     partner.setPollIgnoreListString(value);
@@ -1132,6 +1042,13 @@ public class Partner implements Serializable, Comparable, Cloneable {
      */
     public void setEnableDirPoll(boolean enableDirPoll) {
         this.enableDirPoll = enableDirPoll;
+    }
+
+    /**
+     * @return the partnerEventInfo
+     */
+    public PartnerEventInformation getPartnerEvents() {
+        return partnerEvents;
     }
 
 }

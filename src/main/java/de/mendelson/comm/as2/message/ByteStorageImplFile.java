@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplFile.java 6     6.11.18 16:59 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplFile.java 10    19.03.20 18:51 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.AS2Tools;
@@ -6,18 +6,18 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 /**
  * Container that stores byte arrays in a temp file
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 10 $
  */
 public class ByteStorageImplFile implements IByteStorage {
 
@@ -25,7 +25,8 @@ public class ByteStorageImplFile implements IByteStorage {
      * IByteStorage extends Serializable
      */
     public static final long serialVersionUID = 1L;
-    private Path file = null;
+    //Use a String here to keep this serializable
+    private String fullFilename = null;
 
     public ByteStorageImplFile() {
     }
@@ -35,11 +36,11 @@ public class ByteStorageImplFile implements IByteStorage {
      * Returns the actual stored data size
      */
     public int getSize() {
-        if (this.file == null) {
+        if (this.fullFilename == null) {
             return (0);
         }
         try {
-            return ((int) Files.size(this.file));
+            return ((int) Files.size(Paths.get(this.fullFilename)));
         } catch (IOException e) {
             return (0);
         }
@@ -52,11 +53,11 @@ public class ByteStorageImplFile implements IByteStorage {
     public void put(byte[] data) throws Exception {
         //create the file storage
         Path tempFile = AS2Tools.createTempFile("AS2ByteStorage", ".bin");
-        this.file = tempFile;
+        this.fullFilename = tempFile.toAbsolutePath().toString();
         ByteArrayInputStream inStream = new ByteArrayInputStream(data);
         OutputStream outStream = null;
         try {
-            outStream = Files.newOutputStream(this.file);
+            outStream = Files.newOutputStream(tempFile);
             this.copyStreams(inStream, outStream);
         } finally {
             if (outStream != null) {
@@ -69,13 +70,13 @@ public class ByteStorageImplFile implements IByteStorage {
 
     @Override
     public byte[] get() throws Exception {
-        if (this.file == null) {
+        if (this.fullFilename == null) {
             return (new byte[0]);
         }
         InputStream inStream = null;
         ByteArrayOutputStream outStream = new ByteArrayOutputStream();
         try {
-            inStream = Files.newInputStream(this.file);
+            inStream = Files.newInputStream(Paths.get(this.fullFilename));
             this.copyStreams(inStream, outStream);
         } finally {
             outStream.flush();
@@ -92,15 +93,17 @@ public class ByteStorageImplFile implements IByteStorage {
      * Returns an input stream to read directly from the underlaying buffer
      */
     public InputStream getInputStream() throws Exception {
-        return (Files.newInputStream(this.file));
+        return (Files.newInputStream(Paths.get(this.fullFilename)));
     }
 
     @Override
     public void release() {
         try {
-            Files.delete(this.file);
+            Files.delete(Paths.get(this.fullFilename));
         } catch (IOException e) {
             //nop
+        }finally{
+            this.fullFilename = null;
         }
     }
 

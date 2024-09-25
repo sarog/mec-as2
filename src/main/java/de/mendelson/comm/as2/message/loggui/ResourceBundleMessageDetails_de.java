@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_de.java 22    6/25/18 2:33p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_de.java 23    5.03.20 17:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 23 $
  */
 public class ResourceBundleMessageDetails_de extends MecResourceBundle{
     
@@ -37,7 +37,7 @@ public class ResourceBundleMessageDetails_de extends MecResourceBundle{
         {"transactionstate.error.out", "<HTML>Sie haben die {0} Nachricht erfolgreich an Ihren Partner \"{1}\" übermittelt - er war aber nicht in der Lage, sie zu verarbeiten und antwortete mit dem Fehler [{2}]</HTML>" },
         {"transactionstate.error.in", "<HTML>Sie empfingen die {0} Nachricht erfolgreich von Ihrem Partner \"{1}\" - Ihr System war aber nicht in der Lage, sie zu verarbeiten und antwortete mit dem Fehler [{2}]</HTML>" },
         {"transactionstate.error.unknown-trading-partner", "<HTML>Sie und Ihr Partner haben unterschiedliche AS2 Kennungen für die beiden Partner der Übertragung in der Konfiguration. Die folgenden Kennungen wurden verwendet: \"{0}\" (Nachrichtensender), \"{1}\" (Nachrichtenempfänger)</HTML>" },
-        {"transactionstate.error.authentication-failed", "<HTML>Der Nachrichtenempfänger konnte die Signatur des Senders in den Daten nicht erfolgreich prüfen. Dies ist meistens ein Konfigurationsproblem, da Sender und Empfänger hier das gleiche Zertifikat verwenden müssen.</HTML>" },
+        {"transactionstate.error.authentication-failed", "<HTML>Der Nachrichtenempfänger konnte die Signatur des Senders in den Daten nicht erfolgreich prüfen. Dies ist meistens ein Konfigurationsproblem, da Sender und Empfänger hier das gleiche Zertifikat verwenden müssen. Bitte sehen Sie sich auch die MDN Details im Protokoll an - dieses könnte weitere Informationen enthalten.</HTML>" },
         {"transactionstate.error.decompression-failed", "<HTML>Der Nachrichtenempfänger konnte die empfangene Nachricht nicht dekomprimieren</HTML>" },
         {"transactionstate.error.insufficient-message-security", "<HTML>Der Nachrichtenempfänger erwartete einen höheren Sicherheitslevel für die empfangenen Daten (zum Beispiel verschlüsselte Daten anstelle von unverschlüsselten)</HTML>" },
         {"transactionstate.error.unexpected-processing-error", "<HTML>Dies ist eine sehr generische Fehlermeldung. Aus unbekanntem Grund konnte der Empfänger die Nachricht nicht verarbeiten.</HTML>" },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver.java 6     6.12.18 16:26 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver.java 7     12.03.19 13:36 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleSendOrderReceiver extends MecResourceBundle{
     
@@ -26,7 +26,7 @@ public class ResourceBundleSendOrderReceiver extends MecResourceBundle{
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
         {"async.mdn.wait", "Will wait for async MDN until {0}." },  
-        {"max.retry.reached", "The max retry has been reached, transmission canceled." },
+        {"max.retry.reached", "The max retry has been reached ({0}), transmission canceled." },
         {"retry", "Will retry to send transmission after {0}s, retry {1}/{2}." },
         {"as2.send.disabled", "** The system will not send any AS2 message/MDN because the number of parallel outbound connections is set to 0. Please modify these settings in the server settings dialog to enable sending again **" },
         {"outbound.connection.prepare.mdn", "Preparing outbound MDN connection to \"{0}\", active connections: {1}/{2}." },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 8     10.12.18 12:46 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 15    18.11.20 12:12 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -12,11 +12,15 @@ import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
 import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.SNIHostName;
+import javax.net.ssl.SNIServerName;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
@@ -33,12 +37,21 @@ import javax.net.ssl.X509TrustManager;
  * Performs a connection test and returns information about the results
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 15 $
  */
 public class ConnectionTest {
 
     public static final int CONNECTION_TEST_OFTP2 = 1;
     public static final int CONNECTION_TEST_AS2 = 2;
+    public static final int CONNECTION_TEST_AS4 = 3;
+
+    public static final String[] DEFAULT_TLS_PROTOCOL_LIST
+            = new String[]{
+                "TLSv1.3",
+                "TLSv1.2",
+                "TLSv1.1",
+                "TLSv1"
+            };
 
     private Logger logger = null;
     private InetSocketAddress remoteAddress = null;
@@ -95,7 +108,6 @@ public class ConnectionTest {
                                 this.proxy.getAddress() + ":" + this.proxy.getPort()));
                     }
                 }
-
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("test.start.plain", this.remoteAddress.toString()));
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("timeout.set", String.valueOf(timeout)));
                 socket.setSoTimeout((int) timeout);
@@ -105,8 +117,8 @@ public class ConnectionTest {
             } catch (Exception exception) {
                 testResult.setException(exception);
                 testResult.setConnectionIsPossible(false);
-                 this.logger.severe(this.getLogTag() + this.rb.getResourceString("result.exception",
-                    "[" + exception.getClass().getSimpleName() + "]: " + exception.getMessage()));                
+                this.logger.severe(this.getLogTag() + this.rb.getResourceString("result.exception",
+                        "[" + exception.getClass().getSimpleName() + "]: " + exception.getMessage()));
                 this.logger.severe(this.getLogTag() + this.rb.getResourceString("connection.problem", this.remoteAddress.toString()));
                 return (testResult);
             }
@@ -159,6 +171,14 @@ public class ConnectionTest {
     }
 
     /**
+     * Performs a SSL connection test with the default TLS protocol list and SNI
+     */
+    public ConnectionTestResult checkConnectionSSL(String host, int port, long timeout,
+            CertificateManager certificateManagerSSL) {
+        return (this.checkConnectionSSL(host, port, timeout, certificateManagerSSL, DEFAULT_TLS_PROTOCOL_LIST, true));
+    }
+
+    /**
      * Let the user examine the contents of a certificate file from a SSL
      * connection.
      *
@@ -169,7 +189,8 @@ public class ConnectionTest {
      * @return True if the user was able to examine the certificate, false
      * otherwise
      */
-    public ConnectionTestResult checkConnectionSSL(String host, int port, long timeout, CertificateManager certificateManagerSSL) {
+    public ConnectionTestResult checkConnectionSSL(String host, int port, long timeout,
+            CertificateManager certificateManagerSSL, String[] protocols, boolean useSNI) {
         this.remoteAddress = new InetSocketAddress(host, port);
         ConnectionTestResult testResult = new ConnectionTestResult(this.remoteAddress, true);
         SSLSocket sslSocket = null;
@@ -177,21 +198,7 @@ public class ConnectionTest {
         try {
             SSLSocketFactory socketFactory;
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            X509TrustManager[] trustManagerTrustAll = {
-                new X509TrustManager() {
-                    @Override
-                    public void checkClientTrusted(X509Certificate[] certChain, String auth) {
-                    }
-
-                    @Override
-                    public void checkServerTrusted(X509Certificate[] certChain, String auth) {
-                    }
-
-                    @Override
-                    public X509Certificate[] getAcceptedIssuers() {
-                        return new X509Certificate[0];
-                    }
-                }};
+            X509TrustManager[] trustManagerTrustAll = this.createTrustManagerTrustAll();
             sslContext.init(null, trustManagerTrustAll, null);
             socketFactory = sslContext.getSocketFactory();
             if (this.proxy == null) {
@@ -204,16 +211,29 @@ public class ConnectionTest {
                 sslSocket = (SSLSocket) socketFactory.createSocket(new Socket(proxy), this.proxy.getAddress(), this.proxy.getPort(), true);
                 if (this.proxy.usesAuthentication()) {
                     this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.proxy.auth",
-                                new Object[]{
-                                    this.proxy.getAddress() + ":" + this.proxy.getPort(),
-                                    this.proxy.getUserName()
-                                }));
+                            new Object[]{
+                                this.proxy.getAddress() + ":" + this.proxy.getPort(),
+                                this.proxy.getUserName()
+                            }));
                 } else {
                     this.logger.info(this.getLogTag() + this.rb.getResourceString("test.connection.proxy.noauth",
-                                this.proxy.getAddress() + ":" + this.proxy.getPort()));
+                            this.proxy.getAddress() + ":" + this.proxy.getPort()));
                 }
             }
             sslSocket.setSoTimeout((int) timeout);
+            //set the used protocols for the negotiation
+            sslSocket.setEnabledProtocols(protocols);
+            if( useSNI ){
+                this.setSNI(sslSocket, host);
+            }
+            StringBuilder protocolBuilder = new StringBuilder();
+            for (String singleProtocolStr : protocols) {
+                if (protocolBuilder.length() > 0) {
+                    protocolBuilder.append(" ,");
+                }
+                protocolBuilder.append(singleProtocolStr);
+            }
+            this.logger.info(this.getLogTag() + this.rb.getResourceString("info.protocols", protocolBuilder.toString()));
             try {
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("test.start.ssl", this.remoteAddress.toString()));
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("timeout.set", String.valueOf(timeout)));
@@ -228,16 +248,20 @@ public class ConnectionTest {
             this.logger.config(this.getLogTag() + this.rb.getResourceString("connection.success", this.remoteAddress.toString()));
             testResult.setConnectionIsPossible(true);
             sslSession = sslSocket.getSession();
-            String protocol = sslSession.getProtocol();
+            String foundProtocol = sslSession.getProtocol();
             String usedCipherSuite = sslSession.getCipherSuite();
             String[] supportedCipherSuites = sslSocket.getSupportedCipherSuites();
             String[] enabledCipherSuites = sslSocket.getEnabledCipherSuites();
-            testResult.setProtocol(protocol);
+            testResult.setProtocol(foundProtocol);
             testResult.setUsedCipherSuite(usedCipherSuite);
             testResult.setSupportedCipherSuites(supportedCipherSuites);
             testResult.setEnabledCipherSuites(enabledCipherSuites);
-            if (protocol == null || (!protocol.contains("TLS") && !protocol.contains("SSL"))) {
-                String errorMessage = this.rb.getResourceString("wrong.protocol", protocol);
+            if (foundProtocol == null || (!foundProtocol.contains("TLS") && !foundProtocol.contains("SSL"))) {
+                String errorMessage = this.rb.getResourceString("wrong.protocol",
+                        new Object[]{
+                            foundProtocol,
+                            protocolBuilder.toString()
+                        });
                 this.logger.severe(this.getLogTag() + errorMessage);
                 this.logger.warning(this.getLogTag() + this.rb.getResourceString("wrong.protocol.hint"));
                 Exception e = new Exception();
@@ -245,7 +269,7 @@ public class ConnectionTest {
                 return (testResult);
             }
             this.logger.info(this.getLogTag() + this.rb.getResourceString("protocol.information",
-                    new Object[]{protocol, sslSession.getCipherSuite()}));
+                    new Object[]{foundProtocol, sslSession.getCipherSuite()}));
             this.logger.info(this.getLogTag() + this.rb.getResourceString("requesting.certificates"));
             X509Certificate[] certs = (X509Certificate[]) sslSession.getPeerCertificates();
             testResult.setFoundCertificates(certs);
@@ -333,6 +357,44 @@ public class ConnectionTest {
             }
         }
         return (testResult);
+    }
+
+    /**
+     * Sets the SNI to the request if it is a TLS request
+     * @param host that should be transmitted for the certificate selector on the receiver side
+     */
+    private void setSNI(SSLSocket sslSocket, String host) {
+        SSLParameters parameter = sslSocket.getSSLParameters();
+        List<SNIServerName> sniList = parameter.getServerNames();
+        if( sniList == null ){
+            sniList = new ArrayList<SNIServerName>();
+        }
+        sniList.add( new SNIHostName(host));
+        parameter.setServerNames(sniList);
+        sslSocket.setSSLParameters(parameter);
+        this.logger.info(this.getLogTag() + this.rb.getResourceString("sni.extension.set", host));
+    }
+
+    /**
+     * Generates a new Trust manager that trusts all remote certificates
+     */
+    private X509TrustManager[] createTrustManagerTrustAll() {
+        X509TrustManager[] trustManagerTrustAll = {
+            new X509TrustManager() {
+                @Override
+                public void checkClientTrusted(X509Certificate[] certChain, String auth) {
+                }
+
+                @Override
+                public void checkServerTrusted(X509Certificate[] certChain, String auth) {
+                }
+
+                @Override
+                public X509Certificate[] getAcceptedIssuers() {
+                    return new X509Certificate[0];
+                }
+            }};
+        return (trustManagerTrustAll);
     }
 
     /**

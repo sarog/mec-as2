@@ -1,12 +1,12 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/server/AS2ServerProcessing.java 23    8.01.19 9:48 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/server/AS2ServerProcessing.java 28    18.12.20 13:34 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2Exception;
 import de.mendelson.comm.as2.AS2ServerVersion;
-import de.mendelson.comm.as2.api.message.CommandRequest;
-import de.mendelson.comm.as2.api.server.ServersideAPICommandProcessing;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
+import de.mendelson.comm.as2.api.message.CommandRequest;
+import de.mendelson.comm.as2.api.server.ServersideAPICommandProcessing;
 import de.mendelson.comm.as2.cem.CEMAccessDB;
 import de.mendelson.comm.as2.cem.CEMEntry;
 import de.mendelson.comm.as2.cem.CEMInitiator;
@@ -33,6 +33,7 @@ import de.mendelson.comm.as2.clientserver.message.RefreshTablePartnerData;
 import de.mendelson.comm.as2.clientserver.message.ServerShutdown;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationCheckController;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
+import de.mendelson.comm.as2.database.DBServerInformation;
 import de.mendelson.comm.as2.importexport.ConfigurationExport;
 import de.mendelson.comm.as2.importexport.ConfigurationExportRequest;
 import de.mendelson.comm.as2.importexport.ConfigurationExportResponse;
@@ -47,7 +48,6 @@ import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2MessageParser;
 import de.mendelson.comm.as2.message.DispositionNotificationOptions;
-import de.mendelson.comm.as2.message.ExecuteShellCommand;
 import de.mendelson.comm.as2.message.MDNAccessDB;
 import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.message.clientserver.MessageDetailRequest;
@@ -60,6 +60,7 @@ import de.mendelson.comm.as2.message.clientserver.MessagePayloadRequest;
 import de.mendelson.comm.as2.message.clientserver.MessagePayloadResponse;
 import de.mendelson.comm.as2.message.clientserver.MessageRequestLastMessage;
 import de.mendelson.comm.as2.message.clientserver.MessageResponseLastMessage;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.modulelock.LockClientInformation;
@@ -82,9 +83,12 @@ import de.mendelson.comm.as2.send.DirPollManager;
 import de.mendelson.comm.as2.sendorder.SendOrder;
 import de.mendelson.comm.as2.sendorder.SendOrderSender;
 import de.mendelson.comm.as2.statistic.QuotaAccessDB;
+import de.mendelson.comm.as2.statistic.ServerInteroperabilityAccessDB;
+import de.mendelson.comm.as2.statistic.ServerInteroperabilityContainer;
 import de.mendelson.comm.as2.statistic.StatisticExport;
 import de.mendelson.comm.as2.statistic.StatisticExportRequest;
 import de.mendelson.comm.as2.statistic.StatisticExportResponse;
+import de.mendelson.comm.as2.statistic.StatisticOverviewEntry;
 import de.mendelson.comm.as2.timing.MessageDeleteController;
 import de.mendelson.comm.as2.timing.ResourceBundleMessageDeleteController;
 import de.mendelson.util.AS2Tools;
@@ -170,6 +174,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
@@ -191,7 +196,7 @@ import org.apache.mina.core.session.IoSession;
  * User defined processing to extend the client-server framework
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 28 $
  * @since build 68
  */
 public class AS2ServerProcessing implements ClientServerProcessing {
@@ -232,12 +237,13 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     private ServerSideEventSearch eventSearch = new ServerSideEventSearch();
     private ServerSideLogfileSearch logfileSearch = new ServerSideLogfileSearchImplAS2();
     private FileOperationProcessing fileOperationProcessing = new FileOperationProcessing();
+    private DBServerInformation dbServerInformation;
 
     public AS2ServerProcessing(ClientServer clientserver, DirPollManager pollManager, CertificateManager certificateManagerEncSign,
             CertificateManager certificateManagerSSL,
             Connection configConnection, Connection runtimeConnection,
             ConfigurationCheckController configurationCheckController,
-            HTTPServerConfigInfo httpServerConfigInfo) {
+            HTTPServerConfigInfo httpServerConfigInfo, DBServerInformation dbServerInformation) {
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -257,6 +263,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        this.dbServerInformation = dbServerInformation;
         this.httpServerConfigInfo = httpServerConfigInfo;
         this.filesystemview = new FileSystemViewProcessorServer(this.logger);
         this.clientserver = clientserver;
@@ -315,9 +322,6 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 return (true);
             } else if (message instanceof ConfigurationExportRequest) {
                 this.processConfigurationExportRequest(session, (ConfigurationExportRequest) message);
-                return (true);
-            } else if (message instanceof ConfigurationImportRequest) {
-                this.processConfigurationImportRequest(session, (ConfigurationImportRequest) message);
                 return (true);
             } else if (message instanceof StatisticExportRequest) {
                 this.processStatisticExportRequest(session, (StatisticExportRequest) message);
@@ -622,8 +626,8 @@ public class AS2ServerProcessing implements ClientServerProcessing {
             outStream = Files.newOutputStream(tempFile,
                     StandardOpenOption.APPEND, StandardOpenOption.CREATE);
             inStream = request.getDataStream();
-            this.copyStreams(inStream, outStream);
-        } catch (IOException e) {
+            inStream.transferTo(outStream);
+        } catch (Throwable e) {
             response.setException(e);
         } finally {
             if (inStream != null) {
@@ -685,8 +689,11 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         List<AS2MessageInfo> deleteList = request.getDeleteList();
         RefreshClientMessageOverviewList refreshRequest = new RefreshClientMessageOverviewList();
         refreshRequest.setOperation(RefreshClientMessageOverviewList.OPERATION_DELETE_UPDATE);
+        List<StringBuilder> transactionDeleteLog = new ArrayList<StringBuilder>();
         for (int i = 0; i < deleteList.size(); i++) {
-            controller.deleteMessageFromLog(deleteList.get(i), false);
+            StringBuilder singleTransactionDeleteLog = new StringBuilder();
+            controller.deleteMessageFromLog(deleteList.get(i), false, singleTransactionDeleteLog);
+            transactionDeleteLog.add(singleTransactionDeleteLog);
             if (i % 50 == 0) {
                 this.clientserver.broadcastToClients(refreshRequest);
             }
@@ -699,57 +706,26 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         event.setProcessOriginHost(processOriginHost);
         event.setSubject(this.rbMessageDelete.getResourceString("transaction.deleted.user"));
         StringBuilder builder = new StringBuilder();
-        for (AS2MessageInfo info : deleteList) {
+        for (int i = 0; i < deleteList.size(); i++) {
+            AS2MessageInfo singleInfo = deleteList.get(i);
+            StringBuilder singleDeleteLog = transactionDeleteLog.get(i);
+            builder.append("---").append(System.lineSeparator());
             builder.append("[");
             builder.append(this.rbMessageDelete.getResourceString("transaction.deleted.transactiondate",
-                    dateFormat.format(info.getInitDate())));
+                    dateFormat.format(singleInfo.getInitDate())));
             builder.append("] (");
-            builder.append(info.getSenderId());
+            builder.append(singleInfo.getSenderId());
             builder.append(" --> ");
-            builder.append(info.getReceiverId());
+            builder.append(singleInfo.getReceiverId());
             builder.append(") ");
-            builder.append(info.getMessageId());
+            builder.append(singleInfo.getMessageId());
+            builder.append(System.lineSeparator());
+            builder.append(singleDeleteLog);
             builder.append(System.lineSeparator());
         }
         event.setBody(builder.toString());
         SystemEventManagerImplAS2.newEvent(event);
         this.clientserver.broadcastToClients(refreshRequest);
-    }
-
-    private void processConfigurationImportRequest(IoSession session, ConfigurationImportRequest request) {
-        ConfigurationImportResponse response = new ConfigurationImportResponse(request);
-        InputStream inStream = null;
-        try {
-            String uploadHash = request.getUploadHash();
-            Path uploadFile = null;
-            synchronized (this.uploadMap) {
-                uploadFile = Paths.get(this.uploadMap.get(uploadHash));
-                this.uploadMap.remove(uploadHash);
-            }
-            inStream = Files.newInputStream(uploadFile);
-            ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-            this.copyStreams(inStream, memOut);
-            byte[] importData = memOut.toByteArray();
-            memOut.close();
-            ConfigurationImport importer = new ConfigurationImport(this.configConnection, this.runtimeConnection);
-            inStream = new ByteArrayInputStream(importData);
-            importer.importData(inStream,
-                    request.getPartnerListToImport(),
-                    request.getImportNotification(),
-                    request.getImportServerSettings());
-        } catch (Exception e) {
-            response.setException(e);
-            e.printStackTrace();
-        } finally {
-            if (inStream != null) {
-                try {
-                    inStream.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
-        }
-        session.write(response);
     }
 
     private void processConfigurationExportRequest(IoSession session, ConfigurationExportRequest request) {
@@ -968,26 +944,42 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         ManualSendResponse response = new ManualSendResponse(request);
         SendOrderSender orderSender = new SendOrderSender(this.configConnection, this.runtimeConnection);
         try {
-            String[] originalFilenames = new String[request.getFilenames().size()];
-            for (int i = 0; i < request.getFilenames().size(); i++) {
-                originalFilenames[i] = request.getFilenames().get(i);
-            }
-            List<String> uploadHashs = request.getUploadHashs();
-            List<Path> files = new ArrayList<Path>();
-            for (String uploadHash : uploadHashs) {
-                Path uploadedFile = null;
-                synchronized (this.uploadMap) {
-                    uploadedFile = Paths.get(this.uploadMap.get(uploadHash));
+            String[] originalFilenames = null;
+            Path[] sendFiles = null;
+            String[] payloadContentTypes = null;
+            if (request.getSendTestdata()) {
+                originalFilenames = new String[]{"testdata.txt"};
+                sendFiles = new Path[]{TestdataGenerator.generateTestdata()};
+            } else {
+                //process the received data from the client
+                originalFilenames = new String[request.getFilenames().size()];
+                payloadContentTypes = new String[request.getFilenames().size()];
+                for (int i = 0; i < request.getFilenames().size(); i++) {
+                    originalFilenames[i] = request.getFilenames().get(i);
+                    payloadContentTypes[i] = request.getPayloadContentTypes().get(i);
                 }
-                files.add(uploadedFile);
+                List<String> uploadHashs = request.getUploadHashs();
+                List<Path> files = new ArrayList<Path>();
+                for (String uploadHash : uploadHashs) {
+                    Path uploadedFile = null;
+                    synchronized (this.uploadMap) {
+                        uploadedFile = Paths.get(this.uploadMap.get(uploadHash));
+                    }
+                    files.add(uploadedFile);
+                }
+                sendFiles = new Path[files.size()];
+                for (int i = 0; i < files.size(); i++) {
+                    sendFiles[i] = files.get(i);
+                }
             }
-            Path[] sendFiles = new Path[files.size()];
-            for (int i = 0; i < files.size(); i++) {
-                sendFiles[i] = files.get(i);
-            }
-            AS2Message message = orderSender.send(this.certificateManagerEncSign, request.getSender(),
-                    request.getReceiver(), sendFiles, originalFilenames, request.getUserdefinedId(),
-                    request.getSubject());
+            //reload the partner from the database
+            String senderAS2Id = request.getSenderAS2Id();
+            String receiverAS2Id = request.getReceiverAS2Id();
+            Partner sender = this.partnerAccess.getPartner(senderAS2Id);
+            Partner receiver = this.partnerAccess.getPartner(receiverAS2Id);
+            AS2Message message = orderSender.send(this.certificateManagerEncSign, sender,
+                    receiver, sendFiles, originalFilenames, request.getUserdefinedId(),
+                    request.getSubject(), payloadContentTypes);
             if (message == null) {
                 throw new Exception(this.rb.getResourceString("send.failed"));
             } else {
@@ -1239,19 +1231,18 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     private void processPartnerListRequest(IoSession session, PartnerListRequest request) {
         PartnerListResponse response = new PartnerListResponse(request);
         if (request.getListOption() == PartnerListRequest.LIST_ALL) {
-            response.setList(this.partnerAccess.getPartner());
+            response.setList(this.partnerAccess.getAllPartner(request.getRequestedDataCompleteness()));
         } else if (request.getListOption() == PartnerListRequest.LIST_LOCALSTATION) {
             List<Partner> list = new ArrayList<Partner>();
-            list.addAll(this.partnerAccess.getLocalStations());
+            list.addAll(this.partnerAccess.getLocalStations(request.getRequestedDataCompleteness()));
             response.setList(list);
         } else if (request.getListOption() == PartnerListRequest.LIST_NON_LOCALSTATIONS) {
-            response.setList(this.partnerAccess.getNonLocalStations());
+            response.setList(this.partnerAccess.getNonLocalStations(request.getRequestedDataCompleteness()));
         } else if (request.getListOption() == PartnerListRequest.LIST_NON_LOCALSTATIONS_SUPPORTING_CEM) {
-            List<Partner> partnerList = this.partnerAccess.getNonLocalStations();
+            List<Partner> partnerList = this.partnerAccess.getNonLocalStations(request.getRequestedDataCompleteness());
             List<Partner> cemSupportingList = new ArrayList<Partner>();
             for (Partner partner : partnerList) {
-                PartnerSystemAccessDB systemAccess = new PartnerSystemAccessDB(this.configConnection, this.runtimeConnection);
-                PartnerSystem partnerSystem = systemAccess.getPartnerSystem(partner);
+                PartnerSystem partnerSystem = this.partnerSystemAccess.getPartnerSystem(partner);
                 if (partnerSystem != null && partnerSystem.supportsCEM()) {
                     cemSupportingList.add(partner);
                 }
@@ -1276,6 +1267,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         } else {
             response.setList(this.messageAccess.getMessageOverview(request.getMessageId()));
         }
+        response.setMessageSumOnServer(this.messageAccess.getMessageCount());
         //sync answer
         session.write(response);
     }
@@ -1317,7 +1309,16 @@ public class AS2ServerProcessing implements ClientServerProcessing {
      */
     private void performPartnerSystemRequest(IoSession session, PartnerSystemRequest request) {
         PartnerSystemResponse response = new PartnerSystemResponse(request);
-        response.setPartnerSystem(this.partnerSystemAccess.getPartnerSystem(request.getPartner()));
+        if (request.getType() == PartnerSystemRequest.TYPE_LIST_ALL) {
+            response.addPartnerSystems(this.partnerSystemAccess.getAllPartnerSystems());
+        } else {
+            PartnerSystem singleSystem = this.partnerSystemAccess.getPartnerSystem(request.getPartner());
+            if (singleSystem != null) {
+                List<PartnerSystem> singleList = new ArrayList<PartnerSystem>();
+                singleList.add(singleSystem);
+                response.addPartnerSystems(singleList);
+            }
+        }
         //sync answer
         session.write(response);
     }
@@ -1346,7 +1347,6 @@ public class AS2ServerProcessing implements ClientServerProcessing {
             SystemEventManagerImplAS2.newEvent(event);
         }
     }
-
 
     /**
      * sync
@@ -1441,7 +1441,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     private void processServerInfoRequest(IoSession session, ServerInfoRequest infoRequest) {
         ServerInfoResponse response = new ServerInfoResponse(infoRequest);
         response.setProperty(ServerInfoRequest.SERVER_BUILD_DATE, AS2ServerVersion.getLastModificationDate());
-        response.setProperty(ServerInfoRequest.LICENSEE, "Community edition");
+        response.setProperty(ServerInfoRequest.LICENSEE, "community edition");
         response.setProperty(ServerInfoRequest.SERVER_FULL_PRODUCT_NAME, AS2ServerVersion.getFullProductName());
         response.setProperty(ServerInfoRequest.SERVER_START_TIME, String.valueOf(this.startupTime));
         response.setProperty(ServerInfoRequest.SERVER_PRODUCT_NAME, AS2ServerVersion.getProductName());
@@ -1463,11 +1463,23 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 + System.getProperty("sun.arch.data.model")
                 + " "
                 + System.getProperty("java.vendor"));
+        response.setProperty(ServerInfoRequest.DB_SERVER_VERSION,
+                this.dbServerInformation.getProductName() + " "
+                + this.dbServerInformation.getProductVersion()
+                + "@" + this.dbServerInformation.getHost()
+                + " [JDBC " + this.dbServerInformation.getJDBCVersion() + "]");
+        if (this.httpServerConfigInfo != null) {
+            response.setProperty(ServerInfoRequest.HTTP_SERVER_VERSION, "Jetty " + this.httpServerConfigInfo.getJettyHTTPServerVersion());
+        } else {
+            //Its possible to start the as2 system without http server
+            response.setProperty(ServerInfoRequest.HTTP_SERVER_VERSION, "NONE");
+        }
         response.setProperty(ServerInfoRequest.SERVER_USER, System.getProperty("user.name"));
+        response.setProperty(ServerInfoRequest.SERVER_LOCALE, Locale.getDefault().toString());
         float heapGB = (float) Runtime.getRuntime().maxMemory() / (float) (1024f * 1024f * 1024f);
-        DecimalFormat formatter = new DecimalFormat("0.00");
-        response.setProperty(ServerInfoRequest.SERVER_MAX_HEAP_GB, formatter.format(heapGB) + " GB");
+        response.setProperty(ServerInfoRequest.SERVER_MAX_HEAP_GB, String.format("%.2f", heapGB) + " GB");
         response.setProperty(ServerInfoRequest.SERVERSIDE_TRANSACTION_COUNT, String.valueOf(this.messageAccess.getMessageCount()));
+        response.setProperty(ServerInfoRequest.PLUGINS, AS2Server.PLUGINS.getStartedPluginsAsString());
         //process id server
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         long pid = Long.valueOf(runtimeBean.getName().split("@")[0]);
@@ -1478,6 +1490,9 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         } else {
             response.setProperty(ServerInfoRequest.SERVER_START_METHOD_WINDOWS_SERVICE, "FALSE");
         }
+        //check the number of poll threads
+        response.setProperty(ServerInfoRequest.DIR_POLL_THREAD_COUNT, String.valueOf(this.pollManager.getPollThreadCount()));
+        response.setProperty(ServerInfoRequest.DIR_POLL_THREADS_PER_MIN, String.format("%.0f", this.pollManager.getPollsPerMinute()));
         session.write(response);
     }
 
@@ -1572,26 +1587,6 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     }
 
     /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[2048];
-        int read = 0;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
-    }
-
-    /**
      * Compute the header upload size for the jmx interface
      */
     private long computeRawHeaderSize(Properties header) {
@@ -1622,7 +1617,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     }
 
     /**
-     * A communicatoin connection indicates that a new message arrived
+     * A communication connection indicates that a new message arrived
      */
     private IncomingMessageResponse newMessageArrived(IncomingMessageRequest requestObject) throws Throwable {
         IncomingMessageResponse responseObject = new IncomingMessageResponse(requestObject);
@@ -1643,7 +1638,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         parser.setCertificateManager(this.certificateManagerEncSign, this.certificateManagerEncSign);
         parser.setDBConnection(this.configConnection, this.runtimeConnection);
         parser.setLogger(this.logger);
-        byte[] incomingMessageData = this.readFile(requestObject.getMessageDataFilename());
+        byte[] incomingMessageData = Files.readAllBytes(Paths.get(requestObject.getMessageDataFilename()));
         //store raw incoming message. If the message partners are identified successfully
         //the raw data is also written to the partner dir/raw
         String[] rawFiles = this.messageStoreHandler.storeRawIncomingData(
@@ -1743,10 +1738,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                     mdnInfo.setState(AS2Message.STATE_STOPPED);
                     this.mdnAccess.initializeOrUpdateMDN(mdnInfo);
                     this.messageAccess.setMessageState(mdnInfo.getRelatedMessageId(), AS2Message.STATE_STOPPED);
-                    //content MIC does not match or simular error
-                    ExecuteShellCommand executeCommand = new ExecuteShellCommand(this.configConnection, this.runtimeConnection);
-                    //execute on sync MDN processing error
-                    executeCommand.executeShellCommandOnSend(relatedMessageInfo, mdnInfo);
+                    ProcessingEvent.enqueueEventIfRequired(this.configConnection, this.runtimeConnection, relatedMessageInfo, mdnInfo);
                     //write status file                    
                     MessageStoreHandler handler = new MessageStoreHandler(this.configConnection, this.runtimeConnection);
                     handler.writeOutboundStatusFile(relatedMessageInfo);
@@ -1792,8 +1784,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         if (message.isMDN()) {
             AS2MDNInfo mdnInfo = (AS2MDNInfo) message.getAS2Info();
             AS2MessageInfo originalMessageInfo = this.messageAccess.getLastMessageEntry(mdnInfo.getRelatedMessageId());
-            ExecuteShellCommand executeCommand = new ExecuteShellCommand(this.configConnection, this.runtimeConnection);
-            executeCommand.executeShellCommandOnSend(originalMessageInfo, mdnInfo);
+            ProcessingEvent.enqueueEventIfRequired(this.configConnection, this.runtimeConnection, originalMessageInfo, mdnInfo);
             //write status file
             MessageStoreHandler handler = new MessageStoreHandler(this.configConnection, this.runtimeConnection);
             handler.writeOutboundStatusFile(originalMessageInfo);
@@ -1839,8 +1830,8 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                                 this.configConnection, this.runtimeConnection, this.certificateManagerEncSign);
                         cemReceipt.processInboundCEM(as2RelatedMessageInfo);
                     } else {
-                        ExecuteShellCommand executeCommand = new ExecuteShellCommand(this.configConnection, this.runtimeConnection);
-                        executeCommand.executeShellCommandOnReceipt(messageSender, messageReceiver, as2RelatedMessageInfo);
+                        ProcessingEvent.enqueueEventIfRequired(this.configConnection, this.runtimeConnection,
+                                as2RelatedMessageInfo, null);
                     }
                 }
                 this.messageAccess.setMessageState(((AS2MDNInfo) mdn.getAS2Info()).getRelatedMessageId(), mdn.getAS2Info().getState());
@@ -1862,32 +1853,6 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     }
 
     /**
-     * Reads a file from the disk and returns its content as byte array
-     */
-    private byte[] readFile(String filename) throws Exception {
-        InputStream inStream = null;
-        ByteArrayOutputStream outStream = null;
-        try {
-            inStream = Files.newInputStream(Paths.get(filename));
-            outStream = new ByteArrayOutputStream();
-            this.copyStreams(inStream, outStream);
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
-            if (outStream != null) {
-                outStream.flush();
-                outStream.close();
-            }
-        }
-        if (outStream != null) {
-            return (outStream.toByteArray());
-        } else {
-            return (null);
-        }
-    }
-
-    /**
      * Updates the system information for a partner
      */
     private void updatePartnerSystemInfo(Properties header) {
@@ -1904,7 +1869,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 }
                 String version = header.getProperty("as2-version");
                 if (version != null) {
-                    partnerSystem.setAs2Version(version);
+                    partnerSystem.setAS2Version(version);
                     partnerSystem.setCompression(!version.equals("1.0"));
                 }
                 String optionalProfiles = header.getProperty("ediint-features");
@@ -1912,9 +1877,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                     partnerSystem.setMa(optionalProfiles.contains("multiple-attachments"));
                     partnerSystem.setCEM(optionalProfiles.contains("CEM"));
                 }
-                PartnerSystemAccessDB systemAccess = new PartnerSystemAccessDB(this.configConnection,
-                        this.runtimeConnection);
-                systemAccess.insertOrUpdatePartnerSystem(partnerSystem);
+                this.partnerSystemAccess.insertOrUpdatePartnerSystem(partnerSystem);
             }
         } //this feature is really NOT that important to stop an inbound message
         catch (Exception e) {

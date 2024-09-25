@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult.java 8     10.12.18 12:46 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult.java 11    18.11.20 11:42 Heller $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 11 $
  */
 public class ResourceBundleDialogConnectionTestResult extends MecResourceBundle {
 
@@ -30,18 +30,34 @@ public class ResourceBundleDialogConnectionTestResult extends MecResourceBundle 
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"title", "Connection test result to {0}"},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_OFTP2, "<HTML>The system performed an IP connection to the ip address <strong>{0}</strong>, port <strong>{1}</strong>. The following result shows if this connection was successful and if an OFTP2 server listens to this address. If a TLS connection has been requested and was successful it is possible to download the certificate(s), they will be stored in your TLS keystore. If this connection test is successful and it is a TLS/SSL connection it is not ensured that the SSL handshake will work with your current configuration as this test trusts all remote servers without checking their trust chain or check if the partner certificate is available in the local SSL/TLS keystore.</HTML>"},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS2, "<HTML>The system performed an IP connection to the ip address <strong>{0}</strong>, port <strong>{1}</strong>. The following result shows if this connection was successful and if a HTTP server listens to this address. Even if the test is successful it is not ensured that there listens a AS2 server - it could be a normal HTTP server. If a TLS connection has been requested (HTTPS) and was successful it is possible to download the certificate(s), they will be stored in your TLS keystore. If this connection test is successful and it is a TLS/SSL connection it is not ensured that the SSL handshake will work with your current configuration as this test trusts all remote servers without checking their trust chain or check if the partner certificate is available in the local SSL/TLS keystore.</HTML>"},
-        {"OK", "OK"},
-        {"FAILED", "FAILED"},
-        {"state.ssl", "Result of the connection test (TLS):"},
-        {"state.plain", "Result of the connection test (PLAIN):"},
+        {"title", "Connection test result"},
+        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_OFTP2, 
+            "The system performed an IP connection to the ip address {0}, port {1}. "
+            + "The following result log shows if this connection was successful and if an OFTP2 server listens to this address. "
+            + "If a TLS connection has been requested and was successful it is possible to download the certificate(s), they will be stored in your TLS keystore."},
+        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS2, 
+            "The system performed an IP connection to the ip address {0}, port {1}. "
+            + "The following result log shows if this connection was successful and if a HTTP server listens to this address. "
+            + "Even if the test is successful it is not ensured that there listens a AS2 server - it could be a normal HTTP server. "
+            + "If a TLS connection has been requested (HTTPS) and was successful it is possible to download the certificate(s), "
+            + "they will be stored in your TLS keystore."},
+        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS4, 
+            "The system performed an IP connection to the ip address {0}, port {1}. "
+            + "The following result log shows if this connection was successful and if a HTTP server listens to this address. "
+            + "Even if the test is successful it is not ensured that there listens a AS4 server - it could be a normal HTTP server. "
+            + "If a TLS connection has been requested (HTTPS) and was successful it is possible to download the certificate(s), "
+            + "they will be stored in your TLS keystore."},
+        {"OK", "[OK]"},
+        {"FAILED", "[FAILED]"},
+        {"AVAILABLE", "[AVAILABLE]"},
+        {"NOT_AVAILABLE", "[NOT AVAILABLE]"},
+        {"header.ssl", "{0} [TLS]"},
+        {"header.plain", "{0} [PLAIN]"},
         {"no.certificate.plain", "Not available (Plain connection test)"},
-        {"button.viewcert", "View Certificate(s)"},
+        {"button.viewcert", "<HTML><div style=\"text-align:center\">Import certificate(s)</div></HTML>"},
         {"button.close", "Close"},
-        {"label.connection.established", "The connection has been established"},
-        {"label.certificates.downloaded", "The certificates have been downloaded"},
+        {"label.connection.established", "The raw IP connection has been established"},
+        {"label.certificates.available.local", "The partner TLS certificates are available in your system"},
         {"label.running.oftpservice", "A running OFTP service has been found"},
         {"used.cipher", "The used cipher for this test is \"{0}\"" },           
     };

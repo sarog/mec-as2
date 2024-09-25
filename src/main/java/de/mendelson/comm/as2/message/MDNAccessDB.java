@@ -1,10 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MDNAccessDB.java 15    7.11.18 17:14 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MDNAccessDB.java 17    21.08.20 13:22 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,7 +28,7 @@ import java.util.logging.Logger;
  * Access MDN
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class MDNAccessDB {
 
@@ -40,7 +42,11 @@ public class MDNAccessDB {
     private Connection runtimeConnection = null;
     private Connection configConnection = null;
     private Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-
+    /**HSQLDB supports Java_Objects, PostgreSQL does not support it. Means there are
+     * different access methods required for Object access
+     */
+    private boolean databaseSupportsJavaObjects = true;
+    
     /**
      * Creates new message I/O log and connects to localhost
      *
@@ -49,8 +55,76 @@ public class MDNAccessDB {
     public MDNAccessDB(Connection configConnection, Connection runtimeConnection) {
         this.runtimeConnection = runtimeConnection;
         this.configConnection = configConnection;
+        this.analyzeDatabaseMetadata(configConnection);
     }
 
+    private void analyzeDatabaseMetadata(Connection connection) {
+        try {
+            DatabaseMetaData data = connection.getMetaData();
+            ResultSet result = null;
+            try {
+                result = data.getTypeInfo();
+                while (result.next()) {
+                    if( result.getString( "TYPE_NAME").equalsIgnoreCase("bytea")){
+                        databaseSupportsJavaObjects = false;
+                    }
+                }
+            } finally {
+                if (result != null) {
+                    result.close();
+                }
+            }
+        } catch (Exception e) {
+            //ignore
+        }
+
+    }
+    
+    /**
+     * Reads a binary object from the database and returns a byte array that
+     * contains it. Will return null if the read data was null. Reading and
+     * writing binary objects differs relating the used database system
+     */
+    private String readTextStoredAsJavaObject(ResultSet result, String columnName) throws Exception {
+        if( this.databaseSupportsJavaObjects){
+            Object object = result.getObject(columnName);
+            if (!result.wasNull()) {
+                if (object instanceof String) {
+                    return (((String) object));
+                } else if (object instanceof byte[]) {
+                    return (new String((byte[]) object));
+                }
+            }
+        }else{
+            byte[] bytes = result.getBytes(columnName);
+            if (result.wasNull()) {
+                return (null);
+            }
+            return (new String( bytes, StandardCharsets.UTF_8));
+        }
+        return (null);
+    }
+
+    /**Sets text data as parameter to a stored procedure. The handling depends if the database supports java objects
+     * 
+     */
+    private void setTextParameterAsJavaObject(PreparedStatement statement, int index, String text) throws SQLException{        
+        if( this.databaseSupportsJavaObjects ){
+            if (text == null) {
+                statement.setNull(index, Types.JAVA_OBJECT);
+            } else {
+                statement.setObject(index, text);
+            }
+        }else{
+            if (text == null) {
+                statement.setNull(index, Types.BINARY);
+            } else {
+                statement.setBytes(index, text.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+    }
+    
+    
     /**
      * Returns all overview rows from the database
      */
@@ -76,13 +150,8 @@ public class MDNAccessDB {
                 info.setHeaderFilename(result.getString("headerfilename"));
                 info.setSenderHost(result.getString("senderhost"));
                 info.setUserAgent(result.getString("useragent"));
-                info.setDispositionState(result.getString( "dispositionstate"));
-                Object mdnTextObj = result.getObject("mdntext");
-                if (!result.wasNull() && mdnTextObj instanceof String) {
-                    info.setRemoteMDNText((String) mdnTextObj);
-                } else {
-                    info.setRemoteMDNText(null);
-                }
+                info.setDispositionState(result.getString("dispositionstate"));
+                info.setRemoteMDNText( this.readTextStoredAsJavaObject(result, "mdntext"));
                 messageList.add(info);
             }
             return (messageList);
@@ -141,12 +210,8 @@ public class MDNAccessDB {
             statement.setInt(4, info.getSignType());
             statement.setInt(5, info.getState());
             statement.setString(6, info.getHeaderFilename());
-            if (info.getRemoteMDNText() == null) {
-                statement.setNull(7, Types.JAVA_OBJECT);
-            } else {
-                statement.setObject(7, info.getRemoteMDNText());
-            }
-            statement.setString(8,info.getDispositionState());
+            this.setTextParameterAsJavaObject(statement, 7, info.getRemoteMDNText());
+            statement.setString(8, info.getDispositionState());
             //condition
             statement.setString(9, info.getMessageId());
             statement.execute();
@@ -231,12 +296,8 @@ public class MDNAccessDB {
             statement.setString(10, info.getHeaderFilename());
             statement.setString(11, info.getSenderHost());
             statement.setString(12, info.getUserAgent());
-            if (info.getRemoteMDNText() == null) {
-                statement.setNull(13, Types.JAVA_OBJECT);
-            } else {
-                statement.setObject(13, info.getRemoteMDNText());
-            }
-            statement.setString(14,info.getDispositionState());
+            this.setTextParameterAsJavaObject(statement, 13, info.getRemoteMDNText());
+            statement.setString(14, info.getDispositionState());
             statement.executeUpdate();
         } catch (Exception e) {
             this.logger.severe("MDNAccessDB.initializeMDN: " + e.getMessage());

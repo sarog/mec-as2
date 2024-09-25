@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_fr.java 2     4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_fr.java 3     1.07.19 12:05 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleRenameEntry_fr extends MecResourceBundle {
 
@@ -35,7 +35,9 @@ public class ResourceBundleRenameEntry_fr extends MecResourceBundle {
         {"button.cancel", "Annuler"},
         {"label.newalias", "Nouvel alias:"},
         {"label.keypairpass", "Mot de passe de la clef:"},
-        {"title", "Renommage du certificat déjà existant ({0})"}
+        {"title", "Renommage du certificat déjà existant ({0})"},
+        {"alias.exists.title", "Le renommage d''alias a échoué" },
+        {"alias.exists.message", "L''alias \"{0}\" existe déjà dans ce keystore." },
     };
 
 }

@@ -1,7 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 13    2.10.18 13:14 Heller $
+//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 15    20.08.20 15:47 Heller $
 package de.mendelson.comm.as2;
 
-import de.mendelson.comm.as2.database.DBServer;
+import de.mendelson.comm.as2.database.IDBServer;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -22,14 +22,14 @@ import java.util.ResourceBundle;
  * shut down)
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 15 $
  */
 public class AS2ShutdownThread extends Thread {
 
-    private DBServer dbServer;
+    private IDBServer dbServer;
     private MecResourceBundle rb = null;
 
-    public AS2ShutdownThread(DBServer dbServer) {
+    public AS2ShutdownThread(IDBServer dbServer) {
         this.dbServer = dbServer;
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -48,12 +48,11 @@ public class AS2ShutdownThread extends Thread {
         //indicate that the system is in shutdown process for all other processes
         AS2Server.inShutdownProcess = true;
         try {
+            //if this is an external database server this will simply do nothing
             this.dbServer.shutdown();
         } catch (Throwable e) {
             //nop
         }
-        //delete lock file
-        AS2Server.deleteLockFile();
         SystemEventManagerImplAS2.newEvent(
                 SystemEvent.SEVERITY_INFO,
                 SystemEvent.ORIGIN_SYSTEM,
@@ -61,5 +60,7 @@ public class AS2ShutdownThread extends Thread {
                 this.rb.getResourceString("server.shutdown", AS2ServerVersion.getProductName()),
                 "");
         System.out.println(this.rb.getResourceString("server.shutdown", AS2ServerVersion.getProductName()));
+        //delete lock file
+        AS2Server.deleteLockFile();        
     }
 }

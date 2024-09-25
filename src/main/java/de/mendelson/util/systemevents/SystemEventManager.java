@@ -1,7 +1,11 @@
-//$Header: /as2/de/mendelson/util/systemevents/SystemEventManager.java 11    6.11.18 16:59 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/SystemEventManager.java 15    9.06.20 10:11 Heller $
 package de.mendelson.util.systemevents;
 
+import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.messages.LoginRequest;
+import de.mendelson.util.clientserver.messages.LoginState;
 import java.net.InetAddress;
+import java.net.SocketAddress;
 import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
@@ -9,6 +13,8 @@ import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 
 /*
@@ -22,15 +28,28 @@ import java.util.Date;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 15 $
  */
 public abstract class SystemEventManager {
 
     private DateFormat eventFileDateFormat = new SimpleDateFormat("HH-mm-ss-SSS");
     private DateFormat dailySubDirFormat = new SimpleDateFormat("yyyyMMdd");
+    /**
+     * Always 
+     * localize your output
+     */
+    private MecResourceBundle rb = null;
 
 
     protected SystemEventManager() {
+        //Load resourcebundle
+        try {
+            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleSystemEventManager.class.getName());
+        } //load up  resourcebundle        
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
     }
 
 
@@ -60,4 +79,74 @@ public abstract class SystemEventManager {
         event.store(storageDir, storageFilePrefix, storageFileSuffix);
     }
 
+    /**
+     * Throws a new system event that a login was successful
+     * @param tlsProtocol The used TLS protocol or null if this could not be determined or the connection is unsecured
+     * @param tlsProtocol The used TLS cipher suite or null if this could not be determined or the connection is unsecured
+     * 
+     */
+    public void newEventClientLoginSuccess(LoginState loginState, SocketAddress remoteAddress, String sessionId,
+            LoginRequest loginRequest, String tlsProtocol, String tlsCipherSuite) {
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_USER,
+                SystemEvent.TYPE_CLIENT_LOGIN_SUCCESS);
+        StringBuilder builder = new StringBuilder();
+        builder.append( this.rb.getResourceString("label.body.tlsprotocol", (tlsProtocol==null?"--":tlsProtocol))).append( "\n");     
+        builder.append( this.rb.getResourceString("label.body.tlsciphersuite", (tlsCipherSuite==null?"--":tlsCipherSuite))).append( "\n");
+        builder.append( this.rb.getResourceString("label.body.clientip", remoteAddress.toString())).append( "\n");        
+        builder.append( this.rb.getResourceString("label.body.processid", loginRequest.getPID())).append( "\n");        
+        builder.append( this.rb.getResourceString("label.body.clientos", loginRequest.getClientOSName())).append( "\n");   
+        builder.append( this.rb.getResourceString("label.body.details", loginState.getStateDetails())).append( "\n");   
+        event.setBody(builder.toString());
+        event.setSubject(this.rb.getResourceString("label.subject.login.success", loginState.getUser().getName()));
+        try {
+            this.storeEventToFile(event);
+        } catch (Exception e) {
+            return;
+        }
+    }
+    
+    /**
+     * Throws a new system event that a login has failed
+     */
+    public void newEventClientLoginFailure(LoginState loginState, SocketAddress remoteAddress, String sessionId,
+            LoginRequest loginRequest) {
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_WARNING, SystemEvent.ORIGIN_USER,
+                SystemEvent.TYPE_CLIENT_LOGIN_FAILURE);
+        StringBuilder builder = new StringBuilder();
+        builder.append( this.rb.getResourceString("label.body.clientip", remoteAddress.toString())).append( "\n");   
+        builder.append( this.rb.getResourceString("label.body.processid", loginRequest.getPID())).append( "\n");  
+        builder.append( this.rb.getResourceString("label.body.clientos", loginRequest.getClientOSName())).append( "\n");                
+        builder.append( this.rb.getResourceString("label.body.clientversion", loginRequest.getClientId())).append( "\n");
+        builder.append( this.rb.getResourceString("label.body.details", loginState.getStateDetails())).append( "\n");         
+        event.setBody(builder.toString());
+        event.setSubject(this.rb.getResourceString("label.subject.login.failed", loginState.getUser().getName()));
+        try {
+            this.storeEventToFile(event);
+        } catch (Exception e) {
+            return;
+        }
+    }
+    
+    /**
+     * Throws a new system event that a client has disconnected
+     */
+    public void newEventClientLogoff( String remoteIP, String userName, String processId, String sessionId, 
+            String message ) {
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_USER,
+                SystemEvent.TYPE_CLIENT_LOGOFF);
+        StringBuilder builder = new StringBuilder();
+        builder.append( this.rb.getResourceString("label.body.clientip", remoteIP)).append( "\n");   
+        builder.append( this.rb.getResourceString("label.body.processid", processId)).append( "\n");  
+        if( message != null && message.trim().length() > 0 ){
+            builder.append( this.rb.getResourceString("label.body.details", message)).append( "\n"); 
+        }
+        event.setBody(builder.toString());        
+        event.setSubject(this.rb.getResourceString("label.subject.logoff", userName));
+        try {
+            this.storeEventToFile(event);
+        } catch (Exception e) {
+            return;
+        }
+    }
+    
 }

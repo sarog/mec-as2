@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 4     10.12.18 12:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 6     4.11.20 15:50 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
 
@@ -41,7 +41,8 @@ public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
         {"remote.service.identification", "Identification du service à distance: \"{0}\""},
         {"service.found.success", "Le succès: Exécution du service OFTP trouvé à {0}."},
         {"service.found.failure", "Echec: Aucun service OFTP en cours d''exécution trouvé à {0}."},
-        {"wrong.protocol", "Le protocole trouvé est\"{0}\", ce n'est pas une connexion sécurisée. Vous avez essayé de vous connecter via SSL/TLS à cette adresse mais ce n''est pas fourni par le serveur distant à cette adresse et à ce port."},
+        {"wrong.protocol", "Le protocole trouvé est\"{0}\", ce n'est pas une connexion sécurisée. "
+            + "Vous avez essayé de vous connecter via [{1}] à cette adresse mais ce n''est pas fourni par le serveur distant à cette adresse et à ce port."},
         {"wrong.protocol.hint", "Soit votre partenaire s''attend à une connexion simple, soit il utilise le mauvais protocole, soit l''authentification du client est requise."},
         {"protocol.information", "Le protocole utilisé a été identifié comme suit \"{0}\""},
         {"requesting.certificates", "Demande de certificat(s) à un hôte distant"},
@@ -56,6 +57,9 @@ public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
         {"test.connection.direct", "Une connexion IP directe est utilisée"},
         {"test.connection.proxy.auth", "La connexion utilise le proxy {0} avec authentification (Utilisateur \"{1}\")"},
         {"test.connection.proxy.noauth", "La connexion utilise le proxy {0} sans authentification"},
-        {"result.exception", "L''erreur suivante s''est produite pendant le test :{0}."},};
+        {"result.exception", "L''erreur suivante s''est produite pendant le test :{0}."},
+        {"info.protocols", "Le client permet la négociation via les protocoles TLS suivants: {0}" },
+        {"sni.extension.set", "L''extension TLS SNI (nom de l''hôte) a été fixée à \"{0}\"" },
+    };
 
 }

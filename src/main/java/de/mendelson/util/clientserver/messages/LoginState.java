@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginState.java 17    31.10.18 10:38 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginState.java 19    9.06.20 10:11 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import de.mendelson.util.clientserver.user.User;
@@ -16,7 +16,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class LoginState extends ClientServerResponse implements Serializable {
 
@@ -102,4 +102,5 @@ public class LoginState extends ClientServerResponse implements Serializable {
     public void setStateDetails(String stateDetails) {
         this.stateDetails = stateDetails;
     }
+
 }

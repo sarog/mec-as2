@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 37    7.12.18 9:09 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 42    9.06.20 10:11 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -11,17 +11,17 @@ import de.mendelson.util.clientserver.messages.ServerLogMessage;
 import de.mendelson.util.clientserver.user.PermissionDescription;
 import de.mendelson.util.clientserver.user.User;
 import de.mendelson.util.clientserver.user.UserAccess;
-import de.mendelson.util.log.LogFormatter;
+import de.mendelson.util.systemevents.SystemEventManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.net.ssl.SSLSession;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
+import org.apache.mina.filter.ssl.SslFilter;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -34,12 +34,13 @@ import org.apache.mina.core.session.IoSession;
  * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 42 $
  */
 public class ClientServerSessionHandler extends IoHandlerAdapter {
 
     public static final String SESSION_ATTRIB_USER = "user";
     public static final String SESSION_ATTRIB_CLIENT_PID = "pid";
+    public static final String SESSION_ATTRIB_CLIENT_IP = "ip";
     /**
      * User readable description of user permissions
      */
@@ -59,51 +60,35 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
      */
     private final List<IoSession> sessions = Collections.synchronizedList(new ArrayList<IoSession>());
     private PasswordValidationHandler loginHandler;
-    private Logger serverSessionLogger = Logger.getAnonymousLogger();
     private AnonymousProcessing anonymousProcessing = null;
     private ClientServerSessionHandlerCallback callback = null;
     private String[] validClientIds = null;
     private final int maxClients;
+    private SystemEventManager eventManager;
 
-    public ClientServerSessionHandler(Logger logger, String[] validClientIds, int maxClients) {
+    public ClientServerSessionHandler(Logger logger, String[] validClientIds, int maxClients, SystemEventManager eventManager) {
         if (logger != null) {
             this.logger = logger;
         }
+        this.eventManager = eventManager;
         this.maxClients = maxClients;
         this.validClientIds = validClientIds;
         this.loginHandler = new PasswordValidationHandler(validClientIds);
-        this.serverSessionLogger.setUseParentHandlers(false);
-        try {
-            Handler logHandler = this.generateLogHandler();
-            this.serverSessionLogger.addHandler(logHandler);
-        } catch (Exception e) {
-            logger.warning("Unable to initialize the server session handler: " + e.getMessage());
-        }
     }
 
     public void setCallback(ClientServerSessionHandlerCallback callback) {
         this.callback = callback;
     }
 
+    /**
+     * Get all available sessions
+     */
     public List<IoSession> getSessions() {
         synchronized (this.sessions) {
             List<IoSession> sessionList = new ArrayList<IoSession>();
             sessionList.addAll(this.sessions);
-            return (sessionList);
+            return (Collections.unmodifiableList(sessionList));
         }
-    }
-
-    /**
-     * Overwrite this to create another log mechanism
-     */
-    public Handler generateLogHandler() throws Exception {
-        // Create a file handler that uses 3 logfiles, each with a limit of 1Mbyte
-        String serverSessionLogPattern = "./log/client_server_session_%g.log";
-        int limit = 1000000; // 1 Mb
-        int numLogFiles = 3;
-        FileHandler fileHandler = new FileHandler(serverSessionLogPattern, limit, numLogFiles, true);
-        fileHandler.setFormatter(new LogFormatter(LogFormatter.FORMAT_CONSOLE));
-        return (fileHandler);
     }
 
     /**
@@ -121,23 +106,49 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         this.logger.log(logLevel, message);
     }
 
-    private void logSession(IoSession session, Level logLevel, String message) {
-        StringBuilder builder = new StringBuilder();
-        builder.append("Session ");
-        builder.append(session.getId()).append(" ");
-        if (session.getRemoteAddress() != null) {
-            builder.append("[").append(session.getRemoteAddress()).append("] ");
+    private void throwEventLoginFailed(IoSession session, LoginState loginState, LoginRequest loginRequest) {
+        this.eventManager.newEventClientLoginFailure(loginState, session.getRemoteAddress(), String.valueOf(session.getId()),
+                loginRequest);
+    }
+
+    private void throwEventLoginSuccess(IoSession session, LoginState loginState, LoginRequest loginRequest) {
+        String tlsProtocol = null;
+        String tlsCipherSuite = null;
+        if (session.isSecured()) {
+            Object sessionAttribute = session.getAttribute(SslFilter.SSL_SESSION);
+            if (sessionAttribute != null && sessionAttribute instanceof SSLSession) {
+                SSLSession sslSession = (SSLSession) sessionAttribute;
+                tlsProtocol = sslSession.getProtocol();
+                tlsCipherSuite = sslSession.getCipherSuite();
+            }
         }
-        builder.append(message);
-        this.serverSessionLogger.log(logLevel, builder.toString());
+        this.eventManager.newEventClientLoginSuccess(loginState, session.getRemoteAddress(), String.valueOf(session.getId()),
+                loginRequest, tlsProtocol, tlsCipherSuite);
+    }
+
+    private void throwEventLogoff(IoSession session, String message) {
+        try {
+            String remoteProcessId = (String) session.getAttribute(SESSION_ATTRIB_CLIENT_PID);
+            String userName = (String) session.getAttribute(SESSION_ATTRIB_USER);
+            //this is tricky - if the session is closed it has no longer a remote IP - that is why it is stored
+            //as session parameter
+            String clientIP = (String) session.getAttribute(SESSION_ATTRIB_CLIENT_IP);
+            this.eventManager.newEventClientLogoff(clientIP, userName, remoteProcessId,
+                    String.valueOf(session.getId()), message);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     /**
-     * The session has been opened: send a server info object
+     * The session has been opened: send a server info object This is an
+     * incoming connection from a client
      */
     public void sessionOpened(IoSession session) {
-        this.logSession(session, Level.INFO, "Incoming connection");
+        //store immediatly the remote IP address in the session - if the session is closed it is no longer 
+        //available and it might be required later even if the session goes into the closed state
+        session.setAttribute(SESSION_ATTRIB_CLIENT_IP, session.getRemoteAddress().toString());
         //send information about what this server is
         ServerInfo info = new ServerInfo();
         info.setProductname(this.productName);
@@ -181,17 +192,17 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 int validationState = this.loginHandler.validate(definedUser, loginRequest.getPasswd(),
                         loginRequest.getClientId());
                 if (validationState == PasswordValidationHandler.STATE_FAILURE) {
-                    LoginState state = new LoginState(loginRequest);
-                    state.setUser(transmittedUser);
-                    state.setState(LoginState.STATE_AUTHENTICATION_FAILURE);
-                    state.setStateDetails("Authentication failed: Wrong user/password combination or user does not exist");
-                    this.logSession(session, Level.INFO, state.getStateDetails());
-                    session.write(state);
+                    LoginState loginStateMessage = new LoginState(loginRequest);
+                    loginStateMessage.setUser(transmittedUser);
+                    loginStateMessage.setState(LoginState.STATE_AUTHENTICATION_FAILURE);
+                    loginStateMessage.setStateDetails("Authentication failed: Wrong user/password combination or user does not exist");
+                    this.throwEventLoginFailed(session, loginStateMessage, loginRequest);
+                    session.write(loginStateMessage);
                     return;
                 } else if (validationState == PasswordValidationHandler.STATE_INCOMPATIBLE_CLIENT) {
-                    LoginState state = new LoginState(loginRequest);
-                    state.setUser(transmittedUser);
-                    state.setState(LoginState.STATE_INCOMPATIBLE_CLIENT);
+                    LoginState loginStateMessage = new LoginState(loginRequest);
+                    loginStateMessage.setUser(transmittedUser);
+                    loginStateMessage.setState(LoginState.STATE_INCOMPATIBLE_CLIENT);
                     StringBuilder validClientIdStr = new StringBuilder();
                     for (String clientId : this.validClientIds) {
                         if (validClientIdStr.length() > 0) {
@@ -199,29 +210,29 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                         }
                         validClientIdStr.append(clientId);
                     }
-                    state.setStateDetails("The login process to the server has failed because the client is incompatible. Please ensure that client and server have the same version. Client version: ["
-                            + loginRequest.getClientId() + "], Server version: [" + validClientIdStr + "]");
-                    this.logSession(session, Level.INFO, state.getStateDetails());
-                    session.write(state);
+                    loginStateMessage.setStateDetails("The login process to the server has failed because the client is incompatible. Please ensure that client and server have the same version. Client version: ["
+                            + loginRequest.getClientId() + "], Server version: [" + validClientIdStr + "]");                    
+                    this.throwEventLoginFailed(session, loginStateMessage, loginRequest);
+                    session.write(loginStateMessage);
                     session.closeOnFlush();
                     return;
                 } else if (validationState == PasswordValidationHandler.STATE_PASSWORD_REQUIRED) {
-                    LoginState state = new LoginState(loginRequest);
-                    state.setUser(transmittedUser);
-                    state.setState(LoginState.STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED);
-                    state.setStateDetails("Authentication failed, password required for user " + loginRequest.getUserName());
-                    this.logSession(session, Level.INFO, state.getStateDetails());
-                    session.write(state);
+                    LoginState loginStateMessage = new LoginState(loginRequest);
+                    loginStateMessage.setUser(transmittedUser);
+                    loginStateMessage.setState(LoginState.STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED);
+                    loginStateMessage.setStateDetails("Authentication failed, password required for user [" + loginRequest.getUserName() + "]");
+                    this.throwEventLoginFailed(session, loginStateMessage, loginRequest);
+                    session.write(loginStateMessage);
                     return;
                 }
                 synchronized (this.sessions) {
                     if (this.maxClients > 0 && this.sessions.size() + 1 > this.maxClients) {
-                        LoginState state = new LoginState(loginRequest);
-                        state.setUser(transmittedUser);
-                        state.setState(LoginState.STATE_REJECTED);
-                        state.setStateDetails("Login request rejected.");
-                        this.logSession(session, Level.INFO, state.getStateDetails());
-                        session.write(state);
+                        LoginState loginStateMessage = new LoginState(loginRequest);
+                        loginStateMessage.setUser(transmittedUser);
+                        loginStateMessage.setState(LoginState.STATE_REJECTED);
+                        loginStateMessage.setStateDetails("Login request rejected.");
+                        this.throwEventLoginFailed(session, loginStateMessage, loginRequest);
+                        session.write(loginStateMessage);
                         return;
                     }
                 }
@@ -235,9 +246,9 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 //success!
                 LoginState loginSuccessState = new LoginState(loginRequest);
                 loginSuccessState.setState(LoginState.STATE_AUTHENTICATION_SUCCESS);
-                loginSuccessState.setStateDetails("Authentication successful, user " + definedUser.getName() + " logged in");
-                this.logSession(session, Level.INFO, loginSuccessState.getStateDetails());
+                loginSuccessState.setStateDetails("Authentication successful, user [" + definedUser.getName() + "] logged in");
                 loginSuccessState.setUser(definedUser);
+                this.throwEventLoginSuccess(session, loginSuccessState, loginRequest);
                 session.write(loginSuccessState);
                 if (this.callback != null) {
                     this.callback.clientLoggedIn(session);
@@ -265,14 +276,16 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     /**
      * User defined extensions for the server processing
      */
-    private synchronized void performUserDefinedProcessing(IoSession session, ClientServerMessage message) {
-        boolean processed = false;
-        for (int i = 0; i < this.processingList.size(); i++) {
-            processed |= this.processingList.get(i).process(session, message);
-        }
-        if (!processed) {
-            this.log(Level.WARNING, "performUserDefinedProcessing: inbound message of class "
-                    + message.getClass().getName() + " has not been processed.");
+    private void performUserDefinedProcessing(IoSession session, ClientServerMessage message) {
+        synchronized (this.processingList) {
+            boolean processed = false;
+            for (int i = 0; i < this.processingList.size(); i++) {
+                processed |= this.processingList.get(i).process(session, message);
+            }
+            if (!processed) {
+                this.log(Level.WARNING, "performUserDefinedProcessing: inbound message of class ["
+                        + message.getClass().getName() + "] has not been processed.");
+            }
         }
     }
 
@@ -321,10 +334,10 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     public void sessionClosed(IoSession session) throws Exception {
         String user = (String) session.getAttribute(SESSION_ATTRIB_USER);
         if (user != null) {
-            this.logSession(session, Level.INFO, "Closed");
             synchronized (this.sessions) {
                 this.sessions.remove(session);
             }
+            this.throwEventLogoff(session, "");
             //this.log(Level.INFO, "Session closed for user " + user);
             if (this.callback != null) {
                 this.callback.clientDisconnected(session);
@@ -334,6 +347,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
 
     @Override
     public void sessionIdle(IoSession session, IdleStatus status) {
+        this.throwEventLogoff(session, "");
         // disconnect an idle client
         session.closeOnFlush();
         if (this.callback != null) {
@@ -343,8 +357,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
 
     @Override
     public void exceptionCaught(IoSession session, Throwable cause) {
-        this.logSession(session, Level.WARNING, "Exception caught: " + cause.getMessage());
-        cause.printStackTrace();
+        this.throwEventLogoff(session, "Exception caught in client-server interface: " + cause.getMessage());
         // Close connection when unexpected exception is caught.
         session.closeNow();
         if (this.callback != null) {
@@ -353,7 +366,9 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     }
 
     public int getConnectedClients() {
-        return (this.sessions.size());
+        synchronized (this.sessions) {
+            return (this.sessions.size());
+        }
     }
 
     public void setProductName(String productName) {

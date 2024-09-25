@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 47    13.11.18 12:36 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 49    10.12.20 12:04 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -11,6 +11,7 @@ import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -28,13 +29,12 @@ import java.util.logging.Logger;
  * Please read and agree to all terms before using this software. Other product
  * and brand names are trademarks of their respective owners.
  */
-
 /**
  * Manager that polls the outbox directories of the partners, creates messages
  * and sends them
  *
  * @author S.Heller
- * @version $Revision: 47 $
+ * @version $Revision: 49 $
  */
 public class DirPollManager {
 
@@ -74,8 +74,7 @@ public class DirPollManager {
      */
     public void start() {
         this.partnerConfigurationChanged();
-        List<DirPollThread> threadList = this.getPollThreads();
-        this.logger.info(this.rb.getResourceString("manager.status.modified", String.valueOf(threadList.size())));
+        this.logger.info(this.rb.getResourceString("manager.status.modified", String.valueOf(this.getPollThreadCount())));
     }
 
     /**
@@ -84,11 +83,41 @@ public class DirPollManager {
     private List<DirPollThread> getPollThreads() {
         List<DirPollThread> pollThreadList = new ArrayList<DirPollThread>();
         synchronized (this.mapPollThread) {
-            for (String key : this.mapPollThread.keySet()) {
-                pollThreadList.add(this.mapPollThread.get(key));
-            }
+            pollThreadList.addAll(this.mapPollThread.values());
         }
         return (pollThreadList);
+    }
+
+    /**
+     * Returns the number of directory poll attempts per minute. If the user has
+     * set the poll intervals really small with a huge amount of partners this
+     * will have impact on the file IO
+     *
+     * @return
+     */
+    public float getPollsPerMinute() {
+        float totalPollsPerMinute = 0;
+        synchronized (this.mapPollThread) {
+            Collection<DirPollThread> threadList = this.mapPollThread.values();
+            for (DirPollThread singleThread : threadList) {
+                long pollIntervalInMS = singleThread.getPollIntervalInMS();
+                float pollsPerMinute = 60000f / (float) pollIntervalInMS;
+                totalPollsPerMinute += pollsPerMinute;
+            }
+        }
+        return (totalPollsPerMinute);
+    }
+
+    /**
+     * Returns the number of poll threads for the system information. This might
+     * be important as the number of poll threads grows per local station. E.g.:
+     * If you have 4 local station and 100 remote partners you will have 400
+     * poll threads which might have impact on the file IO
+     */
+    public int getPollThreadCount() {
+        synchronized (this.mapPollThread) {
+            return (this.mapPollThread.size());
+        }
     }
 
     /**

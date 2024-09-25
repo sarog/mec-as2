@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TableModelSubjectAlternativeNames.java 3     6/09/17 11:11a Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TableModelSubjectAlternativeNames.java 4     25.02.20 14:20 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -26,7 +27,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * Table model
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class TableModelSubjectAlternativeNames extends AbstractTableModel {
 
@@ -206,8 +207,10 @@ public class TableModelSubjectAlternativeNames extends AbstractTableModel {
                 if (additionalInfo.length() > 0) {
                     errorMessage = errorMessage + "\n" + additionalInfo.toString();
                 }
-                JOptionPane.showMessageDialog(this.parentComponent,
-                        errorMessage, "Error generating General Name", JOptionPane.ERROR_MESSAGE);
+                UINotification.instance().addNotification(null,
+                        UINotification.TYPE_ERROR,
+                        "Error generating General Name",
+                        errorMessage);
             }
         }
     }

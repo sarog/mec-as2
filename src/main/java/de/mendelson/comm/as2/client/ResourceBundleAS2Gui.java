@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 47    6.12.18 17:57 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 50    21.08.20 17:59 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 47 $
+ * @version $Revision: 50 $
  */
 public class ResourceBundleAS2Gui extends MecResourceBundle {
 
@@ -44,6 +44,7 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"menu.file.send", "Send file to partner"},
         {"menu.file.resend", "Send as new transaction"},
         {"menu.file.resend.multiple", "Send as new transactions"},
+        {"menu.file.migrate.hsqldb", "Migrate from HSQLDB"},
         {"menu.help", "Help"},
         {"menu.help.about", "About"},
         {"menu.help.supportrequest", "Support request"},
@@ -60,6 +61,9 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"filter.direction", "Direction restriction:"},
         {"filter.direction.inbound", "Inbound"},
         {"filter.direction.outbound", "Outbound"},
+        {"filter.use", "Use time filter" },
+        {"filter.from", "From:" },
+        {"filter.to", "To:" },
         {"filter", "Filter"},
         {"keyrefresh", "Reload keys"},
         {"configurecolumns", "Columns" },
@@ -67,6 +71,8 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"stoprefresh.msg", "Toggle refresh"},
         {"dialog.msg.delete.message", "Do you really want to delete the selected messages permanent?"},
         {"dialog.msg.delete.title", "Delete messages"},
+        {"msg.delete.success.single", "{0} message has been deleted successfully" },
+        {"msg.delete.success.multiple", "{0} messages have been deleted successfully" },
         {"welcome", "Welcome, {0}"},
         {"fatal.error", "Fatal error"},
         {"warning.refreshstopped", "The GUI refresh has been stopped."},

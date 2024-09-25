@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 6     7.11.18 10:40 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 12    11.11.20 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -8,12 +8,14 @@ import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.JKSKeys2PKCS12;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.PKCS122PKCS12;
+import de.mendelson.util.uinotification.UINotification;
 import java.nio.file.Paths;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -32,7 +34,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Export a private key into a pkcs#12 keystore
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 12 $
  */
 public class JDialogExportKeyPKCS12 extends JDialog {
 
@@ -62,6 +64,7 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         this.logger = logger;
         this.setTitle(this.rb.getResourceString("title"));
         initComponents();
+        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
         this.manager = manager;
         this.populateAliasList(selectedAlias);
         this.getRootPane().setDefaultButton(this.jButtonOk);
@@ -119,20 +122,21 @@ public class JDialogExportKeyPKCS12 extends JDialog {
                 exporter.saveKeyStore(targetKeystore, this.jPasswordFieldPassphrase.getPassword(),
                         Paths.get(this.jTextFieldExportPKCS12File.getText()));
             }
-            JOptionPane.showMessageDialog(this,
-                    this.rb.getResourceString("key.export.success.message"),
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_SUCCESS,
                     this.rb.getResourceString("key.export.success.title"),
-                    JOptionPane.INFORMATION_MESSAGE);
+                    this.rb.getResourceString("key.export.success.message")
+            );
             this.logger.fine(this.rb.getResourceString("key.exported.to.file",
                     new Object[]{
                         selectedAlias,
                         Paths.get(this.jTextFieldExportPKCS12File.getText()).toAbsolutePath().toString()
                     }));
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(this,
-                    this.rb.getResourceString("key.export.error.message", e.getMessage()),
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_ERROR,
                     this.rb.getResourceString("key.export.error.title"),
-                    JOptionPane.ERROR_MESSAGE);
+                    this.rb.getResourceString("key.export.error.message", e.getMessage()));
         }
     }
 
@@ -165,7 +169,7 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelEdit.setLayout(new java.awt.GridBagLayout());
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/key32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
@@ -198,9 +202,9 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         gridBagConstraints.weighty = 1.0;
         jPanelEdit.add(jPanel3, gridBagConstraints);
 
-        jButtonBrowseExportFile.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/folder.gif"))); // NOI18N
+        jButtonBrowseExportFile.setText("..");
         jButtonBrowseExportFile.setToolTipText(this.rb.getResourceString( "button.browse"));
-        jButtonBrowseExportFile.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonBrowseExportFile.setMargin(new java.awt.Insets(2, 8, 2, 8));
         jButtonBrowseExportFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonBrowseExportFileActionPerformed(evt);
@@ -286,8 +290,8 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds((screenSize.width-466)/2, (screenSize.height-287)/2, 466, 287);
+        setSize(new java.awt.Dimension(466, 287));
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jPasswordFieldPassphraseKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldPassphraseKeyReleased

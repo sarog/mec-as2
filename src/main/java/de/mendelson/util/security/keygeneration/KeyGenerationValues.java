@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 7     6/01/17 11:59a Heller $
+//$Header: /oftp2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 9     3.07.19 13:12 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.util.ArrayList;
@@ -18,17 +18,16 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 /**
  * Stores key values for the generation process
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class KeyGenerationValues {
 
-    public static final String KEYTYPE_DSA = KeyGenerator.KEYTYPE_DSA;
-    public static final String KEYTYPE_RSA = KeyGenerator.KEYTYPE_RSA;
-    public static final String KEYTYPE_ECDSA = KeyGenerator.KEYTYPE_ECDSA;
-    public static final String SIGNATUREALGORITHM_MD5_WITH_RSA_OID = KeyGenerator.SIGNATUREALGORITHM_MD5_WITH_RSA_OID;
-    public final static String SIGNATUREALGORITHM_SHA1_WITH_RSA_OID = KeyGenerator.SIGNATUREALGORITHM_SHA1_WITH_RSA_OID;
+    public static final String KEYALGORITHM_DSA = KeyGenerator.KEYALGORITHM_DSA;
+    public static final String KEYALGORITHM_RSA = KeyGenerator.KEYALGORITHM_RSA;
+    public static final String KEYALGORITHM_ECDSA = KeyGenerator.KEYALGORITHM_ECDSA;
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = "SHA256WithRSA";
 
-    private String keyType = KEYTYPE_RSA;
+    private String keyAlgorithm = KEYALGORITHM_RSA;
     private int keySize = 2048;
     private String commonName = "subdomain.yourdomain.com";
     private String organisationUnit = "Your company department";
@@ -38,23 +37,23 @@ public class KeyGenerationValues {
     private String countryCode = "DE";
     private String emailAddress = "webmaster@mailaddressondomain.to";
     private int keyValidInDays = 365;
-    private String signatureAlgorithm = SIGNATUREALGORITHM_SHA1_WITH_RSA_OID;
+    private String signatureAlgorithm = "SHA256WithRSA";
     private KeyUsage keyExtension = null;
     private ExtendedKeyUsage extendedKeyExtension = null;
     private List<GeneralName> subjectAlternativeNames = new ArrayList<GeneralName>();
 
     /**
-     * @return the keyType
+     * @return RSA/DSA etc
      */
-    public String getKeyType() {
-        return keyType;
+    public String getKeyAlgorithm() {
+        return keyAlgorithm;
     }
 
     /**
-     * @param keyType the keyType to set
+     * @param keyAlgorithm the keyType to set
      */
-    public void setKeyType(String keyType) {
-        this.keyType = keyType;
+    public void setKeyAlgorithm(String keyAlgorithm) {
+        this.keyAlgorithm = keyAlgorithm;
     }
 
     /**

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_de.java 9     9.10.18 12:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_de.java 13    3.09.20 9:38 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,12 +16,13 @@ import de.mendelson.util.MecResourceBundle;
  * to localize eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleDBServer_de extends MecResourceBundle {
 
     public static final long serialVersionUID = 1L;
 
+    @Override
     public Object[][] getContents() {
         return CONTENTS;
     }
@@ -30,23 +31,33 @@ public class ResourceBundleDBServer_de extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"database." + DBDriverManager.DB_CONFIG, "Konfigurationsdatenbank" },
-        {"database." + DBDriverManager.DB_RUNTIME, "Laufzeitdatenbank" },
+        {"database." + IDBDriverManager.DB_CONFIG, "Konfigurationsdatenbank" },
+        {"database." + IDBDriverManager.DB_RUNTIME, "Laufzeitdatenbank" },
         {"dbserver.startup", "Starte integrierten DB Server.." },
-        {"dbserver.running", "Integrierter DB Server {0} läuft"},
+        {"dbserver.running.embedded", "Integrierter DB Server {0} läuft"},
+        {"dbserver.running.external", "Externer DB Server {0} ist verfügbar"},
         {"update.versioninfo", "Automatisches Datenbankupdate: Die gefundene Datenbankversion"
             + " ist {0}, die benoetigte ist {1}."},
         {"update.progress", "Inkrementelles Datenbankupdate gestartet..."},
         {"update.progress.version.start", "Beginne Update der {1} auf Version {0}..."},
         {"update.progress.version.end", "Update der {1} auf Version {0} fertig."},
-        {"update.error", "FATAL: Es ist unmoeglich, die Datenbank von der Version {0} "
+        {"update.error.hsqldb", "FATAL: Es ist nicht möglich, die Datenbank von der Version {0} "
             + " zur Version {1} zu modifizieren.\n"
             + "Bitte löschen Sie alle entsprechenden AS2_DB_*.* Dateien im Installationsverzeichnis.\n"
             + "Dadurch gehen alle benutzerdefinierten Daten verloren."},
+        {"update.error.postgres", "FATAL: Es ist nicht möglich, die Datenbank von der Version {0} "
+            + " zur Version {1} zu modifizieren.\n"
+            + "Bitte starten Sie pgAdmin und löschen die zugehörige Datenbank."},
         {"update.successfully",
             "{0}: Die Datenbank wurde erfolgreich fuer die notwendige Version modifiziert."},
         {"update.notfound", "Fuer das Update muss die Datei update{0}to{1}.sql und/oder"
             + " die Datei Update{0}to{1}.class im (Resource)Verzeichnis {2} existieren."},
-        {"upgrade.required", "Ein Upgrade muss durchgeführt werden.\nBitte führen Sie die Datei as2upgrade.bat oder as2upgrade.sh aus, bevor Sie den Server starten."},};
-
+        {"upgrade.required", "Ein Upgrade muss durchgeführt werden.\nBitte führen Sie die Datei as2upgrade.bat oder as2upgrade.sh aus, bevor Sie den Server starten."},
+        {"dbserver.shutdown", "Datenbankserver wurde heruntergefahren" },
+        {"info.serveridentification", "Server Identifikation: {0}"},
+        {"info.jdbc", "JDBC: {0}"},
+        {"info.host", "Host: {0}"},
+        {"info.clientdriver", "Client Treiber: {0}"},
+        {"info.user", "Benutzer: {0}"},
+    };
 }

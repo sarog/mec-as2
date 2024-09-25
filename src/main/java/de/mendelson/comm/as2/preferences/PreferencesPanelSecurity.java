@@ -1,13 +1,16 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSecurity.java 15    24.09.18 17:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSecurity.java 25    5.11.19 10:45 Heller $
 package de.mendelson.comm.as2.preferences;
 
-import de.mendelson.util.MecFileChooser;
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.filesystemview.RemoteFileBrowser;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
+import java.awt.Color;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 /*
@@ -22,7 +25,7 @@ import javax.swing.SwingUtilities;
  * Panel to define the directory preferences
  *
  * @author S.Heller
- * @version: $Revision: 15 $
+ * @version: $Revision: 25 $
  */
 public class PreferencesPanelSecurity extends PreferencesPanel {
 
@@ -37,6 +40,12 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
     private PreferencesClient preferences;
     private BaseClient baseClient;
 
+    private final static MendelsonMultiResolutionImage ICON_CERTIFICATE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/certificate.svg", 
+                    JDialogPreferences.IMAGE_HEIGHT, JDialogPreferences.IMAGE_HEIGHT*2);
+    private final static MendelsonMultiResolutionImage ICON_WARNING_SIGN
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/warning_sign.svg", 64, 128);
+    
     /**
      * Creates new form PreferencesPanelDirectories
      */
@@ -52,6 +61,10 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         this.baseClient = baseClient;
         this.preferences = new PreferencesClient(baseClient);
         this.initComponents();
+        this.jLabelSecurityHint.setIcon(new ImageIcon(ICON_WARNING_SIGN));
+        this.jLabelSecurityHint.setText(this.rb.getResourceString("keystore.hint"));
+        this.jLabelSecurityHint.setIconTextGap(20);
+        this.jLabelSecurityHint.setForeground(Color.BLACK);
     }
 
     /**
@@ -74,6 +87,7 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        jPanelMargin = new javax.swing.JPanel();
         jTextFieldKeystoreHTTPS = new javax.swing.JTextField();
         jLabelKeystoreHTTPS = new javax.swing.JLabel();
         jButtonBrowseKeystoreHTTPS = new javax.swing.JButton();
@@ -83,10 +97,13 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         jPasswordFieldKeystorePass = new javax.swing.JPasswordField();
         jLabelKeystoreEncryptionSign = new javax.swing.JLabel();
         jTextFieldKeystoreEncryptionSign = new javax.swing.JTextField();
-        jScrollPaneHint = new javax.swing.JScrollPane();
-        jTextAreaHint = new javax.swing.JTextArea();
+        jPanelWarning = new javax.swing.JPanel();
+        jLabelSecurityHint = new javax.swing.JLabel();
+        jPanelSpace = new javax.swing.JPanel();
 
         setLayout(new java.awt.GridBagLayout());
+
+        jPanelMargin.setLayout(new java.awt.GridBagLayout());
 
         jTextFieldKeystoreHTTPS.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
@@ -96,10 +113,11 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        add(jTextFieldKeystoreHTTPS, gridBagConstraints);
+        jPanelMargin.add(jTextFieldKeystoreHTTPS, gridBagConstraints);
 
         jLabelKeystoreHTTPS.setText(this.rb.getResourceString( "label.keystore.https"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -107,21 +125,21 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        add(jLabelKeystoreHTTPS, gridBagConstraints);
+        jPanelMargin.add(jLabelKeystoreHTTPS, gridBagConstraints);
 
-        jButtonBrowseKeystoreHTTPS.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/folder.gif"))); // NOI18N
+        jButtonBrowseKeystoreHTTPS.setText("..");
         jButtonBrowseKeystoreHTTPS.setToolTipText(this.rb.getResourceString( "button.browse"));
-        jButtonBrowseKeystoreHTTPS.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonBrowseKeystoreHTTPS.setMargin(new java.awt.Insets(2, 8, 2, 8));
         jButtonBrowseKeystoreHTTPS.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonBrowseKeystoreHTTPSActionPerformed(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        add(jButtonBrowseKeystoreHTTPS, gridBagConstraints);
+        jPanelMargin.add(jButtonBrowseKeystoreHTTPS, gridBagConstraints);
 
         jLabelKeystoreHTTPSPass.setText(this.rb.getResourceString( "label.keystore.https.pass"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -129,8 +147,10 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.gridy = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelKeystoreHTTPSPass, gridBagConstraints);
+        jPanelMargin.add(jLabelKeystoreHTTPSPass, gridBagConstraints);
 
+        jPasswordFieldKeystoreHTTPPass.setMinimumSize(new java.awt.Dimension(200, 20));
+        jPasswordFieldKeystoreHTTPPass.setPreferredSize(new java.awt.Dimension(200, 20));
         jPasswordFieldKeystoreHTTPPass.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jPasswordFieldKeystoreHTTPPassKeyReleased(evt);
@@ -139,10 +159,10 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jPasswordFieldKeystoreHTTPPass, gridBagConstraints);
+        jPanelMargin.add(jPasswordFieldKeystoreHTTPPass, gridBagConstraints);
 
         jLabelKeystorePass.setText(this.rb.getResourceString( "label.keystore.pass"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -150,8 +170,10 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelKeystorePass, gridBagConstraints);
+        jPanelMargin.add(jLabelKeystorePass, gridBagConstraints);
 
+        jPasswordFieldKeystorePass.setMinimumSize(new java.awt.Dimension(200, 20));
+        jPasswordFieldKeystorePass.setPreferredSize(new java.awt.Dimension(200, 20));
         jPasswordFieldKeystorePass.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jPasswordFieldKeystorePassKeyReleased(evt);
@@ -160,10 +182,10 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jPasswordFieldKeystorePass, gridBagConstraints);
+        jPanelMargin.add(jPasswordFieldKeystorePass, gridBagConstraints);
 
         jLabelKeystoreEncryptionSign.setText(this.rb.getResourceString( "label.keystore.encryptionsign"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -171,7 +193,7 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelKeystoreEncryptionSign, gridBagConstraints);
+        jPanelMargin.add(jLabelKeystoreEncryptionSign, gridBagConstraints);
 
         jTextFieldKeystoreEncryptionSign.setEditable(false);
         jTextFieldKeystoreEncryptionSign.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -182,35 +204,48 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jTextFieldKeystoreEncryptionSign, gridBagConstraints);
+        jPanelMargin.add(jTextFieldKeystoreEncryptionSign, gridBagConstraints);
 
-        jScrollPaneHint.setBorder(null);
-        jScrollPaneHint.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
-        jScrollPaneHint.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
+        jPanelWarning.setBackground(new java.awt.Color(255, 255, 255));
+        jPanelWarning.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(0, 0, 0), 2));
+        jPanelWarning.setLayout(new java.awt.GridBagLayout());
 
-        jTextAreaHint.setEditable(false);
-        jTextAreaHint.setBackground(javax.swing.UIManager.getDefaults().getColor("Panel.background"));
-        jTextAreaHint.setColumns(20);
-        jTextAreaHint.setFont(new java.awt.Font("Dialog", 0, 12)); // NOI18N
-        jTextAreaHint.setLineWrap(true);
-        jTextAreaHint.setRows(5);
-        jTextAreaHint.setText(this.rb.getResourceString( "keystore.hint"));
-        jTextAreaHint.setWrapStyleWord(true);
-        jTextAreaHint.setBorder(null);
-        jScrollPaneHint.setViewportView(jTextAreaHint);
-
+        jLabelSecurityHint.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridy = 0;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        add(jScrollPaneHint, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelWarning.add(jLabelSecurityHint, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(30, 15, 5, 15);
+        jPanelMargin.add(jPanelWarning, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridy = 13;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.weighty = 1.0;
+        jPanelMargin.add(jPanelSpace, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jPanelMargin, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jPasswordFieldKeystorePassKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldKeystorePassKeyReleased
@@ -250,10 +285,12 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
     private javax.swing.JLabel jLabelKeystoreHTTPS;
     private javax.swing.JLabel jLabelKeystoreHTTPSPass;
     private javax.swing.JLabel jLabelKeystorePass;
+    private javax.swing.JLabel jLabelSecurityHint;
+    private javax.swing.JPanel jPanelMargin;
+    private javax.swing.JPanel jPanelSpace;
+    private javax.swing.JPanel jPanelWarning;
     private javax.swing.JPasswordField jPasswordFieldKeystoreHTTPPass;
     private javax.swing.JPasswordField jPasswordFieldKeystorePass;
-    private javax.swing.JScrollPane jScrollPaneHint;
-    private javax.swing.JTextArea jTextAreaHint;
     private javax.swing.JTextField jTextFieldKeystoreEncryptionSign;
     private javax.swing.JTextField jTextFieldKeystoreHTTPS;
     // End of variables declaration//GEN-END:variables
@@ -264,8 +301,9 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
     }
 
     @Override
-    public String getIconResource() {
-        return ("/de/mendelson/comm/as2/preferences/security32x32.gif");
+    public ImageIcon getIcon() {
+        return (new ImageIcon( ICON_CERTIFICATE ));
+                
     }
 
     @Override

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageParser.java 240   7.12.18 10:07 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageParser.java 244   30.06.20 9:11 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -64,7 +64,7 @@ import org.bouncycastle.mail.smime.SMIMEEnveloped;
  * Analyzes and builds AS2 messages
  *
  * @author S.Heller
- * @version $Revision: 240 $
+ * @version $Revision: 244 $
  */
 public class AS2MessageParser {
 
@@ -1142,7 +1142,7 @@ public class AS2MessageParser {
                     } else if (signDigest == AS2Message.SIGNATURE_SHA3_384) {
                         digest = BCCryptoHelper.ALGORITHM_SHA3_384;
                     } else if (signDigest == AS2Message.SIGNATURE_SHA3_512) {
-                        digest = BCCryptoHelper.ALGORITHM_SHA3_384;
+                        digest = BCCryptoHelper.ALGORITHM_SHA3_512;
                     }else if (signDigest == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
                         digest = BCCryptoHelper.ALGORITHM_SHA3_224_RSASSA_PSS;
                     } else if (signDigest == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
@@ -1150,7 +1150,7 @@ public class AS2MessageParser {
                     } else if (signDigest == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
                         digest = BCCryptoHelper.ALGORITHM_SHA3_384_RSASSA_PSS;
                     } else if (signDigest == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
-                        digest = BCCryptoHelper.ALGORITHM_SHA3_384_RSASSA_PSS;
+                        digest = BCCryptoHelper.ALGORITHM_SHA3_512_RSASSA_PSS;
                     }
                     as2Info.setSignType(signDigest);
                     if (this.logger != null) {

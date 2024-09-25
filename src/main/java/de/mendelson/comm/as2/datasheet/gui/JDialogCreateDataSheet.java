@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 16    17.12.18 11:42 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 18    13.08.20 16:50 Heller $
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -43,7 +43,7 @@ import javax.swing.JFrame;
  * Winzard to create a PDF that contains a data sheet
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public class JDialogCreateDataSheet extends JDialog {
 
@@ -94,6 +94,7 @@ public class JDialogCreateDataSheet extends JDialog {
         }
         this.preferenceClient = new PreferencesClient(baseClient);
         this.jTextFieldReceiptURL.setText(this.preferenceClient.get(PreferencesAS2.DATASHEET_RECEIPT_URL));
+        this.refreshLocalURLDisplay();
         this.initializeComboboxes();
         this.setButtonState();
     }
@@ -205,6 +206,18 @@ public class JDialogCreateDataSheet extends JDialog {
             }
         };
         Executors.newSingleThreadExecutor().submit(runnable);
+    }
+
+    /**
+     * Checks the setup local station and updates the display of the receipt URL
+     * by the MDN URL of it
+     */
+    private void refreshLocalURLDisplay() {
+        if (this.jComboBoxLocalPartner.getSelectedItem() != null) {
+            this.localStation = (Partner) this.jComboBoxLocalPartner.getSelectedItem();
+            //this makes no sense if the user has not set this because he uses sync MDN but its a good try
+            this.jTextFieldReceiptURL.setText(this.localStation.getMdnURL());
+        }
     }
 
     /**
@@ -463,7 +476,7 @@ public class JDialogCreateDataSheet extends JDialog {
     }//GEN-LAST:event_jButtonOkActionPerformed
 
     private void jComboBoxLocalPartnerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxLocalPartnerActionPerformed
-        this.localStation = (Partner) this.jComboBoxLocalPartner.getSelectedItem();
+        this.refreshLocalURLDisplay();
     }//GEN-LAST:event_jComboBoxLocalPartnerActionPerformed
 
     private void jTextAreaCommentKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextAreaCommentKeyReleased

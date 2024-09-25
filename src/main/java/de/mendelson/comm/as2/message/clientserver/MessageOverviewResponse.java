@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewResponse.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewResponse.java 3     4.06.19 12:46 Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -17,12 +17,13 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class MessageOverviewResponse extends ClientServerResponse implements Serializable {
 
     public static final long serialVersionUID = 1L;
     private List<AS2MessageInfo> list = null;
+    private int messageSumOnServer = 0;
 
     public MessageOverviewResponse(MessageOverviewRequest request) {
         super(request);
@@ -45,6 +46,20 @@ public class MessageOverviewResponse extends ClientServerResponse implements Ser
      */
     public void setList(List<AS2MessageInfo> list) {
         this.list = list;
+    }
+
+    /**
+     * @return the transmissionSumOnServer
+     */
+    public int getMessageSumOnServer() {
+        return messageSumOnServer;
+    }
+
+    /**
+     * @param messageSumOnServer the transmissionSumOnServer to set
+     */
+    public void setMessageSumOnServer(int messageSumOnServer) {
+        this.messageSumOnServer = messageSumOnServer;
     }
 
     

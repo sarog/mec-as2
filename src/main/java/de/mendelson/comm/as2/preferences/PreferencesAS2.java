@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 29    4-03-16 10:47a Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 32    14.01.21 9:52 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -24,7 +24,7 @@ import java.util.prefs.Preferences;
  * Class to manage the preferences of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 32 $
  */
 public class PreferencesAS2 {
 
@@ -48,6 +48,7 @@ public class PreferencesAS2 {
      * Language to use for the software localization
      */
     public static final String LANGUAGE = "language";
+    public static final String COUNTRY = "country";
     /**
      * the actual used server to connect to
      */
@@ -107,6 +108,7 @@ public class PreferencesAS2 {
     public static final String HIDDENCOLSDEFAULT = "hiddencolsdefault";
     public static final String HIDDENCOLS = "hiddencols";
     public static final String HIDEABLECOLS = "hideablecols";    
+    public static final String COLOR_BLINDNESS = "colorblindness";
 
     /**
      * Settings stored for the user
@@ -144,15 +146,15 @@ public class PreferencesAS2 {
         if (KEY.equals(PreferencesAS2.FRAME_X)) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Dimension dialogSize = new Dimension(
-                    new Integer(this.getDefaultValue(PreferencesAS2.FRAME_WIDTH)).intValue(),
-                    new Integer(this.getDefaultValue(PreferencesAS2.FRAME_HEIGHT)).intValue());
+                    Integer.valueOf(this.getDefaultValue(PreferencesAS2.FRAME_WIDTH)).intValue(),
+                    Integer.valueOf(this.getDefaultValue(PreferencesAS2.FRAME_HEIGHT)).intValue());
             return (String.valueOf((screenSize.width - dialogSize.width) / 2));
         }
         if (KEY.equals(PreferencesAS2.FRAME_Y)) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Dimension dialogSize = new Dimension(
-                    new Integer(this.getDefaultValue(PreferencesAS2.FRAME_WIDTH)).intValue(),
-                    new Integer(this.getDefaultValue(PreferencesAS2.FRAME_HEIGHT)).intValue());
+                    Integer.valueOf(this.getDefaultValue(PreferencesAS2.FRAME_WIDTH)).intValue(),
+                    Integer.valueOf(this.getDefaultValue(PreferencesAS2.FRAME_HEIGHT)).intValue());
             return (String.valueOf((screenSize.height - dialogSize.height) / 2));
         }
         if (KEY.equals(PreferencesAS2.FRAME_WIDTH)) {
@@ -168,6 +170,9 @@ public class PreferencesAS2 {
             }
             //default is always english
             return ("en");
+        }
+        if (KEY.equals(COUNTRY)) {
+            return( Locale.getDefault().getCountry());
         }
         //DB port for the server
         if (KEY.equals(PreferencesAS2.SERVER_DB_PORT)) {
@@ -262,7 +267,7 @@ public class PreferencesAS2 {
             return ("30");
         }
         if (KEY.equals(DATASHEET_RECEIPT_URL)) {
-            return ("http://as2.mendelson-e-c.com:8080/as2/HttpReceiver");
+            return ("http://testas2.mendelson-e-c.com:8080/as2/HttpReceiver");
         }
         if (KEY.equals(AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S)) {
             return (String.valueOf(TimeUnit.DAYS.toSeconds(1)));
@@ -280,7 +285,10 @@ public class PreferencesAS2 {
             return ("0011111111111");
         }
         if (KEY.equals(MAX_OUTBOUND_CONNECTIONS)) {
-            return ("5");
+            return ("9999");
+        }
+        if (KEY.equals(COLOR_BLINDNESS)) {
+            return ("FALSE");
         }
         throw new IllegalArgumentException("No defaults defined for prefs key " + KEY + " in " + this.getClass().getName());
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEvent.java 22    13.11.18 11:58 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent.java 24    20.09.19 10:32 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 24 $
  */
 public class ResourceBundleSystemEvent extends MecResourceBundle {
 
@@ -90,7 +90,12 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_FILE_COPY, "File (copy)"},
         {"type." + SystemEvent.TYPE_MKDIR, "Create dir"},
         {"type." + SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED, "Directory monitoring state changed"},
+        {"type." + SystemEvent.TYPE_CLIENT_ANY, "Client (any)"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGIN_FAILURE, "Client login (failure)"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGIN_SUCCESS, "Client login (success)"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Client logoff"},
         {"type." + SystemEvent.TYPE_OTHER, "Other"},
+        {"type." + SystemEvent.TYPE_PORT_LISTENER, "Port listener"},
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "System" },
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaction" },
         {"origin." + SystemEvent.ORIGIN_USER, "User" },
@@ -109,5 +114,6 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_SERVER_COMPONENTS, "Server components" },
         {"category." + SystemEvent.CATEGORY_TRANSACTION, "Transaction" },
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "File operation" },
+        {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Client operation" },
     };
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/TransferClientWithProgress.java 2     31.08.11 17:14 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/TransferClientWithProgress.java 3     29.08.19 11:24 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.ProgressPanel;
@@ -15,7 +15,7 @@ import java.io.InputStream;
 /**
  * Requests downloads from and sends new uploads to the server
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class TransferClientWithProgress extends TransferClient {
 
@@ -28,6 +28,8 @@ public class TransferClientWithProgress extends TransferClient {
 
     /**Sends the data of the inputstream synced to the server and returns a unique number from the server
      * for the upload process
+     * Warning: This does also transfer files with the size of 0 bytes to the server
+     * Please be aware of this at the server side
      */
     public String uploadChunkedWithProgress(InputStream inStream, String display, int maxBytes) throws Throwable {
         String targetHash = null;
@@ -36,8 +38,8 @@ public class TransferClientWithProgress extends TransferClient {
         try {
             this.progressPanel.startProgress(display, uniqueId, 0, maxBytes);
             while (true) {
-                byte[] data = super.copyBytesFromStream(inStream, 50000);
-                if (data != null && data.length > 0) {                                      
+                byte[] data = super.copyBytesFromStream(inStream, TransferClient.CHUNK_SIZE_IN_BYTES);
+                if (data != null) {                                      
                     readBytes += data.length;
                     UploadRequestChunk uploadRequest = new UploadRequestChunk();
                     uploadRequest.setData(data);
@@ -48,8 +50,12 @@ public class TransferClientWithProgress extends TransferClient {
                     }
                     //display this progress in the progress bar
                     this.progressPanel.setProgressValue(uniqueId, readBytes);
+                    //special case: the transfered file has the size 0
+                    if( data.length == 0){
+                        break;
+                    }
                 } else {
-                    //file seems to be transferred
+                    //file seems to be transferred or stream does not exist
                     break;
                 }
             }

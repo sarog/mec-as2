@@ -1,7 +1,6 @@
-//$Header: /as2/de/mendelson/util/AS2Tools.java 9     7.11.18 13:09 Heller $
+//$Header: /as2/de/mendelson/util/AS2Tools.java 10    14.06.19 10:28 Heller $
 package de.mendelson.util;
 
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -14,8 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Formatter;
 import java.util.Locale;
-import java.util.concurrent.TimeUnit;
-import org.apache.commons.io.FileUtils;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -28,7 +25,7 @@ import org.apache.commons.io.FileUtils;
  * Some programming tools for mendelson business integration
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class AS2Tools {
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 8     4.10.18 13:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 15    7.12.20 14:29 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,7 +17,7 @@ import java.util.ResourceBundle;
  * Contains a single configuration issue
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 15 $
  */
 public class ConfigurationIssue implements Serializable {
 
@@ -36,10 +36,14 @@ public class ConfigurationIssue implements Serializable {
     public static final int KEY_MISSING_SIGN_LOCAL_STATION = 12;
     public static final int USE_OF_TEST_KEYS_IN_SSL = 13;
     public static final int JVM_32_BIT = 14;
+    public static final int DIFFERENT_KEYSTORES_TLS = 15;
+    public static final int WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT = 16;
+    public static final int TOO_MANY_DIR_POLLS = 17;
 
     private int issueId;
     private String details = null;
     private String subject = null;
+    private String hint = null;
 
     private static final MecResourceBundle rb;
 
@@ -55,8 +59,25 @@ public class ConfigurationIssue implements Serializable {
     public ConfigurationIssue(int issueId) {
         this.issueId = issueId;
         this.subject = rb.getResourceString(String.valueOf(this.issueId));
+        this.hint = rb.getResourceString("hint." + String.valueOf(this.issueId));
     }
 
+    /**Returns a list of issues that allow the user to jump into a configuration*/
+    public boolean hasJumpTargetInUI(){
+        return( this.issueId == NO_KEY_IN_SSL_KEYSTORE
+                || this.issueId == MULTIPLE_KEYS_IN_SSL_KEYSTORE
+                || this.issueId == CERTIFICATE_EXPIRED_SSL
+                || this.issueId == CERTIFICATE_EXPIRED_ENC_SIGN
+                || this.issueId == HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE
+                || this.issueId == NO_OUTBOUND_CONNECTIONS_ALLOWED
+                || this.issueId == CERTIFICATE_MISSING_ENC_REMOTE_PARTNER
+                || this.issueId == CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER
+                || this.issueId == KEY_MISSING_ENC_LOCAL_STATION
+                || this.issueId == KEY_MISSING_SIGN_LOCAL_STATION
+                || this.issueId == USE_OF_TEST_KEYS_IN_SSL
+                || this.issueId == DIFFERENT_KEYSTORES_TLS);
+    }
+    
     /**
      * @return the subject
      */
@@ -85,4 +106,18 @@ public class ConfigurationIssue implements Serializable {
         this.details = details;
     }
 
+    /**
+     * @return Some sentences about the problem and how to fix it in the program configuration etc
+     */
+    public String getHintAsHTML() {
+        return hint;
+    }
+
+    /**
+     * @param Sets additional parameter for the hint to display. Has to match the resourcebundle parameter for the hint
+     */
+    public void setHintParameter(Object[] parameter) {
+        this.hint = rb.getResourceString("hint." + String.valueOf(this.issueId), parameter);
+    }
+    
 }

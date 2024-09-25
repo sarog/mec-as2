@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent.java 6     23.10.18 11:00 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent.java 7     23.01.20 9:27 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleDialogSystemEvent extends MecResourceBundle {
 
@@ -49,5 +49,6 @@ public class ResourceBundleDialogSystemEvent extends MecResourceBundle {
         {"category.all", "-- All --" },
         {"label.close", "Close" },
         {"label.search", "Event search" },
+        {"label.resetfilter", "Reset filter" },
     };
 }

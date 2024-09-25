@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/SQLScriptExecutor.java 10    5/02/17 5:48p Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/SQLScriptExecutor.java 12    15.10.20 12:11 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -28,7 +28,7 @@ import java.util.logging.Logger;
  * Class that can execute SQL scripts or execute predefined
  * commands which are assigned to scripts
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class SQLScriptExecutor {
 
@@ -36,11 +36,16 @@ public class SQLScriptExecutor {
     /**Directory where the SQL scripts are found*/
     public static final String SCRIPT_RESOURCE_CONFIG = "/sqlscript/config/";
     public static final String SCRIPT_RESOURCE_RUNTIME = "/sqlscript/runtime/";
+    private ISQLQueryModifier queryModifier = null;
 
     /** Creates new SQLScriptExecutor */
     public SQLScriptExecutor() {
     }
 
+     public void setQueryModifier(ISQLQueryModifier queryModifier){
+        this.queryModifier = queryModifier;
+    }
+    
     /**creates a new database
      * @param connection connection to the database
      * @param RESOURCE resource type as defined in the class 
@@ -121,11 +126,6 @@ public class SQLScriptExecutor {
         while (line != null) {
             line = reader.readLine();
             if (line != null && line.trim().length() > 0 && (!line.startsWith("#"))) {
-                line = line.trim();
-                //compatibility to mySQL: All SQl commands require a ";" at the end
-                while( line.endsWith(";") && line.length()> 1){
-                    line = line.substring(0, line.length()-1);
-                }
                 queryList.add(line);
             }
         }
@@ -136,10 +136,16 @@ public class SQLScriptExecutor {
             statement = connection.createStatement();
             for (String query : queryList) {
                 counter++;
-                lastQuery = query;
+                String modifiedQuery = null;
+                if( this.queryModifier != null ){
+                    modifiedQuery = this.queryModifier.modifyQuery(query);
+                }else{
+                    modifiedQuery = query;
+                }
+                lastQuery = modifiedQuery;
                 float percent = ((float) counter / (float) queryList.size()) * 100f;
                 ConsoleProgressBar.print(percent);
-                statement.executeUpdate(query);
+                int returnValue = statement.executeUpdate(modifiedQuery);
             }
         } finally {
             if (statement != null) {

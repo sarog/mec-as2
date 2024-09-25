@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 9     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 10    15.03.19 11:52 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.Serializable;
@@ -16,19 +16,24 @@ import java.io.Serializable;
  * be send to the server
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class LoginRequest extends ClientServerMessage implements Serializable {
-
+    
     public static final long serialVersionUID = 1L;
     private String username = null;
     private char[] password = null;
+    private String clientOSName;
     /**
      * The servers require a special client version/id because client and server
      * must be compatible. This is set here
      */
     private String clientId = null;
 
+    public LoginRequest(){
+        this.clientOSName = System.getProperty("os.name");
+    }
+    
     public String getUserName() {
         return username;
     }
@@ -64,4 +69,11 @@ public class LoginRequest extends ClientServerMessage implements Serializable {
         this.clientId = clientId;
     }
 
+    /**
+     * @return the clientOSName
+     */
+    public String getClientOSName() {
+        return clientOSName;
+    }
+    
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 48    7.11.18 10:40 Heller $
+//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 56    3.03.20 10:08 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.MecResourceBundle;
@@ -6,6 +6,7 @@ import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,11 +20,15 @@ import java.security.cert.Certificate;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.Provider;
+import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.DSAParams;
+import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.RSAPublicKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,7 +57,7 @@ import org.bouncycastle.util.io.pem.PemObject;
  * Utility class to handle java keyStore issues
  *
  * @author S.Heller
- * @version $Revision: 48 $
+ * @version $Revision: 56 $
  */
 public class KeyStoreUtil {
 
@@ -105,8 +110,7 @@ public class KeyStoreUtil {
      * KeyStore.getInstance(<keystoretype>, <provider>); If the passed filename
      * does not exist a new, empty keystore will be created
      */
-    public void loadKeyStore(KeyStore keystoreInstance,
-            String filename, char[] keystorePass) throws Exception {
+    public void loadKeyStore(KeyStore keystoreInstance, String filename, char[] keystorePass) throws Exception {
         Path inFile = Paths.get(filename);
         InputStream inStream = null;
         try {
@@ -116,6 +120,10 @@ public class KeyStoreUtil {
             } else {
                 keystoreInstance.load(null, null);
             }
+        } catch (Exception e) {
+            String message = "[" + e.getClass().getSimpleName() + "]: " + e.getMessage();
+            throw new Exception("The system is unable to load the keystore \"" + inFile.toAbsolutePath().toString()
+                    + "\" using the keystore and key password \"" + new String(keystorePass) + "\".\nThe following problem occured: " + message);
         } finally {
             if (inStream != null) {
                 inStream.close();
@@ -134,8 +142,10 @@ public class KeyStoreUtil {
      *
      */
     public void renameEntry(KeyStore keyStore, String oldAlias, String newAlias,
-            char[] keyPassword)
-            throws Exception {
+            char[] keyPassword) throws Exception {
+        if (oldAlias != null && newAlias != null && oldAlias.equalsIgnoreCase(newAlias)) {
+            throw new Exception(this.rb.getResourceString("alias.rename.new.equals.old"));
+        }
         if (keyPassword == null) {
             keyPassword = "dummy".toCharArray();
         }
@@ -299,11 +309,8 @@ public class KeyStoreUtil {
      * Reads a chain of certificates from the passed stream
      */
     public List<X509Certificate> readCertificates(InputStream certStream, Provider provider) throws Exception {
-        List<X509Certificate> certList = null;
-        ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-        this.copyStreams(certStream, memOut);
-        memOut.close();
-        byte[] data = memOut.toByteArray();
+        List<X509Certificate> certList = null;        
+        byte[] data = certStream.readAllBytes();
         certList = this.readCertificates(data, provider);
         if (certList == null) {
             //no success, perhaps base64 encoded data? Decode it and retry the read process
@@ -336,6 +343,7 @@ public class KeyStoreUtil {
      *
      * @deprecated Does not support files that contain a cert chain (e.g. *.p7b)
      */
+    @Deprecated(since = "2020")
     public X509Certificate readCertificate(InputStream certStream, Provider provider) throws CertificateException {
         CertificateFactory factory;
         X509Certificate cert = null;
@@ -497,7 +505,7 @@ public class KeyStoreUtil {
             try {
                 outStream = Files.newOutputStream(file);
                 inStream = new ByteArrayInputStream(certificate);
-                this.copyStreams(inStream, outStream);
+                inStream.transferTo(outStream);
             } finally {
                 inStream.close();
                 outStream.flush();
@@ -599,27 +607,6 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out)
-            throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[1024];
-        int read = 1024;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
-    }
-
-    /**
      * Exports an X.509 certificate from a passed keystore, encoding is ASN.1
      * DER
      *
@@ -634,7 +621,7 @@ public class KeyStoreUtil {
             OutputStream outStream = null;
             try {
                 outStream = Files.newOutputStream(file);
-                this.copyStreams(inStream, outStream);
+                inStream.transferTo(outStream);
             } finally {
                 if (inStream != null) {
                     inStream.close();
@@ -644,6 +631,29 @@ public class KeyStoreUtil {
             outStream.close();
         }
         return (new Path[]{file});
+    }
+
+    /**
+     * Exports a public key as PEM in SSH2 format
+     *
+     * @returns the certificate
+     */
+    public Path exportPublicKeySSH2(PublicKey key, String baseFilename) throws Exception {
+        String certificateEncoded = this.convertPublicKeyToSSH2(key);
+        Path file = Paths.get(baseFilename);
+        ByteArrayInputStream inStream = new ByteArrayInputStream(certificateEncoded.getBytes());
+        OutputStream outStream = null;
+        try {
+            outStream = Files.newOutputStream(file);
+            inStream.transferTo(outStream);
+        } finally {
+            if (inStream != null) {
+                inStream.close();
+            }
+        }
+        outStream.flush();
+        outStream.close();
+        return (file);
     }
 
     /**
@@ -660,7 +670,7 @@ public class KeyStoreUtil {
             ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
             try {
                 outStream = Files.newOutputStream(file);
-                this.copyStreams(inStream, outStream);
+                inStream.transferTo(outStream);
             } finally {
                 if (inStream != null) {
                     inStream.close();
@@ -698,6 +708,48 @@ public class KeyStoreUtil {
                     os.close();
                 }
             }
+        }
+    }
+
+    /**
+     * Converts the passed public key as PEM file in SSH2 format, this is RFC
+     * RFC4251
+     */
+    public String convertPublicKeyToSSH2(PublicKey publicKey) throws Exception {
+        String publicKeyEncoded;
+        if (publicKey.getAlgorithm().equals("RSA")) {
+            RSAPublicKey rsaPublicKey = (RSAPublicKey) publicKey;
+            ByteArrayOutputStream memOutStream = new ByteArrayOutputStream();
+            DataOutputStream dataOutStream = new DataOutputStream(memOutStream);
+            dataOutStream.writeInt("ssh-rsa".getBytes().length);
+            dataOutStream.write("ssh-rsa".getBytes());
+            dataOutStream.writeInt(rsaPublicKey.getPublicExponent().toByteArray().length);
+            dataOutStream.write(rsaPublicKey.getPublicExponent().toByteArray());
+            dataOutStream.writeInt(rsaPublicKey.getModulus().toByteArray().length);
+            dataOutStream.write(rsaPublicKey.getModulus().toByteArray());
+            //encode without any line separator!
+            publicKeyEncoded = java.util.Base64.getEncoder().encodeToString(memOutStream.toByteArray());
+            return "ssh-rsa " + publicKeyEncoded;
+        } else if (publicKey.getAlgorithm().equals("DSA")) {
+            DSAPublicKey dsaPublicKey = (DSAPublicKey) publicKey;
+            DSAParams dsaParams = dsaPublicKey.getParams();
+            ByteArrayOutputStream memOutStream = new ByteArrayOutputStream();
+            DataOutputStream dataOutStream = new DataOutputStream(memOutStream);
+            dataOutStream.writeInt("ssh-dss".getBytes().length);
+            dataOutStream.write("ssh-dss".getBytes());
+            dataOutStream.writeInt(dsaParams.getP().toByteArray().length);
+            dataOutStream.write(dsaParams.getP().toByteArray());
+            dataOutStream.writeInt(dsaParams.getQ().toByteArray().length);
+            dataOutStream.write(dsaParams.getQ().toByteArray());
+            dataOutStream.writeInt(dsaParams.getG().toByteArray().length);
+            dataOutStream.write(dsaParams.getG().toByteArray());
+            dataOutStream.writeInt(dsaPublicKey.getY().toByteArray().length);
+            dataOutStream.write(dsaPublicKey.getY().toByteArray());
+            publicKeyEncoded = java.util.Base64.getEncoder().encodeToString(memOutStream.toByteArray());
+            return "ssh-dss " + publicKeyEncoded;
+        } else {
+            throw new IllegalArgumentException(
+                    this.rb.getResourceString("ssh2.algorithmn.not.supported", publicKey.getAlgorithm()));
         }
     }
 

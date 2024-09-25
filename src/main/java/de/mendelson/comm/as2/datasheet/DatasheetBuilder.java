@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 14    6.11.18 16:59 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 15    16.05.19 14:29 Heller $
 package de.mendelson.comm.as2.datasheet;
 
 import de.intarsys.pdf.cds.CDSRectangle;
@@ -22,7 +22,6 @@ import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.MecResourceBundle;
 import java.awt.Rectangle;
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.text.DateFormat;
@@ -44,7 +43,7 @@ import java.util.ResourceBundle;
  * Class that is responsible for the creation of a PDF file
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class DatasheetBuilder {
 
@@ -272,7 +271,7 @@ public class DatasheetBuilder {
                 this.rbMessage.getResourceString("encryption." + this.localInformation.getEncryption()));
         String defaultEncryptionRemote = this.remotePartner == null
                 ? this.rbMessage.getResourceString("encryption." + AS2Message.ENCRYPTION_3DES)
-                : this.rbMessage.getResourceString("encryption." + this.remotePartner.getSignType());
+                : this.rbMessage.getResourceString("encryption." + this.remotePartner.getEncryptionType());
         this.addFormFieldChoice(page, rowX3Abs, y - ygap - lineY, rowWidth3 - 2 * xgap, 10, 10, "ENCRYPTION",
                 this.getEncryptionAlgorithms(), defaultEncryptionRemote);
         lineY = 47;

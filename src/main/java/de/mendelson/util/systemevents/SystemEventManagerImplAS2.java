@@ -1,11 +1,13 @@
-//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 8     7.11.18 17:14 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 12    10.09.20 12:57 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.log.LogAccessDB;
 import de.mendelson.comm.as2.log.LogEntry;
+import de.mendelson.comm.as2.message.AS2Info;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
@@ -42,7 +44,7 @@ import java.util.ResourceBundle;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 12 $
  */
 public class SystemEventManagerImplAS2 extends SystemEventManager {
 
@@ -51,7 +53,6 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * localize your output
      */
     private MecResourceBundle rb = null;
-
 
     /**
      * Constructor without notification data, will perform a lookup in the db
@@ -85,6 +86,44 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
         this.storeEventToFile(event);
     }
 
+    /**
+     * 
+     * @param messageInfo might be null if this is unknown
+     * @param sender might be null if this is unknown
+     * @param receiver might be null if this is unknown
+     * @throws Exception 
+     */
+    public void newEventPostprocessingError(String errorText, String messageId,
+            Partner sender, Partner receiver, int processType, int eventType) throws Exception{
+        String template = "template_notification_postprocessing_error";
+        Properties replacement = new Properties();
+        replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
+        replacement.setProperty("${HOST}", this.getHostname());
+        replacement.setProperty("${EVENT_TYPE}", ProcessingEvent.getLocalizedEventType(eventType));        
+        replacement.setProperty("${PROCESS_TYPE}", ProcessingEvent.getLocalizedProcessType(processType));        
+        replacement.setProperty("${MESSAGEID}", messageId);
+        if( errorText == null ){
+            errorText = "[null]";
+        }
+        replacement.setProperty("${ERROR_MESSAGE}", errorText);
+        String senderName = "UNKNOWN";
+        String receiverName = "UNKNOWN";        
+        if( sender != null ){
+            senderName = sender.getName();
+        }
+        if( receiver != null ){
+            receiverName = receiver.getName();
+        }
+        replacement.setProperty("${SENDER}", senderName);
+        replacement.setProperty("${RECEIVER}", receiverName);
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_WARNING,
+                SystemEvent.ORIGIN_TRANSACTION,
+                SystemEvent.TYPE_POST_PROCESSING);
+        event.readFromNotificationTemplate(template, replacement);
+        this.storeEventToFile(event);
+    }
+    
+    
     /**
      * The system has imported a new certificate into the SSL keystore. The SSL
      * connector has to be restarted before these changes are taken
@@ -192,7 +231,32 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
             }
         }
     }
-    
+
+    /**
+     * Sends a notification if an outbound connection problem occured
+     *
+     * @param partner
+     */
+    public void newEventConnectionProblem(Partner receiver, AS2Info as2Info, String errorMessage, String hint) {
+        String template = "template_notification_connectionproblem";
+        Properties replacement = new Properties();
+        replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
+        replacement.setProperty("${HOST}", SystemEventManagerImplAS2.getHostname());
+        replacement.setProperty("${PARTNER}", receiver.getName());
+        replacement.setProperty("${URL}", receiver.getURL());
+        replacement.setProperty("${MESSAGE}", errorMessage);
+        replacement.setProperty("${MESSAGE_ID}", as2Info.getMessageId());
+        replacement.setProperty("${HINT}", hint);
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR, SystemEvent.ORIGIN_TRANSACTION,
+                SystemEvent.TYPE_CONNECTIVITY_ANY);
+        try {
+            event.readFromNotificationTemplate(template, replacement);
+            this.storeEventToFile(event);
+        } catch (Exception e) {
+            return;
+        }
+    }
+
     /**
      * There are situations where no database may be up and no notification will
      * work - like system shutdown or system startup Then use this method - it
@@ -264,10 +328,7 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * something unexpected happened to the system
      */
     public static void systemFailure(Throwable exception, int eventType) {
-        if (AS2Server.inShutdownProcess) {
-            return;
-        }
-        systemFailure(exception, eventType);
+        systemFailure(exception, eventType, null);
     }
 
     /**
@@ -275,12 +336,9 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * something unexpected happened to the system
      */
     public static void systemFailure(Throwable exception) {
-        if (AS2Server.inShutdownProcess) {
-            return;
-        }
-        systemFailure(exception, SystemEvent.TYPE_OTHER);
+        systemFailure(exception, SystemEvent.TYPE_OTHER, null);
     }
-    
+
     /**
      * Sends a notification if the receive quota has been exceeded
      *
@@ -325,6 +383,11 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
             replacement.setProperty("${DURATION}", String.valueOf(expireDuration));
         }
         replacement.setProperty("${ALIAS}", certificate.getAlias());
+        replacement.setProperty("${ISSUER}", certificate.getIssuerDN());
+        replacement.setProperty("${FINGERPRINT_SHA1}", certificate.getFingerPrintSHA1());
+        DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM);
+        replacement.setProperty("${VALID_FROM}", dateFormat.format(certificate.getNotBefore()));
+        replacement.setProperty("${VALID_TO}", dateFormat.format(certificate.getNotAfter()));
         SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_SYSTEM, SystemEvent.TYPE_CERTIFICATE_EXPIRE);
         event.readFromNotificationTemplate(templateName, replacement);
         this.storeEventToFile(event);
@@ -340,8 +403,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
         replacement.setProperty("${HOST}", this.getHostname());
         replacement.setProperty("${PARTNER}", initiator.getName());
         replacement.setProperty("${REQUEST_ID}", requestId);
-        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, 
-                SystemEvent.ORIGIN_TRANSACTION, 
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO,
+                SystemEvent.ORIGIN_TRANSACTION,
                 SystemEvent.TYPE_CERTIFICATE_EXCHANGE_REQUEST_RECEIVED);
         event.readFromNotificationTemplate(templateName, replacement);
         this.storeEventToFile(event);
@@ -375,8 +438,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
             }
         }
         replacement.setProperty("${CERTIFICATETECHDETAILS}", techInfo.toString());
-        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, 
-                SystemEvent.ORIGIN_SYSTEM, 
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO,
+                SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_CERTIFICATE_EXCHANGE_ANY);
         event.readFromNotificationTemplate(templateName, replacement);
         this.storeEventToFile(event);

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/BCCryptoHelper.java 116   5.11.18 9:59 Heller $
+//$Header: /as2/de/mendelson/util/security/BCCryptoHelper.java 118   11.03.20 11:16 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -122,7 +122,7 @@ import org.bouncycastle.util.encoders.Base64;
  * Utility class to handle bouncycastle cryptography
  *
  * @author S.Heller
- * @version $Revision: 116 $
+ * @version $Revision: 118 $
  */
 public class BCCryptoHelper {
 
@@ -306,17 +306,9 @@ public class BCCryptoHelper {
             byte[] bytes1 = Base64.decode(hashbase641);
             byte[] bytes2 = Base64.decode(hashbase642);
             DigestInputStream inStream1 = new DigestInputStream(new ByteArrayInputStream(bytes1), MessageDigest.getInstance(oid1, "BC"));
+            byte[] bytesHashValue1 = inStream1.readAllBytes();
             DigestInputStream inStream2 = new DigestInputStream(new ByteArrayInputStream(bytes2), MessageDigest.getInstance(oid2, "BC"));
-            ByteArrayOutputStream hashValueStream1 = new ByteArrayOutputStream();
-            ByteArrayOutputStream hashValueStream2 = new ByteArrayOutputStream();
-            this.copyStreams(inStream1, hashValueStream1);
-            this.copyStreams(inStream2, hashValueStream2);
-            inStream1.close();
-            inStream2.close();
-            hashValueStream1.close();
-            hashValueStream2.close();
-            byte[] bytesHashValue1 = hashValueStream1.toByteArray();
-            byte[] bytesHashValue2 = hashValueStream2.toByteArray();
+            byte[] bytesHashValue2 = inStream2.readAllBytes();
             if (bytesHashValue1.length != bytesHashValue2.length) {
                 return (false);
             }
@@ -330,26 +322,6 @@ public class BCCryptoHelper {
             e.printStackTrace();
             return (false);
         }
-    }
-
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[2048];
-        int read = 2048;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
     }
 
     /**
@@ -857,7 +829,7 @@ public class BCCryptoHelper {
         }
         CMSSignedData signedData = new CMSSignedData(signature);
         SignerInformationStore signers = signedData.getSignerInfos();
-        Collection signerCollection = signers.getSigners();
+        Collection<SignerInformation> signerCollection = signers.getSigners();
         Iterator<SignerInformation> iterator = signerCollection.iterator();
         while (iterator.hasNext()) {
             SignerInformation signerInfo = iterator.next();
@@ -1234,7 +1206,7 @@ public class BCCryptoHelper {
                 ASN1ObjectIdentifier objectIdentifier = new ASN1ObjectIdentifier(oid);
                 OutputEncryptor outputEncryptor = new JceCMSContentEncryptorBuilder(objectIdentifier).build();
                 cmsEnveloped = dataStreamGenerator.open(memBuffer, outputEncryptor);
-                this.copyStreams(rawStream, cmsEnveloped);
+                rawStream.transferTo(cmsEnveloped);
             } finally {
                 if (cmsEnveloped != null) {
                     cmsEnveloped.flush();
@@ -1251,7 +1223,7 @@ public class BCCryptoHelper {
                 ASN1ObjectIdentifier objectIdentifier = new ASN1ObjectIdentifier(oid);
                 OutputEncryptor outputEncryptor = new JceCMSContentEncryptorBuilder(objectIdentifier).build();
                 cmsEnveloped = dataStreamGenerator.open(fileBuffer, outputEncryptor);
-                this.copyStreams(rawStream, cmsEnveloped);
+                rawStream.transferTo(cmsEnveloped);
             } finally {
                 if (cmsEnveloped != null) {
                     cmsEnveloped.flush();
@@ -1265,7 +1237,7 @@ public class BCCryptoHelper {
             InputStream fileIn = null;
             try {
                 fileIn = Files.newInputStream(tempFile.toPath());
-                this.copyStreams(fileIn, encryptedStream);
+                fileIn.transferTo(encryptedStream);
             } finally {
                 if (fileIn != null) {
                     fileIn.close();
@@ -1333,7 +1305,7 @@ public class BCCryptoHelper {
                         new JceKeyTransEnvelopedRecipient(this.getPrivateKey(key)).setProvider("BC"));
             }
             InputStream encryptedContent = cmsEncrypted.getContentStream();
-            this.copyStreams(encryptedContent, bufferedDecrypted);
+            encryptedContent.transferTo(bufferedDecrypted);
             bufferedDecrypted.flush();
         } else {
             throw new GeneralSecurityException("Wrong key used to decrypt the data.");
@@ -1345,7 +1317,7 @@ public class BCCryptoHelper {
      */
     public void uncompressCMS(InputStream compressed, OutputStream uncompressed) throws Exception {
         CMSCompressedDataParser compressedParser = new CMSCompressedDataParser(new BufferedInputStream(compressed));
-        this.copyStreams(compressedParser.getContent(new ZlibExpanderProvider()).getContentStream(), uncompressed);
+        compressedParser.getContent(new ZlibExpanderProvider()).getContentStream().transferTo(uncompressed);
         uncompressed.flush();
     }
 
@@ -1358,7 +1330,7 @@ public class BCCryptoHelper {
         if (inMemory) {
             ByteArrayOutputStream memBuffer = new ByteArrayOutputStream();
             OutputStream cOut = generator.open(memBuffer, new ZlibCompressor());
-            this.copyStreams(uncompressed, cOut);
+            uncompressed.transferTo(cOut);
             cOut.flush();
             cOut.close();
             compressed.write(memBuffer.toByteArray());
@@ -1368,7 +1340,7 @@ public class BCCryptoHelper {
             try {
                 fileBuffer = Files.newOutputStream(tempFile.toPath());
                 OutputStream cOut = generator.open(fileBuffer, new ZlibCompressor());
-                this.copyStreams(uncompressed, cOut);
+                uncompressed.transferTo(cOut);
                 cOut.flush();
                 cOut.close();
             } finally {
@@ -1380,7 +1352,7 @@ public class BCCryptoHelper {
             InputStream fileIn = null;
             try {
                 fileIn = Files.newInputStream(tempFile.toPath());
-                this.copyStreams(fileIn, compressed);
+                fileIn.transferTo(compressed);
             } finally {
                 if (fileIn != null) {
                     fileIn.close();
@@ -1406,7 +1378,7 @@ public class BCCryptoHelper {
         if (inMemory) {
             ByteArrayOutputStream memBuffer = new ByteArrayOutputStream();
             OutputStream signedOut = generator.open(memBuffer, true);
-            this.copyStreams(unsigned, signedOut);
+            unsigned.transferTo(signedOut);
             signedOut.flush();
             signedOut.close();
             signed.write(memBuffer.toByteArray());
@@ -1417,7 +1389,7 @@ public class BCCryptoHelper {
             try {
                 fileBuffer = Files.newOutputStream(tempFile.toPath());
                 signedOut = generator.open(fileBuffer, true);
-                this.copyStreams(unsigned, signedOut);
+                unsigned.transferTo(signedOut);
             } finally {
                 if (signedOut != null) {
                     signedOut.flush();
@@ -1431,7 +1403,7 @@ public class BCCryptoHelper {
             InputStream fileIn = null;
             try {
                 fileIn = Files.newInputStream(tempFile.toPath());
-                this.copyStreams(fileIn, signed);
+                fileIn.transferTo(signed);
             } finally {
                 if (fileIn != null) {
                     fileIn.close();
@@ -1469,7 +1441,7 @@ public class BCCryptoHelper {
     public void removeSignatureCMS(InputStream signed, OutputStream unsigned, Certificate cert) throws Exception {
         CMSSignedDataParser parser = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider("BC").build(), signed);
         InputStream signedContent = parser.getSignedContent().getContentStream();
-        this.copyStreams(signedContent, unsigned);
+        signedContent.transferTo(unsigned);
         unsigned.flush();
     }
 

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/CertificateManager.java 40    1.10.18 16:15 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/CertificateManager.java 43    30.07.19 17:15 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -35,7 +35,7 @@ import javax.security.auth.x500.X500Principal;
  * Helper class to store
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 43 $
  */
 public class CertificateManager {
 
@@ -176,6 +176,15 @@ public class CertificateManager {
         return (this.getPrivateKey(certificate.getAlias()));
     }
 
+     /**
+     * Returns the public key for a passed fingerprint (SHA1). If the assigned
+     * certificate does not contain a public key an exception is thrown
+     */
+    public PublicKey getPublicKeyByFingerprintSHA1(byte[] fingerprintStrSHA1) throws Exception {
+        KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintStrSHA1);
+        return (this.getPublicKey(certificate.getAlias()));
+    }
+    
     /**
      * Returns the private key for a passed fingerprint (SHA1). If the assigned
      * certificate does not contain a private key an exception is thrown
@@ -187,6 +196,16 @@ public class CertificateManager {
         return (this.getPrivateKey(certificate.getAlias()));
     }
 
+    /**
+     * Returns the public key for a passed fingerprint (SHA1). If the assigned
+     * certificate does not contain a public key an exception is thrown
+     */
+    public PublicKey getPublicKeyByFingerprintSHA1(String fingerprintStrSHA1) throws Exception {
+        KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintStrSHA1);
+        return (this.getPublicKey(certificate.getAlias()));
+    }
+    
+    
     /**
      * Returns the public key or the private key for an alias.
      */
@@ -598,10 +617,8 @@ public class CertificateManager {
      * returns null if the fingerprint does not exist
      */
     public KeystoreCertificate getKeystoreCertificateByFingerprintSHA1(String fingerprintSHA1) {
-        //if there is a prio in the partners certificates, e.g. for AS2/CEM it could happen that
-        //a null request happends here. sample: A decryption request fails, the program tries
-        //a fallback with a second certificate (prio 2) ..but this one is not set --> a null is passed
-        if (fingerprintSHA1 == null) {
+        //just return null if the fingerprint string is invalid in any case
+        if (fingerprintSHA1 == null || fingerprintSHA1.trim().length() == 0 || !fingerprintSHA1.contains(":")) {
             return (null);
         }
         byte[] fingerprintSHA1Bytes = KeystoreCertificate.fingerprintStrToBytes(fingerprintSHA1);
@@ -609,13 +626,14 @@ public class CertificateManager {
     }
 
     /**
-     * Returns a list of certificates
+     * Returns a list of certificates, sorted by their name
      */
     public List<KeystoreCertificate> getKeyStoreCertificateList() {
         List<KeystoreCertificate> newList = new ArrayList<KeystoreCertificate>();
         synchronized (this.keyStoreCertificateList) {
             newList.addAll(this.keyStoreCertificateList);
         }
+        Collections.sort(newList);
         return (newList);
     }
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 19    22.10.18 15:29 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 21    22.08.19 10:26 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class NotificationImplAS2 extends Notification {
 
@@ -73,7 +73,7 @@ public class NotificationImplAS2 extends Notification {
     }
 
     /**
-     * Sens out the notification
+     * Sends out the notification
      */
     @Override
     public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) {
@@ -132,7 +132,10 @@ public class NotificationImplAS2 extends Notification {
                     new Object[]{                        
                         String.valueOf(systemEventsToNotifyUserOf.size())
                     }));
-            StringBuilder summary = new StringBuilder();
+            StringBuilder infoText = new StringBuilder();
+            infoText.append( this.rb.getResourceString("notification.summary.info"));
+            
+            StringBuilder summary = new StringBuilder();            
             for (SystemEvent singleEvent : systemEventsToNotifyUserOf) {
                 summary.append("[" + singleEvent.getHumanReadableTimestamp() + "]: ");
                 summary.append("(" + singleEvent.severityToTextLocalized().toUpperCase() + ")");
@@ -142,7 +145,10 @@ public class NotificationImplAS2 extends Notification {
                 summary.append("\n").append(singleEvent.getSubject());
                 summary.append("\n\n");
             }
-            event.setBody(summary.toString());
+            event.setBody(
+                    infoText.toString()
+                    + "\n\n\n"
+                    + summary.toString());
             try {
                 this.sendMail(AS2ServerVersion.getProductName(), event);
                 SystemEvent notificationSuccessEvent = new SystemEvent(SystemEvent.SEVERITY_INFO,

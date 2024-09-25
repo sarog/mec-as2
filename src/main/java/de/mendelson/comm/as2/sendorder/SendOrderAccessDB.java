@@ -1,15 +1,19 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderAccessDB.java 13    7.11.18 17:14 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderAccessDB.java 14    21.08.20 13:22 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.ObjectInput;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -25,7 +29,7 @@ import java.util.logging.Logger;
  * Accesses the queue for the internal send orders
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class SendOrderAccessDB {
 
@@ -37,6 +41,12 @@ public class SendOrderAccessDB {
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
 
     /**
+     * HSQLDB supports Java_Objects, PostgreSQL does not support it. Means there
+     * are different access methods required for Object access
+     */
+    private boolean databaseSupportsJavaObjects = true;
+
+    /**
      * Creates new message I/O log and connects to localhost
      *
      * @param host host to connect to
@@ -44,6 +54,86 @@ public class SendOrderAccessDB {
     public SendOrderAccessDB(Connection configConnection, Connection runtimeConnection) {
         this.configConnection = configConnection;
         this.runtimeConnection = runtimeConnection;
+        this.analyzeDatabaseMetadata(configConnection);
+    }
+
+    private void analyzeDatabaseMetadata(Connection connection) {
+        try {
+            DatabaseMetaData data = connection.getMetaData();
+            ResultSet result = null;
+            try {
+                result = data.getTypeInfo();
+                while (result.next()) {
+                    if (result.getString("TYPE_NAME").equalsIgnoreCase("bytea")) {
+                        databaseSupportsJavaObjects = false;
+                    }
+                }
+            } finally {
+                if (result != null) {
+                    result.close();
+                }
+            }
+        } catch (Exception e) {
+            //ignore
+        }
+    }
+
+    /**
+     * Reads a binary object from the database and returns a byte array that
+     * contains it. Will return null if the read data was null. Reading and
+     * writing binary objects differs relating the used database system
+     */
+    private Object readObjectStoredAsJavaObject(ResultSet result, String columnName) throws Exception {
+        if (this.databaseSupportsJavaObjects) {
+            Object object = result.getObject(columnName);
+            if (!result.wasNull()) {
+                return (object);
+            } else {
+                return (null);
+            }
+        } else {
+            byte[] bytes = result.getBytes(columnName);
+            if (!result.wasNull()) {
+                ObjectInputStream in = null;
+                try {
+                    in = new ObjectInputStream(new ByteArrayInputStream(bytes));
+                    Object object = in.readObject();
+                    return (object);
+                } finally {
+                    in.close();
+                }
+            }
+        }
+        return (null);
+    }
+
+    /**
+     * Sets text data as parameter to a stored procedure. The handling depends
+     * if the database supports java objects
+     *
+     */
+    private void setObjectParameterAsJavaObject(PreparedStatement statement, int index, Object obj) throws Exception {
+        if (this.databaseSupportsJavaObjects) {
+            if (obj == null) {
+                statement.setNull(index, Types.JAVA_OBJECT);
+            } else {
+                statement.setObject(index, obj);
+            }
+        } else {
+            if (obj == null) {
+                statement.setNull(index, Types.BINARY);
+            } else {
+                ObjectOutputStream out = null;
+                ByteArrayOutputStream memOut = new ByteArrayOutputStream();
+                try {
+                    out = new ObjectOutputStream(memOut);
+                    out.writeObject(obj);
+                } finally {
+                    out.close();
+                }
+                statement.setBytes(index, memOut.toByteArray());
+            }
+        }
     }
 
     public void delete(int dbId) {
@@ -78,7 +168,7 @@ public class SendOrderAccessDB {
             statement = this.runtimeConnection.prepareStatement(
                     "UPDATE sendorder SET nextexecutiontime=?,sendorder=?,orderstate=? WHERE id=?");
             statement.setLong(1, nextExecutionTime);
-            statement.setObject(2, order);
+            this.setObjectParameterAsJavaObject(statement, 2, order);
             statement.setInt(3, SendOrder.STATE_WAITING);
             //condition
             statement.setInt(4, order.getDbId());
@@ -105,7 +195,7 @@ public class SendOrderAccessDB {
             statement.setLong(1, System.currentTimeMillis());
             //execute as soon as possible
             statement.setLong(2, System.currentTimeMillis());
-            statement.setObject(3, order);
+            this.setObjectParameterAsJavaObject(statement, 3, order);
             statement.setInt(4, SendOrder.STATE_WAITING);
             statement.executeUpdate();
         } catch (Exception e) {
@@ -189,7 +279,7 @@ public class SendOrderAccessDB {
             while (result.next() && count < maxCount) {
                 Object orderObject = null;
                 try {
-                    orderObject = result.getObject("sendorder");
+                    orderObject = this.readObjectStoredAsJavaObject(result, "sendorder");
                 } catch (Throwable invalidClassExeption) {
                     //nop
                 }
@@ -204,9 +294,9 @@ public class SendOrderAccessDB {
                         this.setState(id, SendOrder.STATE_PROCESSING);
                         sendOrderList.add(order);
                         count++;
-                    }else if( orderObject instanceof byte[]){
+                    } else if (orderObject instanceof byte[]) {
                         //this happens if you read the serialized object from mySQL
-                        ByteArrayInputStream memIn = new ByteArrayInputStream((byte[])orderObject);
+                        ByteArrayInputStream memIn = new ByteArrayInputStream((byte[]) orderObject);
                         ObjectInput in = new ObjectInputStream(memIn);
                         SendOrder sendOrderObj = (SendOrder) in.readObject();
                         int id = result.getInt("id");

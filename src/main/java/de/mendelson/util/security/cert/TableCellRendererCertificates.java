@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 6     6/21/18 5:22p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 7     6.05.19 14:29 Heller $
 package de.mendelson.util.security.cert;
 
 import java.awt.Component;
 import java.awt.Color;
 import java.awt.Rectangle;
 import java.security.PrivateKey;
+import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
@@ -13,7 +14,7 @@ import javax.swing.table.TableCellRenderer;
  * Renders a certificate in a JTable column
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class TableCellRendererCertificates extends DefaultTableCellRenderer implements TableCellRenderer {
 
@@ -94,7 +95,7 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
         }
         try {
             PrivateKey key = this.manager.getPrivateKey(alias);
-            this.setIcon(TableModelCertificates.ICON_KEY);
+            this.setIcon(new ImageIcon(TableModelCertificates.ICON_KEY_MULTIRESOLUTION.toMinResolution(15)));
         } catch (Exception e) {
             KeystoreCertificate cert = this.manager.getKeystoreCertificate(alias);
             if (cert != null) {

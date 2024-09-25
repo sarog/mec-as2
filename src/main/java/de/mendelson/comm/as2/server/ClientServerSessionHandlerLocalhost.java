@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ClientServerSessionHandlerLocalhost.java 7     6/07/18 1:29p Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ClientServerSessionHandlerLocalhost.java 8     15.03.19 11:52 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.ClientServerSessionHandler;
 import de.mendelson.util.clientserver.messages.ServerLogMessage;
+import de.mendelson.util.systemevents.SystemEventManager;
 import java.net.InetSocketAddress;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -22,15 +23,16 @@ import org.apache.mina.core.session.IoSession;
  * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ClientServerSessionHandlerLocalhost extends ClientServerSessionHandler {
 
     private MecResourceBundle rb;
     private boolean allowAllClients = false;
 
-    public ClientServerSessionHandlerLocalhost(Logger logger, String[] validClientIds, boolean allowAllClients, int maxClients) {
-        super(logger, validClientIds, maxClients);
+    public ClientServerSessionHandlerLocalhost(Logger logger, String[] validClientIds, boolean allowAllClients, int maxClients,
+            SystemEventManager eventManager) {
+        super(logger, validClientIds, maxClients, eventManager);
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(

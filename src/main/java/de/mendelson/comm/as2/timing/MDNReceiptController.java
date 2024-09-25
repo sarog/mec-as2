@@ -1,11 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 28    7.12.18 9:55 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 30    25.04.19 14:32 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
-import de.mendelson.comm.as2.message.ExecuteShellCommand;
+import de.mendelson.comm.as2.message.postprocessingevent.ExecuteShellCommand;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
@@ -33,7 +34,7 @@ import java.util.logging.Logger;
  * Controlls the timed deletion of as2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 30 $
  */
 public class MDNReceiptController {
 
@@ -113,9 +114,7 @@ public class MDNReceiptController {
                                 //a message id may have more then one entry if the sender implemented a resend mechanism
                                 messageAccess.setMessageState(messageInfo.getMessageId(), AS2Message.STATE_PENDING, AS2Message.STATE_STOPPED);
                                 messageInfo.setState(AS2Message.STATE_STOPPED);
-                                //execute system command after send, will always execute the error command
-                                ExecuteShellCommand executor = new ExecuteShellCommand(this.configConnection, this.runtimeConnection);
-                                executor.executeShellCommandOnSend(messageInfo, null);
+                                ProcessingEvent.enqueueEventIfRequired(this.configConnection, this.runtimeConnection, messageInfo, null);
                                 //write status file
                                 MessageStoreHandler handler = new MessageStoreHandler(this.configConnection, this.runtimeConnection);
                                 handler.writeOutboundStatusFile(messageInfo);

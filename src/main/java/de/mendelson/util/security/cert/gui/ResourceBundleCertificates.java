@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 20    4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 22    11.11.20 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 22 $
  */
 public class ResourceBundleCertificates extends MecResourceBundle{
     
@@ -28,6 +28,7 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         
         {"display.ca.certs", "Show CA certificates" },        
         {"button.delete", "Delete key/certificate" },
+        {"button.delete.all.expired", "Delete all expired keys/certificates" },
         {"button.edit", "Rename alias" },
         {"button.newkey", "Import key" },
         {"button.newcertificate", "Import certificate" },
@@ -51,7 +52,7 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"label.key.export.pkcs12", "Export your own private key (PKCS#12) (for backup purpose only!)" },        
         {"label.keystore", "Keystore file:" },        
         {"title.signencrypt", "Avaliable certificates and keys (encryption, signature)" },
-        {"title.ssl", "Avaliable certificates and keys (SSL)" },                
+        {"title.ssl", "Avaliable certificates and keys (SSL/TLS)" },                
         {"button.ok", "Ok" },
         {"button.cancel", "Cancel" },
         {"filechooser.certificate.import", "Please select the certificate file for the import" },
@@ -80,6 +81,14 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"label.key.invalid", "This key is valid" },
         {"label.cert.valid", "This certificate is valid" },
         {"label.cert.invalid", "This certificate is invalid" },
+        {"warning.deleteallexpired.text", "Do you really want to delete {0} expired and unused entries?" },
+        {"warning.deleteallexpired.title", "Delete all expired, unused keys/certificates" },
+        {"warning.deleteallexpired.noneavailable.title", "None available" },
+        {"warning.deleteallexpired.noneavailable.text", "There are no expired and unused entries available to delete" },
+        {"success.deleteallexpired.title", "Delete expired, unused keys/certificates" },
+        {"success.deleteallexpired.text", "{0} expired and unused keys/certificates have been removed" },
+        {"warning.deleteallexpired.expired.but.used.title", "Used keys/certificates not deleted" },
+        {"warning.deleteallexpired.expired.but.used.text", "{0} keys/certificates are expired but still in use - the system will keep them" },
     };
     
 }

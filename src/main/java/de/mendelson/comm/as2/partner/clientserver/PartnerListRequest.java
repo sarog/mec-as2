@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListRequest.java 5     6/22/18 2:14p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListRequest.java 6     11.12.20 14:57 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
+import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.Serializable;
 /*
@@ -15,7 +16,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class PartnerListRequest extends ClientServerMessage implements Serializable {
 
@@ -31,13 +32,26 @@ public class PartnerListRequest extends ClientServerMessage implements Serializa
     private String additionalListOptionStr = null;
     private int additionalListOptionInt = -1;
     
+    /**Default: Request full partner data*/
+    public static final int DATA_COMPLETENESS_FULL = PartnerAccessDB.DATA_COMPLETENESS_FULL;
+    /**Just return the partner names and the AS2 id and the type - for fast UI requests*/
+    public static final int DATA_COMPLETENESS_NAME_AS2ID_TYPE = PartnerAccessDB.DATA_COMPLETENESS_NAMES_AS2ID_TYPE;
+    private int requestedDataCompleteness = DATA_COMPLETENESS_FULL;
+        
+    
     public PartnerListRequest() {
     }
 
     public PartnerListRequest(int listOption) {
         this.listOption = listOption;
+        this.requestedDataCompleteness = DATA_COMPLETENESS_FULL;
     }
 
+    public PartnerListRequest(int listOption, int dataCompleteness) {
+        this.listOption = listOption;
+        this.requestedDataCompleteness = dataCompleteness;
+    }
+    
     @Override
     public String toString() {
         return ("List partner");
@@ -83,5 +97,9 @@ public class PartnerListRequest extends ClientServerMessage implements Serializa
      */
     public void setAdditionalListOptionInt(int additionalListOptionInt) {
         this.additionalListOptionInt = additionalListOptionInt;
+    }
+    
+    public int getRequestedDataCompleteness(){
+        return( this.requestedDataCompleteness );
     }
 }

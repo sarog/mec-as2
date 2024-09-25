@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 11    14.12.18 13:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 16    4.06.19 12:46 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.message.AS2Info;
@@ -6,7 +6,7 @@ import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.util.MecResourceBundle;
-import java.awt.image.BaseMultiResolutionImage;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -15,7 +15,6 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
-
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -26,55 +25,46 @@ import javax.swing.table.AbstractTableModel;
  */
 /**
  * Model to display the message overview
+ *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 16 $
  */
 public class TableModelMessageDetails extends AbstractTableModel {
 
-    public static final ImageIcon ICON_IN = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/in64x64.gif")).getImage()
-    ));
-    public static final ImageIcon ICON_OUT = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/out64x64.gif")).getImage()            
-    ));
-    public static final ImageIcon ICON_MESSAGE = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/message64x64.gif")).getImage()            
-    ));
-    public static final ImageIcon ICON_SIGNAL_OK = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_ok64x64.gif")).getImage()            
-    ));
-    public static final ImageIcon ICON_SIGNAL_FAILURE = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/signal_failure64x64.gif")).getImage()            
-    ));
-    /**ResourceBundle to localize the headers*/
+    public static final int ROW_HEIGHT = 20;
+    protected static final int IMAGE_HEIGHT = ROW_HEIGHT-3;
+    
+    public static final ImageIcon ICON_IN 
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+            "/de/mendelson/comm/as2/message/loggui/in.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+    public static final ImageIcon ICON_OUT 
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+            "/de/mendelson/comm/as2/message/loggui/out.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+    public static final ImageIcon ICON_MESSAGE
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+            "/de/mendelson/comm/as2/message/loggui/message.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+    public static final ImageIcon ICON_SIGNAL_OK
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+            "/de/mendelson/comm/as2/message/loggui/signal_ok.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+    public static final ImageIcon ICON_SIGNAL_FAILURE
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+            "/de/mendelson/comm/as2/message/loggui/signal_failure.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+    /**
+     * ResourceBundle to localize the headers
+     */
     private MecResourceBundle rb = null;
-    /**ResourceBundle to localize the headers*/
+    /**
+     * ResourceBundle to localize the headers
+     */
     private MecResourceBundle rbMessage = null;
-    /**Format the date output*/
+    /**
+     * Format the date output
+     */
     private DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
     private final List<AS2Info> data = Collections.synchronizedList(new ArrayList<AS2Info>());
 
-    /** Creates new LogTableModel
+    /**
+     * Creates new LogTableModel
      */
     public TableModelMessageDetails() {
         super();
@@ -91,7 +81,9 @@ public class TableModelMessageDetails extends AbstractTableModel {
         }
     }
 
-    /**Passes data to the model and fires a table data update*/
+    /**
+     * Passes data to the model and fires a table data update
+     */
     public void passNewData(List<AS2Info> newData) {
         synchronized (this.data) {
             this.data.clear();
@@ -100,8 +92,11 @@ public class TableModelMessageDetails extends AbstractTableModel {
         this.fireTableDataChanged();
     }
 
-    /**Returns the data stored in the specific row
-     *@param row Row to look into*/
+    /**
+     * Returns the data stored in the specific row
+     *
+     * @param row Row to look into
+     */
     public AS2Info getRow(int row) {
         synchronized (this.data) {
             if (row > this.data.size() - 1) {
@@ -111,7 +106,9 @@ public class TableModelMessageDetails extends AbstractTableModel {
         }
     }
 
-    /**Number of rows to display*/
+    /**
+     * Number of rows to display
+     */
     @Override
     public int getRowCount() {
         synchronized (this.data) {
@@ -122,13 +119,16 @@ public class TableModelMessageDetails extends AbstractTableModel {
         }
     }
 
-    /**Number of cols to display*/
+    /**
+     * Number of cols to display
+     */
     @Override
     public int getColumnCount() {
         return (8);
     }
 
-    /**Returns a value at a specific position in the grid
+    /**
+     * Returns a value at a specific position in the grid
      */
     @Override
     public Object getValueAt(int row, int col) {
@@ -182,7 +182,9 @@ public class TableModelMessageDetails extends AbstractTableModel {
         return (null);
     }
 
-    /**Returns the name of every column
+    /**
+     * Returns the name of every column
+     *
      * @param col Column to get the header name of
      */
     @Override
@@ -208,19 +210,21 @@ public class TableModelMessageDetails extends AbstractTableModel {
         return (null);
     }
 
-    /**Set how to display the grid elements
+    /**
+     * Set how to display the grid elements
+     *
      * @param col requested column
      */
     @Override
     public Class getColumnClass(int col) {
         return (new Class[]{
-                    ImageIcon.class,
-                    String.class,
-                    ImageIcon.class,
-                    String.class,
-                    String.class,
-                    String.class,
-                    String.class,
-                    String.class,}[col]);
+            ImageIcon.class,
+            String.class,
+            ImageIcon.class,
+            String.class,
+            String.class,
+            String.class,
+            String.class,
+            String.class,}[col]);
     }
 }

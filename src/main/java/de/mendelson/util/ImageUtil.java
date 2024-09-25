@@ -1,18 +1,25 @@
-//$Header: /chessopening/de/mendelson/util/ImageUtil.java 5     4/28/17 3:46p Heller $
+//$Header: /converteride/de/mendelson/util/ImageUtil.java 8     4.12.19 15:45 Heller $
 package de.mendelson.util;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
-import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
+import java.awt.image.BufferedImageOp;
+import java.awt.image.ConvolveOp;
 import java.awt.image.FilteredImageSource;
 import java.awt.image.ImageFilter;
+import java.awt.image.Kernel;
+import java.util.List;
 import javax.swing.GrayFilter;
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
 
@@ -27,14 +34,9 @@ import javax.swing.ImageIcon;
  * Class that contains routines for the image processing
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class ImageUtil {
-
-    /**
-     * Composite used to paint the "hidden" element transparent
-     */
-    private Composite compositeTransparent = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
 
     /**
      * Replaces a single color in the passed image and returns the new one
@@ -111,9 +113,7 @@ public class ImageUtil {
                 icon.getIconWidth(),
                 icon.getIconHeight(),
                 BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = (Graphics2D) image.getGraphics();
-        g.setComposite(this.compositeTransparent);
-        g.drawImage(icon.getImage(), 0, 0, null);
+        image = this.setOpacity(image, 0.5f);
         return (new ImageIcon(image));
     }
 
@@ -134,7 +134,7 @@ public class ImageUtil {
      * Scales a passed image icon to a new size and returns this
      */
     public ImageIcon scaleWidthKeepingProportions(ImageIcon icon, int newWidth) {
-        BufferedImage sourceImage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage sourceImage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics g = sourceImage.createGraphics();
         icon.paintIcon(null, g, 0, 0);
         g.dispose();
@@ -146,48 +146,121 @@ public class ImageUtil {
      * Scales a passed image icon to a new size and returns this
      */
     public ImageIcon scaleHeightKeepingProportions(ImageIcon icon, int newHeight) {
-        BufferedImage sourceImage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_RGB);
+        BufferedImage sourceImage = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
         Graphics g = sourceImage.createGraphics();
         icon.paintIcon(null, g, 0, 0);
         g.dispose();
         BufferedImage targetImage = this.scaleHeightKeepingProportions(sourceImage, newHeight);
         return (new ImageIcon(targetImage));
     }
-    
+
     /**
-     * Scales a passed buffered image to a new size and returns this - keeping the proportions
+     * Scales a passed buffered image to a new size and returns this - keeping
+     * the proportions
      *
      * @return
      */
     public BufferedImage scale(BufferedImage sourceImage, int newWidth, int newHeight) {
         BufferedImage targetImage = new BufferedImage(newWidth, newHeight, sourceImage.getType());
         Graphics2D g = targetImage.createGraphics();
-        g.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+        RenderingHints renderingHints = g.getRenderingHints();
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY));
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC));
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
         g.drawImage(sourceImage, 0, 0, newWidth, newHeight, 0, 0, sourceImage.getWidth(),
                 sourceImage.getHeight(), null);
         g.dispose();
-        return( targetImage);
+        return (targetImage);
     }
-    
-     /**
+
+    /**
      * Scales a passed buffered image to a new width and returns this
      *
      * @return
      */
     public BufferedImage scaleWidthKeepingProportions(BufferedImage sourceImage, int newWidth) {
-        double scaleFactor = (double)newWidth/(double)sourceImage.getWidth();
-        return( this.scale( sourceImage, (int)(sourceImage.getWidth()*scaleFactor), (int)(sourceImage.getHeight()*scaleFactor)));
+        double scaleFactor = (double) newWidth / (double) sourceImage.getWidth();
+        return (this.scale(sourceImage, (int) (sourceImage.getWidth() * scaleFactor), (int) (sourceImage.getHeight() * scaleFactor)));
     }
-    
+
     /**
      * Scales a passed buffered image to a new width and returns this
      *
      * @return
      */
     public BufferedImage scaleHeightKeepingProportions(BufferedImage sourceImage, int newHeight) {
-        double scaleFactor = (double)newHeight/(double)sourceImage.getHeight();
-        return( this.scale( sourceImage, (int)(sourceImage.getWidth()*scaleFactor), (int)(sourceImage.getHeight()*scaleFactor)));
+        double scaleFactor = (double) newHeight / (double) sourceImage.getHeight();
+        return (this.scale(sourceImage, (int) (sourceImage.getWidth() * scaleFactor), (int) (sourceImage.getHeight() * scaleFactor)));
     }
-   
-    
+
+    public BufferedImage drawCenteredImageInImage(BufferedImage backgroundImage, BufferedImage frontImage) {
+        Graphics2D graphics = backgroundImage.createGraphics();
+        int frontX = (backgroundImage.getWidth() / 2) - (frontImage.getWidth() / 2);
+        int frontY = (backgroundImage.getHeight() / 2) - (frontImage.getHeight() / 2);
+        graphics.drawImage(
+                frontImage,
+                frontX, frontY, null);
+        graphics.dispose();
+        return (backgroundImage);
+    }
+
+    public BufferedImage blur(BufferedImage image) {
+        Kernel kernel = new Kernel(3, 3,
+                new float[]{
+                    1f / 9f, 1f / 9f, 1f / 9f,
+                    1f / 9f, 1f / 9f, 1f / 9f,
+                    1f / 9f, 1f / 9f, 1f / 9f});
+        BufferedImageOp op = new ConvolveOp(kernel);
+        image = op.filter(image, null);
+        return (image);
+    }
+
+    public BufferedImage setOpacity(BufferedImage source, float opacity) {
+        BufferedImage newImage = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+        Graphics2D graphics = newImage.createGraphics();
+        graphics.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC_OVER, opacity));
+        graphics.drawImage(source, 0, 0, null);
+        graphics.dispose();
+        return (newImage);
+    }
+
+    /**
+     * Generates a disabled image from a passed MultiResolutionImage.
+     *
+     * @param sourceImage
+     * @return
+     */
+    public static MendelsonMultiResolutionImage generateDisabledImage(MendelsonMultiResolutionImage sourceImageMultiResolution) {
+        List<Image> sourceImageList = sourceImageMultiResolution.getResolutionVariants();
+        Image[] disabledImageArray = new Image[sourceImageList.size()];
+        for (int i = 0; i < sourceImageList.size(); i++) {
+            disabledImageArray[i] = GrayFilter.createDisabledImage(sourceImageList.get(i));
+        }
+        MendelsonMultiResolutionImage disabledImage = new MendelsonMultiResolutionImage(disabledImageArray);
+        return (disabledImage);
+    }
+
+    public static ImageIcon iconToImageIcon(Icon icon) {
+        if (icon instanceof ImageIcon) {
+            return (ImageIcon) icon;
+        } else {
+            int w = icon.getIconWidth();
+            int h = icon.getIconHeight();
+            GraphicsEnvironment ge
+                    = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice gd = ge.getDefaultScreenDevice();
+            GraphicsConfiguration gc = gd.getDefaultConfiguration();
+            BufferedImage image = gc.createCompatibleImage(w, h);
+            Graphics2D g = image.createGraphics();
+            icon.paintIcon(null, g, 0, 0);
+            g.dispose();
+            return (new ImageIcon(image));
+        }
+    }
+
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 18    6.12.18 16:26 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 19    11.06.20 10:21 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -29,7 +29,7 @@ import java.util.logging.Logger;
  * Sender class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class SendOrderSender {
 
@@ -59,14 +59,14 @@ public class SendOrderSender {
      */
     public AS2Message send(CertificateManager certificateManager, Partner sender,
             Partner receiver, Path[] files, String[] originalFilenames, String userdefinedId,
-            String subject) {
+            String subject, String[] payloadContentTypes) {
         try {
             long startProcessTime = System.currentTimeMillis();
             AS2MessageCreation messageCreation = new AS2MessageCreation(certificateManager, certificateManager);
             messageCreation.setLogger(this.logger);
             messageCreation.setServerResources(this.configConnection, this.runtimeConnection);            
             AS2Message message = messageCreation.createMessage(sender, receiver, 
-                    files, originalFilenames, userdefinedId, subject);
+                    files, originalFilenames, userdefinedId, subject, payloadContentTypes);
             StringBuilder filenames = new StringBuilder();
             for (Path file : files) {
                 if (filenames.length() > 0) {
@@ -122,12 +122,13 @@ public class SendOrderSender {
      * and https://tools.ietf.org/html/draft-meadors-multiple-attachments-ediint-11 the "MUST" 
      * changed to "SHOULD" - which means that batch EDI data processing is possible since then
      *
+     * @param payloadContentTypes May be null - then the payload content type defined in the receiver is taken
      * @return NULL in the case of an error
      */
     public AS2Message send(CertificateManager certificateManager, Partner sender,
-            Partner receiver, File file, String userdefinedId, String subject) {
+            Partner receiver, File file, String userdefinedId, String subject, String[] payloadContentTypes) {
         return (this.send(certificateManager, sender, receiver, new Path[]{file.toPath()}, null, userdefinedId,
-                subject));
+                subject, payloadContentTypes ));
     }
 
     /**

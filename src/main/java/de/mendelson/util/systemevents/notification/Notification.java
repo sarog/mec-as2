@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/Notification.java 19    13.12.18 15:42 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/notification/Notification.java 20    6.09.19 15:41 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.systemevents.SystemEvent;
@@ -33,7 +33,7 @@ import javax.mail.internet.MimeMessage;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 20 $
  */
 public abstract class Notification {
 
@@ -91,7 +91,7 @@ public abstract class Notification {
      * Returns the footer that should be added to the notification mail
      */
     public abstract String getNotificationFooter();
-
+    
     /**
      * Returns the default session for the mail send process
      */
@@ -124,7 +124,8 @@ public abstract class Notification {
         }
         return (session);
     }
-
+    
+    
     /**
      * Sends out the notification to the user
      */

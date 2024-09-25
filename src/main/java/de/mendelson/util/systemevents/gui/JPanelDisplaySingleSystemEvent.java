@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 3     18.10.18 16:19 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 5     26.09.19 9:37 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -22,11 +22,10 @@ import javax.swing.JPanel;
  * Panel that takes a single system event and displays it
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class JPanelDisplaySingleSystemEvent extends JPanel {
 
-    private static final ImageIcon ICON_EMPTY_24x24 = new ImageIcon(SystemEvent.class.getResource("/de/mendelson/util/systemevents/gui/empty24x24.gif"));
     private MecResourceBundle rb;
     private DateFormat detailedDateTimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
@@ -57,8 +56,8 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
     public void displayNoSelection() {
         this.jTextFieldSubjectContent.setText("");
         this.jEditorPaneEventBody.setText(null);
-        this.jLabelOrigin.setIcon(ICON_EMPTY_24x24);
-        this.jLabelSeverity.setIcon(ICON_EMPTY_24x24);
+        this.jLabelOrigin.setIcon(null);
+        this.jLabelSeverity.setIcon(null);
         this.jLabelEventDateContent.setText("--");
         this.jLabelEventTypeContent.setText("--");
         this.jTextFieldEventIdContent.setText("--");
@@ -69,8 +68,8 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
     public void displayEvent(SystemEvent event) {
         this.jTextFieldSubjectContent.setText(event.getSubject());
         this.jEditorPaneEventBody.setText(event.getBody());
-        this.jLabelOrigin.setIcon(event.getOriginIcon24p());
-        this.jLabelSeverity.setIcon(event.getSeverityIcon24p());
+        this.jLabelOrigin.setIcon(event.getOriginIconMultiResolution(24));
+        this.jLabelSeverity.setIcon(event.getSeverityIconMultiResolution(24));
         if (event.getUser().equals(SystemEvent.USER_SERVER_PROCESS)) {
             this.jLabelEventOwnerContent.setText(this.rb.getResourceString("user.server.process"));
         } else {
@@ -137,16 +136,12 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
         add(jTextFieldSubjectContent, gridBagConstraints);
-
-        jLabelSeverity.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/empty24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(15, 5, 5, 5);
         add(jLabelSeverity, gridBagConstraints);
-
-        jLabelOrigin.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/empty24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;

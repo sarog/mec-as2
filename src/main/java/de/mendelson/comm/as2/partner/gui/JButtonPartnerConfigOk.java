@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 2     4/03/18 11:50a Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 4     18.12.20 10:40 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -6,6 +6,7 @@ import java.awt.Color;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 /*
@@ -19,10 +20,12 @@ import javax.swing.UIManager;
  * Ok Button for the partner config
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class JButtonPartnerConfigOk extends JButton {
 
+    //HEX #FFCCCC. Do not just modify this as the partner icons have the same
+    //background color in an error case. This has to reworked, too if this value is changed.
     private final Color errorColor = new Color(255, 204, 204);
     private JTreePartner tree;
     private JTextField jTextFieldName;
@@ -87,13 +90,35 @@ public class JButtonPartnerConfigOk extends JButton {
         return (error);
     }
 
+    /**Returns the number of partner names found in the passed partner list*/
+    private int getNameCountInList( String partnerName, List<Partner> partnerList){
+        int count = 0;
+        for( Partner partner:partnerList){
+            if( partner.getName().equals(partnerName)){
+                count++;
+            }
+        }
+        return( count );
+    }
+    
+    /**Returns the number of as2 ids names found in the passed partner list*/
+    private int getAS2IdCountInList( String as2Id, List<Partner> partnerList){
+        int count = 0;
+        for( Partner partner:partnerList){
+            if( partner.getAS2Identification().equals(as2Id)){
+                count++;
+            }
+        }
+        return( count );
+    }
+    
     /**
      * Checks if new name is unique and changes color in textfield if not
      */
-    private boolean checkForNonUniqueValues(Partner checkPartner) {
+    private boolean checkForNonUniqueValues(Partner checkPartner, List<Partner> partnerList) {
         boolean error = false;
         String newName = checkPartner.getName();
-        int nameCount = this.tree.getPartnerCountByName(newName);
+        int nameCount = this.getNameCountInList(newName, partnerList);
         if (newName != null && newName.trim().length() > 0 && nameCount == 1) {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
@@ -107,7 +132,7 @@ public class JButtonPartnerConfigOk extends JButton {
             error = true;
         }
         String newAS2Id = checkPartner.getAS2Identification();
-        int idCount = this.tree.getPartnerCountByAS2Id(newAS2Id);
+        int idCount = this.getAS2IdCountInList(newAS2Id, partnerList);
         if (newAS2Id != null && newAS2Id.trim().length() > 0 && idCount == 1) {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
@@ -126,9 +151,9 @@ public class JButtonPartnerConfigOk extends JButton {
     /**
      * Checks if new name is unique and changes color in textfield if not
      */
-    private boolean checkForNonUniqueOrInvalidValues(Partner checkPartner) {
+    private boolean checkForNonUniqueOrInvalidValues(Partner checkPartner, List<Partner> partnerList) {
         boolean error = false;
-        error = error | this.checkForNonUniqueValues(checkPartner);
+        error = error | this.checkForNonUniqueValues(checkPartner, partnerList);
         error = error | this.checkURLProtocol(checkPartner);
         return (error);
     }
@@ -138,20 +163,26 @@ public class JButtonPartnerConfigOk extends JButton {
             this.setEnabled(false);
             return;
         } else {
-            boolean errorInConfig = false;
-            List<Partner> partnerList = this.tree.getAllPartner();
-            for (Partner checkPartner : partnerList) {
-                boolean error = this.checkForNonUniqueOrInvalidValues(checkPartner);
-                boolean hasErrorBefore = checkPartner.hasConfigError();
-                if (error != hasErrorBefore) {
-                    checkPartner.setConfigError(error);
-                    this.tree.partnerChanged(checkPartner);
+            final List<Partner> partnerList = this.tree.getAllPartner();
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    boolean errorInConfig = false;
+                    for (Partner checkPartner : partnerList) {
+                        boolean error = JButtonPartnerConfigOk.this.checkForNonUniqueOrInvalidValues(checkPartner, partnerList);
+                        boolean hasErrorBefore = checkPartner.hasConfigError();
+                        if (error != hasErrorBefore) {
+                            checkPartner.setConfigError(error);
+                            JButtonPartnerConfigOk.this.tree.partnerChanged(checkPartner);
+                        }
+                        if (error) {
+                            errorInConfig = true;
+                        }
+                    }
+                    JButtonPartnerConfigOk.this.setEnabled(!errorInConfig);
                 }
-                if (error) {
-                    errorInConfig = true;
-                }
-            }
-            this.setEnabled(!errorInConfig);
+            };
+            SwingUtilities.invokeLater(runnable);
         }
     }
 

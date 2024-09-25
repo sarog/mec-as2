@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_de.java 1     21.09.18 9:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_de.java 2     20.08.20 15:47 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleDBDriverManager_de extends MecResourceBundle {
 
@@ -29,12 +29,12 @@ public class ResourceBundleDBDriverManager_de extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"creating.database." + DBDriverManager.DB_RUNTIME, "Erstelle Laufzeitdatenbank"},
-        {"creating.database." + DBDriverManager.DB_CONFIG, "Erstelle Konfigurationsdatenbank"},
-        {"database.creation.success." + DBDriverManager.DB_RUNTIME, "Die Laufzeitdatenbank wurde erfolgreich erstellt" },
-        {"database.creation.success." + DBDriverManager.DB_CONFIG, "Die Konfigurationsdatenbank wurde erfolgreich erstellt" },
-        {"database.creation.failed." + DBDriverManager.DB_RUNTIME, "Ein Fehler trat beim Erstellen der Laufzeitdatenbank auf" },
-        {"database.creation.failed." + DBDriverManager.DB_CONFIG, "Ein Fehler trat beim Erstellen der Konfigurationsdatenbank auf" },
+        {"creating.database." + IDBDriverManager.DB_RUNTIME, "Erstelle Laufzeitdatenbank"},
+        {"creating.database." + IDBDriverManager.DB_CONFIG, "Erstelle Konfigurationsdatenbank"},
+        {"database.creation.success." + IDBDriverManager.DB_RUNTIME, "Die Laufzeitdatenbank wurde erfolgreich erstellt" },
+        {"database.creation.success." + IDBDriverManager.DB_CONFIG, "Die Konfigurationsdatenbank wurde erfolgreich erstellt" },
+        {"database.creation.failed." + IDBDriverManager.DB_RUNTIME, "Ein Fehler trat beim Erstellen der Laufzeitdatenbank auf" },
+        {"database.creation.failed." + IDBDriverManager.DB_CONFIG, "Ein Fehler trat beim Erstellen der Konfigurationsdatenbank auf" },
     };
 
 }

@@ -1,7 +1,7 @@
-//$Header: /as2/de/mendelson/upgrade/DBScriptTo20.java 6     7.11.18 10:40 Heller $
+//$Header: /as2/de/mendelson/upgrade/DBScriptTo20.java 8     20.08.20 15:47 Heller $
 package de.mendelson.upgrade;
 
-import de.mendelson.comm.as2.database.DBDriverManager;
+import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
 import de.mendelson.util.ConsoleProgressBar;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -21,6 +21,7 @@ import java.sql.Statement;
 import java.util.Properties;
 import org.hsqldb.Server;
 import org.hsqldb.persist.HsqlProperties;
+import de.mendelson.comm.as2.database.IDBDriverManager;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -32,10 +33,23 @@ import org.hsqldb.persist.HsqlProperties;
 /**
  * Update as2, must be applied for versions < 2012
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class DBScriptTo20 {
+    
+    private DBDriverManagerHSQL dbDriverManager = new DBDriverManagerHSQL();
 
+    private void performUpdate()throws Throwable{
+        boolean updateRequired = this.updateIsRequired();
+            if (updateRequired) {
+                this.startUpgrade(this.dbDriverManager.getDBName(IDBDriverManager.DB_CONFIG));
+                this.startUpgrade(this.dbDriverManager.getDBName(IDBDriverManager.DB_RUNTIME));
+                System.out.println("Upgrade complete. Please start the AS2 now.");
+            } else {
+                System.out.println("No upgrade required.");
+            }
+    }
+    
     private Connection createConnection(String hostName, String dbName) {
         if (hostName.toLowerCase().equals("localhost")) {
             hostName = "127.0.0.1";
@@ -65,7 +79,6 @@ public class DBScriptTo20 {
         if (!dbFile.exists()) {
             return;
         }
-        DBDriverManager.registerDriver();
         HsqlProperties hsqlProperties = new HsqlProperties();
         hsqlProperties.setProperty("server.port", 3336);
         hsqlProperties.setProperty("server.database.0", "file:" + dbName);
@@ -94,8 +107,8 @@ public class DBScriptTo20 {
     }
 
     public boolean updateIsRequired() throws Exception {
-        return (this.updateIsRequired(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG))
-                || this.updateIsRequired(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME)));
+        return (this.updateIsRequired(dbDriverManager.getDBName(IDBDriverManager.DB_CONFIG))
+                || this.updateIsRequired(dbDriverManager.getDBName(IDBDriverManager.DB_RUNTIME)));
     }
 
     private boolean updateIsRequired(String dbName) throws Exception {
@@ -516,14 +529,7 @@ public class DBScriptTo20 {
     public static final void main(String args[]) {
         DBScriptTo20 updater = new DBScriptTo20();
         try {
-            boolean updateRequired = updater.updateIsRequired();
-            if (updateRequired) {
-                updater.startUpgrade(DBDriverManager.getDBName(DBDriverManager.DB_CONFIG));
-                updater.startUpgrade(DBDriverManager.getDBName(DBDriverManager.DB_RUNTIME));
-                System.out.println("Upgrade complete. Please start the AS2 now.");
-            } else {
-                System.out.println("No upgrade required.");
-            }
+            updater.performUpdate();
         } catch (Throwable e) {
             e.printStackTrace();
             System.out.println((new StringBuilder()).append("Unable to upgrade the system: ").append(e.getMessage()).toString());

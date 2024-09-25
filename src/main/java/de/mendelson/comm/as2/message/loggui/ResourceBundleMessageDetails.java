@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails.java 18    6/25/18 2:33p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails.java 19    5.03.20 17:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class ResourceBundleMessageDetails extends MecResourceBundle{
     
@@ -37,7 +37,7 @@ public class ResourceBundleMessageDetails extends MecResourceBundle{
         {"transactionstate.error.out", "<HTML>You sent the {0} message successfully to your partner \"{1}\" but he was unable to process it and he answered with the error state [{2}]</HTML>" },
         {"transactionstate.error.in", "<HTML>You received a {0} message from your partner \"{1}\" but was unable to process it and answered him with the error state [{2}]</HTML>" },
         {"transactionstate.error.unknown-trading-partner", "<HTML>You and your partner have different AS2 ids for the partner of the relationship in the system configuration. The following ids have been used: \"{0}\" (message sender), \"{1}\" (message receiver)</HTML>" },
-        {"transactionstate.error.authentication-failed", "<HTML>The AS2 message receiver was unable to verify the senders signature in the transmitted AS2 data. This is mainly a configuration problem as sender and receiver have to use the same certificate for this process.</HTML>" },
+        {"transactionstate.error.authentication-failed", "<HTML>The AS2 message receiver was unable to verify the senders signature in the transmitted AS2 data. This is mainly a configuration problem as sender and receiver have to use the same certificate for this process. Please also have a look at the MDN details found in the log - this might contain further information.</HTML>" },
         {"transactionstate.error.decompression-failed", "<HTML>The message receiver was unable to decompress the transmitted message</HTML>" },
         {"transactionstate.error.insufficient-message-security", "<HTML>The message receiver expected a higher security level for the transmitted AS2 message (e.g. encrypted data instead of raw data transmission)</HTML>" },
         {"transactionstate.error.unexpected-processing-error", "<HTML>This is a very generic error. The message receiver was unable to process the received AS2 message for unknown reason.</HTML>" },

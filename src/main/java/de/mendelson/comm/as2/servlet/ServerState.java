@@ -1,4 +1,4 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 10    1-11-16 12:19p Heller $
+///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 11    9.10.19 11:30 Heller $
 package de.mendelson.comm.as2.servlet;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,7 +12,7 @@ package de.mendelson.comm.as2.servlet;
  * Servlet to display the server state
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
@@ -68,6 +68,7 @@ public class ServerState extends HttpServlet {
         builder.append("    <head>");
         builder.append("        <META NAME=\"description\" CONTENT=\"mendelson-e-commerce GmbH: Your EAI partner\">");
         builder.append("        <META NAME=\"copyright\" CONTENT=\"mendelson-e-commerce GmbH\">");
+        builder.append("        <META NAME=\"robots\" CONTENT=\"NOINDEX,NOFOLLOW,NOARCHIVE,NOSNIPPET\">");
         builder.append("        <meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
         builder.append("        <title>").append(AS2ServerVersion.getProductName()).append("</title>");
         builder.append("        <link rel=\"shortcut icon\" href=\"images/mendelson_favicon.png\" type=\"image/x-icon\" />");
@@ -128,6 +129,6 @@ public class ServerState extends HttpServlet {
      */
     @Override
     public String getServletInfo() {
-        return "Display AS2 server state";
+        return "Display mendelson AS2 server state";
     }
 }

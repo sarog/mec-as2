@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 4     5.12.18 16:16 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 5     17.09.19 12:07 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import java.io.BufferedReader;
@@ -40,7 +40,7 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public abstract class ServerSideLogfileSearch {
 
@@ -136,7 +136,7 @@ public abstract class ServerSideLogfileSearch {
             //finally perform the search
             TopDocs hits = searcher.search(query, filter.getMaxResults(), sortByMillisecs);
             //System.out.println("Searched in " + (System.currentTimeMillis()-startTime) + "ms");
-            if (hits.totalHits > 0) {
+            if (hits.totalHits.value > 0) {
                 for (ScoreDoc scoreDoc : hits.scoreDocs) {
                     Document doc = multiReader.document(scoreDoc.doc);
                     try {
@@ -239,7 +239,7 @@ public abstract class ServerSideLogfileSearch {
             }
             //finally rewrite the index
             indexWriter.commit();
-            indexedLines = indexWriter.numDocs();
+            indexedLines = indexWriter.getDocStats().numDocs;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {

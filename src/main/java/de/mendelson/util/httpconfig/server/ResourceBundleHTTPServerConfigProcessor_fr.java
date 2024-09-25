@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_fr.java 7     9.10.18 12:29 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_fr.java 9     25.06.20 10:36 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleHTTPServerConfigProcessor_fr extends MecResourceBundle {
 
@@ -41,6 +41,10 @@ public class ResourceBundleHTTPServerConfigProcessor_fr extends MecResourceBundl
         {"webapp.as4.war", "mendelson AS4 Servlet de récepteur"},
         {"webapp.webas2.war", "mendelson AS2 Server Web Monitoring"},
         {"webapp.as2-sample.war", "Exemples d''API AS2 mendelson"},
+        {"webapp.as4-sample.war", "Exemples d''API AS4 mendelson"},
         {"info.cipher", "Les codes suivants sont pris en charge par le serveur HTTP sous-jacent.\nLes modèles supportés dépendent de votre Java VM ({1}).\nVous pouvez désactiver les différents chiffres dans le fichier de configuration\n(\"{0}\")."},
-        {"info.protocols", "Les protocoles suivants sont pris en charge par le serveur HTTP sous-jacent.\nLes protocoles pris en charge dépendent de votre VM Java utilisé ({1}).\nVous pouvez désactiver les protocoles individuels dans le fichier de configuration\n(\"{0}\")."},};
+        {"info.cipher.howtochange", "Pour désactiver certains chiffres pour les connexions entrantes, veuillez modifier le fichier de configuration de votre serveur HTTP intégré ({0}) avec un éditeur de texte. Veuillez rechercher la chaîne <Set name=\"ExcludeCipherSuites\">, ajouter le chiffre à exclure et redémarrer le programme."},
+        {"info.protocols", "Les protocoles suivants sont pris en charge par le serveur HTTP sous-jacent.\nLes protocoles pris en charge dépendent de votre VM Java utilisé ({1}).\nVous pouvez désactiver les protocoles individuels dans le fichier de configuration\n(\"{0}\")."},
+        {"info.protocols.howtochange", "Pour désactiver certains protocoles en entrée, veuillez modifier le fichier de configuration de votre serveur HTTP intégré ({0}) avec un éditeur de texte. Veuillez rechercher la chaîne <Set name=\"ExcludeProtocols\">, ajouter le protocole à exclure et redémarrer le programme."},
+    };
 }

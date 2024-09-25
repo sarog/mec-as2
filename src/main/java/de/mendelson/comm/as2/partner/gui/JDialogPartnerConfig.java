@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 65    9.01.19 11:49 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 75    18.12.20 14:25 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -6,6 +6,7 @@ import de.mendelson.comm.as2.clientserver.message.PartnerConfigurationChanged;
 import de.mendelson.util.modulelock.LockClientInformation;
 import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.comm.as2.partner.PartnerSystem;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.clientserver.PartnerModificationRequest;
@@ -13,6 +14,7 @@ import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.LayoutManagerJToolbar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.AllowModificationCallback;
 import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.clients.fileoperation.FileOperationClient;
@@ -20,6 +22,8 @@ import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewReque
 import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewResponse;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.uinotification.UINotification;
+import java.awt.BorderLayout;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -27,6 +31,8 @@ import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.BorderFactory;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -46,7 +52,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * Dialog to configure the partner of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 65 $
+ * @version $Revision: 75 $
  */
 public class JDialogPartnerConfig extends JDialog {
 
@@ -67,6 +73,12 @@ public class JDialogPartnerConfig extends JDialog {
     private AS2StatusBar status;
     private List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
     private LockClientInformation lockKeeper;
+    private final static MendelsonMultiResolutionImage IMAGE_DELETE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", 24, 48);
+    private final static MendelsonMultiResolutionImage IMAGE_COPY
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg", 24, 48);
+    private final static MendelsonMultiResolutionImage IMAGE_ADD
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", 24, 48);
 
     /**
      * Creates new form JDialogMessageMapping
@@ -76,7 +88,8 @@ public class JDialogPartnerConfig extends JDialog {
             AS2StatusBar status, boolean changesAllowed,
             LockClientInformation lockKeeper,
             CertificateManager certificateManagerEncSign,
-            CertificateManager certificateManagerSSL) {
+            CertificateManager certificateManagerSSL,
+            List<PartnerSystem> partnerSystemList) {
         super(parent, true);
         this.status = status;
         this.guiClient = guiClient;
@@ -91,19 +104,23 @@ public class JDialogPartnerConfig extends JDialog {
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.certificateManagerSSL = certificateManagerSSL;
         this.jTreePartner = new JTreePartner(guiClient.getBaseClient());
+        //create tree gap
+        this.jTreePartner.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         this.initComponents();
+        this.setMultiresolutionIcons();
         this.jScrollPaneTree.setViewportView(this.jTreePartner);
         this.panelEditPartner = new JPanelPartner(this.guiClient.getBaseClient(),
                 this.jTreePartner,
                 this.certificateManagerEncSign,
                 this.certificateManagerSSL,
-                this.jButtonPartnerConfigOk, this.status, changesAllowed);
-        this.jPanelPartner.add(this.panelEditPartner);
+                this.jButtonPartnerConfigOk, this.status, changesAllowed,
+                partnerSystemList);
+        this.jPanelPartner.add(this.panelEditPartner, BorderLayout.CENTER);
         this.getRootPane().setDefaultButton(this.jButtonPartnerConfigOk);
         try {
             this.partnerList.addAll(this.jTreePartner.buildTree());
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(parent, "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+            UINotification.instance().addNotification(e);
             return;
         }
         this.jTreePartner.addTreeSelectionListener(new TreeSelectionListener() {
@@ -112,24 +129,41 @@ public class JDialogPartnerConfig extends JDialog {
                 displayPartnerValues();
             }
         });
-        this.jToolBar.setLayout(new LayoutManagerJToolbar());
-        this.displayPartnerValues();
+        this.jToolBar.setLayout(new LayoutManagerJToolbar());        
         this.jPanelModuleLockWarning.setVisible(!changesAllowed);
     }
 
-    /**Asks the server for an absolute path on its side - this is useful if client
-     * and server are running on different OS or if the client/server path structure is not the same
-     * @param directory
-     * @return A string array of the size 2: 0: path, 1: path separator
-     */
-    private String[] getAbsolutePathOnServerSide( String directory ){
-        FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_GET_ABSOLUTE_PATH_STR);
-        request.setRequestFilePath(directory);
-        FileSystemViewResponse response = (FileSystemViewResponse)this.guiClient.getBaseClient().sendSync(request);
-        return(new String[]{response.getParameterString(), response.getServerSideFileSeparator()});
+    @Override
+    public void setVisible(boolean flag){
+        if( flag ){
+            this.displayPartnerValues();
+        }
+        super.setVisible(flag);
     }
     
     
+    private void setMultiresolutionIcons() {
+        this.jButtonDeletePartner.setIcon(new ImageIcon(IMAGE_DELETE.toMinResolution(24)));
+        this.jButtonClonePartner.setIcon(new ImageIcon(IMAGE_COPY.toMinResolution(24)));
+        this.jButtonNewPartner.setIcon(new ImageIcon(IMAGE_ADD.toMinResolution(24)));
+
+    }
+
+    /**
+     * Asks the server for an absolute path on its side - this is useful if
+     * client and server are running on different OS or if the client/server
+     * path structure is not the same
+     *
+     * @param directory
+     * @return A string array of the size 2: 0: path, 1: path separator
+     */
+    private String[] getAbsolutePathOnServerSide(String directory) {
+        FileSystemViewRequest request = new FileSystemViewRequest(FileSystemViewRequest.TYPE_GET_ABSOLUTE_PATH_STR);
+        request.setRequestFilePath(directory);
+        FileSystemViewResponse response = (FileSystemViewResponse) this.guiClient.getBaseClient().sendSync(request);
+        return (new String[]{response.getParameterString(), response.getServerSideFileSeparator()});
+    }
+
     /**
      * Selects a partner - by its name. If the name does not exist nothing
      * happens
@@ -223,7 +257,7 @@ public class JDialogPartnerConfig extends JDialog {
      * A partner name has been changed: Ask if the underlaying directory should
      * be changed, too
      */
-    private void handlePartnerNameChange(Partner existingPartner, Partner newPartner) {        
+    private void handlePartnerNameChange(Partner existingPartner, Partner newPartner) {
         //get the message path from the server
         PreferencesClient preferences = new PreferencesClient(this.guiClient.getBaseClient());
         String messageDir = preferences.get(PreferencesAS2.DIR_MSG);
@@ -231,8 +265,8 @@ public class JDialogPartnerConfig extends JDialog {
         String serverSideMessagePath = serversideInfo[0];
         String serverSideFileSeparator = serversideInfo[1];
         int requestValue = JOptionPane.showConfirmDialog(this, this.rb.getResourceString("dialog.partner.renamedir.message",
-                        new Object[]{existingPartner.getName(), newPartner.getName(),
-                            existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
+                new Object[]{existingPartner.getName(), newPartner.getName(),
+                    existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
                 this.rb.getResourceString("dialog.partner.renamedir.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
@@ -305,18 +339,22 @@ public class JDialogPartnerConfig extends JDialog {
     private void okPressed() {
         //check if a local station is set
         if (!JDialogPartnerConfig.this.jTreePartner.localStationIsSet()) {
-            JOptionPane.showMessageDialog(JDialogPartnerConfig.this,
-                    JDialogPartnerConfig.this.rb.getResourceString("nolocalstation.message"),
+            UINotification.instance().addNotification(
+                    null,
+                    UINotification.TYPE_ERROR,
                     JDialogPartnerConfig.this.rb.getResourceString("nolocalstation.title"),
-                    JOptionPane.ERROR_MESSAGE);
+                    JDialogPartnerConfig.this.rb.getResourceString("nolocalstation.message")
+            );
             return;
         }
         //check if the localstation contains a private key in security settings
         if (!JDialogPartnerConfig.this.checkAllLocalStationsHavePrivateKeys()) {
-            JOptionPane.showMessageDialog(JDialogPartnerConfig.this,
-                    JDialogPartnerConfig.this.rb.getResourceString("localstation.noprivatekey.message"),
+            UINotification.instance().addNotification(
+                    null,
+                    UINotification.TYPE_ERROR,
                     JDialogPartnerConfig.this.rb.getResourceString("localstation.noprivatekey.title"),
-                    JOptionPane.ERROR_MESSAGE);
+                    JDialogPartnerConfig.this.rb.getResourceString("localstation.noprivatekey.message")
+            );
             return;
         }
         final String uniqueId = this.getClass().getName() + ".okPressed." + System.currentTimeMillis();
@@ -365,8 +403,7 @@ public class JDialogPartnerConfig extends JDialog {
                 } catch (Exception e) {
                     JDialogPartnerConfig.this.unlock();
                     JDialogPartnerConfig.this.status.stopProgressIfExists(uniqueId);
-                    JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, JDialogPartnerConfig.this);
-                    JOptionPane.showMessageDialog(parent, "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                    UINotification.instance().addNotification(e);
                     e.printStackTrace();
                 } finally {
                     JDialogPartnerConfig.this.unlock();
@@ -414,7 +451,7 @@ public class JDialogPartnerConfig extends JDialog {
         jToolBar.setFloatable(false);
         jToolBar.setRollover(true);
 
-        jButtonNewPartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/add_24x24.gif"))); // NOI18N
+        jButtonNewPartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image24x24.gif"))); // NOI18N
         jButtonNewPartner.setText(this.rb.getResourceString( "button.new"));
         jButtonNewPartner.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jButtonNewPartner.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
@@ -425,7 +462,7 @@ public class JDialogPartnerConfig extends JDialog {
         });
         jToolBar.add(jButtonNewPartner);
 
-        jButtonClonePartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/copypartner24x24.gif"))); // NOI18N
+        jButtonClonePartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image24x24.gif"))); // NOI18N
         jButtonClonePartner.setText(this.rb.getResourceString( "button.clone"));
         jButtonClonePartner.setFocusable(false);
         jButtonClonePartner.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -437,7 +474,7 @@ public class JDialogPartnerConfig extends JDialog {
         });
         jToolBar.add(jButtonClonePartner);
 
-        jButtonDeletePartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/delete_24x24.gif"))); // NOI18N
+        jButtonDeletePartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image24x24.gif"))); // NOI18N
         jButtonDeletePartner.setText(this.rb.getResourceString( "button.delete"));
         jButtonDeletePartner.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jButtonDeletePartner.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
@@ -489,7 +526,9 @@ public class JDialogPartnerConfig extends JDialog {
 
         jPanelPartnerMain.setLayout(new java.awt.GridBagLayout());
 
-        jSplitPane.setDividerLocation(150);
+        jSplitPane.setDividerLocation(170);
+
+        jScrollPaneTree.setPreferredSize(new java.awt.Dimension(150, 2));
         jSplitPane.setLeftComponent(jScrollPaneTree);
 
         jPanelPartner.setLayout(new java.awt.BorderLayout());

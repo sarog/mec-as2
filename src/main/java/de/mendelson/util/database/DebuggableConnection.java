@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/DebuggableConnection.java 5     22.10.18 13:03 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggableConnection.java 6     15.10.20 12:11 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Array;
@@ -16,9 +16,13 @@ import java.sql.SQLXML;
 import java.sql.Savepoint;
 import java.sql.Statement;
 import java.sql.Struct;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Executor;
+import java.util.logging.Logger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -32,31 +36,52 @@ import java.util.concurrent.Executor;
  * Database connection that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class DebuggableConnection implements Connection {
 
     private Connection connection = null;
+    private Logger connectionLogger = null;
+    private String connectionName = "Unknown connection";
+    /**
+     * Counter for the unique query ids
+     */
+    private static long currentId = System.currentTimeMillis();
 
     /**
      * Creates a new instance of DebuggableConnection
      */
     public DebuggableConnection(Connection connection) {
-        this.connection = connection;
-        //debug purpose: find out who requested the database connection
-//        long startTime = System.currentTimeMillis();
-//        String methodData = "";
-//        try {
-//            throw new Exception();
-//        } catch (Exception e) {
-//            StackTraceElement[] ste = e.getStackTrace();
-//            methodData = ste[2].getClassName() + "." + ste[2].getMethodName() + "(line:" + ste[2].getLineNumber() + ")";
-//        }
-//        this.logger.info("Connection created in "
-//                + (System.currentTimeMillis() - startTime) + "ms: Requested by "
-//                + methodData);
+        this( connection, null, null);
     }
 
+    /**
+     * Creates a new instance of DebuggableConnection
+     */
+    public DebuggableConnection(Connection connection, Logger connectionLogger, String connectionName) {
+        this.connection = connection;
+        this.connectionLogger = connectionLogger;
+        if( connectionName != null ){
+            String uniqueId = this.createId();
+            this.connectionName = connectionName + " " + uniqueId;
+        }
+        if( this.connectionLogger != null ){
+            this.connectionLogger.info( "[" + this.connectionName + "] connection established");
+        }
+    }
+     
+    /**
+     * Creates a new id in the format yyyyMMddHHmm-nn
+     */
+    private static synchronized String createId() {
+        StringBuilder idBuffer = new StringBuilder();
+        DateFormat format = new SimpleDateFormat("yyyyMMddHHmm");
+        idBuffer.append(format.format(new Date()));
+        idBuffer.append("-");
+        idBuffer.append(currentId++);
+        return (idBuffer.toString());
+    }
+    
     @Override
     public void clearWarnings() throws SQLException {
         this.connection.clearWarnings();
@@ -65,16 +90,22 @@ public class DebuggableConnection implements Connection {
     @Override
     public void close() throws SQLException {
         this.connection.close();
+        if( this.connectionLogger != null ){
+            this.connectionLogger.info( "[" + this.connectionName + "] connection closed");
+        }
     }
 
     @Override
     public void commit() throws SQLException {
         this.connection.commit();
+        if( this.connectionLogger != null ){
+            this.connectionLogger.info( "[" + this.connectionName + "] commit");
+        }
     }
 
     @Override
     public Statement createStatement() throws SQLException {
-        return (new DebuggableStatement(this.connection.createStatement()));
+        return (new DebuggableStatement(this.connection.createStatement(), this.connectionLogger, this.connectionName));
     }
 
     @Override
@@ -156,7 +187,7 @@ public class DebuggableConnection implements Connection {
     public PreparedStatement prepareStatement(String str) throws SQLException {
         try {
             PreparedStatement statement = this.connection.prepareStatement(str);
-            return (new DebuggablePreparedStatement(str, statement));
+            return (new DebuggablePreparedStatement(str, statement, this.connectionLogger, this.connectionName));
         } catch (SQLSyntaxErrorException e) {
             throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
@@ -166,7 +197,7 @@ public class DebuggableConnection implements Connection {
     public PreparedStatement prepareStatement(String str, int param) throws SQLException {
         try {
             PreparedStatement statement = this.connection.prepareStatement(str, param);
-            return (new DebuggablePreparedStatement(str, statement));
+            return (new DebuggablePreparedStatement(str, statement, this.connectionLogger, this.connectionName));
         } catch (SQLSyntaxErrorException e) {
             throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
@@ -176,7 +207,7 @@ public class DebuggableConnection implements Connection {
     public PreparedStatement prepareStatement(String str, int[] values) throws SQLException {
         try {
             PreparedStatement statement = this.connection.prepareStatement(str, values);
-            return (new DebuggablePreparedStatement(str, statement));
+            return (new DebuggablePreparedStatement(str, statement, this.connectionLogger, this.connectionName));
         } catch (SQLSyntaxErrorException e) {
             throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
@@ -186,7 +217,7 @@ public class DebuggableConnection implements Connection {
     public PreparedStatement prepareStatement(String str, String[] str1) throws SQLException {
         try {
             PreparedStatement statement = this.connection.prepareStatement(str, str1);
-            return (new DebuggablePreparedStatement(str, statement));
+            return (new DebuggablePreparedStatement(str, statement, this.connectionLogger, this.connectionName));
         } catch (SQLSyntaxErrorException e) {
             throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
@@ -196,7 +227,7 @@ public class DebuggableConnection implements Connection {
     public PreparedStatement prepareStatement(String str, int param, int param2) throws SQLException {
         try {
             PreparedStatement statement = this.connection.prepareStatement(str, param, param2);
-            return (new DebuggablePreparedStatement(str, statement));
+            return (new DebuggablePreparedStatement(str, statement, this.connectionLogger, this.connectionName));
         } catch (SQLSyntaxErrorException e) {
             throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
@@ -206,7 +237,7 @@ public class DebuggableConnection implements Connection {
     public PreparedStatement prepareStatement(String str, int param, int param2, int param3) throws SQLException {
         try {
             PreparedStatement statement = this.connection.prepareStatement(str, param, param2, param3);
-            return (new DebuggablePreparedStatement(str, statement));
+            return (new DebuggablePreparedStatement(str, statement, this.connectionLogger, this.connectionName));
         } catch (SQLSyntaxErrorException e) {
             throw new SQLSyntaxErrorException(e.getMessage() + " [" + str + "]");
         }
@@ -219,11 +250,17 @@ public class DebuggableConnection implements Connection {
 
     @Override
     public void rollback() throws SQLException {
+        if( this.connectionLogger != null ){
+            this.connectionLogger.info( "[" + this.connectionName + "] rollback");
+        }
         this.connection.rollback();
     }
 
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
+        if( this.connectionLogger != null ){
+            this.connectionLogger.info( "[" + this.connectionName + "] rollback from savepoint");
+        }
         this.connection.rollback(savepoint);
     }
 
@@ -352,6 +389,7 @@ public class DebuggableConnection implements Connection {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public int getNetworkTimeout() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }

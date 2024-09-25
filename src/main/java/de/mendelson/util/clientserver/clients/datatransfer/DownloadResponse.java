@@ -1,14 +1,10 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponse.java 7     4/06/18 12:21p Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponse.java 10    3.03.20 10:26 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -21,7 +17,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 10 $
  */
 public abstract class DownloadResponse extends ClientServerResponse implements Serializable {
 
@@ -34,11 +30,7 @@ public abstract class DownloadResponse extends ClientServerResponse implements S
     }
 
     public void setData(InputStream inStream) throws IOException {
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        this.copyStreams(inStream, outStream);
-        outStream.flush();
-        outStream.close();
-        this.data = outStream.toByteArray();
+        this.data = inStream.readAllBytes();
     }
 
     public void setData(byte[] data) throws IOException {
@@ -58,24 +50,6 @@ public abstract class DownloadResponse extends ClientServerResponse implements S
      */
     public byte[] getDataBytes() {
         return data;
-    }
-
-    /**Copies all data from one stream to another*/
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[2048];
-        int read = 2048;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
     }
 
     @Override

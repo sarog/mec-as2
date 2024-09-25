@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/cem/gui/DialogSendCEM.java 33    8.01.19 11:58 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogSendCEM.java 35    27.08.19 16:10 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.clientserver.CEMSendRequest;
@@ -8,6 +8,7 @@ import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.gui.ListCellRendererPartner;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -21,6 +22,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -38,10 +40,13 @@ import javax.swing.SwingUtilities;
  * application
  *
  * @author S.Heller
- * @version $Revision: 33 $
+ * @version $Revision: 35 $
  */
 public class DialogSendCEM extends JDialog {
 
+    private final static MendelsonMultiResolutionImage ICON_CEM
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg", 32, 64);
+    
     private MecResourceBundle rb = null;
     private CertificateManager certificateManagerEncSign;
     private Logger logger = Logger.getLogger("de.mendelson.as2.client");
@@ -60,6 +65,7 @@ public class DialogSendCEM extends JDialog {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         initComponents();
+        this.jLabelIcon.setIcon( new ImageIcon( ICON_CEM));
         List<KeystoreCertificate> certificateList = this.certificateManagerEncSign.getKeyStoreCertificateList();
         //clone the array
         List<KeystoreCertificate> sortedCertificateList = new ArrayList<KeystoreCertificate>();
@@ -216,7 +222,7 @@ public class DialogSendCEM extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelMain.add(jLabelRemotePartner, gridBagConstraints);
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/cem32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/cem/gui/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -314,7 +320,7 @@ public class DialogSendCEM extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(663, 409));
+        setSize(new java.awt.Dimension(684, 429));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

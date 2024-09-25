@@ -1,7 +1,9 @@
-//$Header: /as4/de/mendelson/util/xmleditorkit/XMLStyledDocument.java 1     4/05/18 10:58a Heller $
+//$Header: /as4/de/mendelson/util/xmleditorkit/XMLStyledDocument.java 3     16.10.19 12:49 Heller $
 package de.mendelson.util.xmleditorkit;
 
+import de.mendelson.util.ColorUtil;
 import java.awt.Color;
+import javax.swing.UIManager;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
@@ -17,9 +19,11 @@ import javax.swing.text.StyleConstants;
  */
 /**
  * XML Editor Kit - based on code from Stanislav Lapitsky
+ * This class requires the ColorUtil class to determine the colors with the best 
+ * contrast for the UIs editor pane background color
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 
 public class XMLStyledDocument extends DefaultStyledDocument {
@@ -36,20 +40,45 @@ public class XMLStyledDocument extends DefaultStyledDocument {
     public static SimpleAttributeSet COMMENT_ATTRIBUTES = new SimpleAttributeSet();
 
     static {
-        StyleConstants.setBold(TAGNAME_ATTRIBUTES, true);
-        StyleConstants.setForeground(TAGNAME_ATTRIBUTES, Color.GREEN.darker());
-
+        Color editorPaneBackgroundColor = UIManager.getColor("EditorPane.background");
+        if( editorPaneBackgroundColor == null ){
+            editorPaneBackgroundColor = Color.WHITE;
+        }        
+        
+        //TAG NAME
+        StyleConstants.setBold(TAGNAME_ATTRIBUTES, true);        
+        StyleConstants.setForeground(TAGNAME_ATTRIBUTES, 
+                ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, Color.GREEN.darker().darker()));
+        
+        //ATTRIBUTENAME
         StyleConstants.setBold(ATTRIBUTENAME_ATTRIBUTES, true);
-
+        StyleConstants.setForeground(ATTRIBUTENAME_ATTRIBUTES, 
+                ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, Color.BLACK));        
+        
+        //ATTRIBUTEVALUE
         StyleConstants.setItalic(ATTRIBUTEVALUE_ATTRIBUTES, true);
-        StyleConstants.setForeground(ATTRIBUTEVALUE_ATTRIBUTES, Color.BLUE);
-
+        StyleConstants.setForeground(ATTRIBUTEVALUE_ATTRIBUTES, 
+                ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, Color.BLUE));
+        
+        //PLAIN ATTRIBUTES
         StyleConstants.setFontSize(PLAIN_ATTRIBUTES, StyleConstants.getFontSize(PLAIN_ATTRIBUTES) - 1);
-        StyleConstants.setForeground(PLAIN_ATTRIBUTES, Color.DARK_GRAY);
-
+        StyleConstants.setForeground(PLAIN_ATTRIBUTES, 
+                ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, Color.DARK_GRAY));
+        
+        //COMMENT ATTRIBUTES
         StyleConstants.setFontSize(COMMENT_ATTRIBUTES, StyleConstants.getFontSize(COMMENT_ATTRIBUTES) - 1);
-        StyleConstants.setForeground(COMMENT_ATTRIBUTES, Color.GRAY);
+        StyleConstants.setForeground(COMMENT_ATTRIBUTES, ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, Color.GRAY));
         StyleConstants.setItalic(COMMENT_ATTRIBUTES, true);
+        
+        
+        //BRACKET ATTRIBUTES
+        StyleConstants.setForeground(BRACKET_ATTRIBUTES, ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, Color.BLACK));
     }
 
     private boolean isUserChanges = true;

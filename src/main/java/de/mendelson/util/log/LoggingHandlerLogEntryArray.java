@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/LoggingHandlerLogEntryArray.java 3     4/06/18 12:22p Heller $
+//$Header: /mec_as4/de/mendelson/util/log/LoggingHandlerLogEntryArray.java 7     7.01.21 13:49 Heller $
 package de.mendelson.util.log;
 
 import java.io.Serializable;
@@ -20,7 +20,7 @@ import java.util.logging.LogRecord;
  * Handler to log output to a StringBuilder
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 7 $
  */
 public class LoggingHandlerLogEntryArray extends Handler {
 

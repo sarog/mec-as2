@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/Base64.java 4     7.11.18 10:40 Heller $
+//$Header: /oftp2/de/mendelson/util/security/Base64.java 5     28.02.20 17:47 Heller $
 package de.mendelson.util.security;
 
 import java.io.BufferedInputStream;
@@ -347,27 +347,6 @@ public final class Base64 {
     }
 
     /**
-     * Copies all data from one stream to another
-     */
-    public final void copyStreams(InputStream in, OutputStream out)
-            throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[1024];
-        int read = 1024;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
-    }
-
-    /**
      * Reads data into a byte array
      */
     public byte[] readFile(String inFile) throws IOException {
@@ -375,7 +354,7 @@ public final class Base64 {
         InputStream inStream = null;
         try {
             inStream = Files.newInputStream(Paths.get(inFile));
-            this.copyStreams(inStream, outStream);
+            inStream.transferTo(outStream);
         } finally {
             if (inStream != null) {
                 inStream.close();
@@ -433,7 +412,7 @@ public final class Base64 {
             }
             ByteArrayInputStream inStream = new ByteArrayInputStream(data);
             OutputStream outStream = Files.newOutputStream(Paths.get(fileout));
-            base64.copyStreams(inStream, outStream);
+            inStream.transferTo(outStream);
             inStream.close();
             outStream.flush();
             outStream.close();

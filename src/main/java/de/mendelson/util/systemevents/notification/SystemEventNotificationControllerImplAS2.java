@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 4     16.10.18 10:31 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 7     10.09.20 12:57 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * a partner
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class SystemEventNotificationControllerImplAS2 extends SystemEventNotificationController {
 
@@ -50,11 +50,24 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
     public List<SystemEvent> filterEventsForNotification(List<SystemEvent> foundSystemEvents) {
         List<SystemEvent> filteredEventsForNotification = new ArrayList<SystemEvent>();
         if (!AS2Server.inShutdownProcess) {
-            NotificationDataImplAS2 notificationData = (NotificationDataImplAS2)this.notification.getNotificationData(true);            
+            NotificationDataImplAS2 notificationData = (NotificationDataImplAS2) this.notification.getNotificationData(true);
             for (SystemEvent event : foundSystemEvents) {
-                if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION && event.getType() == SystemEvent.TYPE_TRANSACTION_ERROR) {
+                if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION 
+                        && event.getType() == SystemEvent.TYPE_TRANSACTION_ERROR) {
                     //Transaction failures
                     if (notificationData.notifyTransactionError()) {
+                        filteredEventsForNotification.add(event);
+                    }
+                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION 
+                        && event.getType() == SystemEvent.TYPE_CONNECTIVITY_ANY) {
+                    //connection problem
+                    if (notificationData.notifyConnectionProblem()) {
+                        filteredEventsForNotification.add(event);
+                    }
+                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION                         
+                        && event.getType() == SystemEvent.TYPE_POST_PROCESSING) {
+                    //postprocessing problem
+                    if (notificationData.notifyPostprocessingProblem()) {
                         filteredEventsForNotification.add(event);
                     }
                 } else if (event.getOrigin() == SystemEvent.ORIGIN_SYSTEM && event.getType() == SystemEvent.TYPE_CERTIFICATE_EXPIRE) {
@@ -70,7 +83,7 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
                     }
                 } else if (event.getType() == SystemEvent.TYPE_TRANSACTION_REJECTED_RESEND) {
                     //rejected resend
-                    if (notificationData.notifySystemFailure()) {
+                    if (notificationData.notifyResendDetected()) {
                         filteredEventsForNotification.add(event);
                     }
                 } else if (event.getSeverity() == SystemEvent.SEVERITY_ERROR && event.getOrigin() == SystemEvent.ORIGIN_SYSTEM) {
@@ -84,10 +97,13 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
         return (filteredEventsForNotification);
     }
 
-    /**Finally inform the user..*/
+    /**
+     * Finally inform the user..
+     */
     @Override
-    public void sendNotification( List<SystemEvent> systemEventsToNotifyUserOf){
-        this.notification.sendNotification(systemEventsToNotifyUserOf);        
+    public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf
+    ) {
+        this.notification.sendNotification(systemEventsToNotifyUserOf);
     }
-    
+
 }

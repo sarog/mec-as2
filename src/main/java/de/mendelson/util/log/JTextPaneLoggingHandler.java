@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/util/log/JTextPaneLoggingHandler.java 25    7/30/18 1:46p Heller $
+//$Header: /as4/de/mendelson/util/log/JTextPaneLoggingHandler.java 28    16.10.19 12:34 Heller $
 package de.mendelson.util.log;
 
+import de.mendelson.util.ColorUtil;
 import java.awt.Color;
 import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -13,6 +15,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import javax.swing.JTextPane;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.text.Style;
 import javax.swing.text.StyleConstants;
 import javax.swing.text.StyleContext;
@@ -29,7 +32,7 @@ import javax.swing.text.StyledDocument;
  * Handler to log logger data to a swing text component
  *
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 28 $
  */
 public class JTextPaneLoggingHandler extends Handler {
 
@@ -49,6 +52,7 @@ public class JTextPaneLoggingHandler extends Handler {
     private String lineSeparator = System.getProperty("line.separator");
     //allows to enable/disable the logging output
     private boolean enabled = true;
+    private Color defaultForegroundColor = UIManager.getColor("TextPane.foreground");
 
     /**
      * Stores the logging colors for the logging levels
@@ -66,6 +70,10 @@ public class JTextPaneLoggingHandler extends Handler {
         this.jTextPane = jTextPane;
         StyleContext context = StyleContext.getDefaultStyleContext();
         this.currentStyle = context.getStyle(StyleContext.DEFAULT_STYLE);
+        if (this.defaultForegroundColor == null) {
+            this.defaultForegroundColor = this.getBestContrastColorAsIndexedColor(
+                    IRCColors.BLACK, jTextPane.getBackground());
+        }
         this.resetStyle();
     }
 
@@ -90,8 +98,85 @@ public class JTextPaneLoggingHandler extends Handler {
      */
     public String getColor(Level loglevel) {
         synchronized (this.colorMap) {
-            return (this.colorMap.get(loglevel));
+            if (colorMap.containsKey(loglevel)) {
+                return (this.colorMap.get(loglevel));
+            }else{
+                return( IRCColors.toColorStr(this.getBestContrastColorAsIndexedColor(IRCColors.BLACK, this.jTextPane.getBackground())));
+            }
         }
+    }
+
+    /**
+     * Controls the contrast of the used colors and tries to adjust them for
+     * higher contrast
+     */
+    public void adjustColorsByContrast() {
+        Color backgroundColor = this.jTextPane.getBackground();
+        Level[] levelList = new Level[]{
+            Level.SEVERE, Level.WARNING, Level.INFO, Level.CONFIG,
+            Level.FINE, Level.FINER, Level.FINEST};
+        for (Level level : levelList) {
+            this.setColor(level,
+                    IRCColors.toColorStr(
+                            this.getBestContrastColorAsIndexedColor(this.getColor(level),
+                                    backgroundColor)));
+        }
+    }
+
+    /**
+     * As there are just 16 indexed colors in the log this will test some
+     * alternative colors if the contrast does not match
+     * It will always return an indexed color as defined in the class IRCColors.
+     *
+     * @param ircColorForeground an index color
+     * @param anyColorBackground
+     * @return
+     */
+    private Color getBestContrastColorAsIndexedColor(String ircColorForeground, Color anyColorBackground) {
+        Color colorForeground = IRCColors.toColor(ircColorForeground);
+        if (ColorUtil.contrastIsOk(anyColorBackground, colorForeground)) {
+            return (colorForeground);
+        }
+        if (ircColorForeground.equals(IRCColors.BLACK)
+                || ircColorForeground.equals(IRCColors.DARK_GRAY)
+                || ircColorForeground.equals(IRCColors.LIGHT_GRAY)
+                || ircColorForeground.equals(IRCColors.WHITE)) {
+            return (ColorUtil.getBestContrastColor(anyColorBackground,
+                    Arrays.asList(new Color[]{
+                IRCColors.toColor(IRCColors.DARK_GRAY),
+                IRCColors.toColor(IRCColors.LIGHT_GRAY),
+                IRCColors.toColor(IRCColors.WHITE)
+            })));
+        }
+        if (ircColorForeground.equals(IRCColors.GREEN)
+                || ircColorForeground.equals(IRCColors.DARK_GREEN)) {
+            return (ColorUtil.getBestContrastColor(anyColorBackground,
+                    Arrays.asList(new Color[]{
+                IRCColors.toColor(IRCColors.GREEN),
+                IRCColors.toColor(IRCColors.DARK_GREEN)
+            })));
+        }
+        if (ircColorForeground.equals(IRCColors.RED)
+                || ircColorForeground.equals(IRCColors.BROWN)
+                || ircColorForeground.equals(IRCColors.OLIVE)) {
+            return (ColorUtil.getBestContrastColor(anyColorBackground,
+                    Arrays.asList(new Color[]{
+                IRCColors.toColor(IRCColors.RED),
+                IRCColors.toColor(IRCColors.BROWN),
+                IRCColors.toColor(IRCColors.OLIVE),})));
+        }
+        if (ircColorForeground.equals(IRCColors.BLUE)
+                || ircColorForeground.equals(IRCColors.DARK_BLUE)
+                || ircColorForeground.equals(IRCColors.CYAN)
+                || ircColorForeground.equals(IRCColors.TEAL)) {
+            return (ColorUtil.getBestContrastColor(anyColorBackground,
+                    Arrays.asList(new Color[]{
+                IRCColors.toColor(IRCColors.BLUE),
+                IRCColors.toColor(IRCColors.DARK_BLUE),
+                IRCColors.toColor(IRCColors.CYAN),
+                IRCColors.toColor(IRCColors.TEAL),})));
+        }
+        return (colorForeground);
     }
 
     /**
@@ -185,8 +270,7 @@ public class JTextPaneLoggingHandler extends Handler {
                         }
                     }
                 }
-                document.insertString(document.getLength(),
-                        buffer.toString(), this.currentStyle);
+                document.insertString(document.getLength(), buffer.toString(), this.currentStyle);
 
             } catch (Throwable ex) {
                 if (ex instanceof Exception) {
@@ -221,6 +305,7 @@ public class JTextPaneLoggingHandler extends Handler {
         this.setStyleItalic(false);
         this.setStyleUnderline(false);
         this.setStyleForeground(1);
+        this.setStyleForeground(this.getDefaultForegroundColor());
     }
 
     /**
@@ -394,12 +479,10 @@ public class JTextPaneLoggingHandler extends Handler {
      */
     private void logMessage(Level level, String message, int rawMessageLength) {
         int timeStampPos = message.length() - rawMessageLength - this.lineSeparator.length();
-        String color = null;
+        String color = "";
         synchronized (this.colorMap) {
             if (this.colorMap.containsKey(level)) {
                 color = this.colorMap.get(level);
-            } else {
-                color = IRCColors.BLACK;
             }
         }
         if (timeStampPos >= 0) {
@@ -415,6 +498,13 @@ public class JTextPaneLoggingHandler extends Handler {
      */
     public long getMaxBuffersize() {
         return MAX_BUFFER_SIZE;
+    }
+
+    /**
+     * @return the defaultForegroundColor
+     */
+    public Color getDefaultForegroundColor() {
+        return defaultForegroundColor;
     }
 
 }

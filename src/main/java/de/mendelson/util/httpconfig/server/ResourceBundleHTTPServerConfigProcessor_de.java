@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_de.java 7     9.10.18 12:29 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_de.java 9     25.06.20 10:36 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleHTTPServerConfigProcessor_de extends MecResourceBundle {
 
@@ -41,6 +41,10 @@ public class ResourceBundleHTTPServerConfigProcessor_de extends MecResourceBundl
         {"webapp.as4.war", "mendelson AS4 Empfangsservlet"},
         {"webapp.webas2.war", "mendelson AS2 Server Web Überwachung"},
         {"webapp.as2-sample.war", "mendelson AS2 API Beispiele"},
-        {"info.cipher", "Die folgende Chiffren werden vom unterliegenden HTTP Server unterstützt.\nWelche unterstützt werden, hängt von Ihrer eingesetzten Java VM ab (aktuell {1}).\nSie können einzelne Chiffren in der Konfigurationsdatei\n\"{0}\" deaktivieren."},
-        {"info.protocols", "Die folgende Protokolle werden vom unterliegenden HTTP Server unterstützt.\nWelche unterstützt werden, hängt von Ihrer eingesetzten Java VM ab (aktuell {1}).\nSie können einzelne Protokolle in der Konfigurationsdatei\n\"{0}\" deaktivieren."},};
+        {"webapp.as4-sample.war", "mendelson AS4 API Beispiele"},
+        {"info.cipher", "Die folgende Chiffren werden vom unterliegenden HTTP Server eingangsseitig unterstützt.\nWelche unterstützt werden, hängt von Ihrer eingesetzten Java VM ab (aktuell {1}).\nSie können einzelne Chiffren in der Konfigurationsdatei\n\"{0}\" deaktivieren."},
+        {"info.cipher.howtochange", "Um bestimmte Chiffren für eingehende Verbindungen zu deaktivieren, bearbeiten Sie bitte die Konfigurationsdatei Ihres eingebetteten HTTP Servers ({0}) mit einem Texteditor. Suchen Sie bitte nach der Zeichenkette <Set name=\"ExcludeCipherSuites\">, fügen Sie die auszuschliessende Chiffre hinzu und starten Sie das Programm neu."},
+        {"info.protocols", "Die folgende Protokolle werden vom unterliegenden HTTP Server für eingehende Verbindungen unterstützt.\nWelche unterstützt werden, hängt von Ihrer eingesetzten Java VM ab (aktuell {1}).\nSie können einzelne Protokolle in der Konfigurationsdatei\n\"{0}\" deaktivieren."},
+        {"info.protocols.howtochange", "Um bestimmte Protokolle eingangsseitig zu deaktivieren, bearbeiten Sie bitte die Konfigurationsdatei Ihres eingebetteten HTTP Servers ({0}) mit einem Texteditor. Suchen Sie bitte nach der Zeichenkette <Set name=\"ExcludeProtocols\">, fügen Sie das auszuschliessende Protokoll hinzu und starten Sie das Programm neu."},
+    };
 }

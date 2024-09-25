@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 43    14.12.18 13:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 56    11.12.20 14:57 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -15,24 +15,24 @@ import de.mendelson.comm.as2.message.clientserver.MessageLogResponse;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.log.IRCColors;
+import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.tables.JTableColumnResizer;
+import de.mendelson.util.uinotification.UINotification;
 import java.awt.Color;
-import java.awt.image.BaseMultiResolutionImage;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
@@ -52,55 +52,51 @@ import javax.swing.text.StyledDocument;
  * Dialog to show the details of a transaction
  *
  * @author S.Heller
- * @version $Revision: 43 $
+ * @version $Revision: 56 $
  */
 public class DialogMessageDetails extends JDialog implements ListSelectionListener {
 
-    public static final ImageIcon ICON_LOCALSTATION = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/localstation16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/localstation24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/localstation32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/localstation48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/localstation64x64.gif")).getImage()
-    ));
-    public static final ImageIcon ICON_REMOTEPARTNER = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/singlepartner16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/singlepartner24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/singlepartner32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/singlepartner48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/singlepartner64x64.gif")).getImage()
-    ));
-    public static final ImageIcon ICON_ARROW_OUTBOUND = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/arrow32x16.gif"));
-    public static final ImageIcon ICON_ARROW_INBOUND = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/arrow_in32x16.gif"));
-    public static final ImageIcon ICON_PENDING = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_pending64x64.gif")).getImage()            
-    ));
-    public static final ImageIcon ICON_STOPPED = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_stopped64x64.gif")).getImage()            
-    ));
-    public static final ImageIcon ICON_FINISHED = new ImageIcon(new BaseMultiResolutionImage(
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished16x16.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished24x24.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished32x32.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished48x48.gif")).getImage(),
-            new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/state_finished64x64.gif")).getImage()            
-    ));
-    public static final ImageIcon OVERVIEWSTATE_OUTBOUND_OK = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/comm_ok_outbound.png"));
-    public static final ImageIcon OVERVIEWSTATE_OUTBOUND_FAILED = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/comm_failed_outbound.png"));
-    public static final ImageIcon OVERVIEWSTATE_INBOUND_FAILED = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/comm_failed_inbound.png"));
-    public static final ImageIcon OVERVIEWSTATE_INBOUND_OK = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/comm_ok_inbound.png"));
-    public static final ImageIcon OVERVIEWSTATE_OUTBOUND_CONN_FAILED = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/comm_failed_outbound_conn.png"));
-    public static final ImageIcon OVERVIEWSTATE_INBOUND_ANSWER_FAILED = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/comm_failed_inbound_answer.png"));
-    public static final ImageIcon OVERVIEWSTATE_PENDING = new ImageIcon(TableModelMessageOverview.class.getResource("/de/mendelson/comm/as2/message/loggui/comm_pending.png"));
-    
+    public static final ImageIcon ICON_LOCALSTATION
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/localstation.svg", 24, 48));
+    public static final ImageIcon ICON_REMOTEPARTNER
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", 24, 48));
+    public static final ImageIcon ICON_ARROW_OUTBOUND
+            = new ImageIcon(DialogMessageDetails.class.getResource("/de/mendelson/comm/as2/message/loggui/arrow32x16.gif"));
+    public static final ImageIcon ICON_ARROW_INBOUND
+            = new ImageIcon(DialogMessageDetails.class.getResource("/de/mendelson/comm/as2/message/loggui/arrow_in32x16.gif"));
+    public static final ImageIcon ICON_PENDING
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/state_pending.svg", 15, 48));
+    public static final ImageIcon ICON_STOPPED
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/state_stopped.svg", 15, 48));
+    public static final ImageIcon ICON_FINISHED
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/state_finished.svg", 15, 48));
+    public static final ImageIcon OVERVIEWSTATE_OUTBOUND_OK
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/comm_ok_outbound.svg", 170, 230));
+    public static final ImageIcon OVERVIEWSTATE_OUTBOUND_FAILED
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/comm_failed_outbound.svg", 170, 230));
+    public static final ImageIcon OVERVIEWSTATE_INBOUND_FAILED
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/comm_failed_inbound.svg", 170, 230));
+    public static final ImageIcon OVERVIEWSTATE_INBOUND_OK
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/comm_ok_inbound.svg", 170, 230));
+    public static final ImageIcon OVERVIEWSTATE_OUTBOUND_CONN_FAILED
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/comm_failed_outbound_conn.svg", 170, 230));
+    public static final ImageIcon OVERVIEWSTATE_INBOUND_ANSWER_FAILED
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/comm_failed_inbound_answer.svg", 170, 230));
+    public static final ImageIcon OVERVIEWSTATE_PENDING
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/comm_pending.svg", 170, 230));
+
     private Logger logger = Logger.getLogger("de.mendelson.as2.client");
     /**
      * Localize the GUI
@@ -118,12 +114,15 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     private JPanelFileDisplay jPanelFileDisplayHeader;
     private JPanelFileDisplay[] jPanelFileDisplayPayload;
     private BaseClient baseClient;
+    private Color colorRed = Color.RED.darker();
+    private Color colorYellow = Color.YELLOW.darker().darker();
+    private Color colorGreen = Color.GREEN.darker().darker();
 
     /**
      * Creates new form AboutDialog
      */
-    public DialogMessageDetails(JFrame parent, BaseClient baseClient, AS2MessageInfo overviewInfo, 
-            List<AS2Payload> payloadList) {
+    public DialogMessageDetails(JFrame parent, BaseClient baseClient, AS2MessageInfo overviewInfo,
+            List<AS2Payload> payloadList, JTextPaneLoggingHandler handler) {
         super(parent, true);
         this.baseClient = baseClient;
         //load resource bundle
@@ -138,21 +137,25 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         this.jPanelFileDisplayHeader = new JPanelFileDisplay(baseClient);
         this.payloadList = payloadList;
         this.overviewInfo = overviewInfo;
-        if( overviewInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM){
+        if (overviewInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
             this.setTitle(this.rb.getResourceString("title.cem"));
-        }else{
+        } else {
             this.setTitle(this.rb.getResourceString("title"));
         }
         this.initComponents();
+        this.colorRed = ColorUtil.getBestContrastColorAroundForeground(this.jLabelTransactionStateDetails.getBackground(), colorRed);
+        this.colorGreen = ColorUtil.getBestContrastColorAroundForeground(this.jLabelTransactionStateDetails.getBackground(), colorGreen);
+        this.colorYellow = ColorUtil.getBestContrastColorAroundForeground(this.jLabelTransactionStateDetails.getBackground(), colorYellow);
         this.populateTransactionOverviewPanel(overviewInfo);
-        this.getRootPane().setDefaultButton(this.jButtonOk);
+        this.getRootPane().setDefaultButton(this.jButtonOk);        
+        this.jTableMessageDetails.setRowHeight(TableModelMessageDetails.ROW_HEIGHT);
         this.jTableMessageDetails.getTableHeader().setReorderingAllowed(false);
         //first icon
         TableColumn column = this.jTableMessageDetails.getColumnModel().getColumn(0);
-        column.setMaxWidth(20);
+        column.setMaxWidth(TableModelMessageDetails.ROW_HEIGHT + this.jTableMessageDetails.getRowMargin()*2);
         column.setResizable(false);
         column = this.jTableMessageDetails.getColumnModel().getColumn(2);
-        column.setMaxWidth(20);
+        column.setMaxWidth(TableModelMessageDetails.ROW_HEIGHT + this.jTableMessageDetails.getRowMargin()*2);
         column.setResizable(false);
         this.displayData(overviewInfo);
         this.jTabbedPane.addTab(this.rb.getResourceString("message.raw.decrypted"), jPanelFileDisplayRaw);
@@ -168,7 +171,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             }
         }
         this.jTableMessageDetails.getSelectionModel().addListSelectionListener(this);
-        this.displayProcessLog();
+        this.displayProcessLog(handler);
         JTableColumnResizer.adjustColumnWidthByContent(this.jTableMessageDetails);
         this.jTableMessageDetails.getSelectionModel().setSelectionInterval(0, 0);
     }
@@ -178,11 +181,14 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
      */
     private void populateTransactionOverviewPanel(AS2MessageInfo overviewInfo) {
         String messageTypeStr = "AS2";
-        if( overviewInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM){
+        if (overviewInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
             messageTypeStr = "CEM";
         }
-        //get all partner from server
-        PartnerListRequest partnerRequest = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID);
+        //get all partner from server - just to display the icons. No full partner
+        //information is required
+        PartnerListRequest partnerRequest 
+                = new PartnerListRequest(
+                        PartnerListRequest.LIST_BY_AS2_ID, PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE);
         partnerRequest.setAdditionalListOptionStr(overviewInfo.getSenderId());
         PartnerListResponse partnerResponse = (PartnerListResponse) this.baseClient.sendSync(partnerRequest);
         List<Partner> partnerList = partnerResponse.getList();
@@ -190,14 +196,15 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         if (!partnerList.isEmpty()) {
             sender = partnerList.get(0);
         }
-        partnerRequest = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID);
+        partnerRequest 
+                = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID, PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE);
         partnerRequest.setAdditionalListOptionStr(overviewInfo.getReceiverId());
         partnerResponse = (PartnerListResponse) this.baseClient.sendSync(partnerRequest);
         partnerList = partnerResponse.getList();
         Partner receiver = null;
         if (!partnerList.isEmpty()) {
             receiver = partnerList.get(0);
-        }
+        }        
         this.jLabelTransactionStateDetails.setVisible(false);
         this.jLabelAS2TransmissionGraphLocalstation.setIcon(ICON_LOCALSTATION);
         this.jLabelAS2TransmissionGraphRemotepartner.setIcon(ICON_REMOTEPARTNER);
@@ -232,19 +239,19 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound", this.jLabelAS2TransmissionGraphRemotepartner.getText()));
             if (overviewInfo.requestsSyncMDN()) {
                 transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.sync"));
-            }else{
+            } else {
                 transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.async"));
             }
         } else {
             transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound", this.jLabelAS2TransmissionGraphRemotepartner.getText()));
             if (overviewInfo.requestsSyncMDN()) {
                 transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.sync"));
-            }else{
+            } else {
                 transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.async"));
             }
         }
-        this.jLabelTransmissionDescription.setText( "<HTML>" + transactionDetailsText.toString() + "</HTML>");
-        
+        this.jLabelTransmissionDescription.setText("<HTML>" + transactionDetailsText.toString() + "</HTML>");
+
         this.jLabelTransactionStateDetails.setVisible(false);
         List<AS2Info> transactionDetails = null;
         try {
@@ -252,8 +259,8 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         } catch (Exception e) {
         }
         if (overviewInfo.getState() == AS2Message.STATE_STOPPED) {
-            this.jLabelTransactionStateGeneral.setForeground(Color.red.darker());
-            this.jLabelTransactionStateDetails.setForeground(Color.red.darker());
+            this.jLabelTransactionStateGeneral.setForeground(this.colorRed);
+            this.jLabelTransactionStateDetails.setForeground(this.colorRed);
             if (transactionDetails == null) {
                 this.jLabelTransactionStateDetails.setVisible(false);
             } else {
@@ -334,8 +341,8 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                 }
             }
         } else if (overviewInfo.getState() == AS2Message.STATE_FINISHED) {
-            this.jLabelTransactionStateGeneral.setForeground(Color.green.darker().darker());
-            this.jLabelTransactionStateDetails.setForeground(Color.green.darker().darker());
+            this.jLabelTransactionStateGeneral.setForeground(this.colorGreen);
+            this.jLabelTransactionStateDetails.setForeground(this.colorGreen);
             if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
                 this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_OUTBOUND_OK);
                 this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.ok.send",
@@ -351,14 +358,13 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                 this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.ok.receive",
                         new Object[]{
                             messageTypeStr,
-                            this.jLabelAS2TransmissionGraphRemotepartner.getText(),
-                        }));
+                            this.jLabelAS2TransmissionGraphRemotepartner.getText(),}));
                 this.jLabelTransactionStateDetails.setVisible(true);
                 this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.ok.details"));
             }
         } else if (overviewInfo.getState() == AS2Message.STATE_PENDING) {
             this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_PENDING);
-            this.jLabelTransactionStateGeneral.setForeground(Color.yellow.darker().darker());
+            this.jLabelTransactionStateGeneral.setForeground(this.colorYellow);
             this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.pending"));
             this.jLabelTransactionStateDetails.setVisible(false);
         }
@@ -367,34 +373,34 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     /**
      * Displays the message details log
      */
-    private void displayProcessLog() {
+    private void displayProcessLog(JTextPaneLoggingHandler handler) {
         StyledDocument document = (StyledDocument) this.jTextPaneLog.getDocument();
         StyleContext context = StyleContext.getDefaultStyleContext();
         Style currentStyle = context.getStyle(StyleContext.DEFAULT_STYLE);
-        Color defaultColor = (Color) currentStyle.getAttribute(StyleConstants.Foreground);
+        Color defaultForegroundColor = handler.getDefaultForegroundColor();
         List<LogEntry> entries = ((MessageLogResponse) this.baseClient.sendSync(new MessageLogRequest(overviewInfo.getMessageId()))).getList();
         StringBuilder buffer = new StringBuilder();
         DateFormat format = SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
         for (int i = 0; i < entries.size(); i++) {
+            LogEntry entry = entries.get(i);
             currentStyle.removeAttribute(StyleConstants.Foreground);
-            currentStyle.addAttribute(StyleConstants.Foreground, defaultColor);
-            buffer.append("[").append(format.format(entries.get(i).getMillis())).append("] ");
+            currentStyle.addAttribute(StyleConstants.Foreground, defaultForegroundColor);
+            buffer.append("[").append(format.format(entry.getMillis())).append("] ");
             try {
                 document.insertString(document.getLength(), buffer.toString(), currentStyle);
             } catch (Throwable ignore) {
                 //nop
             }
             buffer.setLength(0);
-            if (entries.get(i).getLevel().equals(Level.WARNING)) {
-                currentStyle.addAttribute(StyleConstants.Foreground, IRCColors.COLOR_NAVY.brighter());
-            } else if (entries.get(i).getLevel().equals(Level.SEVERE)) {
-                currentStyle.addAttribute(StyleConstants.Foreground, IRCColors.COLOR_RED);
-            } else if (entries.get(i).getLevel().equals(Level.FINE)) {
-                currentStyle.addAttribute(StyleConstants.Foreground, IRCColors.COLOR_GREEN);
+            Color color = null;
+            String ircColor = handler.getColor(entry.getLevel());
+            if (ircColor == null) {
+                color = defaultForegroundColor;
             } else {
-                currentStyle.addAttribute(StyleConstants.Foreground, defaultColor);
+                color = IRCColors.toColor(ircColor);
             }
-            buffer.append(entries.get(i).getMessage()).append("\n");
+            currentStyle.addAttribute(StyleConstants.Foreground, color);
+            buffer.append(entry.getMessage()).append("\n");            
             try {
                 document.insertString(document.getLength(), buffer.toString(), currentStyle);
             } catch (Throwable ignore) {
@@ -402,7 +408,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             }
             buffer.setLength(0);
             currentStyle.removeAttribute(StyleConstants.Foreground);
-            currentStyle.addAttribute(StyleConstants.Foreground, defaultColor);
+            currentStyle.addAttribute(StyleConstants.Foreground, defaultForegroundColor);
         }
     }
 
@@ -414,8 +420,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             List<AS2Info> details = ((MessageDetailResponse) this.baseClient.sendSync(new MessageDetailRequest(overviewRow.getMessageId()))).getList();
             ((TableModelMessageDetails) this.jTableMessageDetails.getModel()).passNewData(details);
         } catch (Exception e) {
-            JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-            JOptionPane.showMessageDialog(parent, e.getMessage());
+            UINotification.instance().addNotification(e);
         }
     }
 
@@ -440,17 +445,17 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                     rawFileName = info.getRawFilename();
                 }
             }
-            this.jPanelFileDisplayRaw.displayFile(rawFileName);
+            this.jPanelFileDisplayRaw.displayFile(rawFileName, false);
             String headerFilename = null;
             if (info.getHeaderFilename() != null) {
                 headerFilename = info.getHeaderFilename();
             }
-            this.jPanelFileDisplayHeader.displayFile(headerFilename);
+            this.jPanelFileDisplayHeader.displayFile(headerFilename, false);
             try {
                 if (this.payloadList.size() > 0) {
                     for (int i = 0; i < payloadList.size(); i++) {
                         String payloadFilename = this.payloadList.get(i).getPayloadFilename();
-                        this.jPanelFileDisplayPayload[i].displayFile(payloadFilename);
+                        this.jPanelFileDisplayPayload[i].displayFile(payloadFilename, true);
                     }
                 }
             } catch (Exception e) {
@@ -478,13 +483,14 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         jLabelTransactionState = new javax.swing.JLabel();
         jLabelTransactionStateGeneral = new javax.swing.JLabel();
         jLabelTransactionStateDetails = new javax.swing.JLabel();
-        jLabelStateOverviewImage = new javax.swing.JLabel();
         jPanelSpace = new javax.swing.JPanel();
         jLabelTransmissionDescription = new javax.swing.JLabel();
         jPanelSep = new javax.swing.JPanel();
         jSeparator1 = new javax.swing.JSeparator();
         jPanelSep2 = new javax.swing.JPanel();
         jSeparator2 = new javax.swing.JSeparator();
+        jPanelOverviewImage = new javax.swing.JPanel();
+        jLabelStateOverviewImage = new javax.swing.JLabel();
         jPanelInfo = new javax.swing.JPanel();
         jSplitPane = new javax.swing.JSplitPane();
         jScrollPaneList = new javax.swing.JScrollPane();
@@ -517,7 +523,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
         jPanelHeader.add(jLabelAS2TransmissionGraph, gridBagConstraints);
 
-        jLabelAS2TransmissionGraphLocalstation.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/localstation16x16.gif"))); // NOI18N
+        jLabelAS2TransmissionGraphLocalstation.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/missing_image24x24.gif"))); // NOI18N
         jLabelAS2TransmissionGraphLocalstation.setText("Local station");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -535,7 +541,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         gridBagConstraints.insets = new java.awt.Insets(10, 0, 5, 0);
         jPanelHeader.add(jLabelAS2TransmissionArrow, gridBagConstraints);
 
-        jLabelAS2TransmissionGraphRemotepartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/singlepartner16x16.gif"))); // NOI18N
+        jLabelAS2TransmissionGraphRemotepartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/missing_image24x24.gif"))); // NOI18N
         jLabelAS2TransmissionGraphRemotepartner.setText("Remote Partner");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
@@ -577,15 +583,6 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 5, 5);
         jPanelHeader.add(jLabelTransactionStateDetails, gridBagConstraints);
-
-        jLabelStateOverviewImage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/comm_ok_outbound.png"))); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 6;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.gridheight = 5;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        jPanelHeader.add(jLabelStateOverviewImage, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 7;
@@ -634,6 +631,30 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         gridBagConstraints.gridheight = 6;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         jPanelHeader.add(jPanelSep2, gridBagConstraints);
+
+        jPanelOverviewImage.setLayout(new java.awt.GridBagLayout());
+
+        jLabelStateOverviewImage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/comm_ok_outbound.png"))); // NOI18N
+        jLabelStateOverviewImage.setMaximumSize(new java.awt.Dimension(170, 90));
+        jLabelStateOverviewImage.setMinimumSize(new java.awt.Dimension(170, 90));
+        jLabelStateOverviewImage.setPreferredSize(new java.awt.Dimension(170, 90));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridheight = 5;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelOverviewImage.add(jLabelStateOverviewImage, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 6;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridheight = 6;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        jPanelHeader.add(jPanelOverviewImage, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -732,6 +753,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     private javax.swing.JPanel jPanelHeader;
     private javax.swing.JPanel jPanelInfo;
     private javax.swing.JPanel jPanelMain;
+    private javax.swing.JPanel jPanelOverviewImage;
     private javax.swing.JPanel jPanelProcessLog;
     private javax.swing.JPanel jPanelSep;
     private javax.swing.JPanel jPanelSep2;

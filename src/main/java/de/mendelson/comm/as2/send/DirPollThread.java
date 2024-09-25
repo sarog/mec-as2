@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 21    7.12.18 9:51 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 24    10.12.20 12:04 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  * Thread that polls a directory
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 24 $
  */
 public class DirPollThread implements Runnable {
 
@@ -92,6 +92,10 @@ public class DirPollThread implements Runnable {
         }
     }
 
+    public long getPollIntervalInMS(){
+        return( this.pollInterval );
+    }
+    
     /**
      * Returns a line that describes this thread for the log
      */
@@ -174,7 +178,7 @@ public class DirPollThread implements Runnable {
                 }
         ));
         //allow to process 3 files threaded
-        ExecutorService fixedTheadExecutor = Executors.newFixedThreadPool(3);
+        ExecutorService sendingTheadExecutor = Executors.newFixedThreadPool(3);
         while (!stopRequested) {
             if (this.preferences.getBoolean(PreferencesAS2.LOG_POLL_PROCESS)) {
                 Calendar calendar = Calendar.getInstance();
@@ -254,7 +258,7 @@ public class DirPollThread implements Runnable {
                     }
                     //wait for all threads to be finished
                     try {
-                        fixedTheadExecutor.invokeAll(tasks);
+                        sendingTheadExecutor.invokeAll(tasks);
                     } catch (InterruptedException e) {
                         //nop
                     }
@@ -263,6 +267,7 @@ public class DirPollThread implements Runnable {
                 }
             }
         }
+        sendingTheadExecutor.shutdown();
     }
 
     /**
@@ -312,8 +317,8 @@ public class DirPollThread implements Runnable {
                     }));
             SendOrderSender orderSender = new SendOrderSender(this.configConnection, this.runtimeConnection);
             AS2Message message = orderSender.send(this.certificateManagerEncSign, this.sender, this.receiver, file.toFile(), null,
-                    this.receiver.getSubject());
-            clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
+                    this.receiver.getSubject(), null);
+            this.clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
 
             try {
                 Files.delete(file);

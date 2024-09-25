@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_de.java 40    27.09.18 13:21 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_de.java 50    11.12.20 11:56 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 50 $
  */
 public class ResourceBundlePreferences_de extends MecResourceBundle {
 
@@ -47,9 +47,11 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"tab.maintenance", "Systempflege"},
         {"tab.notification", "Benachrichtigungen"},
         {"tab.interface", "Module"},
-        {"tab.log", "Log"},
+        {"tab.log", "Protokoll"},
         {"header.dirname", "Typ"},
         {"header.dirvalue", "Verzeichnis"},
+        {"label.language", "Sprache" },
+        {"label.country", "Land/Region" },
         {"label.keystore.https.pass", "Keystore Passwort (zum Senden via Https):"},
         {"label.keystore.pass", "Keystore Password (Verschlüsselung/digitale Signatur):"},
         {"label.keystore.https", "Keystore (zum Senden via Https):"},
@@ -62,7 +64,7 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"filechooser.keystore", "Bitte wählen Sie die Keystore Datei (JKS Format)."},
         {"label.days", "Tage"},
         {"label.deletemsgolderthan", "Automatisches Löschen von Nachrichten, die älter sind als"},
-        {"label.deletemsglog", "Logeinträge für automatisch gelöschte Nachrichten"},
+        {"label.deletemsglog", "Automatisches Löschen von Dateien und Logeinträgen protokollieren"},
         {"label.deletestatsolderthan", "Automatisches Löschen von Statistikdaten, die älter sind als"},
         {"label.asyncmdn.timeout", "Maximale Wartezeit auf asynchrone MDNs:"},
         {"label.httpsend.timeout", "HTTP(s) Sende-Timeout:"},
@@ -74,6 +76,8 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"checkbox.notifycem", "Ereignisse beim Zertifikataustausch (CEM)"},
         {"checkbox.notifyfailure", "Nach Systemproblemen"},
         {"checkbox.notifyresend", "Nach abgewiesenen Resends"},
+        {"checkbox.notifyconnectionproblem", "Bei Verbindungsproblemen"},
+        {"checkbox.notifypostprocessing", "Probleme bei der Nachbearbeitung"},
         {"button.testmail", "Sende Test Mail"},
         {"label.mailhost", "Mailserver (SMTP):"},
         {"label.mailport", "Port:"},
@@ -100,17 +104,24 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.retry.max", "Max Anzahl der Versuche zum Verbindungsaufbau"},
         {"label.retry.waittime", "Wartezeit zwischen Verbindungsaufbauversuchen"},
         {"label.sec", "s"},
-        {"keystore.hint", "Achtung:\nBitte ändern Sie diese Parameter nur, wenn Sie externe Keystores einbinden möchten oder Sie über ein externes Programm die Passwörter der unterliegenden Keystore Dateien modifiziert haben (was nicht empfehlenswert ist!). Wenn Sie diese Einstellungen ändern, werden nicht automatisch die Pfade der unterliegenden Keystores oder deren Passwörter angepasst."},
+        {"keystore.hint", "<HTML><strong>Achtung:</strong><br>Bitte ändern Sie diese Parameter nur, wenn Sie externe Keystores "
+            + "einbinden möchten oder Sie über ein externes Programm die Passwörter der unterliegenden Keystore Dateien "
+            + "modifiziert haben (was nicht empfehlenswert ist!). Wenn Sie diese Einstellungen ändern, werden nicht automatisch "
+            + "die Pfade der unterliegenden Keystores oder deren Passwörter angepasst. Mit veränderten Passwörtern kann es zu "
+            + "Problemen beim Update kommen.</HTML>"},
         {"maintenancemultiplier.day", "Tag(e)"},
         {"maintenancemultiplier.hour", "Stunde(n)"},
         {"maintenancemultiplier.minute", "Minute(n)"},
-        {"label.logpollprocess", "Informationen zum Pollprozes im Log anzeigen (Viele Einträge - nicht im Produktivbetrieb verwenden)"},
+        {"label.logpollprocess", "Informationen zum Pollprozes im Protokoll anzeigen (viele Einträge - nicht im Produktivbetrieb verwenden)"},
         {"label.max.outboundconnections", "Max ausgehende parallele Verbindungen"},
         {"event.preferences.modified.subject", "Der Wert {0} der Servereinstellungen wurde modifiziert"},
         {"event.preferences.modified.body", "Alter Wert: {0}\nNeuer Wert: {1}"},
         {"event.notificationdata.modified.subject", "Die Einstellungen zur Benachrichtigung wurden verändert"},
         {"event.notificationdata.modified.body", "Die Benachrichtigungsdaten wurden von\n\n{0}\n\nnach\n\n{1}\n\n verändert." },
         {"label.maxmailspermin", "Max Anzahl von Benachrichtigungen/min:"},
+        {"systemmaintenance.hint", "<HTML>Dies legt den Zeitrahmen fest, in dem die Transaktionen und die zugehörigen Daten im System verbleiben und in der Transaktionsübersicht angezeigt werden sollen.<br>Diese Einstellungen betreffen <strong>nicht</strong> Ihre empfangenen Daten/Dateien, diese bleiben unberührt.<br>Selbst für gelöschte Transaktionen ist das Transaktionsprotokoll über die Funktionalität der Logsuche weiterhin verfügbar.</HTML>" },
+        {"label.colorblindness", "Unterstützung für Farbblindheit" },
+        {"warning.clientrestart.required", "Die Client Einstellungen wurden geändert - bitte starten Sie den Client neu, damit sie gültig werden" },
     };
 
 }

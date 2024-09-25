@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/MecFileChooser.java 19    31.03.11 12:17 Heller $
+//$Header: /converteride/de/mendelson/util/MecFileChooser.java 21    8.11.19 14:48 Heller $
 package de.mendelson.util;
 
 import java.awt.Frame;
@@ -6,6 +6,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
+import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -32,7 +33,7 @@ import javax.swing.text.JTextComponent;
  * This shows a file chooser, it is possible to select a native or the
  * swing file chooser.
  * @author  S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class MecFileChooser extends JFileChooser {
     //supports only one type of choosers at the moment
@@ -57,6 +58,7 @@ public class MecFileChooser extends JFileChooser {
      * @param TYPE type of the dialog to choose as defined in the class
      *@deprecated use the same method without the type settings
      */
+    @Deprecated
     public MecFileChooser(Frame parent, String defaultDirectory,
             String dialogTitle, final int TYPE) {
         this(parent, dialogTitle);
@@ -202,6 +204,11 @@ public class MecFileChooser extends JFileChooser {
         return (file.getAbsolutePath());
     }
 
+    /**Sets the preselected file in the directory chooser and returns if this was successful*/
+    public void setPreselectedFile(Path preselectedFile) {
+        this.setPreselectedFile(preselectedFile.toFile());
+    }
+    
     /**Sets the preselected file in the directory chooser and returns if this was successful*/
     public void setPreselectedFile(File preselectedFile) {
         if (!preselectedFile.exists()) {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 23    13.11.18 11:58 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 25    20.09.19 10:32 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 25 $
  */
 public class ResourceBundleSystemEvent_de extends MecResourceBundle {
 
@@ -88,8 +88,13 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_FILE_MOVE, "Datei (verschieben)"},
         {"type." + SystemEvent.TYPE_FILE_COPY, "Datei (kopieren)"},
         {"type." + SystemEvent.TYPE_MKDIR, "Verzeichnis erstellen"},
-        {"type." + SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED, "Verzeichnisüberwachung (Status verändert)"},
+        {"type." + SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED, "Verzeichnisüberwachung (Status verändert)"},        
+        {"type." + SystemEvent.TYPE_CLIENT_ANY, "Client"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGIN_FAILURE, "Benutzeranmeldung (Fehlgeschlagen)"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGIN_SUCCESS, "Benutzeranmeldung (Erfolg)"},
+        {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Benutzertrennung"},
         {"type." + SystemEvent.TYPE_OTHER, "Unspezifiziert"},
+        {"type." + SystemEvent.TYPE_PORT_LISTENER, "Empfangsport"},
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "System"},
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaktion"},
         {"origin." + SystemEvent.ORIGIN_USER, "Benutzer"},
@@ -108,5 +113,6 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_SERVER_COMPONENTS, "Server Komponente"},
         {"category." + SystemEvent.CATEGORY_TRANSACTION, "Transaktion"},
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "Dateioperation" },
+        {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Client Operation" },
     };
 }

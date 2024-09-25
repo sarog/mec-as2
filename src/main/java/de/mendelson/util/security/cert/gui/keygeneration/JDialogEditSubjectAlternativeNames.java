@@ -1,11 +1,13 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/keygeneration/JDialogEditSubjectAlternativeNames.java 2     6/01/17 11:59a Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/gui/keygeneration/JDialogEditSubjectAlternativeNames.java 4     27 $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.event.ListSelectionEvent;
@@ -24,7 +26,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * Dialog that is shown if multiple files should be closed
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class JDialogEditSubjectAlternativeNames extends JDialog implements ListSelectionListener {
 
@@ -35,6 +37,11 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
     private MecResourceBundle rb = null;
     private JFrame parent;
     private List<GeneralName> namesList;
+
+    private final static MendelsonMultiResolutionImage ICON_ADD
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/add.svg", 24, 48);
+    private final static MendelsonMultiResolutionImage ICON_DELETE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/delete.svg", 24, 48);
 
     public JDialogEditSubjectAlternativeNames(JFrame parent, List<GeneralName> namesList) {
         super(parent, true);
@@ -49,24 +56,33 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
         }
         setTitle(this.rb.getResourceString("title"));
         initComponents();
-        this.jLabelInfo.setText( "<HTML>" + this.rb.getResourceString( "info") + "</HTML>");        
+        this.setMultiresolutionIcons();
+        this.jLabelInfo.setText("<HTML>" + this.rb.getResourceString("info") + "</HTML>");
         ((TableModelSubjectAlternativeNames) this.jTable.getModel()).passNewData(this.parent, namesList);
         this.jTable.getTableHeader().setReorderingAllowed(false);
         this.jTable.getSelectionModel().addListSelectionListener(this);
         TableColumn columnType = this.jTable.getColumn(this.jTable.getColumnName(0));
         List<String> allValues = new ArrayList<String>();
-        allValues.add( TagNo.DIR_NAME);
-        allValues.add( TagNo.DNS_NAME);        
-        allValues.add( TagNo.IP_ADDRESS);
-        allValues.add( TagNo.REGISTERED_ID);
-        allValues.add( TagNo.RFC822_NAME);
-        allValues.add( TagNo.URI);
+        allValues.add(TagNo.DIR_NAME);
+        allValues.add(TagNo.DNS_NAME);
+        allValues.add(TagNo.IP_ADDRESS);
+        allValues.add(TagNo.REGISTERED_ID);
+        allValues.add(TagNo.RFC822_NAME);
+        allValues.add(TagNo.URI);
         //The following values are in the API but seem not to work during the generation process:
         //allValues.add( TableModelSubjectAlternativeNames.TagNo.X400);    
         //allValues.add( TableModelSubjectAlternativeNames.TagNo.EDI_PARTY_NAME);
         columnType.setCellEditor(new TableCellEditorSubjectAlternativeNames(allValues));
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setButtonState();
+    }
+    
+    /**
+     * Overwrite the designers icons by multi resolution icons
+     */
+    private void setMultiresolutionIcons() {
+        this.jButtonAdd.setIcon(new ImageIcon(ICON_ADD));
+        this.jButtonDel.setIcon(new ImageIcon(ICON_DELETE));
     }
 
     public List<GeneralName> getNewValue() {
@@ -139,7 +155,7 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(25, 5, 15, 5);
+        gridBagConstraints.insets = new java.awt.Insets(25, 10, 15, 10);
         jPanelMain.add(jLabelInfo, gridBagConstraints);
 
         jTable.setModel(new de.mendelson.util.security.cert.gui.keygeneration.TableModelSubjectAlternativeNames());
@@ -155,10 +171,10 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 0.9;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelMain.add(jScrollPane, gridBagConstraints);
 
-        jButtonAdd.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/add_24x24.gif"))); // NOI18N
+        jButtonAdd.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/missing_image24x24.gif"))); // NOI18N
         jButtonAdd.setText(this.rb.getResourceString( "label.add")
         );
         jButtonAdd.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
@@ -172,10 +188,10 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 10);
         jPanelMain.add(jButtonAdd, gridBagConstraints);
 
-        jButtonDel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/delete_24x24.gif"))); // NOI18N
+        jButtonDel.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/missing_image24x24.gif"))); // NOI18N
         jButtonDel.setText(this.rb.getResourceString( "label.del"));
         jButtonDel.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
         jButtonDel.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
@@ -188,7 +204,7 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelMain.add(jButtonDel, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();

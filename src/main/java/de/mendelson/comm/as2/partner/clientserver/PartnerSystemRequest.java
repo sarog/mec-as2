@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemRequest.java 2     4/06/18 12:21p Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemRequest.java 3     18.12.20 14:25 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -16,15 +16,20 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class PartnerSystemRequest extends ClientServerMessage implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    private Partner partner;
+    
+    public static final int TYPE_LIST_ALL = 1;
+    public static final int TYPE_LIST_SINGLE = 2;
+    
+    private Partner partner = null;
+    private int type = TYPE_LIST_ALL;
 
-    public PartnerSystemRequest(Partner partner) {
-        this.partner = partner;
+    public PartnerSystemRequest(final int TYPE) {
+        this.type = TYPE;
     }
 
     @Override
@@ -37,5 +42,19 @@ public class PartnerSystemRequest extends ClientServerMessage implements Seriali
      */
     public Partner getPartner() {
         return partner;
+    }
+
+    /**
+     * @param partner the partner to set if the type is TYPE_LIST_SINGLE
+     */
+    public void setPartner(Partner partner) {
+        this.partner = partner;
+    }
+
+    /**
+     * @return the type
+     */
+    public int getType() {
+        return type;
     }
 }

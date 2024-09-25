@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/log/IRCColors.java 7     31.03.11 13:37 Heller $
+//$Header: /as2/de/mendelson/util/log/IRCColors.java 10    9.09.20 10:27 Heller $
 package de.mendelson.util.log;
 
 import java.awt.Color;
+import java.text.DecimalFormat;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -17,7 +18,7 @@ import java.awt.Color;
  * String myMessage = IRCColors.RED + "Error: " + IRCColors.NORMAL + "An error occured.";
  *</pre>
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 10 $
  */
 public class IRCColors {
 
@@ -42,21 +43,33 @@ public class IRCColors {
      * 15 lt.grey (silver)
      */
     protected static final Color[] indexedColors = {
+        //white
         Color.white,
+        //black
         Color.black,
+        //blue (navy)
         new Color(0x00007f),
+        //green
         new Color(0x009300),
+        // red
         Color.red.darker(),
+        //brown (maroon)
         new Color(0x7f0000),
+        //purple
         new Color(0x9c009c),
+        //orange/olive
         new Color(0xfc7f00),
+        //yellow
         Color.yellow,
-        Color.green,
+        //light green
+        new Color(0x07BA00),
+        //teal (a kinda green/blue cyan)
         new Color(0x009393),
-        // new Color(0x00ffff),
+        //cyan
         Color.cyan,
+        //blue royal
         Color.blue,
-        // new Color(0xff00ff),
+        //light purple
         Color.magenta,
         // new Color(0x7f7f7f),
         Color.darkGray,
@@ -66,17 +79,23 @@ public class IRCColors {
 
     public static final Color COLOR_WHITE = indexedColors[0];
     public static final Color COLOR_BLACK = indexedColors[1];
+    //NAVY is a dark blue
     public static final Color COLOR_NAVY = indexedColors[2];
     public static final Color COLOR_GREEN = indexedColors[3];
     public static final Color COLOR_RED = indexedColors[4];
     public static final Color COLOR_BROWN = indexedColors[5];
     public static final Color COLOR_PURPLE = indexedColors[6];
+    //Orange is same as OLIVE
     public static final Color COLOR_ORANGE = indexedColors[7];
     public static final Color COLOR_YELLOW = indexedColors[8];
+    //LIME is dark cyan
     public static final Color COLOR_LIME = indexedColors[9];
+    //CYAN: like TEAL
     public static final Color COLOR_CYAN = indexedColors[10];
+    //AQUA is blue
     public static final Color COLOR_AQUA = indexedColors[11];
     public static final Color COLOR_ROYAL = indexedColors[12];
+    //FUCHSIA: pink color like magenta
     public static final Color COLOR_FUCHSIA = indexedColors[13];
     public static final Color COLOR_GRAY = indexedColors[14];
     public static final Color COLOR_SILVER = indexedColors[15];
@@ -169,6 +188,22 @@ public class IRCColors {
         return (indexedColors[index]);
     }
 
+    /**Returns a matching IRC color to the passed java color - has to be correct match,
+     * else WHITE is returned
+     * @param ircColor
+     * @return 
+     */
+    public static String toColorStr( Color ircColor ){
+        DecimalFormat format = new DecimalFormat("00");
+        for( int i = 0; i < indexedColors.length; i++ ){
+            if( indexedColors[i].equals( ircColor )){
+                return( "\u0003" + format.format(i));
+            }
+        }
+        return( WHITE );
+    }
+    
+    
     /**
      * Removes all colors and formatting from a line that contains IRC style formatting
      */

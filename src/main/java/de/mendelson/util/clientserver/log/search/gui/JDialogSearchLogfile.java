@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 1     20.12.18 15:05 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 9     15.10.19 15:26 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
+import de.mendelson.util.DateChooserUI;
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.log.search.Logline;
 import de.mendelson.util.clientserver.log.search.ServerSideLogfileFilter;
@@ -22,9 +24,11 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
+import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -42,7 +46,7 @@ import javax.swing.SwingUtilities;
  * Dialog to search on the server side in the log files
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 9 $
  */
 public class JDialogSearchLogfile extends JDialog {
 
@@ -52,6 +56,8 @@ public class JDialogSearchLogfile extends JDialog {
     private Date currentStartDate = new Date();
     private Date currentEndDate = new Date();
     private DateFormat datetimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    private final MendelsonMultiResolutionImage IMAGE_MAGNIFYING_GLASS
+            = MendelsonMultiResolutionImage.fromSVG( "/de/mendelson/util/clientserver/log/search/gui/magnifying_glass.svg", 24, 48); 
 
     /**
      * Creates new form JDialogSearchLogfile
@@ -69,6 +75,7 @@ public class JDialogSearchLogfile extends JDialog {
         this.statusBar = statusBar;
         this.baseClient = baseClient;
         initComponents();
+        this.setMultiresolutionIcons();
         this.setupDateChooser();
         //hide dialog on esc
         ActionListener actionListenerESC = new ActionListener() {
@@ -80,9 +87,14 @@ public class JDialogSearchLogfile extends JDialog {
         KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         this.getRootPane().registerKeyboardAction(actionListenerESC, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
         this.getRootPane().setDefaultButton(this.jButtonSearch);
-        this.jTextFieldSearchText.setText(this.rb.getResourceString("textfield.preset"));        
+        this.jTextFieldSearchText.setText(this.rb.getResourceString("textfield.preset"));  
+        
     }
 
+    private void setMultiresolutionIcons() {
+        this.jButtonSearch.setIcon(new ImageIcon(IMAGE_MAGNIFYING_GLASS.toMinResolution(24)));
+    }
+    
     /**
      * Allows to copy a transmission number to the clipboard which will be used
      * automatically in the search dialog
@@ -117,7 +129,10 @@ public class JDialogSearchLogfile extends JDialog {
         super.setVisible(flag);
     }
 
+    /**Defines the date chooser and the used colors*/
     private void setupDateChooser() {
+        this.jDateChooserStartDate.setUI(new DateChooserUI());
+        this.jDateChooserStartDate.setLocale(Locale.getDefault());
         this.jDateChooserStartDate.setDate(this.currentStartDate);
         this.jDateChooserStartDate.getDateEditor().addPropertyChangeListener(
                 new PropertyChangeListener() {
@@ -128,6 +143,8 @@ public class JDialogSearchLogfile extends JDialog {
                 }
             }
         });
+        this.jDateChooserEndDate.setUI(new DateChooserUI());
+        this.jDateChooserEndDate.setLocale(Locale.getDefault());
         this.jDateChooserEndDate.setDate(this.currentEndDate);
         this.jDateChooserEndDate.getDateEditor().addPropertyChangeListener(
                 new PropertyChangeListener() {
@@ -278,9 +295,10 @@ public class JDialogSearchLogfile extends JDialog {
         jPanelSearch.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelSearch.setLayout(new java.awt.GridBagLayout());
 
-        jButtonSearch.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/log/search/gui/magnifying_glass24x24.png"))); // NOI18N
+        jButtonSearch.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/log/search/gui/missing_image24x24.gif"))); // NOI18N
         jButtonSearch.setText(this.rb.getResourceString( "label.search"));
         jButtonSearch.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonSearch.setMargin(new java.awt.Insets(5, 14, 2, 14));
         jButtonSearch.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
         jButtonSearch.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -289,10 +307,10 @@ public class JDialogSearchLogfile extends JDialog {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 17;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridheight = 4;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 8;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.PAGE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 15);
         jPanelSearch.add(jButtonSearch, gridBagConstraints);
 
         jLabelStartDate.setText(this.rb.getResourceString( "label.startdate"));
@@ -311,16 +329,16 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelSearch.add(jLabelEndDate, gridBagConstraints);
 
-        jDateChooserStartDate.setMinimumSize(new java.awt.Dimension(110, 20));
-        jDateChooserStartDate.setPreferredSize(new java.awt.Dimension(110, 20));
+        jDateChooserStartDate.setMinimumSize(new java.awt.Dimension(130, 20));
+        jDateChooserStartDate.setPreferredSize(new java.awt.Dimension(130, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelSearch.add(jDateChooserStartDate, gridBagConstraints);
 
-        jDateChooserEndDate.setMinimumSize(new java.awt.Dimension(110, 20));
-        jDateChooserEndDate.setPreferredSize(new java.awt.Dimension(110, 20));
+        jDateChooserEndDate.setMinimumSize(new java.awt.Dimension(130, 20));
+        jDateChooserEndDate.setPreferredSize(new java.awt.Dimension(130, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 5;
@@ -330,10 +348,10 @@ public class JDialogSearchLogfile extends JDialog {
         jSeparator1.setOrientation(javax.swing.SwingConstants.VERTICAL);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 15;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridheight = 4;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 15);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 10);
         jPanelSearch.add(jSeparator1, gridBagConstraints);
 
         jSeparator2.setOrientation(javax.swing.SwingConstants.VERTICAL);
@@ -342,7 +360,7 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.gridheight = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 15);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 10);
         jPanelSearch.add(jSeparator2, gridBagConstraints);
 
         buttonGroupSearchSelection.add(jRadioButtonMessageId);
@@ -388,7 +406,7 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 18;
+        gridBagConstraints.gridwidth = 15;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 15, 5);
@@ -400,7 +418,7 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.gridheight = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 15);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 10);
         jPanelSearch.add(jSeparator3, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -451,7 +469,7 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(0, 10, 10, 10);
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(914, 691));
+        setSize(new java.awt.Dimension(1035, 691));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 7     15.11.18 12:59 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 10    29.10.19 11:25 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,6 +11,7 @@ import java.util.ResourceBundle;
 import javax.swing.JTree;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 
 
@@ -23,8 +24,9 @@ import javax.swing.tree.TreePath;
  */
 /**
  * Tree to display remote file structure
- * @author  S.Heller
- * @version $Revision: 7 $
+ *
+ * @author S.Heller
+ * @version $Revision: 10 $
  */
 public class JTreeRemoteStructure extends JTree {
 
@@ -33,10 +35,13 @@ public class JTreeRemoteStructure extends JTree {
     private boolean directoriesOnly = false;
     private MecResourceBundle rb;
 
-    /**Holds a new partner ID for every created partner that is always negativ
-     *but unique in this lifecycle
+    /**
+     * Holds a new partner ID for every created partner that is always negativ
+     * but unique in this lifecycle
      */
-    /**Tree constructor*/
+    /**
+     * Tree constructor
+     */
     public JTreeRemoteStructure() {
         super(new DefaultMutableTreeNode());
         //load resource bundle
@@ -51,14 +56,16 @@ public class JTreeRemoteStructure extends JTree {
         this.root = (DefaultMutableTreeNode) this.getModel().getRoot();
         TreeCellRendererFileBrowser treeCellRenderer = new TreeCellRendererFileBrowser();
         this.setCellRenderer(treeCellRenderer);
-        int iconHeight = treeCellRenderer.getDefaultLeafIcon().getIconHeight();
-        this.setRowHeight(Math.max(this.getRowHeight(), iconHeight+5));
+        int iconHeight = treeCellRenderer.getDefaultLeafIconHeight();
+        this.setRowHeight(Math.max(this.getRowHeight(), iconHeight + 5));
     }
 
     public void addRoots(List<FileObjectRoot> roots) {
         synchronized (this.map) {
             this.map.clear();
             this.root.removeAllChildren();
+        }
+        synchronized (this.map) {
             for (FileObject remoteRoot : roots) {
                 DefaultMutableTreeNode node = new DefaultMutableTreeNode(remoteRoot);
                 this.root.add(node);
@@ -66,41 +73,52 @@ public class JTreeRemoteStructure extends JTree {
                 //add a dummy node below - indicates that the roow has not been expanded so far
                 node.add(new DefaultMutableTreeNode(this.rb.getResourceString("wait")));
             }
-            ((DefaultTreeModel) this.getModel()).nodeStructureChanged(root);
-            this.expand(this.root);
         }
+        ((DefaultTreeModel) this.getModel()).nodeStructureChanged(this.root);
+        this.expand(this.root);
     }
 
-    /**Expands a node*/
+    /**
+     * Expands a node
+     */
     private void expand(DefaultMutableTreeNode node) {
-        this.expandPath(new TreePath(node.getPath()));
-        this.fireTreeExpanded(new TreePath(node.getPath()));
+        TreePath treePath = null;
+        synchronized (node) {
+            treePath = new TreePath(node.getPath());
+            this.expandPath(treePath);
+        }
+        this.fireTreeExpanded(treePath);
     }
 
     public boolean isExplored(DefaultMutableTreeNode node) {
-        if (node.getChildCount() == 1) {
-            DefaultMutableTreeNode firstChild = (DefaultMutableTreeNode) node.getFirstChild();
-            if (firstChild.getUserObject() instanceof String) {
-                return (false);
+        synchronized (node) {
+            if (node.getChildCount() == 1) {
+                DefaultMutableTreeNode firstChild = (DefaultMutableTreeNode) node.getFirstChild();
+                if (firstChild.getUserObject() instanceof String) {
+                    //its the "wait" indicator
+                    return (false);
+                }
             }
         }
         return (true);
     }
 
-    public boolean nodeexists(FileObject node){
+    public boolean nodeexists(FileObject node) {
         synchronized (this.map) {
             DefaultMutableTreeNode parentNode = this.map.get(node);
-            return( parentNode != null );
+            return (parentNode != null);
         }
     }
-    
-    
+
     public void addChildren(FileObject parent, List<FileObject> children) {
+        DefaultMutableTreeNode parentNode = null;
         synchronized (this.map) {
-            DefaultMutableTreeNode parentNode = this.map.get(parent);
+            parentNode = this.map.get(parent);
             //remove dummy node
             parentNode.removeAllChildren();
-            ((DefaultTreeModel) this.getModel()).nodeStructureChanged(parentNode);
+        }
+        ((DefaultTreeModel) this.getModel()).nodeStructureChanged(parentNode);
+        synchronized (this.map) {            
             for (FileObject child : children) {
                 if (child instanceof FileObjectDir
                         || !this.directoriesOnly) {
@@ -112,24 +130,29 @@ public class JTreeRemoteStructure extends JTree {
                     }
                 }
             }
-            ((DefaultTreeModel) this.getModel()).nodeStructureChanged(parentNode);
-            this.expand(parentNode);
-            this.setSelectedNode(parent);
         }
+        ((DefaultTreeModel) this.getModel()).nodeStructureChanged(parentNode);
+        this.expand(parentNode);
+        this.setSelectedNode(parent);
     }
 
+    /**
+     * Returns the Tree node for a passed FileObject
+     */
     public void setSelectedNode(FileObject selection) {
+        DefaultMutableTreeNode selectionNode = null;
         synchronized (this.map) {
-            DefaultMutableTreeNode selectionNode = this.map.get(selection);
-            if( selectionNode != null ){
-                TreePath selectionPath = new TreePath(selectionNode.getPath());                
-                this.scrollPathToVisible(selectionPath);
-                this.setSelectionPath(selectionPath);
-            }
+            selectionNode = this.map.get(selection);
+        }
+        if (selectionNode != null) {
+            TreePath selectionPath = new TreePath(selectionNode.getPath());
+            this.scrollPathToVisible(selectionPath);
+            this.setSelectionPath(selectionPath);
         }
     }
 
-    /**Returns the selected node of the Tree
+    /**
+     * Returns the selected node of the Tree
      */
     public DefaultMutableTreeNode getSelectedNode() {
         TreePath path = this.getSelectionPath();

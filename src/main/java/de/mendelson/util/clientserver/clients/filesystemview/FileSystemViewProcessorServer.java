@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewProcessorServer.java 16    16.11.18 14:20 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewProcessorServer.java 19    29.10.19 9:47 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.io.File;
@@ -32,7 +32,7 @@ import javax.swing.filechooser.FileSystemView;
  * Processes file system view requests
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 19 $
  */
 public class FileSystemViewProcessorServer {
 
@@ -61,9 +61,22 @@ public class FileSystemViewProcessorServer {
         return (null);
     }
 
+    /**
+     * Returns the system icon - may return null if this is not accessible
+     */
     private Icon getSystemIcon(URI fileURI) {
         FileSystemView view = FileSystemView.getFileSystemView();
-        return (view.getSystemIcon(new File(fileURI)));
+        Icon systemIcon = null;
+        try {
+            systemIcon = view.getSystemIcon(new File(fileURI));
+        } catch (Throwable e) {
+            //it is possible that the process owner has no access to the root file
+            //system - e.g. if its LocalSystem under Windows. In this case there will be no root
+            //icon and this method should return null
+            this.logger.warning("Client Request (FileSystemViewProcessorServer.getSystemIcon): Unable to access the system icon for URL \""
+                    + fileURI.toString() + "\" - will use the fallback icon at the client.");
+        }
+        return (systemIcon);
     }
 
     private boolean fileSystemSupportsPosix() {
@@ -114,74 +127,125 @@ public class FileSystemViewProcessorServer {
         return (false);
     }
 
+    /**
+     * Lists the system roots
+     */
+    private List<FileObject> listRoots() {
+        List<FileObject> rootList = new ArrayList<FileObject>();
+        try {
+            File[] roots = File.listRoots();
+            for (File root : roots) {
+                String storeName = this.getRootFileStorageName(root.toURI());
+                Icon icon = this.getSystemIcon(root.toURI());
+                rootList.add(new FileObjectRoot(root.toURI(), storeName, icon));
+            }
+        } catch (Throwable e) {
+            this.logger.warning("Client Request (FileSystemViewProcessorServer [LIST_ROOTS]): Unable to determine file system roots. "
+                    + "[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+        }
+        return (rootList);
+    }
+
+    /**
+     * Lists the children for a specific path
+     */
+    private List<FileObject> listChildren(String requestPath, FileFilter filter) {
+        Path parentDir = Paths.get(requestPath);
+        List<FileObject> childList = new ArrayList<FileObject>();
+        try {
+            List<Path> children = this.listFilesNIOAcceptAll(parentDir);
+            for (Path child : children) {
+                if (Files.isDirectory(child)) {
+                    FileObjectDir fileObject = new FileObjectDir(child.toUri());
+                    fileObject.setHidden(this.isHidden(child));
+                    boolean isSymbolicLink = Files.isSymbolicLink(child);
+                    if (isSymbolicLink) {
+                        fileObject.setIsSymbolikLink(true);
+                        try {
+                            Path symbolicLinkTarget = Files.readSymbolicLink(child);
+                            fileObject.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
+                        } catch (Exception e) {
+                            //java.nio.file.NotLinkException: The file or directory is not a reparse point.
+                        }
+                    }
+                    childList.add(fileObject);
+                } else {
+                    if (filter.displayFile(child)) {
+                        Icon icon = this.getSystemIcon(child.toUri());
+                        FileObjectFile fileObject = new FileObjectFile(child.toUri(), icon);
+                        fileObject.setHidden(this.isHidden(child));
+                        fileObject.setExecutable(this.isExecutable(child));
+                        fileObject.setReadOnly(!Files.isWritable(child));
+                        boolean isSymbolicLink = Files.isSymbolicLink(child);
+                        if (isSymbolicLink) {
+                            fileObject.setIsSymbolikLink(true);
+                            try {
+                                Path symbolicLinkTarget = Files.readSymbolicLink(child);
+                                fileObject.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
+                            } catch (Exception e) {
+                                //java.nio.file.NotLinkException: The file or directory is not a reparse point.
+                            }
+                        }
+                        childList.add(fileObject);
+                    }
+                }
+            }
+            Collections.sort(childList);
+        } catch (Throwable e) {
+            this.logger.warning("Client Request (FileSystemViewProcessorServer [LIST_CHILDREN]): Unable to list children for path \"" + requestPath
+                    + "\". [" + e.getClass().getSimpleName() + "] " + e.getMessage());
+        }
+        return (childList);
+    }
+
+    private List<FileObject> listPathElements(String pathString) {
+        List<FileObject> elements = new ArrayList<FileObject>();
+        try {
+            if (pathString != null) {
+                Path pathFile = Paths.get(pathString);
+                while (pathFile != null) {
+                    if (Files.exists(pathFile)) {
+                        if (pathFile.getParent() == null) {
+                            String storeName = this.getRootFileStorageName(pathFile.toUri());
+                            Icon icon = this.getSystemIcon(pathFile.toUri());
+                            elements.add(0, new FileObjectRoot(pathFile.toUri(), storeName, icon));
+                        } else if (Files.isDirectory(pathFile)) {
+                            FileObjectDir fileObjectDir = new FileObjectDir(pathFile.toUri());
+                            fileObjectDir.setHidden(this.isHidden(pathFile));
+                            boolean isSymbolicLink = Files.isSymbolicLink(pathFile);
+                            if (isSymbolicLink) {
+                                fileObjectDir.setIsSymbolikLink(true);
+                                try {
+                                    Path symbolicLinkTarget = Files.readSymbolicLink(pathFile);
+                                    fileObjectDir.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
+                                } catch (Exception e) {
+                                    //java.nio.file.NotLinkException: The file or directory is not a reparse point.
+                                }
+                            }
+                            elements.add(0, fileObjectDir);
+                        }
+                    }
+                    pathFile = pathFile.getParent();
+                }
+            }
+        } catch (Throwable e) {
+            this.logger.warning("Client Request (FileSystemViewProcessorServer [LIST_PATH_ELEMENT]): Unable to list path elements for path \"" + pathString
+                    + "\". [" + e.getClass().getSimpleName() + "] " + e.getMessage());
+        }
+        return (elements);
+    }
+
     public FileSystemViewResponse performRequest(FileSystemViewRequest request) {
         FileFilter filter = request.getFileFilter();
         FileSystemViewResponse response = new FileSystemViewResponse(request);
         final int requestType = request.getRequestType();
         switch (requestType) {
             case FileSystemViewRequest.TYPE_LIST_ROOTS:
-                List<FileObject> rootList = new ArrayList<FileObject>();
-                try {
-                    File[] roots = File.listRoots();
-                    for (File root : roots) {
-                        String storeName = this.getRootFileStorageName(root.toURI());
-                        Icon icon = this.getSystemIcon(root.toURI());
-                        rootList.add(new FileObjectRoot(root.toURI(), storeName, icon));
-                    }
-                } catch (Throwable e) {
-                    //this.logger.warning("FileSystemViewProcessorServer [LIST_ROOTS]: Unable to determine file system roots: " + e.getMessage());
-                } finally {
-                    response.setParameterFileArray(rootList);
-                }
+                response.setParameterFileArray(this.listRoots());
                 break;
             case FileSystemViewRequest.TYPE_LIST_CHILDREN:
                 String requestPath = request.getRequestFilePath();
-                Path parentDir = Paths.get(requestPath);
-                List<FileObject> childList = new ArrayList<FileObject>();
-                try {
-                    List<Path> children = this.listFilesNIOAcceptAll(parentDir);
-                    for (Path child : children) {
-                        if (Files.isDirectory(child)) {
-                            FileObjectDir fileObject = new FileObjectDir(child.toUri());
-                            fileObject.setHidden(this.isHidden(child));
-                            boolean isSymbolicLink = Files.isSymbolicLink(child);
-                            if (isSymbolicLink) {
-                                fileObject.setIsSymbolikLink(true);
-                                try {
-                                    Path symbolicLinkTarget = Files.readSymbolicLink(child);
-                                    fileObject.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
-                                } catch (Exception e) {
-                                    //java.nio.file.NotLinkException: The file or directory is not a reparse point.
-                                }
-                            }
-                            childList.add(fileObject);
-                        } else {
-                            if (filter.displayFile(child)) {
-                                Icon icon = this.getSystemIcon(child.toUri());
-                                FileObjectFile fileObject = new FileObjectFile(child.toUri(), icon);
-                                fileObject.setHidden(this.isHidden(child));
-                                fileObject.setExecutable(this.isExecutable(child));
-                                fileObject.setReadOnly(!Files.isWritable(child));
-                                boolean isSymbolicLink = Files.isSymbolicLink(child);
-                                if (isSymbolicLink) {
-                                    fileObject.setIsSymbolikLink(true);
-                                    try {
-                                        Path symbolicLinkTarget = Files.readSymbolicLink(child);
-                                        fileObject.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
-                                    } catch (Exception e) {
-                                        //java.nio.file.NotLinkException: The file or directory is not a reparse point.
-                                    }
-                                }
-                                childList.add(fileObject);
-                            }
-                        }
-                    }
-                    Collections.sort(childList);
-                } catch (Throwable e) {
-                    //this.logger.warning("FileSystemViewProcessorServer [LIST_CHILDREN]: Unable to list children: " + e.getMessage());
-                } finally {
-                    response.setParameterFileArray(childList);
-                }
+                response.setParameterFileArray(this.listChildren(requestPath, filter));
                 break;
             case FileSystemViewRequest.TYPE_GET_ABSOLUTE_PATH_STR:
                 String pathStr = "";
@@ -195,36 +259,7 @@ public class FileSystemViewProcessorServer {
                 }
                 break;
             case FileSystemViewRequest.TYPE_GET_PATH_ELEMENTS:
-                List<FileObject> elements = new ArrayList<FileObject>();
-                String pathString = request.getRequestFilePath();
-                if (pathString != null) {
-                    Path pathFile = Paths.get(pathString);
-                    while (pathFile != null) {
-                        if (Files.exists(pathFile)) {
-                            if (pathFile.getParent() == null) {
-                                String storeName = this.getRootFileStorageName(pathFile.toUri());
-                                Icon icon = this.getSystemIcon(pathFile.toUri());
-                                elements.add(0, new FileObjectRoot(pathFile.toUri(), storeName, icon));
-                            } else if (Files.isDirectory(pathFile)) {
-                                FileObjectDir fileObjectDir = new FileObjectDir(pathFile.toUri());
-                                fileObjectDir.setHidden(this.isHidden(pathFile));
-                                boolean isSymbolicLink = Files.isSymbolicLink(pathFile);
-                                if (isSymbolicLink) {
-                                    fileObjectDir.setIsSymbolikLink(true);
-                                    try {
-                                        Path symbolicLinkTarget = Files.readSymbolicLink(pathFile);
-                                        fileObjectDir.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
-                                    } catch (Exception e) {
-                                        //java.nio.file.NotLinkException: The file or directory is not a reparse point.
-                                    }
-                                }
-                                elements.add(0, fileObjectDir);
-                            }
-                        }
-                        pathFile = pathFile.getParent();
-                    }
-                }
-                response.setParameterFileArray(elements);
+                response.setParameterFileArray(this.listPathElements(request.getRequestFilePath()));
                 break;
             case FileSystemViewRequest.TYPE_GET_FILE_SEPARATOR:
                 response.setParameterString(FileSystems.getDefault().getSeparator());

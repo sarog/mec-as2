@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor.java 7     9.10.18 12:29 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor.java 9     25.06.20 10:36 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleHTTPServerConfigProcessor extends MecResourceBundle {
 
@@ -41,7 +41,10 @@ public class ResourceBundleHTTPServerConfigProcessor extends MecResourceBundle {
         {"webapp.as4.war", "mendelson AS4 receipt servlet"},
         {"webapp.webas2.war", "mendelson AS2 server web monitoring"},
         {"webapp.as2-sample.war", "mendelson AS2 API samples"},
-        {"info.cipher", "The following ciphers are supported by the underlying HTTP server.\nWhich ones are supported depends on your used Java VM (it''s {1}).\nYou can disable single ciphers in the configuration file\n(\"{0}\")."},
-        {"info.protocols", "The following protocols are supported by the underlying HTTP server.\nWhich ones are supported depends on your used Java VM (it''s {1}).\nYou can disable single protocols in the configuration file\n(\"{0}\")."},};
-
+        {"webapp.as4-sample.war", "mendelson AS4 API samples"},
+        {"info.cipher", "The following ciphers are supported by the underlying HTTP server for inbound connections. Which ones are supported depends on your used Java VM (it''s {1}). You can disable single ciphers in the configuration file (\"{0}\")."},
+        {"info.cipher.howtochange", "To disable ciphers for inbound connections please edit your unterlaying HTTP servers config file ({0}) using a text editor. Please search for the tag <Set name=\"ExcludeCipherSuites\">, add the cipher to exclude and restart the program."},
+        {"info.protocols", "The following protocols are supported by the underlying HTTP server for inbound connections. Which ones are supported depends on your used Java VM (it''s {1}). You can disable single protocols in the configuration file (\"{0}\")."},
+        {"info.protocols.howtochange", "To disable TLS protocols for inbound connections please edit your unterlaying HTTP servers config file ({0}) using a text editor. Please search for the tag <Set name=\"excludeProtocols\">, add the protocol to exclude and restart the program."},
+    };
 }

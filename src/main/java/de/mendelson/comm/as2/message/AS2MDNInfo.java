@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNInfo.java 5     4/06/18 12:32p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNInfo.java 6     22.08.19 10:26 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -15,7 +15,7 @@ import java.util.Properties;
 /**
  * Stores all information about a as2 message
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class AS2MDNInfo implements AS2Info {
 
@@ -191,19 +191,19 @@ public class AS2MDNInfo implements AS2Info {
         StringBuilder buffer = new StringBuilder();
         buffer.append("direction=\t\t").append(this.direction);
         buffer.append("\n");
-        buffer.append("headerFilename=\t\t").append(this.headerFilename);
+        buffer.append("headerFilename=\t\t").append(this.headerFilename==null?"NULL":this.headerFilename);
         buffer.append("\n");
-        buffer.append("messageDate=\t\t").append(this.initDate);
+        buffer.append("messageDate=\t\t").append(this.initDate==null?"NULL":this.initDate);
         buffer.append("\n");
-        buffer.append("messageId=\t\t").append(this.relatedMessageId);
+        buffer.append("messageId=\t\t").append(this.relatedMessageId==null?"NULL":this.relatedMessageId);
         buffer.append("\n");
-        buffer.append("rawFilename=\t\t").append(this.rawFilename);
-        buffer.append("receiverId=\t\t").append(this.receiverId);
+        buffer.append("rawFilename=\t\t").append(this.rawFilename==null?"NULL":this.rawFilename);
+        buffer.append("receiverId=\t\t").append(this.receiverId==null?"NULL":this.receiverId);
         buffer.append("\n");
-        buffer.append("relatedMessageId=\t\t").append(this.relatedMessageId);
-        buffer.append("senderHost=\t\t").append(this.senderHost);
+        buffer.append("relatedMessageId=\t\t").append(this.relatedMessageId==null?"NULL":this.relatedMessageId);
+        buffer.append("senderHost=\t\t").append(this.senderHost==null?"NULL":this.senderHost);
         buffer.append("\n");
-        buffer.append("senderId=\t\t").append(this.senderId);
+        buffer.append("senderId=\t\t").append(this.senderId==null?"NULL":this.senderId);
         buffer.append("\n");
         buffer.append("signType=\t\t").append(this.signType);
         buffer.append("\n");

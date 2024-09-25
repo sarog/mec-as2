@@ -1,15 +1,18 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogImportKeyJKS.java 3     6/05/18 11:13a Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImportKeyJKS.java 9     11.11.20 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
+
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.MecFileChooser;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.JKSKeys2PKCS12;
 import de.mendelson.util.security.KeyStoreUtil;
+import de.mendelson.util.uinotification.UINotification;
 import java.security.KeyStore;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Logger;
+import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -26,126 +29,135 @@ import javax.swing.SwingUtilities;
  */
 /**
  * Import a JKS key into the PCKS#12 keystore
+ *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 9 $
  */
 public class JDialogImportKeyJKS extends JDialog {
-    
-    /**ResourceBundle to localize the GUI*/
-    private MecResourceBundle rb = null;    
-    private CertificateManager manager = null;    
+
+    /**
+     * ResourceBundle to localize the GUI
+     */
+    private MecResourceBundle rb = null;
+    private CertificateManager manager = null;
     private String newAlias = null;
     private Logger logger = null;
-    
-    /** Creates new form JDialogPartnerConfig
-     *@param manager Manager that handles the certificates
+
+    /**
+     * Creates new form JDialogPartnerConfig
+     *
+     * @param manager Manager that handles the certificates
      */
-    public JDialogImportKeyJKS(JFrame parent, Logger logger, CertificateManager manager ) {
-        super( parent, true );
+    public JDialogImportKeyJKS(JFrame parent, Logger logger, CertificateManager manager) {
+        super(parent, true);
         //load resource bundle
-        try{
-            this.rb = (MecResourceBundle)ResourceBundle.getBundle(
+        try {
+            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleImportKeyJKS.class.getName());
-        } catch ( MissingResourceException e ) {
-            throw new RuntimeException( "Oops..resource bundle "
-                    + e.getClassName() + " not found." );
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
         }
-        this.setTitle( this.rb.getResourceString( "title" ));
+        this.setTitle(this.rb.getResourceString("title"));
         initComponents();
+        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(32)));
         this.logger = logger;
         this.manager = manager;
-        this.getRootPane().setDefaultButton( this.jButtonOk );
+        this.getRootPane().setDefaultButton(this.jButtonOk);
     }
-    
-    public String getNewAlias(){
-        return( this.newAlias );
+
+    public String getNewAlias() {
+        return (this.newAlias);
     }
-    
-    /**Sets the ok and cancel buttons of this GUI*/
-    private void setButtonState(){
-        this.jButtonOk.setEnabled( this.jTextFieldImportJKSFile.getText().length() > 0
-                && this.jPasswordFieldPassphrase.getPassword().length > 0 );
+
+    /**
+     * Sets the ok and cancel buttons of this GUI
+     */
+    private void setButtonState() {
+        this.jButtonOk.setEnabled(this.jTextFieldImportJKSFile.getText().length() > 0
+                && this.jPasswordFieldPassphrase.getPassword().length > 0);
     }
-    
-    /**Finally import the key*/
-    private void performImport(){
-        JFrame parent = (JFrame)SwingUtilities.getAncestorOfClass( JFrame.class, this );
-        try{
-            KeyStoreUtil util = new KeyStoreUtil();            
-            KeyStore sourceKeystore = KeyStore.getInstance( "JKS", "SUN" );
-            util.loadKeyStore( sourceKeystore, this.jTextFieldImportJKSFile.getText(), 
+
+    /**
+     * Finally import the key
+     */
+    private void performImport() {
+        JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        try {
+            KeyStoreUtil util = new KeyStoreUtil();
+            KeyStore sourceKeystore = KeyStore.getInstance("JKS", "SUN");
+            util.loadKeyStore(sourceKeystore, this.jTextFieldImportJKSFile.getText(),
                     this.jPasswordFieldPassphrase.getPassword());
             List<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
             String selectedAlias = null;
-            if( keyAliasesList.isEmpty() ){
-                throw new Exception( this.rb.getResourceString( "keystore.contains.nokeys" ));
-            }else if( keyAliasesList.size() == 1 ){
+            if (keyAliasesList.isEmpty()) {
+                throw new Exception(this.rb.getResourceString("keystore.contains.nokeys"));
+            } else if (keyAliasesList.size() == 1) {
                 selectedAlias = keyAliasesList.get(0);
-            }else{
+            } else {
                 //multiple keys available
                 Object[] aliasArray = new Object[keyAliasesList.size()];
-                for( int i = 0; i < keyAliasesList.size(); i++ ){
+                for (int i = 0; i < keyAliasesList.size(); i++) {
                     aliasArray[i] = keyAliasesList.get(i);
                 }
-                Object selectedAliasObject = JOptionPane.showInputDialog( parent, 
-                        this.rb.getResourceString( "multiple.keys.message" ),
-                        this.rb.getResourceString( "multiple.keys.title" ), JOptionPane.QUESTION_MESSAGE,
-                        null, aliasArray, aliasArray[0] );
+                Object selectedAliasObject = JOptionPane.showInputDialog(parent,
+                        this.rb.getResourceString("multiple.keys.message"),
+                        this.rb.getResourceString("multiple.keys.title"), JOptionPane.QUESTION_MESSAGE,
+                        null, aliasArray, aliasArray[0]);
                 //user break
-                if( selectedAliasObject == null ){
+                if (selectedAliasObject == null) {
                     return;
                 }
                 selectedAlias = selectedAliasObject.toString();
             }
             JKSKeys2PKCS12 importer = new JKSKeys2PKCS12(this.logger);
-            importer.setTargetKeyStore( this.manager.getKeystore());
-            
-            char[] sourceKeypass = this.requestKeyPass( parent, selectedAlias);
+            importer.setTargetKeyStore(this.manager.getKeystore());
+
+            char[] sourceKeypass = this.requestKeyPass(parent, selectedAlias);
             //user canceled
-            if( sourceKeypass == null ){
+            if (sourceKeypass == null) {
                 return;
             }
-            importer.exportKey( sourceKeystore, sourceKeypass, selectedAlias );
+            importer.exportKey(sourceKeystore, sourceKeypass, selectedAlias);
             this.newAlias = selectedAlias;
-            JOptionPane.showMessageDialog( this,
-                    this.rb.getResourceString( "key.import.success.message" ),
-                    this.rb.getResourceString( "key.import.success.title" ),
-                    JOptionPane.INFORMATION_MESSAGE );            
-        } catch( Exception e ){
-            JOptionPane.showMessageDialog( this,
-                    this.rb.getResourceString( "key.import.error.message", e.getMessage()),
-                    this.rb.getResourceString( "key.import.error.title" ),
-                    JOptionPane.ERROR_MESSAGE );
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_SUCCESS,
+                    this.rb.getResourceString("key.import.success.title"),
+                    this.rb.getResourceString("key.import.success.message"));
+        } catch (Exception e) {
+            UINotification.instance().addNotification(null,
+                    UINotification.TYPE_ERROR,
+                    this.rb.getResourceString("key.import.error.title"),
+                    this.rb.getResourceString("key.import.error.message", e.getMessage()));
         }
     }
-    
-    private char[] requestKeyPass( JFrame parent, String alias ){
+
+    private char[] requestKeyPass(JFrame parent, String alias) {
         final JPasswordField passwordField = new JPasswordField(20);
-        final JOptionPane dialog = new JOptionPane(passwordField, 
-                JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION){
-            @Override public void selectInitialValue() {
+        final JOptionPane dialog = new JOptionPane(passwordField,
+                JOptionPane.INFORMATION_MESSAGE, JOptionPane.OK_CANCEL_OPTION) {
+            @Override
+            public void selectInitialValue() {
                 passwordField.requestFocusInWindow();
             }
         };
-        dialog.createDialog(parent, this.rb.getResourceString( "enter.keypassword", alias )).setVisible(true);
+        dialog.createDialog(parent, this.rb.getResourceString("enter.keypassword", alias)).setVisible(true);
         Object answer = dialog.getValue();
-        if (answer == null || answer == JOptionPane.UNINITIALIZED_VALUE)
-            return( null );
-        else{
-            int keyIndex = ((Integer)answer).intValue();
-            if( keyIndex == 0 ){
-                return( passwordField.getPassword() );
+        if (answer == null || answer == JOptionPane.UNINITIALIZED_VALUE) {
+            return (null);
+        } else {
+            int keyIndex = ((Integer) answer).intValue();
+            if (keyIndex == 0) {
+                return (passwordField.getPassword());
             }
         }
-        return( null );
+        return (null);
     }
-    
-    
-    
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
      */
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -169,7 +181,7 @@ public class JDialogImportKeyJKS extends JDialog {
         jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelEdit.setLayout(new java.awt.GridBagLayout());
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/key32x32.gif"))); // NOI18N
+        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
@@ -202,9 +214,9 @@ public class JDialogImportKeyJKS extends JDialog {
         gridBagConstraints.weighty = 1.0;
         jPanelEdit.add(jPanel3, gridBagConstraints);
 
-        jButtonBrowseImportFile.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/folder.gif"))); // NOI18N
+        jButtonBrowseImportFile.setText("..");
         jButtonBrowseImportFile.setToolTipText(this.rb.getResourceString( "button.browse"));
-        jButtonBrowseImportFile.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonBrowseImportFile.setMargin(new java.awt.Insets(2, 8, 2, 8));
         jButtonBrowseImportFile.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonBrowseImportFileActionPerformed(evt);
@@ -274,38 +286,38 @@ public class JDialogImportKeyJKS extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        java.awt.Dimension screenSize = java.awt.Toolkit.getDefaultToolkit().getScreenSize();
-        setBounds((screenSize.width-409)/2, (screenSize.height-245)/2, 409, 245);
+        setSize(new java.awt.Dimension(409, 245));
+        setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
-    
+
     private void jPasswordFieldPassphraseKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldPassphraseKeyReleased
         this.setButtonState();
     }//GEN-LAST:event_jPasswordFieldPassphraseKeyReleased
-    
+
     private void jButtonBrowseImportFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseImportFileActionPerformed
-        JFrame parent = (JFrame)SwingUtilities.getAncestorOfClass( JFrame.class, this );
+        JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         MecFileChooser chooser = new MecFileChooser(
                 parent,
-                this.rb.getResourceString( "filechooser.key.import" ));
-        chooser.browseFilename( this.jTextFieldImportJKSFile );
+                this.rb.getResourceString("filechooser.key.import"));
+        chooser.browseFilename(this.jTextFieldImportJKSFile);
     }//GEN-LAST:event_jButtonBrowseImportFileActionPerformed
-    
+
     private void jTextFieldImportJKSFileKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldImportJKSFileKeyReleased
         this.setButtonState();
     }//GEN-LAST:event_jTextFieldImportJKSFileKeyReleased
-    
+
     private void jButtonCancelActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCancelActionPerformed
-        this.setVisible( false );
+        this.setVisible(false);
         this.dispose();
     }//GEN-LAST:event_jButtonCancelActionPerformed
-    
+
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
-        this.setVisible( false );
+        this.setVisible(false);
         this.performImport();
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
-    
-    
+
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonBrowseImportFile;
     private javax.swing.JButton jButtonCancel;
@@ -319,5 +331,5 @@ public class JDialogImportKeyJKS extends JDialog {
     private javax.swing.JPasswordField jPasswordFieldPassphrase;
     private javax.swing.JTextField jTextFieldImportJKSFile;
     // End of variables declaration//GEN-END:variables
-    
+
 }

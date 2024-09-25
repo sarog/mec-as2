@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSR_fr.java 3     4/06/18 1:35p Heller $
+//$Header: /oftp2/de/mendelson/util/security/csr/ResourceBundleCSR_fr.java 5     7.07.20 13:44 Heller $
 package de.mendelson.util.security.csr;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleCSR_fr extends MecResourceBundle {
 
@@ -46,5 +46,8 @@ public class ResourceBundleCSR_fr extends MecResourceBundle {
         {"csrresponse.import.success.message", "La clé a été patchée avec succès avec la réponse de CA."},
         {"csrresponse.import.success.title", "Chemin de confiance clé établi"},
         {"csrresponse.import.failure.message", "{0}"},
-        {"csrresponse.import.failure.title", "Problème"},};
+        {"csrresponse.import.failure.title", "Problème"},
+        {"cancel", "Annuler" },
+        {"ca.connection.problem", "HTTP {0}: L''AC de Mendelson n'est pas disponible actuellement. Veuillez réessayer plus tard." },
+    };
 }

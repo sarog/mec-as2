@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 12    4.10.18 13:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 24    7.12.20 14:29 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -6,10 +6,14 @@ import de.mendelson.comm.as2.timing.CertificateExpireController;
 import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
+import de.mendelson.comm.as2.send.DirPollManager;
 import de.mendelson.util.AS2Tools;
+import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import java.nio.file.Paths;
 import java.sql.Connection;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +31,7 @@ import java.util.concurrent.TimeUnit;
  * Checks several issues of the configuration
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 24 $
  */
 public class ConfigurationCheckController {
 
@@ -37,13 +41,17 @@ public class ConfigurationCheckController {
     private Connection configConnection;
     private Connection runtimeConnection;
     private PreferencesAS2 preferences = new PreferencesAS2();
+    private HTTPServerConfigInfo httpServerConfigInfo;
+    private DirPollManager pollManager;
 
     public ConfigurationCheckController(CertificateManager managerEncSign, CertificateManager managerSSL, Connection configConnection,
-            Connection runtimeConnection) {
+            Connection runtimeConnection, HTTPServerConfigInfo httpServerConfigInfo, DirPollManager pollManager) {
         this.configConnection = configConnection;
         this.runtimeConnection = runtimeConnection;
         this.managerEncSign = managerEncSign;
         this.managerSSL = managerSSL;
+        this.httpServerConfigInfo = httpServerConfigInfo;
+        this.pollManager = pollManager;
     }
 
     /**
@@ -76,7 +84,7 @@ public class ConfigurationCheckController {
         private Connection configConnection;
         private Connection runtimeConnection;
         private boolean stopRequested = false;
-        //wait this time between checks, once a day
+        //wait this time between checks
         private final long WAIT_TIME = TimeUnit.SECONDS.toMillis(30);
 
         public ConfigurationCheckThread(Connection configConnection, Connection runtimeConnection) {
@@ -107,7 +115,7 @@ public class ConfigurationCheckController {
             }
             return (issues);
         }
-        
+
         public void runAllChecks() {
             this.checkCertificatesExpired();
             this.checkSSLKeystore();
@@ -117,6 +125,9 @@ public class ConfigurationCheckController {
             this.checkOutboundConnectionsAllowed();
             this.checkAllPartnersCertificatesAvailable();
             this.checkDataModel32bit();
+            this.checkTLSKeystoreSettings();
+            this.checkWindowsServiceWithLocalSystemAccount();
+            this.checkDirPollAmount();
         }
 
         /**
@@ -166,6 +177,12 @@ public class ConfigurationCheckController {
                 if (CertificateExpireController.getCertificateExpireDuration(cert) <= 0) {
                     ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN);
                     issue.setDetails(cert.getAlias());
+                    DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM);
+                    issue.setHintParameter(new Object[]{
+                        cert.getAlias(), cert.getIssuerDN(), cert.getFingerPrintSHA1(),
+                        dateFormat.format(cert.getNotBefore()),
+                        dateFormat.format(cert.getNotAfter())
+                    });
                     synchronized (this.issueList) {
                         this.issueList.add(issue);
                     }
@@ -176,6 +193,12 @@ public class ConfigurationCheckController {
                 if (CertificateExpireController.getCertificateExpireDuration(cert) <= 0) {
                     ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CERTIFICATE_EXPIRED_SSL);
                     issue.setDetails(cert.getAlias());
+                    DateFormat dateFormat = DateFormat.getDateInstance(DateFormat.MEDIUM);
+                    issue.setHintParameter(new Object[]{
+                        cert.getAlias(), cert.getIssuerDN(), cert.getFingerPrintSHA1(),
+                        dateFormat.format(cert.getNotBefore()),
+                        dateFormat.format(cert.getNotAfter())
+                    });
                     synchronized (this.issueList) {
                         this.issueList.add(issue);
                     }
@@ -283,7 +306,8 @@ public class ConfigurationCheckController {
 
         private void checkHeapMemory() {
             long maxMemory = Runtime.getRuntime().maxMemory();
-            if (maxMemory < 950000000L) {
+            long oneGB = 1073741824L;
+            if (maxMemory < 4 * oneGB) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.LOW_MAX_HEAP_MEMORY);
                 issue.setDetails(AS2Tools.getDataSizeDisplay(maxMemory));
                 synchronized (this.issueList) {
@@ -291,5 +315,69 @@ public class ConfigurationCheckController {
                 }
             }
         }
+
+        /**
+         * Checks if the underlaying http server uses the same keystore as
+         * defined in the settings
+         *
+         */
+        private void checkTLSKeystoreSettings() {
+            //its possible to start the system without the http server. In this case there are some values missing
+            if (httpServerConfigInfo == null || httpServerConfigInfo.getKeystorePath() == null) {
+                return;
+            }
+            String httpsKeystorePath = Paths.get(httpServerConfigInfo.getKeystorePath()).normalize().toAbsolutePath().toString();
+            String preferencesKeystorePath = Paths.get(preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).normalize().toAbsolutePath().toString();
+            if (!httpsKeystorePath.equals(preferencesKeystorePath)) {
+                ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.DIFFERENT_KEYSTORES_TLS);
+                issue.setHintParameter(
+                        new Object[]{
+                            httpsKeystorePath,
+                            httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString(),
+                            preferencesKeystorePath
+                        });
+                synchronized (this.issueList) {
+                    this.issueList.add(issue);
+                }
+            }
+        }
+
+        /**
+         * Checks if the system runs as service with a local system account.
+         * This is a problem because Windows updates may change the rights of
+         * this user and it is possible that formerly written files of this user
+         * become read only or unaccessible for this user.
+         */
+        private void checkWindowsServiceWithLocalSystemAccount() {
+            //check if this is a windows service with a local system account as user
+            if (System.getenv("iswindowsservice") != null && System.getenv("iswindowsservice").equals("1")) {
+                String serverUser = System.getProperty("user.name");
+                if (serverUser != null && serverUser.contains("$")) {
+                    ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT);
+                    issue.setDetails(serverUser);
+                    issue.setHintParameter(new Object[]{serverUser});
+                    synchronized (this.issueList) {
+                        this.issueList.add(issue);
+                    }
+                }
+            }
+        }
+
+        /**
+         * Checks if the number of dir polls exceeds 5 polls/sec - these are
+         * 300polls/min. This might have impact on the file IO
+         */
+        private void checkDirPollAmount() {
+            float pollsPerMin = ConfigurationCheckController.this.pollManager.getPollsPerMinute();
+            if (pollsPerMin > 300f) {
+                ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.TOO_MANY_DIR_POLLS);
+                issue.setDetails(String.format("%.0f", pollsPerMin));
+                issue.setHintParameter(new Object[]{String.format("%.0f", pollsPerMin)});
+                synchronized (this.issueList) {
+                    this.issueList.add(issue);
+                }
+            }
+        }
+
     }
 }

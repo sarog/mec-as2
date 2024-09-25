@@ -1,11 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelMDN.java 12    24.09.18 17:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelMDN.java 16    28.01.20 15:30 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -18,7 +20,7 @@ import java.util.ResourceBundle;
  * Panel to define the MDN preferences
  *
  * @author S.Heller
- * @version: $Revision: 12 $
+ * @version: $Revision: 16 $
  */
 public class PreferencesPanelMDN extends PreferencesPanel {
 
@@ -27,6 +29,10 @@ public class PreferencesPanelMDN extends PreferencesPanel {
      */
     private MecResourceBundle rb = null;
 
+    protected final static MendelsonMultiResolutionImage IMAGE_PREFS
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/preferences.svg", 
+                    JDialogPreferences.IMAGE_HEIGHT, JDialogPreferences.IMAGE_HEIGHT*2);
+    
     /**
      * GUI prefs
      */
@@ -106,6 +112,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        jPanelMargin = new javax.swing.JPanel();
         jLabelMinutes = new javax.swing.JLabel();
         jPanelSpace = new javax.swing.JPanel();
         jLabelAsyncMDNTimeout = new javax.swing.JLabel();
@@ -123,6 +130,8 @@ public class PreferencesPanelMDN extends PreferencesPanel {
 
         setLayout(new java.awt.GridBagLayout());
 
+        jPanelMargin.setLayout(new java.awt.GridBagLayout());
+
         jLabelMinutes.setText(this.rb.getResourceString( "label.min"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -131,14 +140,14 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        add(jLabelMinutes, gridBagConstraints);
+        jPanelMargin.add(jLabelMinutes, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 18;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weighty = 1.0;
-        add(jPanelSpace, gridBagConstraints);
+        jPanelMargin.add(jPanelSpace, gridBagConstraints);
 
         jLabelAsyncMDNTimeout.setText(this.rb.getResourceString( "label.asyncmdn.timeout"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -146,7 +155,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        add(jLabelAsyncMDNTimeout, gridBagConstraints);
+        jPanelMargin.add(jLabelAsyncMDNTimeout, gridBagConstraints);
 
         jTextFieldSendHttpTimeout.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldSendHttpTimeout.setPreferredSize(new java.awt.Dimension(50, 20));
@@ -155,7 +164,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 15, 5);
-        add(jTextFieldSendHttpTimeout, gridBagConstraints);
+        jPanelMargin.add(jTextFieldSendHttpTimeout, gridBagConstraints);
 
         jLabelHttpSendTimeout.setText(this.rb.getResourceString( "label.httpsend.timeout"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -163,7 +172,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 15, 5);
-        add(jLabelHttpSendTimeout, gridBagConstraints);
+        jPanelMargin.add(jLabelHttpSendTimeout, gridBagConstraints);
 
         jTextFieldAsyncMDNTimeout.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldAsyncMDNTimeout.setPreferredSize(new java.awt.Dimension(50, 20));
@@ -172,7 +181,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        add(jTextFieldAsyncMDNTimeout, gridBagConstraints);
+        jPanelMargin.add(jTextFieldAsyncMDNTimeout, gridBagConstraints);
 
         jLabelMilliseconds.setText("ms");
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -182,7 +191,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 15, 5);
-        add(jLabelMilliseconds, gridBagConstraints);
+        jPanelMargin.add(jLabelMilliseconds, gridBagConstraints);
 
         jLabelConnectionRetryCount.setText(this.rb.getResourceString( "label.retry.max"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -190,7 +199,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelConnectionRetryCount, gridBagConstraints);
+        jPanelMargin.add(jLabelConnectionRetryCount, gridBagConstraints);
 
         jTexFieldRetryCount.setMinimumSize(new java.awt.Dimension(50, 20));
         jTexFieldRetryCount.setPreferredSize(new java.awt.Dimension(50, 20));
@@ -199,7 +208,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jTexFieldRetryCount, gridBagConstraints);
+        jPanelMargin.add(jTexFieldRetryCount, gridBagConstraints);
 
         jLabelConnectionRetryTime.setText(this.rb.getResourceString( "label.retry.waittime"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -207,7 +216,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 5;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelConnectionRetryTime, gridBagConstraints);
+        jPanelMargin.add(jLabelConnectionRetryTime, gridBagConstraints);
 
         jTextFieldRetryWaittime.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldRetryWaittime.setPreferredSize(new java.awt.Dimension(50, 20));
@@ -216,7 +225,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 5;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jTextFieldRetryWaittime, gridBagConstraints);
+        jPanelMargin.add(jTextFieldRetryWaittime, gridBagConstraints);
 
         jLabelSeconds.setText(this.rb.getResourceString( "label.sec"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -226,7 +235,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
-        add(jLabelSeconds, gridBagConstraints);
+        jPanelMargin.add(jLabelSeconds, gridBagConstraints);
 
         jLabelOutboundConnections.setText(this.rb.getResourceString("label.max.outboundconnections"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -234,7 +243,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabelOutboundConnections, gridBagConstraints);
+        jPanelMargin.add(jLabelOutboundConnections, gridBagConstraints);
 
         jTextFieldOutboundConnections.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldOutboundConnections.setPreferredSize(new java.awt.Dimension(50, 20));
@@ -243,7 +252,14 @@ public class PreferencesPanelMDN extends PreferencesPanel {
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jTextFieldOutboundConnections, gridBagConstraints);
+        jPanelMargin.add(jTextFieldOutboundConnections, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jPanelMargin, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
@@ -256,6 +272,7 @@ public class PreferencesPanelMDN extends PreferencesPanel {
     private javax.swing.JLabel jLabelMinutes;
     private javax.swing.JLabel jLabelOutboundConnections;
     private javax.swing.JLabel jLabelSeconds;
+    private javax.swing.JPanel jPanelMargin;
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JTextField jTexFieldRetryCount;
     private javax.swing.JTextField jTextFieldAsyncMDNTimeout;
@@ -265,8 +282,8 @@ public class PreferencesPanelMDN extends PreferencesPanel {
     // End of variables declaration//GEN-END:variables
 
     @Override
-    public String getIconResource() {
-        return ("/de/mendelson/comm/as2/preferences/preferences32x32.gif");
+    public ImageIcon getIcon() {
+        return (new ImageIcon( IMAGE_PREFS ));                
     }
 
     @Override

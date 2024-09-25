@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 42    4/06/18 2:41p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 44    18.02.20 14:37 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
@@ -39,7 +39,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * Abstract client for a user
  *
  * @author S.Heller
- * @version $Revision: 42 $
+ * @version $Revision: 44 $
  */
 public class BaseClient {
 
@@ -105,7 +105,8 @@ public class BaseClient {
 
     public LoginState login(String user, char[] passwd, String clientId) {
         if (!this.isConnected()) {
-            throw new IllegalStateException("[Client-Server communication] BaseClient.login: Not connected. Please connect first.");
+            throw new IllegalStateException("[Client-Server communication] BaseClient.login: "
+                    + "Not connected to a server. Please connect first.");
         }
         LoginRequest login = new LoginRequest();
         login.setPasswd(passwd);
@@ -134,15 +135,17 @@ public class BaseClient {
 
     public boolean connect(InetSocketAddress hostAddress, long timeout) {
         if (this.isConnected()) {
-            throw new IllegalStateException("[Client-Server communication] BaseClient.connect: Already connected to " + hostAddress + ". Disconnect first.");
+            throw new IllegalStateException("[Client-Server communication] BaseClient.connect: "
+                    + "Already connected to " + hostAddress + ". Please disconnect first.");
         }
         try {
             this.connector.setConnectTimeoutMillis(timeout);
             this.connector.setHandler(this.clientSessionHandler);
             //add SSL support
             SslFilter sslFilter = new SslFilter(this.createSSLContextClient());
+            sslFilter.setEnabledProtocols(ClientServer.SERVERSIDE_ACCEPTED_TLS_PROTOCOLS);
             sslFilter.setNeedClientAuth(false);
-            sslFilter.setUseClientMode(true);
+            sslFilter.setUseClientMode(true);            
             this.connector.getFilterChain().addFirst("TLS", sslFilter);
             //add CPU bound tasks first
             this.connector.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger, this.clientSessionHandler.getCallback())));
@@ -161,7 +164,8 @@ public class BaseClient {
                 return (false);
             }
         } catch (Exception e) {
-            this.log(Level.WARNING, "[Client-Server communication] BaseClient.connect: " + e.getMessage());
+            this.log(Level.WARNING, "[Client-Server communication] "
+                    + "BaseClient.connect: " + e.getMessage());
             return false;
         }
     }
@@ -195,7 +199,8 @@ public class BaseClient {
 
     public void broadcast(ClientServerMessage message) {
         if (!this.isConnected()) {
-            throw new IllegalStateException("[Client-Server communication] BaseClient.broadcast: Not connected. Please connect first.");
+            throw new IllegalStateException("[Client-Server communication] "
+                    + "BaseClient.broadcast: Not connected to a server. Please connect first.");
         }
         this.session.write(message);
     }
@@ -205,7 +210,8 @@ public class BaseClient {
      */
     public void sendAsync(ClientServerMessage message) {
         if (!this.isConnected()) {
-            throw new IllegalStateException("[Client-Server communication] BaseClient.sendAsync: Not connected. Please connect first.");
+            throw new IllegalStateException("[Client-Server communication] BaseClient.sendAsync: "
+                    + "Not connected to a server. Please connect first.");
         }
         WriteFuture future = this.session.write(message);
     }
@@ -230,7 +236,8 @@ public class BaseClient {
      */
     public ClientServerResponse sendSyncWaitInfinite(ClientServerMessage request) {
         if (!this.isConnected()) {
-            throw new IllegalStateException("[Client-Server communication] BaseClient.sendSyncWaitInfinite: Not connected. Please connect first.");
+            throw new IllegalStateException("[Client-Server communication] BaseClient.sendSyncWaitInfinite: "
+                    + "Not connected to a server. Please connect first.");
         }
         ClientServerResponse response = null;
         request._setSyncRequest(true);
@@ -239,7 +246,10 @@ public class BaseClient {
             WriteFuture writeFuture = this.session.write(request);
             boolean isSent = writeFuture.await(TIMEOUT_SYNC_SEND, TimeUnit.MILLISECONDS);
             if (!isSent) {
-                throw new TimeoutException("[Client-Server communication] Send timeout - Could not send sync request to server after " + TIMEOUT_SYNC_SEND + "ms");
+                StringBuilder message = new StringBuilder("[Client-Server communication]");
+                message.append( "(" ).append( request.toString() ).append( ") ");
+                message.append( "Send timeout - Could not send sync request to server after " + TIMEOUT_SYNC_SEND + "ms" );
+                throw new TimeoutException(message.toString());
             }
             if (writeFuture.getException() != null) {
                 throw (writeFuture.getException());
@@ -263,7 +273,8 @@ public class BaseClient {
      */
     public ClientServerResponse sendSync(ClientServerMessage request, long timeout) {
         if (!this.isConnected()) {
-            throw new IllegalStateException("[Client-Server communication] BaseClient.sendSync: Not connected. Please connect first.");
+            throw new IllegalStateException("[Client-Server communication] "
+                    + "BaseClient.sendSync: Not connected to a server. Please connect first.");
         }
         ClientServerResponse response = null;
         request._setSyncRequest(true);
@@ -272,15 +283,21 @@ public class BaseClient {
             WriteFuture writeFuture = this.session.write(request);
             boolean isSent = writeFuture.await(TIMEOUT_SYNC_SEND, TimeUnit.MILLISECONDS);
             if (!isSent) {
-                throw new TimeoutException("[Client-Server communication] Send timeout - Could not send sync request to server after " + TIMEOUT_SYNC_SEND + "ms");
+                StringBuilder message = new StringBuilder("[Client-Server communication]");
+                message.append( "(" ).append( request.toString() ).append( ") ");
+                message.append( "Send timeout - Could not send sync request to server after " + TIMEOUT_SYNC_SEND + "ms" );
+                throw new TimeoutException(message.toString());
             }
             if (writeFuture.getException() != null) {
                 throw (writeFuture.getException());
             }
             response = this.clientSessionHandler.waitForSyncAnswer(request.getReferenceId(), timeout);
             if (response == null) {
-                throw new TimeoutException("[Client-Server communication] Receipt timeout - Could not receive the sync response after " + timeout + "ms ["
-                        + request.getClass().getSimpleName() + "]");
+                StringBuilder message = new StringBuilder("[Client-Server communication]");
+                message.append( "(" ).append( request.toString() ).append( ") ");
+                message.append( "Receipt timeout - Could not receive the sync response after " + timeout + "ms [");
+                message.append( request.getClass().getSimpleName() ).append( "]");                
+                throw new TimeoutException(message.toString());
             }
         } catch (Throwable throwable) {
             this.clientSessionHandler.syncRequestFailed(throwable);

@@ -1,17 +1,18 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2StatusBar.java 21    8.01.19 11:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 29    16.09.19 10:55 Heller $
 package de.mendelson.comm.as2.client;
 
+import de.mendelson.comm.as2.configurationcheck.gui.JDialogIssuesList;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckRequest;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckResponse;
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.ProgressPanel;
 import de.mendelson.util.clientserver.BaseClient;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
-import java.awt.image.BaseMultiResolutionImage;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
@@ -32,17 +33,34 @@ import javax.swing.SwingUtilities;
  * Status bar for the AS2 GUI
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 29 $
  */
 public class AS2StatusBar extends JPanel implements IStatusBar {
 
+    private final static int ICON_HEIGHT = 18;
+
     private MecResourceBundle rb;
-    private ImageIcon ICON_WARNING = new ImageIcon(AS2StatusBar.class.getResource("/de/mendelson/comm/as2/client/warning16x16.gif"));
-    private ImageIcon ICON_PENDING = new ImageIcon(AS2StatusBar.class.getResource("/de/mendelson/comm/as2/client/state_pending16x16.gif"));
-    private ImageIcon ICON_STOPPED = new ImageIcon(AS2StatusBar.class.getResource("/de/mendelson/comm/as2/client/state_stopped16x16.gif"));
-    private ImageIcon ICON_FINISHED = new ImageIcon(AS2StatusBar.class.getResource("/de/mendelson/comm/as2/client/state_finished16x16.gif"));
-    private ImageIcon ICON_ALL_SELECTED = new ImageIcon(AS2StatusBar.class.getResource("/de/mendelson/comm/as2/client/state_allselected16x16.gif"));
-    private ImageIcon ICON_ALL = new ImageIcon(AS2StatusBar.class.getResource("/de/mendelson/comm/as2/client/state_all16x16.gif"));
+    public static final MendelsonMultiResolutionImage IMAGE_WARNING
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/client/warning_sign.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+    public static final MendelsonMultiResolutionImage IMAGE_PENDING
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/client/state_pending.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+    public static final MendelsonMultiResolutionImage IMAGE_STOPPED
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/client/state_stopped.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+    public static final MendelsonMultiResolutionImage IMAGE_FINISHED
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/client/state_finished.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+    public static final MendelsonMultiResolutionImage IMAGE_SERVED
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/client/state_all.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+     public static final MendelsonMultiResolutionImage IMAGE_ALL
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/client/state_all_sum.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+    public static final MendelsonMultiResolutionImage IMAGE_ALL_SELECTED
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/client/state_allselected.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
     private ModuleStarter moduleStarter;
     private BaseClient baseClient = null;
     private ConfigurationCheckThread checkThread = null;
@@ -59,67 +77,21 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         initComponents();
+        this.setMultiresolutionIcons();
     }
 
-    private void loadAndAssignIcons() {
-        String basePath = "/de/mendelson/comm/as2/client/";
-        try {
-            ICON_WARNING = new ImageIcon(new BaseMultiResolutionImage(new ImageIcon(
-                    AS2StatusBar.class.getResource(basePath + "warning16x16.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "warning24x24.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "warning32x32.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "warning48x48.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "warning64x64.gif")).getImage()
-            ));
-            ICON_PENDING = new ImageIcon(new BaseMultiResolutionImage(new ImageIcon(
-                    AS2StatusBar.class.getResource(basePath + "state_pending16x16.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_pending24x24.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_pending32x32.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_pending48x48.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_pending64x64.gif")).getImage()
-            ));
-            ICON_STOPPED = new ImageIcon(new BaseMultiResolutionImage(new ImageIcon(
-                    AS2StatusBar.class.getResource(basePath + "state_stopped16x16.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_stopped24x24.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_stopped32x32.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_stopped48x48.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_stopped64x64.gif")).getImage()
-            ));
-            ICON_FINISHED = new ImageIcon(new BaseMultiResolutionImage(new ImageIcon(
-                    AS2StatusBar.class.getResource(basePath + "state_finished16x16.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_finished24x24.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_finished32x32.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_finished48x48.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_finished64x64.gif")).getImage()
-            ));
-            ICON_ALL_SELECTED = new ImageIcon(new BaseMultiResolutionImage(new ImageIcon(
-                    AS2StatusBar.class.getResource(basePath + "state_allselected16x16.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_allselected24x24.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_allselected32x32.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_allselected48x48.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_allselected64x64.gif")).getImage()
-            ));
-            ICON_ALL = new ImageIcon(new BaseMultiResolutionImage(new ImageIcon(
-                    AS2StatusBar.class.getResource(basePath + "state_all16x16.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_all24x24.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_all32x32.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_all48x48.gif")).getImage(),
-                    new ImageIcon(AS2StatusBar.class.getResource(basePath + "state_all64x64.gif")).getImage()
-            ));
-        } catch (Error e) {
-            e.printStackTrace();
-        }
-        this.jLabelTransactionsFailure.setIcon(ICON_STOPPED);
-        this.jLabelTransactionsOk.setIcon(ICON_FINISHED);
-        this.jLabelTransactionsPending.setIcon(ICON_PENDING);
-        this.jLabelTransactionsAll.setIcon(ICON_ALL);
-        this.jLabelTransactionsSelected.setIcon(ICON_ALL_SELECTED);
+    private void setMultiresolutionIcons() {
+        this.jLabelTransactionsFailure.setIcon(new ImageIcon(IMAGE_STOPPED.toMinResolution(ICON_HEIGHT)));
+        this.jLabelTransactionsOk.setIcon(new ImageIcon(IMAGE_FINISHED.toMinResolution(ICON_HEIGHT)));
+        this.jLabelTransactionsPending.setIcon(new ImageIcon(IMAGE_PENDING.toMinResolution(ICON_HEIGHT)));
+        this.jLabelTransactionsServed.setIcon(new ImageIcon(IMAGE_SERVED.toMinResolution(ICON_HEIGHT)));
+        this.jLabelTransactionsAll.setIcon(new ImageIcon(IMAGE_ALL.toMinResolution(ICON_HEIGHT)));
+        this.jLabelTransactionsSelected.setIcon(new ImageIcon(IMAGE_ALL_SELECTED.toMinResolution(ICON_HEIGHT)));
     }
 
     public void initialize(BaseClient baseClient, ModuleStarter moduleStarter) {
         this.baseClient = baseClient;
         this.moduleStarter = moduleStarter;
-        this.loadAndAssignIcons();
     }
 
     public void startConfigurationChecker() {
@@ -130,8 +102,9 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         Executors.newSingleThreadExecutor().submit(this.checkThread);
     }
 
-    public void setTransactionCount(int countAll, int countOk, int countPending, int countFailed, int countSelected) {
+    public void setTransactionCount(int countAll, int countServed, int countOk, int countPending, int countFailed, int countSelected) {
         this.jLabelTransactionsAll.setText(String.valueOf(countAll));
+        this.jLabelTransactionsServed.setText(String.valueOf(countServed));
         this.jLabelTransactionsOk.setText(String.valueOf(countOk));
         this.jLabelTransactionsPending.setText(String.valueOf(countPending));
         this.jLabelTransactionsFailure.setText(String.valueOf(countFailed));
@@ -173,6 +146,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jPanelMain = new javax.swing.JPanel();
         jPanelTransactionCount = new javax.swing.JPanel();
         jLabelTransactionsAll = new javax.swing.JLabel();
+        jLabelTransactionsServed = new javax.swing.JLabel();
         jLabelTransactionsOk = new javax.swing.JLabel();
         jLabelTransactionsPending = new javax.swing.JLabel();
         jLabelTransactionsFailure = new javax.swing.JLabel();
@@ -187,6 +161,8 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jSeparator9 = new javax.swing.JSeparator();
         jPanelSep5 = new javax.swing.JPanel();
         jSeparator10 = new javax.swing.JSeparator();
+        jPanelSep8 = new javax.swing.JPanel();
+        jSeparator13 = new javax.swing.JSeparator();
         jPanelEmpty = new javax.swing.JPanel();
         jLabelConfigurationIssue = new javax.swing.JLabel();
         jLabelHost = new javax.swing.JLabel();
@@ -206,47 +182,56 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
 
         jPanelTransactionCount.setLayout(new java.awt.GridBagLayout());
 
-        jLabelTransactionsAll.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/state_all16x16.gif"))); // NOI18N
+        jLabelTransactionsAll.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsAll.setText("0");
-        jLabelTransactionsAll.setToolTipText(this.rb.getResourceString( "count.all"));
+        jLabelTransactionsAll.setToolTipText(this.rb.getResourceString( "count.all.available"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsAll, gridBagConstraints);
 
-        jLabelTransactionsOk.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/state_finished16x16.gif"))); // NOI18N
-        jLabelTransactionsOk.setText("0");
-        jLabelTransactionsOk.setToolTipText(this.rb.getResourceString( "count.ok"));
+        jLabelTransactionsServed.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
+        jLabelTransactionsServed.setText("0");
+        jLabelTransactionsServed.setToolTipText(this.rb.getResourceString( "count.all.served"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelTransactionCount.add(jLabelTransactionsOk, gridBagConstraints);
+        jPanelTransactionCount.add(jLabelTransactionsServed, gridBagConstraints);
 
-        jLabelTransactionsPending.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/state_pending16x16.gif"))); // NOI18N
-        jLabelTransactionsPending.setText("0");
-        jLabelTransactionsPending.setToolTipText(this.rb.getResourceString( "count.pending"));
+        jLabelTransactionsOk.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
+        jLabelTransactionsOk.setText("0");
+        jLabelTransactionsOk.setToolTipText(this.rb.getResourceString( "count.ok"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelTransactionCount.add(jLabelTransactionsPending, gridBagConstraints);
+        jPanelTransactionCount.add(jLabelTransactionsOk, gridBagConstraints);
 
-        jLabelTransactionsFailure.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/state_stopped16x16.gif"))); // NOI18N
-        jLabelTransactionsFailure.setText("0");
-        jLabelTransactionsFailure.setToolTipText(this.rb.getResourceString( "count.failure"));
+        jLabelTransactionsPending.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
+        jLabelTransactionsPending.setText("0");
+        jLabelTransactionsPending.setToolTipText(this.rb.getResourceString( "count.pending"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 6;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        jPanelTransactionCount.add(jLabelTransactionsPending, gridBagConstraints);
+
+        jLabelTransactionsFailure.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
+        jLabelTransactionsFailure.setText("0");
+        jLabelTransactionsFailure.setToolTipText(this.rb.getResourceString( "count.failure"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 8;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsFailure, gridBagConstraints);
 
-        jLabelTransactionsSelected.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/state_allselected16x16.gif"))); // NOI18N
+        jLabelTransactionsSelected.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsSelected.setText("0");
         jLabelTransactionsSelected.setToolTipText(this.rb.getResourceString( "count.selected"));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 8;
+        gridBagConstraints.gridx = 10;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsSelected, gridBagConstraints);
@@ -276,7 +261,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jPanelSep2.add(jSeparator7, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 5;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         jPanelTransactionCount.add(jPanelSep2, gridBagConstraints);
@@ -291,7 +276,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jPanelSep3.add(jSeparator8, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridx = 7;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         jPanelTransactionCount.add(jPanelSep3, gridBagConstraints);
@@ -306,7 +291,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jPanelSep4.add(jSeparator9, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 9;
+        gridBagConstraints.gridx = 11;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         jPanelTransactionCount.add(jPanelSep4, gridBagConstraints);
@@ -321,10 +306,25 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jPanelSep5.add(jSeparator10, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 7;
+        gridBagConstraints.gridx = 9;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         jPanelTransactionCount.add(jPanelSep5, gridBagConstraints);
+
+        jPanelSep8.setLayout(new java.awt.GridBagLayout());
+
+        jSeparator13.setOrientation(javax.swing.SwingConstants.VERTICAL);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(0, 2, 0, 2);
+        jPanelSep8.add(jSeparator13, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        jPanelTransactionCount.add(jPanelSep8, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -354,7 +354,6 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelEmpty.add(jLabelConfigurationIssue, gridBagConstraints);
 
-        jLabelHost.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/state_empty16x16.gif"))); // NOI18N
         jLabelHost.setText("Not connected");
         jLabelHost.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
         jLabelHost.setMaximumSize(new java.awt.Dimension(1000, 16));
@@ -450,6 +449,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     private javax.swing.JLabel jLabelTransactionsOk;
     private javax.swing.JLabel jLabelTransactionsPending;
     private javax.swing.JLabel jLabelTransactionsSelected;
+    private javax.swing.JLabel jLabelTransactionsServed;
     private javax.swing.JPanel jPanelEmpty;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JPanel jPanelSep1;
@@ -459,10 +459,12 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     private javax.swing.JPanel jPanelSep5;
     private javax.swing.JPanel jPanelSep6;
     private javax.swing.JPanel jPanelSep7;
+    private javax.swing.JPanel jPanelSep8;
     private javax.swing.JPanel jPanelTransactionCount;
     private javax.swing.JSeparator jSeparator10;
     private javax.swing.JSeparator jSeparator11;
     private javax.swing.JSeparator jSeparator12;
+    private javax.swing.JSeparator jSeparator13;
     private javax.swing.JSeparator jSeparator6;
     private javax.swing.JSeparator jSeparator7;
     private javax.swing.JSeparator jSeparator8;
@@ -493,7 +495,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                                 jLabelConfigurationIssue.setIcon(null);
                                 String text = rb.getResourceString("no.configuration.issues");
                                 int labelWidth = computeStringWidth(text) + 10;
-                                jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, 16));
+                                jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, ICON_HEIGHT));
                                 jLabelConfigurationIssue.setText(text);
                             }
                         });
@@ -508,10 +510,11 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                                     text = rb.getResourceString("configuration.issue.single", String.valueOf(issueCount));
                                 }
                                 //contents with some gap result in the label width
-                                final int labelWidth = computeStringWidth(text) + ICON_WARNING.getIconWidth() + 10;
-                                jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, 16));
+                                final int labelWidth = computeStringWidth(text) 
+                                        + new ImageIcon(IMAGE_WARNING.toMinResolution(ICON_HEIGHT)).getIconWidth() + 10;
+                                jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, ICON_HEIGHT));
                                 jLabelConfigurationIssue.setText(text);
-                                jLabelConfigurationIssue.setIcon(ICON_WARNING);
+                                jLabelConfigurationIssue.setIcon(new ImageIcon(IMAGE_WARNING.toMinResolution(ICON_HEIGHT)));
                             }
                         });
                     }

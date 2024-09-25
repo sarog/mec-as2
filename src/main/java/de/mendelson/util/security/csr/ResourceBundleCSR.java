@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSR.java 3     4/06/18 1:35p Heller $
+//$Header: /oftp2/de/mendelson/util/security/csr/ResourceBundleCSR.java 6     7.07.20 13:44 Heller $
 package de.mendelson.util.security.csr;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleCSR extends MecResourceBundle{
     
@@ -27,8 +27,8 @@ public class ResourceBundleCSR extends MecResourceBundle{
     static final Object[][] CONTENTS = {
                 
         {"label.selectcsrfile", "Please select the file where to store the request" },
-        {"csr.title", "Trust certificate: Certificate Sign Request" },
-        {"csr.title.renew", "Renew certificate: Certificate Sign Request" },
+        {"csr.title", "Trust certificate: Certificate Sign Request (CSR)" },
+        {"csr.title.renew", "Renew certificate: Certificate Sign Request (CSR)" },
         {"csr.message.storequestion", "Would you like to trust the key at the mendelson CA\nor store the CSR to a file?" },        
         {"csr.message.storequestion.renew", "Would you like to renew the key at the mendelson CA\nor store the CSR to a file?" },        
         {"csr.generation.success.message", "The CSR has been stored to the file\n\"{0}\".\nPlease send it to your CA to perform the trust request.\nWe would suggest the mendelson CA (http://ca.mendelson-e-c.com)."},
@@ -42,7 +42,9 @@ public class ResourceBundleCSR extends MecResourceBundle{
         {"csrresponse.import.success.message", "The key has been successfully patched with the CA answer." },
         {"csrresponse.import.success.title", "Key trust path established" },
         {"csrresponse.import.failure.message", "{0}" },
-        {"csrresponse.import.failure.title", "Problem patching the key" },       
+        {"csrresponse.import.failure.title", "Problem patching the key" },     
+        {"cancel", "Cancel" },
+        {"ca.connection.problem", "HTTP {0}: The mendelson CA is not reachable at the moment. Please try again later." },
     };
     
 }

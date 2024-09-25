@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/database/DebuggableStatement.java 1     3.01.13 17:01 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggableStatement.java 3     20.10.20 10:09 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Connection;
@@ -6,6 +6,10 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLWarning;
 import java.sql.Statement;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.logging.Logger;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -13,18 +17,30 @@ import java.sql.Statement;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Database statement that could be debugged
+ *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class DebuggableStatement implements Statement {
 
     private Statement statement;
+    private Logger connectionLogger = null;
+    private String connectionName = null;
+    /**
+     * Counter for the unique query ids
+     */
+    private static long currentId = System.currentTimeMillis();
+
+    public DebuggableStatement(Statement statement, Logger connectionLogger, String connectionName) {
+        this.statement = statement;
+        this.connectionLogger = connectionLogger;
+        this.connectionName = connectionName;
+    }
 
     public DebuggableStatement(Statement statement) {
-        this.statement = statement;
+        this(statement, null, null);
     }
 
     @Override
@@ -54,7 +70,25 @@ public class DebuggableStatement implements Statement {
 
     @Override
     public boolean execute(String str) throws SQLException {
-        return (this.statement.execute(str));
+        String uniqueQueryName = null;
+        if (this.connectionLogger != null) {
+            uniqueQueryName = createId();
+            this.connectionLogger.info("[" + this.connectionName + "] [execute query " + uniqueQueryName + "] " + str);
+        }
+        try {
+            boolean returnValue = this.statement.execute(str);
+            return (returnValue);
+        } catch (SQLException e) {
+            if (this.connectionLogger != null) {
+                String errorMessage = "[" + this.connectionName + "] [problem in " + uniqueQueryName + "] "
+                        + e.getClass().getSimpleName()
+                        + " SQLState: " + e.getSQLState()
+                        + " - " + e.getMessage();
+                errorMessage = errorMessage.replace("\n", "; ");
+                this.connectionLogger.info(errorMessage);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -79,12 +113,49 @@ public class DebuggableStatement implements Statement {
 
     @Override
     public ResultSet executeQuery(String str) throws SQLException {
-        return (this.statement.executeQuery(str));
+        String uniqueQueryName = null;
+        if (this.connectionLogger != null) {
+            uniqueQueryName = createId();
+            this.connectionLogger.info("[" + this.connectionName + "] [execute query " + uniqueQueryName + "] " + str);
+        }
+        try {
+            ResultSet result = this.statement.executeQuery(str);
+            return (result);
+        } catch (SQLException e) {
+            if (this.connectionLogger != null) {
+                String errorMessage = "[" + this.connectionName + "] [problem in " + uniqueQueryName + "] "
+                        + e.getClass().getSimpleName()
+                        + " SQLState: " + e.getSQLState()
+                        + " - " + e.getMessage();
+                errorMessage = errorMessage.replace("\n", "; ");
+                this.connectionLogger.info(errorMessage);
+            }
+            throw e;
+        }
     }
 
     @Override
     public int executeUpdate(String str) throws SQLException {
-        return (this.statement.executeUpdate(str));
+        String uniqueQueryName = null;
+        if (this.connectionLogger != null) {
+            uniqueQueryName = createId();
+            this.connectionLogger.info("[" + this.connectionName + "] [execute update query " + uniqueQueryName + "] " + str);
+        }
+        try {
+            int resultInt = this.statement.executeUpdate(str);
+            return (resultInt);
+
+        } catch (SQLException e) {
+            if (this.connectionLogger != null) {
+                String errorMessage = "[" + this.connectionName + "] [problem in " + uniqueQueryName + "] "
+                        + e.getClass().getSimpleName()
+                        + " SQLState: " + e.getSQLState()
+                        + " - " + e.getMessage();
+                errorMessage = errorMessage.replace("\n", "; ");
+                this.connectionLogger.info(errorMessage);
+            }
+            throw e;
+        }
     }
 
     @Override
@@ -237,11 +308,25 @@ public class DebuggableStatement implements Statement {
         return (this.statement.isWrapperFor(iface));
     }
 
+    @Override
     public void closeOnCompletion() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public boolean isCloseOnCompletion() throws SQLException {
         throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    /**
+     * Creates a new id in the format yyyyMMddHHmm-nn
+     */
+    private static synchronized String createId() {
+        StringBuilder idBuffer = new StringBuilder();
+        DateFormat format = new SimpleDateFormat("HHmmss");
+        idBuffer.append("STATEMENT" + format.format(new java.util.Date()));
+        idBuffer.append("-");
+        idBuffer.append(currentId++);
+        return (idBuffer.toString());
     }
 }

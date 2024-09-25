@@ -1,10 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 19    5/03/17 2:40p Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 21    20.08.20 15:47 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageResponse;
-import de.mendelson.comm.as2.database.DBDriverManager;
+import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.clientserver.AnonymousTextClient;
@@ -13,6 +13,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.util.Properties;
 import java.util.logging.Logger;
+import de.mendelson.comm.as2.database.IDBDriverManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
  * AS2 message to a specified sender
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class RawMessageSender {
 
@@ -103,7 +104,7 @@ public class RawMessageSender {
         RawMessageSender sender = new RawMessageSender();
         try {
             //register the database drivers for the VM
-            DBDriverManager.registerDriver();
+            IDBDriverManager manager = new DBDriverManagerHSQL();
             //initialize the security provider
             BCCryptoHelper helper = new BCCryptoHelper();
             helper.initialize();

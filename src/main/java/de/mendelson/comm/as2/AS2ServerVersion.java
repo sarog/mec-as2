@@ -1,7 +1,8 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 82    8.01.19 9:48 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 85    14.01.21 10:40 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.Copyright;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -12,12 +13,15 @@ import de.mendelson.Copyright;
 
 /**
  * Class to check the version and the build of the AS2 server
+ *
  * @author S.Heller
- * @version $Revision: 82 $
+ * @version $Revision: 85 $
  */
 public class AS2ServerVersion {
 
-    /**Returns the used user agent*/
+    /**
+     * Returns the used user agent
+     */
     public static String getUserAgent() {
         StringBuilder agent = new StringBuilder();
         agent.append(AS2ServerVersion.getProductName()).append(" ");
@@ -26,93 +30,113 @@ public class AS2ServerVersion {
         return (agent.toString());
     }
 
-    /**Returns this products version number*/
+    /**
+     * Returns this products version number
+     */
     public static String getVersion() {
         return ("1.1");
     }
 
-    /**Returns the internal build number*/
+    /**
+     * Returns the internal build number
+     */
     public static String getBuild() {
         return ("build " + getBuildNo());
     }
 
-    /**Returns the internal build number*/
+    /**
+     * Returns the internal build number
+     */
     public static int getBuildNo() {
-        return (55);
+        return (59);
     }
 
-    /**returns the name of this product*/
+    /**
+     * returns the name of this product
+     */
     public static String getProductName() {
         return ("mendelson opensource AS2");
     }
 
-    /**The data base has a version. It is found in the column actualversion of the
-     *table version. If the found version does not match the version defined here,
-     *an auto update of the database is performed.
+    /**
+     * The data base has a version. It is found in the column actualversion of
+     * the table version. If the found version does not match the version
+     * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionConfig() {
-        return (43);
+        return (46);
     }
 
-    /**The data base has a version. It is found in the column actualversion of the
-     *table version. If the found version does not match the version defined here,
-     *an auto update of the database is performed.
+    /**
+     * The data base has a version. It is found in the column actualversion of
+     * the table version. If the found version does not match the version
+     * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionRuntime() {
-        return (43);
+        return (45);
     }
 
-    /**returns the short name of this product, return the full name if not such
-     *short name exists!
+    /**
+     * returns the short name of this product, return the full name if not such
+     * short name exists!
      */
     public static String getProductNameShortcut() {
         return ("mendelson opensource AS2");
     }
 
-    /**Returns the date the package was last modified*/
+    /**
+     * Returns the date the package was last modified
+     */
     public static String getLastModificationDate() {
-        String fullDate = "$Date: 8.01.19 9:48 $";
+        String fullDate = "$Date: 14.01.21 10:40 $";
         return (fullDate.substring(fullDate.indexOf(":") + 1, fullDate.lastIndexOf("$")));
     }
 
-    /**Gets the copyright message for this product*/
+    /**
+     * Gets the copyright message for this product
+     */
     public static String getCopyrightMessage() {
         return (Copyright.getCopyrightMessage());
     }
 
-    /**Gets the company name*/
+    /**
+     * Gets the company name
+     */
     public static String getCompany() {
         return ("mendelson-e-commerce GmbH");
     }
 
-    /**Gets the company address*/
+    /**
+     * Gets the company address
+     */
     public static String getStreet() {
         return ("Kurfürstendamm 30");
     }
 
-    /**Gets the company zip*/
+    /**
+     * Gets the company zip
+     */
     public static String getZip() {
         return ("D-10719 Berlin");
     }
 
-    /**Gets the company telephone*/
-    public static String getTelephone() {
-        return ("Tel: +49 30 89 09 10 22");
-    }
-
-    /**Gets the company info email*/
+    /**
+     * Gets the company info email
+     */
     public static String getInfoEmail() {
-        return ("gpl_as2@mendelson.de");
+        return ("service@mendelson.de");
     }
 
-    /**Returns the full name with build, version etc*/
+    /**
+     * Returns the full name with build, version etc
+     */
     public static String getFullProductName() {
         StringBuilder builder = new StringBuilder();
-        builder.append(AS2ServerVersion.getProductName());
-        builder.append(" ");
-        builder.append(AS2ServerVersion.getVersion());
-        builder.append(" ");
-        builder.append(AS2ServerVersion.getBuild());
+        builder.append(AS2ServerVersion.getProductName())
+                .append(" ")
+                .append(AS2ServerVersion.getVersion())
+                .append(" ")
+                .append(AS2ServerVersion.getBuild());
         return (builder.toString());
     }
 }

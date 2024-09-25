@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMAccessDB.java 23    7.11.18 17:14 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMAccessDB.java 24    21.08.20 13:22 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -10,9 +10,12 @@ import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +32,7 @@ import java.util.logging.Logger;
  * Access the certificate lists in the database
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class CEMAccessDB {
 
@@ -42,6 +45,10 @@ public class CEMAccessDB {
      */
     private Connection runtimeConnection;
     private Connection configConnection;
+    /**HSQLDB supports Java_Objects, PostgreSQL does not support it. Means there are
+     * different access methods required for Object access
+     */
+    private boolean databaseSupportsJavaObjects = true;
 
     /**
      * Creates new message I/O log and connects to localhost
@@ -51,8 +58,74 @@ public class CEMAccessDB {
     public CEMAccessDB(Connection configConnection, Connection runtimeConnection) {
         this.configConnection = configConnection;
         this.runtimeConnection = runtimeConnection;
+        this.analyzeDatabaseMetadata(configConnection);
     }
 
+    private void analyzeDatabaseMetadata(Connection connection) {
+        try {
+            DatabaseMetaData data = connection.getMetaData();
+            ResultSet result = null;
+            try {
+                result = data.getTypeInfo();
+                while (result.next()) {
+                    if( result.getString( "TYPE_NAME").equalsIgnoreCase("bytea")){
+                        databaseSupportsJavaObjects = false;
+                    }
+                }
+            } finally {
+                if (result != null) {
+                    result.close();
+                }
+            }
+        } catch (Exception e) {
+            //ignore
+        }
+    }
+    
+    /**
+     * Reads a binary object from the database and returns a byte array that
+     * contains it. Will return null if the read data was null. Reading and
+     * writing binary objects differs relating the used database system
+     */
+    private String readTextStoredAsJavaObject(ResultSet result, String columnName) throws Exception {
+        if( this.databaseSupportsJavaObjects){
+            Object object = result.getObject(columnName);
+            if (!result.wasNull()) {
+                if (object instanceof String) {
+                    return (((String) object));
+                } else if (object instanceof byte[]) {
+                    return (new String((byte[]) object));
+                }
+            }
+        }else{
+            byte[] bytes = result.getBytes(columnName);
+            if (result.wasNull()) {
+                return (null);
+            }
+            return (new String( bytes, StandardCharsets.UTF_8));
+        }
+        return (null);
+    }
+
+    /**Sets text data as parameter to a stored procedure. The handling depends if the database supports java objects
+     * 
+     */
+    private void setTextParameterAsJavaObject(PreparedStatement statement, int index, String text) throws SQLException{        
+        if( this.databaseSupportsJavaObjects ){
+            if (text == null) {
+                statement.setNull(index, Types.JAVA_OBJECT);
+            } else {
+                statement.setObject(index, text);
+            }
+        }else{
+            if (text == null) {
+                statement.setNull(index, Types.BINARY);
+            } else {
+                statement.setBytes(index, text.getBytes(StandardCharsets.UTF_8));
+            }
+        }
+    }
+    
     /**
      * For debug purpose
      */
@@ -168,9 +241,9 @@ public class CEMAccessDB {
                 cemEntry.setRequestMessageOriginated(result.getLong("requestmessageoriginated"));
                 cemEntry.setResponseMessageOriginated(result.getLong("responsemessageoriginated"));
                 cemEntry.setProcessDate(result.getLong("processdate"));
-                Object reasonForRejectionObj = result.getObject("reasonforrejection");
-                if (!result.wasNull() && reasonForRejectionObj instanceof String) {
-                    cemEntry.setReasonForRejection((String) reasonForRejectionObj);
+                String reasonForRejectionStr = this.readTextStoredAsJavaObject(result, "reasonforrejection");
+                if( reasonForRejectionStr != null ){
+                    cemEntry.setReasonForRejection(reasonForRejectionStr);
                 }
                 entryList.add(cemEntry);
             }
@@ -373,11 +446,7 @@ public class CEMAccessDB {
             statement.setInt(1, trustResponse.getState());
             statement.setString(2, info.getMessageId());
             statement.setLong(3, response.getTradingPartnerInfo().getMessageOriginated().getTime());
-            if (trustResponse.getReasonForRejection() == null) {
-                statement.setNull(4, Types.JAVA_OBJECT);
-            } else {
-                statement.setObject(4, trustResponse.getReasonForRejection());
-            }
+            this.setTextParameterAsJavaObject(statement, 4, trustResponse.getReasonForRejection());
             statement.setString(5, response.getRequestId());
             statement.setString(6, initiator.getAS2Identification());
             statement.setString(7, receiver.getAS2Identification());

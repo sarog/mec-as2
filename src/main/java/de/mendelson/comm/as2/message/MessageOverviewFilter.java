@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 9     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 11    2.07.19 11:15 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -14,7 +14,7 @@ import java.io.Serializable;
 /**
  * Filter to apply for the message overview
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class MessageOverviewFilter implements Serializable{
 
@@ -35,6 +35,9 @@ public class MessageOverviewFilter implements Serializable{
     private Partner showLocalStation = null;
     private int direction = DIRECTION_ALL;
     private int messageType = MESSAGETYPE_AS2;
+    private int limit = 1000;
+    private long startTime = 0L;
+    private long endTime = 0L;
     
     /**Filters for the message type that should be displayed*/
     public void setShowMessageType( final int MESSAGETYPE ){
@@ -113,6 +116,48 @@ public class MessageOverviewFilter implements Serializable{
 
     public void setShowLocalStation(Partner showLocalStation) {
         this.showLocalStation = showLocalStation;
+    }
+
+    /**
+     * @return the limit
+     */
+    public int getLimit() {
+        return limit;
+    }
+
+    /**
+     * @param limit the limit to set
+     */
+    public void setLimit(int limit) {
+        this.limit = limit;
+    }
+    
+    /**
+     * @return the startTime
+     */
+    public long getStartTime() {
+        return startTime;
+    }
+
+    /**
+     * @param startTime the startTime to set
+     */
+    public void setStartTime(long startTime) {
+        this.startTime = startTime;
+    }
+
+    /**
+     * @return the endTime
+     */
+    public long getEndTime() {
+        return endTime;
+    }
+
+    /**
+     * @param endTime the endTime to set
+     */
+    public void setEndTime(long endTime) {
+        this.endTime = endTime;
     }
     
 }

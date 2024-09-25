@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager.java 1     21.09.18 9:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager.java 2     20.08.20 15:47 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * to localize eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleDBDriverManager extends MecResourceBundle {
 
@@ -30,12 +30,12 @@ public class ResourceBundleDBDriverManager extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"creating.database." + DBDriverManager.DB_RUNTIME, "Creating runtime database"},
-        {"creating.database." + DBDriverManager.DB_CONFIG, "Creating configuration database"},
-        {"database.creation.success." + DBDriverManager.DB_RUNTIME, "The runtime database has been created successfully" },
-        {"database.creation.success." + DBDriverManager.DB_CONFIG, "The config database has been created successfully" },
-        {"database.creation.failed." + DBDriverManager.DB_RUNTIME, "An error occured during the creation process of the runtime database" },
-        {"database.creation.failed." + DBDriverManager.DB_CONFIG, "An error occured during the creation process of the config database" },
+        {"creating.database." + IDBDriverManager.DB_RUNTIME, "Creating runtime database"},
+        {"creating.database." + IDBDriverManager.DB_CONFIG, "Creating configuration database"},
+        {"database.creation.success." + IDBDriverManager.DB_RUNTIME, "The runtime database has been created successfully" },
+        {"database.creation.success." + IDBDriverManager.DB_CONFIG, "The config database has been created successfully" },
+        {"database.creation.failed." + IDBDriverManager.DB_RUNTIME, "An error occured during the creation process of the runtime database" },
+        {"database.creation.failed." + IDBDriverManager.DB_CONFIG, "An error occured during the creation process of the config database" },
     };
 
 }

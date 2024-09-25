@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/MDNParser.java 26    3-03-16 1:47p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MDNParser.java 28    3.03.20 10:08 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -38,7 +38,7 @@ import javax.mail.util.ByteArrayDataSource;
  * Parses MDNs, this is NOT thread safe!
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 28 $
  */
 public class MDNParser {
 
@@ -140,12 +140,8 @@ public class MDNParser {
         Object content = body.getContent();
         if (content instanceof InputStream) {
             InputStream inStream = (InputStream) body.getContent();
-            ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-            this.copyStreams(inStream, memOut);
-            memOut.flush();
-            memOut.close();
+            byte[] rawData = inStream.readAllBytes();
             inStream.close();
-            byte[] rawData = memOut.toByteArray();
             return (this.decodeBodypartContentTransferEncoding(rawData, contentTransferEncoding));
         } else if (content instanceof String) {
             //in the case of casting the content transfer encoding processing is performed by the API
@@ -157,26 +153,6 @@ public class MDNParser {
             //should never happen
             throw new Exception("Unable to process MDN body part content - unexpected content Object " + content.getClass().getName());
         }
-    }
-
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[2048];
-        int read = 2048;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
     }
 
     /**

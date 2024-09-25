@@ -1,15 +1,17 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 16    24.09.18 17:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 20    5.11.19 10:45 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.filesystemview.RemoteFileBrowser;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
-import java.sql.Connection;
+import de.mendelson.util.tables.JTableColumnResizer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
@@ -23,10 +25,14 @@ import javax.swing.SwingUtilities;
 /**
  *Panel to define the directory preferences
  * @author S.Heller
- * @version: $Revision: 16 $
+ * @version: $Revision: 20 $
  */
 public class PreferencesPanelDirectories extends PreferencesPanel {
 
+    private final static MendelsonMultiResolutionImage ICON_FOLDER
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/folder.svg", 
+                    JDialogPreferences.IMAGE_HEIGHT, JDialogPreferences.IMAGE_HEIGHT*2);
+    
     /**Localize the GUI*/
     private MecResourceBundle rb = null;
     /**GUI prefs*/
@@ -45,6 +51,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         this.preferences = new PreferencesClient(baseClient);
         this.baseClient = baseClient;
         this.initComponents();
+        this.jTable.setRowHeight(TableModelPreferencesDir.ROW_HEIGHT);
         this.setButtonState();
     }
 
@@ -68,6 +75,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
                     this.preferences.get(key)));
         }
         ((TableModelPreferencesDir) this.jTable.getModel()).passNewData(list);
+        JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
         this.jCheckBoxReceiverSubdirectory.setSelected(this.preferences.getBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR));
     }
 
@@ -98,6 +106,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
+        jPanelMargin = new javax.swing.JPanel();
         jCheckBoxReceiverSubdirectory = new javax.swing.JCheckBox();
         jPanelDirSelection = new javax.swing.JPanel();
         jScrollPane = new javax.swing.JScrollPane();
@@ -105,6 +114,8 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         jButtonChange = new javax.swing.JButton();
 
         setLayout(new java.awt.GridBagLayout());
+
+        jPanelMargin.setLayout(new java.awt.GridBagLayout());
 
         jCheckBoxReceiverSubdirectory.setText(this.rb.getResourceString( "receipt.subdir" ));
         jCheckBoxReceiverSubdirectory.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
@@ -120,7 +131,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(20, 10, 10, 10);
-        add(jCheckBoxReceiverSubdirectory, gridBagConstraints);
+        jPanelMargin.add(jCheckBoxReceiverSubdirectory, gridBagConstraints);
 
         jPanelDirSelection.setLayout(new java.awt.GridBagLayout());
 
@@ -163,7 +174,14 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jPanelDirSelection, gridBagConstraints);
+        jPanelMargin.add(jPanelDirSelection, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jPanelMargin, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
     private void jTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTableMouseClicked
@@ -184,6 +202,7 @@ private void jCheckBoxReceiverSubdirectoryActionPerformed(java.awt.event.ActionE
     private javax.swing.JButton jButtonChange;
     private javax.swing.JCheckBox jCheckBoxReceiverSubdirectory;
     private javax.swing.JPanel jPanelDirSelection;
+    private javax.swing.JPanel jPanelMargin;
     private javax.swing.JScrollPane jScrollPane;
     private javax.swing.JTable jTable;
     // End of variables declaration//GEN-END:variables
@@ -194,8 +213,8 @@ private void jCheckBoxReceiverSubdirectoryActionPerformed(java.awt.event.ActionE
     }
 
     @Override
-    public String getIconResource() {
-        return ("/de/mendelson/comm/as2/preferences/folder32x32.gif");
+    public ImageIcon getIcon() {
+        return (new ImageIcon( ICON_FOLDER));
     }
 
     @Override

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServer.java 22    4/06/18 10:56a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientServer.java 27    18.02.20 14:37 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
@@ -13,6 +13,7 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -41,7 +42,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
  * Server root for the mendelson client/server architecture
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 27 $
  */
 public class ClientServer {
 
@@ -50,6 +51,7 @@ public class ClientServer {
     private ClientServerSessionHandler sessionHandler = null;
     private int port = 0;
     private String productName = "";
+    public static final String[] SERVERSIDE_ACCEPTED_TLS_PROTOCOLS = new String[]{ "TLSv1.2" };
 
     /**
      * Creates a new instance of Server
@@ -103,6 +105,8 @@ public class ClientServer {
         //If client authentication is disabled the client certificate must not be in the servers keystore
         sslFilter.setNeedClientAuth(false);
         sslFilter.setUseClientMode(false);
+        //allow defined TLS protocols only for the client-server connection
+        sslFilter.setEnabledProtocols(SERVERSIDE_ACCEPTED_TLS_PROTOCOLS);
         acceptor.getFilterChain().addFirst("TLS", sslFilter);
         //add CPU bound tasks first
         acceptor.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger, null)));
@@ -121,18 +125,18 @@ public class ClientServer {
     }
 
     /**
-     * Instanciate a SSL context. This creates an SSL key on the server and uses
-     * it for the SSL secured client-server communication. The SSL (TSLv1)
+     * Instanciate a SSL/TLS context. This creates an SSL key on the server and uses
+     * it for the SSL secured client-server communication. The TLS (TSLv1.2)
      * between client and server only delivers weak security as the client
      * trusts any key from the server (client and server certificates are not
      * exchanged using an other communication channel, there is no additional
-     * shared secred between client and server) - Please be aware that this SSL
+     * shared secret between client and server) - Please be aware that this TSL
      * implementation is not safe against a man in the middle attack. Anyway a
      * man in the middle attack is not an easy attempt in this case.
      */
     private SSLContext createSSLContext() throws Exception {
         BCCryptoHelper helper = new BCCryptoHelper();
-        SSLContext ctx = SSLContext.getInstance("TLSv1");
+        SSLContext sslContext = SSLContext.getInstance("TLSv1");
         KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance(KeyManagerFactory.getDefaultAlgorithm());
         KeyStore keystore = helper.createKeyStoreInstance(BCCryptoHelper.KEYSTORE_PKCS12);
         //initialize keystore
@@ -141,19 +145,22 @@ public class ClientServer {
         keystore.setKeyEntry("key", result.getKeyPair().getPrivate(), "dummy".toCharArray(), new Certificate[]{result.getCertificate()});
         keyManagerFactory.init(keystore, "dummy".toCharArray());
         KeyManager[] defaultKeymanager = keyManagerFactory.getKeyManagers();
-        ctx.init(defaultKeymanager, null, SecureRandom.getInstance("SHA1PRNG"));
-        return ctx;
+        sslContext.init(defaultKeymanager, null, SecureRandom.getInstance("SHA1PRNG"));               
+        return sslContext;
     }
 
+    /**
+     * Generates the SSL key for the client-server connection
+     */
     private KeyGenerationResult generateSSLKey() throws Exception {
         KeyGenerator generator = new KeyGenerator();
         KeyGenerationValues parameter = new KeyGenerationValues();
-        //generating a longer key takes some time. In the current test (09/2012): 1024bit 140ms, 2048bit 1250ms
-        parameter.setKeySize(1024);
-        parameter.setKeyType(KeyGenerationValues.KEYTYPE_RSA);
+        //generating a longer key takes some time.
+        parameter.setKeySize(2048);
+        parameter.setKeyAlgorithm(KeyGenerationValues.KEYALGORITHM_RSA);
         //one shutdown every 10 years should be ok
         parameter.setKeyValidInDays(365 * 10);
-        parameter.setSignatureAlgorithm(KeyGenerationValues.SIGNATUREALGORITHM_SHA1_WITH_RSA_OID);
+        parameter.setSignatureAlgorithm(KeyGenerationValues.SIGNATUREALGORITHM_SHA256_WITH_RSA);
         parameter.setOrganisationName(this.productName);
         parameter.setOrganisationUnit("Server");
         try {
@@ -172,12 +179,15 @@ public class ClientServer {
         return (generator.generateKeyPair(parameter));
     }
 
-    /**Returns the current sessions on this server*/
+    /**
+     * Returns the current sessions on this server
+     */
     public List<IoSession> getSessions() {
         if (this.sessionHandler != null) {
             return (this.sessionHandler.getSessions());
         } else {
-            return (new ArrayList<IoSession>());
+            List emptyList = new ArrayList<IoSession>();
+            return (Collections.unmodifiableList(emptyList));
         }
     }
 

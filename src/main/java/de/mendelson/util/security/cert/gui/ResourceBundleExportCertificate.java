@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate.java 3     4/06/18 1:35p Heller $ 
+//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate.java 5     23.10.19 10:49 Hell $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleExportCertificate extends MecResourceBundle {
 
@@ -44,6 +44,8 @@ public class ResourceBundleExportCertificate extends MecResourceBundle {
         {"certificate.export.success.message", "The certificate has been exported successfully to\n\"{0}\"."},
         {JDialogExportCertificate.PEM, "Text format (PEM, *.cer)"},
         {JDialogExportCertificate.DER, "Binary format (DER, *.cer)"},
-        {JDialogExportCertificate.PKCS7, "With full trust chain (PKCS#7, *.p7b)"},};
+        {JDialogExportCertificate.PKCS7, "With full trust chain (PKCS#7, *.p7b)"},
+        {JDialogExportCertificate.SSH2, "SSH2 format (public key, *.pub)"},
+    };
 
 }
