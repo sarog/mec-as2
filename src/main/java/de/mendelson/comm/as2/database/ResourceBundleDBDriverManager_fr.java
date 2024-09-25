@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_fr.java 3     3.02.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_fr.java 5     26/07/22 16:34 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.database.IDBDriverManager;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleDBDriverManager_fr extends MecResourceBundle {
 
@@ -29,9 +29,11 @@ public class ResourceBundleDBDriverManager_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
+        {"module.name", "[BASE DE DONNEES]" },
         {"creating.database." + IDBDriverManager.DB_RUNTIME, "Créer une base de données d'exécution"},
         {"creating.database." + IDBDriverManager.DB_CONFIG, "Créer une base de données de configuration"},
+        {"creating.database.details", "Host: {0}, Port: {1}, Utilisateur: {2}, Nom de la base de données: {3}"},
         {"database.creation.success." + IDBDriverManager.DB_RUNTIME, "La base de données d'exécution a été créée avec succès" },
         {"database.creation.success." + IDBDriverManager.DB_CONFIG, "La base de données de configuration a été créée avec succès" },
         {"database.creation.failed." + IDBDriverManager.DB_RUNTIME, "Une erreur est survenue lors de la création de la base de données d''exécution" },

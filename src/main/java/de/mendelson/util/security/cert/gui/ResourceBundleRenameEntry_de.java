@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_de.java 4     23.09.21 12:27 Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_de.java 6     15/12/22 10:27 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleRenameEntry_de extends MecResourceBundle {
 
@@ -32,10 +32,10 @@ public class ResourceBundleRenameEntry_de extends MecResourceBundle {
     static final Object[][] CONTENTS = {
         {"button.ok", "Ok"},
         {"button.cancel", "Abbrechen"},
-        {"label.newalias", "Neuer Alias:"},
+        {"label.newalias", "Neuer Alias"},
         {"label.newalias.hint", "Der Alias, der zukünftig verwendet werden soll"},
-        {"label.keypairpass", "Schlüssel Password:"},
-        {"title", "Bestehenden Eintrag ({0}) umbenennen"},
+        {"label.keypairpass", "Schlüssel Password"},
+        {"title", "Alias ({0}) umbenennen"},
         {"alias.exists.title", "Umbennen des Alias schlug fehl" },
         {"alias.exists.message", "Der Alias \"{0}\" exisitert bereits im unterliegenden Keystore." },
     };

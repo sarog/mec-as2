@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 10    2.09.20 16:32 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 14    17/01/23 11:55 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -27,7 +27,7 @@ import org.apache.mina.core.session.IoSession;
  * Processes a http config request on the server side
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 14 $
  */
 public class HTTPServerConfigInfoProcessor {
 
@@ -114,7 +114,6 @@ public class HTTPServerConfigInfoProcessor {
         }
         if (this.httpServerConfigInfo.isSSLEnabled()) {
             if (this.httpServerConfigInfo.getKeystorePath() != null) {
-                //normalize this path, may contain "/./" parts
                 Path keystoreFile = Paths.get(this.httpServerConfigInfo.getKeystorePath());
                 logBuilder.append(this.rb.getResourceString("http.server.config.keystorepath",
                         keystoreFile.normalize().toAbsolutePath()));
@@ -136,7 +135,11 @@ public class HTTPServerConfigInfoProcessor {
             Path path = Paths.get(deployedWARPath);
             logBuilder.append("[");
             String filename = path.getFileName().toString();
-            logBuilder.append(this.rb.getResourceString("webapp." + filename));
+            if( this.rb.containsResourceString("webapp." + filename)){
+                logBuilder.append(this.rb.getResourceString("webapp." + filename));
+            }else{
+                logBuilder.append(this.rb.getResourceString("webapp._unknown"));
+            }
             logBuilder.append("] ");
             logBuilder.append(deployedWARPath);
             logBuilder.append("\n");
@@ -187,14 +190,15 @@ public class HTTPServerConfigInfoProcessor {
         protocolBuilder.append(fold(this.rb.getResourceString("info.protocols",
                 new Object[]{
                     this.httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString(),
-                    this.httpServerConfigInfo.getJavaVersion()
+                    this.httpServerConfigInfo.getJavaVersion(),
+                    this.httpServerConfigInfo.getTLSSecurityProviderName()
                 }), "\n", 80));
         protocolBuilder.append("\n\n");
         for (String protocol : this.httpServerConfigInfo.getPossibleProtocols()) {
             protocolBuilder.append(protocol);
             protocolBuilder.append("\n");
         }
-        protocolBuilder.append("\n\n");
+        protocolBuilder.append("\n\n");        
         protocolBuilder.append(fold(this.rb.getResourceString("info.protocols.howtochange",
                 new Object[]{
                     this.httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString()
@@ -229,6 +233,7 @@ public class HTTPServerConfigInfoProcessor {
         DisplayHTTPServerConfigurationResponse response = new DisplayHTTPServerConfigurationResponse(request);
         if (this.httpServerConfigInfo != null) {
             response.setHttpServerConfigFile(this.httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString());
+            response.setHTTPServerUserConfigFile(this.httpServerConfigInfo.getHTTPServerUserConfigFile().normalize().toAbsolutePath().toString());
             response.setEmbeddedJettyServerVersion(this.httpServerConfigInfo.getJettyHTTPServerVersion());
             response.setEmbeddedHTTPServerStarted(this.httpServerConfigInfo.isEmbeddedHTTPServerStarted());
             response.setSSLEnabled(this.httpServerConfigInfo.isSSLEnabled());

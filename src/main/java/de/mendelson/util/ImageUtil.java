@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/ImageUtil.java 9     25.11.21 13:20 Heller $
+//$Header: /converteride/de/mendelson/util/ImageUtil.java 13    17/01/23 15:26 Heller $
 package de.mendelson.util;
 
 import java.awt.AlphaComposite;
@@ -10,12 +10,9 @@ import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.RenderingHints;
-import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ConvolveOp;
-import java.awt.image.FilteredImageSource;
-import java.awt.image.ImageFilter;
 import java.awt.image.Kernel;
 import java.util.List;
 import javax.swing.GrayFilter;
@@ -34,14 +31,42 @@ import javax.swing.ImageIcon;
  * Class that contains routines for the image processing
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class ImageUtil {
 
-    /**Its just a utility class..*/
-    private ImageUtil(){        
+    /**
+     * Its just a utility class..
+     */
+    private ImageUtil() {
     }
-    
+
+    /**
+     * Replaces a single color in the passed image and returns the new one
+     *
+     * @param background original image to set new rgb values in
+     * @param colorOld The old color to replace
+     * @param colorNew Replacing color
+     */
+    public static ImageIcon replaceColor(ImageIcon background, Color colorOld, Color colorNew) {
+        int oldColorRGB = colorOld.getRGB();
+        int newColorRGB = colorNew.getRGB();
+        BufferedImage image = new BufferedImage(
+                background.getIconWidth(),
+                background.getIconHeight(),
+                BufferedImage.TYPE_INT_ARGB);
+        Graphics g = image.getGraphics();
+        g.drawImage(background.getImage(), 0, 0, null);
+        for (int x = 0; x < background.getIconWidth(); x++) {
+            for (int y = 0; y < background.getIconHeight(); y++) {
+                if (image.getRGB(x, y) == oldColorRGB) {
+                    image.setRGB(x, y, newColorRGB);
+                }
+            }
+        }
+        return (new ImageIcon(image));
+    }
+   
     /**
      * Replaces a single color in the passed image and returns the new one
      *
@@ -64,22 +89,31 @@ public class ImageUtil {
         }
         Color oldColor = Color.decode(hexColorOld);
         Color newColor = Color.decode(hexColorNew);
-        int oldColorRGB = oldColor.getRGB();
-        int newColorRGB = newColor.getRGB();
-        BufferedImage image = new BufferedImage(
-                background.getIconWidth(),
-                background.getIconHeight(),
-                BufferedImage.TYPE_INT_ARGB);
-        Graphics g = image.getGraphics();
-        g.drawImage(background.getImage(), 0, 0, null);
-        for (int x = 0; x < background.getIconWidth(); x++) {
-            for (int y = 0; y < background.getIconHeight(); y++) {
-                if (image.getRGB(x, y) == oldColorRGB) {
-                    image.setRGB(x, y, newColorRGB);
-                }
-            }
+        return (replaceColor(background, oldColor, newColor));
+    }
+
+    /**
+     * Forms a web known hex string from a given color The output format is
+     * "#RRGGBB"
+     */
+    public static String toHex(Color color) {
+        StringBuilder builder = new StringBuilder();
+        String red = Integer.toHexString(color.getRed());
+        String green = Integer.toHexString(color.getGreen());
+        String blue = Integer.toHexString(color.getBlue());
+        if (red.length() < 2) {
+            builder.append("0");
         }
-        return (new ImageIcon(image));
+        builder.append(red);
+        if (green.length() < 2) {
+            builder.append("0");
+        }
+        builder.append(green);
+        if (blue.length() < 2) {
+            builder.append("0");
+        }
+        builder.append(blue);
+        return ("#" + builder.toString());
     }
 
     /**
@@ -90,21 +124,23 @@ public class ImageUtil {
      * @param foreground Foreground image, is painted second
      */
     public static ImageIcon mixImages(ImageIcon background, ImageIcon foreground) {
+        final int backgroundIconWidth = background.getIconWidth();
+        final int backgroundIconHeight = background.getIconHeight();
         BufferedImage image = new BufferedImage(
-                background.getIconWidth(),
-                background.getIconHeight(),
+                backgroundIconWidth,
+                backgroundIconHeight,
                 BufferedImage.TYPE_INT_ARGB);
-        Graphics g = image.getGraphics();
-        g.drawImage(background.getImage(), 0, 0, null);
-        int foregroundOffsetX = background.getIconWidth() - foreground.getIconWidth();
+        Graphics2D g2d = (Graphics2D)image.getGraphics();
+        g2d.drawImage(background.getImage(), 0, 0, null);
+        int foregroundOffsetX = backgroundIconWidth - foreground.getIconWidth();
         if (foregroundOffsetX < 0) {
             foregroundOffsetX = 0;
         }
-        int foregroundOffsetY = background.getIconHeight() - foreground.getIconHeight();
+        int foregroundOffsetY = backgroundIconWidth - foreground.getIconHeight();
         if (foregroundOffsetY < 0) {
             foregroundOffsetY = 0;
         }
-        g.drawImage(foreground.getImage(), foregroundOffsetX, foregroundOffsetY, null);
+        g2d.drawImage(foreground.getImage(), foregroundOffsetX, foregroundOffsetY, null);
         return (new ImageIcon(image));
     }
 
@@ -124,11 +160,10 @@ public class ImageUtil {
     /**
      * Turns the passed icon into a grayed out and returns it
      */
-    public static ImageIcon grayImage(ImageIcon icon) {  
+    public static ImageIcon grayImage(ImageIcon icon) {
         return new ImageIcon(GrayFilter.createDisabledImage(icon.getImage()));
     }
-    
-    
+
     /**
      * Scales a passed image icon to a new size and returns this
      */
@@ -184,7 +219,7 @@ public class ImageUtil {
      */
     public static BufferedImage scaleWidthKeepingProportions(BufferedImage sourceImage, int newWidth) {
         double scaleFactor = (double) newWidth / (double) sourceImage.getWidth();
-        return (scale(sourceImage, (int) (sourceImage.getWidth() * scaleFactor), 
+        return (scale(sourceImage, (int) (sourceImage.getWidth() * scaleFactor),
                 (int) (sourceImage.getHeight() * scaleFactor)));
     }
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_fr.java 12    7.12.18 9:51 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_fr.java 13    16/06/22 13:39 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleAS2ServerProcessing_fr extends MecResourceBundle {
 
@@ -36,5 +36,6 @@ public class ResourceBundleAS2ServerProcessing_fr extends MecResourceBundle {
         {"message.resend.oldtransaction", "Cette transaction a été envoyée à nouveau manuellement avec le nouveau numéro de transaction [{0}]." },
         {"message.resend.newtransaction", "Cette transaction est un renvoi de la transaction [{0}]." },    
         {"message.resend.title", "Envoi manuel des données dans la nouvelle transaction" },    
+        {"local.station", "Station locale" },
     };
 }

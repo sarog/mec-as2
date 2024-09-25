@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogRenameEntry.java 10    23.09.21 12:27 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogRenameEntry.java 12    15/12/22 10:27 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -27,18 +27,15 @@ import javax.swing.JFrame;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class JDialogRenameEntry extends JDialog {
 
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private MecResourceBundle rb = null;
-    private CertificateManager manager = null;
-    private String oldAlias;
+    private final MecResourceBundle rb;
+    private final CertificateManager manager;
+    private final String oldAlias;
     private String newAlias = null;
-    private String keystoreType;
+    private final String keystoreType;
 
     /**
      * Creates new form JDialogPartnerConfig
@@ -60,7 +57,7 @@ public class JDialogRenameEntry extends JDialog {
         this.setTitle(this.rb.getResourceString("title", oldAlias));
         initComponents();
         TextOverlay.addTo(this.jTextFieldNewAlias, this.rb.getResourceString("label.newalias.hint"));
-        PasswordOverlay.addTo(this.jPasswordFieldKeyPairPass);        
+        PasswordOverlay.addTo(this.jPasswordFieldKeyPairPass);
         this.manager = manager;
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.oldAlias = oldAlias;
@@ -68,11 +65,13 @@ public class JDialogRenameEntry extends JDialog {
         this.jLabelKeyPairPass.setEnabled(this.keystoreType.equals(BCCryptoHelper.KEYSTORE_JKS));
         this.jPasswordFieldKeyPairPass.setEditable(this.keystoreType.equals(BCCryptoHelper.KEYSTORE_JKS));
         this.jPasswordFieldKeyPairPass.setEnabled(this.keystoreType.equals(BCCryptoHelper.KEYSTORE_JKS));
-        if( this.keystoreType.equals(BCCryptoHelper.KEYSTORE_JKS)){
+        if (this.keystoreType.equals(BCCryptoHelper.KEYSTORE_JKS)) {
             this.jPasswordFieldKeyPairPass.setText(new String(keystorepass));
         }
         //request the focus on the new alias field
+        this.jTextFieldNewAlias.setText(oldAlias);
         this.jTextFieldNewAlias.requestFocusInWindow();
+        this.jTextFieldNewAlias.selectAll();
         this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EDIT_MULTIRESOLUTION.toMinResolution(32)));
         this.setButtonState();
     }
@@ -81,8 +80,10 @@ public class JDialogRenameEntry extends JDialog {
      * Sets the ok and cancel buttons of this GUI
      */
     private void setButtonState() {
+        String newAliasTmp = this.jTextFieldNewAlias.getText();
         this.jButtonOk.setEnabled(
-                this.jTextFieldNewAlias.getText().length() > 0);
+                newAliasTmp.length() > 0
+                && !this.oldAlias.equals(newAliasTmp));
     }
 
     private boolean aliasDoesAlreadyExist(String newAlias) {
@@ -109,7 +110,7 @@ public class JDialogRenameEntry extends JDialog {
                 keypairPass = this.jPasswordFieldKeyPairPass.getPassword();
             }
             this.manager.renameAlias(this.oldAlias, this.jTextFieldNewAlias.getText(), keypairPass);
-        } catch (Exception e) {
+        } catch (Throwable e) {
             UINotification.instance().addNotification(e);
         }
     }
@@ -151,7 +152,7 @@ public class JDialogRenameEntry extends JDialog {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelNewAlias, gridBagConstraints);
 
         jTextFieldNewAlias.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -164,7 +165,7 @@ public class JDialogRenameEntry extends JDialog {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 15);
         jPanelEdit.add(jTextFieldNewAlias, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -178,7 +179,7 @@ public class JDialogRenameEntry extends JDialog {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelKeyPairPass, gridBagConstraints);
 
         jPasswordFieldKeyPairPass.setMinimumSize(new java.awt.Dimension(150, 20));
@@ -192,7 +193,7 @@ public class JDialogRenameEntry extends JDialog {
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 15);
         jPanelEdit.add(jPasswordFieldKeyPairPass, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -232,7 +233,7 @@ public class JDialogRenameEntry extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(442, 248));
+        setSize(new java.awt.Dimension(449, 276));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

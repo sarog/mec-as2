@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/timing/StatisticDeleteController.java 4     2/02/22 15:29 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/timing/StatisticDeleteController.java 5     2/01/23 16:47 Heller $
 package de.mendelson.comm.as2.timing;
 
 /*
@@ -10,11 +10,11 @@ package de.mendelson.comm.as2.timing;
  */
 /**
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class StatisticDeleteController {
 
-    public StatisticDeleteController(Object a, Object b) {
+    public StatisticDeleteController(Object a) {
     }
 
     public void startAutoDeleteControl() {

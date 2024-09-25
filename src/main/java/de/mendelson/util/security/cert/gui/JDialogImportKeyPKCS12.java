@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogImportKeyPKCS12.java 14    24.09.21 10:37 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImportKeyPKCS12.java 16    26/09/22 10:19 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.MecFileChooser;
@@ -20,6 +20,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 /*
@@ -32,15 +33,15 @@ import javax.swing.SwingUtilities;
 /**
  * Dialog to configure a single partner
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 16 $
  */
 public class JDialogImportKeyPKCS12 extends JDialog {
     
     /**ResourceBundle to localize the GUI*/
-    private MecResourceBundle rb = null;    
-    private CertificateManager manager = null;    
+    private MecResourceBundle rb;    
+    private final CertificateManager manager;    
     private String newAlias = null;
-    private Logger logger = null;
+    private final Logger logger;
     
     /** Creates new form JDialogPartnerConfig
      *@param manager Manager that handles the certificates
@@ -62,6 +63,7 @@ public class JDialogImportKeyPKCS12 extends JDialog {
         TextOverlay.addTo(this.jTextFieldImportPKCS12File, this.rb.getResourceString( "label.importkey.hint"));
         this.jLabelIcon.setIcon( new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(32)));
         this.manager = manager;
+        this.logger = logger;
         this.getRootPane().setDefaultButton( this.jButtonOk );
         this.setButtonState();
     }
@@ -80,7 +82,8 @@ public class JDialogImportKeyPKCS12 extends JDialog {
     private void performImport(){
         try{
             KeyStoreUtil util = new KeyStoreUtil();            
-            KeyStore sourceKeystore = KeyStore.getInstance( BCCryptoHelper.KEYSTORE_PKCS12, "BC" );
+            KeyStore sourceKeystore = KeyStore.getInstance( BCCryptoHelper.KEYSTORE_PKCS12, 
+                    BouncyCastleProvider.PROVIDER_NAME );            
             util.loadKeyStore( sourceKeystore, this.jTextFieldImportPKCS12File.getText(), 
                     this.jPasswordFieldPassphrase.getPassword());
             List<String> keyAliasesList = util.getKeyAliases(sourceKeystore);

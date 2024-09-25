@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/util/security/signature/ListCellRendererSignature.java 2     16.09.21 14:54 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/ListCellRendererSignature.java 4     8/12/22 11:35 Heller $
 package de.mendelson.util.security.signature;
 
+import de.mendelson.util.ImageUtil;
 import java.awt.Component;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
@@ -13,19 +15,21 @@ import javax.swing.SwingConstants;
  * Renderer to render the signature entries in comboboxes
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ListCellRendererSignature extends JLabel implements ListCellRenderer {
 
-    protected static final int IMAGE_HEIGHT = 18;
+    public static final int IMAGE_HEIGHT = 18;
+    private final JComponent container;
 
 
     /**
      * Constructs a default renderer object for an item in a list.
      */
-    public ListCellRendererSignature() {
+    public ListCellRendererSignature(JComponent container) {
         super();
         setOpaque(true);        
+        this.container = container;
     }
 
     /**
@@ -185,9 +189,13 @@ public class ListCellRendererSignature extends JLabel implements ListCellRendere
         if (value != null) {
             if (value instanceof SignatureDisplay) {
                 SignatureDisplay display = (SignatureDisplay)value;                
-                this.setEnabled(list.isEnabled());
+                this.setEnabled(this.container.isEnabled());
                 this.setText(display.getText());
-                this.setIcon(display.getIcon());
+                if( this.container.isEnabled()){
+                    this.setIcon(display.getIcon());
+                }else{
+                    this.setIcon(ImageUtil.grayImage(display.getIcon()));
+                }
             }
         }
         this.setHorizontalAlignment(SwingConstants.LEADING);

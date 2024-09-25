@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 69    9.03.21 13:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 75    26/09/22 10:36 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -54,6 +54,7 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -67,13 +68,11 @@ import javax.xml.validation.Validator;
  * like
  *
  * @author S.Heller
- * @version $Revision: 69 $
+ * @version $Revision: 75 $
  */
 public class CEMReceiptController {
 
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private IDBDriverManager dbDriverManager;
     private CertificateManager certificateManagerEncSign;
     private MecResourceBundle rb;
@@ -83,10 +82,8 @@ public class CEMReceiptController {
     public static final String KEYSTORE_TYPE_SSL = "SSL";
     public static final String KEYSTORE_TYPE_ENC_SIGN = "ENC_SIGN";
 
-    public CEMReceiptController(ClientServer clientServer, 
+    public CEMReceiptController(ClientServer clientServer,
             IDBDriverManager dbDriverManager,
-            Connection configConnection,
-            Connection runtimeConnection,
             CertificateManager certificateManagerEncSign) {
         //load resource bundle
         try {
@@ -96,8 +93,6 @@ public class CEMReceiptController {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         this.dbDriverManager = dbDriverManager;
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.clientServer = clientServer;
     }
@@ -169,8 +164,7 @@ public class CEMReceiptController {
                 this.logger.log(Level.INFO, this.rb.getResourceString("cemtype.response"), info);
                 EDIINTCertificateExchangeResponse response = EDIINTCertificateExchangeResponse.parse(description.getData());
                 CEMAccessDB cemAccess = new CEMAccessDB(
-                        this.dbDriverManager,
-                        this.configConnection, this.runtimeConnection);
+                        this.dbDriverManager);
                 if (!cemAccess.requestExists(response.getRequestId())) {
                     //do not loalize, will be returned in an MDN
                     throw new Exception("Related CEM request with requestId " + response.getRequestId() + " does not exist.");
@@ -231,9 +225,7 @@ public class CEMReceiptController {
             response.addTrustResponse(trustResponse);
         }
         //enter the request to the CEM table in the db
-        CEMAccessDB cemAccess = new CEMAccessDB(
-                this.dbDriverManager,
-                this.configConnection, this.runtimeConnection);
+        CEMAccessDB cemAccess = new CEMAccessDB(this.dbDriverManager);
         cemAccess.insertRequest(info, initiator, receiver, request);
         if (this.clientServer != null) {
             this.clientServer.broadcastToClients(new RefreshClientCEMDisplay());
@@ -266,8 +258,7 @@ public class CEMReceiptController {
         EDIINTCertificateExchangeResponse response = EDIINTCertificateExchangeResponse.parse(description.getData());
         //insert the response into the database
         CEMAccessDB cemAccess = new CEMAccessDB(
-                this.dbDriverManager,
-                this.configConnection, this.runtimeConnection);
+                this.dbDriverManager);
         //insert the request data into the certificate database
         PartnerAccessDB partnerAccess
                 = new PartnerAccessDB(this.dbDriverManager);
@@ -284,7 +275,7 @@ public class CEMReceiptController {
      */
     private List<AS2Payload> getPayloads(AS2MessageInfo info) throws Exception {
         MessageAccessDB messageAccess
-                = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                = new MessageAccessDB(this.dbDriverManager);
         List<AS2Payload> payloads = messageAccess.getPayload(info.getMessageId());
         for (AS2Payload payload : payloads) {
             payload.loadDataFromPayloadFile();
@@ -354,11 +345,9 @@ public class CEMReceiptController {
         order.setReceiver(receiver);
         order.setMessage(message);
         order.setSender(sender);
-        SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager);
         orderSender.send(order);
-        CEMAccessDB cemAccess = new CEMAccessDB(
-                this.dbDriverManager,
-                this.configConnection, this.runtimeConnection);
+        CEMAccessDB cemAccess = new CEMAccessDB(this.dbDriverManager);
         cemAccess.insertResponse((AS2MessageInfo) message.getAS2Info(), receiver, sender, response);
         if (this.clientServer != null) {
             this.clientServer.broadcastToClients(new RefreshClientCEMDisplay());
@@ -388,8 +377,7 @@ public class CEMReceiptController {
                     }), info);
         } else {
             //import the new alias
-            Provider provBC = Security.getProvider("BC");
-            importAlias = util.importX509Certificate(certificateManager.getKeystore(), certificate, provBC);
+            importAlias = util.importX509Certificate(certificateManager.getKeystore(), certificate, BouncyCastleProvider.PROVIDER_NAME);
             certificateManager.saveKeystore();
             this.logger.log(Level.FINE, this.rb.getResourceString(keystoreType + ".cert.imported.success",
                     new Object[]{
@@ -405,9 +393,9 @@ public class CEMReceiptController {
      * Auto imports the CEM request certificates into the encryption/sign
      * keystore if they dont exist so far
      */
-    private List<TrustResponse> importCertificates(Partner initiator, AS2MessageInfo info, EDIINTCertificateExchangeRequest request, List<AS2Payload> payloads) throws Throwable {
+    private List<TrustResponse> importCertificates(Partner initiator, AS2MessageInfo info, 
+            EDIINTCertificateExchangeRequest request, List<AS2Payload> payloads) throws Throwable {
         KeyStoreUtil util = new KeyStoreUtil();
-        Provider provBC = Security.getProvider("BC");
         List<TrustResponse> trustResponseList = new ArrayList<TrustResponse>();
         List<TrustRequest> trustRequestList = request.getTrustRequestList();
         //log some information about the inbound trust request
@@ -432,7 +420,7 @@ public class CEMReceiptController {
             Collection<? extends Certificate> certList = null;
             try {
                 inStream = Files.newInputStream(Paths.get(certPayload.getPayloadFilename()));
-                certList = util.readCertificates(inStream, provBC);
+                certList = util.readCertificates(inStream, BouncyCastleProvider.PROVIDER_NAME);
             } finally {
                 if (inStream != null) {
                     inStream.close();
@@ -461,7 +449,7 @@ public class CEMReceiptController {
                         if (trustRequest.isCertUsageSSL()) {
                             //import the certificate into the SSL keystore
                             CertificateManager certificateManagerSSL = new CertificateManager(this.logger);
-                            String keystoreFile 
+                            String keystoreFile
                                     = Paths.get(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).toAbsolutePath().toString();
                             KeystoreStorageImplFile storage = new KeystoreStorageImplFile(keystoreFile,
                                     this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),

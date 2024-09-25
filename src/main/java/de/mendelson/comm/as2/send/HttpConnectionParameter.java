@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/HttpConnectionParameter.java 3     20.09.11 17:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/HttpConnectionParameter.java 6     29/07/22 10:35 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,7 +14,7 @@ import java.net.InetAddress;
 /**
  * Sets several parameter for an outbound http connection. This includes routing, connection and protocol issues
  * @author  S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class HttpConnectionParameter {
 
@@ -29,6 +29,8 @@ public class HttpConnectionParameter {
     private String httpProtocolVersion = null;
     private boolean useExpectContinue = true;
     private ProxyObject proxy = null;
+    private boolean trustAllRemoteServerCertificates = false;
+    private boolean strictHostCheck = true;
 
     public HttpConnectionParameter() {
     }
@@ -156,6 +158,34 @@ public class HttpConnectionParameter {
      */
     public void setProxy(ProxyObject proxy) {
         this.proxy = proxy;
+    }
+
+    /**
+     * @return the trustAllRemoteServerCertificates
+     */
+    public boolean getTrustAllRemoteServerCertificates() {
+        return trustAllRemoteServerCertificates;
+    }
+
+    /**
+     * @param trustAllRemoteServerCertificates the trustAllRemoteServerCertificates to set
+     */
+    public void setTrustAllRemoteServerCertificates(boolean trustAllRemoteServerCertificates) {
+        this.trustAllRemoteServerCertificates = trustAllRemoteServerCertificates;
+    }
+
+    /**
+     * @return the trustAllHostnames
+     */
+    public boolean getStrictHostCheck() {
+        return strictHostCheck;
+    }
+
+    /**
+     * @param strictHostCheck the trustAllHostnames to set
+     */
+    public void setStrictHostCheck(boolean strictHostCheck) {
+        this.strictHostCheck = strictHostCheck;
     }
 
 }

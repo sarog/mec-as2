@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 22    26.02.21 17:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 24    10/10/22 17:45 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -13,7 +13,6 @@ import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.File;
 import java.nio.file.Path;
-import java.sql.Connection;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -30,18 +29,16 @@ import java.util.logging.Logger;
  * Sender class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 24 $
  */
 public class SendOrderSender {
 
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private MecResourceBundle rb;
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private SendOrderAccessDB sendOrderAccess;
     private IDBDriverManager dbDriverManager;
 
-    public SendOrderSender(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
+    public SendOrderSender(IDBDriverManager dbDriverManager) {
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -50,12 +47,8 @@ public class SendOrderSender {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
         this.dbDriverManager = dbDriverManager;
-        this.sendOrderAccess = new SendOrderAccessDB(
-                dbDriverManager,
-                this.configConnection, this.runtimeConnection);
+        this.sendOrderAccess = new SendOrderAccessDB(dbDriverManager);
     }
 
     /**
@@ -68,7 +61,7 @@ public class SendOrderSender {
             long startProcessTime = System.currentTimeMillis();
             AS2MessageCreation messageCreation = new AS2MessageCreation(certificateManager, certificateManager);
             messageCreation.setLogger(this.logger);
-            messageCreation.setServerResources(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+            messageCreation.setServerResources(this.dbDriverManager);
             AS2Message message = messageCreation.createMessage(sender, receiver,
                     files, originalFilenames, userdefinedId, subject, payloadContentTypes);
             StringBuilder filenames = new StringBuilder();

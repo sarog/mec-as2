@@ -1,13 +1,15 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/SystemEvent.java 45    3.12.21 14:22 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/SystemEvent.java 50    13/10/22 16:36 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import java.awt.Image;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
-import java.io.FileReader;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.nio.charset.CharsetDecoder;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -36,7 +38,7 @@ import javax.swing.ImageIcon;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 45 $
+ * @version $Revision: 50 $
  */
 public class SystemEvent implements Serializable {
 
@@ -111,7 +113,7 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_SCHEDULER_SERVER_SHUTDOWN = 115;
     public static final int TYPE_DIRECTORY_MONITORING_STATE_CHANGED = 116;
     public static final int TYPE_PORT_LISTENER = 117;
-    
+
     /**
      * Connectivity
      */
@@ -185,6 +187,9 @@ public class SystemEvent implements Serializable {
      */
     public static final int CATEGORY_LICENSE = 1100;
     public static final int TYPE_LICENSE_ANY = 1100;
+    public static final int TYPE_LICENSE_UPDATE = 1101;
+    public static final int TYPE_LICENSE_EXPIRE = 1102;
+
     /**
      * File operation
      */
@@ -265,13 +270,20 @@ public class SystemEvent implements Serializable {
         boolean inSubject = false;
         boolean inBody = false;
 
-        FileReader templateReader = null;
+        BufferedReader templateReader = null;
+        InputStream inStream = null;
         try {
-            templateReader = new FileReader(templateFilename);
-            BufferedReader reader = new BufferedReader(templateReader);
+            //prevent Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);
+            //because this will throw a MalformedInputException if the encoding does not match!
+            //The REPLACE action will replace the unreadable character with a "?"
+            inStream = Files.newInputStream(Paths.get(templateFilename));
+            CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            templateReader = new BufferedReader(new InputStreamReader(inStream, decoder));
             String line = "";
             while (line != null) {
-                line = reader.readLine();
+                line = templateReader.readLine();
                 if (line != null) {
                     if (line.trim().equals("[SUBJECT]")) {
                         inSubject = true;
@@ -296,6 +308,9 @@ public class SystemEvent implements Serializable {
         } finally {
             if (templateReader != null) {
                 templateReader.close();
+            }
+            if( inStream != null ){
+                inStream.close();
             }
         }
         this.setBody(this.replaceAllVars(bodyBuffer.toString(), replacement));
@@ -477,7 +492,6 @@ public class SystemEvent implements Serializable {
             writer.newLine();
         } finally {
             if (writer != null) {
-                writer.flush();
                 writer.close();
             }
         }
@@ -490,12 +504,20 @@ public class SystemEvent implements Serializable {
     public static SystemEvent parse(Path eventFile) throws Exception {
         SystemEvent event = new SystemEvent(SEVERITY_INFO, ORIGIN_SYSTEM, TYPE_OTHER);
         BufferedReader reader = null;
+        InputStream inStream = null;
         String section = "";
         StringBuilder body = new StringBuilder();
         StringBuilder subject = new StringBuilder();
         int sectionCount = 0;
         try {
-            reader = Files.newBufferedReader(eventFile, StandardCharsets.UTF_8);
+            //prevent Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);
+            //because this will throw a MalformedInputException if the encoding does not match!
+            //The REPLACE action will replace the unreadable character with a "?"            
+            inStream = Files.newInputStream(eventFile);
+            CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPLACE)
+                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
+            reader = new BufferedReader(new InputStreamReader(inStream, decoder));
             String line = reader.readLine();
             while (line != null) {
                 if (line.trim().equals(SECTION_DESCRIPTION)) {
@@ -514,13 +536,13 @@ public class SystemEvent implements Serializable {
                             if (keyValue[0].equalsIgnoreCase("user")) {
                                 event.setUser(keyValue[1]);
                             } else if (keyValue[0].equalsIgnoreCase("timestamp")) {
-                                event.setTimestamp(new Long(keyValue[1]).longValue());
+                                event.setTimestamp(Long.valueOf(keyValue[1]).longValue());
                             } else if (keyValue[0].equalsIgnoreCase("severity")) {
-                                event.setSeverity(new Integer(keyValue[1]).intValue());
+                                event.setSeverity(Integer.valueOf(keyValue[1]).intValue());
                             } else if (keyValue[0].equalsIgnoreCase("origin")) {
-                                event.setOrigin(new Integer(keyValue[1]).intValue());
+                                event.setOrigin(Integer.valueOf(keyValue[1]).intValue());
                             } else if (keyValue[0].equalsIgnoreCase("type")) {
-                                event.setType(new Integer(keyValue[1]).intValue());
+                                event.setType(Integer.valueOf(keyValue[1]).intValue());
                             } else if (keyValue[0].equalsIgnoreCase("processoriginhost")) {
                                 event.setProcessOriginHost(keyValue[1]);
                             } else if (keyValue[0].equalsIgnoreCase("eventid")) {
@@ -541,6 +563,9 @@ public class SystemEvent implements Serializable {
         } finally {
             if (reader != null) {
                 reader.close();
+            }
+            if( inStream != null ){
+                inStream.close();
             }
         }
         if (sectionCount != 3) {

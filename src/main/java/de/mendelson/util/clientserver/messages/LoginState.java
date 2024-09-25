@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginState.java 19    9.06.20 10:11 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/messages/LoginState.java 21    24/08/22 17:33 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import de.mendelson.util.clientserver.ServerHelloMessage;
 import de.mendelson.util.clientserver.user.User;
 import java.io.Serializable;
+import java.util.List;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,7 +18,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class LoginState extends ClientServerResponse implements Serializable {
 
@@ -33,6 +35,7 @@ public class LoginState extends ClientServerResponse implements Serializable {
     private User user;
     private int state = STATE_AUTHENTICATION_FAILURE;
     private String stateDetails = null;
+    private List<ServerHelloMessage> serverHelloMessages = null;
 
     public LoginState(LoginRequest request) {
         super(request);
@@ -61,6 +64,20 @@ public class LoginState extends ClientServerResponse implements Serializable {
         this.user = user;
     }
 
+    /**
+     * @return the serverHelloMessage
+     */
+    public List<ServerHelloMessage> getServerHelloMessages() {
+        return this.serverHelloMessages;
+    }
+
+    /**
+     * @param serverHelloMessage the serverHelloMessage to set
+     */
+    public void setServerHelloMessages(List<ServerHelloMessage> serverHelloMessages) {
+        this.serverHelloMessages = serverHelloMessages;
+    }
+    
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
@@ -74,12 +91,10 @@ public class LoginState extends ClientServerResponse implements Serializable {
         if (this.state == STATE_AUTHENTICATION_FAILURE) {
             builder.append("FAILURE");
         } else if (this.state == STATE_AUTHENTICATION_SUCCESS) {
-            builder.append("SUCCESS");
+            builder.append("AUTHENTICATION SUCCESS");
         } else if (this.state == STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED) {
             builder.append("PASSWORD_REQUIRED");
-        } else if (this.state == STATE_AUTHENTICATION_SUCCESS) {
-            builder.append("AUTHENTICATION SUCCESS");
-        } else if (this.state == STATE_INCOMPATIBLE_CLIENT) {
+        }  else if (this.state == STATE_INCOMPATIBLE_CLIENT) {
             builder.append("INCOMPATIBLE CLIENT");
         } else if (this.state == STATE_REJECTED) {
             builder.append("REJECTED");

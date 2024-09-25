@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/ColorUtil.java 10    8.11.19 12:00 Heller $
+//$Header: /oftp2/de/mendelson/util/ColorUtil.java 13    13/05/22 14:01 Heller $
 package de.mendelson.util;
 
 import static de.mendelson.util.ColorUtil.getBestContrastColorAroundForeground;
@@ -21,7 +21,7 @@ import java.util.List;
  * background color could result in a bad color contrast
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class ColorUtil {
 
@@ -34,6 +34,9 @@ public class ColorUtil {
      * @return A value between 0 and 255
      */
     public static int calculateLuminance(Color color) {
+        if( color == null ){
+            throw new RuntimeException( "ColorUtil.calculateLuminance(Color color): Color argument must not be null");
+        }
         float luminance = (float) (0.2126f * color.getRed() + 0.7152f * color.getGreen() + 0.0722f * color.getBlue());
         return (Math.round(luminance));
     }
@@ -62,9 +65,28 @@ public class ColorUtil {
     public static boolean contrastIsOk(Color color1, Color color2) {
         return (calculateContrast(color1, color2) >= BEST_CONTRAST);
     }
-
+ 
     /**
-     * Returns the best contrast color from the passed foreground colors for the
+     * Returns the color of the list of possible colors that has the lowest contrast to the suggestedColor
+     * @param suggestedColor The color which is the best suggestion - but only a list of other colors is available
+     * @param possibleColors List of colors - one of them is returned (the one with the lowest contrast)
+     * @return 
+     */
+    public static Color getColorWithLowestContrast( Color suggestedColor, List<Color> possibleColors){
+        int lowestContrastSoFar = Integer.MAX_VALUE;
+        int bestIndexSoFar = 0;
+        for (int i = 0; i < possibleColors.size(); i++) {
+            int foundContrast = calculateContrast(suggestedColor, possibleColors.get(i));
+            if (foundContrast < lowestContrastSoFar) {
+                bestIndexSoFar = i;
+                lowestContrastSoFar = foundContrast;
+            }
+        }
+        return (possibleColors.get(bestIndexSoFar));
+    }    
+    
+    /**
+     * Returns the best contrast color from the list of passed foreground colors for the
      * passed background color
      *
      * @param background
@@ -224,7 +246,7 @@ public class ColorUtil {
                 color.getRed(), 
                 color.getGreen(), 
                 color.getBlue());  
-        return( hex);
+        return( hex.toUpperCase());
     }
     
 }

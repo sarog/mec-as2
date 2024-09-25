@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/JDialogPreferences.java 39    12.02.20 14:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/JDialogPreferences.java 48    5/10/22 10:10 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.ColorUtil;
@@ -34,7 +34,7 @@ import javax.swing.JFrame;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 39 $
+ * @version $Revision: 48 $
  */
 public class JDialogPreferences extends JDialog {
 
@@ -44,8 +44,12 @@ public class JDialogPreferences extends JDialog {
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/language.svg", IMAGE_HEIGHT,
                     IMAGE_HEIGHT * 2);
     private final static MendelsonMultiResolutionImage IMAGE_COLORBLIND
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/color_blindness.svg", 18,
-                    36, MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);    
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/color_blindness.svg", 20,
+                    36, MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
+    private final static MendelsonMultiResolutionImage IMAGE_DARKMODE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/darkmode.svg", 20);
+    private final static MendelsonMultiResolutionImage IMAGE_LIGHTMODE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/lightmode.svg", 20);
 
     /**
      * ResourceBundle to localize the GUI
@@ -59,17 +63,19 @@ public class JDialogPreferences extends JDialog {
     /**
      * stores all available panels
      */
-    private List<PreferencesPanel> panelList = new ArrayList<PreferencesPanel>();
+    private final List<PreferencesPanel> panelList = new ArrayList<PreferencesPanel>();
+    private ImageButtonBar buttonBar;
 
     /**
      * Creates new form JDialogPartnerConfig
      *
      * @param parameter Parameter to edit, null for a new one
      * @param parameterList List of available parameter
+     * @param activatedPlugins A String containing all activated plugins of the system
      */
-    public JDialogPreferences(JFrame parent, List<PreferencesPanel> panelList, String selectedTab) {
+    public JDialogPreferences(JFrame parent, List<PreferencesPanel> panelList, String selectedTab, String activatedPlugins) {
         super(parent, true);
-        this.panelList = panelList;
+        this.panelList.addAll( panelList );
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -80,6 +86,7 @@ public class JDialogPreferences extends JDialog {
         initComponents();
         this.setMultiresolutionIcons();
         this.setupCountrySelection();
+        this.setDarkModeRadio();
         ColorUtil.autoCorrectForegroundColor(this.jLabelLanguageInfo);
         if (this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("de")) {
             this.jRadioButtonLangDE.setSelected(true);
@@ -99,12 +106,13 @@ public class JDialogPreferences extends JDialog {
         gridBagConstraints.weighty = 1.0;
         for (PreferencesPanel preferencePanel : this.panelList) {
             //initialize the panels
-            preferencePanel.loadPreferences();
+            preferencePanel.setActivatedPlugins(activatedPlugins);
+            preferencePanel.loadPreferences();            
             //add the panels to the layout
             this.jPanelEdit.add(preferencePanel, gridBagConstraints);
         }
-        ImageButtonBar buttonBar = new ImageButtonBar(ImageButtonBar.HORIZONTAL);
-        buttonBar.setPreferredButtonSize(85, 84);
+        this.buttonBar = new ImageButtonBar(ImageButtonBar.HORIZONTAL)
+                .setPreferredButtonSize(85, 84);
         boolean selected = selectedTab == null;
         for (PreferencesPanel preferencePanel : this.panelList) {
             if (selectedTab != null && preferencePanel.getTabResource().equals(selectedTab)) {
@@ -121,8 +129,8 @@ public class JDialogPreferences extends JDialog {
                 new ImageIcon(IMAGE_LANGUAGE.toMinResolution(IMAGE_HEIGHT)),
                 this.rb.getResourceString("tab.language"),
                 new JComponent[]{this.jPanelLanguage},
-                false);
-        buttonBar.build();
+                false)
+                .build();
         //add button bar
         this.jPanelButtonBar.setLayout(new BorderLayout());
         this.jPanelButtonBar.add(buttonBar, BorderLayout.CENTER);
@@ -131,47 +139,56 @@ public class JDialogPreferences extends JDialog {
     }
 
     private void setMultiresolutionIcons() {
-        this.jLabelIconBlind.setIcon(new ImageIcon(IMAGE_COLORBLIND.toMinResolution(18)));
+        this.jLabelIconBlind.setIcon(new ImageIcon(IMAGE_COLORBLIND.toMinResolution(20)));
+        this.jLabelDarkMode.setIcon(new ImageIcon(IMAGE_DARKMODE.toMinResolution(20)));
+        this.jLabelLightMode.setIcon(new ImageIcon(IMAGE_LIGHTMODE.toMinResolution(20)));
     }
-        
     
     private void captureGUIValues() {
-        boolean clientRestartRequired = false;        
+        boolean clientRestartRequired = false;
         if (this.jRadioButtonLangDE.isSelected()) {
-            if( !this.clientPreferences.get( PreferencesAS2.LANGUAGE).equals( "de")){
+            if (!this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("de")) {
                 clientRestartRequired = true;
             }
             this.clientPreferences.put(PreferencesAS2.LANGUAGE, "de");
         } else if (this.jRadioButtonLangEN.isSelected()) {
-            if( !this.clientPreferences.get( PreferencesAS2.LANGUAGE).equals( "en")){
+            if (!this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("en")) {
                 clientRestartRequired = true;
             }
             this.clientPreferences.put(PreferencesAS2.LANGUAGE, "en");
         } else if (this.jRadioButtonLangFR.isSelected()) {
-            if( !this.clientPreferences.get( PreferencesAS2.LANGUAGE).equals( "fr")){
+            if (!this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("fr")) {
                 clientRestartRequired = true;
             }
             this.clientPreferences.put(PreferencesAS2.LANGUAGE, "fr");
-        }        
+        }
         if (this.jListCountry.getSelectedValue() != null) {
             String newCountryCode = this.jListCountry.getSelectedValue().getCountryCode();
-            if( !this.clientPreferences.get( PreferencesAS2.COUNTRY).equals( newCountryCode)){
+            if (!this.clientPreferences.get(PreferencesAS2.COUNTRY).equals(newCountryCode)) {
                 clientRestartRequired = true;
             }
             this.clientPreferences.put(PreferencesAS2.COUNTRY, newCountryCode);
         }
-        if( this.clientPreferences.getBoolean(PreferencesAS2.COLOR_BLINDNESS)!=( this.jCheckBoxColorBlindness.isSelected())){
-                clientRestartRequired = true;
-            }
+        if (this.clientPreferences.getBoolean(PreferencesAS2.COLOR_BLINDNESS) != (this.jCheckBoxColorBlindness.isSelected())) {
+            clientRestartRequired = true;
+        }
         this.clientPreferences.putBoolean(PreferencesAS2.COLOR_BLINDNESS, this.jCheckBoxColorBlindness.isSelected());
-        if( clientRestartRequired ){
+        if ((this.jRadioButtonDarkMode.isSelected()
+                && !this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT).equalsIgnoreCase("DARK"))
+                || (this.jRadioButtonLiteMode.isSelected()
+                && this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT).equalsIgnoreCase("DARK"))) {
+            this.clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT,
+                    this.jRadioButtonDarkMode.isSelected() ? "DARK" : "LIGHT");
+            clientRestartRequired = true;
+        }
+        if (clientRestartRequired) {
             UINotification.instance().addNotification(
                     PreferencesPanelMDN.IMAGE_PREFS,
-                    UINotification.TYPE_WARNING, 
+                    UINotification.TYPE_INFORMATION,
                     this.rb.getResourceString("title"),
                     this.rb.getResourceString("warning.clientrestart.required"));
         }
-        
+
     }
 
     /**
@@ -192,6 +209,15 @@ public class JDialogPreferences extends JDialog {
         this.jListCountry.setListData(countryArray);
     }
 
+    private void setDarkModeRadio() {
+        String displayMode = this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
+        if (displayMode.equalsIgnoreCase("DARK")) {
+            this.jRadioButtonDarkMode.setSelected(true);
+        } else {
+            this.jRadioButtonLiteMode.setSelected(true);
+        }
+    }
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -202,6 +228,7 @@ public class JDialogPreferences extends JDialog {
         java.awt.GridBagConstraints gridBagConstraints;
 
         buttonGroupLanguage = new javax.swing.ButtonGroup();
+        buttonGroupDarkMode = new javax.swing.ButtonGroup();
         jPanelEdit = new javax.swing.JPanel();
         jPanelLanguage = new javax.swing.JPanel();
         jRadioButtonLangDE = new javax.swing.JRadioButton();
@@ -209,14 +236,19 @@ public class JDialogPreferences extends JDialog {
         jRadioButtonLangFR = new javax.swing.JRadioButton();
         jPanelSpace = new javax.swing.JPanel();
         jLabelLanguageInfo = new javax.swing.JLabel();
-        jLabelCountry = new javax.swing.JLabel();
         jScrollPaneCountry = new javax.swing.JScrollPane();
         jListCountry = new javax.swing.JList<>();
         jPanelSpace44 = new javax.swing.JPanel();
-        jLabelLanguage = new javax.swing.JLabel();
         jCheckBoxColorBlindness = new javax.swing.JCheckBox();
         jPanelColorBlindness = new javax.swing.JPanel();
         jLabelIconBlind = new javax.swing.JLabel();
+        jPanelDarkMode = new javax.swing.JPanel();
+        jRadioButtonDarkMode = new javax.swing.JRadioButton();
+        jRadioButtonLiteMode = new javax.swing.JRadioButton();
+        jLabelDarkMode = new javax.swing.JLabel();
+        jLabelLightMode = new javax.swing.JLabel();
+        jPanelUIHelpLabel1 = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabel2 = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jPanelButtonBar = new javax.swing.JPanel();
@@ -267,6 +299,7 @@ public class JDialogPreferences extends JDialog {
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelLanguage.add(jPanelSpace, gridBagConstraints);
 
         jLabelLanguageInfo.setFont(new java.awt.Font("Tahoma", 3, 11)); // NOI18N
@@ -274,23 +307,15 @@ public class JDialogPreferences extends JDialog {
         jLabelLanguageInfo.setText(this.rb.getResourceString("info.restart.client"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridy = 12;
         gridBagConstraints.gridwidth = 9;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(15, 15, 15, 15);
         jPanelLanguage.add(jLabelLanguageInfo, gridBagConstraints);
 
-        jLabelCountry.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelCountry.setText(this.rb.getResourceString( "label.country"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(20, 50, 5, 5);
-        jPanelLanguage.add(jLabelCountry, gridBagConstraints);
-
         jScrollPaneCountry.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_ALWAYS);
+        jScrollPaneCountry.setMinimumSize(new java.awt.Dimension(275, 242));
 
         jListCountry.setModel(new DefaultListModel());
         jListCountry.setSelectionMode(javax.swing.ListSelectionModel.SINGLE_SELECTION);
@@ -314,22 +339,13 @@ public class JDialogPreferences extends JDialog {
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelLanguage.add(jPanelSpace44, gridBagConstraints);
-
-        jLabelLanguage.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelLanguage.setText(this.rb.getResourceString( "label.language"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(20, 10, 5, 5);
-        jPanelLanguage.add(jLabelLanguage, gridBagConstraints);
 
         jCheckBoxColorBlindness.setText(this.rb.getResourceString( "label.colorblindness"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridy = 11;
         gridBagConstraints.gridwidth = 5;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
@@ -344,11 +360,84 @@ public class JDialogPreferences extends JDialog {
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 5;
-        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridy = 11;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelLanguage.add(jPanelColorBlindness, gridBagConstraints);
+
+        jPanelDarkMode.setLayout(new java.awt.GridBagLayout());
+
+        buttonGroupDarkMode.add(jRadioButtonDarkMode);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
+        jPanelDarkMode.add(jRadioButtonDarkMode, gridBagConstraints);
+
+        buttonGroupDarkMode.add(jRadioButtonLiteMode);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 0);
+        jPanelDarkMode.add(jRadioButtonLiteMode, gridBagConstraints);
+
+        jLabelDarkMode.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jLabelDarkMode.setText(this.rb.getResourceString( "label.darkmode"));
+        jLabelDarkMode.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabelDarkModeMouseClicked(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 20);
+        jPanelDarkMode.add(jLabelDarkMode, gridBagConstraints);
+
+        jLabelLightMode.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jLabelLightMode.setText(this.rb.getResourceString( "label.litemode"));
+        jLabelLightMode.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabelLightModeMouseClicked(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelDarkMode.add(jLabelLightMode, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 20, 5);
+        jPanelLanguage.add(jPanelDarkMode, gridBagConstraints);
+
+        jPanelUIHelpLabel1.setToolTipText(this.rb.getResourceString( "label.country.help"));
+        jPanelUIHelpLabel1.setFont(new java.awt.Font("Dialog", 1, 12)); // NOI18N
+        jPanelUIHelpLabel1.setText(this.rb.getResourceString( "label.country"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(20, 45, 5, 0);
+        jPanelLanguage.add(jPanelUIHelpLabel1, gridBagConstraints);
+
+        jPanelUIHelpLabel2.setToolTipText(this.rb.getResourceString( "label.language.help"));
+        jPanelUIHelpLabel2.setFont(new java.awt.Font("Dialog", 1, 12)); // NOI18N
+        jPanelUIHelpLabel2.setText(this.rb.getResourceString( "label.language"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 0);
+        jPanelLanguage.add(jPanelUIHelpLabel2, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -392,37 +481,51 @@ public class JDialogPreferences extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtonBar, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(1011, 627));
+        setSize(new java.awt.Dimension(1084, 691));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
         for (PreferencesPanel panel : this.panelList) {
             panel.savePreferences();
-        }        
+        }
         this.setVisible(false);
-        this.captureGUIValues();        
+        this.captureGUIValues();
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
 
+    private void jLabelDarkModeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelDarkModeMouseClicked
+        this.jRadioButtonDarkMode.setSelected(true);
+    }//GEN-LAST:event_jLabelDarkModeMouseClicked
+
+    private void jLabelLightModeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelLightModeMouseClicked
+        this.jRadioButtonLiteMode.setSelected(true);
+    }//GEN-LAST:event_jLabelLightModeMouseClicked
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.ButtonGroup buttonGroupDarkMode;
     private javax.swing.ButtonGroup buttonGroupLanguage;
     private javax.swing.JButton jButtonOk;
     private javax.swing.JCheckBox jCheckBoxColorBlindness;
-    private javax.swing.JLabel jLabelCountry;
+    private javax.swing.JLabel jLabelDarkMode;
     private javax.swing.JLabel jLabelIconBlind;
-    private javax.swing.JLabel jLabelLanguage;
     private javax.swing.JLabel jLabelLanguageInfo;
+    private javax.swing.JLabel jLabelLightMode;
     private javax.swing.JList<DisplayCountry> jListCountry;
     private javax.swing.JPanel jPanelButtonBar;
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelColorBlindness;
+    private javax.swing.JPanel jPanelDarkMode;
     private javax.swing.JPanel jPanelEdit;
     private javax.swing.JPanel jPanelLanguage;
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JPanel jPanelSpace44;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabel1;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabel2;
+    private javax.swing.JRadioButton jRadioButtonDarkMode;
     private javax.swing.JRadioButton jRadioButtonLangDE;
     private javax.swing.JRadioButton jRadioButtonLangEN;
     private javax.swing.JRadioButton jRadioButtonLangFR;
+    private javax.swing.JRadioButton jRadioButtonLiteMode;
     private javax.swing.JScrollPane jScrollPaneCountry;
     // End of variables declaration//GEN-END:variables
 

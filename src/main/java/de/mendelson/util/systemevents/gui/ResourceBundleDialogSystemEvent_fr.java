@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_fr.java 8     27.09.21 16:10 He $
+//$Header: /as2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_fr.java 9     5/01/23 12:24 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDialogSystemEvent_fr extends MecResourceBundle {
 
@@ -31,20 +31,20 @@ public class ResourceBundleDialogSystemEvent_fr extends MecResourceBundle {
      */
     static final Object[][] CONTENTS = {
         {"title", "Visualiseur d''événements système"},
-        {"label.user", "Propriétaire:"},
-        {"label.host", "Hôte:"},
-        {"label.id", "Id de l'événement:"},
-        {"label.date", "Date:"},
-        {"label.type", "Type:"},
-        {"label.category", "Catégorie:"},
+        {"label.user", "Propriétaire"},
+        {"label.host", "Hôte"},
+        {"label.id", "Id de l''événement"},
+        {"label.date", "Date"},
+        {"label.type", "Type"},
+        {"label.category", "Catégorie"},
         {"header.timestamp", "Horodatage"},
         {"header.type", "Type"},
         {"header.category", "Catégorie"},
         {"user.server.process", "Processus serveur" },
-        {"label.startdate", "Début: " },
-        {"label.enddate", "Fin: " },
+        {"label.startdate", "Début" },
+        {"label.enddate", "Fin" },
         {"no.data", "Aucun événement système ne correspond à la sélection de date/type en cours." },  
-        {"label.freetext", "Rechercher du texte: " },
+        {"label.freetext", "Rechercher du texte" },
         {"label.freetext.hint", "Identifiant complet de l''événement ou recherche textuelle dans le corps et le sujet" },
         {"category.all", "-- Tous --" },      
         {"label.close", "Fermer" },

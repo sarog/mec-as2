@@ -1,7 +1,8 @@
-//$Header: /converteride/de/mendelson/util/wizard/category/ResourceBundleCategorySelection_de.java 1     1.04.05 11:17 Heller $
+//$Header: /oftp2/de/mendelson/util/wizard/category/ResourceBundleCategorySelection_de.java 2     24/08/22 17:33 Heller $
 package de.mendelson.util.wizard.category;
 
 import de.mendelson.util.MecResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -10,22 +11,26 @@ import de.mendelson.util.MecResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 
-
-/** 
+/**
  * ResourceBundle to localize a mendelson product
- * @author  S.Heller
- * @version $Revision: 1 $
+ *
+ * @author S.Heller
+ * @version $Revision: 2 $
  */
-public class ResourceBundleCategorySelection_de extends MecResourceBundle{
+public class ResourceBundleCategorySelection_de extends MecResourceBundle {
 
-  public Object[][] getContents() {
-    return contents;
-  }
+    public static final long serialVersionUID = 1L;
 
-   /**List of messages in the specific language*/
-  static final Object[][] contents = {
-    {"button.ok", "Ok"},   
-    {"button.cancel", "Abbrechen"},        
-  };		
-  
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+
+    /**
+     * List of messages in the specific language
+     */
+    static final Object[][] CONTENTS = {
+        {"button.ok", "Ok"},
+        {"button.cancel", "Abbrechen"},};
+
 }

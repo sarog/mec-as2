@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/Copyright.java 21    3.01.22 8:57 Heller $
+//$Header: /as2/de/mendelson/Copyright.java 22    2/01/23 9:52 Heller $
 package de.mendelson;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -11,13 +11,13 @@ package de.mendelson;
  * Show information about the copyright message for all products of
  * mendelson-e-commerce GmbH
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 22 $
  */
 public class Copyright{
 
     /**Gets the copyright message for all products*/
     public static String getCopyrightMessage(){
-        return( "(c) 2000-2022 mendelson-e-commerce GmbH Berlin, Germany" );
+        return( "(c) 2000-2023 mendelson-e-commerce GmbH Berlin, Germany" );
     }
     
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_de.java 15    12.02.21 14:43 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_de.java 18    23/06/22 16:50 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,7 +17,7 @@ import de.mendelson.util.database.IDBDriverManager;
  * to localize eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleDBServer_de extends MecResourceBundle {
 
@@ -32,6 +32,7 @@ public class ResourceBundleDBServer_de extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
+        {"module.name", "[DATENBANK]" },
         {"database." + IDBDriverManager.DB_CONFIG, "Konfigurationsdatenbank" },
         {"database." + IDBDriverManager.DB_RUNTIME, "Laufzeitdatenbank" },
         {"dbserver.startup", "Starte integrierten DB Server.." },
@@ -49,6 +50,12 @@ public class ResourceBundleDBServer_de extends MecResourceBundle {
         {"update.error.postgres", "FATAL: Es ist nicht möglich, die Datenbank von der Version {0} "
             + " zur Version {1} zu modifizieren.\n"
             + "Bitte starten Sie pgAdmin und löschen die zugehörige Datenbank."},
+        {"update.error.mysql", "FATAL: Es ist nicht möglich, die Datenbank von der Version {0} "
+            + " zur Version {1} zu modifizieren.\n"
+            + "Bitte starten Sie MySQLWorkbench und löschen die zugehörige Datenbank."},
+        {"update.error.oracledb", "FATAL: Es ist nicht möglich, die Datenbank von der Version {0} "
+            + " zur Version {1} zu modifizieren.\n"
+            + "Bitte starten Sie den Oracle SQL Developer löschen Sie die Datenbank."},
         {"update.successfully",
             "{0}: Die Datenbank wurde erfolgreich fuer die notwendige Version modifiziert."},
         {"update.notfound", "Fuer das Update muss die Datei update{0}to{1}.sql und/oder"

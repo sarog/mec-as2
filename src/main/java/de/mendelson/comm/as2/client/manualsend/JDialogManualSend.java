@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 39    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 40    20/01/23 10:53 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -42,7 +42,7 @@ import javax.swing.SwingUtilities;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 39 $
+ * @version $Revision: 40 $
  */
 public class JDialogManualSend extends JDialog {
 
@@ -395,7 +395,7 @@ public class JDialogManualSend extends JDialog {
         gridBagConstraints.gridy = 2;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelRemotePartner, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -441,7 +441,7 @@ public class JDialogManualSend extends JDialog {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelSender, gridBagConstraints);
 
         jLabelFilename2.setText(this.rb.getResourceString( "label.filename"));
@@ -554,7 +554,7 @@ public class JDialogManualSend extends JDialog {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.gridwidth = 13;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 0);
         jPanelEdit.add(jPanelSpace4, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -594,7 +594,7 @@ public class JDialogManualSend extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(480, 330));
+        setSize(new java.awt.Dimension(492, 350));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

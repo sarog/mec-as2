@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/gui/TreeCellRendererTrustChain.java 5     3.06.19 13:15 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/TreeCellRendererTrustChain.java 6     29/08/22 15:21 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.DNUtil;
@@ -22,7 +22,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * TreeCellRenderer that will display the icons of the trust chain tree
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class TreeCellRendererTrustChain extends DefaultTreeCellRenderer {
 
@@ -30,13 +30,13 @@ public class TreeCellRendererTrustChain extends DefaultTreeCellRenderer {
     protected static final int IMAGE_HEIGHT = TableModelCertificates.ROW_HEIGHT-3;
     
     public static final ImageIcon ICON_ROOT
-            = new ImageIcon( TableModelCertificates.ICON_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+            = new ImageIcon( TableModelCertificates.IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_CERT
-            = new ImageIcon( TableModelCertificates.ICON_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+            = new ImageIcon( TableModelCertificates.IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_KEY
-            = new ImageIcon( TableModelCertificates.ICON_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+            = new ImageIcon( TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_CERTIFICATE_UNTRUSTED
-            = new ImageIcon( TableModelCertificates.ICON_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+            = new ImageIcon( TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
 
     /**
      * Stores the selected node

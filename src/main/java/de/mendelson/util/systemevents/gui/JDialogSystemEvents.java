@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 32    27/01/22 10:23 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 34    5/01/23 12:24 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import com.toedter.calendar.JDateChooser;
@@ -54,15 +54,15 @@ import javax.swing.table.TableColumn;
 public class JDialogSystemEvents extends JDialog implements ListSelectionListener {
 
     private static final MendelsonMultiResolutionImage IMAGE_MAGNIFYING_GLASS
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/magnifying_glass.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/magnifying_glass.svg", 24);
     private static final MendelsonMultiResolutionImage IMAGE_RESET_FILTER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/refresh.svg", 24, 48);
-    private BaseClient baseClient;
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/refresh.svg", 24);
+    private final BaseClient baseClient;
     private Date currentStartDate = new Date();
     private Date currentEndDate = new Date();
-    private MecResourceBundle rb;
-    private static MecResourceBundle rbSystemEvent;
-    private IStatusBar statusBar;
+    private final MecResourceBundle rb;
+    private final MecResourceBundle rbSystemEvent;
+    private final IStatusBar statusBar;
 
     /**
      * Creates new form JDialogSystemEvents
@@ -109,6 +109,8 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         this.jLabelOriginTransaction.setText(this.rbSystemEvent.getResourceString("origin." + SystemEvent.ORIGIN_TRANSACTION));
         this.jLabelOriginUser.setText(this.rbSystemEvent.getResourceString("origin." + SystemEvent.ORIGIN_USER));
         List<UIEventCategory> categoryList = UIEventCategory.getAllSorted();
+        // +1 because there is an "all" entry
+        this.jComboBoxCategory.setMaximumRowCount(categoryList.size()+1);
         this.jComboBoxCategory.addItem(this.rb.getResourceString("category.all"));
         for (UIEventCategory category : categoryList) {
             this.jComboBoxCategory.addItem(category);

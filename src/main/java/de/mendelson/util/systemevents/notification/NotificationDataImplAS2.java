@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 6     10.09.20 12:57 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 9     13/10/22 10:05 Heller $
 package de.mendelson.util.systemevents.notification;
 
+import de.mendelson.util.oauth2.OAuth2Config;
 import java.io.Serializable;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -16,7 +17,7 @@ import org.w3c.dom.NodeList;
 /**
  * Implementation of a server log for the as2 server database
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class NotificationDataImplAS2 extends NotificationData implements Serializable{
    
@@ -34,11 +35,13 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
     private boolean notifyPostprocessingProblem = false;
     /**Makes no sense but some mail servers require this to be a valid email from the same host to prevent SPAM sending*/
     private String replyTo = null;
-    private boolean useSMTHAuth = false;
+    private boolean useSMTPAuthCredentials = false;
+    private boolean useSMTPAuthOAuth2 = false;
     private String smtpUser = null;
     private char[] smtpPass = null;
     private int connectionSecurity = SECURITY_PLAIN;
     private int maxNotificationsPerMin = 2;
+    private OAuth2Config oAuth2Config = null;
 
     @Override
     public String getNotificationMail() {
@@ -94,7 +97,7 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
     }
     
     /**Serializes this notification data object to XML
-     * @param level level in the XML hierarchie for the xml beautifying
+     * @param level level in the XML hierarch for the XML beautifying
      */
     public String toXML(int level) {
         StringBuilder builder = new StringBuilder();
@@ -114,6 +117,13 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
         builder.append(offset).append("\t<notifyconnectionproblem>").append(String.valueOf(this.notifyConnectionProblem)).append("</notifyconnectionproblem>\n");
         builder.append(offset).append("\t<replyto>").append(this.toCDATA(this.replyTo)).append("</replyto>\n");
         builder.append(offset).append("\t<maxnotificationspermin>").append(this.toCDATA(String.valueOf(this.maxNotificationsPerMin))).append("</maxnotificationspermin>\n");
+        builder.append(offset).append("\t<useauthorizationcredentials>").append(this.toCDATA(String.valueOf(this.useSMTPAuthCredentials))).append("</useauthorizationcredentials>\n");
+        builder.append(offset).append("\t<authorizationcredentialsuser>").append(this.toCDATA(String.valueOf(this.smtpUser==null?"":this.smtpUser))).append("</authorizationcredentialsuser>\n");
+        builder.append(offset).append("\t<authorizationcredentialspass>").append(this.toCDATA(String.valueOf(this.smtpPass==null?"":new String(this.smtpPass)))).append("</authorizationcredentialspass>\n");
+        builder.append(offset).append("\t<useauthorizationoauth2>").append(this.toCDATA(String.valueOf(this.useSMTPAuthOAuth2))).append("</useauthorizationoauth2>\n");
+        if( this.oAuth2Config != null ){
+            builder.append(offset).append(this.oAuth2Config.toXML(level+1, offset, this.useSMTPAuthOAuth2));
+        }
         builder.append(offset).append("</notification>\n");
         return (builder.toString());
     }
@@ -174,21 +184,30 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
         this.notifyCEM = notifyCEM;
     }
 
-    /**
-     * @return the useSMTHAuth
-     */
     @Override
-    public boolean usesSMTHAuth() {
-        return useSMTHAuth;
+    public boolean usesSMTPAuthCredentials() {
+        return useSMTPAuthCredentials;
     }
-
+ 
     /**
      * @param useSMTHAuth the useSMTHAuth to set
-     */
-    public void setUsesSMTHAuth(boolean useSMTHAuth) {
-        this.useSMTHAuth = useSMTHAuth;
+     */    
+    public void setUsesSMTPAuthCredentials(boolean useSMTPAuthCredentials) {
+        this.useSMTPAuthCredentials = useSMTPAuthCredentials;
     }
-
+    
+    @Override
+    public boolean usesSMTPAuthOAuth2() {
+        return useSMTPAuthOAuth2;
+    }
+ 
+    /**
+     * @param useSMTHAuth the useSMTHAuth to set
+     */    
+    public void setUsesSMTPAuthOAuth2(boolean useSMTPAuthOAuth2) {
+        this.useSMTPAuthOAuth2 = useSMTPAuthOAuth2;
+    }
+    
     /**
      * @return the smtpUser
      */
@@ -303,6 +322,16 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
      */
     public void setNotifyPostprocessingProblem(boolean notifyPostprocessingProblem) {
         this.notifyPostprocessingProblem = notifyPostprocessingProblem;
+    }
+
+    /**Returns the OAuth2 config - might be null*/
+    @Override
+    public OAuth2Config getOAuth2Config() {
+        return( this.oAuth2Config);
+    }
+    
+    public void setOAuth2Config(OAuth2Config oAuth2Config){
+        this.oAuth2Config = oAuth2Config;
     }
 
     

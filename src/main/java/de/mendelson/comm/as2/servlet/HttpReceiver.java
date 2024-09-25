@@ -1,11 +1,10 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 54    23.08.21 13:48 Heller $
+///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 56    1/09/22 14:11 Heller $
 package de.mendelson.comm.as2.servlet;
 
 import de.mendelson.Copyright;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageResponse;
-import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.clientserver.AnonymousTextClient;
@@ -15,6 +14,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -22,7 +22,6 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Properties;
-import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -40,12 +39,9 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet to receive AS2 messages via HTTP
  *
  * @author S.Heller
- * @version $Revision: 54 $
+ * @version $Revision: 56 $
  */
 public class HttpReceiver extends HttpServlet {
-
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private PreferencesAS2 preferences = new PreferencesAS2();
 
     public HttpReceiver() {
     }
@@ -80,8 +76,8 @@ public class HttpReceiver extends HttpServlet {
      * POST by the HTTP client: receive the message and work on it
      */
     @Override
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-        //stores if the commit already occured. Do not send an additional error in this case
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {        
+        //stores if the commit already occured. Do not send an additional error in this case        
         boolean committed = false;
         Path dataFile = null;
         try {
@@ -143,11 +139,11 @@ public class HttpReceiver extends HttpServlet {
         try {
             client = new AnonymousTextClient();
             client.setDisplayServerLogMessages(false);
-            PreferencesAS2 preferences = new PreferencesAS2();
             client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             IncomingMessageRequest messageRequest = new IncomingMessageRequest();
             messageRequest.setMessageDataFilename(dataFile.toAbsolutePath().toString());
             messageRequest.setContentType(request.getContentType());
+            messageRequest.setUsesTLS(request.isSecure());
             String remoteHost = request.getRemoteHost();
             if (remoteHost == null) {
                 remoteHost = request.getRemoteAddr();

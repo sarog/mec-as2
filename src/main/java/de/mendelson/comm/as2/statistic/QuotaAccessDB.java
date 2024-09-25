@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/statistic/QuotaAccessDB.java 9     2/02/22 16:22 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/statistic/QuotaAccessDB.java 12    2/01/23 16:47 Heller $
 package de.mendelson.comm.as2.statistic;
 
 import java.util.ArrayList;
@@ -7,22 +7,24 @@ import java.util.List;
 /**
  * Dummy class, not used
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class QuotaAccessDB {
 
 
-    public QuotaAccessDB(Object a, Object b, Object c){
+    public QuotaAccessDB(Object a){
     }
 
     public void resetCounter(String a, String b) {
     }
 
 
-    public static synchronized void incSentMessages(Object a, Object b, Object c, Object d, Object e, int state, Object f) {
+    public static synchronized void incSentMessages(
+            Object a, Object b, Object c, int d, Object e) {
     }
     
-    public static synchronized void incReceivedMessages(Object a, Object b, Object c, Object d, Object e, int state, Object f) {
+    public static synchronized void incReceivedMessages(
+            Object a, Object b, Object c, int d, Object e) {
     }
 
     

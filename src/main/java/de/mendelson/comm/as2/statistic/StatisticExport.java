@@ -1,11 +1,5 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/statistic/StatisticExport.java 3     17.04.12 11:32 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/statistic/StatisticExport.java 4     2/01/23 16:47 Heller $
 package de.mendelson.comm.as2.statistic;
-
-import de.mendelson.comm.as2.partner.Partner;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.sql.Connection;
-import java.sql.SQLException;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,18 +9,16 @@ import java.sql.SQLException;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Exports the statistic data to a passed export file, format is XML
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class StatisticExport {
 
-    public StatisticExport(Connection configConnection, Connection runtimeConnection) {        
+    public StatisticExport(Object a) {        
     }
 
-    /**Exports the statistic data to a passed export file*/
-    public void export(OutputStream streamout, long startDate, long endDate, long timestep, Partner localStation, Partner partner)
-            throws SQLException, IOException {           
+    public void export(Object a, long b, long c, long d, Object e, Object f)
+            throws Exception {           
     }
 
     

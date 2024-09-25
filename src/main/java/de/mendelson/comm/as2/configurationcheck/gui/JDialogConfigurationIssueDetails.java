@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 10    29.06.20 10:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 11    24/11/22 10:22 Heller $
 package de.mendelson.comm.as2.configurationcheck.gui;
 
 import de.mendelson.comm.as2.client.ModuleStarter;
@@ -29,7 +29,7 @@ import javax.swing.JDialog;
  * This is a dialog that contains additional information about a single issue
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class JDialogConfigurationIssueDetails extends JDialog {
 
@@ -102,16 +102,16 @@ public class JDialogConfigurationIssueDetails extends JDialog {
             case ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN:
                 this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
-            case ConfigurationIssue.CERTIFICATE_EXPIRED_SSL:
+            case ConfigurationIssue.CERTIFICATE_EXPIRED_TLS:
                 this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
-            case ConfigurationIssue.NO_KEY_IN_SSL_KEYSTORE:
+            case ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE:
                 this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
-            case ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE:
+            case ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE:
                 this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
-            case ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL:
+            case ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS:
                 this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
             case ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE:
@@ -148,16 +148,16 @@ public class JDialogConfigurationIssueDetails extends JDialog {
             case ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN:
                 this.moduleStarter.displayCertificateManagerEncSign(selectedIssue.getDetails());
                 break;
-            case ConfigurationIssue.CERTIFICATE_EXPIRED_SSL:
+            case ConfigurationIssue.CERTIFICATE_EXPIRED_TLS:
                 this.moduleStarter.displayCertificateManagerSSL(selectedIssue.getDetails());
                 break;
-            case ConfigurationIssue.NO_KEY_IN_SSL_KEYSTORE:
+            case ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE:
                 this.moduleStarter.displayCertificateManagerSSL(null);
                 break;
-            case ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE:
+            case ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE:
                 this.moduleStarter.displayCertificateManagerSSL(null);
                 break;
-            case ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL:
+            case ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS:
                 this.moduleStarter.displayCertificateManagerSSL(selectedIssue.getDetails());
                 break;
             case ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE:

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/JDialogGenerateKey.java 24    23.04.20 10:02 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/JDialogGenerateKey.java 30    8/12/22 11:35 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -6,11 +6,17 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.security.keygeneration.KeyGenerationValues;
 import de.mendelson.util.security.keygeneration.KeyGenerator;
+import de.mendelson.util.security.keylength.KeyLengthDisplay;
+import de.mendelson.util.security.keylength.ListCellRendererKeyLength;
+import de.mendelson.util.security.signature.ListCellRendererSignature;
+import de.mendelson.util.security.signature.SignatureDisplay;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.Objects;
@@ -25,6 +31,7 @@ import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -37,7 +44,7 @@ import org.bouncycastle.asn1.x509.KeyUsage;
  * Dialog to work with certificates
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 30 $
  */
 public class JDialogGenerateKey extends JDialog {
 
@@ -48,17 +55,17 @@ public class JDialogGenerateKey extends JDialog {
     public static final String SIGNATUREALGORITHM_SHA1_WITH_RSA = "SHA1WithRSA";
     public static final String SIGNATUREALGORITHM_MD5_WITH_RSA = "MD5WithRSA";
     public static final String SIGNATUREALGORITHM_SHA256_WITH_ECDSA = "SHA256WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA384_WITH_ECDSA = "SHA384WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_ECDSA = "SHA512WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA = "SHA3-256WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA = "SHA3-384WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA = "SHA3-512WithECDSA";
+
     public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA = "SHA3-256withRSA";
     //http://www.w3.org/2007/05/xmldsig-more#sha3-256-rsa-MGF1
     //SHA3-256withRSA/PSS
     public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS = "SHA3-256withRSAAndMGF1";
 
-    //EC only
-    private static final String KEY_SIZE_256 = "256";
-    //EC only
-    private static final String KEY_SIZE_384 = "384";
-    //EC only
-    private static final String KEY_SIZE_512 = "512";
     private static final String KEY_SIZE_1024 = "1024";
     private static final String KEY_SIZE_2048 = "2048";
     private static final String KEY_SIZE_4096 = "4096";
@@ -94,6 +101,8 @@ public class JDialogGenerateKey extends JDialog {
         }
         this.setTitle(this.rb.getResourceString("title"));
         initComponents();
+        this.jComboBoxSignature.setRenderer(new ListCellRendererSignature(this.jComboBoxSignature));
+        this.jComboBoxSize.setRenderer( new ListCellRendererKeyLength(this.jComboBoxSize));
         this.setMultiresolutionIcons();
         this.manager = manager;
         //populate combo boxes
@@ -103,15 +112,30 @@ public class JDialogGenerateKey extends JDialog {
         this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_ECDSA);
         this.jComboBoxKeyType.setSelectedItem(KeyGenerator.KEYALGORITHM_RSA);
         this.displayValues();
+        Enumeration enumeration = ECNamedCurveTable.getNames();
+        List<String> curveNames = new ArrayList<String>();
+        while (enumeration.hasMoreElements()) {
+            String curveName = enumeration.nextElement().toString();
+            if (curveName.length() > 0) {
+                curveName = curveName.substring(0, 1).toUpperCase() + curveName.substring(1);
+                curveNames.add(curveName);
+            }
+        }
+        Collections.sort(curveNames);
+        this.jComboBoxECCurve.removeAllItems();
+        for (String curveName : curveNames) {
+            this.jComboBoxECCurve.addItem(curveName);
+        }
+        this.jComboBoxECCurve.setSelectedItem("Prime256v1");
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setViewMode();
         this.addWindowListener(
                 new WindowAdapter() {
-                    //Windows closing is called when the user closes the window using a OS button, e.g. "X"
-                    @Override
-                    public void windowClosing(WindowEvent e) {
-                        values = null;
-                    }
+            //Windows closing is called when the user closes the window using a OS button, e.g. "X"
+            @Override
+            public void windowClosing(WindowEvent e) {
+                values = null;
+            }
         });
     }
 
@@ -125,41 +149,52 @@ public class JDialogGenerateKey extends JDialog {
 
     private void setKeyRelatedValuesToCombobox() {
         String keyType = (String) this.jComboBoxKeyType.getSelectedItem();
-        String keySizePreselection = (String) this.jComboBoxSize.getSelectedItem();
+        KeyLengthDisplay keySizePreselection = (KeyLengthDisplay) this.jComboBoxSize.getSelectedItem();
         SignatureDisplayValue signatureAlgorithmPreselection = null;
-        if( jComboBoxSignature.getSelectedItem() != null){
-            signatureAlgorithmPreselection = (SignatureDisplayValue)this.jComboBoxSignature.getSelectedItem();
+        if (this.jComboBoxSignature.getSelectedItem() != null) {
+            signatureAlgorithmPreselection = (SignatureDisplayValue) this.jComboBoxSignature.getSelectedItem();
         }
         if (keyType == null) {
             return;
         }
-        this.jComboBoxSize.removeAllItems();
         this.jComboBoxSignature.removeAllItems();
         if (keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
-            this.jComboBoxSize.addItem(KEY_SIZE_256);
-            this.jComboBoxSize.addItem(KEY_SIZE_384);
             // 10/2019: a key size of 512 will result in an invalid key size error
             // - this is the same as an asymmetric key size of 15360 bit which seems
             // not to be supported now
             // this.jComboBoxSize.addItem(KEY_SIZE_512);
+            this.jComboBoxSignature.removeAllItems();
             this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_ECDSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA384_WITH_ECDSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA512_WITH_ECDSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA));
+            this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA));
+            this.jPanelUIHelpLabelECCurve.setEnabled(true);
+            this.jComboBoxECCurve.setEnabled(true);
+            this.jComboBoxSize.setEnabled(false);
+            this.jPanelUIHelpLabelKeySize.setEnabled(false);
         } else {
-            this.jComboBoxSize.addItem(KEY_SIZE_1024);
-            this.jComboBoxSize.addItem(KEY_SIZE_2048);
-            this.jComboBoxSize.addItem(KEY_SIZE_4096);
+            this.jComboBoxSize.removeAllItems();
+            this.jComboBoxSize.addItem(new KeyLengthDisplay(KEY_SIZE_1024));
+            this.jComboBoxSize.addItem(new KeyLengthDisplay(KEY_SIZE_2048));
+            this.jComboBoxSize.addItem(new KeyLengthDisplay(KEY_SIZE_4096));
+            this.jComboBoxSignature.removeAllItems();
             this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_MD5_WITH_RSA));
             this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA1_WITH_RSA));
             this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_RSA));
             this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS));
             this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA3_256_WITH_RSA));
             this.jComboBoxSignature.addItem(new SignatureDisplayValue(SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS));
+            this.jPanelUIHelpLabelECCurve.setEnabled(false);
+            this.jComboBoxECCurve.setEnabled(false);
+            this.jComboBoxSize.setEnabled(true);
+            this.jPanelUIHelpLabelKeySize.setEnabled(true);
         }
         this.jComboBoxSize.setSelectedItem(keySizePreselection);
         if (this.jComboBoxSize.getSelectedItem() == null) {
-            if (keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
-                this.jComboBoxSize.addItem(KEY_SIZE_256);
-            } else {
-                this.jComboBoxSize.setSelectedItem(KEY_SIZE_2048);
+            if (!keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
+                this.jComboBoxSize.setSelectedItem(new KeyLengthDisplay(KEY_SIZE_2048));
             }
         }
         this.jComboBoxSignature.setSelectedItem(signatureAlgorithmPreselection);
@@ -173,35 +208,43 @@ public class JDialogGenerateKey extends JDialog {
     }
 
     /**
-     * Stores the actual gui values in an object that could be accessed from
+     * Stores the actual GUI values in an object that could be accessed from
      * outside
      */
     private void captureGUIValues() {
-        this.getValues().setCommonName(this.jTextFieldCommonName.getText().trim());
-        this.getValues().setCountryCode(this.jTextFieldCountryCode.getText().trim());
-        this.getValues().setEmailAddress(this.jTextFieldMailAddress.getText().trim());
-        this.getValues().setKeySize(Integer.valueOf(this.jComboBoxSize.getSelectedItem().toString()));
-        this.getValues().setKeyAlgorithm(this.jComboBoxKeyType.getSelectedItem().toString());
-        this.getValues().setKeyValidInDays(Integer.valueOf(this.jTextFieldValidity.getText().trim()));
-        this.getValues().setLocalityName(this.jTextFieldLocality.getText().trim());
-        this.getValues().setOrganisationName(this.jTextFieldOrganisationName.getText().trim());
-        this.getValues().setOrganisationUnit(this.jTextFieldOrganisationUnit.getText().trim());
-        SignatureDisplayValue selectedsignature = (SignatureDisplayValue)this.jComboBoxSignature.getSelectedItem();
-        this.getValues().setSignatureAlgorithm(selectedsignature.getSignatureAlgorithm());
-        this.getValues().setStateName(this.jTextFieldState.getText().trim());
+        this.values.setCommonName(this.jTextFieldCommonName.getText().trim());
+        this.values.setCountryCode(this.jTextFieldCountryCode.getText().trim());
+        this.values.setEmailAddress(this.jTextFieldMailAddress.getText().trim());
+        if (!this.jComboBoxECCurve.isEnabled()) {
+            KeyLengthDisplay display = (KeyLengthDisplay)this.jComboBoxSize.getSelectedItem();
+            this.values.setKeySize(Integer.valueOf(display.getWrappedValue()));
+        } else {
+            this.values.setKeySize(-1);
+        }
+        this.values.setKeyAlgorithm(this.jComboBoxKeyType.getSelectedItem().toString());
+        this.values.setKeyValidInDays(Integer.valueOf(this.jTextFieldValidity.getText().trim()));
+        this.values.setLocalityName(this.jTextFieldLocality.getText().trim());
+        this.values.setOrganisationName(this.jTextFieldOrganisationName.getText().trim());
+        this.values.setOrganisationUnit(this.jTextFieldOrganisationUnit.getText().trim());
+        SignatureDisplayValue selectedsignature = (SignatureDisplayValue) this.jComboBoxSignature.getSelectedItem();
+        this.values.setSignatureAlgorithm(selectedsignature.getSignatureAlgorithm());
+        this.values.setStateName(this.jTextFieldState.getText().trim());
+        if (this.jComboBoxECCurve.isEnabled()) {
+            this.values.setECNamedCurve(this.jComboBoxECCurve.getSelectedItem().toString());
+        }
         if (this.jCheckBoxPurposeSignEncrypt.isSelected() || this.jCheckBoxPurposeSSL.isSelected()) {
-            this.getValues().setKeyExtension(new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
+            this.values.setKeyExtension(new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
         }
         if (this.jCheckBoxPurposeSSL.isSelected()) {
             KeyPurposeId[] extKeyUsage = new KeyPurposeId[]{
                 KeyPurposeId.id_kp_serverAuth,
                 KeyPurposeId.id_kp_clientAuth
             };
-            this.getValues().setExtendedKeyExtension(new ExtendedKeyUsage(extKeyUsage));
+            this.values.setExtendedKeyExtension(new ExtendedKeyUsage(extKeyUsage));
         }
         //Subject Alternative Name (German: Alternativer Antragstellername)
         for (GeneralName generalName : this.namesList) {
-            this.getValues().addSubjectAlternativeName(generalName);
+            this.values.addSubjectAlternativeName(generalName);
         }
     }
 
@@ -345,9 +388,9 @@ public class JDialogGenerateKey extends JDialog {
         jPanelEditInner = new javax.swing.JPanel();
         jLabelIcon = new javax.swing.JLabel();
         jLabelOrganisationUnit = new javax.swing.JLabel();
-        jComboBoxSize = new javax.swing.JComboBox();
-        jComboBoxSignature = new javax.swing.JComboBox();
-        jComboBoxKeyType = new javax.swing.JComboBox();
+        jComboBoxSize = new javax.swing.JComboBox<>();
+        jComboBoxSignature = new javax.swing.JComboBox<>();
+        jComboBoxKeyType = new javax.swing.JComboBox<>();
         jTextFieldValidity = new javax.swing.JTextField();
         jTextFieldMailAddress = new javax.swing.JTextField();
         jTextFieldState = new javax.swing.JTextField();
@@ -357,12 +400,6 @@ public class JDialogGenerateKey extends JDialog {
         jLabelLocality = new javax.swing.JLabel();
         jLabelState = new javax.swing.JLabel();
         jLabelCountryCode = new javax.swing.JLabel();
-        jLabelMailAddress = new javax.swing.JLabel();
-        jLabelValidity = new javax.swing.JLabel();
-        jLabelKeyType = new javax.swing.JLabel();
-        jLabelSignature = new javax.swing.JLabel();
-        jLabelSize = new javax.swing.JLabel();
-        jLabelCommonName = new javax.swing.JLabel();
         jCheckBoxPurposeSignEncrypt = new javax.swing.JCheckBox();
         jCheckBoxPurposeSSL = new javax.swing.JCheckBox();
         jLabelPurpose = new javax.swing.JLabel();
@@ -375,10 +412,18 @@ public class JDialogGenerateKey extends JDialog {
         jPanelCountryCode = new javax.swing.JPanel();
         jLabelCountryCodeHint = new javax.swing.JLabel();
         jTextFieldCountryCode = new javax.swing.JTextField();
-        jPanelCountryCode1 = new javax.swing.JPanel();
+        jPanelSAN = new javax.swing.JPanel();
         jTextFieldSubjectAlternativeNames = new javax.swing.JTextField();
         jButtonSubjectAlternativeNames = new javax.swing.JButton();
         jLabelSubjectAlternativeNames = new javax.swing.JLabel();
+        jPanelUIHelpLabelKeyType = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelSignature = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelKeySize = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelCommonName = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelMailaddress = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelValidity = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jComboBoxECCurve = new javax.swing.JComboBox<>();
+        jPanelUIHelpLabelECCurve = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
@@ -388,7 +433,7 @@ public class JDialogGenerateKey extends JDialog {
 
         getContentPane().setLayout(new java.awt.GridBagLayout());
 
-        jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+        jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(null, (String)null));
         jPanelEdit.setLayout(new java.awt.GridBagLayout());
 
         jPanelEditInner.setLayout(new java.awt.GridBagLayout());
@@ -408,8 +453,8 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jLabelOrganisationUnit, gridBagConstraints);
 
-        jComboBoxSize.setMinimumSize(new java.awt.Dimension(40, 22));
-        jComboBoxSize.setPreferredSize(new java.awt.Dimension(70, 20));
+        jComboBoxSize.setMinimumSize(new java.awt.Dimension(130, 24));
+        jComboBoxSize.setPreferredSize(new java.awt.Dimension(130, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 4;
@@ -418,7 +463,8 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jComboBoxSize, gridBagConstraints);
 
-        jComboBoxSignature.setPreferredSize(new java.awt.Dimension(70, 20));
+        jComboBoxSignature.setMinimumSize(new java.awt.Dimension(150, 24));
+        jComboBoxSignature.setPreferredSize(new java.awt.Dimension(150, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 3;
@@ -427,7 +473,8 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jComboBoxSignature, gridBagConstraints);
 
-        jComboBoxKeyType.setPreferredSize(new java.awt.Dimension(70, 20));
+        jComboBoxKeyType.setMinimumSize(new java.awt.Dimension(130, 24));
+        jComboBoxKeyType.setPreferredSize(new java.awt.Dimension(130, 24));
         jComboBoxKeyType.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBoxKeyTypeActionPerformed(evt);
@@ -441,6 +488,8 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jComboBoxKeyType, gridBagConstraints);
 
+        jTextFieldValidity.setMaximumSize(new java.awt.Dimension(50, 22));
+        jTextFieldValidity.setPreferredSize(new java.awt.Dimension(50, 22));
         jTextFieldValidity.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextFieldValidityKeyReleased(evt);
@@ -449,8 +498,8 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 12;
-        gridBagConstraints.gridwidth = 6;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.gridwidth = 8;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jTextFieldValidity, gridBagConstraints);
@@ -463,7 +512,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 11;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -477,7 +526,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 9;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -491,7 +540,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -505,7 +554,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 6;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -547,65 +596,11 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jLabelCountryCode, gridBagConstraints);
 
-        jLabelMailAddress.setText(this.rb.getResourceString( "label.mailaddress"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 11;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jLabelMailAddress, gridBagConstraints);
-
-        jLabelValidity.setText(this.rb.getResourceString( "label.validity"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 12;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jLabelValidity, gridBagConstraints);
-
-        jLabelKeyType.setText(this.rb.getResourceString( "label.keytype"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jLabelKeyType, gridBagConstraints);
-
-        jLabelSignature.setText(this.rb.getResourceString( "label.signature"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jLabelSignature, gridBagConstraints);
-
-        jLabelSize.setText(this.rb.getResourceString( "label.size"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jLabelSize, gridBagConstraints);
-
-        jLabelCommonName.setText(this.rb.getResourceString( "label.commonname"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jLabelCommonName, gridBagConstraints);
-
         jCheckBoxPurposeSignEncrypt.setText(this.rb.getResourceString( "label.purpose.encsign"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 14;
-        gridBagConstraints.gridwidth = 5;
+        gridBagConstraints.gridwidth = 11;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
         jPanelEditInner.add(jCheckBoxPurposeSignEncrypt, gridBagConstraints);
@@ -614,7 +609,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 15;
-        gridBagConstraints.gridwidth = 5;
+        gridBagConstraints.gridwidth = 11;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
         jPanelEditInner.add(jCheckBoxPurposeSSL, gridBagConstraints);
@@ -624,7 +619,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 13;
-        gridBagConstraints.gridwidth = 5;
+        gridBagConstraints.gridwidth = 11;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weighty = 1.0;
@@ -660,7 +655,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 8;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         jPanelEditInner.add(jPanelLocality, gridBagConstraints);
@@ -694,7 +689,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         jPanelEditInner.add(jPanelCommonName, gridBagConstraints);
@@ -727,12 +722,12 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 10;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         jPanelEditInner.add(jPanelCountryCode, gridBagConstraints);
 
-        jPanelCountryCode1.setLayout(new java.awt.GridBagLayout());
+        jPanelSAN.setLayout(new java.awt.GridBagLayout());
 
         jTextFieldSubjectAlternativeNames.setEditable(false);
         jTextFieldSubjectAlternativeNames.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -747,7 +742,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelCountryCode1.add(jTextFieldSubjectAlternativeNames, gridBagConstraints);
+        jPanelSAN.add(jTextFieldSubjectAlternativeNames, gridBagConstraints);
 
         jButtonSubjectAlternativeNames.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/missing_image16x16.gif"))); // NOI18N
         jButtonSubjectAlternativeNames.setMargin(new java.awt.Insets(2, 5, 2, 5));
@@ -758,15 +753,15 @@ public class JDialogGenerateKey extends JDialog {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelCountryCode1.add(jButtonSubjectAlternativeNames, gridBagConstraints);
+        jPanelSAN.add(jButtonSubjectAlternativeNames, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 16;
-        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridwidth = 7;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        jPanelEditInner.add(jPanelCountryCode1, gridBagConstraints);
+        jPanelEditInner.add(jPanelSAN, gridBagConstraints);
 
         jLabelSubjectAlternativeNames.setText(this.rb.getResourceString( "label.subjectalternativenames"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -776,6 +771,92 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jLabelSubjectAlternativeNames, gridBagConstraints);
+
+        jPanelUIHelpLabelKeyType.setToolTipText(this.rb.getResourceString( "label.keytype.help"));
+        jPanelUIHelpLabelKeyType.setText(this.rb.getResourceString( "label.keytype"));
+        jPanelUIHelpLabelKeyType.setTooltipWidth(300);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        jPanelEditInner.add(jPanelUIHelpLabelKeyType, gridBagConstraints);
+
+        jPanelUIHelpLabelSignature.setToolTipText(this.rb.getResourceString( "label.signature.help"));
+        jPanelUIHelpLabelSignature.setText(this.rb.getResourceString( "label.signature"));
+        jPanelUIHelpLabelSignature.setTooltipWidth(300);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        jPanelEditInner.add(jPanelUIHelpLabelSignature, gridBagConstraints);
+
+        jPanelUIHelpLabelKeySize.setToolTipText(this.rb.getResourceString( "label.size.help"));
+        jPanelUIHelpLabelKeySize.setText(this.rb.getResourceString( "label.size"));
+        jPanelUIHelpLabelKeySize.setTooltipWidth(300);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        jPanelEditInner.add(jPanelUIHelpLabelKeySize, gridBagConstraints);
+
+        jPanelUIHelpLabelCommonName.setToolTipText(this.rb.getResourceString( "label.commonname.help"));
+        jPanelUIHelpLabelCommonName.setText(this.rb.getResourceString( "label.commonname"));
+        jPanelUIHelpLabelCommonName.setTooltipWidth(300);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        jPanelEditInner.add(jPanelUIHelpLabelCommonName, gridBagConstraints);
+
+        jPanelUIHelpLabelMailaddress.setToolTipText(this.rb.getResourceString( "label.mailaddress.help"));
+        jPanelUIHelpLabelMailaddress.setText(this.rb.getResourceString( "label.mailaddress"));
+        jPanelUIHelpLabelMailaddress.setTooltipWidth(300);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        jPanelEditInner.add(jPanelUIHelpLabelMailaddress, gridBagConstraints);
+
+        jPanelUIHelpLabelValidity.setToolTipText(this.rb.getResourceString( "label.validity.help"));
+        jPanelUIHelpLabelValidity.setText(this.rb.getResourceString( "label.validity"));
+        jPanelUIHelpLabelValidity.setTooltipWidth(300);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        jPanelEditInner.add(jPanelUIHelpLabelValidity, gridBagConstraints);
+
+        jComboBoxECCurve.setMinimumSize(new java.awt.Dimension(180, 24));
+        jComboBoxECCurve.setPreferredSize(new java.awt.Dimension(180, 24));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 10;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelEditInner.add(jComboBoxECCurve, gridBagConstraints);
+
+        jPanelUIHelpLabelECCurve.setToolTipText(this.rb.getResourceString( "label.namedeccurve.help"));
+        jPanelUIHelpLabelECCurve.setText(this.rb.getResourceString( "label.namedeccurve"));
+        jPanelUIHelpLabelECCurve.setTooltipWidth(175);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 8;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
+        jPanelEditInner.add(jPanelUIHelpLabelECCurve, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -855,7 +936,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         getContentPane().add(jToolBar, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(559, 718));
+        setSize(new java.awt.Dimension(652, 728));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -932,33 +1013,35 @@ public class JDialogGenerateKey extends JDialog {
     private javax.swing.JButton jButtonSubjectAlternativeNames;
     private javax.swing.JCheckBox jCheckBoxPurposeSSL;
     private javax.swing.JCheckBox jCheckBoxPurposeSignEncrypt;
-    private javax.swing.JComboBox jComboBoxKeyType;
-    private javax.swing.JComboBox jComboBoxSignature;
-    private javax.swing.JComboBox jComboBoxSize;
-    private javax.swing.JLabel jLabelCommonName;
+    private javax.swing.JComboBox<String> jComboBoxECCurve;
+    private javax.swing.JComboBox<String> jComboBoxKeyType;
+    private javax.swing.JComboBox<SignatureDisplayValue> jComboBoxSignature;
+    private javax.swing.JComboBox<KeyLengthDisplay> jComboBoxSize;
     private javax.swing.JLabel jLabelCommonNameHint;
     private javax.swing.JLabel jLabelCountryCode;
     private javax.swing.JLabel jLabelCountryCodeHint;
     private javax.swing.JLabel jLabelIcon;
-    private javax.swing.JLabel jLabelKeyType;
     private javax.swing.JLabel jLabelLocality;
     private javax.swing.JLabel jLabelLocalityHint;
-    private javax.swing.JLabel jLabelMailAddress;
     private javax.swing.JLabel jLabelOrganisationName;
     private javax.swing.JLabel jLabelOrganisationUnit;
     private javax.swing.JLabel jLabelPurpose;
-    private javax.swing.JLabel jLabelSignature;
-    private javax.swing.JLabel jLabelSize;
     private javax.swing.JLabel jLabelState;
     private javax.swing.JLabel jLabelSubjectAlternativeNames;
-    private javax.swing.JLabel jLabelValidity;
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelCommonName;
     private javax.swing.JPanel jPanelCountryCode;
-    private javax.swing.JPanel jPanelCountryCode1;
     private javax.swing.JPanel jPanelEdit;
     private javax.swing.JPanel jPanelEditInner;
     private javax.swing.JPanel jPanelLocality;
+    private javax.swing.JPanel jPanelSAN;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelCommonName;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelECCurve;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelKeySize;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelKeyType;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelMailaddress;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelSignature;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelValidity;
     private javax.swing.JTextField jTextFieldCommonName;
     private javax.swing.JTextField jTextFieldCountryCode;
     private javax.swing.JTextField jTextFieldLocality;
@@ -980,11 +1063,25 @@ public class JDialogGenerateKey extends JDialog {
         return values;
     }
 
-    private static class SignatureDisplayValue {
+    private static class SignatureDisplayValue extends SignatureDisplay {
+
+        /**
+         * Icons, multi resolution
+         */
+        public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_STRONG
+                = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_strong.svg",
+                        ListCellRendererSignature.IMAGE_HEIGHT);
+        public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_WEAK
+                = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_weak.svg",
+                        ListCellRendererSignature.IMAGE_HEIGHT);
+        public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_BROKEN
+                = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_broken.svg",
+                        ListCellRendererSignature.IMAGE_HEIGHT);
 
         private String signatureAlgorithm = null;
 
         public SignatureDisplayValue(String signatureAlgorithm) {
+            super(signatureAlgorithm);
             this.signatureAlgorithm = signatureAlgorithm;
         }
 
@@ -1013,7 +1110,17 @@ public class JDialogGenerateKey extends JDialog {
                 case JDialogGenerateKey.SIGNATUREALGORITHM_SHA1_WITH_RSA:
                     return ("SHA-1");
                 case JDialogGenerateKey.SIGNATUREALGORITHM_SHA256_WITH_ECDSA:
-                    return ("Elliptic Curve");
+                    return ("ECDSA-SHA256");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA384_WITH_ECDSA:
+                    return ("ECDSA-SHA384");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA512_WITH_ECDSA:
+                    return ("ECDSA-SHA512");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA:
+                    return ("ECDSA-SHA-3 256");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA:
+                    return ("ECDSA-SHA-3 384");
+                case JDialogGenerateKey.SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA:
+                    return ("ECDSA-SHA-3 512");
                 case JDialogGenerateKey.SIGNATUREALGORITHM_SHA256_WITH_RSA:
                     return ("SHA-2 256");
                 case JDialogGenerateKey.SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS:
@@ -1039,6 +1146,23 @@ public class JDialogGenerateKey extends JDialog {
          */
         public String getSignatureAlgorithm() {
             return signatureAlgorithm;
+        }
+
+        @Override
+        public ImageIcon getIcon() {
+            String signAlgorithm = (String) this.getWrappedValue();
+            if (signAlgorithm.equals(JDialogGenerateKey.SIGNATUREALGORITHM_MD5_WITH_RSA)) {
+                return (new ImageIcon(IMAGE_SIGNATURE_BROKEN.toMinResolution(ListCellRendererSignature.IMAGE_HEIGHT)));
+            } else if (signAlgorithm.equals(JDialogGenerateKey.SIGNATUREALGORITHM_SHA1_WITH_RSA)) {
+                return (new ImageIcon(IMAGE_SIGNATURE_WEAK.toMinResolution(ListCellRendererSignature.IMAGE_HEIGHT)));
+            } else {
+                return (new ImageIcon(IMAGE_SIGNATURE_STRONG.toMinResolution(ListCellRendererSignature.IMAGE_HEIGHT)));
+            }
+        }
+
+        @Override
+        public String getText() {
+            return (this.toString());
         }
     }
 }

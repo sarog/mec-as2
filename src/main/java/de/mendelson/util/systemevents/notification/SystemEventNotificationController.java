@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationController.java 12    27/01/22 11:35 Heller $
+//$Header: /mec_oftp2/de/mendelson/util/systemevents/notification/SystemEventNotificationController.java 17    5/01/23 9:28 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.NamedThreadFactory;
@@ -36,7 +36,7 @@ import java.util.logging.Logger;
  * a partner
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 17 $
  */
 public abstract class SystemEventNotificationController {
 
@@ -51,8 +51,7 @@ public abstract class SystemEventNotificationController {
     /**
      * Logger to log information to
      */
-    private Logger logger;
-    private ClientServer clientserver;
+    private final Logger logger;    
     private final NotificationCheckThread notificationCheckThread;
 
     /**
@@ -60,23 +59,23 @@ public abstract class SystemEventNotificationController {
      *
      * @param host host to connect to
      */
-    public SystemEventNotificationController(Logger logger, ClientServer clientserver, Connection configConnection, Connection runtimeConnection) {
+    public SystemEventNotificationController(Logger logger) {
         this.logger = logger;
-        this.clientserver = clientserver;
         this.notificationCheckThread = new NotificationCheckThread();
-        this.scheduledExecutor.scheduleWithFixedDelay(this.notificationCheckThread, 0, WAIT_TIME_IN_MS, TimeUnit.MILLISECONDS);
+        this.scheduledExecutor.scheduleWithFixedDelay(this.notificationCheckThread, 
+                TimeUnit.SECONDS.toMillis(5), WAIT_TIME_IN_MS, TimeUnit.MILLISECONDS);
     }
 
     /**
      * Gets all notifications found in a time frame and sends out notifications
      * if required
      */
-    private void checkForNotificationToSend() throws IOException {
+    private void checkForNotificationToSend() throws Exception {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MILLISECOND, -2 * ((int) this.WAIT_TIME_IN_MS));
         Path storageDir = Paths.get(this.getStorageDir(),
-                this.dailySubDirFormat.format(new Date())
-                + FileSystems.getDefault().getSeparator() + "events");
+                this.dailySubDirFormat.format(new Date()),
+                "events");
         //there is no event for the current day - the event subdirectory does not exist
         if (!Files.exists(storageDir)) {
             return;
@@ -135,7 +134,7 @@ public abstract class SystemEventNotificationController {
      */
     public abstract List<SystemEvent> filterEventsForNotification(List<SystemEvent> foundSystemEvents);
 
-    public abstract void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf);
+    public abstract void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) throws Exception;
 
     /**
      * Returns the product specific notification dir

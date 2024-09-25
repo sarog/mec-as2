@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 83    27.07.21 15:33 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 89    18/10/22 17:48 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -8,6 +8,7 @@ import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.partner.gui.ResourceBundlePartnerPanel;
 import de.mendelson.comm.as2.send.HttpConnectionParameter;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import org.w3c.dom.NodeList;
  * Stores all information about a business partner
  *
  * @author S.Heller
- * @version $Revision: 83 $
+ * @version $Revision: 89 $
  */
 public class Partner implements Serializable, Comparable, Cloneable {
 
@@ -89,11 +90,11 @@ public class Partner implements Serializable, Comparable, Cloneable {
     /**
      * Stores an async MDN HTTP authentication if requested
      */
-    private HTTPAuthentication authenticationAsyncMDN = new HTTPAuthentication();
+    private HTTPAuthentication authenticationCredentialsAsyncMDN = new HTTPAuthentication();
     /**
      * Stores a send data HTTP authentication if requested
      */
-    private HTTPAuthentication authentication = new HTTPAuthentication();
+    private HTTPAuthentication authenticationCredentialsMessage = new HTTPAuthentication();
     /**
      * Comment for a partner, this is not relevant for the as2 communication
      */
@@ -124,6 +125,10 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * Should be always set to true - see RFC 6211
      */
     private boolean useAlgorithmIdentifierProtectionAttribute = true;
+    private boolean useOAuth2Message = false;
+    private boolean useOAuth2MDN = false;
+    private OAuth2Config oauth2Message = null;
+    private OAuth2Config oauth2MDN = null;
 
     public Partner() {
     }
@@ -476,20 +481,20 @@ public class Partner implements Serializable, Comparable, Cloneable {
         this.signedMDN = signedMDN;
     }
 
-    public HTTPAuthentication getAuthenticationAsyncMDN() {
-        return authenticationAsyncMDN;
+    public HTTPAuthentication getAuthenticationCredentialsAsyncMDN() {
+        return authenticationCredentialsAsyncMDN;
     }
 
-    public void setAuthenticationAsyncMDN(HTTPAuthentication authenticationAsyncMDN) {
-        this.authenticationAsyncMDN = authenticationAsyncMDN;
+    public void setAuthenticationAsyncMDN(HTTPAuthentication authenticationCredentialsAsyncMDN) {
+        this.authenticationCredentialsAsyncMDN = authenticationCredentialsAsyncMDN;
     }
 
-    public HTTPAuthentication getAuthentication() {
-        return authentication;
+    public HTTPAuthentication getAuthenticationCredentialsMessage() {
+        return authenticationCredentialsMessage;
     }
 
-    public void setAuthentication(HTTPAuthentication authentication) {
-        this.authentication = authentication;
+    public void setAuthentication(HTTPAuthentication authenticationCredentialsMessage) {
+        this.authenticationCredentialsMessage = authenticationCredentialsMessage;
     }
 
     public void setKeepOriginalFilenameOnReceipt(boolean keepFilenameOnReceipt) {
@@ -661,13 +666,15 @@ public class Partner implements Serializable, Comparable, Cloneable {
             builder.append(rbPartnerPanel.getResourceString("label.maxpollfiles")).append(" ");
             builder.append(String.valueOf(this.maxPollFiles)).append("\n");
         }
-        if (this.authentication.isEnabled()) {
-            builder.append(rbPartnerPanel.getResourceString("label.usehttpauth")).append(": ");
-            builder.append(this.authentication.getUser() + "/" + this.authentication.getPassword()).append("\n");
+        if (this.authenticationCredentialsMessage.isEnabled()) {
+            builder.append(rbPartnerPanel.getResourceString("label.httpauth.credentials.message")).append(" (Msg): ");
+            builder.append(this.authenticationCredentialsMessage.getUser() + "/" 
+                    + this.authenticationCredentialsMessage.getPassword()).append("\n");
         }
-        if (this.authenticationAsyncMDN.isEnabled()) {
-            builder.append(rbPartnerPanel.getResourceString("label.usehttpauth.asyncmdn")).append(": ");
-            builder.append(this.authenticationAsyncMDN.getUser() + "/" + this.authenticationAsyncMDN.getPassword()).append("\n");
+        if (this.authenticationCredentialsAsyncMDN.isEnabled()) {
+            builder.append(rbPartnerPanel.getResourceString("label.httpauth.credentials.asyncmdn")).append(" (MDN): ");
+            builder.append(this.authenticationCredentialsAsyncMDN.getUser() + "/" 
+                    + this.authenticationCredentialsAsyncMDN.getPassword()).append("\n");
         }
         return (builder.toString());
     }
@@ -734,11 +741,17 @@ public class Partner implements Serializable, Comparable, Cloneable {
         builder.append(offset).append("\t<syncmdn>").append(String.valueOf(this.syncMDN)).append("</syncmdn>\n");
         builder.append(offset).append("\t<algorithmidentifierprotectionattribute>").append(String.valueOf(this.useAlgorithmIdentifierProtectionAttribute)).append("</algorithmidentifierprotectionattribute>\n");
         builder.append(offset).append("\t<enabledirpoll>").append(String.valueOf(this.isEnableDirPoll())).append("</enabledirpoll>\n");
-        if (this.authentication != null) {
-            builder.append(this.authentication.toXML(level + 1, "standard"));
+        if (this.authenticationCredentialsMessage != null) {
+            builder.append(this.authenticationCredentialsMessage.toXML(level + 1, "standard"));
         }
-        if (this.authenticationAsyncMDN != null) {
-            builder.append(this.authenticationAsyncMDN.toXML(level + 1, "asyncmdn"));
+        if (this.authenticationCredentialsAsyncMDN != null) {
+            builder.append(this.authenticationCredentialsAsyncMDN.toXML(level + 1, "asyncmdn"));
+        }
+        if( this.oauth2Message != null ){
+            builder.append(this.oauth2Message.toXML(level + 1, "standard", this.useOAuth2Message));
+        }
+        if( this.oauth2MDN != null ){
+            builder.append(this.oauth2MDN.toXML(level + 1, "asyncmdn", this.useOAuth2MDN));
         }
         synchronized (this.httpHeader) {
             if (this.httpHeader != null && this.httpHeader.size() > 0) {
@@ -883,6 +896,21 @@ public class Partner implements Serializable, Comparable, Cloneable {
                 partner.setAuthenticationAsyncMDN(HTTPAuthentication.fromXML(authenticationElement));
             }
         }
+        //deserialize the oauth2 authentications
+        NodeList oauth2NodeList = element.getElementsByTagName("oauth2config");
+        for (int i = 0; i < oauth2NodeList.getLength(); i++) {
+            Element authenticationElement = (Element) oauth2NodeList.item(i);
+            if (!authenticationElement.hasAttribute("type")) {
+                continue;
+            }
+            if (authenticationElement.getAttribute("type").equalsIgnoreCase("standard")) {
+                partner.setOAuth2Message(OAuth2Config.fromXML(authenticationElement));
+                partner.setUseOAuth2Message(OAuth2Config.fromXMLIsEnabled(authenticationElement));
+            } else if (authenticationElement.getAttribute("type").equalsIgnoreCase("asyncmdn")) {
+                partner.setOAuth2MDN(OAuth2Config.fromXML(authenticationElement));
+                partner.setUseOAuth2MDN(OAuth2Config.fromXMLIsEnabled(authenticationElement));
+            }
+        }
         return (partner);
     }
 
@@ -983,8 +1011,12 @@ public class Partner implements Serializable, Comparable, Cloneable {
     @Override
     public Object clone() {
         try {
-            Partner object = (Partner) super.clone();
-            return (object);
+            Partner clonedPartner = (Partner) super.clone();            
+            clonedPartner.partnerCertificateList = new PartnerCertificateInformationList();
+            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN));
+            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT));
+            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SSL));
+            return (clonedPartner);
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
             return (null);
@@ -1053,6 +1085,62 @@ public class Partner implements Serializable, Comparable, Cloneable {
      */
     public PartnerEventInformation getPartnerEvents() {
         return partnerEvents;
+    }
+
+    /**
+     * @return the useOAuth2Message
+     */
+    public boolean usesOAuth2Message() {
+        return useOAuth2Message;
+    }
+
+    /**
+     * @param useOAuth2Message the useOAuth2Message to set
+     */
+    public void setUseOAuth2Message(boolean useOAuth2Message) {
+        this.useOAuth2Message = useOAuth2Message;
+    }
+
+    /**
+     * @return the useOAuth2MDN
+     */
+    public boolean usesOAuth2MDN() {
+        return useOAuth2MDN;
+    }
+
+    /**
+     * @param useOAuth2MDN the useOAuth2MDN to set
+     */
+    public void setUseOAuth2MDN(boolean useOAuth2MDN) {
+        this.useOAuth2MDN = useOAuth2MDN;
+    }
+
+    /**
+     * @return the oauth2Message
+     */
+    public OAuth2Config getOAuth2Message() {
+        return(this.oauth2Message);
+    }
+
+    /**
+     * @param oauth2Message the oauth2Message to set
+     */
+    public void setOAuth2Message(OAuth2Config oauth2Message) {
+        this.oauth2Message = oauth2Message;
+    }
+
+    /**
+     * @return the oauth2MDN
+     */
+    public OAuth2Config getOAuth2MDN() {
+        return( this.oauth2MDN);
+    }
+
+    /**
+     * @param oauth2MDN the oauth2MDN to set
+     */
+    public void setOAuth2MDN(OAuth2Config oauth2MDN) {
+        this.oauth2MDN = oauth2MDN;
     }
 
 }

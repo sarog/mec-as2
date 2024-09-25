@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/XPathHelper.java 28    4.01.22 15:15 Heller $
+//$Header: /as4/de/mendelson/util/XPathHelper.java 30    27/10/22 13:25 Heller $
 package de.mendelson.util;
 
 import java.io.InputStream;
@@ -6,9 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Logger;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -17,11 +17,7 @@ import org.jaxen.XPath;
 import org.jaxen.XPathSyntaxException;
 import org.jaxen.dom.DOMXPath;
 import org.jaxen.dom.NamespaceNode;
-import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -40,7 +36,7 @@ import org.xml.sax.SAXParseException;
  * parameters of XPATH pathes, get values of nodes ...
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 30 $
  */
 public class XPathHelper {
 
@@ -53,6 +49,8 @@ public class XPathHelper {
      * Namespace to set to the xpath that is used
      */
     private SimpleNamespaceContext namespaceContext = null;
+    //Stores all defined namespaces to look up the alias by providing the URI. Its [URI,ALIAS]
+    private final Map<String, String> namespaceLookupMap = new ConcurrentHashMap<String, String>();
 
     /**
      * Parses the passed filename document and creates a DOM document
@@ -89,48 +87,36 @@ public class XPathHelper {
         factory.setIgnoringComments(true);
         factory.setValidating(false);
         DocumentBuilder builder = factory.newDocumentBuilder();
-        builder.setErrorHandler(new ErrorHandler(){
+        builder.setErrorHandler(new ErrorHandler() {
             @Override
             public void warning(SAXParseException exception) throws SAXException {
             }
 
             @Override
             public void error(SAXParseException exception) throws SAXException {
-                throw( exception );
+                throw (exception);
             }
 
             @Override
             public void fatalError(SAXParseException exception) throws SAXException {
-                throw( exception );
+                throw (exception);
             }
-            
+
         });
         Document parseDocument = builder.parse(source);
         this.parse(parseDocument);
     }
 
     private void parse(Document document) {
-        synchronized (document) {
+        this.document = document;
+        synchronized (this.document) {
+            this.namespaceLookupMap.clear();
             this.namespaceContext = null;
-            this.document = document;
-            //check if there are namespaces defined..add them to the XPath later
-            Element documentElement = this.document.getDocumentElement();
-            NamedNodeMap map = documentElement.getAttributes();
-            for (int i = 0; i < map.getLength(); i++) {
-                Node node = map.item(i);
-                if (node.getNodeType() == Node.ATTRIBUTE_NODE) {
-                    Attr attribute = (Attr) node;
-                    String attributeName = attribute.getNodeName();
-                    if (attributeName.startsWith("xmlns:")
-                            && attributeName.length() > 6) {
-                        String uri = documentElement.getAttribute(attributeName);
-                        String ns = attributeName.substring(6);
-                        if (this.namespaceContext == null) {
-                            this.namespaceContext = new SimpleNamespaceContext();
-                        }
-                        this.namespaceContext.addNamespace(ns, uri);
-                    }
-                }
+            //add all found namespaces
+            try {
+                Map<String, String> tempNSMap = this.extractNamespaces();
+                this.addNamespaces(tempNSMap);
+            } catch (Exception e) {
             }
         }
     }
@@ -142,11 +128,12 @@ public class XPathHelper {
      * ...
      * </semiramis>
      */
-    public void addNamespace(String ns, String uri) {
+    public void addNamespace(String alias, String uri) {
         if (this.namespaceContext == null) {
             this.namespaceContext = new SimpleNamespaceContext();
         }
-        this.namespaceContext.addNamespace(ns, uri);
+        this.namespaceContext.addNamespace(alias, uri);
+        this.namespaceLookupMap.put(uri, alias);
     }
 
     /**
@@ -157,15 +144,22 @@ public class XPathHelper {
      * </semiramis>
      */
     public void addNamespaces(Map<String, String> map) {
-        Iterator<String> iterator = map.keySet().iterator();
-        while (iterator.hasNext()) {
-            if (this.namespaceContext == null) {
-                this.namespaceContext = new SimpleNamespaceContext();
-            }
-            String name = iterator.next();
-            String uri = map.get(name);
-            this.namespaceContext.addNamespace(name, uri);
+        for (String alias : map.keySet()) {
+            String uri = map.get(alias);
+            this.addNamespace(alias, uri);
         }
+    }
+
+    /**
+     * Returns the alias name for a special namespace URI. This is required if
+     * the xpath expression requires the alias and this is a variable value,
+     * e.g. //xsi:Test/dsx:Test2
+     *
+     * @param namespaceURI
+     * @return Null if the namespace URI is not assigned to an alias
+     */
+    public String getAliasForNamespace(String namespaceURI) {
+        return (this.namespaceLookupMap.getOrDefault(namespaceURI, null));
     }
 
     /**

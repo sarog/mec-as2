@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_de.java 8     27.09.21 16:10 He $
+//$Header: /as2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_de.java 9     5/01/23 12:24 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDialogSystemEvent_de extends MecResourceBundle {
 
@@ -31,20 +31,20 @@ public class ResourceBundleDialogSystemEvent_de extends MecResourceBundle {
      */
     static final Object[][] CONTENTS = {
         {"title", "Ansicht der Systemereignisse"},
-        {"label.user", "Besitzer:"},
-        {"label.host", "Host:"},
-        {"label.id", "Ereignisnummer:"},
-        {"label.date", "Datum:"},        
-        {"label.type", "Typ:"},
-        {"label.category", "Kategorie:"},
+        {"label.user", "Besitzer"},
+        {"label.host", "Host"},
+        {"label.id", "Ereignisnummer"},
+        {"label.date", "Datum"},        
+        {"label.type", "Typ"},
+        {"label.category", "Kategorie"},
         {"header.timestamp", "Zeitstempel"},
         {"header.category", "Kategorie"},
         {"header.type", "Typ"},
         {"user.server.process", "Serverprozess" },
-        {"label.startdate", "Start: " },
-        {"label.enddate", "Ende: " },
+        {"label.startdate", "Start" },
+        {"label.enddate", "Ende" },
         {"no.data", "Es gibt kein Systemereignis, das mit der aktuellen Datums-/Typenauswahl übereinstimmt." }, 
-        {"label.freetext", "Suchtext: " },
+        {"label.freetext", "Suchtext" },
         {"label.freetext.hint", "Vollständige Ereignisnummer oder Textsuche in Text und Betreff" },
         {"category.all", "-- Alle --" },
         {"label.close", "Schliessen" },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 44    17.09.21 15:36 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 48    2/09/22 11:32 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -15,13 +15,15 @@ import de.mendelson.util.systemevents.SystemEventManager;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSession;
+import javax.net.ssl.SSLSocket;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
-import org.apache.mina.filter.ssl.SslFilter;
+import org.apache.mina.core.write.WriteToClosedSessionException;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -34,7 +36,7 @@ import org.apache.mina.filter.ssl.SslFilter;
  * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 48 $
  */
 public class ClientServerSessionHandler extends IoHandlerAdapter {
 
@@ -60,7 +62,15 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
      */
     private final List<IoSession> sessions = Collections.synchronizedList(new ArrayList<IoSession>());
     private PasswordValidationHandler loginHandler;
+    /**
+     * Allows to access the server for special messages without a required login
+     */
     private AnonymousProcessing anonymousProcessing = null;
+    /**
+     * Generate a server hello message for a client once it is connected to the
+     * server
+     */
+    private ServerHelloMessageGenerator serverHelloMessageGenerator = null;
     private ClientServerSessionHandlerCallback callback = null;
     private String[] validClientIds = null;
     private final int maxClients;
@@ -99,6 +109,14 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     }
 
     /**
+     * Add a implementation that generates a server hello message for a client
+     * once it is connected to the server
+     */
+    public void setServerHelloMessageGenerator(ServerHelloMessageGenerator serverHelloMessageGenerator) {
+        this.serverHelloMessageGenerator = serverHelloMessageGenerator;
+    }
+
+    /**
      * Logs something to the clients log - but only if the level is higher than
      * the defined loglevelThreshold
      */
@@ -111,15 +129,21 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 loginRequest);
     }
 
+    /**Informs the event manager that a successful login has been performed. Finds out the TLS protocol and the cipher suite
+     *      
+     */
     private void throwEventLoginSuccess(IoSession session, LoginState loginState, LoginRequest loginRequest) {
         String tlsProtocol = null;
         String tlsCipherSuite = null;
         if (session.isSecured()) {
-            Object sessionAttribute = session.getAttribute(SslFilter.SSL_SESSION);
-            if (sessionAttribute != null && sessionAttribute instanceof SSLSession) {
-                SSLSession sslSession = (SSLSession) sessionAttribute;
-                tlsProtocol = sslSession.getProtocol();
-                tlsCipherSuite = sslSession.getCipherSuite();
+            Set<Object> keys = session.getAttributeKeys();
+            for( Object key:keys){
+                if( session.getAttribute(key) instanceof SSLSession){
+                    SSLSession sslSession = (SSLSession)session.getAttribute(key);
+                    tlsProtocol = sslSession.getProtocol();
+                    tlsCipherSuite = sslSession.getCipherSuite();
+                    break;
+                }
             }
         }
         this.eventManager.newEventClientLoginSuccess(loginState, session.getRemoteAddress(), String.valueOf(session.getId()),
@@ -136,7 +160,8 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
             this.eventManager.newEventClientLogoff(clientIP, userName, remoteProcessId,
                     String.valueOf(session.getId()), message);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("ClientServerSessionHandler.logoff: ["
+                    + e.getClass().getSimpleName() + "] " + e.getMessage());
         }
     }
 
@@ -150,7 +175,8 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
             this.eventManager.newEventExceptionInClientServerProcess(clientIP, userName, remoteProcessId,
                     String.valueOf(session.getId()), message);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("ClientServerSessionHandler.clientserver: ["
+                    + e.getClass().getSimpleName() + "] " + e.getMessage());
         }
     }
 
@@ -207,6 +233,9 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                         loginRequest.getClientId());
                 if (validationState == PasswordValidationHandler.STATE_FAILURE) {
                     LoginState loginStateMessage = new LoginState(loginRequest);
+                    if (this.serverHelloMessageGenerator != null) {
+                        loginStateMessage.setServerHelloMessages(this.serverHelloMessageGenerator.generateServerHelloMessages());
+                    }
                     loginStateMessage.setUser(transmittedUser);
                     loginStateMessage.setState(LoginState.STATE_AUTHENTICATION_FAILURE);
                     loginStateMessage.setStateDetails("Authentication failed: Wrong user/password combination or user does not exist");
@@ -215,6 +244,10 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                     return;
                 } else if (validationState == PasswordValidationHandler.STATE_INCOMPATIBLE_CLIENT) {
                     LoginState loginStateMessage = new LoginState(loginRequest);
+                    if (this.serverHelloMessageGenerator != null) {
+                        loginStateMessage.setServerHelloMessages(
+                                this.serverHelloMessageGenerator.generateServerHelloMessages());
+                    }
                     loginStateMessage.setUser(transmittedUser);
                     loginStateMessage.setState(LoginState.STATE_INCOMPATIBLE_CLIENT);
                     StringBuilder validClientIdStr = new StringBuilder();
@@ -232,6 +265,10 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                     return;
                 } else if (validationState == PasswordValidationHandler.STATE_PASSWORD_REQUIRED) {
                     LoginState loginStateMessage = new LoginState(loginRequest);
+                    if (this.serverHelloMessageGenerator != null) {
+                        loginStateMessage.setServerHelloMessages(
+                                this.serverHelloMessageGenerator.generateServerHelloMessages());
+                    }
                     loginStateMessage.setUser(transmittedUser);
                     loginStateMessage.setState(LoginState.STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED);
                     loginStateMessage.setStateDetails("Authentication failed, password required for user [" + loginRequest.getUserName() + "]");
@@ -242,6 +279,10 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 synchronized (this.sessions) {
                     if (this.maxClients > 0 && this.sessions.size() + 1 > this.maxClients) {
                         LoginState loginStateMessage = new LoginState(loginRequest);
+                        if (this.serverHelloMessageGenerator != null) {
+                            loginStateMessage.setServerHelloMessages(
+                                    this.serverHelloMessageGenerator.generateServerHelloMessages());
+                        }
                         loginStateMessage.setUser(transmittedUser);
                         loginStateMessage.setState(LoginState.STATE_REJECTED);
                         loginStateMessage.setStateDetails("Login request rejected.");
@@ -259,6 +300,10 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 }
                 //success!
                 LoginState loginSuccessState = new LoginState(loginRequest);
+                if( this.serverHelloMessageGenerator != null ){
+                        loginSuccessState.setServerHelloMessages(
+                                this.serverHelloMessageGenerator.generateServerHelloMessages());
+                    }
                 loginSuccessState.setState(LoginState.STATE_AUTHENTICATION_SUCCESS);
                 loginSuccessState.setStateDetails("Authentication successful, user [" + definedUser.getName() + "] logged in");
                 loginSuccessState.setUser(definedUser);
@@ -371,6 +416,11 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
 
     @Override
     public void exceptionCaught(IoSession session, Throwable cause) {
+        //The method org.apache.mina.core.polling.AbstractPollingIoProcessor  seems to have a problem
+        //in the method clearWriteRequestQueue(AbstractPollingIoProcessor.java:1200) in MINA 2.2.1 - this will be ignored here
+        if( cause instanceof WriteToClosedSessionException){
+            return;
+        }
         StringBuilder builder = new StringBuilder();
         builder.append("Exception caught in client-server interface.").append("\n");
         builder.append("[" + cause.getClass().getSimpleName() + "]: " + cause.getMessage()).append("\n\n");

@@ -1,4 +1,4 @@
-//$Header: /mec_oftp2/de/mendelson/util/security/cert/clientserver/UploadRequestKeystore.java 5     4.01.19 11:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/clientserver/UploadRequestKeystore.java 6     12/12/22 14:18 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.clientserver.clients.datatransfer.UploadRequestFile;
@@ -17,7 +17,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class UploadRequestKeystore extends UploadRequestFile implements Serializable {
 
@@ -26,8 +26,8 @@ public class UploadRequestKeystore extends UploadRequestFile implements Serializ
     
     public static final long serialVersionUID = 1L;
 
-    private String keystoreStorageType;
-    private int keystoreUsage;
+    private final String keystoreStorageType;
+    private final int keystoreUsage;
 
     public UploadRequestKeystore(final int KEYSTORE_USAGE, final String KEYSTORE_STORAGE_TYPE) {
         this.keystoreStorageType = KEYSTORE_STORAGE_TYPE;

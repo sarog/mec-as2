@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Info.java 2     20.09.11 17:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Info.java 3     1/09/22 14:11 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.Serializable;
@@ -14,7 +14,7 @@ import java.util.Date;
 /**
  * Stores all information about a as2 message
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public interface AS2Info extends Serializable {
     
@@ -83,6 +83,9 @@ public interface AS2Info extends Serializable {
     public String getUserAgent();
 
     public void setUserAgent(String useragent);
+        
+    public boolean usesTLS();
+    public void setUsesTLS(boolean usesTLS);
  
 
 }

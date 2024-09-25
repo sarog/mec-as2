@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationResponse.java 6     9.10.18 12:29 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationResponse.java 7     2/05/22 10:55 Heller $
 package de.mendelson.util.httpconfig.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -17,13 +17,14 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
     private String httpServerConfigFile = null;
+    private String httpServerUserConfigFile = null;
     private List<String> cipherList = new ArrayList<String>();
     private List<String> protocolList = new ArrayList<String>();
     private boolean sslEnabled = false;
@@ -166,6 +167,20 @@ public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse
      */
     public void setEmbeddedJettyServerVersion(String embeddedJettyServerVersion) {
         this.embeddedJettyServerVersion = embeddedJettyServerVersion;
+    }
+
+    /**
+     * @return the httpUserServerConfigFile
+     */
+    public String getHTTPServerUserConfigFile() {
+        return httpServerUserConfigFile;
+    }
+
+    /**
+     * @param httpUserServerConfigFile the httpUserServerConfigFile to set
+     */
+    public void setHTTPServerUserConfigFile(String httpUserServerConfigFile) {
+        this.httpServerUserConfigFile = httpUserServerConfigFile;
     }
 
 }

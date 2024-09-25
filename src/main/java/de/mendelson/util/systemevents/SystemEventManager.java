@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/SystemEventManager.java 16    1.09.21 11:28 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/SystemEventManager.java 18    13/10/22 10:59 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -10,6 +10,7 @@ import java.net.UnknownHostException;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.sql.PreparedStatement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -28,7 +29,7 @@ import java.util.ResourceBundle;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public abstract class SystemEventManager {
 
@@ -68,8 +69,8 @@ public abstract class SystemEventManager {
      */
     protected void storeEventToFile(SystemEvent event) throws Exception {
         Path storageDir = Paths.get(this.getStorageMainDir().toString(),
-                this.dailySubDirFormat.format(new Date())
-                + FileSystems.getDefault().getSeparator() + "events");
+                this.dailySubDirFormat.format(new Date()),
+                "events");
         String storageFilePrefix = this.eventFileDateFormat.format(new Date())
                 + "_" + event.severityToFilename()
                 + "_" + event.originToFilename()
@@ -170,5 +171,9 @@ public abstract class SystemEventManager {
             return;
         }
     }
+    
+    public abstract void handleSystemFailure(Throwable exception, int eventType, PreparedStatement statement);
+    public abstract void handleSystemFailure(Throwable exception, int eventType);
+    public abstract void handleSystemFailure(Throwable exception);
     
 }

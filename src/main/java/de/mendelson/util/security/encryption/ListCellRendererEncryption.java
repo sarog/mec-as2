@@ -1,9 +1,11 @@
-//$Header: /oftp2/de/mendelson/util/security/encryption/ListCellRendererEncryption.java 3     16.09.21 16:25 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/ListCellRendererEncryption.java 4     8/12/22 11:35 Heller $
 package de.mendelson.util.security.encryption;
 
+import de.mendelson.util.ImageUtil;
 import java.awt.Component;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
+import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
@@ -13,18 +15,20 @@ import javax.swing.SwingConstants;
  * Renderer to render the encryption entries in comboboxes
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ListCellRendererEncryption extends JLabel implements ListCellRenderer{
 
     protected static final int IMAGE_HEIGHT = 18;
+    private final JComponent container;
 
     /**
      * Constructs a default renderer object for an item in a list.
      */
-    public ListCellRendererEncryption() {
+    public ListCellRendererEncryption(JComponent container) {
         super();
         setOpaque(true);
+        this.container = container;
     }
 
     /**
@@ -184,9 +188,13 @@ public class ListCellRendererEncryption extends JLabel implements ListCellRender
         if (value != null) {
             if (value instanceof EncryptionDisplay) {
                 EncryptionDisplay display = (EncryptionDisplay) value;
-                this.setEnabled(list.isEnabled());
+                this.setEnabled(this.container.isEnabled());
                 this.setText(display.getText());
-                this.setIcon(display.getIcon());
+                if( this.container.isEnabled()){
+                    this.setIcon(display.getIcon());
+                }else{
+                    this.setIcon(ImageUtil.grayImage(display.getIcon()));
+                }                
             }
         }
         this.setHorizontalAlignment(SwingConstants.LEADING);

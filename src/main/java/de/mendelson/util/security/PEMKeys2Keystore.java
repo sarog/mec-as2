@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/PEMKeys2Keystore.java 9     7.11.18 15:33 Heller $
+//$Header: /as2/de/mendelson/util/security/PEMKeys2Keystore.java 10    26/09/22 10:19 Heller $
 package de.mendelson.util.security;
 
 import java.io.ByteArrayInputStream;
@@ -16,6 +16,7 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.logging.Logger;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMDecryptorProvider;
 import org.bouncycastle.openssl.PEMEncryptedKeyPair;
 import org.bouncycastle.openssl.PEMKeyPair;
@@ -43,7 +44,7 @@ import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
  * PRIVATE KEY-----
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class PEMKeys2Keystore{
 
@@ -93,7 +94,7 @@ public class PEMKeys2Keystore{
         Object readObject = pemParser.readObject();
 
         PEMDecryptorProvider decryptorProvider = new JcePEMDecryptorProviderBuilder().build(keypassIn);
-        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider("BC");
+        JcaPEMKeyConverter converter = new JcaPEMKeyConverter().setProvider(BouncyCastleProvider.PROVIDER_NAME);
 
         PrivateKey privateKey = null;
         if (readObject instanceof PEMEncryptedKeyPair) {
@@ -169,7 +170,8 @@ public class PEMKeys2Keystore{
         //do not remove the BC paramter, SUN cannot handle the format proper
         KeyStore newKeystore = null;
         if (this.targetKeystoreType.equals(BCCryptoHelper.KEYSTORE_PKCS12)) {
-            newKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, "BC");
+            newKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+                    BouncyCastleProvider.PROVIDER_NAME);
         } else if (this.targetKeystoreType.equals(BCCryptoHelper.KEYSTORE_JKS)) {
             newKeystore = KeyStore.getInstance("JKS");
         } else {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_de.java 12    7.12.18 9:51 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_de.java 13    16/06/22 13:39 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleAS2ServerProcessing_de extends MecResourceBundle {
 
@@ -38,6 +38,7 @@ public class ResourceBundleAS2ServerProcessing_de extends MecResourceBundle {
         {"info.mdn.inboundfiles", "Für die eingegangene MDN war es nicht möglich, die referenzierte AS2 Nachricht zu ermitteln.\n[Eingegangene MDN (Daten): {0}]\n[Eingegangene MDN (Header): {1}]"},
         {"message.resend.oldtransaction", "Diese Transaktion wurde erneut manuell mit der neuen Transaktionsnummer [{0}] versendet." },
         {"message.resend.newtransaction", "Diese Transaktion ist ein erneuter Versand der Transaktion [{0}]." },
-        {"message.resend.title", "Manueller Versand von Daten in neuer Transaktion" },        
+        {"message.resend.title", "Manueller Versand von Daten in neuer Transaktion" },       
+        {"local.station", "Lokale Station" },
     };
 }

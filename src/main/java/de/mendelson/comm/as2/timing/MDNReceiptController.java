@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 35    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 37    5/08/22 9:18 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -15,7 +15,6 @@ import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.sql.Connection;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -36,7 +35,7 @@ import java.util.logging.Logger;
  * Controls the timed deletion of as2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 37 $
  */
 public class MDNReceiptController {
 
@@ -53,14 +52,9 @@ public class MDNReceiptController {
      */
     private ClientServer clientserver = null;
     private MecResourceBundle rb = null;
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private IDBDriverManager dbDriverManager;
 
-    public MDNReceiptController(ClientServer clientserver, IDBDriverManager dbDriverManager, Connection configConnection,
-            Connection runtimeConnection) {
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
+    public MDNReceiptController(ClientServer clientserver, IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
         this.clientserver = clientserver;
         //Load default resourcebundle
@@ -77,7 +71,7 @@ public class MDNReceiptController {
      * Starts the embedded task that guards the log
      */
     public void startMDNCheck() {
-        this.checkThread = new MDNCheckThread(this.configConnection, this.runtimeConnection);
+        this.checkThread = new MDNCheckThread();
         this.scheduledExecutor.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
     }
 
@@ -85,14 +79,10 @@ public class MDNReceiptController {
 
         //wait this time between checks
         private MessageAccessDB messageAccess;
-        private Connection configConnection;
-        private Connection runtimeConnection;
 
-        public MDNCheckThread(Connection configConnection, Connection runtimeConnection) {
-            this.configConnection = configConnection;
-            this.runtimeConnection = runtimeConnection;
+        public MDNCheckThread() {
             try {
-                this.messageAccess = new MessageAccessDB(dbDriverManager, this.configConnection, this.runtimeConnection);
+                this.messageAccess = new MessageAccessDB(dbDriverManager);
             } catch (Exception e) {
                 logger.severe("MDNCheckThread: " + e.getMessage());
                 SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
@@ -111,10 +101,9 @@ public class MDNReceiptController {
                             //a message id may have more then one entry if the sender implemented a resend mechanism
                             messageAccess.setMessageState(messageInfo.getMessageId(), AS2Message.STATE_PENDING, AS2Message.STATE_STOPPED);
                             messageInfo.setState(AS2Message.STATE_STOPPED);
-                            ProcessingEvent.enqueueEventIfRequired(dbDriverManager,
-                                    this.configConnection, this.runtimeConnection, messageInfo, null);
+                            ProcessingEvent.enqueueEventIfRequired(dbDriverManager, messageInfo, null);
                             //write status file
-                            MessageStoreHandler handler = new MessageStoreHandler(dbDriverManager, this.configConnection, this.runtimeConnection);
+                            MessageStoreHandler handler = new MessageStoreHandler(dbDriverManager);
                             handler.writeOutboundStatusFile(messageInfo);
                         } catch (Exception e) {
                             //this thread MUST not stop on any error!

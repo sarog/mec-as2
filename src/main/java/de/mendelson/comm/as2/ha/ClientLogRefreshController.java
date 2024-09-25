@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/ha/ClientLogRefreshController.java 1     2/02/22 15:13 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/ha/ClientLogRefreshController.java 2     2/01/23 16:47 Heller $
 package de.mendelson.comm.as2.ha;
 
 /*
@@ -9,19 +9,13 @@ package de.mendelson.comm.as2.ha;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Checks the number of transactions in the system and informs the attached
- * clients that there is a change. This will help synchronizing the log display
- * between all clients if there are multiple nodes in the network that work
- * together (HA)
- *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ClientLogRefreshController {
 
 
-    public ClientLogRefreshController(Object a, Object b,
-            Object c, Object d) throws Exception {
+    public ClientLogRefreshController(Object a, Object b) throws Exception {
     }
 
     public void startHALogRefreshControl() {

@@ -1,16 +1,12 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/log/JTextPaneLoggingHandler.java 30    29.11.21 15:40 Heller $
+//$Header: /as2/de/mendelson/util/log/JTextPaneLoggingHandler.java 36    24/08/22 12:56 Heller $
 package de.mendelson.util.log;
 
 import de.mendelson.util.ColorUtil;
 import java.awt.Color;
 import java.io.UnsupportedEncodingException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.ErrorManager;
-import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -33,7 +29,7 @@ import javax.swing.text.StyledDocument;
  * Handler to log logger data to a swing text component
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 36 $
  */
 public class JTextPaneLoggingHandler extends Handler {
 
@@ -42,37 +38,49 @@ public class JTextPaneLoggingHandler extends Handler {
      * there is data removed at the start
      */
     private final long MAX_BUFFER_SIZE = 30000;
-    private boolean doneHeader;
     private JTextPane jTextPane = null;
-    private Style currentStyle;
+    private final Style currentStyle;
     private boolean bold = false;
     private boolean underline = false;
     private boolean italic = false;
-    // Line separator string.  This is the value of the line.separator
-    // property at the moment that the Formatter was created.
-    private String lineSeparator = System.getProperty("line.separator");
     //allows to enable/disable the logging output
     private boolean enabled = true;
     private Color defaultForegroundColor = UIManager.getColor("TextPane.foreground");
+    private Color defaultBackgroundColor = UIManager.getColor("TextPane.background");
+    private final Map<Color, Color> highContrastColorCache = new ConcurrentHashMap<Color, Color>();
+    private final LogFormatter formatter;
 
     /**
-     * Stores the logging colors for the logging levels
+     * Stores the logging colors for the logging levels as ANSI
      */
-    private final Map<Level, String> colorMap = new ConcurrentHashMap<Level, String>();
+    private final Map<Level, String> colorMapANSI = new ConcurrentHashMap<Level, String>();
 
-    public JTextPaneLoggingHandler(JTextPane jTextPane, Formatter formatter) {
-        //set default colors, these could be overwritten using the setColor method
-        this.colorMap.put(Level.WARNING, IRCColors.BLUE);
-        this.colorMap.put(Level.SEVERE, IRCColors.RED);
-        this.colorMap.put(Level.FINE, IRCColors.DARK_GREEN);
-        this.colorMap.put(Level.FINEST, IRCColors.LIGHT_GRAY);
+    public JTextPaneLoggingHandler(JTextPane jTextPane, LogFormatter formatter) {
         this.setFormatter(formatter);
+        this.formatter = formatter;
+        //set default colors, these could be overwritten using the setColor method
+        this.setColor(Level.WARNING, ANSI.COLOR_SYSTEM_BLUE);
+        this.setColor(Level.SEVERE, ANSI.COLOR_SYSTEM_RED);
+        this.setColor(Level.INFO, ANSI.COLOR_SYSTEM_BLACK);
+        this.setColor(Level.FINE, ANSI.COLOR_SYSTEM_GREEN);
+        this.setColor(Level.FINER, ANSI.COLOR_SYSTEM_GREY);
+        this.setColor(Level.FINEST, ANSI.COLOR_SYSTEM_GREY_BRIGHT);        
         this.jTextPane = jTextPane;
         StyleContext context = StyleContext.getDefaultStyleContext();
         this.currentStyle = context.getStyle(StyleContext.DEFAULT_STYLE);
+        if (this.defaultBackgroundColor == null) {
+            this.defaultBackgroundColor = jTextPane.getBackground();
+        }
+        if (this.defaultBackgroundColor == null) {
+            this.defaultBackgroundColor = Color.WHITE;
+        }
         if (this.defaultForegroundColor == null) {
-            this.defaultForegroundColor = this.getBestContrastColorAsIndexedColor(
-                    IRCColors.BLACK, jTextPane.getBackground());
+            this.defaultForegroundColor = jTextPane.getForeground();
+        }
+        if (this.defaultForegroundColor == null) {
+            this.defaultForegroundColor
+                    = ColorUtil.getBestContrastColorAroundForeground(
+                            this.defaultBackgroundColor, Color.BLACK);
         }
         this.resetStyle();
     }
@@ -83,165 +91,102 @@ public class JTextPaneLoggingHandler extends Handler {
 
     /**
      * Sets a color for the log levels. The color is a constant of the class
-     * IRCColor
+     * ANSI
      *
      */
-    public void setColor(Level loglevel, String color) {
-        this.colorMap.put(loglevel, color);
+    public void setColor(Level loglevel, final String ANSI_COLOR) {
+        this.colorMapANSI.put(loglevel, ANSI_COLOR);
+        this.formatter.setColor(loglevel, ANSI_COLOR);
     }
 
+    /**Takes the colors from the given logging handler
+     * - useful if there are multiple logging handlers in the product that should use always
+     * the same colors
+     */
+    public void setColorsFrom( JTextPaneLoggingHandler otherHandler ){
+        this.setColor(Level.CONFIG, otherHandler.getColorAsANSI(Level.CONFIG));
+        this.setColor(Level.FINE, otherHandler.getColorAsANSI(Level.FINE));
+        this.setColor(Level.FINER, otherHandler.getColorAsANSI(Level.FINER));
+        this.setColor(Level.FINEST, otherHandler.getColorAsANSI(Level.FINEST));
+        this.setColor(Level.INFO, otherHandler.getColorAsANSI(Level.INFO));
+        this.setColor(Level.SEVERE, otherHandler.getColorAsANSI(Level.SEVERE));
+        this.setColor(Level.WARNING, otherHandler.getColorAsANSI(Level.WARNING));
+    }
+    
+    
     /**
      * Returns the current set color for the passed log level. May return null
      * if no color is defined for the passed level
      */
-    public String getColor(Level loglevel) {
-        if (colorMap.containsKey(loglevel)) {
-            return (this.colorMap.get(loglevel));
-        } else {
-            return (IRCColors.toColorStr(this.getBestContrastColorAsIndexedColor(IRCColors.BLACK, this.jTextPane.getBackground())));
+    public String getColorAsANSI(Level loglevel) {
+        if (colorMapANSI.containsKey(loglevel)) {
+            return (this.colorMapANSI.get(loglevel));
+        }
+        return (null);
+    }
+
+    private void performANSICommand(String command) {
+        switch (command) {
+            case ANSI.BOLD:
+                this.toggleStyleBold();
+                break;
+            case ANSI.ITALIC:
+                this.toggleStyleItalic();
+                break;
+            case ANSI.UNDERLINE:
+                this.toggleStyleUnderline();
+                break;
+            case ANSI.RESET:
+                this.resetStyle();
+                break;
+            default:
+                if (ANSI.isColorSequence(command)) {
+                    this.setStyleForegroundAutoCorrected(command);
+                }
+                break;
         }
     }
 
     /**
-     * Controls the contrast of the used colors and tries to adjust them for
-     * higher contrast
-     */
-    public void adjustColorsByContrast() {
-        Color backgroundColor = this.jTextPane.getBackground();
-        Level[] levelList = new Level[]{
-            Level.SEVERE, Level.WARNING, Level.INFO, Level.CONFIG,
-            Level.FINE, Level.FINER, Level.FINEST};
-        for (Level level : levelList) {
-            this.setColor(level,
-                    IRCColors.toColorStr(
-                            this.getBestContrastColorAsIndexedColor(this.getColor(level),
-                                    backgroundColor)));
-        }
-    }
-
-    /**
-     * As there are just 16 indexed colors in the log this will test some
-     * alternative colors if the contrast does not match It will always return
-     * an indexed color as defined in the class IRCColors.
-     *
-     * @param ircColorForeground an index color
-     * @param anyColorBackground
-     * @return
-     */
-    private Color getBestContrastColorAsIndexedColor(String ircColorForeground, Color anyColorBackground) {
-        Color colorForeground = IRCColors.toColor(ircColorForeground);
-        if (ColorUtil.contrastIsOk(anyColorBackground, colorForeground)) {
-            return (colorForeground);
-        }
-        if (ircColorForeground.equals(IRCColors.BLACK)
-                || ircColorForeground.equals(IRCColors.DARK_GRAY)
-                || ircColorForeground.equals(IRCColors.LIGHT_GRAY)
-                || ircColorForeground.equals(IRCColors.WHITE)) {
-            return (ColorUtil.getBestContrastColor(anyColorBackground,
-                    Arrays.asList(new Color[]{
-                IRCColors.toColor(IRCColors.DARK_GRAY),
-                IRCColors.toColor(IRCColors.LIGHT_GRAY),
-                IRCColors.toColor(IRCColors.WHITE)
-            })));
-        }
-        if (ircColorForeground.equals(IRCColors.GREEN)
-                || ircColorForeground.equals(IRCColors.DARK_GREEN)) {
-            return (ColorUtil.getBestContrastColor(anyColorBackground,
-                    Arrays.asList(new Color[]{
-                IRCColors.toColor(IRCColors.GREEN),
-                IRCColors.toColor(IRCColors.DARK_GREEN)
-            })));
-        }
-        if (ircColorForeground.equals(IRCColors.RED)
-                || ircColorForeground.equals(IRCColors.BROWN)
-                || ircColorForeground.equals(IRCColors.OLIVE)) {
-            return (ColorUtil.getBestContrastColor(anyColorBackground,
-                    Arrays.asList(new Color[]{
-                IRCColors.toColor(IRCColors.RED),
-                IRCColors.toColor(IRCColors.BROWN),
-                IRCColors.toColor(IRCColors.OLIVE),})));
-        }
-        if (ircColorForeground.equals(IRCColors.BLUE)
-                || ircColorForeground.equals(IRCColors.DARK_BLUE)
-                || ircColorForeground.equals(IRCColors.CYAN)
-                || ircColorForeground.equals(IRCColors.TEAL)) {
-            return (ColorUtil.getBestContrastColor(anyColorBackground,
-                    Arrays.asList(new Color[]{
-                IRCColors.toColor(IRCColors.BLUE),
-                IRCColors.toColor(IRCColors.DARK_BLUE),
-                IRCColors.toColor(IRCColors.CYAN),
-                IRCColors.toColor(IRCColors.TEAL),})));
-        }
-        return (colorForeground);
-    }
-
-    /**
-     * Appends a message to the output area. IRC color codes will be decoded
-     * first.
+     * Appends a message to the output area. ANSI codes will be decoded first.
      */
     public void messageDecode(String message) {
         // quick checks to speed things up
-        if ((message.indexOf('\002') >= 0)
-                || (message.indexOf('\003') >= 0)
-                || (message.indexOf('\026') >= 0)
-                || (message.indexOf(0x0f) >= 0)
-                || (message.indexOf('\037') >= 0)) {
-            StringBuilder buf = new StringBuilder();
-            int len = message.length();
-            int i;
-            char c;
-
-            for (i = 0; i < len; i++) {
-                c = message.charAt(i);
-                switch (c) {
-                    case '\002':   // bold
-                        this.messageDecodeWrite(buf);
-                        this.toggleStyleBold();
+        if (message.contains(ANSI.CSI)) {
+            boolean inSequence = false;
+            int pos = 0;
+            while (true) {
+                if (!inSequence) {
+                    int nextSequenceStartIndex = message.indexOf(ANSI.CSI, pos);
+                    if (nextSequenceStartIndex < 0) {
+                        //there is no other sequence
+                        this.messageDecodeWrite(new StringBuilder(message.substring(pos)));
                         break;
-                    case '\003': // colors
-                    {
-                        char c1;
-                        char c2;
-                        if (i < (len - 1)) {
-                            c1 = message.charAt(i + 1);
-                            if ((c1 >= '0') && (c1 <= '9')) {
-                                if (i < (len - 2)) {
-                                    c2 = message.charAt(i + 2);
-
-                                    if ((c2 >= '0') && (c2 <= '9')) {
-                                        this.messageDecodeWrite(buf);
-                                        this.setStyleForeground((c1 - '0') * 10 + c2 - '0');
-                                        i += 2;
-                                    }
-                                } else {
-                                    this.messageDecodeWrite(buf);
-                                    this.setStyleForeground(c1 - '0');
-                                    i++;
-                                }
-                            }
+                    } else {
+                        //there is another sequence
+                        this.messageDecodeWrite(new StringBuilder(message.substring(pos, nextSequenceStartIndex)));
+                        pos = nextSequenceStartIndex;
+                        inSequence = true;
+                    }
+                } else {
+                    int nextSequenceEndIndex = message.indexOf('m', pos);
+                    if (nextSequenceEndIndex <= 0) {
+                        //looks like an error, the sequence has no end marker - just bail out
+                        break;
+                    } else {
+                        if( nextSequenceEndIndex == message.length()-1 ){
+                            this.performANSICommand(message.substring(pos));
+                            inSequence = false;
+                            break;
+                        }else{
+                            this.performANSICommand(message.substring(pos, nextSequenceEndIndex+1));
+                            pos = nextSequenceEndIndex+1;
+                            inSequence = false;
                         }
                     }
-                    break;
-                    case '\026':   // italic
-                        this.messageDecodeWrite(buf);
-                        toggleStyleItalic();
-                        break;
-                    case '\037':   // underline
-                        this.messageDecodeWrite(buf);
-                        toggleStyleUnderline();
-                        break;
-                    case 0x0f: //reset all styles
-                        this.messageDecodeWrite(buf);
-                        this.resetStyle();
-                        break;
-                    default:
-                        buf.append(c);
-                        break;
                 }
             }
-            this.messageDecodeWrite(buf);
-        } else {
-            this.resetStyle();
+        } else {            
             messageDecodeWrite(new StringBuilder(message));
         }
     }
@@ -300,8 +245,7 @@ public class JTextPaneLoggingHandler extends Handler {
         this.setStyleBold(false);
         this.setStyleItalic(false);
         this.setStyleUnderline(false);
-        this.setStyleForeground(1);
-        this.setStyleForeground(this.getDefaultForegroundColor());
+        this.setStyleForeground(this.defaultForegroundColor);
     }
 
     /**
@@ -365,19 +309,25 @@ public class JTextPaneLoggingHandler extends Handler {
     }
 
     /**
-     * Set foreground for subsequent messages (IRC standard indexed color).
+     * Set foreground for subsequent messages.
      */
-    private void setStyleForeground(int index) {
-        setStyleForeground(IRCColors.indexedColors[index]);
+    private void setStyleForegroundAutoCorrected(String ansiSequence) {
+        Color foregroundColor = ANSI.toColor(ansiSequence);
+        //auto correct for higher contrast, cache this lookup
+        if (!this.highContrastColorCache.containsKey(foregroundColor)) {
+            this.highContrastColorCache.put(foregroundColor, ColorUtil.getBestContrastColorAroundForeground(
+                    this.defaultBackgroundColor, foregroundColor));
+        }
+        this.setStyleForeground(this.highContrastColorCache.get(foregroundColor));
     }
 
     /**
      * Set foreground for subsequent messages.
      */
-    private void setStyleForeground(Color col) {
+    private void setStyleForeground(Color foregroundColor) {
         synchronized (this.currentStyle) {
             this.currentStyle.removeAttribute(StyleConstants.Foreground);
-            this.currentStyle.addAttribute(StyleConstants.Foreground, col);
+            this.currentStyle.addAttribute(StyleConstants.Foreground, foregroundColor);
         }
     }
 
@@ -410,14 +360,9 @@ public class JTextPaneLoggingHandler extends Handler {
         if (!isLoggable(record) || !this.enabled) {
             return;
         }
-        String msg;
-        int rawMessageLength = 0;
+        String message;
         try {
-            msg = this.getFormatter().format(record);
-            String rawMessage = this.getFormatter().formatMessage(record);
-            if (rawMessage != null) {
-                rawMessageLength = rawMessage.length();
-            }
+            message = this.getFormatter().format(record);
         } catch (Throwable ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -427,11 +372,7 @@ public class JTextPaneLoggingHandler extends Handler {
             return;
         }
         try {
-            if (!doneHeader) {
-                this.logMessage(record.getLevel(), this.getFormatter().getHead(this), rawMessageLength);
-                doneHeader = true;
-            }
-            this.logMessage(record.getLevel(), msg, rawMessageLength);
+            this.messageDecode(message);
         } catch (Throwable ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -470,21 +411,6 @@ public class JTextPaneLoggingHandler extends Handler {
     }
 
     /**
-     * Finally logs the passed message to the text component and sets the canvas
-     * pos
-     */
-    private void logMessage(Level level, String message, int rawMessageLength) {
-        int timeStampPos = message.length() - rawMessageLength - this.lineSeparator.length();
-        String color = this.getColor(level);
-        if (timeStampPos >= 0) {
-            message = message.substring(0, timeStampPos)
-                    + color + message.substring(timeStampPos);
-        }
-        this.messageDecode(message);
-        this.resetStyle();
-    }
-
-    /**
      * @return the maxBuffersize
      */
     public long getMaxBuffersize() {
@@ -492,10 +418,11 @@ public class JTextPaneLoggingHandler extends Handler {
     }
 
     /**
-     * @return the defaultForegroundColor
+     * @return the defaultForegroundColor, this is already corrected for best
+     * contrast if dark mode etc is used
      */
     public Color getDefaultForegroundColor() {
-        return defaultForegroundColor;
+        return (this.defaultForegroundColor);
     }
 
 }

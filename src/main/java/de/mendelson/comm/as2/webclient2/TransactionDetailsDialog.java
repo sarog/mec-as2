@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 29    27/01/22 17:19 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 31    8/08/22 10:13 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.event.selection.SelectionEvent;
@@ -69,7 +69,7 @@ import java.util.logging.Level;
  * The about dialog for the as2 server web ui
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 31 $
  */
 public class TransactionDetailsDialog extends OkDialog {
 
@@ -131,12 +131,8 @@ public class TransactionDetailsDialog extends OkDialog {
         PartnerAccessDB partnerAccess = new PartnerAccessDB(dbDriverManager);
         this.sender = partnerAccess.getPartnerByAS2Id(as2MessageInfo.getSenderId(), PartnerAccessDB.DATA_COMPLETENESS_NAMES_AS2ID_TYPE);
         this.receiver = partnerAccess.getPartnerByAS2Id(as2MessageInfo.getReceiverId(), PartnerAccessDB.DATA_COMPLETENESS_NAMES_AS2ID_TYPE);
-        Connection configConnection = null;
-        Connection runtimeConnection = null;
         try {
-            configConnection = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            runtimeConnection = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
-            MDNAccessDB mdnAccess = new MDNAccessDB(dbDriverManager, configConnection, runtimeConnection);
+            MDNAccessDB mdnAccess = new MDNAccessDB(dbDriverManager);
             List<AS2MDNInfo> mdnInfoList = mdnAccess.getMDN(messageId);
             if (!mdnInfoList.isEmpty()) {
                 AS2MDNInfo mdnInfo = mdnInfoList.get(0);
@@ -148,19 +144,6 @@ public class TransactionDetailsDialog extends OkDialog {
             new Notification("Problem", "[" + e.getClass().getSimpleName() + "] " + e.getMessage(),
                     Notification.Type.WARNING_MESSAGE, true)
                     .show(Page.getCurrent());
-        } finally {
-            if (configConnection != null) {
-                try {
-                    configConnection.close();
-                } catch (Exception e) {
-                }
-            }
-            if (runtimeConnection != null) {
-                try {
-                    runtimeConnection.close();
-                } catch (Exception e) {
-                }
-            }
         }
         this.setIcon(new ThemeResource("../mendelson/images/messagedetails_24x24.png"));
         //load resource bundle
@@ -187,32 +170,15 @@ public class TransactionDetailsDialog extends OkDialog {
         RESOURCE_IMAGE_FINISHED = new FileResource(new File("/VAADIN/theme/mendelson/images/state_finished.svg"));
         RESOURCE_IMAGE_LOCALSTATION = new FileResource(new File("/VAADIN/theme/mendelson/images/localstation.svg"));
         RESOURCE_IMAGE_SINGLEPARTNER = new FileResource(new File("/VAADIN/theme/mendelson/images/singlepartner.svg"));
-        Connection configConnection = null;
-        Connection runtimeConnection = null;
         try {
-            configConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            runtimeConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
-            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, configConnection, runtimeConnection);
+            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
             this.payload = messageAccess.getPayload(TransactionDetailsDialog.this.as2MessageInfo.getMessageId());
         } catch (Exception e) {
             new Notification("Problem", "["
                     + e.getClass().getSimpleName() + "] " + e.getMessage(),
                     Notification.Type.ERROR_MESSAGE, true)
                     .show(Page.getCurrent());
-        } finally {
-            if (configConnection != null) {
-                try {
-                    configConnection.close();
-                } catch (Exception e) {
-                }
-            }
-            if (runtimeConnection != null) {
-                try {
-                    runtimeConnection.close();
-                } catch (Exception e) {
-                }
-            }
-        }
+        } 
         super.init(displayOkButton);
         this.refreshTableContentAndSelectFirst();
     }
@@ -389,11 +355,9 @@ public class TransactionDetailsDialog extends OkDialog {
         RichTextArea textArea = new RichTextArea();
         textArea.setWidth(100, Unit.PERCENTAGE);
         textArea.setHeightUndefined();
-        Connection runtimeConnection = null;
         try {
-            runtimeConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
             LogAccessDB logAccess = new LogAccessDB(this.dbDriverManager);
-            List<LogEntry> entries = logAccess.getLog(runtimeConnection, this.as2MessageInfo.getMessageId());
+            List<LogEntry> entries = logAccess.getLog(this.as2MessageInfo.getMessageId());
             StringBuilder log = new StringBuilder();
             log.append("<HTML>");
             for (LogEntry entry : entries) {
@@ -419,13 +383,6 @@ public class TransactionDetailsDialog extends OkDialog {
                     + e.getClass().getSimpleName() + "] " + e.getMessage(),
                     Notification.Type.ERROR_MESSAGE, true)
                     .show(Page.getCurrent());
-        } finally {
-            if (runtimeConnection != null) {
-                try {
-                    runtimeConnection.close();
-                } catch (Exception e) {
-                }
-            }
         }
         return (textArea);
     }
@@ -525,12 +482,8 @@ public class TransactionDetailsDialog extends OkDialog {
      * the first entry
      */
     private void refreshTableContentAndSelectFirst() {
-        Connection configConnection = null;
-        Connection runtimeConnection = null;
         try {
-            configConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            runtimeConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
-            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, configConnection, runtimeConnection);
+            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
             //add the content
             List<AS2Info> infoList = messageAccess.getMessageDetails(this.as2MessageInfo.getMessageId());
             List<GridDetailRow> displayList = new ArrayList<GridDetailRow>();
@@ -546,20 +499,7 @@ public class TransactionDetailsDialog extends OkDialog {
             new Notification("Problem", "[" + e.getClass().getSimpleName() + "] " + e.getMessage(),
                     Notification.Type.WARNING_MESSAGE, true)
                     .show(Page.getCurrent());
-        } finally {
-            if (configConnection != null) {
-                try {
-                    configConnection.close();
-                } catch (Exception e) {
-                }
-            }
-            if (runtimeConnection != null) {
-                try {
-                    runtimeConnection.close();
-                } catch (Exception e) {
-                }
-            }
-        }
+        } 
     }
 
     private Label generateImageLabel(FileResource resource) {

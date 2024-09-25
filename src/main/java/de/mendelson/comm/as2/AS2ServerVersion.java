@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 87    3/02/22 14:36 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 89    23/01/23 11:43 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.Copyright;
@@ -15,7 +15,7 @@ import de.mendelson.Copyright;
  * Class to check the version and the build of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 87 $
+ * @version $Revision: 89 $
  */
 public class AS2ServerVersion {
 
@@ -48,7 +48,7 @@ public class AS2ServerVersion {
      * Returns the internal build number
      */
     public static int getBuildNo() {
-        return (61);
+        return (63);
     }
 
     /**
@@ -64,7 +64,7 @@ public class AS2ServerVersion {
      * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionConfig() {
-        return (47);
+        return (50);
     }
 
     /**
@@ -73,7 +73,7 @@ public class AS2ServerVersion {
      * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionRuntime() {
-        return (49);
+        return (50);
     }
 
     /**
@@ -88,7 +88,7 @@ public class AS2ServerVersion {
      * Returns the date the package was last modified
      */
     public static String getLastModificationDate() {
-        String fullDate = "$Date: 3/02/22 14:36 $";
+        String fullDate = "$Date: 23/01/23 11:43 $";
         return (fullDate.substring(fullDate.indexOf(":") + 1, fullDate.lastIndexOf("$")));
     }
 

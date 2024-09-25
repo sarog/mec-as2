@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 11    2.07.19 11:15 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 12    7/10/22 17:42 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -14,7 +14,7 @@ import java.io.Serializable;
 /**
  * Filter to apply for the message overview
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class MessageOverviewFilter implements Serializable{
 
@@ -38,6 +38,7 @@ public class MessageOverviewFilter implements Serializable{
     private int limit = 1000;
     private long startTime = 0L;
     private long endTime = 0L;
+    private String userdefinedId = null;
     
     /**Filters for the message type that should be displayed*/
     public void setShowMessageType( final int MESSAGETYPE ){
@@ -59,6 +60,8 @@ public class MessageOverviewFilter implements Serializable{
         this.direction = DIRECTION;
     }
 
+    
+    
     /**Returns the message type that should be shown or MESSAGETYPE_ALL if no filter should be applied
      * for the message type
      */
@@ -158,6 +161,22 @@ public class MessageOverviewFilter implements Serializable{
      */
     public void setEndTime(long endTime) {
         this.endTime = endTime;
+    }
+
+    /**
+     * @return the userdefinedId. If this is null there should be no filter
+     * for the user defined id
+     */
+    public String getUserdefinedId() {
+        return userdefinedId;
+    }
+
+    /**
+     * @param userdefinedId the userdefinedId to set. Set this to null to
+     * ignore this (this is the default)
+     */
+    public void setUserdefinedId(String userdefinedId) {
+        this.userdefinedId = userdefinedId;
     }
     
 }

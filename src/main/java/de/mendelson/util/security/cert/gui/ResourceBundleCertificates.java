@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 22    11.11.20 17:06 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 24    12/12/22 14:18 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 24 $
  */
 public class ResourceBundleCertificates extends MecResourceBundle{
     
@@ -32,7 +32,11 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"button.edit", "Rename alias" },
         {"button.newkey", "Import key" },
         {"button.newcertificate", "Import certificate" },
-        {"button.export", "Export certificate" },                
+        {"button.export", "Export certificate" },       
+        {"button.reference", "Show usage" },       
+        {"button.keycopy", "Copy entry to {0} manager" },       
+        {"button.keycopy.tls", "TLS" },
+        {"button.keycopy.signencrypt", "Encryption/Signature" },
         {"menu.file", "File" },        
         {"menu.file.close", "Close" },
         {"menu.import", "Import" },        
@@ -73,7 +77,7 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"dialog.cert.delete.message", "Do you really want to delete the certificate with the alias \"{0}\"?"},
         {"dialog.cert.delete.title", "Delete certificate"},        
         {"title.cert.in.use", "Certificate is in use" },
-        {"cert.delete.impossible", "It is impossible to delete the entry:" },
+        {"cert.delete.impossible", "Impossible to delete the entry, it''s in use by a partner. \nPlease use \"Show usage\" for details." },
         {"module.locked", "This certificate management is locked by another client, you are not allowed to commit your changes!" },
         {"label.trustanchor", "Trust anchor:" },
         {"warning.testkey", "Public mendelson test key - do not use in production!" },
@@ -89,6 +93,13 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"success.deleteallexpired.text", "{0} expired and unused keys/certificates have been removed" },
         {"warning.deleteallexpired.expired.but.used.title", "Used keys/certificates not deleted" },
         {"warning.deleteallexpired.expired.but.used.text", "{0} keys/certificates are expired but still in use - the system will keep them" },
+        {"module.locked.title", "Module locked" },
+        {"module.locked.text", "The module {0} is locked by another client ({1})." },
+        {"keycopy.target.exists.title", "Entry exists in the target certifiicate manager"},
+        {"keycopy.target.exists.text", "This entry does already exist (alias {0})."},
+        {"keycopy.target.ro.title", "Target r/o" },
+        {"keycopy.target.ro.text", "The underlaying keystore file for the target certificate manager is read/only." },
+        {"keycopy.success.text", "The entry [{0}] has been copied successfully" },
     };
     
 }

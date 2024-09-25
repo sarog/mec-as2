@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateUsedByPartnerChecker_de.java 3     4/06/18 1:35p Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateUsedByPartnerChecker_de.java 4     7/04/22 10:33 Heller $ 
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleCertificateUsedByPartnerChecker_de extends MecResourceBundle {
 
@@ -30,7 +30,7 @@ public class ResourceBundleCertificateUsedByPartnerChecker_de extends MecResourc
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        {"used.crypt", "Verwendet vom Partner {0} (Verschlüsselung)."},
-        {"used.sign", "Verwendet vom Partner {0} (Digitale Signatur)."},};
+        {"used.crypt", "Datenverschlüsselung"},
+        {"used.sign", "Digitale Signatur"},};
 
 }

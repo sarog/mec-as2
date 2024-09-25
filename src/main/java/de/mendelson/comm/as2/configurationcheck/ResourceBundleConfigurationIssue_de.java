@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue_de.java 24    19/01/22 16:17 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue_de.java 25    24/11/22 10:22 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 25 $
  */
 public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
 
@@ -43,8 +43,8 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "Gültig von: {3}<br>"
             + "Gültig bis: {4}<br>"
             + "<br></HTML>"},
-        {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_SSL), "Zertifikat ist abgelaufen (SSL)"},
-        {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_SSL),
+        {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS), "Zertifikat ist abgelaufen (TLS)"},
+        {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS),
             "<HTML>Zertifikate haben nur eine begrenzte Laufzeit. In der Regel sind das ein, drei oder fünf Jahre.<br>"
             + "Ein Zertifikat, was Sie in Ihrem System für die SSL/TLS Leitungssicherung verwenden, ist nicht mehr gültig.<br>"
             + "Es ist nicht möglich, mit einem abgelaufenen Zertifikat kryptographischer Operationen auszuführen - "
@@ -57,14 +57,14 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "Gültig von: {3}<br>"
             + "Gültig bis: {4}<br>"
             + "<br></HTML>"},
-        {String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE), "Mehrere Schlüssel im SSL Keystore gefunden - darf nur einer sein"},
-        {"hint." + String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE),
+        {String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE), "Mehrere Schlüssel im TLS Keystore gefunden - darf nur einer sein"},
+        {"hint." + String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE),
             "<HTML>In dem SSL/TLS Keystore Ihres Systems befinden sich mehrere Schlüssel. Es darf sich allerdings nur einer darin befinden - dieser wird beim Start des Servers als SSL/TLS Schlüssel verwendet.<br>"
             + "Bitte löschen Sie so lange Schüssel aus dem SSL/TLS Keystore, bis nur noch ein Schlüssel darin vorhanden ist.<br>"
             + "Sie erkennen die Schlüssel in der Zertifikatverwaltung am Schlüsselsymbol in der ersten Spalte.<br>"
             + "Nach dieser Änderung ist es notwendig, den Server neu zu starten.</HTML>"},
-        {String.valueOf(ConfigurationIssue.NO_KEY_IN_SSL_KEYSTORE), "Kein Schlüssel im SSL Keystore gefunden"},
-        {"hint." + String.valueOf(ConfigurationIssue.NO_KEY_IN_SSL_KEYSTORE),
+        {String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE), "Kein Schlüssel im TLS Keystore gefunden"},
+        {"hint." + String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE),
             "<HTML>Es wurde kein Schlüssel im SSL/TLS Keystore Ihres Systems gefunden.<br>"
             + "Sie erkennen Schlüssel am vorangestellten Schlüsselsymbol, wenn Sie die Zertifikatverwaltung öffnen.<br>"
             + "Es wird genau ein Schlüssel im SSL/TLS Keystore benötigt, um den Handshakeprozess der Leitungssicherung durchzuführen.<br>"
@@ -107,8 +107,8 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             "<HTML>Ihre lokale Station hat keinen Signaturschlüssel zugewiesen.<br>"
             + "Sie können in dieser Konfiguration keine ausgehenden Nachrichten digital signieren - egal für welchem Partner.<br>"
             + "Bitte öffnen Sie die Partnerverwaltung und weisen Sie der lokalen Station einen privaten Schlüssel zu.</HTML>"},
-        {String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL), "Verwendung eines öffentlich verfügbaren Testschlüssels als SSL Schlüssel"},
-        {"hint." + String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL),
+        {String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS), "Verwendung eines öffentlich verfügbaren Testschlüssels als TLS Schlüssel"},
+        {"hint." + String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS),
             "<HTML>In der Auslieferung stellt mendelson einige Testschlüssel zur Verfügung.<br>"
             + "Diese sind auf der mendelson Webseite öffentlich verfügbar.<br>"
             + "Wenn Sie diese Schlüssel für kryptographische Aufgaben innerhalb Ihres Datentransfers produktiv verwenden, bieten sie daher <strong>KEINE</strong> Sicherheit.<br>"
@@ -136,6 +136,23 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "Bitte reduzieren Sie diesen Wert, indem Sie die Überwachungsintervalle der jeweiligen Partnerverzeichnisse vergrößern und"
             + " auch Überwachungen für Partner deaktivieren, wo dies nicht benötigt wird."
             + "Bei einer großen Anzahl von Partnern wird empfohlen, alle Verzeichnisüberwachungen deaktivieren und die Sendeaufträge von "
-            + "Ihrem Backend aus mit den Befehlen <i>AS2Send.exe</i> oder <i>as2send.sh</i> nach Bedarf zu erstellen.</HTML>"}
+            + "Ihrem Backend aus mit den Befehlen <i>AS2Send.exe</i> oder <i>as2send.sh</i> nach Bedarf zu erstellen.</HTML>"},
+        {String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO), "Interne Keystoredatei (Sign/Verschlüsselung) ist nur lesbar"},
+        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO),
+            "<HTML>Die unterliegende Datei zum Verwalten von kryptographischen Schlüsseln und Zertifikaten \"{0}\" kann vom aktuellen "
+            + "Benutzer des Serverprozesses ({1}) nicht beschrieben werden.<br>"
+            + "Das schränkt die Funktion des Systems nicht ein - es ist aber nicht möglich, Änderungen im Zertifikatmanager "
+            + "(Signatur/Verschlüsselung) vorzunehmen. Sie können also in diesem Zustand dem System keine Schlüssel/Zertifikate hinzufügen,"
+            + "löschen oder umbenennen."
+            + "</HTML>" },
+        {String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO), "Interne Keystoredatei (TLS) ist nur lesbar"},
+        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO),
+            "<HTML>Die unterliegende Datei zum Verwalten von kryptographischen Schlüsseln und Zertifikaten \"{0}\" kann vom aktuellen "
+            + "Benutzer des Serverprozesses ({1}) nicht beschrieben werden.<br>"
+            + "Das schränkt die Funktion des Systems nicht ein - es ist aber nicht möglich, Änderungen im Zertifikatmanager "
+            + "(TLS) vorzunehmen.<br>"
+            + "Sie können also in diesem Zustand dem System keine Schlüssel/Zertifikate hinzufügen,"
+            + "löschen oder umbenennen."
+            + "</HTML>" },
     };
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 20    5.11.19 10:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 22    7/06/22 16:28 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -25,7 +25,7 @@ import javax.swing.SwingUtilities;
 /**
  *Panel to define the directory preferences
  * @author S.Heller
- * @version: $Revision: 20 $
+ * @version: $Revision: 22 $
  */
 public class PreferencesPanelDirectories extends PreferencesPanel {
 
@@ -51,10 +51,15 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         this.preferences = new PreferencesClient(baseClient);
         this.baseClient = baseClient;
         this.initComponents();
+        this.initializeHelp();
         this.jTable.setRowHeight(TableModelPreferencesDir.ROW_HEIGHT);
         this.setButtonState();
     }
 
+    private void initializeHelp(){
+        this.jPanelUIHelpPartnerDir.setToolTip( this.rb, "receipt.subdir.help");
+    }
+    
     /**checks the state of the buttons, it depends on the selection in
      *the table
      */
@@ -112,6 +117,9 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         jScrollPane = new javax.swing.JScrollPane();
         jTable = new javax.swing.JTable();
         jButtonChange = new javax.swing.JButton();
+        jPanelUIHelpPartnerDir = new de.mendelson.util.balloontip.JPanelUIHelp();
+        jPanelSpacer = new javax.swing.JPanel();
+        jPanelSpaceAbove = new javax.swing.JPanel();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -127,10 +135,9 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(20, 10, 10, 10);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelMargin.add(jCheckBoxReceiverSubdirectory, gridBagConstraints);
 
         jPanelDirSelection.setLayout(new java.awt.GridBagLayout());
@@ -169,12 +176,32 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
         jPanelMargin.add(jPanelDirSelection, gridBagConstraints);
+
+        jPanelUIHelpPartnerDir.setPreferredSize(new java.awt.Dimension(20, 20));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 3;
+        jPanelMargin.add(jPanelUIHelpPartnerDir, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelMargin.add(jPanelSpacer, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelMargin.add(jPanelSpaceAbove, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -203,6 +230,9 @@ private void jCheckBoxReceiverSubdirectoryActionPerformed(java.awt.event.ActionE
     private javax.swing.JCheckBox jCheckBoxReceiverSubdirectory;
     private javax.swing.JPanel jPanelDirSelection;
     private javax.swing.JPanel jPanelMargin;
+    private javax.swing.JPanel jPanelSpaceAbove;
+    private javax.swing.JPanel jPanelSpacer;
+    private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelpPartnerDir;
     private javax.swing.JScrollPane jScrollPane;
     private javax.swing.JTable jTable;
     // End of variables declaration//GEN-END:variables

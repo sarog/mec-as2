@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyPEM.java 3     23.09.21 12:27 Heller $ 
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyPEM.java 4     7/12/22 16:31 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleImportKeyPEM extends MecResourceBundle {
 
@@ -33,13 +33,13 @@ public class ResourceBundleImportKeyPEM extends MecResourceBundle {
         {"button.ok", "Ok"},
         {"button.cancel", "Cancel"},
         {"button.browse", "Browse"},
-        {"label.importkey", "Key file (PEM):"},        
+        {"label.importkey", "Key file (PEM)"},        
         {"label.importkey.hint", "File contents starts with --- BEGIN PRIVATE KEY ---"},
-        {"label.importcert", "Certificate file:"},
+        {"label.importcert", "Certificate file"},
         {"label.importcert.hint", "File contents starts with --- BEGIN CERTIFICATE ---"},        
-        {"label.alias", "Alias:"},
+        {"label.alias", "Alias"},
         {"label.alias.hint", "New alias to use for this key entry"},
-        {"label.keypass", "Password:"},
+        {"label.keypass", "Password"},
         {"label.keypass.hint", "Key password (importing key)"},
         {"title", "Import keys (PEM format)"},
         {"filechooser.cert.import", "Please select the certificate file for the import"},

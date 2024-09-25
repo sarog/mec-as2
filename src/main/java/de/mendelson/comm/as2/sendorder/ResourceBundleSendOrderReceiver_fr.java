@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver_fr.java 7     12.03.19 13:36 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver_fr.java 8     9/02/22 13:26 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleSendOrderReceiver_fr extends MecResourceBundle{
     
@@ -33,7 +33,6 @@ public class ResourceBundleSendOrderReceiver_fr extends MecResourceBundle{
         {"outbound.connection.prepare.mdn", "Préparer la connexion MDN sortante vers \"{0}\", connexions actives: {1}/{2}." },
         {"outbound.connection.prepare.message", "Préparer la connexion AS2 message sortante vers \"{0}\", Connexions actives: {1}/{2}." },
         {"send.connectionsstillopen", "Vous avez réduit le nombre de connexions sortantes à {0}, mais actuellement, il y a encore {1} connexions sortantes." },
-        {"warning.nomore.outbound.connections.available", "Le nombre maximum de connexions sortantes ({0}) a été atteint. Il n''est plus possible de créer des connexions sortantes supplémentaires. Veuillez modifier cette valeur dans la configuration de serveur si vous le souhaitez toujours." },
     };
     
 }

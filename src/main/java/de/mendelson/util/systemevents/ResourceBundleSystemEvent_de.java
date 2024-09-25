@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 26    26.01.21 15:20 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 27    24/02/22 17:04 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 27 $
  */
 public class ResourceBundleSystemEvent_de extends MecResourceBundle {
 
@@ -83,6 +83,8 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_PRE_PROCESSING, "Vorverarbeitung"},
         {"type." + SystemEvent.TYPE_POST_PROCESSING, "Nachverarbeitung"},
         {"type." + SystemEvent.TYPE_LICENSE_ANY, "Lizenz"},
+        {"type." + SystemEvent.TYPE_LICENSE_EXPIRE, "License Ablauf"},
+        {"type." + SystemEvent.TYPE_LICENSE_UPDATE, "License Aktualisierung"},
         {"type." + SystemEvent.TYPE_FILE_OPERATION_ANY, "Dateioperation"},
         {"type." + SystemEvent.TYPE_FILE_DELETE, "Datei (löschen)"},
         {"type." + SystemEvent.TYPE_FILE_MOVE, "Datei (verschieben)"},

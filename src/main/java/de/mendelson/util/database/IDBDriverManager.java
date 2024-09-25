@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/database/IDBDriverManager.java 8     7.12.21 11:06 Heller $
+//$Header: /as2/de/mendelson/util/database/IDBDriverManager.java 10    22/11/22 8:22 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Connection;
@@ -18,7 +18,7 @@ import java.sql.Statement;
  * Interface for all supported database drivers
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public interface IDBDriverManager {
 
@@ -27,7 +27,9 @@ public interface IDBDriverManager {
     public static int DB_DEPRICATED = 3;
     
     /**
-     * Setup the driver manager, initialize the connection pool
+     * Setup the driver manager, initialize the connection pool. It's for some
+     * cases important that this method could be called multiple times without setting up
+     * the connection pool again (e.g. web interfaces)
      *
      */
     public void setupConnectionPool();
@@ -151,4 +153,12 @@ public interface IDBDriverManager {
     
     /**Returns some connection pool information for debug purpose*/
     public String getPoolInformation(int DB_TYPE);
+    
+    /**Adds a limit clause to the SQL query. LIMIT is common but no used by all databases - e.g. not by
+     * the oracle database
+     * @param query
+     * @param maxRows 
+     */
+    public String addLimitToQuery( String query, int maxRows );
+    
 }

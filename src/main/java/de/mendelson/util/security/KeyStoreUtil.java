@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/KeyStoreUtil.java 61    3.12.21 14:22 Heller $
+//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 67    14/12/22 14:56 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.MecResourceBundle;
@@ -42,6 +42,7 @@ import java.util.StringTokenizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.util.io.pem.PemObject;
 
@@ -56,7 +57,7 @@ import org.bouncycastle.util.io.pem.PemObject;
  * Utility class to handle java keyStore issues
  *
  * @author S.Heller
- * @version $Revision: 61 $
+ * @version $Revision: 67 $
  */
 public class KeyStoreUtil {
 
@@ -85,9 +86,9 @@ public class KeyStoreUtil {
         OutputStream out = null;
         try {
             out = Files.newOutputStream(Paths.get(filename),
-                    StandardOpenOption.SYNC, 
-                    StandardOpenOption.CREATE, 
-                    StandardOpenOption.TRUNCATE_EXISTING, 
+                    StandardOpenOption.SYNC,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE);
             this.saveKeyStore(keystore, keystorePass, out);
         } finally {
@@ -179,11 +180,11 @@ public class KeyStoreUtil {
      * import
      */
     public void importX509Certificate(KeyStore keystore, InputStream certStream,
-            String alias, int certIndex, Provider provider) throws Exception {
+            String alias, int certIndex, String securityProvider) throws Exception {
         if (keystore.containsAlias(alias)) {
             throw new Exception(this.rb.getResourceString("alias.exist", alias));
         }
-        List<X509Certificate> certList = this.readCertificates(certStream, provider);
+        List<X509Certificate> certList = this.readCertificates(certStream, securityProvider);
         keystore.setCertificateEntry(alias, certList.get(certIndex));
     }
 
@@ -212,9 +213,9 @@ public class KeyStoreUtil {
      *
      * @param keystore Keystore to import the certificate to
      * @param certStream Stream to access the cert data from
-     * @param alias Aslias to use in the keystore
+     * @param alias Alias to use in the keystore
      */
-    public String importX509Certificate(KeyStore keystore, X509Certificate cert, Provider provider) throws Exception {
+    public String importX509Certificate(KeyStore keystore, X509Certificate cert, String securityProvider) throws Exception {
         //dont import the certificate if it already exists!
         if (this.getCertificateAlias(keystore, cert) != null) {
             return (this.getCertificateAlias(keystore, cert));
@@ -259,30 +260,39 @@ public class KeyStoreUtil {
     /**
      * Tries to read a certificate from a byte array, may return null if reading
      * the data fails
+     *
+     * @param securityProvider Might be null - then the default security
+     * provider is taken as defined in the jre security settings. It's
+     * recommended to pass "BC" here for the bouncycastle security provider
      */
-    private List<X509Certificate> readCertificates(byte[] data, Provider provider) throws CertificateException {
-        CertificateFactory factory;
+    private List<X509Certificate> readCertificates(byte[] data, String securityProvider) throws Exception {
+        CertificateFactory certificateFactory;
         List<X509Certificate> certList = null;
-        if (provider != null) {
-            factory = CertificateFactory.getInstance("X.509", provider);
+        if (securityProvider != null) {
+            certificateFactory = CertificateFactory.getInstance("X.509", securityProvider);
         } else {
-            factory = CertificateFactory.getInstance("X.509");
+            certificateFactory = CertificateFactory.getInstance("X.509");
         }
         //perform the PEM decode process first - this will simply fail if the passed certificate structure is not in PEM
+        InputStreamReader reader = null;
         try {
-            PEMParser pemParser = new PEMParser(new InputStreamReader(new ByteArrayInputStream(data)));
+            reader = new InputStreamReader(new ByteArrayInputStream(data));
+            PEMParser pemParser = new PEMParser(reader);
             //this will be null if the PEMParser could not successful extract an object
             PemObject pemObject = pemParser.readPemObject();
             if (pemObject != null) {
                 data = pemObject.getContent();
             }
-        } catch (Exception e) {
-            e.printStackTrace();
+        } finally {
+            if (reader != null) {
+                reader.close();
+            }
         }
         try {
             //try to read pkcs#7 files first - all other read methods will ignore certificates if there is stored more than one
             //cert in the p7b file
-            Collection<? extends Certificate> tempCertList = factory.generateCertPath(new ByteArrayInputStream(data), "PKCS7").getCertificates();
+            Collection<? extends Certificate> tempCertList
+                    = certificateFactory.generateCertPath(new ByteArrayInputStream(data), "PKCS7").getCertificates();
             if (tempCertList != null && !tempCertList.isEmpty()) {
                 certList = new ArrayList<X509Certificate>();
                 for (Certificate cert : tempCertList) {
@@ -293,8 +303,8 @@ public class KeyStoreUtil {
         }
         try {
             if (certList == null) {
-                factory = CertificateFactory.getInstance("X.509", provider);
-                Collection<? extends Certificate> tempCertList = factory.generateCertificates(new ByteArrayInputStream(data));
+                Collection<? extends Certificate> tempCertList
+                        = certificateFactory.generateCertificates(new ByteArrayInputStream(data));
                 if (tempCertList != null && !tempCertList.isEmpty()) {
                     certList = new ArrayList<X509Certificate>();
                     for (Certificate cert : tempCertList) {
@@ -309,16 +319,18 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Reads a chain of certificates from the passed stream
+     * Reads a chain of certificates from the passed stream. If the read process
+     * fails the method tries to unzip the data - expecting that the user passed
+     * a .zip file that contains a certificate which happens quiet often
      */
-    public List<X509Certificate> readCertificates(InputStream certStream, Provider provider) throws Exception {
-        List<X509Certificate> certList = null;        
+    public List<X509Certificate> readCertificates(InputStream certStream, String securityProvider) throws Exception {
+        List<X509Certificate> certList = null;
         byte[] data = certStream.readAllBytes();
-        certList = this.readCertificates(data, provider);
+        certList = this.readCertificates(data, securityProvider);
         if (certList == null) {
             //no success, perhaps base64 encoded data? Decode it and retry the read process
             byte[] decoded = Base64.decode(new String(data));
-            certList = this.readCertificates(decoded, provider);
+            certList = this.readCertificates(decoded, securityProvider);
         }
         if (certList != null) {
             return (certList);
@@ -389,11 +401,11 @@ public class KeyStoreUtil {
      * import
      */
     public void importX509Certificate(KeyStore keystore, String certificateFilename,
-            String alias, int certIndex, Provider provider) throws Exception {
+            String alias, int certIndex, String securityProvider) throws Exception {
         InputStream inCert = null;
         try {
             inCert = Files.newInputStream(Paths.get(certificateFilename));
-            this.importX509Certificate(keystore, inCert, alias, certIndex, provider);
+            this.importX509Certificate(keystore, inCert, alias, certIndex, securityProvider);
         } finally {
             if (inCert != null) {
                 inCert.close();
@@ -414,13 +426,13 @@ public class KeyStoreUtil {
      */
     public void importX509Certificate(KeyStore keystore, String certificateFilename,
             String alias, int certIndex) throws Exception {
-        InputStream inCert = null;
+        InputStream inStream = null;
         try {
-            inCert = Files.newInputStream(Paths.get(certificateFilename));
-            this.importX509Certificate(keystore, inCert, alias, certIndex, null);
+            inStream = Files.newInputStream(Paths.get(certificateFilename));
+            this.importX509Certificate(keystore, inStream, alias, certIndex, null);
         } finally {
-            if (inCert != null) {
-                inCert.close();
+            if (inStream != null) {
+                inStream.close();
             }
         }
     }
@@ -510,9 +522,19 @@ public class KeyStoreUtil {
                 inStream = new ByteArrayInputStream(certificate);
                 inStream.transferTo(outStream);
             } finally {
-                inStream.close();
-                outStream.flush();
-                outStream.close();
+                if (inStream != null) {
+                    try {
+                        inStream.close();
+                    } finally {
+
+                    }
+                }
+                if (outStream != null) {
+                    try {
+                        outStream.close();
+                    } finally {
+                    }
+                }
             }
         }
         return (new Path[]{file});
@@ -556,7 +578,7 @@ public class KeyStoreUtil {
      * Converts an array x.509 certificate to pkcs#7 format
      */
     public byte[] convertX509CertificateToPKCS7(X509Certificate[] certificates) throws Exception {
-        CertificateFactory factory = CertificateFactory.getInstance("X.509", "BC");
+        CertificateFactory factory = CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
         List<Certificate> certList = new ArrayList<Certificate>();
         certList.addAll(Arrays.asList(certificates));
         CertPath certPath = factory.generateCertPath(certList);
@@ -707,7 +729,6 @@ public class KeyStoreUtil {
                 os.write(pkcs8.getEncoded());
             } finally {
                 if (os != null) {
-                    os.flush();
                     os.close();
                 }
             }
@@ -770,8 +791,7 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Returns a list of aliases for a specified keystore, vector of string
-     * because this may be used for GUI lists
+     * Returns a list of aliases for a specified keystore
      */
     public List<String> getKeyAliases(KeyStore keystore) throws KeyStoreException {
         Enumeration enumeration = keystore.aliases();

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 21    23.09.21 13:58 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 22    10/02/22 11:22 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -22,7 +22,7 @@ import javax.swing.ImageIcon;
  * Panel to define the proxy settings
  *
  * @author S.Heller
- * @version: $Revision: 21 $
+ * @version: $Revision: 22 $
  */
 public class PreferencesPanelProxy extends PreferencesPanel {
 
@@ -34,8 +34,8 @@ public class PreferencesPanelProxy extends PreferencesPanel {
     private PreferencesClient preferences;
 
     private final MendelsonMultiResolutionImage IMAGE_PROXY
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/proxy.svg", 
-                    JDialogPreferences.IMAGE_HEIGHT, JDialogPreferences.IMAGE_HEIGHT*2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/proxy.svg",
+                    JDialogPreferences.IMAGE_HEIGHT, JDialogPreferences.IMAGE_HEIGHT * 2);
 
     /**
      * Creates new form PreferencesPanelDirectories
@@ -50,14 +50,13 @@ public class PreferencesPanelProxy extends PreferencesPanel {
                     + e.getClassName() + " not found.");
         }
         this.preferences = new PreferencesClient(baseClient);
-        this.initComponents();                
-        TextOverlay.addTo( this.jTextFieldProxyPort, this.rb.getResourceString( "label.proxy.port.hint"));
-        TextOverlay.addTo( this.jTextFieldProxyURL, this.rb.getResourceString( "label.proxy.url.hint"));
-        TextOverlay.addTo( this.jTextFieldProxyUser, this.rb.getResourceString( "label.proxy.user.hint"));
-        PasswordOverlay.addTo(this.jPasswordFieldProxyPass, this.rb.getResourceString( "label.proxy.pass.hint"));
+        this.initComponents();
+        TextOverlay.addTo(this.jTextFieldProxyPort, this.rb.getResourceString("label.proxy.port.hint"));
+        TextOverlay.addTo(this.jTextFieldProxyURL, this.rb.getResourceString("label.proxy.url.hint"));
+        TextOverlay.addTo(this.jTextFieldProxyUser, this.rb.getResourceString("label.proxy.user.hint"));
+        PasswordOverlay.addTo(this.jPasswordFieldProxyPass, this.rb.getResourceString("label.proxy.pass.hint"));
     }
 
-    
     private void setButtonState() {
         this.jTextFieldProxyURL.setEnabled(this.jCheckBoxUseProxy.isSelected());
         this.jTextFieldProxyURL.setEditable(this.jCheckBoxUseProxy.isSelected());
@@ -246,34 +245,27 @@ public class PreferencesPanelProxy extends PreferencesPanel {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jTextFieldProxyPortKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldProxyPortKeyReleased
-        try {
-            int proxyPort = Integer.valueOf(this.jTextFieldProxyPort.getText().trim()).intValue();
-            this.preferences.putInt(PreferencesAS2.PROXY_PORT, proxyPort);
-        } catch (Exception e) {
-            //just ignore this - the formerly value will be kept and the user will see this one he opens the preferences again
-        }
+        this.setButtonState();
     }//GEN-LAST:event_jTextFieldProxyPortKeyReleased
 
     private void jCheckBoxUseProxyAuthentificationItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBoxUseProxyAuthentificationItemStateChanged
-        this.preferences.putBoolean(PreferencesAS2.AUTH_PROXY_USE, this.jCheckBoxUseProxyAuthentification.isSelected());
         this.setButtonState();
     }//GEN-LAST:event_jCheckBoxUseProxyAuthentificationItemStateChanged
 
     private void jTextFieldProxyURLKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldProxyURLKeyReleased
-        this.preferences.put(PreferencesAS2.PROXY_HOST, this.jTextFieldProxyURL.getText());
+        this.setButtonState();
     }//GEN-LAST:event_jTextFieldProxyURLKeyReleased
 
     private void jCheckBoxUseProxyItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jCheckBoxUseProxyItemStateChanged
-        this.preferences.putBoolean(PreferencesAS2.PROXY_USE, this.jCheckBoxUseProxy.isSelected());
         this.setButtonState();
     }//GEN-LAST:event_jCheckBoxUseProxyItemStateChanged
 
     private void jPasswordFieldProxyPassKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldProxyPassKeyReleased
-        this.preferences.put(PreferencesAS2.AUTH_PROXY_PASS, new String(this.jPasswordFieldProxyPass.getPassword()));
+        this.setButtonState();
     }//GEN-LAST:event_jPasswordFieldProxyPassKeyReleased
 
     private void jTextFieldProxyUserKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldProxyUserKeyReleased
-        this.preferences.put(PreferencesAS2.AUTH_PROXY_USER, this.jTextFieldProxyUser.getText());
+        this.setButtonState();
     }//GEN-LAST:event_jTextFieldProxyUserKeyReleased
 
 
@@ -294,12 +286,22 @@ public class PreferencesPanelProxy extends PreferencesPanel {
 
     @Override
     public void savePreferences() {
-        //NOP
+        try {
+            int proxyPort = Integer.valueOf(this.jTextFieldProxyPort.getText().trim()).intValue();
+            this.preferences.putInt(PreferencesAS2.PROXY_PORT, proxyPort);
+        } catch (Exception e) {
+            //just ignore this - the formerly value will be kept and the user will see this one he opens the preferences again
+        }
+        this.preferences.putBoolean(PreferencesAS2.AUTH_PROXY_USE, this.jCheckBoxUseProxyAuthentification.isSelected());
+        this.preferences.put(PreferencesAS2.PROXY_HOST, this.jTextFieldProxyURL.getText());
+        this.preferences.putBoolean(PreferencesAS2.PROXY_USE, this.jCheckBoxUseProxy.isSelected());
+        this.preferences.put(PreferencesAS2.AUTH_PROXY_PASS, new String(this.jPasswordFieldProxyPass.getPassword()));
+        this.preferences.put(PreferencesAS2.AUTH_PROXY_USER, this.jTextFieldProxyUser.getText());
     }
 
     @Override
     public ImageIcon getIcon() {
-        return (new ImageIcon( IMAGE_PROXY ));
+        return (new ImageIcon(IMAGE_PROXY));
     }
 
     @Override

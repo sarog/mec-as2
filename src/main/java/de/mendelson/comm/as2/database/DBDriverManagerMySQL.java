@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerMySQL.java 4     2/02/22 14:35 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerMySQL.java 5     2/01/23 13:16 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.database.AbstractDBDriverManagerMySQL;
@@ -17,7 +17,7 @@ import java.sql.SQLException;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class DBDriverManagerMySQL extends AbstractDBDriverManagerMySQL implements IDBDriverManager, ISQLQueryModifier {
 
@@ -109,6 +109,11 @@ public class DBDriverManagerMySQL extends AbstractDBDriverManagerMySQL implement
      */
     @Override
     public String getPoolInformation(int DB_TYPE) {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public String addLimitToQuery(String a, int b) {
         throw new IllegalAccessError();
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/LogFormatterAS2.java 5     3.02.21 11:30 Heller $
+//$Header: /as2/de/mendelson/util/log/LogFormatterAS2.java 7     27/06/22 12:05 Heller $
 package de.mendelson.util.log;
 
 import de.mendelson.comm.as2.message.AS2MDNInfo;
@@ -31,9 +31,9 @@ public class LogFormatterAS2 extends LogFormatter {
     /**
      * Allows references to the user defined processing id for MDNs
      */
-    public LogFormatterAS2(int formatType, IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
+    public LogFormatterAS2(int formatType, IDBDriverManager dbDriverManager) {
         super(formatType);
-        this.messageAccess = new MessageAccessDB(dbDriverManager, configConnection, runtimeConnection);
+        this.messageAccess = new MessageAccessDB(dbDriverManager);
     }
 
     /**
@@ -79,7 +79,8 @@ public class LogFormatterAS2 extends LogFormatter {
                     }
                 }
             }
-        } else if (formatType == LogFormatter.FORMAT_CONSOLE) {
+        } else if (formatType == LogFormatter.FORMAT_CONSOLE 
+                || formatType == LogFormatter.FORMAT_CONSOLE_COLORED) {
             for (Object parameter : recordParameter) {
                 if (parameter instanceof AS2MessageInfo) {
                     AS2MessageInfo messageInfo = (AS2MessageInfo) parameter;

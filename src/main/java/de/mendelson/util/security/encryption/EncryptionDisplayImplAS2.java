@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 3     16.09.21 15:40 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 4     8/12/22 11:35 Heller $
 package de.mendelson.util.security.encryption;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
  * Container superclass for the encryption rendering
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
     
@@ -20,13 +20,13 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
      */
     public final static MendelsonMultiResolutionImage IMAGE_ENCRYPTION_STRONG
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_strong.svg",
-                    ListCellRendererEncryption.IMAGE_HEIGHT, ListCellRendererEncryption.IMAGE_HEIGHT * 2);
+                    ListCellRendererEncryption.IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_ENCRYPTION_WEAK
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_weak.svg",
-                    ListCellRendererEncryption.IMAGE_HEIGHT, ListCellRendererEncryption.IMAGE_HEIGHT * 2);
+                    ListCellRendererEncryption.IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_ENCRYPTION_BROKEN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_broken.svg",
-                    ListCellRendererEncryption.IMAGE_HEIGHT, ListCellRendererEncryption.IMAGE_HEIGHT * 2);
+                    ListCellRendererEncryption.IMAGE_HEIGHT);
     
     private MecResourceBundle rb;
     

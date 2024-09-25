@@ -1,6 +1,7 @@
-//$Header: /oftp2/de/mendelson/util/uinotification/NotificationWindow.java 15    27/01/22 10:23 Heller $package de.mendelson.util.uinotification;
+//$Header: /as2/de/mendelson/util/uinotification/NotificationWindow.java 21    10/05/22 13:18 Heller $package de.mendelson.util.uinotification;
 package de.mendelson.util.uinotification;
 
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -21,6 +22,7 @@ import java.util.concurrent.Executors;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
 import javax.swing.event.MouseInputListener;
@@ -36,7 +38,7 @@ import javax.swing.event.MouseInputListener;
  * Single notification panel
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 21 $
  */
 public class NotificationWindow extends JWindow implements MouseInputListener {
 
@@ -54,9 +56,15 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
     private boolean graphicSupportsTranslucentWindows = false;
     private boolean graphicSupportsShapedWindows = false;
 
-    private JFrame anchorFrame;
-    private NotificationPanel notificationPanel;
-    private JLabel closeCrossLabel;
+    private final JFrame anchorFrame;
+    private final NotificationPanel notificationPanel;
+    private final JLabel closeCrossLabel;
+    private final JPanel closeCrossPanel;
+    private final JPanel notificationTypePanel;
+    private final JPanel textPanel;
+
+    private Color crossColor = Color.BLACK;
+    private Color crossColorMouseOver = Color.WHITE;
 
     /**
      * @param anchorFrame Root frame for the notification position
@@ -97,8 +105,13 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
                 // If the window is resized, the shape is recalculated here.
                 @Override
                 public void componentResized(ComponentEvent e) {
-                    RoundRectangle2D.Float shape = new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 10f, 10f);
+                    RoundRectangle2D.Float shape = new RoundRectangle2D.Float(0, 0,
+                            (int) getWidth(),
+                            (int) getHeight(),
+                            10f, 10f);
                     setShape(shape);
+                    invalidate();
+                    validate();
                 }
             });
         }
@@ -107,7 +120,54 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
         }
         this.setBounds(bounds);
         this.notificationHandler = notificationHandler;
-        this.notificationPanel = new NotificationPanel(image, NOTIFICATION_TYPE, notificationTitle, notificationDetails, bounds);
+        this.notificationPanel = new NotificationPanel(image, NOTIFICATION_TYPE,
+                notificationTitle, notificationDetails, bounds, this.graphicSupportsShapedWindows);
+        this.notificationTypePanel = this.notificationPanel.getNotificationTypePanel();
+        this.textPanel = this.notificationPanel.getTextPanel();
+        this.closeCrossPanel = this.notificationPanel.getCloseCrossPanel();
+        this.closeCrossPanel.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                NotificationWindow.this.setVisible(false);
+                NotificationWindow.this.notificationHandler.deleteNotification(NotificationWindow.this);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        Color backgroundColor = NotificationWindow.this.notificationTypePanel.getBackground();
+                        NotificationWindow.this.closeCrossPanel.setBackground(backgroundColor);
+                        Color bestCrossContrastColor = ColorUtil.getBestContrastColorAroundForeground(backgroundColor, crossColorMouseOver);
+                        ImageIcon crossIcon = UINotification.generateCrossImage(NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
+                        NotificationWindow.this.closeCrossLabel.setIcon(crossIcon);
+                    }
+                });
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        Color backgroundColor = NotificationWindow.this.textPanel.getBackground();
+                        NotificationWindow.this.closeCrossPanel.setBackground(backgroundColor);
+                        Color bestCrossContrastColor = ColorUtil.getBestContrastColorAroundForeground(backgroundColor, crossColor);
+                        ImageIcon crossIcon = UINotification.generateCrossImage(NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
+                        NotificationWindow.this.closeCrossLabel.setIcon(crossIcon);
+                    }
+                });
+            }
+        });
         this.closeCrossLabel = this.notificationPanel.getCloseCrossLabel();
         this.closeCrossLabel.addMouseListener(new MouseListener() {
             @Override
@@ -126,14 +186,30 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
 
             @Override
             public void mouseEntered(MouseEvent e) {
-                NotificationWindow.this.closeCrossLabel.setIcon(
-                        new ImageIcon(UINotification.IMAGE_CROSS_MOUSEOVER.toMinResolution(NotificationPanel.CLOSE_CROSS_SIZE)));
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        Color backgroundColor = NotificationWindow.this.notificationTypePanel.getBackground();
+                        NotificationWindow.this.closeCrossPanel.setBackground(backgroundColor);
+                        Color bestCrossContrastColor = ColorUtil.getBestContrastColorAroundForeground(backgroundColor, crossColorMouseOver);
+                        ImageIcon crossIcon = UINotification.generateCrossImage(NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
+                        NotificationWindow.this.closeCrossLabel.setIcon(crossIcon);
+                    }
+                });
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
-                NotificationWindow.this.closeCrossLabel.setIcon(
-                        new ImageIcon(UINotification.IMAGE_CROSS.toMinResolution(NotificationPanel.CLOSE_CROSS_SIZE)));
+                SwingUtilities.invokeLater(new Runnable() {
+                    @Override
+                    public void run() {
+                        Color backgroundColor = NotificationWindow.this.textPanel.getBackground();
+                        NotificationWindow.this.closeCrossPanel.setBackground(backgroundColor);
+                        Color bestCrossContrastColor = ColorUtil.getBestContrastColorAroundForeground(backgroundColor, crossColor);
+                        ImageIcon crossIcon = UINotification.generateCrossImage(NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
+                        NotificationWindow.this.closeCrossLabel.setIcon(crossIcon);
+                    }
+                });
             }
         });
         this.add(this.notificationPanel, BorderLayout.CENTER);
@@ -215,8 +291,24 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
     /**
      * Redefines the used background colors for the panels
      */
-    public NotificationWindow setBackgroundColors(Color backgroundSuccess, Color backgroundWarning, Color backgroundError, Color backgroundInformation) {
-        this.notificationPanel.setBackgroundColors(backgroundSuccess, backgroundWarning, backgroundError, backgroundInformation);
+    public NotificationWindow setBackgroundColors(
+            Color backgroundSuccessLight,
+            Color backgroundSuccessDark,
+            Color backgroundWarningLight,
+            Color backgroundWarningDark,
+            Color backgroundErrorLight,
+            Color backgroundErrorDark,
+            Color backgroundInformationLight,
+            Color backgroundInformationDark) {
+        this.notificationPanel.setBackgroundColors(
+                backgroundSuccessLight,
+                backgroundSuccessDark,
+                backgroundWarningLight,
+                backgroundWarningDark,
+                backgroundErrorLight,
+                backgroundErrorDark,
+                backgroundInformationLight,
+                backgroundInformationDark);
         return (this);
     }
 
@@ -225,6 +317,16 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
      */
     public NotificationWindow setForegroundColors(Color foregroundTitle, Color foregroundDetails) {
         this.notificationPanel.setForegroundColors(foregroundTitle, foregroundDetails);
+        return (this);
+    }
+
+    /**
+     * Redefines the used cross colors for the panels
+     */
+    public NotificationWindow setCrossColors(Color crossColor, Color crossColorMouseOver) {
+        this.notificationPanel.setCurrentCross(crossColor);
+        this.crossColor = crossColor;
+        this.crossColorMouseOver = crossColorMouseOver;
         return (this);
     }
 

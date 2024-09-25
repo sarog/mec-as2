@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 9     3.07.19 13:12 Heller $
+//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 10    21/10/22 17:12 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 /**
  * Stores key values for the generation process
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class KeyGenerationValues {
 
@@ -41,6 +41,7 @@ public class KeyGenerationValues {
     private KeyUsage keyExtension = null;
     private ExtendedKeyUsage extendedKeyExtension = null;
     private List<GeneralName> subjectAlternativeNames = new ArrayList<GeneralName>();
+    private String ecNamedCurve = null;
 
     /**
      * @return RSA/DSA etc
@@ -236,5 +237,19 @@ public class KeyGenerationValues {
      */
     public void addSubjectAlternativeName(GeneralName name) {
         this.subjectAlternativeNames.add( name );
+    }
+
+    /**
+     * @return the ecNamedCurve
+     */
+    public String getECNamedCurve() {
+        return ecNamedCurve;
+    }
+
+    /**
+     * @param ecNamedCurve the ecNamedCurve to set
+     */
+    public void setECNamedCurve(String ecNamedCurve) {
+        this.ecNamedCurve = ecNamedCurve;
     }
 }

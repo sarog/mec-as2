@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 57    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 58    28/07/22 13:06 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * and sends them
  *
  * @author S.Heller
- * @version $Revision: 57 $
+ * @version $Revision: 58 $
  */
 public class DirPollManager {
 
@@ -58,16 +58,11 @@ public class DirPollManager {
      * Localize the GUI
      */
     private MecResourceBundle rb = null;
-    //DB connection
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private ClientServer clientserver;
     private IDBDriverManager dbDriverManager;
 
-    public DirPollManager(CertificateManager certificateManager, Connection configConnection, Connection runtimeConnection,
+    public DirPollManager(CertificateManager certificateManager, 
             ClientServer clientserver, IDBDriverManager dbDriverManager) throws Exception {
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
         this.clientserver = clientserver;
         this.dbDriverManager = dbDriverManager;
         //Load default resourcebundle
@@ -268,8 +263,8 @@ public class DirPollManager {
      *
      */
     private DirPollThread addPartnerPollThread(Partner localStation, Partner partner) {
-        DirPollThread thread = new DirPollThread(this.dbDriverManager, this.configConnection,
-                this.runtimeConnection, this.clientserver, this.certificateManager,
+        DirPollThread thread = new DirPollThread(this.dbDriverManager, 
+                this.clientserver, this.certificateManager,
                 localStation, partner);
         synchronized (this.mapPollThread) {
             this.mapPollThread.put(localStation.getDBId() + "_" + partner.getDBId(), thread);

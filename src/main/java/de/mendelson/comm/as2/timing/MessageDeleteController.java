@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MessageDeleteController.java 45    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/MessageDeleteController.java 48    25/11/22 11:50 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -44,7 +44,7 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 45 $
+ * @version $Revision: 48 $
  */
 public class MessageDeleteController {
 
@@ -55,24 +55,19 @@ public class MessageDeleteController {
     private PreferencesAS2 preferences = new PreferencesAS2();
     private MessageDeleteThread deleteThread;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-        new NamedThreadFactory("old-transactions-housekeeping"));
+            new NamedThreadFactory("old-transactions-housekeeping"));
     private ClientServer clientserver = null;
     private MecResourceBundle rb = null;
     private MecResourceBundle rbTime = null;
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private LogAccessDB logAccess;
     private IDBDriverManager dbDriverManager;
     private MessageAccessDB messageAccess;
 
-    public MessageDeleteController(ClientServer clientserver, IDBDriverManager dbDriverManager, Connection configConnection,
-            Connection runtimeConnection) {
+    public MessageDeleteController(ClientServer clientserver, IDBDriverManager dbDriverManager) {
         this.clientserver = clientserver;
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
         this.dbDriverManager = dbDriverManager;
         this.logAccess = new LogAccessDB(dbDriverManager);
-        this.messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        this.messageAccess = new MessageAccessDB(this.dbDriverManager);
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -94,7 +89,7 @@ public class MessageDeleteController {
      * Starts the embedded task that guards the log
      */
     public void startAutoDeleteControl() {
-        this.deleteThread = new MessageDeleteThread(this.configConnection, this.runtimeConnection);
+        this.deleteThread = new MessageDeleteThread();
         this.scheduledExecutor.scheduleWithFixedDelay(this.deleteThread, 1, 1, TimeUnit.MINUTES);
     }
 
@@ -106,39 +101,34 @@ public class MessageDeleteController {
      * @param deleteLog
      */
     private void deleteMessageFromLogPart(List<AS2MessageInfo> infoList, boolean broadcastRefresh, StringBuilder deleteLog,
-            Connection runtimeConnectionNoAutoCommit) {
-        try {
-            List<String> messageIdList = new ArrayList<String>();
-            for (AS2MessageInfo messageInfo : infoList) {
-                messageIdList.add(messageInfo.getMessageId());
-            }
-            this.logAccess.deleteMessageLog(messageIdList, runtimeConnectionNoAutoCommit);
-            //delete all raw files from the disk
-            List<String> rawfilenames = this.messageAccess.getRawFilenamesToDelete(messageIdList, runtimeConnectionNoAutoCommit);
-            if (rawfilenames != null && !rawfilenames.isEmpty()) {
-                for (String rawfilename : rawfilenames) {
-                    try {
-                        Files.delete(Paths.get(rawfilename));
-                        deleteLog.append("[" + rb.getResourceString("delete.ok") + "]: ");
-                    } catch (NoSuchFileException e) {
-                        deleteLog.append("[" + rb.getResourceString("delete.skipped")
-                                + "]: (" + e.getClass().getSimpleName() + ")  " + e.getMessage());
-                    } catch (Exception e) {
-                        deleteLog.append("[" + rb.getResourceString("delete.failed")
-                                + "]: (" + e.getClass().getSimpleName() + ")  " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_FILE_OPERATION_ANY);
-                        new File(rawfilename).deleteOnExit();
-                    }
-                    deleteLog.append("  ");
-                    deleteLog.append(Paths.get(rawfilename).toAbsolutePath().toString());
-                    deleteLog.append(System.lineSeparator());
-                }
-            }
-            this.messageAccess.deleteMessages(messageIdList, runtimeConnectionNoAutoCommit);
-        } catch (Exception e) {
-            this.logger.severe("deleteMessageFromLog: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+            Connection runtimeConnectionNoAutoCommit) throws Exception {
+        List<String> messageIdList = new ArrayList<String>();
+        for (AS2MessageInfo messageInfo : infoList) {
+            messageIdList.add(messageInfo.getMessageId());
         }
+        this.logAccess.deleteMessageLog(messageIdList, runtimeConnectionNoAutoCommit);
+        //delete all raw files from the disk
+        List<String> rawfilenames = this.messageAccess.getRawFilenamesToDelete(messageIdList, runtimeConnectionNoAutoCommit);
+        if (rawfilenames != null && !rawfilenames.isEmpty()) {
+            for (String rawfilename : rawfilenames) {
+                try {
+                    Files.delete(Paths.get(rawfilename));
+                    deleteLog.append("[" + rb.getResourceString("delete.ok") + "]: ");
+                } catch (NoSuchFileException e) {
+                    deleteLog.append("[" + rb.getResourceString("delete.skipped")
+                            + "]: (" + e.getClass().getSimpleName() + ")  " + e.getMessage());
+                } catch (Exception e) {
+                    deleteLog.append("[" + rb.getResourceString("delete.failed")
+                            + "]: (" + e.getClass().getSimpleName() + ")  " + e.getMessage());
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_FILE_OPERATION_ANY);
+                    new File(rawfilename).deleteOnExit();
+                }
+                deleteLog.append("  ");
+                deleteLog.append(Paths.get(rawfilename).toAbsolutePath().toString());
+                deleteLog.append(System.lineSeparator());
+            }
+        }
+        this.messageAccess.deleteMessages(messageIdList, runtimeConnectionNoAutoCommit);
         if (broadcastRefresh && this.clientserver != null) {
             this.clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
         }
@@ -211,22 +201,15 @@ public class MessageDeleteController {
 
     public class MessageDeleteThread implements Runnable {
 
-        //DB connection
-        private Connection configConnection;
-        private Connection runtimeConnection;
-
-        public MessageDeleteThread(Connection configConnection, Connection runtimeConnection) {
-            this.configConnection = configConnection;
-            this.runtimeConnection = runtimeConnection;
+        public MessageDeleteThread() {
         }
 
         @Override
         public void run() {
             try {
                 if (preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE)) {
-                    MessageAccessDB messageAccess = null;
+                    MessageAccessDB messageAccess = new MessageAccessDB(dbDriverManager);
                     try {
-                        messageAccess = new MessageAccessDB(dbDriverManager, this.configConnection, this.runtimeConnection);
                         long olderThan = System.currentTimeMillis()
                                 - TimeUnit.SECONDS.toMillis(
                                         preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN)

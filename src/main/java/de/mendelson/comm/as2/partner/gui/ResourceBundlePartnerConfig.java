@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig.java 12    20.09.18 13:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig.java 13    26/08/22 14:17 Heller $
 package de.mendelson.comm.as2.partner.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundlePartnerConfig extends MecResourceBundle{
     
@@ -31,6 +31,7 @@ public class ResourceBundlePartnerConfig extends MecResourceBundle{
         {"button.new", "New" },
         {"button.clone", "Clone" },
         {"button.delete", "Delete" },
+        {"button.globalchange", "Global" },
         {"nolocalstation.message", "There has to be defined min one partner as local station." },
         {"nolocalstation.title", "No local station" },
         {"localstation.noprivatekey.message", "Please assign a private key to every of the local stations." },

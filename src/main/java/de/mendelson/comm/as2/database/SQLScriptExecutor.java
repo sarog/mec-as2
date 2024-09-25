@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/SQLScriptExecutor.java 12    15.10.20 12:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/SQLScriptExecutor.java 15    21/06/22 17:35 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -9,13 +9,13 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.logging.Logger;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -23,32 +23,38 @@ import java.util.logging.Logger;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
- * Class that can execute SQL scripts or execute predefined
- * commands which are assigned to scripts
+ * Class that can execute SQL scripts or execute predefined commands which are
+ * assigned to scripts
+ *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class SQLScriptExecutor {
 
-   private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    /**Directory where the SQL scripts are found*/
+    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    /**
+     * Directory where the SQL scripts are found
+     */
     public static final String SCRIPT_RESOURCE_CONFIG = "/sqlscript/config/";
     public static final String SCRIPT_RESOURCE_RUNTIME = "/sqlscript/runtime/";
     private ISQLQueryModifier queryModifier = null;
 
-    /** Creates new SQLScriptExecutor */
+    /**
+     * Creates new SQLScriptExecutor
+     */
     public SQLScriptExecutor() {
     }
 
-     public void setQueryModifier(ISQLQueryModifier queryModifier){
+    public void setQueryModifier(ISQLQueryModifier queryModifier) {
         this.queryModifier = queryModifier;
     }
-    
-    /**creates a new database
+
+    /**
+     * creates a new database
+     *
      * @param connection connection to the database
-     * @param RESOURCE resource type as defined in the class 
+     * @param RESOURCE resource type as defined in the class
      */
     public void create(Connection connection, final String RESOURCE, int version) throws Exception {
         PreparedStatement statement = null;
@@ -60,8 +66,8 @@ public class SQLScriptExecutor {
             //fill in values
             statement.setInt(1, version);
             statement.setTimestamp(2, new Timestamp(System.currentTimeMillis()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
-            statement.setString(3, AS2ServerVersion.getProductName() 
-                    + " " + AS2ServerVersion.getVersion() + " " 
+            statement.setString(3, AS2ServerVersion.getProductName()
+                    + " " + AS2ServerVersion.getVersion() + " "
                     + AS2ServerVersion.getBuild() + ": initial installation");
             statement.executeUpdate();
             statement.close();
@@ -72,7 +78,9 @@ public class SQLScriptExecutor {
         }
     }
 
-    /**Checks if the resource exist
+    /**
+     * Checks if the resource exist
+     *
      * @param resource Resource to check for existence
      */
     public boolean resourceExists(String resource) {
@@ -92,10 +100,13 @@ public class SQLScriptExecutor {
         }
     }
 
-    /**Executes a SQL script to make changes to the database
-     * @param resource FULL Resource of the sql script, e.g. "/sqlscript/config/script.sql"
+    /**
+     * Executes a SQL script to make changes to the database
+     *
+     * @param resource FULL Resource of the sql script, e.g.
+     * "/sqlscript/config/script.sql"
      * @param connection connection to the database
-     *@return true if everything worked fine
+     * @return true if everything worked fine
      */
     public void executeScript(Connection connection, String resource) throws Exception {
         InputStream is = null;
@@ -113,10 +124,13 @@ public class SQLScriptExecutor {
         }
     }
 
-    /**Executes a SQL script to make changes to the database
-     * @param resource FULL Resource of the sql script, e.g. "/sqlscript/config/script.sql"
+    /**
+     * Executes a SQL script to make changes to the database
+     *
+     * @param resource FULL Resource of the sql script, e.g.
+     * "/sqlscript/config/script.sql"
      * @param connection connection to the database
-     *@return true if everything worked fine
+     * @return true if everything worked fine
      */
     private void executeScript(Connection connection, InputStream is) throws Exception {
         ConsoleProgressBar.print(0f);
@@ -129,29 +143,29 @@ public class SQLScriptExecutor {
                 queryList.add(line);
             }
         }
-        Statement statement = null;
         String lastQuery = "";
-        try {
-            int counter = 0;
-            statement = connection.createStatement();
-            for (String query : queryList) {
-                counter++;
-                String modifiedQuery = null;
-                if( this.queryModifier != null ){
-                    modifiedQuery = this.queryModifier.modifyQuery(query);
-                }else{
-                    modifiedQuery = query;
+        int counter = 0;
+        for (String query : queryList) {            
+            counter++;
+            String modifiedQuery = null;
+            if (this.queryModifier != null) {
+                modifiedQuery = this.queryModifier.modifyQuery(query);
+            } else {
+                modifiedQuery = query;
+            }
+            lastQuery = modifiedQuery;
+            float percent = ((float) counter / (float) queryList.size()) * 100f;
+            ConsoleProgressBar.print(percent);
+            PreparedStatement statement = null;
+            try {
+                statement = connection.prepareStatement(modifiedQuery);
+                statement.executeUpdate();
+            } finally {
+                if (statement != null) {
+                    statement.close();
                 }
-                lastQuery = modifiedQuery;
-                float percent = ((float) counter / (float) queryList.size()) * 100f;
-                ConsoleProgressBar.print(percent);
-                int returnValue = statement.executeUpdate(modifiedQuery);
             }
-        } finally {
-            if (statement != null) {
-                statement.close();
-            }
-            System.out.println();
         }
+        System.out.println();
     }
 }

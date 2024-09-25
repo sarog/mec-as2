@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_de.java 3     3.02.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager_de.java 5     26/07/22 16:34 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.database.IDBDriverManager;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleDBDriverManager_de extends MecResourceBundle {
 
@@ -29,9 +29,11 @@ public class ResourceBundleDBDriverManager_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
+        {"module.name", "[DATENBANK]" },
         {"creating.database." + IDBDriverManager.DB_RUNTIME, "Erstelle Laufzeitdatenbank"},
         {"creating.database." + IDBDriverManager.DB_CONFIG, "Erstelle Konfigurationsdatenbank"},
+        {"creating.database.details", "Host: {0}, Port: {1}, Benutzer: {2}, DB Name: {3}"},
         {"database.creation.success." + IDBDriverManager.DB_RUNTIME, "Die Laufzeitdatenbank wurde erfolgreich erstellt" },
         {"database.creation.success." + IDBDriverManager.DB_CONFIG, "Die Konfigurationsdatenbank wurde erfolgreich erstellt" },
         {"database.creation.failed." + IDBDriverManager.DB_RUNTIME, "Ein Fehler trat beim Erstellen der Laufzeitdatenbank auf" },

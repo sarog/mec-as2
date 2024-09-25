@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 17    11.10.19 9:44 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 21    26/09/22 10:19 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.ColorUtil;
@@ -40,7 +40,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * or a passed object
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 21 $
  */
 public class JDialogInfoOnExternalCertificate extends JDialog {
 
@@ -139,7 +139,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     }
     
     private void setMultiresolutionIcons() {
-        this.jLabelIcon.setIcon(new ImageIcon(TableModelCertificates.ICON_CERTIFICATE_MULTIRESOLUTION.toMinResolution(32)));
+        this.jLabelIcon.setIcon(new ImageIcon(TableModelCertificates.IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(32)));
     }
     
     
@@ -192,10 +192,10 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         List<String> infoList = null;
         InputStream inStream = null;
         try {
-            Provider provBC = new BouncyCastleProvider();
             inStream = Files.newInputStream(certFile);
             KeyStoreUtil util = new KeyStoreUtil();
-            List<X509Certificate> certList = util.readCertificates(inStream, provBC);
+            List<X509Certificate> certList = util.readCertificates(inStream, 
+                    BouncyCastleProvider.PROVIDER_NAME);
             certListToFill.addAll(certList);
             infoList = this.getInfo(certList);
             //add file info to info text
@@ -274,7 +274,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         jPanelHeader.setLayout(new java.awt.GridBagLayout());
 
         jButtonIndexDown.setText("<<");
-        jButtonIndexDown.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonIndexDown.setMargin(new java.awt.Insets(10, 10, 10, 10));
         jButtonIndexDown.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonIndexDownActionPerformed(evt);
@@ -289,7 +289,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         jPanelHeader.add(jButtonIndexDown, gridBagConstraints);
 
         jButtonIndexUp.setText(">>");
-        jButtonIndexUp.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonIndexUp.setMargin(new java.awt.Insets(10, 10, 10, 10));
         jButtonIndexUp.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jButtonIndexUpActionPerformed(evt);

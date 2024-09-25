@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 17    4.10.21 11:57 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 19    26/09/22 10:19 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -35,7 +35,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Export a private key into a pkcs#12 keystore
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class JDialogExportKeyPKCS12 extends JDialog {
 
@@ -109,7 +109,8 @@ public class JDialogExportKeyPKCS12 extends JDialog {
             KeyStoreUtil util = new KeyStoreUtil();
             KeyStore sourceKeystore = this.manager.getKeystore();
             String selectedAlias = (String) this.jComboBoxAlias.getSelectedItem();
-            KeyStore targetKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, new BouncyCastleProvider());
+            KeyStore targetKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+                    BouncyCastleProvider.PROVIDER_NAME);
             util.loadKeyStore(targetKeystore, this.jTextFieldExportPKCS12File.getText(),
                     this.jPasswordFieldPassphrase.getPassword());
             String keystoreFormat = this.manager.getKeystoreType();

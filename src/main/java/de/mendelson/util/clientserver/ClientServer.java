@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServer.java 29    21.09.21 14:13 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientServer.java 32    23/08/22 10:28 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.BCCryptoHelper;
@@ -16,6 +17,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.KeyManager;
@@ -41,16 +44,17 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
  * Server root for the mendelson client/server architecture
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 32 $
  */
 public class ClientServer {
 
     private long startTime = 0;
-    private Logger logger;
+    private final Logger logger;
     private ClientServerSessionHandler sessionHandler = null;
-    private int port = 0;
+    private int port;
     private String productName = "";
     public static final String[] SERVERSIDE_ACCEPTED_TLS_PROTOCOLS = new String[]{ "TLSv1.2" };
+    private final MecResourceBundle rb;
 
     /**
      * Creates a new instance of Server
@@ -58,6 +62,14 @@ public class ClientServer {
     public ClientServer(Logger logger, int port) {
         this.port = port;
         this.logger = logger;
+        //load resource bundle
+        try {
+            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleClientServer.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
     }
 
     public void setSessionHandler(ClientServerSessionHandler sessionHandler) {
@@ -92,7 +104,11 @@ public class ClientServer {
      * Finally starts the server
      */
     public void start() throws Exception {
-        this.logger.log(Level.INFO, "Starting " + this.productName + " client-server interface, listening on port " + this.port);
+        this.logger.log(Level.INFO, this.rb.getResourceString("clientserver.start",
+                new Object[]{
+                    this.productName,
+                    String.valueOf(this.port)
+                }));
         if (this.sessionHandler != null) {
             this.sessionHandler.setProductName(this.productName);
         } else {
@@ -103,7 +119,6 @@ public class ClientServer {
         SslFilter sslFilter = new SslFilter(this.createSSLContext());
         //If client authentication is disabled the client certificate must not be in the servers keystore
         sslFilter.setNeedClientAuth(false);
-        sslFilter.setUseClientMode(false);
         //allow defined TLS protocols only for the client-server connection
         sslFilter.setEnabledProtocols(SERVERSIDE_ACCEPTED_TLS_PROTOCOLS);
         acceptor.getFilterChain().addFirst("TLS", sslFilter);
@@ -119,7 +134,7 @@ public class ClientServer {
         }
         //finally bind the protocol handler to the port
         acceptor.bind(new InetSocketAddress(this.port));
-        this.logger.log(Level.INFO, this.productName + " client-server interface started.");
+        this.logger.log(Level.INFO,this.rb.getResourceString( "clientserver.started", this.productName));
         this.startTime = System.currentTimeMillis();
     }
 
@@ -187,7 +202,7 @@ public class ClientServer {
         if (this.sessionHandler != null) {
             return (this.sessionHandler.getSessions());
         } else {
-            List emptyList = new ArrayList<IoSession>();
+            List<IoSession> emptyList = new ArrayList<IoSession>();
             return (Collections.unmodifiableList(emptyList));
         }
     }

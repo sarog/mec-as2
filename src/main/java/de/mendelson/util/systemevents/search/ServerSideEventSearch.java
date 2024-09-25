@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 10    3.12.21 14:22 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 11    1/06/22 14:49 Heller $
 package de.mendelson.util.systemevents.search;
 
 import de.mendelson.util.systemevents.SystemEvent;
@@ -57,7 +57,7 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class ServerSideEventSearch {
 
@@ -312,8 +312,7 @@ public class ServerSideEventSearch {
      * Recreates a search index for system events in the passed directory for
      * the passed event date
      */
-    private void recreateIndex(Date date, String indexDirStr) throws IOException {
-        long startTime = System.currentTimeMillis();
+    private void recreateIndex(Date date, String indexDirStr) throws IOException {        
         IndexWriter indexWriter = null;
         Path indexDirPath = Paths.get(indexDirStr);
         //generate index
@@ -322,8 +321,8 @@ public class ServerSideEventSearch {
             IndexWriterConfig config = new IndexWriterConfig();
             indexWriter = new IndexWriter(indexDir, config);
             Path storageDir = Paths.get("log",
-                    this.dailySubDirFormat.format(date)
-                    + FileSystems.getDefault().getSeparator() + "events");
+                    this.dailySubDirFormat.format(date),
+                    "events");
             DirectoryStream<Path> dirStream = null;
             try {
                 dirStream = Files.newDirectoryStream(storageDir);
@@ -392,7 +391,6 @@ public class ServerSideEventSearch {
                 e.printStackTrace();
             }
         }
-        //System.out.println("Recreated index " + indexDirPath.toString() + " in " + (System.currentTimeMillis()-startTime) + "ms");
     }
 
 //    public static final void main(String[] args) {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest.java 10    4.11.20 15:50 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest.java 12    20/06/22 11:22 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleConnectionTest extends MecResourceBundle {
 
@@ -58,7 +58,9 @@ public class ResourceBundleConnectionTest extends MecResourceBundle {
         {"test.connection.proxy.noauth", "The connection uses the proxy at {0} without authentication" },
         {"result.exception", "The following exception happened on the server during the test: {0}" },     
         {"info.protocols", "The client allows the following TLS protocols to be negotiated: {0}" },
+        {"info.securityprovider", "Used TLS security provider: {0}" },
         {"sni.extension.set", "TLS SNI Extension host name set to \"{0}\"" },
+        {"local.station", "Local station" },
     };
 
 }

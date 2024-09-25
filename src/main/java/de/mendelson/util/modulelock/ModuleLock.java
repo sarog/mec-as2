@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/modulelock/ModuleLock.java 13    26.08.21 14:00 Heller $
+//$Header: /oftp2/de/mendelson/util/modulelock/ModuleLock.java 15    5/08/22 17:09 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.database.IDBDriverManager;
@@ -26,7 +26,7 @@ import javax.swing.JOptionPane;
  * all other clients should have just a read-only view.
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 15 $
  */
 public class ModuleLock {
 
@@ -161,25 +161,17 @@ public class ModuleLock {
     /**
      * Releases all locks, should be executed on server start
      */
-    public synchronized static void releaseAllLocks(Connection runtimeConnection) {
-        Statement transactionStatement = null;
+    public synchronized static void releaseAllLocks(IDBDriverManager dbDriverManager) {
+        Connection runtimeConnectionAutoCommit = null;
         try {
-            _deleteAllLocks(runtimeConnection, 0L);
-            if (!runtimeConnection.getAutoCommit()) {
-                transactionStatement.execute("COMMIT");
-            }
+            runtimeConnectionAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+            _deleteAllLocks(runtimeConnectionAutoCommit, 0L);
         } catch (Exception e) {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
-                }
-            }
         } finally {
-            if (transactionStatement != null) {
+            if (runtimeConnectionAutoCommit != null) {
                 try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
+                    runtimeConnectionAutoCommit.close();
+                } catch (Exception e) {
                 }
             }
         }
@@ -395,6 +387,30 @@ public class ModuleLock {
                     result.close();
                 } catch (Exception e) {
                     //nop
+                }
+            }
+        }
+        return (null);
+    }
+
+    /**
+     * Checks for an existing lock on the requested module and return the lock
+     * keeper if there is one of null if there is none This is non transactional
+     * - it just reads information
+     */
+    public static LockClientInformation getCurrentLockKeeper(String moduleName, IDBDriverManager dbDriverManager) throws Exception {
+        Connection runtimeConnectionAutoCommit = null;
+        try {
+            runtimeConnectionAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+            return (getCurrentLockKeeper(moduleName, runtimeConnectionAutoCommit));
+        } catch (Exception e) {
+            logger.severe("ModuleLock.getCurrentLockKeeper: " + e.getMessage());
+        } finally {
+            if (runtimeConnectionAutoCommit != null) {
+                try {
+                    runtimeConnectionAutoCommit.close();
+                } catch (Exception e) {
+                    logger.severe("ModuleLock.getCurrentLockKeeper: " + e.getMessage());
                 }
             }
         }

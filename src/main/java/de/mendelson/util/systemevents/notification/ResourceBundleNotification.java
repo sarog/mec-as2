@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification.java 10    9.10.19 13:56 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification.java 13    7/10/22 10:37 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleNotification extends MecResourceBundle {
 
@@ -29,10 +29,10 @@ public class ResourceBundleNotification extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
-        //dialog
+    static final Object[][] CONTENTS = {        
+        {"module.name", "[MAIL NOTIFICATION]" },
         {"test.message.send", "A test email has been sent to {0}."},
-        {"test.message.debug", "\nThe send mail process has been failed, here are some debug information that might help you:\n"},
+        {"test.message.debug", "\nThe send mail process failed.\n"},
         {"misc.message.send", "A notification mail has been sent to {0} ({1}-{2})."},
         {"misc.message.send.failed", "The notification send process to {0} failed"},
         {"notification.about.event", "This notification is related to the system event from {0}.\nSeverity: {1}\nOrigin: {2}\nType: {3}\nId: {4}"},
@@ -43,6 +43,10 @@ public class ResourceBundleNotification extends MecResourceBundle {
             + "Then enter the unique number of the event in the search mask."},
         {"misc.message.summary.send", "A notification mail has been sent to {0} (summary)"},
         {"misc.message.summary.failed", "The notification send process to {0} failed (summary)"},
-        {"do.not.reply", "Please do not reply to this mail."},};
+        {"do.not.reply", "Please do not reply to this mail."},
+        {"authorization.none", "NONE" },
+        {"authorization.oauth2", "OAUTH2" },
+        {"authorization.credentials", "User/password" },
+    };
 
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 52    25.03.21 17:54 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 53    17/01/23 14:16 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 52 $
+ * @version $Revision: 53 $
  */
 public class ResourceBundleAS2Gui extends MecResourceBundle {
 
@@ -32,7 +32,7 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"menu.file.certificates", "Certificates"},
         {"menu.file.certificate", "Certificates"},
         {"menu.file.certificate.signcrypt", "Sign/Crypt"},
-        {"menu.file.certificate.ssl", "SSL/TLS"},
+        {"menu.file.certificate.ssl", "TLS"},
         {"menu.file.cem", "Certificate Exchange Manager (CEM)"},
         {"menu.file.cemsend", "Exchange certificates with partners (CEM)"},
         {"menu.file.statistic", "Statistic"},

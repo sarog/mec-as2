@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 20    26.08.21 14:00 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 24    13/10/22 11:16 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -11,7 +11,6 @@ import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
-import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.statistic.QuotaAccessDB;
 import de.mendelson.comm.as2.statistic.StatisticOverviewEntry;
@@ -22,7 +21,6 @@ import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.systemevents.notification.ResourceBundleNotification;
 import java.nio.file.Path;
-import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.DateFormat;
@@ -44,29 +42,14 @@ import java.util.ResourceBundle;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 24 $
  */
 public class SystemEventManagerImplAS2 extends SystemEventManager {
-
-    private PreferencesAS2 preferences = new PreferencesAS2();
-    /**
-     * localize your output
-     */
-    private MecResourceBundle rb = null;
 
     /**
      * Constructor without notification data, will perform a lookup in the db
      */
     public SystemEventManagerImplAS2() {
-        super();
-        //Load resourcebundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleNotification.class.getName());
-        } //load up  resourcebundle        
-        catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
     }
 
     public void newEventResendDetected(AS2MessageInfo newMessageInfo, AS2MessageInfo alreadyExistingMessageInfo,
@@ -180,10 +163,9 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * @param partner
      */
     public void newEventPartnerSendQuotaExceededCheck(Partner localStation, Partner partner,
-            IDBDriverManager dbDriverManager, 
-            Connection configConnection, Connection runtimeConnection) {
+            IDBDriverManager dbDriverManager) {
         StatisticOverviewEntry entry = null;
-        QuotaAccessDB access = new QuotaAccessDB(dbDriverManager, configConnection, runtimeConnection);
+        QuotaAccessDB access = new QuotaAccessDB(dbDriverManager);
         entry = access.getStatisticOverview(
                 localStation.getAS2Identification(), partner.getAS2Identification());
         if (partner.isNotifySendEnabled() && partner.getNotifySend() == entry.getSendMessageCount()) {
@@ -210,9 +192,9 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * @param partner
      */
     public void newEventPartnerReceiveQuotaExceededCheck(Partner localStation, Partner partner,
-            IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
+            IDBDriverManager dbDriverManager) {
         StatisticOverviewEntry entry = null;
-        QuotaAccessDB access = new QuotaAccessDB(dbDriverManager, configConnection, runtimeConnection);
+        QuotaAccessDB access = new QuotaAccessDB(dbDriverManager);
         entry = access.getStatisticOverview(
                 localStation.getAS2Identification(), partner.getAS2Identification());
         if (partner.isNotifyReceiveEnabled() && partner.getNotifyReceive() == entry.getReceivedMessageCount()) {
@@ -346,16 +328,16 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * @param partner
      */
     public void newEventPartnerSendReceiveQuotaExceededCheck(Partner localStation, Partner partner,
-            IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
+            IDBDriverManager dbDriverManager) {
         StatisticOverviewEntry entry = null;
-        QuotaAccessDB access = new QuotaAccessDB(dbDriverManager, configConnection, runtimeConnection);
+        QuotaAccessDB access = new QuotaAccessDB(dbDriverManager);
         entry = access.getStatisticOverview(
                 localStation.getAS2Identification(), partner.getAS2Identification());
         if (partner.isNotifySendReceiveEnabled() && partner.getNotifySendReceive() == entry.getSendMessageCount() + entry.getReceivedMessageCount()) {
             String template = "template_notification_sendreceivequota_exceeded";
             Properties replacement = new Properties();
             replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
-            replacement.setProperty("${HOST}", this.getHostname());
+            replacement.setProperty("${HOST}", getHostname());
             replacement.setProperty("${PARTNER}", partner.getName());
             replacement.setProperty("${QUOTA}", String.valueOf(partner.getNotifyReceive()));
             SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_WARNING, SystemEvent.ORIGIN_SYSTEM,
@@ -393,7 +375,24 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
         event.readFromNotificationTemplate(templateName, replacement);
         this.storeEventToFile(event);
     }
-
+    
+    /**
+     * Sends an email that a certification will expire
+     */
+    public void newEventLicenseWillExpire(long expireInDays, String formattedExpireDate) throws Exception {
+        String templateName = "template_notification_license_expire";
+        Properties replacement = new Properties();
+        replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
+        replacement.setProperty("${HOST}", this.getHostname());        
+        replacement.setProperty("${DURATION}", String.valueOf(expireInDays));
+        replacement.setProperty("${EXPIRE_DATE}", formattedExpireDate);
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_SYSTEM, 
+                SystemEvent.TYPE_LICENSE_EXPIRE);
+        event.readFromNotificationTemplate(templateName, replacement);
+        this.storeEventToFile(event);
+    }
+    
+    
     /**
      * Sends an email that a CEM has been received
      */
@@ -449,9 +448,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
     /**
      * Returns the message info object a a passed message id from the database
      */
-    private AS2MessageInfo lookupMessageInfo(String messageId, IDBDriverManager dbDriverManager, 
-            Connection configConnection, Connection runtimeConnection) throws Exception {
-        MessageAccessDB messageAccess = new MessageAccessDB(dbDriverManager, configConnection, runtimeConnection);
+    private AS2MessageInfo lookupMessageInfo(String messageId, IDBDriverManager dbDriverManager) throws Exception {
+        MessageAccessDB messageAccess = new MessageAccessDB(dbDriverManager);
         AS2MessageInfo info = messageAccess.getLastMessageEntry(messageId);
         if (info == null) {
             throw new Exception("No message entry found for " + messageId);
@@ -462,14 +460,13 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
     /**
      * Sends an email that an error occurred in a transaction
      */
-    public void newEventTransactionError(String messageId, IDBDriverManager dbDriverManager, 
-            Connection configConnection, Connection runtimeConnection) {
+    public void newEventTransactionError(String messageId, IDBDriverManager dbDriverManager) {
         AS2MessageInfo info = null;
         try {
             //get additional properties for the notification eMail
             String senderName = "Unknown";
             String receiverName = "Unknown";
-            info = this.lookupMessageInfo(messageId, dbDriverManager, configConnection, runtimeConnection);
+            info = this.lookupMessageInfo(messageId, dbDriverManager);
             //lookup partner            
             PartnerAccessDB partnerAccess = new PartnerAccessDB(dbDriverManager);
             if (info.getSenderId() != null) {
@@ -486,7 +483,7 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
             }
             LogAccessDB logAccess = new LogAccessDB(dbDriverManager);
             StringBuilder log = new StringBuilder();
-            List<LogEntry> entries = logAccess.getLog(runtimeConnection, messageId);
+            List<LogEntry> entries = logAccess.getLog(messageId);
             DateFormat format = DateFormat.getDateTimeInstance();
             for (LogEntry entry : entries) {
                 if (log.length() > 0) {
@@ -521,4 +518,19 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
         return (AS2Server.LOG_DIR);
     }
 
+    @Override
+    public void handleSystemFailure(Throwable exception, int eventType, PreparedStatement statement) {
+        SystemEventManagerImplAS2.systemFailure(exception, eventType, statement);
+    }
+
+    @Override
+    public void handleSystemFailure(Throwable exception, int eventType) {
+        SystemEventManagerImplAS2.systemFailure(exception, eventType);
+    }
+
+    @Override
+    public void handleSystemFailure(Throwable exception) {
+        SystemEventManagerImplAS2.systemFailure(exception);
+    }
+    
 }

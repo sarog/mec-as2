@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 23    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 24    8/12/22 11:34 Heller $
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -48,7 +48,7 @@ import javax.swing.JFrame;
  * Winzard to create a PDF that contains a data sheet
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class JDialogCreateDataSheet extends JDialog {
 
@@ -109,7 +109,7 @@ public class JDialogCreateDataSheet extends JDialog {
     }
 
     private void initializeComboboxes() {
-        this.jComboBoxEncryptionType.setRenderer(new ListCellRendererEncryption());
+        this.jComboBoxEncryptionType.setRenderer(new ListCellRendererEncryption(this.jComboBoxEncryptionType));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_NONE)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_40)));
@@ -127,7 +127,7 @@ public class JDialogCreateDataSheet extends JDialog {
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_128)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_DES)));
         this.jComboBoxEncryptionType.setSelectedItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));
-        this.jComboBoxSignType.setRenderer(new ListCellRendererSignature());
+        this.jComboBoxSignType.setRenderer(new ListCellRendererSignature(this.jComboBoxSignType));
         this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_NONE)));
         this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_SHA1)));
         this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_MD5)));

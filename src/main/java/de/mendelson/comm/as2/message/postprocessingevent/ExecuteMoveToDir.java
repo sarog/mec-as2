@@ -1,10 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToDir.java 8     25.03.21 16:37 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToDir.java 11    24/08/22 14:57 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
-import de.mendelson.comm.as2.message.MDNAccessDB;
 import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
@@ -15,7 +14,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.sql.Connection;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -34,7 +32,7 @@ import java.util.logging.Logger;
  * message receipt
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 11 $
  */
 public class ExecuteMoveToDir implements IProcessingExecution {
 
@@ -46,8 +44,8 @@ public class ExecuteMoveToDir implements IProcessingExecution {
      */
     private MecResourceBundle rb = null;
 
-    public ExecuteMoveToDir(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.messageAccess = new MessageAccessDB(dbDriverManager, configConnection, runtimeConnection);
+    public ExecuteMoveToDir(IDBDriverManager dbDriverManager) {
+        this.messageAccess = new MessageAccessDB(dbDriverManager);
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
         //Load resourcebundle
         try {
@@ -67,13 +65,14 @@ public class ExecuteMoveToDir implements IProcessingExecution {
         //get all required values for this event
         AS2MessageInfo messageInfo = this.messageAccess.getLastMessageEntry(event.getMessageId());
         if (messageInfo == null) {
-            throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", messageInfo.getMessageId()));
-        }
-        if (event.getEventType() == ProcessingEvent.TYPE_SEND_FAILURE
-                || event.getEventType() == ProcessingEvent.TYPE_SEND_SUCCESS) {
-            this.executeMoveToDirOnSend(event, messageInfo);
+            throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", event.getMessageId()));
         } else {
-            this.executeMoveToDirOnReceipt(event, messageInfo);
+            if (event.getEventType() == ProcessingEvent.TYPE_SEND_FAILURE
+                    || event.getEventType() == ProcessingEvent.TYPE_SEND_SUCCESS) {
+                this.executeMoveToDirOnSend(event, messageInfo);
+            } else {
+                this.executeMoveToDirOnReceipt(event, messageInfo);
+            }
         }
     }
 
@@ -121,7 +120,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
                 }
             }
         } else {
-            throw new PostprocessingException("executeMoveToDirOnSend: No payload found for message " 
+            throw new PostprocessingException("executeMoveToDirOnSend: No payload found for message "
                     + messageInfo.getMessageId(),
                     messageSender, messageReceiver);
         }
@@ -131,7 +130,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
      * Executes a shell command for an inbound AS2 message if this has been
      * defined in the partner settings
      */
-    private void executeMoveToDirOnReceipt(ProcessingEvent event, AS2MessageInfo messageInfo) throws Exception{
+    private void executeMoveToDirOnReceipt(ProcessingEvent event, AS2MessageInfo messageInfo) throws Exception {
         //do not execute a command for CEM messages
         if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
             return;

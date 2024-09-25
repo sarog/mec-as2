@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 42    2/02/22 16:22 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 43    2/01/23 16:47 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.httpconfig.gui.JDialogDisplayHTTPConfiguration;
@@ -34,14 +34,15 @@ import de.mendelson.comm.as2.partner.gui.ListCellRendererPartner;
 import de.mendelson.comm.as2.preferences.JDialogPreferences;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.preferences.PreferencesPanel;
+import de.mendelson.comm.as2.preferences.PreferencesPanelConnectivity;
 import de.mendelson.comm.as2.preferences.PreferencesPanelDirectories;
 import de.mendelson.comm.as2.preferences.PreferencesPanelInterface;
 import de.mendelson.comm.as2.preferences.PreferencesPanelLog;
 import de.mendelson.comm.as2.preferences.PreferencesPanelMDN;
 import de.mendelson.comm.as2.preferences.PreferencesPanelNotification;
 import de.mendelson.comm.as2.preferences.PreferencesPanelProxy;
-import de.mendelson.comm.as2.preferences.PreferencesPanelSecurity;
 import de.mendelson.comm.as2.preferences.PreferencesPanelSystemMaintenance;
+import de.mendelson.comm.as2.preferences.ResourceBundlePreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.ColorUtil;
@@ -54,9 +55,14 @@ import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.Splash;
 import de.mendelson.util.clientserver.ClientsideMessageProcessor;
 import de.mendelson.util.clientserver.GUIClient;
+import de.mendelson.util.clientserver.SyncRequestTimeoutException;
+import de.mendelson.util.clientserver.about.ServerInfoRequest;
+import de.mendelson.util.clientserver.about.ServerInfoResponse;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadRequestFile;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadResponseFile;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClientWithProgress;
+import de.mendelson.util.clientserver.clients.preferences.ConfigurationChangedOnServer;
+import de.mendelson.util.clientserver.clients.preferences.ConfigurationChangedOnServerPreferences;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.clientserver.log.search.gui.JDialogSearchLogfile;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -65,9 +71,13 @@ import de.mendelson.util.clientserver.messages.ServerInfo;
 import de.mendelson.util.log.LogFormatter;
 import de.mendelson.util.log.LogFormatterAS2;
 import de.mendelson.util.log.panel.LogConsolePanel;
+import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.DefaultKeyCopyHandler;
+import de.mendelson.util.security.cert.KeyCopyHandler;
 import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
+import de.mendelson.util.security.cert.clientserver.KeystoreStorageImplClientServer;
 import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import de.mendelson.util.security.cert.gui.ResourceBundleCertificates;
 import de.mendelson.util.systemevents.gui.JDialogSystemEvents;
@@ -148,6 +158,7 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledExecutorService;
 
 /*
@@ -161,7 +172,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Main GUI for the control of the mendelson AS2 server
  *
  * @author S.Heller
- * @version $Revision: 42 $
+ * @version $Revision: 43 $
  */
 public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorterListener,
         ClientsideMessageProcessor, MouseListener, PopupMenuListener, ModuleStarter,
@@ -179,44 +190,42 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
      * Icons, multi resolution
      */
     private static final MendelsonMultiResolutionImage ICON_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/delete.svg", IMAGE_SIZE_MENU_ITEM,
-                    IMAGE_SIZE_MENU_ITEM * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/delete.svg", IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage IMAGE_FILTER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/filter.svg", IMAGE_SIZE_MENU_ITEM,
-                    IMAGE_SIZE_MENU_ITEM * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/filter.svg", IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage IMAGE_FILTER_ACTIVE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/filter_active.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_MESSAGE_DETAILS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/messagedetails.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_CERTIFICATE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_MANUAL_SEND
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/send.svg",
                     IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_TOOLBAR * 2);
     private static final MendelsonMultiResolutionImage ICON_PARTNER
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/singlepartner.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_STOP
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/stop.svg",
-                    IMAGE_SIZE_TOOLBAR, IMAGE_SIZE_TOOLBAR * 2);
+                    IMAGE_SIZE_TOOLBAR);
     private static final MendelsonMultiResolutionImage ICON_COLUMN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/tables/hideablecolumns/column.svg",
-                    IMAGE_SIZE_TOOLBAR, IMAGE_SIZE_TOOLBAR * 2);
+                    IMAGE_SIZE_TOOLBAR);
     private static final MendelsonMultiResolutionImage ICON_LOG_SEARCH
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/log/search/gui/magnifying_glass.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_TOOLBAR * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_PORTS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/httpconfig/gui/ports.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_EXIT
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/exit.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_PREFERENCES
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/preferences.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     public static final MendelsonMultiResolutionImage IMAGE_PRODUCT_LOGO_WITH_TEXT
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/logo_open_source_with_text.svg",
                     100, 180);
@@ -226,27 +235,35 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     private static final MendelsonMultiResolutionImage ICON_PENDING
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_pending.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_STOPPED
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_stopped.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage ICON_FINISHED
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_finished.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private final static MendelsonMultiResolutionImage ICON_HIDE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/hide.svg",
                     IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2,
                     SVGScalingOption.KEEP_HEIGHT);
     private final static MendelsonMultiResolutionImage ICON_SYSINFO
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/sysinfo.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private final static MendelsonMultiResolutionImage ICON_CEM
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg",
-                    IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2);
+                    IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage IMAGE_NEW_VERSION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/import_red.svg", 16, 32);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/import_red.svg", 16);
+    private final static MendelsonMultiResolutionImage IMAGE_HOURGLASS
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/hourglass.svg",
+                    IMAGE_SIZE_MENU_ITEM,
+                    IMAGE_SIZE_TOOLBAR * 2);
+    private static final MendelsonMultiResolutionImage IMAGE_PREFERENCES
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/preferences.svg",
+                    IMAGE_SIZE_MENU_ITEM,
+                    IMAGE_SIZE_TOOLBAR * 2);
 
     /**
      * Preferences of the application
@@ -256,8 +273,9 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     /**
      * Resourcebundle to localize the GUI
      */
-    private MecResourceBundle rb = null;
-    private MecResourceBundle rbCertGui = null;
+    private MecResourceBundle rb;
+    private MecResourceBundle rbCertGui;
+    private MecResourceBundle rbPreferences;
     /**
      * actual loaded helpset
      */
@@ -351,6 +369,13 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        //load resource bundle
+        try {
+            this.rbPreferences = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundlePreferencesAS2.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
         initComponents();
         this.setMultiresolutionIcons();
         this.initializeDesktopIntegration();
@@ -371,16 +396,16 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 this.clientPreferences.getInt(PreferencesAS2.FRAME_HEIGHT));
         //ensure to display all messages
         this.getLogger().setLevel(Level.ALL);
-        this.consolePanel = new LogConsolePanel(this.getLogger(), new LogFormatterAS2(LogFormatter.FORMAT_CONSOLE));
+        this.consolePanel = new LogConsolePanel(this.getLogger(),
+                new LogFormatterAS2(LogFormatter.FORMAT_CONSOLE_COLORED));
         //define the colors for the log levels
-        consolePanel.setColor(Level.SEVERE, LogConsolePanel.COLOR_BROWN);
-        consolePanel.setColor(Level.WARNING, LogConsolePanel.COLOR_BLUE);
+        consolePanel.setColor(Level.SEVERE, LogConsolePanel.COLOR_DARK_RED);
+        consolePanel.setColor(Level.WARNING, LogConsolePanel.COLOR_DARK_BLUE);
         consolePanel.setColor(Level.INFO, LogConsolePanel.COLOR_BLACK);
         consolePanel.setColor(Level.CONFIG, LogConsolePanel.COLOR_DARK_GREEN);
-        consolePanel.setColor(Level.FINE, LogConsolePanel.COLOR_DARK_GREEN);
-        consolePanel.setColor(Level.FINER, LogConsolePanel.COLOR_OLIVE);
-        consolePanel.setColor(Level.FINEST, LogConsolePanel.COLOR_DARK_GREEN);
-        consolePanel.adjustColorsByContrast();
+        consolePanel.setColor(Level.FINE, LogConsolePanel.COLOR_LIGHT_GRAY);
+        consolePanel.setColor(Level.FINER, LogConsolePanel.COLOR_LIGHT_GRAY);
+        consolePanel.setColor(Level.FINEST, LogConsolePanel.COLOR_LIGHT_GRAY);
         this.jPanelServerLog.add(consolePanel);
         String title = AS2ServerVersion.getProductName() + " " + AS2ServerVersion.getVersion();
         if (host != null && !host.equals("localhost")) {
@@ -562,20 +587,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
      * Initializes the User Interface notification - also for the dark mode
      */
     private void initializeUINotification(String displayMode) {
-        Color notificationBackgroundSuccess = UINotification.DEFAULT_COLOR_BACKGROUND_SUCCESS;
-        Color notificationBackgroundInformation = UINotification.DEFAULT_COLOR_BACKGROUND_INFORMATION;
-        Color notificationBackgroundWarning = UINotification.DEFAULT_COLOR_BACKGROUND_WARNING;
-        Color notificationBackgroundError = UINotification.DEFAULT_COLOR_BACKGROUND_ERROR;
-        Color notificationForegroundTitle = UINotification.DEFAULT_COLOR_FOREGROUND_TITLE;
-        Color notificationForegroundDetails = UINotification.DEFAULT_COLOR_FOREGROUND_DETAILS;
-        if (displayMode != null && displayMode.equalsIgnoreCase("DARK")) {
-            notificationBackgroundSuccess = ColorUtil.darkenColor(notificationBackgroundSuccess, 0.2f);
-            notificationBackgroundInformation = ColorUtil.darkenColor(notificationBackgroundInformation, 0.2f);
-            notificationBackgroundWarning = ColorUtil.darkenColor(notificationBackgroundWarning, 0.2f);
-            notificationBackgroundError = ColorUtil.darkenColor(notificationBackgroundError, 0.2f);
-            notificationForegroundTitle = Color.DARK_GRAY;
-            notificationForegroundDetails = Color.DARK_GRAY;
-        }
+        boolean dark = displayMode != null && displayMode.equalsIgnoreCase("DARK");
         UINotification.instance()
                 .setAnchor(this)
                 .setStart(UINotification.START_POS_RIGHT_LOWER)
@@ -584,15 +596,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                         UINotification.DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEIN_IN_MS,
                         UINotification.DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS,
                         UINotification.DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEOUT_IN_MS)
-                .setBackgroundColors(
-                        notificationBackgroundSuccess,
-                        notificationBackgroundWarning,
-                        notificationBackgroundError,
-                        notificationBackgroundInformation)
-                .setForegroundColors(
-                        notificationForegroundTitle,
-                        notificationForegroundDetails);
-
+                .setAllColorsDefaultFromUIManager(dark);
     }
 
     private void configureHideableColumns() {
@@ -1128,11 +1132,11 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         Executors.newSingleThreadExecutor().submit(runnable);
     }
 
+
     /**
      * The client received a message from the server
      */
     @Override
-
     public boolean processMessageFromServer(ClientServerMessage message) {
         if (message instanceof RefreshClientMessageOverviewList) {
             RefreshClientMessageOverviewList refreshRequest = (RefreshClientMessageOverviewList) message;
@@ -1154,9 +1158,49 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
             //return true for this message even if it is not processed here to prevent a
             //warning that the message was not processed
             return (true);
+        } else if (message instanceof ConfigurationChangedOnServer) {
+            this.preferencesChangedOnServer((ConfigurationChangedOnServer) message);
+            return (true);
         }
         //not processed here
         return (false);
+    }
+
+    /**
+     * Compute a change of a preference on the server side
+     */
+    private void preferencesChangedOnServer(ConfigurationChangedOnServer message) {
+        if (message.getType() == ConfigurationChangedOnServer.TYPE_SERVER_PREFERENCES) {
+            ConfigurationChangedOnServerPreferences messagePreferences = (ConfigurationChangedOnServerPreferences) message;
+            StringBuilder text = new StringBuilder()
+                    .append(this.rbPreferences.getResourceString(messagePreferences.getKey()))
+                    .append(" ")
+                    .append(this.rbPreferences.getResourceString("set.to"))
+                    .append(" ");
+            if ((messagePreferences.getOldValue().toUpperCase().equals("TRUE")
+                    || messagePreferences.getOldValue().toUpperCase().equals("FALSE"))
+                    && (messagePreferences.getNewValue().toUpperCase().equals("TRUE")
+                    || messagePreferences.getNewValue().toUpperCase().equals("FALSE"))) {
+                text.append("[")
+                        .append(this.rbPreferences.getResourceString(messagePreferences.getNewValue().toUpperCase()))
+                        .append("]");
+            } else {
+                text.append("[")
+                        .append(messagePreferences.getNewValue())
+                        .append("]");
+            }
+            UINotification.instance().addNotification(
+                    IMAGE_PREFERENCES,
+                    UINotification.TYPE_INFORMATION,
+                    this.rbPreferences.getResourceString("setting.updated"),
+                    text.toString());
+        } else if (message.getType() == ConfigurationChangedOnServer.TYPE_NOTIFICATION_SETTINGS) {
+            UINotification.instance().addNotification(
+                    IMAGE_PREFERENCES,
+                    UINotification.TYPE_INFORMATION,
+                    this.rbPreferences.getResourceString("setting.updated"),
+                    this.rbPreferences.getResourceString("notification.setting.updated"));
+        }
     }
 
     /**
@@ -1193,9 +1237,10 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
                     char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
                     String filename = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
-                    dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this, AS2Gui.this.rbCertGui.getResourceString("title.ssl"),
+                    dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), 
+                            AS2Gui.this, AS2Gui.this.rbCertGui.getResourceString("title.ssl"),
                             AS2ServerVersion.getFullProductName(), false,
-                            null, null);
+                            ModuleLock.MODULE_SSL_KEYSTORE, null);
                     dialog.setImageSizePopup(AS2Gui.IMAGE_SIZE_POPUP);
                     dialog.setSelectionByAlias(selectedAlias);
                     KeystoreStorage storage = new KeystoreStorageImplFile(
@@ -1204,6 +1249,15 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                             KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
                     );
                     dialog.initialize(storage);
+                    char[] keystorePassTLS = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
+                    String keystoreNameTLS = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);                    
+                    KeyCopyHandler keycopyHandler = new DefaultKeyCopyHandler(
+                            AS2Gui.this.getBaseClient(), 
+                            keystoreNameTLS, keystorePassTLS, 
+                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_SSL,
+                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_JKS, 
+                            ModuleLock.MODULE_SSL_KEYSTORE);
+                    dialog.setKeyCopyHandler(keycopyHandler);
                 } catch (Throwable e) {
                     e.printStackTrace();
                     AS2Gui.this.getLogger().severe("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
@@ -1235,7 +1289,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this,
                             AS2Gui.this.rbCertGui.getResourceString("title.signencrypt"),
                             AS2ServerVersion.getFullProductName(), false,
-                            null, null);
+                            ModuleLock.MODULE_ENCSIGN_KEYSTORE, null);
                     dialog.setImageSizePopup(AS2Gui.IMAGE_SIZE_POPUP);
                     KeystoreStorage storage = new KeystoreStorageImplFile(
                             keystoreName, keystorePass,
@@ -1243,6 +1297,15 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                             KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
                     );
                     dialog.initialize(storage);
+                    char[] keystorePassEncSign = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
+                    String keystoreNameEncSign = client.get(PreferencesAS2.KEYSTORE);  
+                    KeyCopyHandler keycopyHandler = new DefaultKeyCopyHandler(
+                            AS2Gui.this.getBaseClient(), 
+                            keystoreNameEncSign, keystorePassEncSign, 
+                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN,
+                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_PKCS12, 
+                            ModuleLock.MODULE_ENCSIGN_KEYSTORE);
+                    dialog.setKeyCopyHandler(keycopyHandler);
                     CertificateUsedByPartnerChecker checker = new CertificateUsedByPartnerChecker(AS2Gui.this.getBaseClient());
                     dialog.addCertificateInUseChecker(checker);
                 } catch (Throwable e) {
@@ -1292,7 +1355,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     @Override
     public void displayPreferences(final String selectedTab) {
         final String uniqueId = this.getClass().getName() + ".displayPreferences." + System.currentTimeMillis();
-        Runnable test = new Runnable() {
+        Runnable prefRunner = new Runnable() {
             @Override
             public void run() {
                 JDialogPreferences dialog = null;
@@ -1300,27 +1363,34 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 AS2Gui.this.as2StatusBar.startProgressIndeterminate(
                         AS2Gui.this.rb.getResourceString("menu.file.preferences"), uniqueId);
                 try {
+                    AS2Gui.this.jMenuItemFilePreferences.setEnabled(false);
                     List<PreferencesPanel> panelList = new ArrayList<PreferencesPanel>();
                     panelList.add(new PreferencesPanelMDN(AS2Gui.this.getBaseClient()));
+                    panelList.add(new PreferencesPanelConnectivity(AS2Gui.this.getBaseClient()));
                     panelList.add(new PreferencesPanelProxy(AS2Gui.this.getBaseClient()));
-                    panelList.add(new PreferencesPanelSecurity(AS2Gui.this.getBaseClient()));
+                    //modifying the underlaying keystore settings makes only sense if HA is enabled
+                    ServerInfoResponse infoResponse = (ServerInfoResponse) AS2Gui.this.getBaseClient().sendSync(new ServerInfoRequest());
                     panelList.add(new PreferencesPanelDirectories(AS2Gui.this.getBaseClient()));
                     panelList.add(new PreferencesPanelSystemMaintenance(AS2Gui.this.getBaseClient()));
                     panelList.add(new PreferencesPanelNotification(AS2Gui.this.getBaseClient(), AS2Gui.this.as2StatusBar));
                     panelList.add(new PreferencesPanelInterface(AS2Gui.this.getBaseClient()));
                     panelList.add(new PreferencesPanelLog(AS2Gui.this.getBaseClient()));
-                    dialog = new JDialogPreferences(AS2Gui.this, panelList, selectedTab);
+                    dialog = new JDialogPreferences(AS2Gui.this, panelList, selectedTab, "");
                 } catch (Exception e) {
+                    UINotification.instance().addNotification(e);
                     e.printStackTrace();
                 } finally {
                     AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                     if (dialog != null) {
                         dialog.setVisible(true);
                     }
+                    AS2Gui.this.jMenuItemFilePreferences.setEnabled(true);
                 }
             }
         };
-        Executors.newSingleThreadExecutor().submit(test);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(prefRunner);
+        executor.shutdown();
     }
 
     @Override
@@ -1361,7 +1431,8 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                             AS2Gui.this,
                             AS2Gui.this.as2StatusBar, true, null,
                             certificateManagerEncSign,
-                            certificateManagerSSL, systemresponse.getPartnerSystems());
+                            certificateManagerSSL, systemresponse.getPartnerSystems(),
+                            "");
                     if (partnername != null) {
                         dialog.setPreselectedPartner(partnername);
                     }
@@ -2434,11 +2505,24 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
     }
 
     /**
-     * Makes this a ClientSesionHandlerCallback
+     * Makes this a ClientSesionHandlerCallback. This is called if a sync
+     * request failed
      */
     @Override
-    public void syncRequestFailed(Throwable throwable) {
-        this.logger.severe(throwable.getMessage());
+    public void syncRequestFailed(ClientServerMessage request, ClientServerMessage response, Throwable throwable) {
+        //the client has a timeout problem either sending data to the server or receiving a sync answer 
+        //in the defined time . Ignore the payload requests. If there are huge changes on the server these could be
+        //really a huge amount of requests (up to 1000) - and so a timeout might happen.
+        if (throwable instanceof SyncRequestTimeoutException) {
+            if (request != null && !(request instanceof MessagePayloadRequest)) {
+                UINotification.instance().addNotification(AS2Gui.IMAGE_HOURGLASS,
+                        UINotification.TYPE_WARNING,
+                        AS2Gui.this.rb.getResourceString("server.answer.timeout.title"),
+                        AS2Gui.this.rb.getResourceString("server.answer.timeout.details"));
+            }
+        } else {
+            this.logger.severe(throwable.getMessage());
+        }
     }
 
     @Override
@@ -2468,7 +2552,7 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
 
         private boolean overviewRefreshRequested = true;
         private boolean partnerRefreshRequested = true;
-        private LazyLoaderThread lazyLoader = null;
+        private LazyPayloadLoaderThread lazyLoader = null;
         private boolean firstStart = true;
 
         @Override
@@ -2513,7 +2597,10 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
          */
         public void refreshTablePartnerData() {
             try {
-                List<Partner> partnerList = ((PartnerListResponse) AS2Gui.this.sendSync(new PartnerListRequest(PartnerListRequest.LIST_ALL))).getList();
+                List<Partner> partnerList = ((PartnerListResponse) AS2Gui.this.sendSync(
+                        new PartnerListRequest(
+                                PartnerListRequest.LIST_ALL,
+                                PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE))).getList();
                 Map<String, Partner> partnerMap = new HashMap<String, Partner>();
                 for (Partner partner : partnerList) {
                     partnerMap.put(partner.getAS2Identification(), partner);
@@ -2529,9 +2616,11 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
         /**
          * Loads the payloads for the passed messages in the background
          */
-        private void lazyloadPayloads(final List<AS2Message> messageList) {
-            this.lazyLoader = new LazyLoaderThread(messageList);
-            Executors.newSingleThreadExecutor().submit(this.lazyLoader);
+        private void lazyloadPayloads() {
+            this.lazyLoader = new LazyPayloadLoaderThread();
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            executor.submit(this.lazyLoader);
+            executor.shutdown();
         }
 
         /**
@@ -2576,43 +2665,51 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
                 int countPending = 0;
                 int countFailure = 0;
                 int countSelected = 0;
-                MessageOverviewResponse response = ((MessageOverviewResponse) AS2Gui.this.sendSync(new MessageOverviewRequest(filter)));
-                List<AS2MessageInfo> overviewList = response.getList();
-                int countAll = response.getMessageSumOnServer();
-                countServed = overviewList.size();
-                List<AS2Message> messageList = new ArrayList<AS2Message>();
-                for (AS2MessageInfo messageInfo : overviewList) {
-                    AS2Message message = new AS2Message(messageInfo);
-                    switch (messageInfo.getState()) {
-                        case AS2Message.STATE_FINISHED:
-                            countOk++;
-                            break;
-                        case AS2Message.STATE_PENDING:
-                            countPending++;
-                            break;
-                        case AS2Message.STATE_STOPPED:
-                            countFailure++;
-                            break;
+                //The response will be null if the server could not answer in the set timeout - bad connection or system under heavy load?
+                MessageOverviewResponse response = ((MessageOverviewResponse) AS2Gui.this.sendSync(
+                        new MessageOverviewRequest(filter)));
+                if (response != null) {
+                    List<AS2MessageInfo> overviewList = response.getList();
+                    int countAll = response.getMessageSumOnServer();
+                    countServed = overviewList.size();
+                    List<AS2Message> messageList = new ArrayList<AS2Message>();
+                    for (AS2MessageInfo messageInfo : overviewList) {
+                        AS2Message message = new AS2Message(messageInfo);
+                        switch (messageInfo.getState()) {
+                            case AS2Message.STATE_FINISHED:
+                                countOk++;
+                                break;
+                            case AS2Message.STATE_PENDING:
+                                countPending++;
+                                break;
+                            case AS2Message.STATE_STOPPED:
+                                countFailure++;
+                                break;
+                        }
+                        //add the payloads related to this message
+                        messageList.add(message);
                     }
-                    //add the payloads related to this message
-                    messageList.add(message);
+                    TableModelMessageOverview tableModel = (TableModelMessageOverview) AS2Gui.this.jTableMessageOverview.getModel();
+                    tableModel.passNewData(messageList);
+                    //try to jump to latest entry
+                    try {
+                        int rowCount = AS2Gui.this.jTableMessageOverview.getRowCount();
+                        AS2Gui.this.jTableMessageOverview.getSelectionModel().
+                                setSelectionInterval(rowCount - 1, rowCount - 1);
+                        RefreshThread.this.makeRowVisible(AS2Gui.this.jTableMessageOverview, rowCount - 1);
+                    } catch (Throwable ignore) {
+                        //nop
+                    }
+                    countSelected = AS2Gui.this.jTableMessageOverview.getSelectedRowCount();
+                    AS2Gui.this.as2StatusBar.setTransactionCount(
+                            countAll, countServed, countOk, countPending,
+                            countFailure, countSelected);
+                    //lazy load the payloads of the underlaying table that have not been loaded so far
+                    this.lazyloadPayloads();
                 }
-                TableModelMessageOverview tableModel = (TableModelMessageOverview) AS2Gui.this.jTableMessageOverview.getModel();
-                tableModel.passNewData(messageList);
-                this.lazyloadPayloads(messageList);
-                //try to jump to latest entry
-                try {
-                    int rowCount = AS2Gui.this.jTableMessageOverview.getRowCount();
-                    AS2Gui.this.jTableMessageOverview.getSelectionModel().
-                            setSelectionInterval(rowCount - 1, rowCount - 1);
-                    RefreshThread.this.makeRowVisible(AS2Gui.this.jTableMessageOverview, rowCount - 1);
-                } catch (Throwable ignore) {
-                    //nop
-                }
-                countSelected = AS2Gui.this.jTableMessageOverview.getSelectedRowCount();
-                AS2Gui.this.as2StatusBar.setTransactionCount(countAll, countServed, countOk, countPending, countFailure, countSelected);
             } catch (Exception e) {
-                AS2Gui.this.getLogger().severe("refreshMessageOverviewList: " + e.getMessage());
+                UINotification.instance().addNotification(e);
+                e.printStackTrace();
             } finally {
                 AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
             }
@@ -2660,13 +2757,21 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
         }
     }
 
-    private class LazyLoaderThread implements Runnable {
+    private class LazyPayloadLoaderThread implements Runnable {
 
-        private List<AS2Message> messageList = new ArrayList<AS2Message>();
+        private final List<AS2Message> messageListToUpdate;
         private boolean stopLazyLoad = false;
 
-        public LazyLoaderThread(List<AS2Message> messageList) {
-            this.messageList.addAll(messageList);
+        /**
+         *
+         * @param existingMessageList List of messages that have been already
+         * updated
+         * @param newMessageList
+         */
+        public LazyPayloadLoaderThread() {
+            TableModelMessageOverview tableModel = (TableModelMessageOverview) AS2Gui.this.jTableMessageOverview.getModel();
+            //most time the list of transactions to upload should be empty - only if there is activity this will change
+            this.messageListToUpdate = tableModel.getMessagesWithoutPassedPayloads();
         }
 
         public void stopLazyLoad() {
@@ -2676,12 +2781,13 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
         @Override
         public void run() {
             TableModelMessageOverview tableModel = (TableModelMessageOverview) AS2Gui.this.jTableMessageOverview.getModel();
-            for (AS2Message message : this.messageList) {
+            for (AS2Message message : this.messageListToUpdate) {
                 //bail out, lazy load is no longer required because a new overview refresh occured
                 if (this.stopLazyLoad) {
                     break;
                 } else {
-                    List<AS2Payload> payloads = ((MessagePayloadResponse) AS2Gui.this.sendSync(new MessagePayloadRequest(message.getAS2Info().getMessageId()))).getList();
+                    List<AS2Payload> payloads = ((MessagePayloadResponse) AS2Gui.this.sendSync(
+                            new MessagePayloadRequest(message.getAS2Info().getMessageId()))).getList();
                     tableModel.passPayload(message, payloads);
                 }
             }

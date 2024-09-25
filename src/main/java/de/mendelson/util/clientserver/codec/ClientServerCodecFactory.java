@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerCodecFactory.java 3     4/06/18 10:56a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerCodecFactory.java 4     11/02/22 13:14 Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.clientserver.ClientSessionHandlerCallback;
@@ -18,14 +18,12 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 /**
  * Factory that handles encoding/decoding of the requests
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ClientServerCodecFactory implements ProtocolCodecFactory {
 
     private final ProtocolEncoder encoder;
     private final ProtocolDecoder decoder;
-    /**This may be null if there is no callback or this is not a client instance*/
-    private final ClientSessionHandlerCallback clientCallback;
 
     /**
      * 
@@ -35,7 +33,6 @@ public class ClientServerCodecFactory implements ProtocolCodecFactory {
     public ClientServerCodecFactory( Logger logger, ClientSessionHandlerCallback clientCallback) {
         this.encoder = new ClientServerEncoder();
         this.decoder = new ClientServerDecoder(logger, clientCallback);
-        this.clientCallback = clientCallback;
     }
 
     @Override

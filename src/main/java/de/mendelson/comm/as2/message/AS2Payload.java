@@ -1,10 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 17    26.07.21 15:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 19    24/08/22 12:55 Heller $
 package de.mendelson.comm.as2.message;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -25,17 +22,17 @@ import java.nio.file.StandardOpenOption;
  * have multiple attachments in as2 transmission
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class AS2Payload implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    
+
     /**
      * Original filename of the sender, mustnt be provided
      */
     private String originalFilename = null;
-    private ByteStorage data = new ByteStorage();
+    private final ByteStorage byteStorage = new ByteStorage();
     /**
      * Filename of the payload in the as2 system
      */
@@ -62,7 +59,7 @@ public class AS2Payload implements Serializable {
         StringBuilder buffer = new StringBuilder();
         buffer.append("originalFilename=\t\t").append(this.originalFilename);
         buffer.append("\n");
-        buffer.append("data size=\t\t").append(this.data != null ? String.valueOf(this.data.getSize()) : "0");
+        buffer.append("data size=\t\t").append(this.byteStorage != null ? String.valueOf(this.byteStorage.getSize()) : "0");
         buffer.append("\n");
         buffer.append("payloadFilename=\t\t").append(this.payloadFilename);
         buffer.append("\n");
@@ -79,11 +76,11 @@ public class AS2Payload implements Serializable {
     }
 
     public byte[] getData() throws Exception {
-        return this.data.get();
+        return this.byteStorage.get();
     }
 
     public void setData(byte[] data) throws Exception {
-        this.data.put(data);
+        this.byteStorage.put(data);
     }
 
     public String getPayloadFilename() {
@@ -102,11 +99,11 @@ public class AS2Payload implements Serializable {
         InputStream inStream = null;
         try {
             outStream = Files.newOutputStream(file,
-                    StandardOpenOption.SYNC, 
-                    StandardOpenOption.CREATE, 
-                    StandardOpenOption.TRUNCATE_EXISTING, 
+                    StandardOpenOption.SYNC,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE);
-            inStream = this.data.getInputStream();
+            inStream = this.byteStorage.getInputStream();
             inStream.transferTo(outStream);
         } finally {
             if (outStream != null) {
@@ -133,18 +130,24 @@ public class AS2Payload implements Serializable {
             inStream.transferTo(outStream);
         } finally {
             if (outStream != null) {
-                outStream.flush();
-                outStream.close();
+                try {
+                    outStream.flush();
+                    outStream.close();
+                } finally {
+                }
             }
             if (inStream != null) {
-                inStream.close();
+                try {
+                    inStream.close();
+                } finally {
+
+                }
             }
         }
         if (outStream != null) {
-            this.data.put(outStream.toByteArray());
+            this.byteStorage.put(outStream.toByteArray());
         }
     }
-    
 
     /**
      * @return the contentId
@@ -181,8 +184,8 @@ public class AS2Payload implements Serializable {
      * Releases all resources that have been allocated, e.g. temp files
      */
     public void releaseResources() {
-        if (this.data != null) {
-            this.data.release();
+        if (this.byteStorage != null) {
+            this.byteStorage.release();
         }
     }
 }

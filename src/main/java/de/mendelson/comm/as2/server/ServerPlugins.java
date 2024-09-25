@@ -1,7 +1,8 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/server/ServerPlugins.java 3     2/02/22 14:35 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/server/ServerPlugins.java 6     23/01/23 13:13 Heller $
 package de.mendelson.comm.as2.server;
 
 import java.io.Serializable;
+import java.time.LocalDateTime;
 import java.util.logging.Logger;
 
 
@@ -13,10 +14,10 @@ import java.util.logging.Logger;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Stores information about the activation state of the plugins
+ * Not implemented in the community edition
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class ServerPlugins implements Serializable {
 
@@ -26,6 +27,9 @@ public class ServerPlugins implements Serializable {
     public static final String PLUGIN_JAVA_API = "Java_API";
     public static final String PLUGIN_MYSQL = "MySQL";
     public static final String PLUGIN_REST_API = "REST_API";
+    public static final String PLUGIN_WEBINTERFACE = "Webinterface";
+    public static final String PLUGIN_ORACLE_DB = "OracleDB";
+    public static final String PLUGIN_OAUTH2 = "OAUTH2";
 
     public ServerPlugins() {
     }
@@ -33,22 +37,22 @@ public class ServerPlugins implements Serializable {
     public void displayActivationState(Logger logger) {
     }
 
-    public void setStartPlugins(boolean dummy) {
+    public void setStartPlugins(boolean a) {
     }
 
-    public void setActivated(final String dummy, boolean dummy1) {
+    public void setActivated(final String a, boolean b) {
     }
 
-    public boolean isActivated(final String dummy) {
-        return (false);
+    public boolean isActivated(final String a) {
+        return( a.equals( PLUGIN_WEBINTERFACE));
     }
 
-    public String getVersion(final String dummy) {
+    public String getVersion(final String a) {
         return ("--");
     }
 
     public String getStartedPluginsAsString() {
-        return ("--");
+        return (PLUGIN_WEBINTERFACE);
     }
 
     /**
@@ -58,11 +62,20 @@ public class ServerPlugins implements Serializable {
         return( "Community edition");
     }
 
-    /**
-     * @return the licenseEndDate
-     */
-    public String getLicenseExpireDate() {
-        return "00";
+    public LocalDateTime getLicenseExpireDate() {
+        return( LocalDateTime.now().plusYears(999));
+    }
+        
+    public String getLicenseExpireDateAsString() {
+        return( "00000000" );
+    }
+        
+    public boolean licenseWillExpire() {
+        return (false);
+    }
+        
+    public long getLicenseExpiresInDays() {        
+        return (999);
     }
     
 }

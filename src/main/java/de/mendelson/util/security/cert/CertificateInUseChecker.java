@@ -1,7 +1,5 @@
-//$Header: /as2/de/mendelson/util/security/cert/CertificateInUseChecker.java 3     11.11.20 17:06 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/CertificateInUseChecker.java 4     7/04/22 10:33 Heller $
 package de.mendelson.util.security.cert;
-
-import java.util.List;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,11 +11,11 @@ import java.util.List;
 /**
  * Checks if a certificate is in use
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public interface CertificateInUseChecker {
 
-    /**Returns null or an empty list if this certificate is not in use*/
-    public List<CertificateInUseInfo> checkUsed(KeystoreCertificate cert); 
+    /**Returns an empty element if this certificate is not in use*/
+    public CertificateInUseInfo checkUsed(KeystoreCertificate cert); 
     
 }

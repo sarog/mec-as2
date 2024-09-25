@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/util/database/DebuggableConnection.java 9     2/02/22 12:59 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/database/DebuggableConnection.java 10    10/11/22 11:57 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Array;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * Database connection that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class DebuggableConnection implements Connection {
 
@@ -65,7 +65,7 @@ public class DebuggableConnection implements Connection {
         String uniqueId = this.createId();
         this.connectionName = connectionName + " " + uniqueId;
         if( this.connectionLogger != null ){
-            this.connectionLogger.info( "New DB connection with the internal id [" + this.connectionName + "] has been established");
+            this.connectionLogger.info( "New connection [" + this.connectionName + "]");
         }
     }
      
@@ -93,7 +93,7 @@ public class DebuggableConnection implements Connection {
     public void close() throws SQLException {
         this.connection.close();
         if( this.connectionLogger != null ){
-            this.connectionLogger.info( "The DB connection with the internal id [" + this.connectionName + "] has been closed");
+            this.connectionLogger.info( "Connection closed [" + this.connectionName + "]");
         }
     }
 
@@ -101,7 +101,7 @@ public class DebuggableConnection implements Connection {
     public void commit() throws SQLException {
         this.connection.commit();
         if( this.connectionLogger != null ){
-            this.connectionLogger.info( "COMMIT performed on DB connection [" + this.connectionName + "] ");
+            this.connectionLogger.info( "COMMIT on [" + this.connectionName + "] ");
         }
     }
 
@@ -253,7 +253,7 @@ public class DebuggableConnection implements Connection {
     @Override
     public void rollback() throws SQLException {
         if( this.connectionLogger != null ){
-            this.connectionLogger.info( "ROLLBACK performed on DB connection [" + this.connectionName + "]");
+            this.connectionLogger.info( "ROLLBACK on [" + this.connectionName + "]");
         }
         this.connection.rollback();
     }
@@ -261,7 +261,7 @@ public class DebuggableConnection implements Connection {
     @Override
     public void rollback(Savepoint savepoint) throws SQLException {
         if( this.connectionLogger != null ){
-            this.connectionLogger.info( "ROLLBACK FROM SAVEPOINT performed on DB connection [" + this.connectionName + "]");
+            this.connectionLogger.info( "ROLLBACK FROM SAVEPOINT on [" + this.connectionName + "]");
         }
         this.connection.rollback(savepoint);
     }

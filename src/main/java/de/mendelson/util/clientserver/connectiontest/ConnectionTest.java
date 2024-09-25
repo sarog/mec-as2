@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 19    19.11.21 10:35 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 22    24/08/22 17:33 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.net.InetSocketAddress;
 import java.net.Proxy;
 import java.net.Socket;
+import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,9 +38,12 @@ import javax.net.ssl.X509TrustManager;
  * Performs a connection test and returns information about the results
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 22 $
  */
 public class ConnectionTest {
+
+    public static final int PARTNER_ROLE_REMOTE_PARTNER = 1;
+    public static final int PARTNER_ROLE_GATEWAY_PARTNER = 2;
 
     public static final int CONNECTION_TEST_OFTP2 = 1;
     public static final int CONNECTION_TEST_AS2 = 2;
@@ -76,15 +80,17 @@ public class ConnectionTest {
     }
 
     /**
-     * Let the user examine the contents of a certificate file from a SSL
-     * connection.
+     * Perform a IP connection test, similar to a telnet connection
      *
-     * @return True if the user was able to examine the certificate, false
-     * otherwise
+     * @param PARTNER_ROLE The role of the remote partner in the communication,
+     * one of ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER or
+     * ConnectionTest.PARTNER_ROLE_GATEWAY_PARTNER
      */
-    public ConnectionTestResult checkConnectionPlain(String host, int port, long timeout) {
+    public ConnectionTestResult checkConnectionPlain(String host, int port, long timeout,
+            String senderName, String receiverName, int PARTNER_ROLE) {
         this.remoteAddress = new InetSocketAddress(host, port);
-        ConnectionTestResult testResult = new ConnectionTestResult(this.remoteAddress, false);
+        ConnectionTestResult testResult = new ConnectionTestResult(this.remoteAddress, false,
+                senderName, receiverName, PARTNER_ROLE);
         Socket socket = null;
         try {
             try {
@@ -137,7 +143,9 @@ public class ConnectionTest {
                     testResult.setException(e);
                     return (testResult);
                 } finally {
-                    in.close();
+                    if( in != null ){
+                        in.close();
+                    }
                 }
                 OFTP2SSRM ssrm = new OFTP2SSRM();
                 StringBuilder expectedSSRM = new StringBuilder();
@@ -169,13 +177,19 @@ public class ConnectionTest {
         }
         return (testResult);
     }
-    
+
     /**
      * Performs a SSL connection test with the default TLS protocol list and SNI
+     *
+     * @param PARTNER_ROLE The role of the remote partner in the communication,
+     * one of ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER or
+     * ConnectionTest.PARTNER_ROLE_GATEWAY_PARTNER
      */
     public ConnectionTestResult checkConnectionTLS(String host, int port, long timeout,
-            CertificateManager certificateManagerTLS) {
-        return (this.checkConnectionTLS(host, port, timeout, certificateManagerTLS, DEFAULT_TLS_PROTOCOL_LIST, true));
+            CertificateManager certificateManagerTLS,
+            String senderName, String receiverName, int PARTNER_ROLE) {
+        return (this.checkConnectionTLS(host, port, timeout, certificateManagerTLS, DEFAULT_TLS_PROTOCOL_LIST, true,
+                senderName, receiverName, PARTNER_ROLE));
     }
 
     /**
@@ -185,14 +199,17 @@ public class ConnectionTest {
      * @param certificateManagerSSL The certificate manager to check if the
      * remote certificate has been already imported in the local SSL keystore,
      * might be null - then no test is performed
+     * @param PARTNER_ROLE The role of the remote partner in the communication,
+     * one of ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER or
+     * ConnectionTest.PARTNER_ROLE_GATEWAY_PARTNER
      *
-     * @return True if the user was able to examine the certificate, false
-     * otherwise
      */
     public ConnectionTestResult checkConnectionTLS(String host, int port, long timeout,
-            CertificateManager certificateManagerSSL, String[] protocols, boolean useSNI) {
+            CertificateManager certificateManagerSSL, String[] protocols, boolean useSNI,
+            String senderName, String receiverName, int PARTNER_ROLE) {
         this.remoteAddress = new InetSocketAddress(host, port);
-        ConnectionTestResult testResult = new ConnectionTestResult(this.remoteAddress, true);
+        ConnectionTestResult testResult = new ConnectionTestResult(this.remoteAddress, true,
+                senderName, receiverName, PARTNER_ROLE);
         SSLSocket sslSocket = null;
         SSLSession sslSession = null;
         try {
@@ -218,12 +235,12 @@ public class ConnectionTest {
                             this.proxy.getAddress() + ":" + this.proxy.getPort()));
                 }
                 //create a unconnected socket. If the proxy is invalid this will already throw an exception            
-                sslSocket = (SSLSocket) socketFactory.createSocket(new Socket(proxy), this.proxy.getAddress(), this.proxy.getPort(), true);                
+                sslSocket = (SSLSocket) socketFactory.createSocket(new Socket(proxy), this.proxy.getAddress(), this.proxy.getPort(), true);
             }
             sslSocket.setSoTimeout((int) timeout);
             //set the used protocols for the negotiation
             sslSocket.setEnabledProtocols(protocols);
-            if( useSNI ){
+            if (useSNI) {
                 this.setSNI(sslSocket, host);
             }
             StringBuilder protocolBuilder = new StringBuilder();
@@ -234,6 +251,9 @@ public class ConnectionTest {
                 protocolBuilder.append(singleProtocolStr);
             }
             this.logger.info(this.getLogTag() + this.rb.getResourceString("info.protocols", protocolBuilder.toString()));
+            //find out the TLS security provider            
+            Provider usedProvider = sslContext.getProvider();
+            this.logger.info(this.getLogTag() + this.rb.getResourceString("info.securityprovider", usedProvider.getName()));
             try {
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("test.start.ssl", this.remoteAddress.toString()));
                 this.logger.info(this.getLogTag() + this.rb.getResourceString("timeout.set", String.valueOf(timeout)));
@@ -323,7 +343,9 @@ public class ConnectionTest {
                     testResult.setException(e);
                     return (testResult);
                 } finally {
-                    in.close();
+                    if( in != null ){
+                        in.close();
+                    }
                 }
                 OFTP2SSRM ssrm = new OFTP2SSRM();
                 StringBuilder expectedSSRM = new StringBuilder();
@@ -361,15 +383,17 @@ public class ConnectionTest {
 
     /**
      * Sets the SNI to the request if it is a TLS request
-     * @param host that should be transmitted for the certificate selector on the receiver side
+     *
+     * @param host that should be transmitted for the certificate selector on
+     * the receiver side
      */
     private void setSNI(SSLSocket sslSocket, String host) {
         SSLParameters parameter = sslSocket.getSSLParameters();
         List<SNIServerName> sniList = parameter.getServerNames();
-        if( sniList == null ){
+        if (sniList == null) {
             sniList = new ArrayList<SNIServerName>();
         }
-        sniList.add( new SNIHostName(host));
+        sniList.add(new SNIHostName(host));
         parameter.setServerNames(sniList);
         sslSocket.setSSLParameters(parameter);
         this.logger.info(this.getLogTag() + this.rb.getResourceString("sni.extension.set", host));

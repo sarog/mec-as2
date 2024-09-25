@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_fr.java 14    5.03.20 17:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_fr.java 16    1/09/22 14:19 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 14 $
+ * @version $Revision: 16 $
  */
 public class ResourceBundleMessageDetails_fr extends MecResourceBundle{
     
@@ -28,9 +28,7 @@ public class ResourceBundleMessageDetails_fr extends MecResourceBundle{
     static final Object[][] CONTENTS = {
         
         {"title", "Détails du message" },
-        {"title.cem", "Détails du message de l'échange de certificat (CEM)" },
-        {"label.transmissiongraph", "Conférer:" },
-        {"label.transactionstate", "Statut:" },
+        {"title.cem", "Détails du message de l'échange de certificat (CEM)" },        
         {"transactionstate.ok.send", "<HTML>Le message {0} a été envoyé avec succès au partenaire \"{1}\" - il a envoyé une confirmation correspondante.</HTML>"},
         {"transactionstate.ok.receive", "<HTML>Le message {0} a été reçu avec succès au partenaire \"{1}\". Une confirmation correspondante a été envoyée.</HTML>"},
         {"transactionstate.ok.details", "<HTML>Les données ont été transférées et la transaction a été effectuée avec succès.</HTML>" },
@@ -48,8 +46,10 @@ public class ResourceBundleMessageDetails_fr extends MecResourceBundle{
         {"transactionstate.error.asyncmdnsend", "<HTML>Un message contenant une demande de MDN asynchrone a été reçu et traité avec succès, mais votre système n''a pas pu renvoyer le MDN asynchrone ou il n' a pas été accepté par le système partenaire.</HTML>" },
         {"transactionstate.error.asyncmdnsend.details", "<HTML>L''expéditeur du message AS2 transmet l''URL à laquelle il doit renvoyer le MDN - soit ce système n'est pas joignable (problème d''infrastructure ou système partenaire a échoué?) soit le système partenaire n''a pas accepté le MDN asynchrone et a répondu par un HTTP 400.</HTML>" },
         {"transactionstate.pending", "Cette transaction est en attente." },
-        {"transactiondetails.outbound", "Il s''agit d''une connexion sortante, vous envoyez des données au partenaire \"{0}\"." },
-        {"transactiondetails.inbound", "Il s''agit d'une connexion entrante, vous recevez les données du partenaire \"{0}\"." },
+        {"transactiondetails.outbound.insecure", "Il s''agit d''une connexion sortante non sécurisée, vous envoyez des données au partenaire \"{0}\"." },
+        {"transactiondetails.outbound.secure", "Il s''agit d''une connexion sortante sécurisée, vous envoyez des données au partenaire \"{0}\"." },
+        {"transactiondetails.inbound.insecure", "Il s''agit d'une connexion entrante non sécurisée, vous recevez les données du partenaire \"{0}\"." },
+        {"transactiondetails.inbound.secure", "Il s''agit d'une connexion entrante sécurisée, vous recevez les données du partenaire \"{0}\"." },
         {"transactiondetails.outbound.sync", " Vous recevez la confirmation directement en réponse sur le canal arrière de votre connexion sortante (MDN synchrone)." },
         {"transactiondetails.outbound.async", " Votre partenaire établit une nouvelle connexion avec vous pour confirmation (MDN asynchrone)." },
         {"transactiondetails.inbound.sync", " Vous envoyez la confirmation directement en réponse sur le canal arrière de la connexion entrante (MDN synchrone)." },

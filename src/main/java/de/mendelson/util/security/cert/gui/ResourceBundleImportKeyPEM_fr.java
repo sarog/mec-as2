@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyPEM_fr.java 3     23.09.21 12:27 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleImportKeyPEM_fr.java 4     7/12/22 16:31 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleImportKeyPEM_fr extends MecResourceBundle {
 
@@ -34,20 +34,20 @@ public class ResourceBundleImportKeyPEM_fr extends MecResourceBundle {
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"button.browse", "Parcourir..."},
-        {"label.importkey", "Fichier clef (PEM):"},
+        {"label.importkey", "Fichier clef (PEM)"},
         {"label.importkey.hint", "Le contenu du fichier commence par --- BEGIN PRIVATE KEY ---"},
-        {"label.importcert", "Fichier certificat (PEM):"},    
+        {"label.importcert", "Fichier certificat (PEM)"},    
         {"label.importcert.hint", "Le contenu du fichier commence par --- BEGIN CERTIFICATE ---"},        
-        {"label.alias", "Alias:"},
+        {"label.alias", "Alias"},
         {"label.alias.hint", "Nouvel alias à utiliser pour cette clé"},
-        {"label.keypass", "Mot de passe:"},
+        {"label.keypass", "Mot de passe"},
         {"label.keypass.hint", "Mot de passe de la clé privée"},
         {"title", "Importer les clefs (format PEM)"},
-        {"filechooser.cert.import", "Merci de sélectionner le fichier de certificat pour l'import"},
-        {"filechooser.key.import", "Merci de sélectionner le fichier de clef pour l'import (format PEM)"},
+        {"filechooser.cert.import", "Merci de sélectionner le fichier de certificat pour l''import"},
+        {"filechooser.key.import", "Merci de sélectionner le fichier de clef pour l''import (format PEM)"},
         {"key.import.success.message", "La clef a été importée avec succès."},
         {"key.import.success.title", "Succès"},
-        {"key.import.error.message", "Une erreur a eu lieu lors du processus d'import.\n{0}"},
+        {"key.import.error.message", "Une erreur a eu lieu lors du processus d''import.\n{0}"},
         {"key.import.error.title", "Erreur"},};
 
 }

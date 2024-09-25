@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 8     13.11.20 8:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 10    10/01/23 9:23 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
@@ -22,7 +22,7 @@ import org.w3c.dom.NodeList;
  * Stores event information of a partner
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class PartnerEventInformation implements Serializable {
 
@@ -43,9 +43,9 @@ public class PartnerEventInformation implements Serializable {
     private int processOnSenderror = PROCESS_EXECUTE_SHELL;
     private int processOnSendsuccess = PROCESS_EXECUTE_SHELL;
 
-    private List<String> parameteronreceipt = new ArrayList<String>();
-    private List<String> parameteronsenderror = new ArrayList<String>();
-    private List<String> parameteronsendsuccess = new ArrayList<String>();
+    private final List<String> parameteronreceipt = new ArrayList<String>();
+    private final List<String> parameteronsenderror = new ArrayList<String>();
+    private final List<String> parameteronsendsuccess = new ArrayList<String>();
 
     /**
      * Creates an empty entry
@@ -160,15 +160,18 @@ public class PartnerEventInformation implements Serializable {
     }
 
     private static void collectXMLValues(List<String> list, Element element) {
-        list.clear();
+        list.clear();        
         NodeList propertiesNodeList = element.getChildNodes();
         for (int i = 0; i < propertiesNodeList.getLength(); i++) {
             if (propertiesNodeList.item(i).getNodeType() == Node.ELEMENT_NODE) {
-                Element property = (Element) propertiesNodeList.item(i);
-                String key = property.getTagName();
-                String value = property.getTextContent();
-                if (key.equals("value")) {
-                    list.add(value);
+                Element valueElement = (Element) propertiesNodeList.item(i);
+                String valueTag = valueElement.getTagName();
+                if (valueTag.equals("value")) {
+                    String propertyValue = "";
+                    if( valueElement.getTextContent() != null ){
+                        propertyValue = valueElement.getTextContent();
+                    }
+                    list.add(propertyValue);
                 }
             }
         }
@@ -217,7 +220,7 @@ public class PartnerEventInformation implements Serializable {
         for (String listBStr : listB) {
             builderB.append(listBStr);
         }
-        return (builderA.toString().equals(builderB));
+        return (builderA.toString().equals(builderB.toString()));
     }
 
     /**

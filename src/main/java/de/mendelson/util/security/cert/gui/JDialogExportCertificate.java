@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 20    27/01/22 9:23 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 21    18/11/22 15:00 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecFileChooser;
@@ -8,8 +8,8 @@ import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.uinotification.UINotification;
-import java.io.File;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.cert.CertPath;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.X509Certificate;
@@ -27,7 +27,7 @@ import javax.swing.SwingUtilities;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 21 $
  */
 public class JDialogExportCertificate extends JDialog {
 
@@ -58,8 +58,8 @@ public class JDialogExportCertificate extends JDialog {
         }
         this.setTitle(this.rb.getResourceString("title"));
         initComponents();
-        TextOverlay.addTo(jTextFieldExportFile, 
-                this.rb.getResourceString( "label.exportfile.hint"));
+        TextOverlay.addTo(jTextFieldExportFile,
+                this.rb.getResourceString("label.exportfile.hint"));
         this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
         this.manager = manager;
         this.getRootPane().setDefaultButton(this.jButtonOk);
@@ -162,16 +162,19 @@ public class JDialogExportCertificate extends JDialog {
                 }
                 util.exportPublicKeySSH2(this.manager.getPublicKey(alias), exportFilename);
             }
-            String exportFilenameDisplay = new File(exportFilename).getCanonicalPath();
+            String exportFilenameDisplay = Paths.get(exportFilename).toAbsolutePath().toString();
             UINotification.instance().addNotification(null,
                     UINotification.TYPE_SUCCESS,
                     this.rb.getResourceString("certificate.export.success.title"),
-                    this.rb.getResourceString("certificate.export.success.message", exportFilenameDisplay));
-        } catch (Exception e) {
+                    this.rb.getResourceString("certificate.export.success.message", 
+                            exportFilenameDisplay));
+        } catch (Throwable e) {
             UINotification.instance().addNotification(null,
                     UINotification.TYPE_ERROR,
                     this.rb.getResourceString("certificate.export.error.title"),
-                    this.rb.getResourceString("certificate.export.error.message", e.getMessage()));
+                    this.rb.getResourceString("certificate.export.error.message",
+                            "[" + e.getClass().getSimpleName() + "] "
+                            + e.getMessage()));
         }
     }
 

@@ -1,15 +1,20 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/uinotification/UINotification.java 21    28.10.21 14:57 Heller $
+//$Header: /as2/de/mendelson/util/uinotification/UINotification.java 28    11/05/22 9:45 Heller $
 package de.mendelson.util.uinotification;
 
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.Point;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
+import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -19,6 +24,7 @@ import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -31,27 +37,31 @@ import javax.swing.SwingUtilities;
  * Main UI Notification
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 28 $
  */
 public class UINotification implements INotificationHandler {
 
     protected final static MendelsonMultiResolutionImage IMAGE_SUCCESS
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_ok.svg", 32, 64);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_ok.svg",
+                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
     protected final static MendelsonMultiResolutionImage IMAGE_ERROR
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_error.svg", 32, 64);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_error.svg",
+                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
     protected final static MendelsonMultiResolutionImage IMAGE_WARNING
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_warning.svg", 32, 64);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_warning.svg",
+                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
     protected final static MendelsonMultiResolutionImage IMAGE_INFORMATION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_information.svg", 32, 64);
-    protected final static MendelsonMultiResolutionImage IMAGE_CROSS
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_cross.svg", 10, 32);
-    protected final static MendelsonMultiResolutionImage IMAGE_CROSS_MOUSEOVER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_cross_mouseover.svg", 10, 32);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_information.svg",
+                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
 
-    public static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS = NotificationPanel.DEFAULT_COLOR_BACKGROUND_SUCCESS;
-    public static final Color DEFAULT_COLOR_BACKGROUND_WARNING = NotificationPanel.DEFAULT_COLOR_BACKGROUND_WARNING;
-    public static final Color DEFAULT_COLOR_BACKGROUND_ERROR = NotificationPanel.DEFAULT_COLOR_BACKGROUND_ERROR;
-    public static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION = NotificationPanel.DEFAULT_COLOR_BACKGROUND_INFORMATION;
+    public static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT;
+    public static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK;
+    public static final Color DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT;
+    public static final Color DEFAULT_COLOR_BACKGROUND_WARNING_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_WARNING_DARK;
+    public static final Color DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT;
+    public static final Color DEFAULT_COLOR_BACKGROUND_ERROR_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_ERROR_DARK;
+    public static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT;
+    public static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK;
     public static final Color DEFAULT_COLOR_FOREGROUND_DETAILS = NotificationPanel.DEFAULT_COLOR_FOREGROUND_DETAILS;
     public static final Color DEFAULT_COLOR_FOREGROUND_TITLE = NotificationPanel.DEFAULT_COLOR_FOREGROUND_TITLE;
 
@@ -68,18 +78,30 @@ public class UINotification implements INotificationHandler {
     public static final int INTERACTION_TYPE_INTERNAL_STACKED_FRAMES = 1;
     public static final int INTERACTION_TYPE_MESSAGE_DIALOGS = 2;
 
-    private Color backgroundSuccess = DEFAULT_COLOR_BACKGROUND_SUCCESS;
-    private Color backgroundWarning = DEFAULT_COLOR_BACKGROUND_WARNING;
-    private Color backgroundError = DEFAULT_COLOR_BACKGROUND_ERROR;
-    private Color backgroundInformation = DEFAULT_COLOR_BACKGROUND_INFORMATION;
+    private Color backgroundSuccessLight = DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT;
+    private Color backgroundSuccessDark = DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK;
+    private Color backgroundWarningLight = DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT;
+    private Color backgroundWarningDark = DEFAULT_COLOR_BACKGROUND_WARNING_DARK;
+    private Color backgroundErrorLight = DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT;
+    private Color backgroundErrorDark = DEFAULT_COLOR_BACKGROUND_ERROR_DARK;
+    private Color backgroundInformationLight = DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT;
+    private Color backgroundInformationDark = DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK;
 
     private Color foregroundDetails = DEFAULT_COLOR_FOREGROUND_DETAILS;
     private Color foregroundTitle = DEFAULT_COLOR_FOREGROUND_TITLE;
 
+    private Color crossColor = Color.GRAY;
+    private Color crossColorMouseOver = Color.WHITE;
+    
+    protected final static String UIMANAGER_KEY_FOREGROUND = "controlText";
+    protected final static String UIMANAGER_KEY_BACKGROUND = "controlHighlight";
+    protected final static String UIMANAGER_KEY_CROSS = "controlText";
+    protected final static String UIMANAGER_KEY_CROSS_MOUSEOVER = "controlHighlight";
+
     /**
      * How long is a single notification frame visible?
      */
-    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS = 4000;
+    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS = 4500;
     /**
      * Fade out time
      */
@@ -108,8 +130,8 @@ public class UINotification implements INotificationHandler {
     private long notificationDisplayTimeFadeout = DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEOUT_IN_MS;
     private long notificationDisplayTimeFadeIn = DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEIN_IN_MS;
 
-    private int notificationHeight = 70;
-    private int notificationWidth = 350;
+    private int notificationHeight = 80;
+    private int notificationWidth = 400;
 
     private int interactionType = INTERACTION_TYPE_INTERNAL_STACKED_FRAMES;
 
@@ -212,14 +234,99 @@ public class UINotification implements INotificationHandler {
     }
 
     /**
+     * Redefines the used background colors for the panels - takes the default
+     * colors defined in the UI manager and also sets the dark mode colors if
+     * requested
+     */
+    public UINotification setAllColorsDefaultFromUIManager(boolean darkMode) {
+        this.setForegroundColorsDefaultFromUIManager(darkMode);
+        this.setBackgroundColorsDefaultFromUIManager(darkMode);
+        this.setCrossColorsDefaultFromUIManager(darkMode);
+        return (this);
+    }
+
+    /**
+     * Redefines the used cross colors for the panels - takes the default colors
+     * defined in the UI manager and also sets the dark mode colors if requested
+     */
+    public UINotification setCrossColorsDefaultFromUIManager(boolean darkMode) {
+        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS) != null) {
+            this.crossColor = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS);
+        }
+        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS_MOUSEOVER) != null) {
+            this.crossColorMouseOver = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS_MOUSEOVER);
+        }
+        return (this);
+    }
+
+    /**
+     * Redefines the used cross colors for the panels - takes the default colors
+     * defined in the UI manager and also sets the dark mode colors if requested
+     */
+    public UINotification setCrossColors(Color crossColor, Color crossColorMouseOver) {
+        this.crossColor = crossColor;
+        this.crossColorMouseOver = crossColorMouseOver;
+        return (this);
+    }
+
+    /**
+     * Redefines the used background colors for the panels - takes the default
+     * colors defined in the UI manager and also sets the dark mode colors if
+     * requested
+     */
+    public UINotification setBackgroundColorsDefaultFromUIManager(boolean darkMode) {
+        this.backgroundSuccessDark = new Color(0, 104, 55);
+        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND) != null) {
+            this.backgroundSuccessLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
+            this.backgroundWarningLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
+            this.backgroundErrorLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
+            this.backgroundInformationLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
+        }
+        this.backgroundWarningDark = new Color(255, 176, 59);
+        this.backgroundErrorDark = new Color(193, 39, 45);
+        this.backgroundInformationDark = new Color(0, 113, 188);
+        if (darkMode) {
+            this.backgroundSuccessDark = ColorUtil.darkenColor(this.backgroundSuccessDark, 0.2f);
+            this.backgroundInformationDark = ColorUtil.darkenColor(this.backgroundInformationDark, 0.2f);
+            this.backgroundWarningDark = ColorUtil.darkenColor(this.backgroundWarningDark, 0.2f);
+            this.backgroundErrorDark = ColorUtil.darkenColor(this.backgroundErrorDark, 0.2f);
+        }
+        return (this);
+    }
+
+    /**
+     * Redefines the used foreground colors for the panels - takes the default
+     * colors defined in the UI manager and also sets the dark mode colors if
+     * requested
+     */
+    public UINotification setForegroundColorsDefaultFromUIManager(boolean darkMode) {
+        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_FOREGROUND) != null) {
+            this.foregroundTitle = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_FOREGROUND);
+            this.foregroundDetails = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_FOREGROUND);
+        }
+        return (this);
+    }
+
+    /**
      * Redefines the used background colors for the panels
      */
-    public UINotification setBackgroundColors(Color backgroundSuccess, Color backgroundWarning,
-            Color backgroundError, Color backgroundInformation) {
-        this.backgroundSuccess = backgroundSuccess;
-        this.backgroundInformation = backgroundInformation;
-        this.backgroundWarning = backgroundWarning;
-        this.backgroundError = backgroundError;
+    public UINotification setBackgroundColors(
+            Color backgroundSuccessLight,
+            Color backgroundSuccessDark,
+            Color backgroundWarningLight,
+            Color backgroundWarningDark,
+            Color backgroundErrorLight,
+            Color backgroundErrorDark,
+            Color backgroundInformationLight,
+            Color backgroundInformationDark) {
+        this.backgroundSuccessLight = backgroundSuccessLight;
+        this.backgroundSuccessDark = backgroundSuccessDark;
+        this.backgroundInformationLight = backgroundInformationLight;
+        this.backgroundInformationDark = backgroundInformationDark;
+        this.backgroundWarningLight = backgroundWarningLight;
+        this.backgroundWarningDark = backgroundWarningDark;
+        this.backgroundErrorLight = backgroundErrorLight;
+        this.backgroundErrorDark = backgroundErrorDark;
         return (this);
     }
 
@@ -370,12 +477,17 @@ public class UINotification implements INotificationHandler {
                     this.notificationDisplayTimeFadeout
             )
                     .setBackgroundColors(
-                            this.backgroundSuccess,
-                            this.backgroundWarning,
-                            this.backgroundError,
-                            this.backgroundInformation)
-                    .setForegroundColors(
-                            this.foregroundTitle, this.foregroundDetails);
+                            this.backgroundSuccessLight,
+                            this.backgroundSuccessDark,
+                            this.backgroundWarningLight,
+                            this.backgroundWarningDark,
+                            this.backgroundErrorLight,
+                            this.backgroundErrorDark,
+                            this.backgroundInformationLight,
+                            this.backgroundInformationDark
+                    )
+                    .setForegroundColors(this.foregroundTitle, this.foregroundDetails)
+                    .setCrossColors(this.crossColor, this.crossColorMouseOver);
             synchronized (this.notificationList) {
                 this.notificationList.add(0, notificationWindow);
                 this.notificationPositionsHaveChanged();
@@ -569,6 +681,36 @@ public class UINotification implements INotificationHandler {
             }
         }
         return (result.toString());
+    }
+
+    /**Generates the "notification close" cross image in a requested color
+     * 
+     * @param size both height and width, its a square
+     * @param color The paint color for the cross
+     * @return 
+     */
+    protected static ImageIcon generateCrossImage(int size, Color color) {
+        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = (Graphics2D) image.createGraphics();
+        RenderingHints renderingHints = new RenderingHints(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY);
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC));
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON));
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
+        renderingHints.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_NORMALIZE));
+        g.setRenderingHints(renderingHints);
+        g.setColor(color);
+        g.setStroke(new BasicStroke(2));
+        g.drawLine(0, 0, size - 1, size - 1);
+        g.drawLine(0, size - 1, size - 1, 0);
+        g.dispose();
+        return (new ImageIcon(image));
     }
 
 }

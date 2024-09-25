@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 78    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 83    9/11/22 15:45 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.client.AS2StatusBar;
 import de.mendelson.comm.as2.clientserver.message.PartnerConfigurationChanged;
 import de.mendelson.util.modulelock.LockClientInformation;
@@ -10,6 +11,7 @@ import de.mendelson.comm.as2.partner.PartnerSystem;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.clientserver.PartnerModificationRequest;
+import de.mendelson.comm.as2.partner.gui.global.JDialogGlobalChange;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.LayoutManagerJToolbar;
 import de.mendelson.util.LockingGlassPane;
@@ -21,6 +23,7 @@ import de.mendelson.util.clientserver.clients.fileoperation.FileOperationClient;
 import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewRequest;
 import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewResponse;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
+import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.uinotification.UINotification;
 import java.awt.BorderLayout;
@@ -53,7 +56,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * Dialog to configure the partner of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 78 $
+ * @version $Revision: 83 $
  */
 public class JDialogPartnerConfig extends JDialog {
 
@@ -75,11 +78,14 @@ public class JDialogPartnerConfig extends JDialog {
     private List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
     private LockClientInformation lockKeeper;
     private final static MendelsonMultiResolutionImage IMAGE_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_COPY
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg", AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_ADD
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", AS2Gui.IMAGE_SIZE_TOOLBAR);
+    private final static MendelsonMultiResolutionImage IMAGE_PARTNER_GROUP
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/global/partner_group.svg",
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
 
     /**
      * Creates new form JDialogMessageMapping
@@ -90,7 +96,8 @@ public class JDialogPartnerConfig extends JDialog {
             LockClientInformation lockKeeper,
             CertificateManager certificateManagerEncSign,
             CertificateManager certificateManagerSSL,
-            List<PartnerSystem> partnerSystemList) {
+            List<PartnerSystem> partnerSystemList,
+            String activatedPlugins) {
         super(parent, true);
         this.status = status;
         this.guiClient = guiClient;
@@ -115,7 +122,7 @@ public class JDialogPartnerConfig extends JDialog {
                 this.certificateManagerEncSign,
                 this.certificateManagerSSL,
                 this.jButtonPartnerConfigOk, this.status, changesAllowed,
-                partnerSystemList);
+                partnerSystemList, activatedPlugins);
         this.jPanelPartner.add(this.panelEditPartner, BorderLayout.CENTER);
         this.getRootPane().setDefaultButton(this.jButtonPartnerConfigOk);
         try {
@@ -143,9 +150,10 @@ public class JDialogPartnerConfig extends JDialog {
     }
 
     private void setMultiresolutionIcons() {
-        this.jButtonDeletePartner.setIcon(new ImageIcon(IMAGE_DELETE.toMinResolution(24)));
-        this.jButtonClonePartner.setIcon(new ImageIcon(IMAGE_COPY.toMinResolution(24)));
-        this.jButtonNewPartner.setIcon(new ImageIcon(IMAGE_ADD.toMinResolution(24)));
+        this.jButtonDeletePartner.setIcon(new ImageIcon(IMAGE_DELETE.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
+        this.jButtonClonePartner.setIcon(new ImageIcon(IMAGE_COPY.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
+        this.jButtonNewPartner.setIcon(new ImageIcon(IMAGE_ADD.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
+        this.jButtonGlobalSettings.setIcon(new ImageIcon(IMAGE_PARTNER_GROUP.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
 
     }
 
@@ -396,11 +404,16 @@ public class JDialogPartnerConfig extends JDialog {
                             JDialogPartnerConfig.this.rb.getResourceString("saving"), uniqueId);
                     PartnerModificationRequest modificationRequest = new PartnerModificationRequest();
                     modificationRequest.setData(JDialogPartnerConfig.this.partnerList);
-                    JDialogPartnerConfig.this.guiClient.getBaseClient().sendSync(modificationRequest, Partner.TIMEOUT_PARTNER_REQUEST);
+                    ClientServerResponse response
+                            = JDialogPartnerConfig.this.guiClient.getBaseClient().sendSync(
+                                    modificationRequest, Partner.TIMEOUT_PARTNER_REQUEST);
+                    if (response.getException() != null) {
+                        throw (response.getException());
+                    }
                     //inform the server that the configuration has been changed
                     PartnerConfigurationChanged signal = new PartnerConfigurationChanged();
                     JDialogPartnerConfig.this.guiClient.sendAsync(signal);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     JDialogPartnerConfig.this.unlock();
                     JDialogPartnerConfig.this.status.stopProgressIfExists(uniqueId);
                     UINotification.instance().addNotification(e);
@@ -419,6 +432,58 @@ public class JDialogPartnerConfig extends JDialog {
     }
 
     /**
+     * Clones the selected partner and select it
+     */
+    private void cloneSelectedPartner() {
+        Partner selectedPartner = this.jTreePartner.getSelectedPartner();
+        Partner newPartner = (Partner) selectedPartner.clone();
+        if (newPartner == null) {
+            return;
+        }
+        newPartner.setDBId(-1);
+        newPartner.setCryptFingerprintSHA1(selectedPartner.getCryptFingerprintSHA1());
+        newPartner.setSignFingerprintSHA1(selectedPartner.getSignFingerprintSHA1());
+        //find the next unique name
+        String rawName = selectedPartner.getName();
+        boolean alreadyUsed = true;
+        int counter = 0;
+        while (alreadyUsed) {
+            String testName = rawName + String.valueOf(counter);
+            alreadyUsed = false;
+            for (Partner checkPartner : this.partnerList) {
+                if (checkPartner.getName().equals(testName)) {
+                    alreadyUsed = true;
+                    break;
+                }
+            }
+            if (!alreadyUsed) {
+                newPartner.setName(testName);
+            }
+            counter++;
+        }
+        //find the next unique id
+        String rawId = selectedPartner.getAS2Identification();
+        alreadyUsed = true;
+        counter = 0;
+        while (alreadyUsed) {
+            String testId = rawId + String.valueOf(counter);
+            alreadyUsed = false;
+            for (Partner checkPartner : this.partnerList) {
+                if (checkPartner.getAS2Identification().equals(testId)) {
+                    alreadyUsed = true;
+                    break;
+                }
+            }
+            if (!alreadyUsed) {
+                newPartner.setAS2Identification(testId);
+            }
+            counter++;
+        }
+        this.jTreePartner.addPartner(newPartner);
+        this.partnerList.add(newPartner);
+    }
+
+    /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
@@ -431,6 +496,7 @@ public class JDialogPartnerConfig extends JDialog {
         jButtonNewPartner = new javax.swing.JButton();
         jButtonClonePartner = new javax.swing.JButton();
         jButtonDeletePartner = new javax.swing.JButton();
+        jButtonGlobalSettings = new javax.swing.JButton();
         jPanelMain = new javax.swing.JPanel();
         jPanelModuleLockWarning = new javax.swing.JPanel();
         jLabelModuleLockedWarning = new javax.swing.JLabel();
@@ -486,6 +552,18 @@ public class JDialogPartnerConfig extends JDialog {
             }
         });
         jToolBar.add(jButtonDeletePartner);
+
+        jButtonGlobalSettings.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image24x24.gif"))); // NOI18N
+        jButtonGlobalSettings.setText(this.rb.getResourceString( "button.globalchange"));
+        jButtonGlobalSettings.setFocusable(false);
+        jButtonGlobalSettings.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonGlobalSettings.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonGlobalSettings.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonGlobalSettingsActionPerformed(evt);
+            }
+        });
+        jToolBar.add(jButtonGlobalSettings);
 
         getContentPane().add(jToolBar, java.awt.BorderLayout.NORTH);
 
@@ -589,7 +667,7 @@ public class JDialogPartnerConfig extends JDialog {
 
         getContentPane().add(jPanelMain, java.awt.BorderLayout.CENTER);
 
-        setSize(new java.awt.Dimension(877, 654));
+        setSize(new java.awt.Dimension(994, 718));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -628,52 +706,7 @@ public class JDialogPartnerConfig extends JDialog {
         if (!this.isOperationAllowed(false)) {
             return;
         }
-        Partner selectedPartner = this.jTreePartner.getSelectedPartner();
-        Partner newPartner = (Partner) selectedPartner.clone();
-        if (newPartner == null) {
-            return;
-        }
-        newPartner.setDBId(-1);
-        newPartner.setCryptFingerprintSHA1(selectedPartner.getCryptFingerprintSHA1());
-        newPartner.setSignFingerprintSHA1(selectedPartner.getSignFingerprintSHA1());
-        //find the next unique name
-        String rawName = selectedPartner.getName();
-        boolean alreadyUsed = true;
-        int counter = 0;
-        while (alreadyUsed) {
-            String testName = rawName + String.valueOf(counter);
-            alreadyUsed = false;
-            for (Partner checkPartner : this.partnerList) {
-                if (checkPartner.getName().equals(testName)) {
-                    alreadyUsed = true;
-                    break;
-                }
-            }
-            if (!alreadyUsed) {
-                newPartner.setName(testName);
-            }
-            counter++;
-        }
-        //find the next unique id
-        String rawId = selectedPartner.getAS2Identification();
-        alreadyUsed = true;
-        counter = 0;
-        while (alreadyUsed) {
-            String testId = rawId + String.valueOf(counter);
-            alreadyUsed = false;
-            for (Partner checkPartner : this.partnerList) {
-                if (checkPartner.getAS2Identification().equals(testId)) {
-                    alreadyUsed = true;
-                    break;
-                }
-            }
-            if (!alreadyUsed) {
-                newPartner.setAS2Identification(testId);
-            }
-            counter++;
-        }
-        this.jTreePartner.addPartner(newPartner);
-        this.partnerList.add(newPartner);
+        this.cloneSelectedPartner();
     }//GEN-LAST:event_jButtonClonePartnerActionPerformed
 
     private void jButtonPartnerConfigOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonPartnerConfigOkActionPerformed
@@ -685,10 +718,18 @@ public class JDialogPartnerConfig extends JDialog {
         ModuleLock.displayDialogModuleLocked(parent, this.lockKeeper, ModuleLock.MODULE_PARTNER);
     }//GEN-LAST:event_jButtonModuleLockInfoActionPerformed
 
+    private void jButtonGlobalSettingsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonGlobalSettingsActionPerformed
+        JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        JDialog dialog = new JDialogGlobalChange(parent, this.partnerList);
+        dialog.setVisible(true);
+        this.displayPartnerValues();
+    }//GEN-LAST:event_jButtonGlobalSettingsActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonClonePartner;
     private javax.swing.JButton jButtonDeletePartner;
+    private javax.swing.JButton jButtonGlobalSettings;
     private javax.swing.JButton jButtonModuleLockInfo;
     private javax.swing.JButton jButtonNewPartner;
     private de.mendelson.comm.as2.partner.gui.JButtonPartnerConfigOk jButtonPartnerConfigOk;

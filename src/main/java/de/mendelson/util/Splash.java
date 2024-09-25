@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/Splash.java 52    24.11.21 16:28 Heller $
+//$Header: /oftp2/de/mendelson/util/Splash.java 55    20/04/22 13:08 Heller $
 package de.mendelson.util;
 
 import java.awt.BorderLayout;
@@ -9,6 +9,7 @@ import java.awt.Font;
 import java.awt.GradientPaint;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
@@ -26,6 +27,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JWindow;
 import javax.swing.SwingConstants;
 
@@ -40,7 +42,7 @@ import javax.swing.SwingConstants;
  * Splash window to been shown while one of the mendelson products load
  *
  * @author S.Heller
- * @version $Revision: 52 $
+ * @version $Revision: 55 $
  */
 public class Splash extends JWindow implements SwingConstants {
 
@@ -65,28 +67,29 @@ public class Splash extends JWindow implements SwingConstants {
      * Indicates if textual output should be anti aliased in the splash
      */
     private boolean textAntialiasing = true;
-        
+
     /**
      * Creates a new splash with the given width and length
      *
      * @param imageResource ResourcePath to the image
-     * @param imageHeight Scaling height of the splash - only valid if this is a SVG, else the image size is taken
+     * @param imageHeight Scaling height of the splash - only valid if this is a
+     * SVG, else the image size is taken
      */
-    public Splash(String imageResource, int imageHeight) {               
-        this.splashImage = this.loadImage(imageResource, imageHeight);                
-        float width = (float)this.splashImage.getWidth(this);
-        float height = (float)this.splashImage.getHeight(this);
-        this.getContentPane().setLayout(new BorderLayout());        
+    public Splash(String imageResource, int imageHeight) {
+        this.splashImage = this.loadImage(imageResource, imageHeight);
+        float width = (float) this.splashImage.getWidth(this);
+        float height = (float) this.splashImage.getHeight(this);
+        this.getContentPane().setLayout(new BorderLayout());
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        this.setBounds((screenSize.width - (int)width) / 2,
-                (screenSize.height - (int)height) / 2, (int)width, (int)height);
+        this.setBounds((screenSize.width - (int) width) / 2,
+                (screenSize.height - (int) height) / 2, (int) width, (int) height);
     }
 
     @Deprecated(since = "2020")
     public Splash(String imageResource) {
-        this( imageResource, 330);
+        this(imageResource, 330);
     }
-    
+
     /**
      * Adds a static display string to the splash, this is always painted using
      * the passed parameters
@@ -120,9 +123,7 @@ public class Splash extends JWindow implements SwingConstants {
     public void addDisplayString(Font font, int x, int y, String text, Color color) {
         this.addDisplayString(font, x, y, text, color, null);
     }
-    
-    
-    
+
     /**
      * Defines where to write the output to, with which properties
      *
@@ -150,14 +151,14 @@ public class Splash extends JWindow implements SwingConstants {
      * @param foregroundColor foreground color of the bar
      * @param backgroundColor set this to null to have a transparent background
      * @param showPercent indicates to show the progress in procent
-     */        
+     */
     public Splash.Progress createProgress(
-            int x, int y, int height, int width, 
+            int x, int y, int height, int width,
             Color foregroundColor,
-            Color backgroundColor, 
+            Color backgroundColor,
             Color borderColor, boolean showPercent) {
-        this.progress = new Splash.Progress((JWindow)this,
-                x, y, 
+        this.progress = new Splash.Progress((JWindow) this,
+                x, y,
                 height, width,
                 foregroundColor, backgroundColor, borderColor, showPercent);
         return (this.progress);
@@ -170,8 +171,10 @@ public class Splash extends JWindow implements SwingConstants {
         this.textAntialiasing = textAntialiasing;
     }
 
-    /**Sets the rendering hints for any rendering of this splash*/
-    private void setRenderingHints( Graphics2D graphics){
+    /**
+     * Sets the rendering hints for any rendering of this splash
+     */
+    private void setRenderingHints(Graphics2D graphics) {
         graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
         graphics.setRenderingHint(RenderingHints.KEY_RENDERING,
@@ -181,16 +184,16 @@ public class Splash extends JWindow implements SwingConstants {
         graphics.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING,
                 RenderingHints.VALUE_COLOR_RENDER_QUALITY);
         graphics.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_BICUBIC);        
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC);
         if (this.textAntialiasing) {
             graphics.setRenderingHint(
                     RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         } else {
             graphics.setRenderingHint(
-                    RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);            
+                    RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
         }
     }
-    
+
     /**
      * Draw/update this component
      */
@@ -207,7 +210,7 @@ public class Splash extends JWindow implements SwingConstants {
         this.setRenderingHints(offScreenGraphics);
         //assume a white background
         offScreenGraphics.setColor(Color.WHITE);
-        offScreenGraphics.fillRect(0, 0, offScreenImage.getWidth(this), offScreenImage.getHeight(this));    
+        offScreenGraphics.fillRect(0, 0, offScreenImage.getWidth(this), offScreenImage.getHeight(this));
         //copy the image into memory, off-screen
         offScreenGraphics.drawImage(this.splashImage, 0, 0, this);
         //add the static texts to the image, off-screen
@@ -221,7 +224,7 @@ public class Splash extends JWindow implements SwingConstants {
                 transformPosition.setToTranslation(
                         displayString.getX(), displayString.getY());
                 //only concat a transform if the display string has one
-                if (displayString.getFontTransform()!= null) {
+                if (displayString.getFontTransform() != null) {
                     transformPosition.concatenate(displayString.getFontTransform());
                 }
                 Shape shape = layout.getOutline(transformPosition);
@@ -326,46 +329,64 @@ public class Splash extends JWindow implements SwingConstants {
         Graphics2D g2d = (Graphics2D) g;
         this.setRenderingHints(g2d);
         //bring the image to the screen
-        g2d.setPaintMode();        
+        g2d.setPaintMode();
         g2d.drawImage(offScreenImage, 0, 0, offScreenImage.getWidth(this),
                 offScreenImage.getHeight(this), this);
     }
 
-    
+    private BufferedImage toBufferedImage(Image image) {
+        if (image instanceof BufferedImage) {
+            return (BufferedImage) image;
+        }
+        // Create a buffered image with transparency
+        BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        // Draw the image on to the buffered image
+        Graphics2D graphics = bufferedImage.createGraphics();
+        graphics.drawImage(image, 0, 0, null);
+        graphics.dispose();
+        // Return the buffered image
+        return bufferedImage;
+    }
+
     /**
      * Loads the image and tracks it
      *
      * @param resource image resource to load the image
      */
     private BufferedImage loadImage(String resource, int imageHeight) {
-        if( resource.endsWith(".svg")){
-          MendelsonMultiResolutionImage image = MendelsonMultiResolutionImage.fromSVG(resource, imageHeight, imageHeight, 
-                  MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
-          return( image.getResolutionVariant(imageHeight, imageHeight));
-        }
-        else{
+        if (resource.endsWith(".svg")) {
+            MendelsonMultiResolutionImage image = MendelsonMultiResolutionImage.fromSVG(resource, imageHeight, imageHeight * 2,
+                    MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
+            return (this.toBufferedImage(new ImageIcon(image.toMinResolution(imageHeight)).getImage()));
+        } else {
             BufferedImage image = this.loadImageAsBitmap(resource);
-            return( image );
+            return (image);
         }
     }
 
-    
     private BufferedImage loadImageAsBitmap(String resource) {
         BufferedImage bufferedImage = null;
+        InputStream inStream = null;
         try {
             //get an input stream from the resource
-            InputStream inStream = Splash.class.getResourceAsStream(resource);
+            inStream = Splash.class.getResourceAsStream(resource);
             bufferedImage = ImageIO.read(inStream);
-            inStream.close();
+
         } catch (Exception e) {
             System.err.println("Fatal: Unable to load splash image resource " + resource + ".");
             System.exit(-1);
+        } finally {
+            try {
+                if (inStream != null) {
+                    inStream.close();
+                }
+            } catch (Exception e) {
+
+            }
         }
         return (bufferedImage);
     }
-    
-    
-    
+
     @Override
     public void setVisible(boolean flag) {
         super.setVisible(flag);
@@ -529,7 +550,7 @@ public class Splash extends JWindow implements SwingConstants {
          */
         private boolean useGradientPaint = true;
         private JWindow parent;
-        
+
         /**
          * Initialize the progress bar
          *
@@ -540,8 +561,8 @@ public class Splash extends JWindow implements SwingConstants {
          * @param backgroundColor color, set this to null to have a transparent
          * background
          * @param foregroundColor bar color
-         * @param borderColor progress bar border color set this to null to not have
-         * a border
+         * @param borderColor progress bar border color set this to null to not
+         * have a border
          * @param showPercent indicates to show the progress in procent
          */
         public Progress(JWindow parent, int x, int y, int height, int width,

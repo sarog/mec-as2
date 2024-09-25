@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 15    7.12.20 14:29 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 16    24/11/22 10:22 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,14 +17,14 @@ import java.util.ResourceBundle;
  * Contains a single configuration issue
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class ConfigurationIssue implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    public static final int NO_KEY_IN_SSL_KEYSTORE = 1;
-    public static final int MULTIPLE_KEYS_IN_SSL_KEYSTORE = 2;
-    public static final int CERTIFICATE_EXPIRED_SSL = 3;
+    public static final int NO_KEY_IN_TLS_KEYSTORE = 1;
+    public static final int MULTIPLE_KEYS_IN_TLS_KEYSTORE = 2;
+    public static final int CERTIFICATE_EXPIRED_TLS = 3;
     public static final int CERTIFICATE_EXPIRED_ENC_SIGN = 4;
     public static final int HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE = 5;
     public static final int FEW_CPU_CORES = 6;
@@ -34,11 +34,13 @@ public class ConfigurationIssue implements Serializable {
     public static final int CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER = 10;
     public static final int KEY_MISSING_ENC_LOCAL_STATION = 11;
     public static final int KEY_MISSING_SIGN_LOCAL_STATION = 12;
-    public static final int USE_OF_TEST_KEYS_IN_SSL = 13;
+    public static final int USE_OF_TEST_KEYS_IN_TLS = 13;
     public static final int JVM_32_BIT = 14;
     public static final int DIFFERENT_KEYSTORES_TLS = 15;
     public static final int WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT = 16;
     public static final int TOO_MANY_DIR_POLLS = 17;
+    public static final int KEYSTORE_TLS_RO = 18;
+    public static final int KEYSTORE_SIGN_ENCRYPT_RO = 19;
 
     private int issueId;
     private String details = null;
@@ -64,9 +66,9 @@ public class ConfigurationIssue implements Serializable {
 
     /**Returns a list of issues that allow the user to jump into a configuration*/
     public boolean hasJumpTargetInUI(){
-        return( this.issueId == NO_KEY_IN_SSL_KEYSTORE
-                || this.issueId == MULTIPLE_KEYS_IN_SSL_KEYSTORE
-                || this.issueId == CERTIFICATE_EXPIRED_SSL
+        return( this.issueId == NO_KEY_IN_TLS_KEYSTORE
+                || this.issueId == MULTIPLE_KEYS_IN_TLS_KEYSTORE
+                || this.issueId == CERTIFICATE_EXPIRED_TLS
                 || this.issueId == CERTIFICATE_EXPIRED_ENC_SIGN
                 || this.issueId == HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE
                 || this.issueId == NO_OUTBOUND_CONNECTIONS_ALLOWED
@@ -74,7 +76,7 @@ public class ConfigurationIssue implements Serializable {
                 || this.issueId == CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER
                 || this.issueId == KEY_MISSING_ENC_LOCAL_STATION
                 || this.issueId == KEY_MISSING_SIGN_LOCAL_STATION
-                || this.issueId == USE_OF_TEST_KEYS_IN_SSL
+                || this.issueId == USE_OF_TEST_KEYS_IN_TLS
                 || this.issueId == DIFFERENT_KEYSTORES_TLS);
     }
     

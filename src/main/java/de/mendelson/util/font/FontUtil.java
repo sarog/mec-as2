@@ -1,4 +1,4 @@
-//$Header: /edipad/de/mendelson/util/font/FontUtil.java 8     13/01/22 12:30 Heller $
+//$Header: /converteride/de/mendelson/util/font/FontUtil.java 9     23/03/22 13:28 Heller $
 package de.mendelson.util.font;
 
 import java.awt.Color;
@@ -17,14 +17,16 @@ import java.io.InputStream;
  * products
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class FontUtil {
 
+    public static final String STYLE_LOGO = "LOGO_PLAIN";
     public static final String STYLE_PRODUCT_PLAIN = "PRODUCT_PLAIN";
     public static final String STYLE_PRODUCT_BOLD = "PRODUCT_BOLD";
     public static final String STYLE_PLAIN = "PLAIN";
     public static final String STYLE_BOLD = "BOLD";
+    
 
     public static final String PRODUCT_MBI = "mbi";
     public static final String PRODUCT_AS2 = "AS2";
@@ -40,6 +42,7 @@ public class FontUtil {
     private static Font fontProductBold;
     private static Font fontPlain;
     private static Font fontBold;
+    private static Font fontLogo;
 
     static {
         String fontResourceProductPlain = "/de/mendelson/util/font/Square721ExtendedBT.ttf";
@@ -102,6 +105,21 @@ public class FontUtil {
                 }
             }
         }
+        fontInStream = null;
+        String fontResourceLogo = "/de/mendelson/util/font/NewDetroitRegular.ttf";
+        try {
+            fontInStream = FontUtil.class.getResourceAsStream(fontResourceLogo);
+            fontLogo = Font.createFont(Font.TRUETYPE_FONT, fontInStream);
+        } catch (Exception e) {
+            fontBold = new Font("SansSerif", Font.PLAIN, 18);
+        } finally {
+            if (fontInStream != null) {
+                try {
+                    fontInStream.close();
+                } catch (Exception e) {
+                }
+            }
+        }
     }
 
     /**
@@ -137,7 +155,8 @@ public class FontUtil {
         if (!STYLE.equals(STYLE_PRODUCT_PLAIN)
                 && !STYLE.equals(STYLE_PRODUCT_BOLD)
                 && !STYLE.equals(STYLE_PLAIN)
-                && !STYLE.equals(STYLE_BOLD)) {
+                && !STYLE.equals(STYLE_BOLD)
+                && !STYLE.equals(STYLE_LOGO)) {
             throw new IllegalArgumentException("FontUtil.getProductFont(): Unknown font style " + STYLE);
         }
         if (STYLE.equals(STYLE_PRODUCT_PLAIN)) {
@@ -146,6 +165,8 @@ public class FontUtil {
             return (fontProductBold.deriveFont((float) size));
         } else if (STYLE.equals(STYLE_BOLD)) {
             return (fontBold.deriveFont((float) size));
+        }else if (STYLE.equals(STYLE_LOGO)) {
+            return (fontLogo.deriveFont(Font.PLAIN, (float) size));
         } else {
             return (fontPlain.deriveFont((float) size));
         }

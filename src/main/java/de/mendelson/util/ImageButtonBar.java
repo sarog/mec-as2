@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ImageButtonBar.java 13    29.11.21 16:35 Heller $
+//$Header: /converteride/de/mendelson/util/ImageButtonBar.java 14    16/05/22 12:55 Heller $
 package de.mendelson.util;
 
 import com.l2fprod.common.swing.JButtonBar;
@@ -33,7 +33,7 @@ import javax.swing.SwingConstants;
  * the following way: 1.initialize it 2.Add panels to it by addButton()
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ImageButtonBar extends JPanel {
 
@@ -56,9 +56,10 @@ public class ImageButtonBar extends JPanel {
         bar.setUI(new ImageButtonBarUI());
     }
 
-    public void setPreferredButtonSize(int width, int height) {
+    public ImageButtonBar setPreferredButtonSize(int width, int height) {
         this.preferredButtonHeight = height;
         this.preferredButtonWidth = width;
+        return( this );
     }
 
     /**
@@ -83,11 +84,12 @@ public class ImageButtonBar extends JPanel {
      * @param internalName Name that should be used for the button if you would
      * like to select it later using the setSelectedButton method, might be null
      */
-    public void addButton(ImageIcon icon, String text, String internalName, JComponent[] components, boolean initialSelected) {
+    public ImageButtonBar addButton(ImageIcon icon, String text, String internalName, JComponent[] components, boolean initialSelected) {
         synchronized (this.componentsList) {
             ImageButtonComponent imageButton = new ImageButtonComponent(icon, text, internalName, components, initialSelected);
             this.componentsList.add(imageButton);
         }
+        return( this );
     }
 
     /**
@@ -98,20 +100,20 @@ public class ImageButtonBar extends JPanel {
      * @param panel Assigned component
      * @param initialSelected selects the component initial if set
      */
-    public void addButton(ImageIcon icon, String text, JComponent[] components, boolean initialSelected) {
-        this.addButton(icon, text, null, components, initialSelected);
+    public ImageButtonBar addButton(ImageIcon icon, String text, JComponent[] components, boolean initialSelected) {
+        return( this.addButton(icon, text, null, components, initialSelected));
     }
 
     /**
      * Add a panel that is controlled by the passed icon
      *
      * @param icon Icon to display
-     * @param text Text taht is assigned to the icon
-     * @param panel Assigned component
+     * @param text Text that is assigned to the icon (and displayed below)
+     * @param panel Assigned component - this is shown once the button is selected
      * @param initialSelected selects the component initial if set
      */
-    public void addButton(ImageIcon icon, String text, JComponent component, boolean initialSelected) {
-        this.addButton(icon, text, null, new JComponent[]{component}, initialSelected);
+    public ImageButtonBar addButton(ImageIcon icon, String text, JComponent component, boolean initialSelected) {
+        return( this.addButton(icon, text, null, new JComponent[]{component}, initialSelected));
     }
 
     /**
@@ -135,7 +137,7 @@ public class ImageButtonBar extends JPanel {
         return (buttonMinWidth);
     }
 
-    public void build() {
+    public ImageButtonBar build() {
         int buttonMinWidth = this.computeButtonMinWidth();
         ButtonGroup buttonGroup = new ButtonGroup();
         synchronized (this.componentsList) {
@@ -164,6 +166,7 @@ public class ImageButtonBar extends JPanel {
         BorderLayout layout = new BorderLayout();
         this.setLayout(layout);
         this.add(this.bar, BorderLayout.CENTER);
+        return( this );
     }
 
     private final static class ImageButtonComponent {
@@ -186,7 +189,7 @@ public class ImageButtonBar extends JPanel {
         /**
          * Overwrite the equal method of object
          *
-         * @param anObject object ot compare
+         * @param anObject object to compare
          */
         @Override
         public boolean equals(Object anObject) {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server.java 18    11.02.21 17:28 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server.java 20    29/04/22 17:03 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleAS2Server extends MecResourceBundle {
 
@@ -35,9 +35,10 @@ public class ResourceBundleAS2Server extends MecResourceBundle {
         {"server.startup.failed", "The server failed to startup" },
         {"server.shutdown", "{0} is shutting down." },
         {"bind.exception", "{0}\nYou defined a port that is currently used in your system by another process.\nThis might be the client-server port or the HTTP/S port you defined in the HTTP configuration.\nPlease modify your configuration or stop the other process before using the {1}."},
-        {"httpserver.willstart", "Embedded HTTP server is starting" },
-        {"httpserver.running", "Embedded HTTP server is running ({0})" },
          {"server.started.issues", "Warning: There has been found {0} configuration issues during server startup." },
-        {"server.started.issue", "Warning: There has been found 1 configuration issue during server startup." },        
+        {"server.started.issue", "Warning: There has been found 1 configuration issue during server startup." },   
+        {"server.hello", "This is {0}" },
+        {"server.hello.licenseexpire", "The license will expire in {0} days ({1}). You must renew the licence via mendelson support (service@mendelson.de) if you wish to continue using it afterwards." },
+        {"server.hello.licenseexpire.single", "The license will expire in {0} day ({1}). You must renew the licence via mendelson support (service@mendelson.de) if you wish to continue using it afterwards." },
     };
 }

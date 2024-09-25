@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplay.java 1     16.09.21 15:24 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplay.java 2     8/12/22 11:35 Heller $
 package de.mendelson.util.security.encryption;
 
 import java.util.Objects;
@@ -8,11 +8,11 @@ import javax.swing.ImageIcon;
  * Container superclass for the encryption rendering
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public abstract class EncryptionDisplay{
 
-    private Object wrappedValue;
+    private final Object wrappedValue;
     
     public EncryptionDisplay( Object wrappedValue ){
         this.wrappedValue = wrappedValue;

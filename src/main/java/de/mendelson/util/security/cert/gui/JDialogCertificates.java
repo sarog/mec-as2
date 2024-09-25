@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/gui/JDialogCertificates.java 90    6.09.21 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogCertificates.java 96    12/12/22 14:18 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.ColorUtil;
@@ -6,7 +6,6 @@ import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.gui.keygeneration.JDialogGenerateKey;
 import de.mendelson.util.LayoutManagerJToolbar;
-import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecFileChooser;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -16,6 +15,7 @@ import de.mendelson.util.modulelock.LockClientInformation;
 import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateInUseChecker;
+import de.mendelson.util.security.cert.KeyCopyHandler;
 import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.clientserver.RefreshKeystoreCertificates;
 import de.mendelson.util.security.csr.CSRUtil;
@@ -38,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.PrivateKey;
-import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -78,7 +77,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequest;
  * Certificate manager UI
  *
  * @author S.Heller
- * @version $Revision: 90 $
+ * @version $Revision: 96 $
  */
 public class JDialogCertificates extends JDialog implements ListSelectionListener {
 
@@ -105,20 +104,24 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/ca.svg", IMAGE_SIZE_MENUITEM, IMAGE_SIZE_MENUITEM * 2);
     protected final static MendelsonMultiResolutionImage IMAGE_CERTIFICATE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_SIZE_MENUITEM, IMAGE_SIZE_MENUITEM * 2);
+    protected final static MendelsonMultiResolutionImage IMAGE_REFERENCE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/reference.svg", IMAGE_SIZE_MENUITEM, IMAGE_SIZE_MENUITEM * 2);
+    protected final static MendelsonMultiResolutionImage IMAGE_KEYCOPY
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keycopy.svg", IMAGE_SIZE_MENUITEM, IMAGE_SIZE_MENUITEM * 2);
 
     /**
      * Resource to localize the GUI
      */
-    private MecResourceBundle rb = null;
-    private MecResourceBundle rbCSR = null;
+    private final MecResourceBundle rb;
+    private final MecResourceBundle rbCSR;
     private JPanelCertificates panelCertificates = null;
     private CertificateManager manager;
-    private Logger logger = null;
-    private GUIClient guiClient;
-    private String productName;
-    private List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
-    private LockClientInformation lockKeeper;
-    private String moduleName;
+    private final Logger logger;
+    private final GUIClient guiClient;
+    private final String productName;
+    private final List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
+    private final LockClientInformation lockKeeper;
+    private final String moduleName;
     private Color colorOk = Color.green.darker().darker();
     private Color colorWarning = Color.red.darker();
 
@@ -158,6 +161,14 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         this.jPanelCertificatesMain.add(this.panelCertificates);
         this.jPanelModuleLockWarning.setVisible(moduleLockedByAnotherClient);
         this.jToolBar.setLayout(new LayoutManagerJToolbar());
+        if (this.moduleName.equals(ModuleLock.MODULE_ENCSIGN_KEYSTORE)) {
+            this.jMenuItemFileKeyCopy.setText(this.rb.getResourceString("button.keycopy",
+                    this.rb.getResourceString("button.keycopy.tls")));
+        } else {
+            this.jMenuItemFileKeyCopy.setText(this.rb.getResourceString("button.keycopy",
+                    this.rb.getResourceString("button.keycopy.signencrypt")));
+        }
+        this.jMenuItemFileKeyCopy.setEnabled(false);
         //bind del key to delete certificate
         ActionListener actionListenerDEL = new ActionListener() {
             @Override
@@ -194,12 +205,15 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         this.jMenuItemGenerateCSRRenew.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
         this.jMenuItemImportCSRResponseInitial.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
         this.jMenuItemImportCSRResponseRenew.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemFileReference.setIcon(new ImageIcon(IMAGE_REFERENCE.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemFileKeyCopy.setIcon(new ImageIcon(IMAGE_KEYCOPY.toMinResolution(IMAGE_SIZE_MENUITEM)));
     }
 
     @Override
     public void setVisible(boolean flag) {
         if (flag) {
             this.setMultiresolutionIcons();
+            this.setButtonState();
         }
         super.setVisible(flag);
     }
@@ -273,12 +287,30 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     }
 
     /**
+     * Set the handler to copy entries from one keystore manager to another. If
+     * this is not passed the entry "key copy" in the UI will be greyed out
+     *
+     * @param handler
+     */
+    public void setKeyCopyHandler(KeyCopyHandler handler) {
+        if (this.manager == null) {
+            throw new IllegalArgumentException("JDialogCertificates: Please call initialize() before "
+                    + "passing a key copy handler");
+        }
+        if( handler != null ){
+            handler.setSource(this.manager);
+        }
+        this.panelCertificates.setKeyCopyHandler(handler);
+        this.jMenuItemFileKeyCopy.setEnabled(handler != null);        
+    }
+
+    /**
      * Initializes the keystore gui
      */
     public void initialize(KeystoreStorage keystoreStorage) {
         this.manager = new CertificateManager(this.logger);
         this.setTitle(this.getTitle() + " | " + keystoreStorage.getKeystoreStorageType());
-        manager.loadKeystoreCertificates(keystoreStorage);
+        this.manager.loadKeystoreCertificates(keystoreStorage);
         this.jTextFieldCertFileInfo.setText(keystoreStorage.getOriginalKeystoreFilename());
         this.panelCertificates.addKeystore(manager);
         this.setButtonState();
@@ -341,9 +373,9 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             InputStream inStream = null;
             try {
                 KeyStoreUtil util = new KeyStoreUtil();
-                Provider provBC = new BouncyCastleProvider();
                 inStream = Files.newInputStream(Paths.get(importFilename));
-                List<X509Certificate> certList = util.readCertificates(inStream, provBC);
+                List<X509Certificate> certList = util.readCertificates(inStream,
+                        BouncyCastleProvider.PROVIDER_NAME);
                 X509Certificate importCertificate = certList.get(selectedCertificateIndex);
                 String proposedAlias = util.getProposalCertificateAliasForImport(importCertificate);
                 String alias = JOptionPane.showInputDialog(this,
@@ -351,7 +383,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 if (alias == null || alias.trim().length() == 0) {
                     return;
                 }
-                util.importX509Certificate(this.manager.getKeystore(), importFilename, alias, selectedCertificateIndex, provBC);
+                util.importX509Certificate(this.manager.getKeystore(), importFilename, alias, selectedCertificateIndex,
+                        BouncyCastleProvider.PROVIDER_NAME);
                 this.manager.saveKeystore();
                 this.manager.rereadKeystoreCertificates();
                 //inform the server that there are changes in the keystore
@@ -464,9 +497,9 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
 
     private void generateCSR(boolean initial) {
         CSRUtil util = new CSRUtil();
-        KeystoreCertificate selectedCert = this.panelCertificates.getSelectedCertificate();
+        KeystoreCertificate selectedPrivateKey = this.panelCertificates.getSelectedCertificate();
         try {
-            PKCS10CertificationRequest csr = util.generateCSR(this.manager, selectedCert.getAlias());
+            PKCS10CertificationRequest csr = util.generateCSR(this.manager, selectedPrivateKey.getAlias());
             String title = this.rbCSR.getResourceString("csr.title.renew");
             String storequestion = this.rbCSR.getResourceString("csr.message.storequestion.renew");
             String[] options = new String[]{
@@ -682,6 +715,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                     && !selectedCert.isSelfSigned());
             this.jMenuItemImportCSRResponseRenew.setEnabled(operationAllowed && selectedCert != null && selectedCert.getIsKeyPair()
                     && !selectedCert.isSelfSigned());
+            this.jMenuItemFileReference.setEnabled(selectedCert != null
+                    && this.panelCertificates.isReferenceFunctionAvailable());
         }
     }
 
@@ -704,7 +739,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         }
         return (newAlias);
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -717,6 +752,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuBar = new javax.swing.JMenuBar();
         jMenuFile = new javax.swing.JMenu();
         jMenuItemFileEdit = new javax.swing.JMenuItem();
+        jMenuItemFileReference = new javax.swing.JMenuItem();
+        jMenuItemFileKeyCopy = new javax.swing.JMenuItem();
         jMenuItemFileDelete = new javax.swing.JMenuItem();
         jMenuItemFileDeleteAllExpired = new javax.swing.JMenuItem();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
@@ -772,6 +809,24 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             }
         });
         jMenuFile.add(jMenuItemFileEdit);
+
+        jMenuItemFileReference.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
+        jMenuItemFileReference.setText(this.rb.getResourceString( "button.reference"));
+        jMenuItemFileReference.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemFileReferenceActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemFileReference);
+
+        jMenuItemFileKeyCopy.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
+        jMenuItemFileKeyCopy.setText(this.rb.getResourceString( "button.keycopy"));
+        jMenuItemFileKeyCopy.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemFileKeyCopyActionPerformed(evt);
+            }
+        });
+        jMenuFile.add(jMenuItemFileKeyCopy);
 
         jMenuItemFileDelete.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemFileDelete.setText(this.rb.getResourceString( "button.delete"));
@@ -1286,6 +1341,14 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         this.panelCertificates.deleteAllUnusedExpiredEntries();
     }//GEN-LAST:event_jMenuItemFileDeleteAllExpiredActionPerformed
 
+    private void jMenuItemFileReferenceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemFileReferenceActionPerformed
+        this.panelCertificates.displayReference();
+    }//GEN-LAST:event_jMenuItemFileReferenceActionPerformed
+
+    private void jMenuItemFileKeyCopyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemFileKeyCopyActionPerformed
+       this.panelCertificates.keycopy();
+    }//GEN-LAST:event_jMenuItemFileKeyCopyActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonAddCertificate;
     private javax.swing.JButton jButtonDeleteCertificate;
@@ -1308,6 +1371,8 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     private javax.swing.JMenuItem jMenuItemFileDelete;
     private javax.swing.JMenuItem jMenuItemFileDeleteAllExpired;
     private javax.swing.JMenuItem jMenuItemFileEdit;
+    private javax.swing.JMenuItem jMenuItemFileKeyCopy;
+    private javax.swing.JMenuItem jMenuItemFileReference;
     private javax.swing.JMenuItem jMenuItemGenerateCSRInitial;
     private javax.swing.JMenuItem jMenuItemGenerateCSRRenew;
     private javax.swing.JMenuItem jMenuItemGenerateKey;

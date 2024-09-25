@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 22    19/01/22 16:17 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 23    24/11/22 10:22 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 23 $
  */
 public class ResourceBundleConfigurationIssue extends MecResourceBundle {
 
@@ -42,8 +42,8 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "Valid from: {3}<br>"
             + "Valid to: {4}<br>"
             + "<br></HTML>"},
-        {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_SSL), "Certificate expired (SSL)"},
-        {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_SSL),
+        {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS), "Certificate expired (TLS)"},
+        {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS),
             "<HTML>Certificates have only a limited term. This is usually one, three or five years.<br>"
             + "A certificate that you use in your system for the SSL/TLS handshake is no longer valid.<br>"
             + "It is not possible to perform cryptographic operations with an expired certificate - "
@@ -55,13 +55,13 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "Valid from: {3}<br>"
             + "Valid to: {4}<br>"
             + "<br></HTML>"},
-        {String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE), "Multiple keys found in SSL keystore - must be single key"},
-        {"hint." + String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_SSL_KEYSTORE),
+        {String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE), "Multiple keys found in TLS keystore - must be single key"},
+        {"hint." + String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE),
             "<HTML>There are several keys in the SSL/TLS keystore of your system.<br>"
             + "However, only one key may be in it - this is used as the SSL/TLS key when the server is started.<br>"
             + "Please delete the key from the SSL/TLS keystore until there is only one key left. You can recognize the keys in the certificate manager by the key symbol in the first column. After this change it is necessary to restart the server.</HTML>"},
-        {String.valueOf(ConfigurationIssue.NO_KEY_IN_SSL_KEYSTORE), "No key found in SSL keystore"},
-        {"hint." + String.valueOf(ConfigurationIssue.NO_KEY_IN_SSL_KEYSTORE),
+        {String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE), "No key found in TLS keystore"},
+        {"hint." + String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE),
             "<HTML>No key was found in the SSL/TLS keystore of your system.<br>"
             + "You can recognize a key by the key symbol in front of it when you open the certificate manager.<br>"
             + "Exactly one key is required in the SSL/TLS keystore to execute the handshake process of the SSL/TLS line security.<br>"
@@ -103,8 +103,8 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             "<HTML>Your local station hasn''t assigned a sign key.<br>"
             + "You cannot sign any outbound message messages in this configuration - regardless to which partner.<br>"
             + "Please open the partner management and assign a private key to the local station.</HTML>"},
-        {String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL), "Use of a public available test key as SSL key"},
-        {"hint." + String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_SSL),
+        {String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS), "Use of a public available test key as TLS key"},
+        {"hint." + String.valueOf(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS),
             "<HTML>mendelson provides test keys in the delivery.<br>"
             + "These are publicly available on the mendelson website.<br>"
             + "If you use these keys productively for cryptographic tasks within your data transfer, they therefore offer NO security.<br>"
@@ -132,6 +132,23 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "Please decrease this value by increasing the monitoring intervals of the respective partner directories and "
             + "also disable outbound directory monitoring for partners where this is not required.<br><br>"
             + "For a huge amount of partners it is recommended to disable all directory monitoring processes and create the send orders "
-            + "from your backend using the commands <i>AS2Send.exe</i> or <i>as2send.sh</i> on demand.</HTML>"}
+            + "from your backend using the commands <i>AS2Send.exe</i> or <i>as2send.sh</i> on demand.</HTML>"},
+        {String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO), "Internal keystore file (sign/encryption) is read only"},
+        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO),
+            "<HTML>The underlying file for managing cryptographic keys and certificates \"{0}\" cannot be written by the "
+            + "current user of the server process ({1}).<br>"
+            + "This does not limit the function of the system - but it is not possible to make changes "
+            + "in the certificate manager (signature/encryption).<br>"
+            + "So in this state you cannot add, delete or rename keys/certificates "
+            + "in the system."
+            + "</HTML>" },
+        {String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO), "Internal keystore file (TLS) is read only"},
+        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO),
+            "<HTML>The underlying file for managing cryptographic keys and certificates \"{0}\" cannot be written by the "
+            + "current user of the server process ({1}).<br>"
+            + "This does not limit the function of the system - but it is not possible to make changes "
+            + "in the certificate manager (TLS).<br>"
+            + "So in this state you cannot add, delete or rename keys/certificates in the system."
+            + "</HTML>" },
     };
 }

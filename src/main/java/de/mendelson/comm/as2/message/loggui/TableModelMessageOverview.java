@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 33    30.11.21 11:08 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 35    22/11/22 16:38 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -33,7 +33,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 33 $
+ * @version $Revision: 35 $
  */
 public class TableModelMessageOverview extends AbstractTableModel {
 
@@ -62,11 +62,11 @@ public class TableModelMessageOverview extends AbstractTableModel {
     /**
      * ResourceBundle to localize the headers
      */
-    private MecResourceBundle rb = null;
+    private final MecResourceBundle rb;
     /**
      * ResourceBundle to localize the enc/signature stuff
      */
-    private MecResourceBundle rbMessage = null;
+    private final MecResourceBundle rbMessage;
     /**
      * Stores all partner ids and the corresponding partner objects
      */
@@ -78,7 +78,7 @@ public class TableModelMessageOverview extends AbstractTableModel {
     /**
      * Format the date display
      */
-    private DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
     /**
      * Creates new LogTableModel
@@ -107,12 +107,27 @@ public class TableModelMessageOverview extends AbstractTableModel {
     }
 
     /**
-     * Passes data to the model and fires a table data update
+     * Passes data to the model and fires a table data update. If there has been already loaded
+     * a payload for the message (if it existed already and the new message hasnt one - copy
+     * the payload from the existing one. No need to request if again from the server
      */
     public void passNewData(List<AS2Message> newData) {
         synchronized (this.data) {
+            List<AS2Message> existingData = new ArrayList<AS2Message>();
+            existingData.addAll(this.data);            
             this.data.clear();
-            this.data.addAll(newData);
+            for( AS2Message newMessage:newData){
+                this.data.add(newMessage);
+                if( newMessage.getPayloadCount() == 0 ){
+                    int existingIndex = existingData.indexOf(newMessage);
+                    if( existingIndex >= 0 ){
+                        AS2Message existingMessage = existingData.get(existingIndex);
+                        if( existingMessage.getPayloadCount() > 0){
+                            newMessage.setPayloads(existingMessage.getPayloads());
+                        }
+                    }                    
+                }
+            }
         }
         ((AbstractTableModel) this).fireTableDataChanged();
     }
@@ -131,6 +146,20 @@ public class TableModelMessageOverview extends AbstractTableModel {
         }
     }
 
+    /**Returns a list of messages with already updated/existing payloads*/
+    public List<AS2Message> getMessagesWithoutPassedPayloads(){
+        List<AS2Message> messagePayloadList = new ArrayList<AS2Message>();
+        synchronized( this.data ){
+            for( AS2Message message:this.data ){
+                if( message.getPayloadCount() == 0 ){
+                    messagePayloadList.add( message );
+                }
+            }
+        }
+        return( messagePayloadList );
+    }
+    
+    
     /**
      * Returns the data stored in the specific row
      *

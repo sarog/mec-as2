@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_de.java 7     28.09.21 11:05 Heller $ 
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_de.java 8     7/12/22 16:31 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleExportCertificate_de extends MecResourceBundle {
 
@@ -34,10 +34,10 @@ public class ResourceBundleExportCertificate_de extends MecResourceBundle {
         {"button.cancel", "Abbrechen"},
         {"button.browse", "Durchsuchen"},
         {"title", "X.509 Zertifikat exportieren"},
-        {"label.exportfile", "Dateiname:"},
+        {"label.exportfile", "Dateiname"},
         {"label.exportfile.hint", "Zertifikatsdatei, die generiert wird"},
-        {"label.alias", "Alias:"},
-        {"label.exportformat", "Format:"},
+        {"label.alias", "Alias"},
+        {"label.exportformat", "Format"},
         {"filechooser.certificate.export", "Bitte wählen Sie den Dateinamen für den Export."},
         {"certificate.export.error.title", "Fehler beim Export"},
         {"certificate.export.error.message", "Der Export des Zertifikates schlug fehl:\n{0}"},

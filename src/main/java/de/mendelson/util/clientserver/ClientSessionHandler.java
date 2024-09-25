@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/ClientSessionHandler.java 28    6.12.21 11:54 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandler.java 29    11/02/22 13:14 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -24,7 +24,7 @@ import org.apache.mina.core.session.IoSession;
  * Client side protocol handler
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 29 $
  */
 public class ClientSessionHandler extends IoHandlerAdapter {
 
@@ -33,7 +33,7 @@ public class ClientSessionHandler extends IoHandlerAdapter {
     /**
      * Callback that is used for event notification
      */
-    private final ClientSessionHandlerCallback callback;
+    private ClientSessionHandlerCallback callback = null;
     /**
      * stores the sync requests
      */
@@ -93,14 +93,15 @@ public class ClientSessionHandler extends IoHandlerAdapter {
         //sync response: check if there was a request for this message
         if (message._isSyncRequest()) {
             ClientServerResponse response = (ClientServerResponse) message;
-                if (!this.syncMap.containsKey(response.getReferenceId())) {
-                    Exception unreferredSyncResponse = new Exception("[Client-Server communication] The client received a unreferred sync response. Type: " + response.getClass().getName()
-                            + ", reference id: " + response.getReferenceId());
-                    this.callback.syncRequestFailed(unreferredSyncResponse);
-                } else {
-                    BlockingQueue queue = this.syncMap.get(response.getReferenceId());
-                    queue.offer(response);
-                }
+            if (!this.syncMap.containsKey(response.getReferenceId())) {
+                Exception unreferredSyncResponseException
+                        = new Exception("[Client-Server communication] The client received a unreferred sync response. Type: " + response.getClass().getName()
+                                + ", reference id: " + response.getReferenceId());
+                this.callback.syncRequestFailed(null, response, unreferredSyncResponseException);
+            } else {
+                BlockingQueue queue = this.syncMap.get(response.getReferenceId());
+                queue.offer(response);
+            }
         }
         if (message instanceof ServerLogMessage) {
             if (this.displayServerLogMessages) {
@@ -116,7 +117,7 @@ public class ClientSessionHandler extends IoHandlerAdapter {
 
     @Override
     public void sessionClosed(IoSession session) throws Exception {
-        callback.disconnected();
+        this.callback.disconnected();
     }
 
     public ClientServerResponse waitForSyncAnswerInfinite(IoSession session, Long referenceId) throws Exception {
@@ -137,14 +138,14 @@ public class ClientSessionHandler extends IoHandlerAdapter {
      */
     public ClientServerResponse waitForSyncAnswer(Long referenceId, long timeoutInMS) throws Exception {
         BlockingQueue<ClientServerResponse> queue = null;
-            if (!this.syncMap.containsKey(referenceId)) {
-                Exception unreferredSyncResponse = new Exception("[Client-Server communication] ClientSessionHandler.waitForSyncAnswer: "
-                        + "The message that should be waited for is unreferred."
-                        + " Reference id: " + referenceId);
-                this.callback.syncRequestFailed(unreferredSyncResponse);
-            } else {
-                queue = this.syncMap.get(referenceId);
-            }
+        if (!this.syncMap.containsKey(referenceId)) {
+            Exception unreferredSyncResponseException = new Exception("[Client-Server communication] ClientSessionHandler.waitForSyncAnswer: "
+                    + "The message that should be waited for is unreferred."
+                    + " Reference id: " + referenceId);
+            this.callback.syncRequestFailed(null, null, unreferredSyncResponseException);
+        } else {
+            queue = this.syncMap.get(referenceId);
+        }
         ClientServerResponse response = null;
         if (queue != null) {
             response = queue.poll(timeoutInMS, TimeUnit.MILLISECONDS);
@@ -154,24 +155,27 @@ public class ClientSessionHandler extends IoHandlerAdapter {
 
     public void addSyncRequest(ClientServerMessage request) {
         BlockingQueue<ClientServerResponse> queue = new LinkedBlockingQueue<ClientServerResponse>(1);
-            this.syncMap.put(request.getReferenceId(), queue);
+        this.syncMap.put(request.getReferenceId(), queue);
     }
 
     public void removeSyncRequest(ClientServerMessage request) {
-            if (!this.syncMap.containsKey(request.getReferenceId())) {
-                Exception unreferredSyncResponse = new Exception("[Client-Server communication] ClientSessionHandler.removeSyncRequest: "
-                        + "The message to remove from the sync map does not exist. "
-                        + " Reference id: " + request.getReferenceId());
-                this.callback.syncRequestFailed(unreferredSyncResponse);
-            }
-            this.syncMap.remove(request.getReferenceId());
+        if (!this.syncMap.containsKey(request.getReferenceId())) {
+            Exception unreferredSyncResponseException = new Exception("[Client-Server communication] ClientSessionHandler.removeSyncRequest: "
+                    + "The message to remove from the sync map does not exist. "
+                    + " Reference id: " + request.getReferenceId());
+            this.callback.syncRequestFailed(request, null, unreferredSyncResponseException);
+        }
+        this.syncMap.remove(request.getReferenceId());
     }
 
     /**
      * Inform the callback that a sync request failed
+     *
+     * @param request sync request that failed
+     * @param the exception that was thrown
      */
-    public void syncRequestFailed(Throwable throwable) {
-        this.callback.syncRequestFailed(throwable);
+    public void syncRequestFailed(ClientServerMessage request, ClientServerMessage response, Throwable throwable) {
+        this.callback.syncRequestFailed(request, response, throwable);
     }
 
     @Override

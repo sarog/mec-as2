@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 37    9.03.21 13:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 41    15/11/22 9:23 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * Initiates a CEM request
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 41 $
  */
 public class CEMInitiator {
 
@@ -60,11 +60,6 @@ public class CEMInitiator {
      * Stores the certificates
      */
     private CertificateManager certificateManagerEncSign;
-    /**
-     * Partner access
-     */
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private IDBDriverManager dbDriverManager;
     private PartnerAccessDB partnerAccess;
     private MecResourceBundle rb;
@@ -74,8 +69,7 @@ public class CEMInitiator {
      *
      * @param host host to connect to
      */
-    public CEMInitiator(IDBDriverManager dbDriverManager, Connection configConnection,
-            Connection runtimeConnection, CertificateManager certificateManagerEncSign) {
+    public CEMInitiator(IDBDriverManager dbDriverManager, CertificateManager certificateManagerEncSign) {
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -83,8 +77,6 @@ public class CEMInitiator {
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
         this.dbDriverManager = dbDriverManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
@@ -99,10 +91,10 @@ public class CEMInitiator {
             throws Exception {
         //get all partner that are CEM enabled
         List<Partner> cemPartnerList = new ArrayList<Partner>();
-        PartnerSystemAccessDB systemAccess = new PartnerSystemAccessDB(this.partnerAccess);
+        PartnerSystemAccessDB systemAccess = new PartnerSystemAccessDB(this.dbDriverManager);
         //check again if this partner supports CEM...
         for (Partner partner : receiver) {
-            PartnerSystem partnerSystem = systemAccess.getPartnerSystem(partner, this.configConnection);
+            PartnerSystem partnerSystem = systemAccess.getPartnerSystem(partner);
             if (partnerSystem != null && partnerSystem.supportsCEM()) {
                 cemPartnerList.add(partner);
             }
@@ -114,7 +106,7 @@ public class CEMInitiator {
         }
         for (SendOrder order : orderList) {
             SendOrderSender orderSender
-                    = new SendOrderSender(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                    = new SendOrderSender(this.dbDriverManager);
             orderSender.send(order);
         }
         return (cemPartnerList);
@@ -183,12 +175,10 @@ public class CEMInitiator {
         order.setSender(initiator);
         AS2MessageInfo messageInfo = (AS2MessageInfo) order.getMessage().getAS2Info();
         //enter the request to the CEM table in the db
-        CEMAccessDB cemAccess = new CEMAccessDB(
-                this.dbDriverManager,
-                this.configConnection, this.runtimeConnection);
+        CEMAccessDB cemAccess = new CEMAccessDB(this.dbDriverManager);
         cemAccess.insertRequest((AS2MessageInfo) order.getMessage().getAS2Info(), initiator, order.getReceiver(), request);
         MessageAccessDB messageAccess
-                = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                = new MessageAccessDB(this.dbDriverManager);
         messageAccess.initializeOrUpdateMessage(messageInfo);
         this.logger.log(Level.INFO, this.rb.getResourceString("cem.created.request",
                 new Object[]{

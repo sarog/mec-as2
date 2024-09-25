@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_de.java 9     14.08.19 17:08 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_de.java 12    7/10/22 10:37 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize 
  * eagle to your language, please contact us: localize@mendelson.de
  * @author  S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleNotification_de extends MecResourceBundle {
 
@@ -26,9 +26,9 @@ public class ResourceBundleNotification_de extends MecResourceBundle {
     }
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
-        //dialog
+        {"module.name", "[EMAIL BENACHRICHTIGUNG]" },
         {"test.message.send", "Eine Testnachricht wurde geschickt an {0}."},
-        {"test.message.debug", "\nDer Mailversandprozess schlug fehlt, die folgenden Zusatzinformationen könnten Ihnen helfen, das Problem einzugrenzen:\n" },        
+        {"test.message.debug", "\nDer Nachrichtenversand schlug fehl.\n" },        
         {"misc.message.send", "Eine Benachrichtigungsmail wurde an {0} geschickt ({1}-{2})."},
         {"misc.message.send.failed", "Das Senden einer Benachrichtigungsmail an {0} schlug fehl"},
         {"notification.about.event", "Diese Benachrichtigung bezieht sich auf das Systemereignis von {0}.\nDringlichkeit: {1}\nQuelle: {2}\nTyp: {3}\nId: {4}" },
@@ -43,5 +43,8 @@ public class ResourceBundleNotification_de extends MecResourceBundle {
         {"misc.message.summary.send", "Eine zusammenfassende Benachrichtigungsmail wurde an {0} geschickt" },
         {"misc.message.summary.failed", "Das Senden einer zusammenfassenden Benachrichtigungsmail an {0} schlug fehl" },
         {"do.not.reply", "Bitte antworten Sie nicht auf diese Nachricht."},      
+        {"authorization.none", "KEINE" },
+        {"authorization.oauth2", "OAUTH2" },
+        {"authorization.credentials", "Benutzer/Passwort" },
     };
 }

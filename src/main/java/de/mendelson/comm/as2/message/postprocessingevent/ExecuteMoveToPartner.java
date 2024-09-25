@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 6     9.03.21 13:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 10    24/08/22 14:57 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -15,7 +15,6 @@ import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -34,7 +33,7 @@ import java.util.logging.Logger;
  * defined remote partner
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 10 $
  */
 public class ExecuteMoveToPartner implements IProcessingExecution {
 
@@ -43,24 +42,19 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
     private MDNAccessDB mdnAccess;
     private PartnerAccessDB partnerAccess;
     private CertificateManager certificateManagerEncSign;
-    
+
     /**
      * Localize your GUI!
      */
     private MecResourceBundle rb = null;
-    //DB connections
-    private Connection runtimeConnection;
-    private Connection configConnection;
     private IDBDriverManager dbDriverManager;
 
-    public ExecuteMoveToPartner(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection,
+    public ExecuteMoveToPartner(IDBDriverManager dbDriverManager,
             CertificateManager certificateManagerEncSign) {
-        this.runtimeConnection = runtimeConnection;
-        this.configConnection = configConnection;
         this.dbDriverManager = dbDriverManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.messageAccess = new MessageAccessDB(dbDriverManager, configConnection, runtimeConnection);
-        this.mdnAccess = new MDNAccessDB(dbDriverManager, configConnection, runtimeConnection);
+        this.messageAccess = new MessageAccessDB(dbDriverManager);
+        this.mdnAccess = new MDNAccessDB(dbDriverManager);
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
         //Load resourcebundle
         try {
@@ -81,13 +75,14 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
         //get all required values for this event
         AS2MessageInfo messageInfo = this.messageAccess.getLastMessageEntry(event.getMessageId());
         if (messageInfo == null) {
-            throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", messageInfo.getMessageId()));
-        }
-        if (event.getEventType() == ProcessingEvent.TYPE_SEND_FAILURE
-                || event.getEventType() == ProcessingEvent.TYPE_SEND_SUCCESS) {
-            this.executeMoveToPartnerOnSend(event, messageInfo);
+            throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", event.getMessageId()));
         } else {
-            this.executeMoveToPartnerOnReceipt(event, messageInfo);
+            if (event.getEventType() == ProcessingEvent.TYPE_SEND_FAILURE
+                    || event.getEventType() == ProcessingEvent.TYPE_SEND_SUCCESS) {
+                this.executeMoveToPartnerOnSend(event, messageInfo);
+            } else {
+                this.executeMoveToPartnerOnReceipt(event, messageInfo);
+            }
         }
     }
 
@@ -134,7 +129,7 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
                 String[] originalFilenames = new String[]{originalFilename};
                 String[] payloadContentTypes = new String[]{targetPartner.getContentType()};
                 try {
-                    SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                    SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager);
                     orderSender.send(this.certificateManagerEncSign, messageSender,
                             targetPartner, sendFiles, originalFilenames, null,
                             targetPartner.getSubject(), payloadContentTypes);
@@ -191,7 +186,7 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
                     Path[] sendFiles = new Path[]{sourceFile};
                     String[] originalFilenames = new String[]{originalFilename};
                     String[] payloadContentTypes = new String[]{targetPartner.getContentType()};
-                    SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                    SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager);
                     orderSender.send(this.certificateManagerEncSign, messageReceiver,
                             targetPartner, sendFiles, originalFilenames, null,
                             targetPartner.getSubject(), payloadContentTypes);

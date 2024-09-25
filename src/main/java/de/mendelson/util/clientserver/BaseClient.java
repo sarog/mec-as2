@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/BaseClient.java 49    28.10.21 11:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 51    23/08/22 10:28 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
@@ -39,7 +39,7 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * Abstract client for a user
  *
  * @author S.Heller
- * @version $Revision: 49 $
+ * @version $Revision: 51 $
  */
 public class BaseClient {
 
@@ -145,7 +145,6 @@ public class BaseClient {
             SslFilter sslFilter = new SslFilter(this.createSSLContextClient());
             sslFilter.setEnabledProtocols(ClientServer.SERVERSIDE_ACCEPTED_TLS_PROTOCOLS);
             sslFilter.setNeedClientAuth(false);
-            sslFilter.setUseClientMode(true);
             this.connector.getFilterChain().addFirst("TLS", sslFilter);
             //add CPU bound tasks first
             this.connector.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger, this.clientSessionHandler.getCallback())));
@@ -256,7 +255,7 @@ public class BaseClient {
             }
             response = this.clientSessionHandler.waitForSyncAnswerInfinite(this.session, request.getReferenceId());
         } catch (Throwable throwable) {
-            this.clientSessionHandler.syncRequestFailed(throwable);
+            this.clientSessionHandler.syncRequestFailed(request, response, throwable);
         } finally {
             //remove the request from the map
             this.clientSessionHandler.removeSyncRequest(request);
@@ -307,7 +306,7 @@ public class BaseClient {
                 throw exception;
             }
         } catch (Throwable throwable) {
-            this.clientSessionHandler.syncRequestFailed(throwable);
+            this.clientSessionHandler.syncRequestFailed(request, response, throwable);
         } finally {
             //remove the request from the map
             this.clientSessionHandler.removeSyncRequest(request);

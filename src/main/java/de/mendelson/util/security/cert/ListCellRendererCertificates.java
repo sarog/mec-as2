@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ListCellRendererCertificates.java 8     16.09.21 11:34 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ListCellRendererCertificates.java 9     29/08/22 15:21 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -25,7 +25,7 @@ import javax.swing.SwingConstants;
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ListCellRendererCertificates extends JLabel implements ListCellRenderer {
 
@@ -205,11 +205,11 @@ public class ListCellRendererCertificates extends JLabel implements ListCellRend
             if (value instanceof KeystoreCertificate) {
                 KeystoreCertificate certificate = (KeystoreCertificate) value;
                 if (certificate.getIsKeyPair()) {
-                    this.setIcon(new ImageIcon(TableModelCertificates.ICON_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                    this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
                 } else if (certificate.isRootCertificate()) {
-                    this.setIcon(new ImageIcon(TableModelCertificates.ICON_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                    this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
                 } else {
-                    this.setIcon(new ImageIcon(TableModelCertificates.ICON_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                    this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
                 }
                 this.setEnabled(list.isEnabled());
                 StringBuilder text = new StringBuilder(certificate.getAlias());
@@ -224,11 +224,11 @@ public class ListCellRendererCertificates extends JLabel implements ListCellRend
                 this.setText(text.toString());
             } else {
                 this.setText(this.rb.getResourceString("certificate.not.assigned"));
-                this.setIcon(new ImageIcon(TableModelCertificates.ICON_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
             }
         } else {
             this.setText(this.rb.getResourceString("certificate.not.assigned"));
-            this.setIcon(new ImageIcon(TableModelCertificates.ICON_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+            this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
         }
         this.setHorizontalAlignment(SwingConstants.LEADING);
         this.setHorizontalTextPosition(SwingConstants.RIGHT);

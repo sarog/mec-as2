@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 3     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 4     1/09/22 14:11 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -16,7 +16,7 @@ import java.util.Properties;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class IncomingMessageRequest extends ClientServerMessage implements Serializable {
 
@@ -25,6 +25,7 @@ public class IncomingMessageRequest extends ClientServerMessage implements Seria
     private String remoteHost = null;
     private Properties header = new Properties();
     private String messageDataFilename = null;
+    private boolean usesTLS = false;
 
     public IncomingMessageRequest() {
     }
@@ -77,6 +78,20 @@ public class IncomingMessageRequest extends ClientServerMessage implements Seria
      */
     public void setMessageDataFilename(String messageDataFilename) {
         this.messageDataFilename = messageDataFilename;
+    }
+
+    /**
+     * @return the usesTLS
+     */
+    public boolean usesTLS() {
+        return usesTLS;
+    }
+
+    /**
+     * @param usesTLS the usesTLS to set
+     */
+    public void setUsesTLS(boolean usesTLS) {
+        this.usesTLS = usesTLS;
     }
 
 }

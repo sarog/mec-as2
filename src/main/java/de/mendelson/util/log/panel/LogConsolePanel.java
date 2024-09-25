@@ -1,9 +1,9 @@
-//$Header: /oftp2/de/mendelson/util/log/panel/LogConsolePanel.java 14    19.02.21 11:33 Heller $
+//$Header: /as2/de/mendelson/util/log/panel/LogConsolePanel.java 17    18/05/22 12:16 Heller $
 package de.mendelson.util.log.panel;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import de.mendelson.util.log.IRCColors;
+import de.mendelson.util.log.ANSI;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.JTextPaneOutputStream;
 import de.mendelson.util.log.LogFormatter;
@@ -33,26 +33,26 @@ import javax.swing.JPanel;
  * The frame system output/debug info is written to
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 17 $
  */
 public class LogConsolePanel extends JPanel implements ClipboardOwner {
 
-    public static final String COLOR_BLACK = IRCColors.BLACK;
-    public static final String COLOR_BLUE = IRCColors.BLUE;
-    public static final String COLOR_BROWN = IRCColors.BROWN;
-    public static final String COLOR_CYAN = IRCColors.CYAN;
-    public static final String COLOR_DARK_BLUE = IRCColors.DARK_BLUE;
-    public static final String COLOR_DARK_GRAY = IRCColors.DARK_GRAY;
-    public static final String COLOR_DARK_GREEN = IRCColors.DARK_GREEN;
-    public static final String COLOR_GREEN = IRCColors.GREEN;
-    public static final String COLOR_LIGHT_GRAY = IRCColors.LIGHT_GRAY;
-    public static final String COLOR_MAGENTA = IRCColors.MAGENTA;
-    public static final String COLOR_OLIVE = IRCColors.OLIVE;
-    public static final String COLOR_PURPLE = IRCColors.PURPLE;
-    public static final String COLOR_RED = IRCColors.RED;
-    public static final String COLOR_TEAL = IRCColors.TEAL;
-    public static final String COLOR_WHITE = IRCColors.WHITE;
-    public static final String COLOR_YELLOW = IRCColors.YELLOW;
+    public static final String COLOR_BLACK = ANSI.COLOR_SYSTEM_BLACK;
+    public static final String COLOR_LIGHT_BLUE = ANSI.COLOR_SYSTEM_BLUE_BRIGHT;
+    public static final String COLOR_LIGHT_RED = ANSI.COLOR_SYSTEM_RED_BRIGHT;
+    public static final String COLOR_LIGHT_CYAN = ANSI.COLOR_SYSTEM_CYAN_BRIGHT;
+    public static final String COLOR_LIGHT_GREEN = ANSI.COLOR_SYSTEM_GREEN_BRIGHT;
+    public static final String COLOR_LIGHT_GRAY = ANSI.COLOR_SYSTEM_GREY_BRIGHT;
+    public static final String COLOR_LIGHT_PURPLE = ANSI.COLOR_SYSTEM_PURPLE_BRIGHT;
+    public static final String COLOR_DARK_BLUE = ANSI.COLOR_SYSTEM_BLUE;
+    public static final String COLOR_DARK_GRAY = ANSI.COLOR_SYSTEM_GREY;    
+    public static final String COLOR_DARK_GREEN = ANSI.COLOR_SYSTEM_GREEN;
+    public static final String COLOR_DARK_PURPLE = ANSI.COLOR_SYSTEM_PURPLE;
+    public static final String COLOR_DARK_RED = ANSI.COLOR_SYSTEM_RED;
+    public static final String COLOR_DARK_CYAN = ANSI.COLOR_SYSTEM_CYAN;
+    public static final String COLOR_WHITE = ANSI.COLOR_SYSTEM_WHITE_BRIGHT;
+    public static final String COLOR_DARK_YELLOW = ANSI.COLOR_SYSTEM_YELLOW;
+    public static final String COLOR_LIGHT_YELLOW = ANSI.COLOR_SYSTEM_YELLOW;
 
     /**
      * PrintStream to write in, this is just a wrapper to the internal logger.
@@ -73,7 +73,7 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
     private static final MendelsonMultiResolutionImage IMAGE_CLIPBOARD
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/log/panel/notes.svg", 18, 36);
     
-    public LogConsolePanel(Logger logger, Formatter logFormatter) {
+    public LogConsolePanel(Logger logger, LogFormatter logFormatter) {
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -117,7 +117,7 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
         }
     }
 
-    private void initialize(Logger logger, Formatter logFormatter) {
+    private void initialize(Logger logger, LogFormatter logFormatter) {
         this.logger = logger;
         this.logger.setUseParentHandlers(false);
         OutputStream logStream = new JTextPaneOutputStream(this.jTextPane);
@@ -134,12 +134,12 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
      *
      */
     public void setDefaultColors(JTextPaneLoggingHandler handler) {
-        handler.setColor(Level.SEVERE, COLOR_RED);
-        handler.setColor(Level.WARNING, COLOR_BROWN);
+        handler.setColor(Level.SEVERE, COLOR_DARK_RED);
+        handler.setColor(Level.WARNING, COLOR_DARK_BLUE);
         handler.setColor(Level.INFO, COLOR_BLACK);
         handler.setColor(Level.CONFIG, COLOR_DARK_GREEN);
-        handler.setColor(Level.FINE, COLOR_BLUE);
-        handler.setColor(Level.FINER, COLOR_OLIVE);
+        handler.setColor(Level.FINE, COLOR_LIGHT_GRAY);
+        handler.setColor(Level.FINER, COLOR_LIGHT_GRAY);
         handler.setColor(Level.FINEST, COLOR_LIGHT_GRAY);
     }
 
@@ -149,14 +149,6 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
      */
     public void setColor(Level level, String color) {
         this.handler.setColor(level, color);
-    }
-
-    /**
-     * Controls the contrast of the used colors and tries to adjust them for
-     * higher contrast
-     */
-    public void adjustColorsByContrast() {
-        this.handler.adjustColorsByContrast();
     }
 
     /**

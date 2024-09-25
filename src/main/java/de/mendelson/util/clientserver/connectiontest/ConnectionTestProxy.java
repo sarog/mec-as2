@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestProxy.java 3     19.11.21 10:35 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestProxy.java 4     24/08/22 12:56 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.io.Serializable;
@@ -21,9 +21,10 @@ import java.net.SocketAddress;
  * for the real connection should be used.
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ConnectionTestProxy implements Serializable {
+    public static final long serialVersionUID = 1L;
 
     /**
      * By default the standard telnet port is used

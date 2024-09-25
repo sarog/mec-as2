@@ -1,4 +1,4 @@
- //$Header: /mendelson_business_integration/de/mendelson/util/IOFileFilterRegexpMatch.java 3     14.04.14 9:56 Heller $
+ //$Header: /as2/de/mendelson/util/IOFileFilterRegexpMatch.java 4     24/08/22 12:55 Heller $
 package de.mendelson.util;
 
 import java.io.File;
@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * are positive and negative patterns possible (matching/nonmatching).
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class IOFileFilterRegexpMatch implements DirectoryStream.Filter {
 
@@ -121,19 +121,19 @@ public class IOFileFilterRegexpMatch implements DirectoryStream.Filter {
         }
     }
 
-    public static final void main(String[] args) {
-        IOFileFilterRegexpMatch fileFilter = new IOFileFilterRegexpMatch();
-        fileFilter.addNonMatchingPattern("*.txt");
-        fileFilter.addNonMatchingPattern("*.log");        
-        File dir = new File("c:/temp");
-        Path dirPath = dir.toPath();
-        try {
-            DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath, fileFilter);
-            for (Path entry : stream) {
-                System.out.println(entry.getFileName());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+//    public static final void main(String[] args) {
+//        IOFileFilterRegexpMatch fileFilter = new IOFileFilterRegexpMatch();
+//        fileFilter.addNonMatchingPattern("*.txt");
+//        fileFilter.addNonMatchingPattern("*.log");        
+//        File dir = new File("c:/temp");
+//        Path dirPath = dir.toPath();
+//        try {
+//            DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath, fileFilter);
+//            for (Path entry : stream) {
+//                System.out.println(entry.getFileName());
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//    }
 }

@@ -1,4 +1,4 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 13    23.08.21 13:48 Heller $
+///$Header: /mec_as2/de/mendelson/comm/as2/servlet/ServerState.java 14    2/01/23 15:57 Heller $
 package de.mendelson.comm.as2.servlet;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,7 +12,7 @@ package de.mendelson.comm.as2.servlet;
  * Servlet to display the server state
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
@@ -81,7 +81,7 @@ public class ServerState extends HttpServlet {
             client.setDisplayServerLogMessages(false);
             client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             ServerInfoResponse response = (ServerInfoResponse) client.sendSync(new ServerInfoRequest(), 30000);
-            long startTime = new Long(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME)).longValue();
+            long startTime = Long.valueOf(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME)).longValue();
             builder.append("The AS2 processing unit "
                     + response.getProperties().getProperty(ServerInfoResponse.SERVER_PRODUCT_NAME) + " "
                     + response.getProperties().getProperty(ServerInfoResponse.SERVER_VERSION) + " "

@@ -1,13 +1,9 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 62    2/02/22 16:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 75    9/11/22 15:46 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
-import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
-import de.mendelson.comm.as2.database.DBDriverManagerMySQL;
-import de.mendelson.comm.as2.database.DBDriverManagerPostgreSQL;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.server.ServerInstance;
-import de.mendelson.comm.as2.server.ServerPlugins;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
@@ -39,7 +35,7 @@ import java.sql.ResultSet;
  * Class to manage the preferences of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 62 $
+ * @version $Revision: 75 $
  */
 public class PreferencesAS2 {
 
@@ -124,6 +120,14 @@ public class PreferencesAS2 {
     public static final String HIDEABLECOLS = "hideablecols";
     public static final String COLOR_BLINDNESS = "colorblindness";
     public static final String LAST_UPDATE_CHECK = "lastupdatecheck";
+    public static final String DISPLAY_MODE_CLIENT = "displaymodeclient";
+    public static final String TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES = "trustallservercerts";
+    public static final String TLS_STRICT_HOST_CHECK = "stricthostcheck";
+    public static final String EMBEDDED_HTTP_SERVER_STARTED = "embeddedhttpserverstarted";
+    public static final String HTTP_LISTEN_PORT = "jetty.http.port";
+    public static final String HTTPS_LISTEN_PORT = "jetty.ssl.port";
+    public static final String EMBEDDED_HTTP_SERVER_SETTINGS_ACCESSIBLE = "embeddedhttpserversettingsaccessible";
+    public static final String MAX_INBOUND_CONNECTIONS = "jetty.connectionlimit.maxConnections";
 
     private IDBDriverManager dbDriverManager = null;
 
@@ -135,8 +139,6 @@ public class PreferencesAS2 {
         DIR_MSG,
         ASYNC_MDN_TIMEOUT,
         KEYSTORE_HTTPS_SEND,
-        KEYSTORE_HTTPS_SEND_PASS,
-        KEYSTORE_PASS,
         KEYSTORE,
         AUTH_PROXY_USER,
         AUTH_PROXY_PASS,
@@ -155,14 +157,32 @@ public class PreferencesAS2 {
         PROXY_USE,
         RECEIPT_PARTNER_SUBDIR,
         HTTP_SEND_TIMEOUT,
-        SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG,
-        SHOW_HTTPHEADER_IN_PARTNER_CONFIG,
         CEM,
         WRITE_OUTBOUND_STATUS_FILE,
         MAX_CONNECTION_RETRY_COUNT,
         MAX_OUTBOUND_CONNECTIONS,
         CONNECTION_RETRY_WAIT_TIME_IN_S,
-        DATASHEET_RECEIPT_URL
+        TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES,
+        TLS_STRICT_HOST_CHECK
+    };
+
+    /**
+     * These properties are constant. You could try to change them but they will
+     * always return the default value
+     */
+    private final String[] CONSTANT_PROPERTIES = new String[]{
+        KEYSTORE_HTTPS_SEND_PASS,
+        KEYSTORE_PASS,
+        EMBEDDED_HTTP_SERVER_STARTED
+    };
+
+    /**
+     * These properties are stored in the embedded jetty properties file
+     */
+    private final String[] JETTY_PROPERTIES = new String[]{
+        HTTP_LISTEN_PORT,
+        HTTPS_LISTEN_PORT,
+        MAX_INBOUND_CONNECTIONS
     };
 
     /**
@@ -228,7 +248,7 @@ public class PreferencesAS2 {
             return (new File(System.getProperty("user.dir")).getAbsolutePath() + FileSystems.getDefault().getSeparator() + "messages");
         }
         if (KEY.equals(KEYSTORE_HTTPS_SEND)) {
-            return ("jetty9/etc/keystore");
+            return ("jetty10/etc/keystore");
         }
         if (KEY.equals(KEYSTORE)) {
             return ("certificates.p12");
@@ -304,7 +324,7 @@ public class PreferencesAS2 {
             return ("FALSE");
         }
         if (KEY.equals(COMMUNITY_EDITION)) {
-            return (ServerInstance.ID.equals("COMMUN") ? "TRUE" : "FALSE");
+            return (ServerInstance.ID.equals(ServerInstance.ID_COMMUNITY_EDITION) ? "TRUE" : "FALSE");
         }
         if (KEY.equals(LAST_UPDATE_CHECK)) {
             return ("0");
@@ -338,6 +358,31 @@ public class PreferencesAS2 {
         }
         if (KEY.equals(COLOR_BLINDNESS)) {
             return ("FALSE");
+        }
+        if (KEY.equals(DISPLAY_MODE_CLIENT)) {
+            return ("LIGHT");
+        }
+        if (KEY.equals(TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES)) {
+            return ("FALSE");
+        }
+        if (KEY.equals(TLS_STRICT_HOST_CHECK)) {
+            return ("FALSE");
+        }
+        if (KEY.equals(EMBEDDED_HTTP_SERVER_STARTED)) {
+            return (System.getProperty("mendelson.as2.embeddedhttpserver", "TRUE"));
+        }
+        if (KEY.equals(HTTPS_LISTEN_PORT)) {
+            return ("8443");
+        }
+        if (KEY.equals(HTTP_LISTEN_PORT)) {
+            return ("8080");
+        }
+        if (KEY.equals(EMBEDDED_HTTP_SERVER_SETTINGS_ACCESSIBLE)) {
+            JettyConfigfileHandler handler = JettyConfigfileHandler.instance();
+            return (handler.configFileAccessible() ? "TRUE" : "FALSE");
+        }
+        if (KEY.equals(MAX_INBOUND_CONNECTIONS)) {
+            return ("1000");
         }
         throw new IllegalArgumentException("No defaults defined for prefs key " + KEY + " in " + this.getClass().getName());
     }
@@ -443,6 +488,27 @@ public class PreferencesAS2 {
     }
 
     /**
+     * Indicates if this is a constant property. In this case it is not possible
+     * to change the default value
+     *
+     * @param KEY
+     * @return
+     */
+    private boolean isConstantProperty(String KEY) {
+        return (Arrays.asList(CONSTANT_PROPERTIES).contains(KEY));
+    }
+
+    /**
+     * Indicates if this is a property that is stored in the jetty config file
+     *
+     * @param KEY
+     * @return
+     */
+    private boolean isJettyProperty(String KEY) {
+        return (Arrays.asList(JETTY_PROPERTIES).contains(KEY));
+    }
+
+    /**
      * Will read a setting from the storage and return null if there is no
      * storage entry - then the default value should be returned
      *
@@ -450,6 +516,13 @@ public class PreferencesAS2 {
      * @return
      */
     private String readSetting(String KEY) {
+        if (isConstantProperty(KEY)) {
+            return (this.getDefaultValue(KEY));
+        }
+        if (isJettyProperty(KEY)) {
+            JettyConfigfileHandler handler = JettyConfigfileHandler.instance();
+            return (handler.getValue(KEY, this.getDefaultValue(KEY)));
+        }
         if (isServerSideProperty(KEY)) {
             PreparedStatement statement = null;
             if (this.dbDriverManager == null) {
@@ -505,89 +578,92 @@ public class PreferencesAS2 {
      * @return
      */
     private void writeSetting(String KEY, String value) {
-        if (isServerSideProperty(KEY)) {
-            Statement statementTransaction = null;
-            PreparedStatement statementUpdate = null;
-            PreparedStatement statementInsert = null;
-            if (this.dbDriverManager == null) {
-                this.setDBDriverManagerByPluginCheck();
-            }
-            Connection configConnectionNoAutoCommit = null;
-            try {
-                configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-                configConnectionNoAutoCommit.setAutoCommit(false);
-                String transactionName = "PreferencesAS2_writeSetting";
-                statementTransaction = configConnectionNoAutoCommit.createStatement();
-                dbDriverManager.setTableLockINSERTAndUPDATE(statementTransaction, new String[]{"serversettings"});
-                //try to update existing row
-                statementUpdate = configConnectionNoAutoCommit.prepareStatement("UPDATE serversettings SET vvalue=? WHERE vkey=?");
-                statementUpdate.setString(1, value);
-                statementUpdate.setString(2, KEY);
-                int updatedRows = statementUpdate.executeUpdate();
-                if (updatedRows == 0) {
-                    //nothing updated - this was a new entry
-                    statementInsert = configConnectionNoAutoCommit.prepareStatement("INSERT INTO serversettings(vkey,vvalue)VALUES(?,?)");
-                    statementInsert.setString(1, KEY);
-                    statementInsert.setString(2, value);
-                    statementInsert.executeUpdate();
+        if (isJettyProperty(KEY)) {
+            //write to jetty config file if this is a jetty config setting
+            JettyConfigfileHandler handler = JettyConfigfileHandler.instance();
+            handler.setValue(KEY, value);
+        } else if (!isConstantProperty(KEY)) {
+            if (isServerSideProperty(KEY)) {
+                Statement statementTransaction = null;
+                PreparedStatement statementUpdate = null;
+                PreparedStatement statementInsert = null;
+                if (this.dbDriverManager == null) {
+                    this.setDBDriverManagerByPluginCheck();
                 }
-                this.dbDriverManager.commitTransaction(statementTransaction, transactionName);
-            } catch (Exception e) {
+                Connection configConnectionNoAutoCommit = null;
                 try {
-                    this.dbDriverManager.rollbackTransaction(statementTransaction);
-                } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-                }
-                SystemEventManagerImplAS2.systemFailure(e);
-            } finally {
-                if (statementUpdate != null) {
+                    configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+                    configConnectionNoAutoCommit.setAutoCommit(false);
+                    String transactionName = "PreferencesAS2_writeSetting";
+                    statementTransaction = configConnectionNoAutoCommit.createStatement();
+                    dbDriverManager.startTransaction(statementTransaction, transactionName);
+                    dbDriverManager.setTableLockINSERTAndUPDATE(statementTransaction, 
+                            new String[]{"serversettings"});
+                    //try to update existing row
+                    statementUpdate = configConnectionNoAutoCommit.prepareStatement("UPDATE serversettings SET vvalue=? WHERE vkey=?");
+                    statementUpdate.setString(1, value);
+                    statementUpdate.setString(2, KEY);
+                    int updatedRows = statementUpdate.executeUpdate();
+                    if (updatedRows == 0) {
+                        //nothing updated - this was a new entry
+                        statementInsert = configConnectionNoAutoCommit.prepareStatement("INSERT INTO serversettings(vkey,vvalue)VALUES(?,?)");
+                        statementInsert.setString(1, KEY);
+                        statementInsert.setString(2, value);
+                        statementInsert.executeUpdate();
+                    }
+                    this.dbDriverManager.commitTransaction(statementTransaction, transactionName);
+                } catch (Exception e) {
                     try {
-                        statementUpdate.close();
-                    } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        this.dbDriverManager.rollbackTransaction(statementTransaction);
+                    } catch (Exception ex) {
+                        SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    }
+                    SystemEventManagerImplAS2.systemFailure(e);
+                } finally {
+                    if (statementUpdate != null) {
+                        try {
+                            statementUpdate.close();
+                        } catch (Exception e) {
+                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        }
+                    }
+                    if (statementInsert != null) {
+                        try {
+                            statementInsert.close();
+                        } catch (Exception e) {
+                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        }
+                    }
+                    if (statementTransaction != null) {
+                        try {
+                            statementTransaction.close();
+                        } catch (Exception e) {
+                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        }
+                    }
+                    if (configConnectionNoAutoCommit != null) {
+                        try {
+                            configConnectionNoAutoCommit.close();
+                        } catch (Exception e) {
+                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        }
                     }
                 }
-                if (statementInsert != null) {
-                    try {
-                        statementInsert.close();
-                    } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
+            } else {
+                //its a client value - just write it to the preferences
+                Preferences preferences = Preferences.userNodeForPackage(AS2ServerVersion.class);
+                preferences.put(KEY, value);
+                try {
+                    preferences.flush();
+                } catch (BackingStoreException ignore) {
                 }
-                if (statementTransaction != null) {
-                    try {
-                        statementTransaction.close();
-                    } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
-                }
-                if (configConnectionNoAutoCommit != null) {
-                    try {
-                        configConnectionNoAutoCommit.close();
-                    } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
-                }
-            }
-        } else {
-            Preferences preferences = Preferences.userNodeForPackage(AS2ServerVersion.class);
-            preferences.put(KEY, value);
-            try {
-                preferences.flush();
-            } catch (BackingStoreException ignore) {
             }
         }
     }
 
     private synchronized void setDBDriverManagerByPluginCheck() {
         if (this.dbDriverManager == null) {
-            if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_POSTGRESQL)) {
-                this.dbDriverManager = DBDriverManagerPostgreSQL.instance();
-            } else if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_MYSQL)) {
-                this.dbDriverManager = DBDriverManagerMySQL.instance();
-            } else {
-                this.dbDriverManager = DBDriverManagerHSQL.instance();
-            }
+            this.dbDriverManager = AS2Server.getActivatedDBDriverManager();
         }
     }
 
@@ -610,7 +686,9 @@ public class PreferencesAS2 {
                 configConnection.setAutoCommit(false);
                 String transactionName = "PreferencesAS2_deleteSetting";
                 statementTransactionControl = configConnection.createStatement();
-                this.dbDriverManager.setTableLockDELETE(statementTransactionControl, new String[]{"serversettings"});
+                this.dbDriverManager.startTransaction(statementTransactionControl, transactionName);
+                this.dbDriverManager.setTableLockDELETE(statementTransactionControl, 
+                        new String[]{"serversettings"});
                 statementDelete = configConnection.prepareStatement("DELETE FROM serversettings WHERE vkey=?");
                 statementDelete.setString(1, KEY);
                 statementDelete.executeUpdate();

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ProgressPanel.java 15    12.02.20 14:44 Heller $
+//$Header: /as2/de/mendelson/util/ProgressPanel.java 16    17/02/22 11:30 Heller $
 package de.mendelson.util;
 
 import java.util.ArrayList;
@@ -19,11 +19,12 @@ import javax.swing.SwingUtilities;
  * Progress panel to display status information.
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class ProgressPanel extends JPanel {
 
     private final List<ProgressRequest> progressList = Collections.synchronizedList(new ArrayList<ProgressRequest>());
+    private final BoundedRangeModel progressModel;
 
     /**
      * Creates new form ProgressPanel
@@ -31,15 +32,21 @@ public class ProgressPanel extends JPanel {
     public ProgressPanel() {
         this.initComponents();
         this.disableProgressDisplay();
+        this.progressModel = this.jProgressBar.getModel();
     }
 
     private void disableProgressDisplay() {
-        this.jProgressBar.setIndeterminate(false);
-        BoundedRangeModel progressModel = ProgressPanel.this.jProgressBar.getModel();
-        progressModel.setRangeProperties( 0, 0, 0, 0, false);
-        this.jProgressBar.setStringPainted(false);
-        this.jLabelProgressDetails.setText(null);
-        this.jProgressBar.setVisible(false);
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                jProgressBar.setIndeterminate(false);
+                progressModel.setRangeProperties(0, 0, 0, 0, false);
+                jProgressBar.setStringPainted(false);
+                jLabelProgressDetails.setText(null);
+                jProgressBar.setVisible(false);
+            }
+        };
+        SwingUtilities.invokeLater(runnable);
     }
 
     /**
@@ -55,7 +62,7 @@ public class ProgressPanel extends JPanel {
         this.displayProgressBar(request);
     }
 
-    private synchronized void displayProgressBar(final ProgressRequest request) {
+    private void displayProgressBar(final ProgressRequest request) {
         Runnable runnable = new Runnable() {
 
             @Override
@@ -80,7 +87,6 @@ public class ProgressPanel extends JPanel {
                     if (request.isIndeterminate()) {
                         ProgressPanel.this.jProgressBar.setStringPainted(false);
                     } else {
-                        BoundedRangeModel progressModel = ProgressPanel.this.jProgressBar.getModel();
                         progressModel.setRangeProperties(
                                 request.getActualValue(), 0,
                                 request.getMinValue(), request.getMaxValue(), false);

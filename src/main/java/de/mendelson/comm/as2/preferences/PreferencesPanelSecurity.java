@@ -1,7 +1,6 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSecurity.java 29    23.09.21 12:27 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSecurity.java 33    8/06/22 11:10 Heller $
 package de.mendelson.comm.as2.preferences;
 
-import de.mendelson.util.passwordfield.PasswordOverlay;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
@@ -25,7 +24,7 @@ import javax.swing.SwingUtilities;
  * Panel to define the directory preferences
  *
  * @author S.Heller
- * @version: $Revision: 29 $
+ * @version: $Revision: 33 $
  */
 public class PreferencesPanelSecurity extends PreferencesPanel {
 
@@ -61,8 +60,6 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         this.baseClient = baseClient;
         this.preferences = new PreferencesClient(baseClient);
         this.initComponents();
-        PasswordOverlay.addTo(this.jPasswordFieldKeystorePass);
-        PasswordOverlay.addTo(this.jPasswordFieldKeystoreHTTPPass);
         this.jLabelSecurityHint.setIcon(new ImageIcon(ICON_WARNING_SIGN));
         this.jLabelSecurityHint.setText(this.rb.getResourceString("keystore.hint"));
         this.jLabelSecurityHint.setIconTextGap(20);
@@ -75,8 +72,6 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
     @Override
     public void loadPreferences() {
         this.jTextFieldKeystoreHTTPS.setText(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND));
-        this.jPasswordFieldKeystoreHTTPPass.setText(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS));
-        this.jPasswordFieldKeystorePass.setText(this.preferences.get(PreferencesAS2.KEYSTORE_PASS));
         this.jTextFieldKeystoreEncryptionSign.setText(this.preferences.get(PreferencesAS2.KEYSTORE));
     }
 
@@ -93,10 +88,6 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         jTextFieldKeystoreHTTPS = new javax.swing.JTextField();
         jLabelKeystoreHTTPS = new javax.swing.JLabel();
         jButtonBrowseKeystoreHTTPS = new javax.swing.JButton();
-        jLabelKeystoreHTTPSPass = new javax.swing.JLabel();
-        jPasswordFieldKeystoreHTTPPass = new javax.swing.JPasswordField();
-        jLabelKeystorePass = new javax.swing.JLabel();
-        jPasswordFieldKeystorePass = new javax.swing.JPasswordField();
         jLabelKeystoreEncryptionSign = new javax.swing.JLabel();
         jTextFieldKeystoreEncryptionSign = new javax.swing.JTextField();
         jPanelWarning = new javax.swing.JPanel();
@@ -108,17 +99,13 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
 
         jPanelMargin.setLayout(new java.awt.GridBagLayout());
 
-        jTextFieldKeystoreHTTPS.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                jTextFieldKeystoreHTTPSKeyReleased(evt);
-            }
-        });
+        jTextFieldKeystoreHTTPS.setMinimumSize(new java.awt.Dimension(250, 22));
+        jTextFieldKeystoreHTTPS.setPreferredSize(new java.awt.Dimension(250, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         jPanelMargin.add(jTextFieldKeystoreHTTPS, gridBagConstraints);
 
@@ -144,52 +131,6 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
         jPanelMargin.add(jButtonBrowseKeystoreHTTPS, gridBagConstraints);
 
-        jLabelKeystoreHTTPSPass.setText(this.rb.getResourceString( "label.keystore.https.pass"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelMargin.add(jLabelKeystoreHTTPSPass, gridBagConstraints);
-
-        jPasswordFieldKeystoreHTTPPass.setMinimumSize(new java.awt.Dimension(200, 20));
-        jPasswordFieldKeystoreHTTPPass.setPreferredSize(new java.awt.Dimension(200, 20));
-        jPasswordFieldKeystoreHTTPPass.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                jPasswordFieldKeystoreHTTPPassKeyReleased(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelMargin.add(jPasswordFieldKeystoreHTTPPass, gridBagConstraints);
-
-        jLabelKeystorePass.setText(this.rb.getResourceString( "label.keystore.pass"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelMargin.add(jLabelKeystorePass, gridBagConstraints);
-
-        jPasswordFieldKeystorePass.setMinimumSize(new java.awt.Dimension(200, 20));
-        jPasswordFieldKeystorePass.setPreferredSize(new java.awt.Dimension(200, 20));
-        jPasswordFieldKeystorePass.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                jPasswordFieldKeystorePassKeyReleased(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelMargin.add(jPasswordFieldKeystorePass, gridBagConstraints);
-
         jLabelKeystoreEncryptionSign.setText(this.rb.getResourceString( "label.keystore.encryptionsign"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -198,17 +139,13 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMargin.add(jLabelKeystoreEncryptionSign, gridBagConstraints);
 
-        jTextFieldKeystoreEncryptionSign.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                jTextFieldKeystoreEncryptionSignKeyReleased(evt);
-            }
-        });
+        jTextFieldKeystoreEncryptionSign.setMinimumSize(new java.awt.Dimension(250, 22));
+        jTextFieldKeystoreEncryptionSign.setPreferredSize(new java.awt.Dimension(250, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMargin.add(jTextFieldKeystoreEncryptionSign, gridBagConstraints);
 
@@ -264,10 +201,6 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         add(jPanelMargin, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jPasswordFieldKeystorePassKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldKeystorePassKeyReleased
-        this.preferences.put(PreferencesAS2.KEYSTORE_PASS, new String(this.jPasswordFieldKeystorePass.getPassword()));
-    }//GEN-LAST:event_jPasswordFieldKeystorePassKeyReleased
-
     private void jButtonBrowseKeystoreHTTPSActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseKeystoreHTTPSActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         RemoteFileBrowser browser = new RemoteFileBrowser(parent, this.baseClient,
@@ -281,18 +214,6 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
         }
         this.preferences.put(PreferencesAS2.KEYSTORE_HTTPS_SEND, this.jTextFieldKeystoreHTTPS.getText());
     }//GEN-LAST:event_jButtonBrowseKeystoreHTTPSActionPerformed
-
-    private void jPasswordFieldKeystoreHTTPPassKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jPasswordFieldKeystoreHTTPPassKeyReleased
-        this.preferences.put(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS, new String(this.jPasswordFieldKeystoreHTTPPass.getPassword()));
-    }//GEN-LAST:event_jPasswordFieldKeystoreHTTPPassKeyReleased
-
-    private void jTextFieldKeystoreHTTPSKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldKeystoreHTTPSKeyReleased
-        this.preferences.put(PreferencesAS2.KEYSTORE_HTTPS_SEND, this.jTextFieldKeystoreHTTPS.getText());
-    }//GEN-LAST:event_jTextFieldKeystoreHTTPSKeyReleased
-
-    private void jTextFieldKeystoreEncryptionSignKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldKeystoreEncryptionSignKeyReleased
-        this.preferences.put(PreferencesAS2.KEYSTORE, this.jTextFieldKeystoreEncryptionSign.getText());
-}//GEN-LAST:event_jTextFieldKeystoreEncryptionSignKeyReleased
 
     private void jButtonBrowseKeystoreEncryptionSignActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseKeystoreEncryptionSignActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
@@ -314,21 +235,18 @@ public class PreferencesPanelSecurity extends PreferencesPanel {
     private javax.swing.JButton jButtonBrowseKeystoreHTTPS;
     private javax.swing.JLabel jLabelKeystoreEncryptionSign;
     private javax.swing.JLabel jLabelKeystoreHTTPS;
-    private javax.swing.JLabel jLabelKeystoreHTTPSPass;
-    private javax.swing.JLabel jLabelKeystorePass;
     private javax.swing.JLabel jLabelSecurityHint;
     private javax.swing.JPanel jPanelMargin;
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JPanel jPanelWarning;
-    private javax.swing.JPasswordField jPasswordFieldKeystoreHTTPPass;
-    private javax.swing.JPasswordField jPasswordFieldKeystorePass;
     private javax.swing.JTextField jTextFieldKeystoreEncryptionSign;
     private javax.swing.JTextField jTextFieldKeystoreHTTPS;
     // End of variables declaration//GEN-END:variables
 
     @Override
     public void savePreferences() {
-        //NOP
+        this.preferences.put(PreferencesAS2.KEYSTORE_HTTPS_SEND, this.jTextFieldKeystoreHTTPS.getText());
+        this.preferences.put(PreferencesAS2.KEYSTORE, this.jTextFieldKeystoreEncryptionSign.getText());
     }
 
     @Override

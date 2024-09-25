@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 63    16.09.21 15:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 65    22/11/22 16:38 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.security.encryption.EncryptionConstantsAS2;
@@ -10,19 +10,21 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
  * Stores a AS2 message
  *
  * @author S.Heller
- * @version $Revision: 63 $
+ * @version $Revision: 65 $
  */
 public class AS2Message implements Serializable {
 
     public static final long serialVersionUID = 1L;
-    
+
     public static final int ENCRYPTION_UNKNOWN = EncryptionConstantsAS2.ENCRYPTION_UNKNOWN;
     public static final int ENCRYPTION_NONE = EncryptionConstantsAS2.ENCRYPTION_NONE;
     public static final int ENCRYPTION_3DES = EncryptionConstantsAS2.ENCRYPTION_3DES;
@@ -59,11 +61,11 @@ public class AS2Message implements Serializable {
     public static final int SIGNATURE_SHA3_224 = SignatureConstantsAS2.SIGNATURE_SHA3_224;
     public static final int SIGNATURE_SHA3_256 = SignatureConstantsAS2.SIGNATURE_SHA3_256;
     public static final int SIGNATURE_SHA3_384 = SignatureConstantsAS2.SIGNATURE_SHA3_384;
-    public static final int SIGNATURE_SHA3_512 = SignatureConstantsAS2.SIGNATURE_SHA3_512;    
+    public static final int SIGNATURE_SHA3_512 = SignatureConstantsAS2.SIGNATURE_SHA3_512;
     public static final int SIGNATURE_SHA3_224_RSASSA_PSS = SignatureConstantsAS2.SIGNATURE_SHA3_224_RSASSA_PSS;
     public static final int SIGNATURE_SHA3_256_RSASSA_PSS = SignatureConstantsAS2.SIGNATURE_SHA3_256_RSASSA_PSS;
     public static final int SIGNATURE_SHA3_384_RSASSA_PSS = SignatureConstantsAS2.SIGNATURE_SHA3_384_RSASSA_PSS;
-    public static final int SIGNATURE_SHA3_512_RSASSA_PSS = SignatureConstantsAS2.SIGNATURE_SHA3_512_RSASSA_PSS;    
+    public static final int SIGNATURE_SHA3_512_RSASSA_PSS = SignatureConstantsAS2.SIGNATURE_SHA3_512_RSASSA_PSS;
     public static final int COMPRESSION_UNKNOWN = 0;
     public static final int COMPRESSION_NONE = 1;
     public static final int COMPRESSION_ZLIB = 2;
@@ -81,17 +83,17 @@ public class AS2Message implements Serializable {
     /**
      * Stores the raw message data
      */
-    private ByteStorage rawData = new ByteStorage();
+    private final ByteStorage rawData = new ByteStorage();
     /**
      * Stores the raw message data, decrypted. Contains the same data as the raw
      * data if the message has been sent unencrypted
      */
-    private ByteStorage decryptedRawData = new ByteStorage();
+    private final ByteStorage decryptedRawData = new ByteStorage();
     /**
      * Payload of the as2 message, will be only one if the AS2 version is < AS2
      * 1.2
      */
-    private List<AS2Payload> payload = new ArrayList<AS2Payload>();
+    private final List<AS2Payload> payload = Collections.synchronizedList(new ArrayList<AS2Payload>());
     private Properties header = new Properties();
     private String contentType;
 
@@ -140,7 +142,9 @@ public class AS2Message implements Serializable {
      * 1 if the AS2 version is < AS2 1.2
      */
     public int getPayloadCount() {
-        return (this.payload.size());
+        synchronized (this.payload) {
+            return (this.payload.size());
+        }
     }
 
     /**
@@ -194,14 +198,24 @@ public class AS2Message implements Serializable {
      * AS2 version is < AS2 1.2
      */
     public AS2Payload getPayload(int index) {
-        if (this.payload == null || this.payload.isEmpty()) {
-            throw new IllegalArgumentException("AS2 message does not contain " + index + " payloads.");
+        synchronized (this.payload) {
+            if (this.payload.isEmpty()) {
+                throw new IllegalArgumentException("AS2 message does not contain " + index + " payloads.");
+            }
+            return (this.payload.get(index));
         }
-        return (this.payload.get(index));
     }
 
     public void addPayload(AS2Payload data) {
-        this.payload.add(data);
+        synchronized (this.payload) {
+            this.payload.add(data);
+        }
+    }
+    
+    public void clearPayloads() {
+        synchronized (this.payload) {
+            this.payload.clear();
+        }
     }
 
     /**
@@ -209,7 +223,9 @@ public class AS2Message implements Serializable {
      */
     public List<AS2Payload> getPayloads() {
         List<AS2Payload> list = new ArrayList<AS2Payload>();
-        list.addAll(this.payload);
+        synchronized (this.payload) {
+            list.addAll(this.payload);
+        }
         return (list);
     }
 
@@ -217,8 +233,10 @@ public class AS2Message implements Serializable {
      * Deletes the actual payloads and adds the passed ones
      */
     public void setPayloads(List<AS2Payload> payloads) {
-        this.payload.clear();
-        this.payload.addAll(payloads);
+        synchronized (this.payload) {
+            this.payload.clear();
+            this.payload.addAll(payloads);
+        }
     }
 
     /**
@@ -228,10 +246,10 @@ public class AS2Message implements Serializable {
         OutputStream outStream = null;
         InputStream inStream = null;
         try {
-            outStream = Files.newOutputStream(file, 
-                    StandardOpenOption.SYNC, 
-                    StandardOpenOption.CREATE, 
-                    StandardOpenOption.TRUNCATE_EXISTING, 
+            outStream = Files.newOutputStream(file,
+                    StandardOpenOption.SYNC,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
                     StandardOpenOption.WRITE);
             inStream = this.decryptedRawData.getInputStream();
             inStream.transferTo(outStream);
@@ -267,4 +285,37 @@ public class AS2Message implements Serializable {
     public void setAS2Info(AS2Info as2Info) {
         this.as2Info = as2Info;
     }
+    
+    /**
+     * Overwrite the equal method of object
+     *
+     * @param anObject object to compare
+     */
+    @Override
+    public boolean equals(Object anObject) {
+        if (anObject == this) {
+            return (true);
+        }
+        if (anObject != null && anObject instanceof AS2Message) {
+            AS2Message aMessage = (AS2Message)anObject;
+            if( aMessage.getAS2Info() != null && this.getAS2Info() != null ){
+                return( aMessage.getAS2Info().equals( this.getAS2Info()));
+            }
+            return( false );
+        }
+        return (false);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 5;
+        hash = 97 * hash + Objects.hashCode(this.as2Info);
+        hash = 97 * hash + Objects.hashCode(this.rawData);
+        hash = 97 * hash + Objects.hashCode(this.decryptedRawData);
+        hash = 97 * hash + Objects.hashCode(this.payload);
+        hash = 97 * hash + Objects.hashCode(this.header);
+        hash = 97 * hash + Objects.hashCode(this.contentType);
+        return hash;
+    }
+    
 }

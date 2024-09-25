@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplay.java 3     16.09.21 15:04 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplay.java 4     8/12/22 11:35 Heller $
 package de.mendelson.util.security.signature;
 
 import java.util.Objects;
@@ -8,11 +8,11 @@ import javax.swing.ImageIcon;
  * Container superclass for the signature rendering
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public abstract class SignatureDisplay{
 
-    private Object wrappedValue;
+    private final Object wrappedValue;
     
     public SignatureDisplay( Object wrappedValue ){
         this.wrappedValue = wrappedValue;

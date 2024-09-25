@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer.java 15    12.02.21 14:43 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer.java 18    23/06/22 16:50 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,7 +17,7 @@ import de.mendelson.util.database.IDBDriverManager;
  * to localize eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleDBServer extends MecResourceBundle {
 
@@ -32,6 +32,7 @@ public class ResourceBundleDBServer extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
+        {"module.name", "[DATABASE]" },
         {"database." + IDBDriverManager.DB_CONFIG, "configuration database" },
         {"database." + IDBDriverManager.DB_RUNTIME, "runtime database" },
         {"dbserver.startup", "Starting embedded DB server.." },
@@ -50,6 +51,12 @@ public class ResourceBundleDBServer extends MecResourceBundle {
         {"update.error.postgres", "FATAL: Impossible to update database "
             + " from version {0} to {1}.\n"
             + "Please enter pgAdmin and delete the database. An update seems to be impossible."},
+        {"update.error.mysql", "FATAL: Impossible to update database "
+            + " from version {0} to {1}.\n"
+            + "Please enter MySQLWorkbench and delete the database. An update seems to be impossible."},
+        {"update.error.oracledb", "FATAL: Impossible to update database "
+            + " from version {0} to {1}.\n"
+            + "Please enter the Oracle SQL Developer and delete the database. An update seems to be impossible."},
         {"update.successfully", "{0}: Update to the necessary version has been finished successfully."},
         {"update.notfound", "For the update, the file update{0}to{1}.sql and/or "
             + "Update{0}to{1}.class must exists in the (resource)directory {2}."},

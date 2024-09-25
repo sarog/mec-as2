@@ -1,17 +1,1 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 19.1.0, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="-167 69 64 64" style="enable-background:new -167 69 64 64;" xml:space="preserve">
-<style type="text/css">
-	.st0{fill:#FFFFFF;stroke:#808080;stroke-linecap:round;stroke-linejoin:round;}
-	.st1{fill:#808080;}
-</style>
-<title>filter</title>
-<rect x="-166.5" y="69.5" class="st0" width="63" height="63"/>
-<g>
-	<polyline class="st1" points="-155.7,92.5 -139.9,105.9 -139.9,120.4 -130.1,120.4 -130.1,105.9 -114.3,92.5 -114.3,84 -155.7,84 
-		-155.7,92.5 	"/>
-	<path class="st1" d="M-130.1,121.5h-9.7c-0.6,0-1-0.4-1-1v-14.1l-15.5-13.1c-0.2-0.2-0.4-0.5-0.4-0.8V84c0-0.6,0.4-1,1-1h41.3
-		c0.6,0,1,0.4,1,1v8.5c0,0.3-0.1,0.6-0.4,0.8l-15.5,13.1v14.1C-129.1,121-129.6,121.5-130.1,121.5z"/>
-</g>
-</svg>
+<svg id="a958a94e-cf80-4915-988e-7f9b6cab05d0" data-name="Layer 1" xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64"><defs><style>.b0b78003-22ec-4a3b-8610-b5e7e5fb744c{fill:#fff;}.f90986eb-ae1c-4d19-ab47-888043004326{fill:gray;}.b445d152-7e5f-4c30-bb59-48662fafc090{fill:#534741;}</style></defs><rect class="b0b78003-22ec-4a3b-8610-b5e7e5fb744c" x="0.5" y="0.5" width="63" height="63"/><path class="f90986eb-ae1c-4d19-ab47-888043004326" d="M63.5,64H.5a.5.5,0,0,1-.5-.5V.5A.5.5,0,0,1,.5,0h63a.5.5,0,0,1,.5.5v63A.5.5,0,0,1,63.5,64ZM1,63H63V1H1Z"/><polygon class="b445d152-7e5f-4c30-bb59-48662fafc090" points="53 14 9 14 25 31 25 47 27 48 27 30 13.495 16 48.555 16 35 30 35 52 36.981 53 37 31 53 14"/></svg>

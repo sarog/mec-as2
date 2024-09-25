@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_fr.java 15    12.02.21 14:43 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_fr.java 18    23/06/22 16:50 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.database.IDBDriverManager;
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 15 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleDBServer_fr extends MecResourceBundle {
 
@@ -28,6 +28,7 @@ public class ResourceBundleDBServer_fr extends MecResourceBundle {
     }
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
+        {"module.name", "[BASE DE DONNEES]" },
         {"database." + IDBDriverManager.DB_CONFIG, "base de configuration" },
         {"database." + IDBDriverManager.DB_RUNTIME, "base de maturité" },
         {"dbserver.startup", "Démarrer le serveur de base de données.." },
@@ -46,6 +47,12 @@ public class ResourceBundleDBServer_fr extends MecResourceBundle {
         {"update.error.postgres", "FATAL: Impossible de mettre à jour la base de données "
             + " de la version {0} vers la version {1}.\n"
             + "Veuillez lancer pgAdmin et supprimer la base de données correspondante."},
+        {"update.error.mysql", "FATAL: Impossible de mettre à jour la base de données "
+            + " de la version {0} vers la version {1}.\n"
+            + "Veuillez lancer MySQLWorkbench et supprimer la base de données correspondante."},
+        {"update.error.oracledb", "FATAL: Impossible de mettre à jour la base de données "
+            + " de la version {0} vers la version {1}.\n"
+            + "Veuillez lancer Oracle SQL Developer et supprimer la base de données correspondante."},
         {"update.successfully", "La mise à jour de la BD vers la version requise a été réalisée avec succès."},
         {"update.notfound", "Pour la mise à jour, the fichier update{0}to{1}.sql et/ou "
             + "Update{0}to{1}.class doivent être présents dans le répertoire sqlscript."},

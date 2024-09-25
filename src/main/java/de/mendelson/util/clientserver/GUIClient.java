@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/GUIClient.java 35    27/01/22 10:23 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/GUIClient.java 37    24/02/22 14:20 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -39,7 +39,7 @@ import javax.swing.SwingUtilities;
  * GUI Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 37 $
  */
 public abstract class GUIClient extends JFrame implements ClientSessionHandlerCallback {
 
@@ -111,21 +111,32 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
     public abstract Logger getLogger();
 
     public void performLogin(String user, char[] passwd, String clientId) {
-        LoginState state = this.getBaseClient().login(user, passwd, clientId);
+        LoginState loginStateMessage = this.getBaseClient().login(user, passwd, clientId);
         if (this.getLogger() == null) {
             throw new RuntimeException("GUIClient.loggedIn: No logger set.");
         }
-        while (state.getState() != LoginState.STATE_AUTHENTICATION_SUCCESS
-                && state.getState() != LoginState.STATE_INCOMPATIBLE_CLIENT
-                && state.getState() != LoginState.STATE_REJECTED) {
-            state = this.performLogin(user);
+        if (loginStateMessage.getServerHelloMessages() != null) {
+            for (ServerHelloMessage helloMessage : loginStateMessage.getServerHelloMessages()) {
+                Level logLevel = Level.CONFIG;
+                if( helloMessage.getLevel() == ServerHelloMessage.LEVEL_SEVERE){
+                    logLevel= Level.SEVERE;
+                }else if(helloMessage.getLevel() == ServerHelloMessage.LEVEL_WARNING){
+                    logLevel= Level.WARNING;
+                }
+                this.log(logLevel, helloMessage.getMessage());
+            }
         }
-        if (state.getState() == LoginState.STATE_INCOMPATIBLE_CLIENT) {
-            this.log(Level.SEVERE, state.getStateDetails());
-        } else if (state.getState() == LoginState.STATE_REJECTED) {
-            this.log(Level.SEVERE, state.getStateDetails());
+        while (loginStateMessage.getState() != LoginState.STATE_AUTHENTICATION_SUCCESS
+                && loginStateMessage.getState() != LoginState.STATE_INCOMPATIBLE_CLIENT
+                && loginStateMessage.getState() != LoginState.STATE_REJECTED) {
+            loginStateMessage = this.performLogin(user);
+        }
+        if (loginStateMessage.getState() == LoginState.STATE_INCOMPATIBLE_CLIENT) {
+            this.log(Level.SEVERE, loginStateMessage.getStateDetails());
+        } else if (loginStateMessage.getState() == LoginState.STATE_REJECTED) {
+            this.log(Level.SEVERE, loginStateMessage.getStateDetails());
         } else {
-            User returnedLoginUser = state.getUser();
+            User returnedLoginUser = loginStateMessage.getUser();
             //login successful: pass a user to the base client
             this.getBaseClient().setUser(returnedLoginUser);
             this.log(Level.CONFIG, this.rb.getResourceString("login.success", returnedLoginUser.getName()));
@@ -307,7 +318,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
      * Makes this a ClientSessionCallback
      */
     @Override
-    public void syncRequestFailed(Throwable throwable) {
+    public void syncRequestFailed(ClientServerMessage request, ClientServerMessage response, Throwable throwable) {
         this.getLogger().warning(throwable.getMessage());
     }
 

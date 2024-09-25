@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/store/MessageStoreHandler.java 86    15.12.21 16:56 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/store/MessageStoreHandler.java 89    24/08/22 14:57 Heller $
 package de.mendelson.comm.as2.message.store;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -48,28 +47,24 @@ import java.util.logging.Logger;
  * Stores messages in specified directories
  *
  * @author S.Heller
- * @version $Revision: 86 $
+ * @version $Revision: 89 $
  */
 public class MessageStoreHandler {
 
     /**
      * products preferences
      */
-    private PreferencesAS2 preferences = new PreferencesAS2();
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final PreferencesAS2 preferences = new PreferencesAS2();
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * localize the output
      */
     private MecResourceBundle rb = null;
     private final String CRLF = new String(new byte[]{0x0d, 0x0a});
-    private Connection configConnection;
-    private Connection runtimeConnection;
-    private IDBDriverManager dbDriverManager;
+    private final IDBDriverManager dbDriverManager;
     private final static DateFormat DATE_FORMAT_RAW_INCOMING_FILE = new SimpleDateFormat("yyyyMMddHHmmssSSS");
 
-    public MessageStoreHandler(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
+    public MessageStoreHandler(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
         //Load resourcebundle
         try {
@@ -139,7 +134,6 @@ public class MessageStoreHandler {
             }
         } finally {
             if (outStreamHeader != null) {
-                outStreamHeader.flush();
                 outStreamHeader.close();
             }
         }
@@ -188,7 +182,7 @@ public class MessageStoreHandler {
             }
         }
         //load message overview from database
-        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
         List<AS2Payload> payloadList = messageAccess.getPayload(messageId);
         AS2MessageInfo messageInfo = messageAccess.getLastMessageEntry(messageId);
         if (payloadList != null) {
@@ -298,7 +292,7 @@ public class MessageStoreHandler {
                 payload.writeTo(pendingFile);
                 payload.setPayloadFilename(pendingFile.toAbsolutePath().toString());
             }
-            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
             messageAccess.insertPayloads(message.getAS2Info().getMessageId(), message.getPayloads());
             Path decryptedRawFile = Paths.get(message.getAS2Info().getRawFilename() + ".decrypted");
             OutputStream outStream = null;
@@ -391,7 +385,7 @@ public class MessageStoreHandler {
                 new Object[]{
                     errorRawFile.toAbsolutePath().toString()
                 }), message.getAS2Info());
-        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
         if (!message.getAS2Info().isMDN()) {
             AS2MessageInfo messageInfo = (AS2MessageInfo) message.getAS2Info();
             messageInfo.setRawFilenameDecrypted(errorRawFile.toAbsolutePath().toString());
@@ -537,7 +531,7 @@ public class MessageStoreHandler {
         as2Info.setRawFilename(rawFile.toAbsolutePath().toString());
         as2Info.setHeaderFilename(headerFile.toAbsolutePath().toString());
         //update the filenames in the db
-        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
         if (!as2Info.isMDN()) {
             AS2MessageInfo messageInfo = (AS2MessageInfo) as2Info;
             messageInfo.setRawFilenameDecrypted(rawFileDecrypted.toAbsolutePath().toString());
@@ -588,7 +582,7 @@ public class MessageStoreHandler {
         PartnerAccessDB partnerAccessDB = new PartnerAccessDB(this.dbDriverManager);
         Partner sender = partnerAccessDB.getPartner(messageInfo.getSenderId());
         Partner receiver = partnerAccessDB.getPartner(messageInfo.getReceiverId());
-        MessageAccessDB access = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        MessageAccessDB access = new MessageAccessDB(this.dbDriverManager);
         List<AS2Payload> payload = access.getPayload(messageInfo.getMessageId());
         //deal with the status directory
         Path statusDir = Paths.get("outboundstatus");
@@ -655,7 +649,6 @@ public class MessageStoreHandler {
             }
         } finally {
             if (outStream != null) {
-                outStream.flush();
                 outStream.close();
             }
         }

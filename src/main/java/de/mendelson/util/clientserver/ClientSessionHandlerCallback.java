@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandlerCallback.java 8     4/06/18 10:56a Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandlerCallback.java 9     11/02/22 13:14 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Client side protocol handler classback interface
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public interface ClientSessionHandlerCallback {
 
@@ -37,7 +37,13 @@ public interface ClientSessionHandlerCallback {
 
     public Logger getLogger();
 
-    public void syncRequestFailed(Throwable throwable);
+    /**A sync request failed
+     * 
+     * @param request The sync request that was not successful if it was a request, might be null
+     * @param response The sync request that was not successful if it was a response, might be null
+     * @param throwable The exception that occurred
+     */
+    public void syncRequestFailed(ClientServerMessage request, ClientServerMessage response, Throwable throwable);
 
     public void clientIsIncompatible(String errorMessage);
 }

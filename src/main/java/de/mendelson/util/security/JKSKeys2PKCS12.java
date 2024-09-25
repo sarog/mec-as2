@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/JKSKeys2PKCS12.java 5     7.11.18 10:40 Heller $
+//$Header: /as2/de/mendelson/util/security/JKSKeys2PKCS12.java 6     26/09/22 10:19 Heller $
 package de.mendelson.util.security;
 
 import java.io.OutputStream;
@@ -8,6 +8,7 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.util.logging.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * the pkcs#12 format
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class JKSKeys2PKCS12 {
 
@@ -65,7 +66,7 @@ public class JKSKeys2PKCS12 {
      */
     private KeyStore generatePKCS12KeyStore() throws Exception {
         //do not remove the BC paramter, SUN cannot handle the format proper
-        KeyStore keystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, "BC");
+        KeyStore keystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, BouncyCastleProvider.PROVIDER_NAME);
         keystore.load(null, null);
         return (keystore);
     }

@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/MendelsonMultiResolutionImage.java 28    29.11.21 15:57 Heller $
+//$Header: /as2/de/mendelson/util/MendelsonMultiResolutionImage.java 38    24/08/22 14:57 Heller $
 package de.mendelson.util;
 
 import java.awt.Graphics;
@@ -44,20 +44,38 @@ import org.w3c.dom.Element;
  * Mendelson implementation of the MultiResolution image
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 38 $
  */
 public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
     private int baseImageIndex;
-    private List<BufferedImage> resolutionVariants;
+    private final List<BufferedImage> resolutionVariants;
+    private final static RenderingHints RENDERING_HINTS_BEST_QUALITY
+            = new RenderingHints(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+
+    static {
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_NORMALIZE));
+    }
 
     /**
      * Stores the global list of image operations that could be performed while
      * creating a rasted image from a SVG, e.g. darken the icon etc
      */
-    private static final List<BufferedImageOp> svgImageOperations 
+    private static final List<BufferedImageOp> svgImageOperations
             = Collections.synchronizedList(new ArrayList<BufferedImageOp>());
     /**
      * Stores a list of overlays for special SVG resources. The overlay is
@@ -69,6 +87,8 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
     public static enum SVGScalingOption {
         KEEP_HEIGHT, KEEP_WIDTH
     }
+
+    private SVGScalingOption usedScalingOption = SVGScalingOption.KEEP_WIDTH;
 
     /**
      * Creates a multi-resolution image with the given base image index and
@@ -174,13 +194,23 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
         }
         this.baseImageIndex = baseImageIndex;
         this.resolutionVariants = new ArrayList<BufferedImage>();
-        for (Image image : resolutionVariants) {
-            this.resolutionVariants.add(toBufferedImage(image));
+        if (resolutionVariants != null) {
+            for (Image image : resolutionVariants) {
+                this.resolutionVariants.add(toBufferedImage(image));
+            }
         }
         for (Image resolutionVariant : this.resolutionVariants) {
             Objects.requireNonNull(resolutionVariant,
                     "Resolution variants must not be null");
         }
+    }
+
+    /**
+     * Generates multiple resolutions from a vector image and stores them as
+     * bitmaps for the multi resolution image
+     */
+    public static MendelsonMultiResolutionImage fromSVG(String svgURLStr, int initialSize) {
+        return (fromSVG(svgURLStr, initialSize, initialSize * 3, SVGScalingOption.KEEP_WIDTH));
     }
 
     /**
@@ -212,13 +242,23 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
      * Generates multiple resolutions from a vector image and stores them as
      * bitmaps for the multi resolution image
      */
-    public static MendelsonMultiResolutionImage fromSVG(String svgURLStr, int initialSize, int maxSize, SVGScalingOption scale) {
+    public static MendelsonMultiResolutionImage fromSVG(String svgURLStr, int initialSize,
+            SVGScalingOption scalingOption) {
+        return (fromSVG(svgURLStr, initialSize, initialSize * 3, scalingOption));
+    }
+
+    /**
+     * Generates multiple resolutions from a vector image and stores them as
+     * bitmaps for the multi resolution image
+     */
+    public static MendelsonMultiResolutionImage fromSVG(String svgURLStr, int initialSize, int maxSize,
+            SVGScalingOption scalingOption) {
         //check if an overlay is defined for this SVG resource
         String svgResourceFilename = extractSVGFilenameFromSVGURLStr(svgURLStr);
-        MendelsonMultiResolutionImage overlayImage = null;        
+        MendelsonMultiResolutionImage overlayImage = null;
         if (svgImageOverlaysMap.containsKey(svgResourceFilename)) {
             //load overlay image in all required resolutions
-            overlayImage = fromSVG(svgImageOverlaysMap.get(svgResourceFilename), initialSize, maxSize, scale);
+            overlayImage = fromSVG(svgImageOverlaysMap.get(svgResourceFilename), initialSize, maxSize, scalingOption);
         }
         if (initialSize > maxSize) {
             System.out.println("MendelsonMultiResolutionImage:fromSVG(..): minWidth must be smaller than maxWidth");
@@ -263,16 +303,22 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
             //transcode the SVG to a BufferedImage
             TranscoderInput transcoderInput = new TranscoderInput(document);
             BufferedImageTranscoder transcoder = new BufferedImageTranscoder();
-            int step = 1;
+            int step;
             //use larger steps if this is not just a small pixel perfect icon. Else the prerendering process
-            //will take some time. Means the larger the image is the less resolutions are pre rendered
-            if (initialSize > 64) {
+            //will take some time and also memory. Means the larger the image is the less resolutions are pre rendered
+            if (initialSize <= 64) {
+                step = 1;
+            } else if (initialSize <= 128) {
                 step = 2;
+            } else if (initialSize <= 256) {
+                step = 4;
+            } else {
+                step = 8;
             }
             for (int i = initialSize; i <= maxSize; i += step) {
                 float variantWidth = 0;
                 float variantHeight = 0;
-                if (scale == SVGScalingOption.KEEP_WIDTH) {
+                if (scalingOption == SVGScalingOption.KEEP_WIDTH) {
                     variantWidth = i;
                     variantHeight = i * scalingfactor;
 
@@ -286,7 +332,8 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
                 //add the overlay if this is defined for this resource
                 if (overlayImage != null) {
                     BufferedImage bufferedOverlayImage = overlayImage.getResolutionVariant(variantWidth, variantHeight);
-                    Graphics g = resolutionVariant.getGraphics();
+                    Graphics2D g = (Graphics2D) resolutionVariant.getGraphics();
+                    g.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
                     g.drawImage(bufferedOverlayImage, 0, 0, null);
                 }
                 //filter the created image if this is requested
@@ -304,6 +351,7 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
                     + e.getClass().getSimpleName() + "] " + e.getMessage());
         }
         MendelsonMultiResolutionImage multiResolutionImage = new MendelsonMultiResolutionImage(0, svgResolutionVariants);
+        multiResolutionImage.setUsedScalingOption(scalingOption);
         return (multiResolutionImage);
     }
 
@@ -328,13 +376,43 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
     /**
      * Returns a multi resolution image that has the passed min resolution
      */
-    public MendelsonMultiResolutionImage toMinResolution(int minResolution) {
+    public MendelsonMultiResolutionImage toMinResolution(int requestedResolution) {
+        //special case: the requested resolution is bigger than the available resolutions. Scale up
+        if (requestedResolution > this.resolutionVariants.get(this.resolutionVariants.size() - 1).getWidth()
+                && requestedResolution > this.resolutionVariants.get(this.resolutionVariants.size() - 1).getHeight()) {
+            //get highest resolution variant image and scale up. This will blur...
+            BufferedImage tooSmallImage = this.resolutionVariants.get(this.resolutionVariants.size() - 1);
+            List<Image> variantList = new ArrayList<Image>();
+            if (this.usedScalingOption == SVGScalingOption.KEEP_WIDTH) {
+                BufferedImage scaledUpImage = ImageUtil.scaleWidthKeepingProportions(tooSmallImage, requestedResolution);
+                variantList.add(scaledUpImage);
+            } else {
+                BufferedImage scaledUpImage = ImageUtil.scaleHeightKeepingProportions(tooSmallImage, requestedResolution);
+                variantList.add(scaledUpImage);
+            }
+            return (new MendelsonMultiResolutionImage(0, variantList));
+        }
+        //special case: the requested resolution is smaller than the available resolution. Scale down.
+        if (requestedResolution < this.resolutionVariants.get(0).getWidth()
+                && requestedResolution < this.resolutionVariants.get(0).getHeight()) {
+            //get lowest resolution variant image and scale down. This will look ugly...
+            BufferedImage tooLargeImage = this.resolutionVariants.get(0);
+            List<Image> variantList = new ArrayList<Image>();
+            if (this.usedScalingOption == SVGScalingOption.KEEP_WIDTH) {
+                BufferedImage scaledDownImage = ImageUtil.scaleWidthKeepingProportions(tooLargeImage, requestedResolution);
+                variantList.add(scaledDownImage);
+            } else {
+                BufferedImage scaledDownImage = ImageUtil.scaleHeightKeepingProportions(tooLargeImage, requestedResolution);
+                variantList.add(scaledDownImage);
+            }
+            return (new MendelsonMultiResolutionImage(0, variantList));
+        }
         int newBaseImageIndex = 0;
         //find start index of images that matches the min resolution        
         for (int i = 0; i < this.resolutionVariants.size(); i++) {
             Image resolutionVariantImage = this.resolutionVariants.get(i);
-            if (minResolution <= resolutionVariantImage.getWidth(null)
-                    && minResolution <= resolutionVariantImage.getHeight(null)) {
+            if (requestedResolution <= resolutionVariantImage.getWidth(null)
+                    && requestedResolution <= resolutionVariantImage.getHeight(null)) {
                 newBaseImageIndex = i;
                 break;
             }
@@ -344,10 +422,11 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
         if (newBaseImageIndex == this.baseImageIndex) {
             return (this);
         } else {
-            MendelsonMultiResolutionImage newImage
-                    = new MendelsonMultiResolutionImage(newBaseImageIndex,
-                            new ArrayList<Image>(this.resolutionVariants));
-            return (newImage);
+            List<Image> variantList = new ArrayList<Image>();
+            for (int i = newBaseImageIndex; i < this.resolutionVariants.size(); i++) {
+                variantList.add(this.resolutionVariants.get(i));
+            }
+            return (new MendelsonMultiResolutionImage(0, variantList));
         }
     }
 
@@ -415,13 +494,23 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
             return (BufferedImage) image;
         }
         // Create a buffered image with transparency
-        BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null), BufferedImage.TYPE_INT_ARGB);
+        BufferedImage bufferedImage = new BufferedImage(image.getWidth(null), image.getHeight(null),
+                BufferedImage.TYPE_INT_ARGB);
         // Draw the image on to the buffered image
         Graphics2D graphics = bufferedImage.createGraphics();
+        graphics.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
         graphics.drawImage(image, 0, 0, null);
         graphics.dispose();
         // Return the buffered image
         return bufferedImage;
+    }
+
+    private void setUsedScalingOption(SVGScalingOption usedScalingOption) {
+        this.usedScalingOption = usedScalingOption;
+    }
+
+    private SVGScalingOption getUsedScalingOption() {
+        return (this.usedScalingOption);
     }
 
     /**
@@ -441,22 +530,16 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
             super.hints.put(ImageTranscoder.KEY_XML_PARSER_VALIDATING, Boolean.FALSE);
         }
 
+        /**
+         * Adds best quality rendering hints to the super class renderer
+         *
+         * @return The superclass renderer but with high quality rendering hints
+         */
         @Override
         protected ImageRenderer createRenderer() {
             ImageRenderer renderer = super.createRenderer();
             RenderingHints renderingHints = renderer.getRenderingHints();
-            renderingHints.add(new RenderingHints(RenderingHints.KEY_RENDERING,
-                    RenderingHints.VALUE_RENDER_QUALITY));
-            renderingHints.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BICUBIC));
-            renderingHints.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
-                    RenderingHints.VALUE_ANTIALIAS_ON));
-            renderingHints.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
-                    RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
-            renderingHints.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
-                    RenderingHints.VALUE_COLOR_RENDER_QUALITY));
-            renderingHints.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
-                    RenderingHints.VALUE_STROKE_NORMALIZE));
+            renderingHints.add(RENDERING_HINTS_BEST_QUALITY);
             renderer.setRenderingHints(renderingHints);
             return (renderer);
         }

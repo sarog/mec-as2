@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 12    10.03.21 8:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 15    24/08/22 14:57 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.log.LogAccessDB;
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * message receipt
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class ExecuteShellCommand implements IProcessingExecution {
 
@@ -49,17 +49,12 @@ public class ExecuteShellCommand implements IProcessingExecution {
     /**
      * Localize your GUI!
      */
-    private MecResourceBundle rb = null;
-    //DB connection
-    private Connection runtimeConnection;
-    private Connection configConnection;
+    private MecResourceBundle rb = null;    
 
-    public ExecuteShellCommand(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.runtimeConnection = runtimeConnection;
-        this.configConnection = configConnection;
+    public ExecuteShellCommand(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
-        this.messageAccess = new MessageAccessDB(dbDriverManager, configConnection, runtimeConnection);
-        this.mdnAccess = new MDNAccessDB(dbDriverManager, configConnection, runtimeConnection);
+        this.messageAccess = new MessageAccessDB(dbDriverManager);
+        this.mdnAccess = new MDNAccessDB(dbDriverManager);
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
         //Load resourcebundle
         try {
@@ -79,12 +74,12 @@ public class ExecuteShellCommand implements IProcessingExecution {
         //get all required values for this event
         AS2MessageInfo messageInfo = this.messageAccess.getLastMessageEntry(event.getMessageId());
         if (messageInfo == null) {
-            throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", messageInfo.getMessageId()));
+            throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", event.getMessageId()));
         }
         AS2MDNInfo mdnInfo = null;
         if (event.getMDNId() != null) {
             List<AS2MDNInfo> mdnInfoList = this.mdnAccess.getMDN(event.getMessageId());
-            if (!mdnInfoList.isEmpty()) {
+            if (mdnInfoList != null && !mdnInfoList.isEmpty()) {
                 mdnInfo = mdnInfoList.get(0);
             }
         }
@@ -146,7 +141,7 @@ public class ExecuteShellCommand implements IProcessingExecution {
                 if (command.contains("${log}")) {
                     try {
                         LogAccessDB logAccess = new LogAccessDB(this.dbDriverManager);
-                        List<LogEntry> entries = logAccess.getLog(this.runtimeConnection, messageInfo.getMessageId());
+                        List<LogEntry> entries = logAccess.getLog(messageInfo.getMessageId());
                         StringBuilder logBuffer = new StringBuilder();
                         for (LogEntry logEntry : entries) {
                             logBuffer.append(logEntry.getMessage()).append("\\n");

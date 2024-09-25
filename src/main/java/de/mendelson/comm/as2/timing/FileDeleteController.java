@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 17    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 18    1/06/22 14:49 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 18 $
  */
 public class FileDeleteController {
 
@@ -193,8 +193,8 @@ public class FileDeleteController {
         public void run() {
             if (preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE)) {
                 Path rawIncomingDir
-                        = Paths.get(Paths.get(preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString()
-                                + FileSystems.getDefault().getSeparator() + "_rawincoming");
+                        = Paths.get(Paths.get(preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString(),
+                                "_rawincoming");
                 //delete all files that are older than MDN wait time + delete log time
                 long maxAgeInS = (preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN)
                         * preferences.getInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S))

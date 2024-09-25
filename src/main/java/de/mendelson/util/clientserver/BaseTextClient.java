@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/BaseTextClient.java 16    28.10.21 11:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseTextClient.java 17    11/02/22 13:14 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.console.LoggingHandlerPrintStream;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * Text Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public abstract class BaseTextClient implements ClientSessionHandlerCallback {
 
@@ -129,7 +129,7 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
      * Makes this a ClientSessionCallback
      */
     @Override
-    public void syncRequestFailed(Throwable throwable) {
+    public void syncRequestFailed(ClientServerMessage request, ClientServerMessage response, Throwable throwable) {
         this.log(Level.WARNING, throwable.getMessage());
     }
 

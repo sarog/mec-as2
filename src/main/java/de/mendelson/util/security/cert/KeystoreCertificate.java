@@ -1,14 +1,17 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeystoreCertificate.java 29    22.10.20 12:46 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/KeystoreCertificate.java 37    14/12/22 17:13 Heller $
 package de.mendelson.util.security.cert;
 
 import java.io.Serializable;
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
@@ -27,12 +30,16 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
+import java.security.interfaces.ECKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
+import java.security.spec.ECGenParameterSpec;
+import java.security.spec.ECParameterSpec;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +57,9 @@ import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x9.ECNamedCurveTable;
+import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /*
@@ -63,14 +73,20 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Object that stores a single configuration certificate/key
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 37 $
  */
 public class KeystoreCertificate implements Comparable, Serializable {
 
     public static final long serialVersionUID = 1L;
     private String alias = "";
     private X509Certificate certificate = null;
+    /**Private of public key*/
+    private Key key = null;
     private boolean isKeyPair = false;
+    private String infoText = "";
+    //cache some data
+    private byte[] fingerprintSHA1Bytes = null;
+    private String fingerprintSHA1 = null;
 
     private static final Map<String, String> OID_MAP = new HashMap<String, String>();
 
@@ -117,8 +133,6 @@ public class KeystoreCertificate implements Comparable, Serializable {
         "08:FF:33:83:DF:8B:2F:9F:40:BB:F7:88:FE:FD:9C:15:40:E4:FE:C6", //key4
         "DC:99:5A:83:60:A4:37:C4:30:3B:10:AC:31:4E:D9:21:16:61:36:77" //key3  
     };
-
-    private String infoText = "";
 
     public KeystoreCertificate() {
     }
@@ -483,6 +497,10 @@ public class KeystoreCertificate implements Comparable, Serializable {
         this.certificate = certificate;
         this.computeInfoText();
     }
+    
+    public void setKey(Key key) {
+        this.key = key;
+    }
 
     public void setIsKeyPair(boolean isKeyPair) {
         this.isKeyPair = isKeyPair;
@@ -496,6 +514,12 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (this.isKeyPair);
     }
 
+    /**Returns the private key of the entry - or null if it is not set*/
+    public Key getKey(){
+        return( this.key );
+    }
+    
+    
     /**
      * KeyUsage extension, (OID = 2.5.29.15). The key usage extension defines
      * the purpose (e.g., encipherment, signature, certificate signing) of the
@@ -565,7 +589,10 @@ public class KeystoreCertificate implements Comparable, Serializable {
     }
 
     public byte[] getFingerPrintBytesSHA1() {
-        return (this.getFingerPrintBytes("SHA1"));
+        if( this.fingerprintSHA1Bytes == null ){
+            this.fingerprintSHA1Bytes = this.getFingerPrintBytes("SHA1");
+        }
+        return( this.fingerprintSHA1Bytes);
     }
 
     public byte[] getFingerPrintBytesMD5() {
@@ -577,7 +604,10 @@ public class KeystoreCertificate implements Comparable, Serializable {
     }
 
     public String getFingerPrintSHA1() {
-        return (this.getFingerPrint("SHA1"));
+        if( this.fingerprintSHA1 == null ){
+            this.fingerprintSHA1 = this.getFingerPrint("SHA1");
+        }
+        return( this.fingerprintSHA1);
     }
 
     public String getFingerPrintMD5() {
@@ -677,10 +707,11 @@ public class KeystoreCertificate implements Comparable, Serializable {
     /**
      * Returns the cert path for this certificate as it exists in the keystore
      *
-     * @return null if no cert path could be found
-     * All used methods are not thread safe
+     * @return null if no cert path could be found All used methods are not
+     * thread safe
      */
-    public synchronized PKIXCertPathBuilderResult getPKIXCertPathBuilderResult(KeyStore keystore, List<X509Certificate> certificateList) {
+    public synchronized PKIXCertPathBuilderResult 
+        getPKIXCertPathBuilderResult(KeyStore keystore, List<X509Certificate> certificateList) {
         X509Certificate embeddedCertificate = this.getX509Certificate();
         try {
             X509CertSelector selector = new X509CertSelector();
@@ -689,15 +720,16 @@ public class KeystoreCertificate implements Comparable, Serializable {
             if (!selected) {
                 return (null);
             }
-            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", new BouncyCastleProvider());
+            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", BouncyCastleProvider.PROVIDER_NAME);
             PKIXBuilderParameters pkixParameter = new PKIXBuilderParameters(keystore, selector);
             pkixParameter.setRevocationEnabled(false);
             //a value of 5 does not work for some certificates in Bouncycastle. 3 means Anchor + 3 certificate 
             //which should be fine
             pkixParameter.setMaxPathLength(3);
             CertStoreParameters params = new CollectionCertStoreParameters(certificateList);
-            CertStore intermediateCertStore  = CertStore.getInstance("Collection", params, new BouncyCastleProvider());
-            pkixParameter.addCertStore(intermediateCertStore );
+            CertStore intermediateCertStore = CertStore.getInstance("Collection", params,
+                    BouncyCastleProvider.PROVIDER_NAME);
+            pkixParameter.addCertStore(intermediateCertStore);
             PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult) builder.build(pkixParameter);
             return (result);
         } catch (KeyStoreException e) {
@@ -727,7 +759,8 @@ public class KeystoreCertificate implements Comparable, Serializable {
             // Disable CRL checking since we are not supplying any CRLs
             params.setRevocationEnabled(false);
             //use BC here else PKCS#12 is not supported as keystore
-            CertPathValidator certPathValidator = CertPathValidator.getInstance("PKIX", "BC");
+            CertPathValidator certPathValidator = CertPathValidator.getInstance("PKIX",
+                    BouncyCastleProvider.PROVIDER_NAME);
             CertPathValidatorResult result = certPathValidator.validate(certPath, params);
             // Get the CA used to validate this path
             PKIXCertPathValidatorResult pkixResult = (PKIXCertPathValidatorResult) result;
@@ -778,6 +811,19 @@ public class KeystoreCertificate implements Comparable, Serializable {
         infoTextBuilder.append(" ").append(this.getPublicKeyAlgorithm()).append("\n");
         infoTextBuilder.append("Signature algorithm: ").append(this.getSigAlgName()).append(" (OID ")
                 .append(this.getSigAlgOID()).append(")\n");
+        if (this.getPublicKeyAlgorithm().startsWith("EC")) {
+            try {
+                String oid = this.getCurveOID(this.getX509Certificate().getPublicKey());
+                String name = this.getCurveName(this.getX509Certificate().getPublicKey());
+                infoTextBuilder
+                        .append("Named Curve: ")
+                        .append(name).append( " [OID ")
+                        .append(oid).append("]\n");
+            } catch (Exception ignore) {
+                infoTextBuilder
+                        .append("Named Curve:  Unknown\n");
+            }
+        }
         try {
             infoTextBuilder.append("Fingerprint (MD5): ").append(this.getFingerPrintMD5()).append("\n");
             infoTextBuilder.append("Fingerprint (SHA-1): ").append(this.getFingerPrintSHA1()).append("\n");
@@ -786,6 +832,42 @@ public class KeystoreCertificate implements Comparable, Serializable {
             infoTextBuilder.append("Fingerprint processing failed: ").append(e.getMessage());
         }
         this.infoText = infoTextBuilder.toString();
+    }
+
+    /**
+     * Returns the curve OID if this is a EC key/certificate
+     */
+    public String getCurveOID(Key key) throws Exception {
+        if (key instanceof ECPublicKey) {
+            AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
+            params.init(((ECKey) key).getParams());
+            return params.getParameterSpec(ECGenParameterSpec.class).getName();
+        }
+        return ("");
+    }
+
+    /**
+     * Returns the curve OID if this is a EC key/certificate
+     */
+    public String getCurveName(Key key) throws Exception {
+        if (key instanceof ECPublicKey) {
+            ECParameterSpec params = ((ECPublicKey) key).getParams();
+            org.bouncycastle.jce.spec.ECParameterSpec spec = EC5Util.convertSpec(params);          
+            Enumeration names = ECNamedCurveTable.getNames();
+            while (names.hasMoreElements()) {
+                String name = names.nextElement().toString();
+                X9ECParameters possibleMatch = ECNamedCurveTable.getByName(name);
+                if (possibleMatch != null) {
+                    if (spec.getN().equals(possibleMatch.getN())
+                            && spec.getH().equals(possibleMatch.getH())
+                            && spec.getCurve().equals(possibleMatch.getCurve())
+                            && spec.getG().equals(possibleMatch.getG())) {
+                        return name;
+                    }
+                }
+            }
+        }
+        return( "");
     }
 
     /**
@@ -805,23 +887,23 @@ public class KeystoreCertificate implements Comparable, Serializable {
             extensionText.append("CRL distribution[").append(String.valueOf(i + 1)).append("]: ").append(crl.get(i)).append("\n");
         }
         List<String> alternativeNames = this.getSubjectAlternativeNames();
-        if (alternativeNames.size() > 0) {
+        if (!alternativeNames.isEmpty()) {
             extensionText.append("Subject alternative name: ").append(this.convertListToString(alternativeNames)).append("\n");
         }
         List<String> keyUsages = this.getKeyUsages();
-        if (keyUsages.size() > 0) {
+        if (!keyUsages.isEmpty()) {
             extensionText.append("Key usage: ").append(this.convertListToString(keyUsages)).append("\n");
         }
         List<String> extkeyUsages = this.getExtendedKeyUsage();
-        if (extkeyUsages.size() > 0) {
+        if (!extkeyUsages.isEmpty()) {
             extensionText.append("Extended key usage: ").append(this.convertListToString(extkeyUsages)).append("\n");
         }
         List<String> authorityKeyIdentifier = this.getAuthorityKeyIdentifier();
-        if (authorityKeyIdentifier.size() > 0) {
+        if (!authorityKeyIdentifier.isEmpty()) {
             extensionText.append("Authority key identifier: ").append(this.convertListToString(authorityKeyIdentifier)).append("\n");
         }
         List<String> subjectKeyIdentifier = this.getSubjectKeyIdentifier();
-        if (subjectKeyIdentifier.size() > 0) {
+        if (!subjectKeyIdentifier.isEmpty()) {
             extensionText.append("Subject key identifier: ").append(this.convertListToString(subjectKeyIdentifier)).append("\n");
         }
         return (extensionText.toString());

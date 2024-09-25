@@ -1,10 +1,9 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 14    3.12.21 14:22 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 18    16/12/22 13:41 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.KeyStoreUtil;
-import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -27,7 +26,7 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a keystore file
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 18 $
  */
 public class KeystoreStorageImplFile implements KeystoreStorage {
 
@@ -37,12 +36,12 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     public static final String KEYSTORE_STORAGE_TYPE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
     
     private KeyStore keystore = null;
-    private char[] keystorePass = null;
-    private String keystoreFilename = null;
-    private KeyStoreUtil keystoreUtil = new KeyStoreUtil();
-    private MecResourceBundle rb;
+    private final char[] keystorePass;
+    private final String keystoreFilename;
+    private final KeyStoreUtil keystoreUtil = new KeyStoreUtil();
+    private final MecResourceBundle rb;
     private int keystoreUsage = KEYSTORE_USAGE_ENC_SIGN;
-    private String keystoreStorageType = KEYSTORE_STORAGE_TYPE_PKCS12;
+    private final String keystoreStorageType;
 
     /**
      * @param keystoreFilename
@@ -62,6 +61,16 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
         this.keystorePass = keystorePass;
         this.keystoreUsage = KEYSTORE_USAGE;
         this.keystoreStorageType = KEYSTORE_STORAGE_TYPE;
+        Path keystoreFile = Paths.get(this.keystoreFilename);
+        if (!keystoreFile.toFile().canRead()) {
+            throw new Exception(this.rb.getResourceString("error.readaccess", this.keystoreFilename));
+        }
+        if (!Files.exists(keystoreFile)) {
+            throw new Exception(this.rb.getResourceString("error.filexists", this.keystoreFilename));
+        }
+        if (!keystoreFile.toFile().isFile()) {
+            throw new Exception(this.rb.getResourceString("error.notafile", this.keystoreFilename));
+        }
         BCCryptoHelper cryptoHelper = new BCCryptoHelper();
         this.keystore = cryptoHelper.createKeyStoreInstance(this.keystoreStorageType);
         this.keystoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
@@ -90,7 +99,8 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
 
     @Override
     public X509Certificate getCertificate(String alias) throws Exception {
-        return ((X509Certificate) this.keystore.getCertificate(alias));
+        X509Certificate certificate = (X509Certificate) this.keystore.getCertificate(alias);
+        return (certificate);
     }
 
     @Override
@@ -119,17 +129,7 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     }
 
     @Override
-    public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {
-        Path keystoreFile = Paths.get(this.keystoreFilename);
-        if (!keystoreFile.toFile().canRead()) {
-            throw new Exception(this.rb.getResourceString("error.readaccess", this.keystoreFilename));
-        }
-        if (!Files.exists(keystoreFile)) {
-            throw new Exception(this.rb.getResourceString("error.filexists", this.keystoreFilename));
-        }
-        if (!keystoreFile.toFile().isFile()) {
-            throw new Exception(this.rb.getResourceString("error.notafile", this.keystoreFilename));
-        }
+    public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {   
         //recreate keystore object
         this.keystoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
         Map<String, Certificate> certificateMap = this.keystoreUtil.getCertificatesFromKeystore(this.keystore);

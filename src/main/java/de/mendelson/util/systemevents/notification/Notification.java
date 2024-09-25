@@ -1,16 +1,17 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/notification/Notification.java 20    6.09.19 15:41 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/notification/Notification.java 29    14/10/22 9:13 Heller $
 package de.mendelson.util.systemevents.notification;
 
+import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.systemevents.SystemEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.SocketTimeoutException;
-import java.sql.Connection;
 import java.util.Date;
 import java.util.List;
+import java.util.MissingResourceException;
 import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import javax.mail.Address;
 import javax.mail.Authenticator;
 import javax.mail.Message;
@@ -33,56 +34,36 @@ import javax.mail.internet.MimeMessage;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 29 $
  */
 public abstract class Notification {
 
-    /**
-     * Stores the connection data and notification eMail
-     */
-    private NotificationData notificationData;
-    private Logger logger = Logger.getAnonymousLogger();
-    private NotificationAccessDB notificationAccess;
+    private final String MODULE_NAME;
+    private final MecResourceBundle rb;
 
-    /**
-     * Will not perform a lookup in the db but take the passed notification data
-     * object
-     */
-    public Notification(NotificationData notificationData, NotificationAccessDB notificationAccess) {
-        this.notificationData = notificationData;
-        this.notificationAccess = notificationAccess;
-    }
-
-    /**
-     * Constructor without notification data, will perform a lookup in the db
-     */
-    public Notification(NotificationAccessDB notificationAccess) {
-        this.notificationAccess = notificationAccess;
-        this.notificationData = this.notificationAccess.getNotificationData();
-        if (notificationData == null) {
-            throw new RuntimeException("Unable to read the notification settings");
+    public Notification() {
+        try {
+            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleNotification.class.getName());
+        } //load up  resourcebundle
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        MODULE_NAME = rb.getResourceString("module.name");
     }
 
     /**
      * Sends a test notification
      *
      */
-    public abstract void sendTest(String userName, String processOriginHost) throws Exception;
+    public abstract void sendTest(String userName, String processOriginHost,
+            NotificationData notificationData) throws Exception;
 
     /**
-     * Generates a subject line addition that has the format "[<product>@<hostname]"
+     * Generates a subject line addition that has the format
+     * "[<product>@<hostname]"
      */
     public abstract String getNotificationSubjectServerIdentification();
-
-    protected NotificationData getNotificationData(boolean reload) {
-        if (reload) {
-            synchronized (this) {
-                this.notificationData = this.notificationAccess.getNotificationData();
-            }
-        }
-        return (this.notificationData);
-    }
 
     //should mainly be implemented by the code rb.getResourceString("test.message.debug")
     public abstract String getTestMessageDebugStr();
@@ -91,62 +72,73 @@ public abstract class Notification {
      * Returns the footer that should be added to the notification mail
      */
     public abstract String getNotificationFooter();
-    
+
     /**
      * Returns the default session for the mail send process
      */
-    private Session getDefaultSession() {
-        String SSL_FACTORY = "javax.net.ssl.SSLSocketFactory";
-
+    private Session getSessionInstance(NotificationData notificationData) {
         Properties properties = new Properties();
-        properties.setProperty("mail.smtp.host", this.notificationData.getMailServer());
-        properties.setProperty("mail.smtp.port", String.valueOf(this.notificationData.getMailServerPort()));
+        properties.setProperty("mail.smtp.host", notificationData.getMailServer());
+        properties.setProperty("mail.smtp.port", String.valueOf(notificationData.getMailServerPort()));
         properties.setProperty("mail.transport.protocol", "smtp");
         properties.setProperty("mail.smtp.connectiontimeout", String.valueOf(TimeUnit.SECONDS.toMillis(10)));
         properties.setProperty("mail.smtp.timeout", String.valueOf(TimeUnit.SECONDS.toMillis(10)));
-        if (this.notificationData.getConnectionSecurity() == NotificationData.SECURITY_START_SSL) {
+        if (notificationData.getConnectionSecurity() == NotificationData.SECURITY_START_TLS) {
             properties.setProperty("mail.smtp.starttls.enable", "true");
             properties.setProperty("mail.smtp.ssl.protocols", "SSLv3 TLSv1 TLSv1.1 TLSv1.2 TLSv1.3");
-        } else if (this.notificationData.getConnectionSecurity() == NotificationData.SECURITY_SSL) {
+        } else if (notificationData.getConnectionSecurity() == NotificationData.SECURITY_TLS) {
+            properties.setProperty("mail.smtp.ssl.enable", "true");
             properties.setProperty("mail.smtp.ssl.protocols", "SSLv3 TLSv1 TLSv1.1 TLSv1.2 TLSv1.3");
-            properties.setProperty("mail.smtp.socketFactory.class", SSL_FACTORY);
-            properties.setProperty("mail.smtp.socketFactory.fallback", "false");
-            properties.setProperty("mail.smtp.socketFactory.port", String.valueOf(this.notificationData.getMailServerPort()));
         }
         Session session = null;
-        if (this.notificationData.usesSMTHAuth()) {
-            properties.put("mail.smtp.auth", "true");
+        if (notificationData.usesSMTPAuthCredentials()) {
+            properties.setProperty("mail.smtp.auth", "true");
+            properties.setProperty("mail.debug.auth", "true");
             session = Session.getInstance(properties,
-                    new SendMailAuthenticator(this.notificationData.getSMTPUser(),
-                            String.valueOf(this.notificationData.getSMTPPass())));
+                    new SendMailAuthenticator(notificationData.getSMTPUser(),
+                            String.valueOf(notificationData.getSMTPPass())));
+        } else if (notificationData.usesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
+            properties.setProperty("mail.smtp.auth.mechanisms", "XOAUTH2");
+            properties.setProperty("mail.smtp.auth", "true");
+            properties.setProperty("mail.debug.auth", "true");
+            session = Session.getInstance(properties);
         } else {
-            session = Session.getInstance(properties, null);
+            session = Session.getInstance(properties);
         }
         return (session);
     }
-    
-    
+
     /**
      * Sends out the notification to the user
      */
-    public abstract void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf);
+    public abstract void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf,
+            NotificationData notificationData);
 
+    /**
+     *
+     * @param productName
+     * @param event
+     * @param notificationData
+     * @param displayTrace
+     * @return The trace of the process if this is requested or just an empty
+     * String if it was not requested
+     * @throws Exception
+     */
     @SuppressWarnings("static-access")
-    protected void sendMail(String productName, SystemEvent event) throws Exception {
-        boolean debug = false;
+    protected String sendMail(String productName, SystemEvent event,
+            NotificationData notificationData, boolean displayTrace) throws Exception {
 
-        Session session = this.getDefaultSession();
-        ByteArrayOutputStream debugOut = new ByteArrayOutputStream();
-        PrintStream debugPrintStream = new PrintStream(debugOut);
-        if (debug) {
-            session.setDebug(true);
+        Session session = this.getSessionInstance(notificationData);
+        ByteArrayOutputStream traceOut = new ByteArrayOutputStream();
+        if (displayTrace) {
+            PrintStream debugPrintStream = new PrintStream(traceOut);
             session.setDebugOut(debugPrintStream);
+            session.setDebug(true);
         }
-
         // construct the message
         MimeMessage msg = new MimeMessage(session);
-        msg.setFrom(new InternetAddress(this.notificationData.getReplyTo()));
-        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(this.notificationData.getNotificationMail(), false));
+        msg.setFrom(new InternetAddress(notificationData.getReplyTo()));
+        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(notificationData.getNotificationMail(), false));
         String subject = event.getSubject();
         if (subject == null) {
             subject = "";
@@ -174,8 +166,14 @@ public abstract class Notification {
         Transport transport = null;
         try {
             transport = session.getTransport("smtp");
-            transport.send(msg);
-        } catch (Exception e) {
+            if (notificationData.getOAuth2Config() != null) {
+                transport.connect(notificationData.getOAuth2Config().getUserName(),
+                        notificationData.getOAuth2Config().getAccessTokenStr());
+                transport.sendMessage(msg, msg.getAllRecipients());
+            } else {
+                transport.send(msg);
+            }
+        } catch (Throwable e) {
             if (e instanceof SendFailedException) {
                 SendFailedException sendFailedException = (SendFailedException) e;
                 Address failedAddresses[] = sendFailedException.getInvalidAddresses();
@@ -199,12 +197,13 @@ public abstract class Notification {
                 errorLog.append("] ");
                 errorLog.append(sendFailedException.getMessage()).append("\n");
                 errorLog.append(errorMessage.toString());
-                Exception detailledException = new Exception(errorLog.toString(), e);
+                String errorLogStr = MODULE_NAME + " " + this.replace(errorLog.toString(), "\n", "\n" + MODULE_NAME);
+                Exception detailledException = new Exception(errorLogStr, e);
                 throw (detailledException);
             } else {
                 StringBuilder errorLog = new StringBuilder();
                 errorLog.append(this.getTestMessageDebugStr());
-                errorLog.append(debugOut.toString());
+                errorLog.append(traceOut.toString());
                 errorLog.append("\n[");
                 errorLog.append(e.getClass().getSimpleName());
                 errorLog.append("] ");
@@ -213,41 +212,52 @@ public abstract class Notification {
                     errorLog.append(" - caused by [" + e.getCause().getClass().getName() + "] ");
                     errorLog.append(e.getCause().getMessage());
                     if (e.getCause() instanceof SocketTimeoutException) {
-                        errorLog.append("\nThere listens a server on the SMTP host \"" + this.notificationData.getMailServer()
-                                + ":" + this.notificationData.getMailServerPort() + "\" but this seems either not to be a mail server "
+                        errorLog.append("\nThere listens a server on the SMTP host \"" + notificationData.getMailServer()
+                                + ":" + notificationData.getMailServerPort() + "\" but this seems either not to be a mail server "
                                 + "or it does not answer to any request.");
                     }
-                    errorLog.append("\nKey data for the connection:\n");
-                    errorLog.append("mail.smtp.host: " + session.getProperty("mail.smtp.host")).append("\n");
-                    errorLog.append("mail.smtp.port: " + session.getProperty("mail.smtp.port")).append("\n");
-                    errorLog.append("mail.smtp.auth: " + session.getProperty("mail.smtp.auth")).append("\n");
-                    if (session.getProperty("mail.smtp.auth").equalsIgnoreCase("true")) {
-                        errorLog.append("SMTP user: " + this.notificationData.getSMTPUser()).append("\n");
-                    }
                 }
-                Exception detailledException = new Exception(errorLog.toString(), e);
+                String errorLogStr = MODULE_NAME + " " + this.replace(errorLog.toString(), "\n", "\n" + MODULE_NAME + " ");
+                Exception detailledException = new Exception(errorLogStr, e);
                 throw (detailledException);
             }
         } finally {
-            transport.close();
-            if (debugOut != null) {
-                debugOut.close();
+            if (transport != null) {
+                try {
+                    transport.close();
+                } finally {
+                }
+            }
+            if (traceOut != null) {
+                traceOut.close();
             }
         }
+        return (traceOut.toString());
     }
 
     /**
-     * @return the configConnection
+     * Replaces the string tag by the string replacement in the sourceString
+     *
+     * @param source Source string
+     * @param tag	String that will be replaced
+     * @param replacement String that will replace the tag
+     * @return String that contains the replaced values
      */
-    protected Connection getConfigConnection() {
-        return (this.notificationAccess.getConfigConnection());
-    }
-
-    /**
-     * @return the runtimeConnection
-     */
-    protected Connection getRuntimeConnection() {
-        return (this.notificationAccess.getRuntimeConnection());
+    private String replace(String source, String tag, String replacement) {
+        if (source == null) {
+            return null;
+        }
+        StringBuilder buffer = new StringBuilder();
+        while (true) {
+            int index = source.indexOf(tag);
+            if (index == -1) {
+                buffer.append(source);
+                return (buffer.toString());
+            }
+            buffer.append(source.substring(0, index));
+            buffer.append(replacement);
+            source = source.substring(index + tag.length());
+        }
     }
 
     /**
@@ -255,8 +265,8 @@ public abstract class Notification {
      */
     private static class SendMailAuthenticator extends Authenticator {
 
-        private String user;
-        private String password;
+        private final String user;
+        private final String password;
 
         public SendMailAuthenticator(String user, String password) {
             this.user = user;

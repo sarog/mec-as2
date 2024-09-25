@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/about/ServerInfoRequest.java 10    24.02.21 13:51 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoRequest.java 11    14/06/22 16:02 Heller $
 package de.mendelson.util.clientserver.about;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -17,7 +17,7 @@ import java.lang.management.RuntimeMXBean;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class ServerInfoRequest extends ClientServerMessage implements Serializable {
 
@@ -42,6 +42,7 @@ public class ServerInfoRequest extends ClientServerMessage implements Serializab
     public static final String SERVER_LOCALE = "server_locale";    
     public static final String HTTP_SERVER_VERSION = "http_server_version";    
     public static final String DB_SERVER_VERSION = "db_server_version";    
+    public static final String DB_CLIENT_VERSION = "db_client_version";    
     public static final String PLUGINS = "plugins";    
     public static final String DIR_POLL_THREAD_COUNT = "dir_poll_thread_count";    
     public static final String DIR_POLL_THREADS_PER_MIN = "dir_poll_threads_per_min";    

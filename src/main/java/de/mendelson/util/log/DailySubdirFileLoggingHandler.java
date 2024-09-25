@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 14    3.12.21 14:22 Heller $
+//$Header: /as2/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 15    1/06/22 14:49 Heller $
 package de.mendelson.util.log;
 
 import java.io.BufferedWriter;
@@ -32,7 +32,7 @@ import java.util.logging.LogRecord;
  * DailySubdirFileLoggingHandler(Paths.get("mylogdir"), "mylogfile.log") );
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class DailySubdirFileLoggingHandler extends Handler {
 
@@ -150,17 +150,16 @@ public class DailySubdirFileLoggingHandler extends Handler {
     }
 
     private String generateNewLogFileName(Path fullLogDir) {
-        Path newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString()
-                + FileSystems.getDefault().getSeparator() + this.logfileName);
+        Path newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString(),
+                this.logfileName);
         if (this.maxLogFileSize == -1) {
             return (newLogFile.toAbsolutePath().toString());
         }
         int counter = 1;
         try {
             while (Files.exists(newLogFile) && Files.size(newLogFile) > this.maxLogFileSize) {
-                newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString()
-                        + FileSystems.getDefault().getSeparator()
-                        + this.logfileName + "." + counter);
+                newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString(),                        
+                        this.logfileName + "." + counter);
                 counter++;
             }
         } catch (IOException e) {

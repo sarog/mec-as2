@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 189   19.11.21 10:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 202   16/12/22 14:11 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
@@ -22,6 +22,7 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.AnonymousTextClient;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import de.mendelson.util.systemevents.SystemEvent;
@@ -41,8 +42,10 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.sql.Connection;
+import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -57,10 +60,13 @@ import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.mail.internet.MimeUtility;
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLPeerUnverifiedException;
+import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSocket;
+import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.http.Header;
@@ -84,6 +90,7 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.protocol.ClientContext;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.conn.ConnectTimeoutException;
+import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
@@ -98,6 +105,7 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.conn.DefaultProxyRoutePlanner;
 import org.apache.http.protocol.ExecutionContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.SSLContexts;
 
 
@@ -112,20 +120,20 @@ import org.apache.http.ssl.SSLContexts;
  * Class to allow HTTP multipart uploads
  *
  * @author S.Heller
- * @version $Revision: 189 $
+ * @version $Revision: 202 $
  */
 public class MessageHttpUploader {
 
     private Logger logger = null;
-    private PreferencesAS2 preferences = new PreferencesAS2();
+    private final PreferencesAS2 preferences = new PreferencesAS2();
     /**
-     * localisze the GUI
+     * localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private final MecResourceBundle rb;
     /**
      * The header that has been built fro the request
      */
-    private Properties requestHeader = new Properties();
+    private final Properties requestHeader = new Properties();
     /**
      * remote answer
      */
@@ -139,9 +147,6 @@ public class MessageHttpUploader {
      */
     private StatusLine responseStatusLine = null;
     private ClientServer clientserver = null;
-    //DB connection
-    private Connection configConnection = null;
-    private Connection runtimeConnection = null;
     private IDBDriverManager dbDriverManager = null;
     //keystore data
     private KeystoreStorage certStore = null;
@@ -177,7 +182,7 @@ public class MessageHttpUploader {
     }
 
     /**
-     * Sets keystore parameter for SSL sending. This is only necessary if HTTPS
+     * Sets keystore parameter for TLS sending. This is only necessary if HTTPS
      * is the protocol used for the message POST
      *
      * @param truststore Truststore file
@@ -206,11 +211,9 @@ public class MessageHttpUploader {
     }
 
     /**
-     * Pass a DB connection to this class for logging purpose
+     * Pass a DB access to this class for logging purpose
      */
-    public void setDBConnection(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
+    public void setDBConnection(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
     }
 
@@ -223,11 +226,11 @@ public class MessageHttpUploader {
         AS2Info as2Info = message.getAS2Info();
         MessageAccessDB messageAccess = null;
         MDNAccessDB mdnAccess = null;
-        if (this.runtimeConnection != null && messageAccess == null && !as2Info.isMDN()) {
-            messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        if (this.dbDriverManager != null && messageAccess == null && !as2Info.isMDN()) {
+            messageAccess = new MessageAccessDB(this.dbDriverManager);
             messageAccess.initializeOrUpdateMessage((AS2MessageInfo) as2Info);
-        } else if (this.runtimeConnection != null && as2Info.isMDN()) {
-            mdnAccess = new MDNAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        } else if (this.dbDriverManager != null && as2Info.isMDN()) {
+            mdnAccess = new MDNAccessDB(this.dbDriverManager);
             mdnAccess.initializeOrUpdateMDN((AS2MDNInfo) as2Info);
         }
         if (this.clientserver != null) {
@@ -262,7 +265,7 @@ public class MessageHttpUploader {
             }
         } else {
             //If the returncode is -1 here, this has been already handled by the upload routine 
-            //- its a SSL Problem or a timeout problem
+            //- its a TLS Problem or a timeout problem
             if (returnCode > 0) {
                 //no connection
                 new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
@@ -279,19 +282,18 @@ public class MessageHttpUploader {
             }
         }
         //store the sent data and assign the payload to the message
-        if (this.configConnection != null) {
-            MessageStoreHandler messageStoreHandler = new MessageStoreHandler(this.dbDriverManager,
-                    this.configConnection, this.runtimeConnection);
+        if (this.dbDriverManager != null) {
+            MessageStoreHandler messageStoreHandler = new MessageStoreHandler(this.dbDriverManager);
             messageStoreHandler.storeSentMessage(message, sender, receiver, this.getRequestHeader());
         }
         //perform some statistic entries
-        if (this.configConnection != null) {
+        if (this.dbDriverManager != null) {
             //inc the sent data size, this is for new connections (as2 messages, async mdn)
             AS2Server.incRawSentData(size);
             if (message.getAS2Info().isMDN()) {
                 AS2MDNInfo mdnInfo = (AS2MDNInfo) message.getAS2Info();
                 //ASYNC MDN sent: insert an entry into the statistic table
-                QuotaAccessDB.incReceivedMessages(this.dbDriverManager, this.configConnection, this.runtimeConnection, mdnInfo.getSenderId(),
+                QuotaAccessDB.incReceivedMessages(this.dbDriverManager, mdnInfo.getSenderId(),
                         mdnInfo.getReceiverId(), mdnInfo.getState(), mdnInfo.getRelatedMessageId());
             }
         }
@@ -299,6 +301,11 @@ public class MessageHttpUploader {
         if (!message.isMDN()) {
             AS2MessageInfo messageInfo = (AS2MessageInfo) message.getAS2Info();
             if (messageInfo.requestsSyncMDN()) {
+                //check if the received MDN is just empty
+                if(( this.getResponseHeader() == null || this.getResponseHeader().length == 0)
+                        && (this.getResponseData() == null || this.getResponseData().length == 0)){
+                    throw new Exception(this.rb.getResourceString("answer.no.sync.mdn.empty"));
+                }                
                 //perform a check if the answer really contains a MDN or is just an empty HTTP 200 with some header data
                 //this check looks for the existance of some key header values
                 boolean as2FromExists = false;
@@ -335,7 +342,6 @@ public class MessageHttpUploader {
                 try {
                     client = new AnonymousTextClient();
                     client.setDisplayServerLogMessages(false);
-                    PreferencesAS2 preferences = new PreferencesAS2();
                     client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
                     IncomingMessageRequest messageRequest = new IncomingMessageRequest();
                     //create temporary file to store the data
@@ -526,30 +532,31 @@ public class MessageHttpUploader {
             if (receiptURL == null) {
                 //async MDN requested?
                 if (message.isMDN()) {
-                    if (this.runtimeConnection == null) {
+                    if (this.dbDriverManager == null) {
                         throw new IllegalArgumentException("MessageHTTPUploader.performUpload(): A MDN receipt URL is not set, unable to determine where to send the MDN");
                     }
-                    MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
-                    AS2MessageInfo relatedMessageInfo = messageAccess.getLastMessageEntry(((AS2MDNInfo) message.getAS2Info()).getRelatedMessageId());
+                    MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
+                    AS2MessageInfo relatedMessageInfo = messageAccess.getLastMessageEntry(
+                            ((AS2MDNInfo) message.getAS2Info()).getRelatedMessageId());
                     receiptURL = new URL(relatedMessageInfo.getAsyncMDNURL());
                 } else {
                     receiptURL = new URL(receiver.getURL());
                 }
-            }
+            }           
             //create the http client
             HttpClientBuilder clientBuilder = HttpClients.custom();
             if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
-                clientBuilder.setSSLSocketFactory(this.generateSSLFactory());
+                clientBuilder.setSSLSocketFactory(this.generateSSLFactory(connectionParameter, message.getAS2Info()));
             }
             clientBuilder.setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE);
             HttpHost targetHost = new HttpHost(receiptURL.getHost(), receiptURL.getPort(), receiptURL.getProtocol());
             boolean credentialAuthUsed = false;
             CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
             HttpClientContext httpClientContext = null;
-            if (receiver.getAuthentication().isEnabled()) {
+            if (receiver.getAuthenticationCredentialsMessage().isEnabled()) {
                 credentialAuthUsed = true;
                 httpClientContext = this.generateHttpClientContextForBasicAuth(
-                        targetHost, credentialsProvider, receiver.getAuthentication());
+                        targetHost, credentialsProvider, receiver.getAuthenticationCredentialsMessage());
             }
             ProxyObject proxy = connectionParameter.getProxy();
             if (proxy != null && proxy.getHost() != null) {
@@ -578,7 +585,7 @@ public class MessageHttpUploader {
             filePost.addHeader("as2-from", AS2Message.escapeFromToHeader(sender.getAS2Identification()));
             filePost.addHeader("as2-to", AS2Message.escapeFromToHeader(receiver.getAS2Identification()));
             String originalFilename = null;
-            if (message.getPayloads() != null && message.getPayloads().size() > 0) {
+            if (message.getPayloads() != null && !message.getPayloads().isEmpty()) {
                 originalFilename = message.getPayloads().get(0).getOriginalFilename();
             }
             if (originalFilename != null) {
@@ -588,8 +595,8 @@ public class MessageHttpUploader {
                 if (!message.isMDN()) {
                     ((AS2MessageInfo) message.getAS2Info()).setSubject(subject);
                     //refresh this in the database if it is requested
-                    if (this.runtimeConnection != null) {
-                        MessageAccessDB access = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                    if (this.dbDriverManager != null) {
+                        MessageAccessDB access = new MessageAccessDB(this.dbDriverManager);
                         access.updateSubject((AS2MessageInfo) message.getAS2Info());
                     }
                 }
@@ -618,6 +625,19 @@ public class MessageHttpUploader {
                                     new Object[]{
                                         receiptURL
                                     }), message.getAS2Info());
+                    //its a TLS connection and the system should trust all server certificates
+                    if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
+                        if (connectionParameter.getTrustAllRemoteServerCertificates()) {
+                            this.logger.log(Level.INFO,
+                                    this.rb.getResourceString("trust.all.server.certificates"),
+                                    message.getAS2Info());
+                        }
+                        if (connectionParameter.getStrictHostCheck()) {
+                            this.logger.log(Level.INFO,
+                                    this.rb.getResourceString("strict.hostname.check"),
+                                    message.getAS2Info());
+                        }
+                    }
                 }
                 filePost.addHeader("server", message.getAS2Info().getUserAgent());
             } else {
@@ -638,6 +658,19 @@ public class MessageHttpUploader {
                                                 receiver.getURL()
                                             }), messageInfo);
                         }
+                        //its a TLS connection and the system should trust all server certificates
+                        if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
+                            if (connectionParameter.getTrustAllRemoteServerCertificates()) {
+                                this.logger.log(Level.INFO,
+                                        this.rb.getResourceString("trust.all.server.certificates"),
+                                        messageInfo);
+                            }
+                            if (connectionParameter.getStrictHostCheck()) {
+                                this.logger.log(Level.INFO,
+                                        this.rb.getResourceString("strict.hostname.check"),
+                                        messageInfo);
+                            }
+                        }
                     }
                 } else {
                     //Message with ASYNC MDN request
@@ -656,6 +689,19 @@ public class MessageHttpUploader {
                                                 receiver.getURL(),
                                                 sender.getMdnURL()
                                             }), messageInfo);
+                        }
+                        //its a TLS connection and the system should trust all server certificates
+                        if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
+                            if (connectionParameter.getTrustAllRemoteServerCertificates()) {
+                                this.logger.log(Level.INFO,
+                                        this.rb.getResourceString("trust.all.server.certificates"),
+                                        messageInfo);
+                            }
+                            if (connectionParameter.getStrictHostCheck()) {
+                                this.logger.log(Level.INFO,
+                                        this.rb.getResourceString("strict.hostname.check"),
+                                        messageInfo);
+                            }
                         }
                     }
                     //The following header indicates that this requests an asnc MDN.
@@ -711,7 +757,13 @@ public class MessageHttpUploader {
             ByteArrayEntity postEntity = new ByteArrayEntity(transferData);
             postEntity.setContentType(contentType);
             filePost.setEntity(postEntity);
-            this.updateUploadHTTPHeader(filePost, receiver);
+            //setup oauth2 header
+            if(message.isMDN()){
+                this.setOAuth2Header( filePost, receiver.usesOAuth2MDN(), receiver.getOAuth2MDN() );
+            }else{
+                this.setOAuth2Header( filePost, receiver.usesOAuth2Message(), receiver.getOAuth2Message());
+            } 
+            this.updateUploadHTTPHeaderWithUserDefinedHeaders(filePost, receiver);
             if (httpClientContext != null) {
                 //use preemtive basic authentication
                 httpResponse = httpClient.execute(targetHost, filePost, httpClientContext);
@@ -826,26 +878,39 @@ public class MessageHttpUploader {
         return (statusCode);
     }
 
-    private SSLConnectionSocketFactory generateSSLFactory() throws Exception {
-        //TLS key stores not set so far: take the preferences data from the server
+    private SSLConnectionSocketFactory generateSSLFactory(HttpConnectionParameter connectionParameter,
+            AS2Info as2Info) throws Exception {
+        String trustStoreFilename = null;
+        char[] trustStorePass = null;
+        char[] certStorePass = null;
+        String certStoreFilename = null;
+        
+        //TLS key stores not set so far: take the preferences data from the server preferences
         if (this.certStore == null) {
-            this.certStore = new KeystoreStorageImplFile(
-                    this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND),
-                    this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),
-                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
-                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS);
-            this.trustStore = new KeystoreStorageImplFile(
-                    this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND),
-                    this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),
-                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
-                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS);
+            trustStoreFilename = Paths.get(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).toAbsolutePath().toString();
+            certStoreFilename = Paths.get(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).toAbsolutePath().toString();
+            trustStorePass = this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
+            certStorePass = this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();            
+        }else{
+            trustStoreFilename = Paths.get(this.trustStore.getOriginalKeystoreFilename()).toAbsolutePath().toString();
+            certStoreFilename = Paths.get(this.certStore.getOriginalKeystoreFilename()).toAbsolutePath().toString();
+            trustStorePass = this.trustStore.getKeystorePass();
+            certStorePass = this.certStore.getKeystorePass();         
         }
-        SSLContext sslcontext = SSLContexts.custom()
-                .loadTrustMaterial(new File(this.trustStore.getOriginalKeystoreFilename()), this.trustStore.getKeystorePass(),
-                        new TrustSelfSignedStrategy())
-                .loadKeyMaterial(new File(this.certStore.getOriginalKeystoreFilename()), this.certStore.getKeystorePass(),
-                        this.certStore.getKeystorePass())
-                .build();
+        SSLContext sslcontext = null;
+        if (connectionParameter.getTrustAllRemoteServerCertificates()) {
+            SSLContextBuilder builder = SSLContexts.custom()
+                    .loadTrustMaterial(new File(trustStoreFilename), trustStorePass,
+                            new TrustSelfSignedStrategy());
+            sslcontext = builder.build();
+        } else {
+            sslcontext = SSLContexts.custom()
+                    .loadTrustMaterial(new File(trustStoreFilename), trustStorePass,
+                            new TrustSelfSignedStrategy())
+                    .loadKeyMaterial(new File(certStoreFilename), certStorePass,
+                            certStorePass)
+                    .build();
+        }
         // Allowed SSL/TLS protocols as client
         String[] allowedProtocols
                 = new String[]{
@@ -854,37 +919,72 @@ public class MessageHttpUploader {
                     "TLSv1.1",
                     "TLSv1.2",
                     "TLSv1.3"};
-        SSLConnectionSocketFactory sslConnectionFactory = new SSLConnectionSocketFactory(sslcontext,
-                allowedProtocols,
-                null,
-                //this is the AllowAllHostnameVerifier
-                new NoopHostnameVerifier()) {
-            @Override
-            /**
-             * This is required to support SNI (Server Name Indication) - this
-             * is more a hack as it makes use of Commons BeanUtils to invoke
-             * Oracle private method via reflection
-             */
-            public Socket connectSocket(
-                    int connectTimeout,
-                    Socket socket,
-                    HttpHost host,
-                    InetSocketAddress remoteAddress,
-                    InetSocketAddress localAddress,
-                    HttpContext context) throws IOException, ConnectTimeoutException {
-                if (socket instanceof SSLSocket) {
-                    try {
-                        PropertyUtils.setProperty(socket, "host", host.getHostName());
-                    } catch (NoSuchMethodException ex) {
-                    } catch (IllegalAccessException ex) {
-                    } catch (InvocationTargetException ex) {
+        SSLConnectionSocketFactory sslConnectionFactory = null;
+        if (!connectionParameter.getStrictHostCheck()) {
+            sslConnectionFactory = new SSLConnectionSocketFactory(sslcontext,
+                    allowedProtocols,
+                    null,
+                    //this is the AllowAllHostnameVerifier, another verifier is the StrictHostnameVerifier
+                    new NoopHostnameVerifier()) {
+                @Override
+                /**
+                 * This is required to support SNI (Server Name Indication) -
+                 * this is more a hack as it makes use of Commons BeanUtils to
+                 * invoke Oracle private method via reflection
+                 */
+                public Socket connectSocket(
+                        int connectTimeout,
+                        Socket socket,
+                        HttpHost host,
+                        InetSocketAddress remoteAddress,
+                        InetSocketAddress localAddress,
+                        HttpContext context) throws IOException, ConnectTimeoutException {
+                    if (socket instanceof SSLSocket) {
+                        try {
+                            PropertyUtils.setProperty(socket, "host", host.getHostName());
+                        } catch (NoSuchMethodException ex) {
+                        } catch (IllegalAccessException ex) {
+                        } catch (InvocationTargetException ex) {
+                        }
                     }
+                    return super.connectSocket(connectTimeout, socket, host, remoteAddress,
+                            localAddress, context);
                 }
-                return super.connectSocket(connectTimeout, socket, host, remoteAddress,
-                        localAddress, context);
-            }
 
-        };
+            };
+        } else {
+            sslConnectionFactory = new SSLConnectionSocketFactory(sslcontext,
+                    allowedProtocols,
+                    null,
+                    //this is the StrictHostnameVerifier with self signed exception
+                    new DefaultHostnameVerifierTrustedOnly(as2Info)) {
+                @Override
+                /**
+                 * This is required to support SNI (Server Name Indication) -
+                 * this is more a hack as it makes use of Commons BeanUtils to
+                 * invoke Oracle private method via reflection
+                 */
+                public Socket connectSocket(
+                        int connectTimeout,
+                        Socket socket,
+                        HttpHost host,
+                        InetSocketAddress remoteAddress,
+                        InetSocketAddress localAddress,
+                        HttpContext context) throws IOException, ConnectTimeoutException {
+                    if (socket instanceof SSLSocket) {
+                        try {
+                            PropertyUtils.setProperty(socket, "host", host.getHostName());
+                        } catch (NoSuchMethodException ex) {
+                        } catch (IllegalAccessException ex) {
+                        } catch (InvocationTargetException ex) {
+                        }
+                    }
+                    return super.connectSocket(connectTimeout, socket, host, remoteAddress,
+                            localAddress, context);
+                }
+
+            };
+        }
         return (sslConnectionFactory);
     }
 
@@ -910,11 +1010,18 @@ public class MessageHttpUploader {
         return (subjectBuilder.toString());
     }
 
+    /**Generates a authorization header for OAuth2 if this is required*/
+    private void setOAuth2Header(HttpPost post, boolean useOAuth2, OAuth2Config config){
+        if( useOAuth2 && config != null){
+            post.setHeader("Authorization", "Bearer " + config.getAccessTokenStr());
+        }
+    }
+    
     /**
      * Updates the passed post HTTP headers with the headers defined for the
-     * sender
+     * receiver
      */
-    private void updateUploadHTTPHeader(HttpPost post, Partner receiver) {
+    private void updateUploadHTTPHeaderWithUserDefinedHeaders(HttpPost post, Partner receiver) {
         List<String> usedHeaderKeys = new ArrayList<String>();
         for (Header singleHeader : post.getAllHeaders()) {
             PartnerHttpHeader headerReplacement = receiver.getHttpHeader(singleHeader.getName());
@@ -968,7 +1075,7 @@ public class MessageHttpUploader {
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 189 $";
+        String revision = "$Revision: 202 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -1050,4 +1157,50 @@ public class MessageHttpUploader {
 
         }
     }
+
+    private class DefaultHostnameVerifierTrustedOnly implements HostnameVerifier {
+
+        private final AS2Info as2Info;
+        
+        public DefaultHostnameVerifierTrustedOnly(AS2Info as2Info){
+            this.as2Info = as2Info;
+        }
+        
+        @Override
+        public boolean verify(String hostname, SSLSession session) {
+            try {
+                Certificate[] certificates = session.getPeerCertificates();
+                if (certificates != null && certificates.length > 0) {
+                    X509Certificate certificate = (X509Certificate) certificates[0];
+                    if (this.isSelfSigned(certificate)) {
+                        if( logger != null ){
+                            logger.log(Level.INFO,
+                                        rb.getResourceString("strict.hostname.check.skipped.selfsigned"),
+                                        this.as2Info);
+                        }
+                        return (true);
+                    }
+                }
+            } catch (Exception e) {
+            }
+            return (new DefaultHostnameVerifier().verify(hostname, session));
+        }
+
+        /**
+         * Checks if the passed certificate is self signed. A certificate is
+         * self-signed if the subject and issuer match
+         */
+        private boolean isSelfSigned(X509Certificate certificate) {
+            try {
+                X500Principal issuer = certificate.getIssuerX500Principal();
+                X500Principal subject = certificate.getSubjectX500Principal();
+                certificate.verify(certificate.getPublicKey());
+                return issuer.equals(subject);
+            } catch (Exception e) {
+                return false;
+            }
+        }
+
+    }
+
 }

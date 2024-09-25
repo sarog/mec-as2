@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager.java 3     3.02.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBDriverManager.java 5     26/07/22 16:34 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.database.IDBDriverManager;
  * to localize eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleDBDriverManager extends MecResourceBundle {
 
@@ -30,9 +30,11 @@ public class ResourceBundleDBDriverManager extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
+        {"module.name", "[DATABASE]" },
         {"creating.database." + IDBDriverManager.DB_RUNTIME, "Creating runtime database"},
         {"creating.database." + IDBDriverManager.DB_CONFIG, "Creating configuration database"},
+        {"creating.database.details", "Host: {0}, Port: {1}, User: {2}, DB Name: {3}"},
         {"database.creation.success." + IDBDriverManager.DB_RUNTIME, "The runtime database has been created successfully" },
         {"database.creation.success." + IDBDriverManager.DB_CONFIG, "The config database has been created successfully" },
         {"database.creation.failed." + IDBDriverManager.DB_RUNTIME, "An error occured during the creation process of the runtime database" },

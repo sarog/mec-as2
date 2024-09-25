@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/PKCS122PKCS12.java 9     7.11.18 10:40 Heller $
+//$Header: /as2/de/mendelson/util/security/PKCS122PKCS12.java 10    26/09/22 10:19 Heller $
 package de.mendelson.util.security;
 
 import java.io.InputStream;
@@ -9,6 +9,7 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.logging.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PasswordFinder;
 
 /*
@@ -23,7 +24,7 @@ import org.bouncycastle.openssl.PasswordFinder;
  * other pkcs12 keystore
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class PKCS122PKCS12 implements PasswordFinder {
 
@@ -80,7 +81,8 @@ public class PKCS122PKCS12 implements PasswordFinder {
     public void importKey(InputStream sourceKeystoreStream, char[] sourceKeypass,
             String alias) throws Exception {
         //open keystore
-        KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, "BC");
+        KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+                BouncyCastleProvider.PROVIDER_NAME);
         sourceKeystore.load(sourceKeystoreStream, sourceKeypass);
         this.importKey(sourceKeystore, alias);
     }
@@ -90,7 +92,8 @@ public class PKCS122PKCS12 implements PasswordFinder {
      */
     private KeyStore generateKeyStore() throws Exception {
         //do not remove the BC paramter, SUN cannot handle the format proper
-        KeyStore localKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, "BC");
+        KeyStore localKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+                BouncyCastleProvider.PROVIDER_NAME);
         localKeystore.load(null, null);
         return (localKeystore);
     }

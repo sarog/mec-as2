@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent.java 8     27.09.21 16:10 Helle $
+//$Header: /as2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent.java 9     5/01/23 12:24 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDialogSystemEvent extends MecResourceBundle {
 
@@ -31,20 +31,20 @@ public class ResourceBundleDialogSystemEvent extends MecResourceBundle {
      */
     static final Object[][] CONTENTS = {
         {"title", "System event viewer"},
-        {"label.user", "Owner:"},
-        {"label.host", "Host:"},
-        {"label.id", "Event id:"},
-        {"label.date", "Date:"},
-        {"label.type", "Type:"},
-        {"label.category", "Category:"},
+        {"label.user", "Owner"},
+        {"label.host", "Host"},
+        {"label.id", "Event id"},
+        {"label.date", "Date"},
+        {"label.type", "Type"},
+        {"label.category", "Category"},
         {"header.timestamp", "Timestamp"},
         {"header.type", "Type"},
         {"header.category", "Category"},
         {"user.server.process", "Server process" },
         {"no.data", "There is no system event that matches the current date/type selection." },        
-        {"label.startdate", "Start: " },
-        {"label.enddate", "End: " },
-        {"label.freetext", "Free text: " },
+        {"label.startdate", "Start" },
+        {"label.enddate", "End" },
+        {"label.freetext", "Free text" },
         {"label.freetext.hint", "Full event id or textual search in body and subject" },
         {"category.all", "-- All --" },
         {"label.close", "Close" },

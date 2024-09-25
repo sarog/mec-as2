@@ -1,13 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 38    10.03.21 8:56 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 45    9/11/22 15:14 Heller $
 package de.mendelson.comm.as2.log;
 
-import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.sql.Timestamp;
@@ -16,7 +16,6 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -29,24 +28,21 @@ import java.util.logging.Logger;
  * Access to the AS2 log that stores log messages for every transaction
  *
  * @author S.Heller
- * @version $Revision: 38 $
+ * @version $Revision: 45 $
  */
 public class LogAccessDB {
 
-    private int LEVEL_FINE = 3;
-    private int LEVEL_SEVERE = 2;
-    private int LEVEL_WARNING = 1;
-    private int LEVEL_INFO = 0;
-    /**
-     * Logger to log information to
-     */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private IDBDriverManager dbDriverManager;
+    private final int LEVEL_FINE = 3;
+    private final int LEVEL_SEVERE = 2;
+    private final int LEVEL_WARNING = 1;
+    private final int LEVEL_INFO = 0;
+    private final IDBDriverManager dbDriverManager;
+
     /**
      * Store the timestamps in the database in UTC to make the database portable
      * and to prevent daylight saving problems
      */
-    private Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
+    private final Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     /**
      * @param host host to connect to
@@ -82,9 +78,37 @@ public class LogAccessDB {
     }
 
     /**
-     * Adds a log line to the db
+     * Adds a log line to the db - opens a new database connection first
      */
-    public void logAsTransaction(Connection runtimeConnectionNoAutoCommit,
+    public void logAsTransaction(Level level, long millis, String logMessage, String messageId) {
+        if (logMessage == null) {
+            return;
+        }
+        Connection runtimeConnectionNoAutoCommit = null;
+        try {
+            runtimeConnectionNoAutoCommit
+                    = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            this.logAsTransaction(runtimeConnectionNoAutoCommit, level, millis, logMessage, messageId);
+        } catch (SQLException e) {
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+        } catch (Throwable e) {
+            SystemEventManagerImplAS2.systemFailure(e);
+        } finally {
+            if (runtimeConnectionNoAutoCommit != null) {
+                try {
+                    runtimeConnectionNoAutoCommit.close();
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.systemFailure(e);
+                }
+            }
+        }
+    }
+
+    /**
+     * Adds a single log line to the db
+     */
+    private void logAsTransaction(Connection runtimeConnectionNoAutoCommit,
             Level level, long millis, String logMessage, String messageId) {
         if (logMessage == null) {
             return;
@@ -109,8 +133,8 @@ public class LogAccessDB {
                     + " The system tries to store a log entry for the message id \"" + messageId
                     + "\", but this message seems not to exist in the system.\n"
                     + "The reason might be an unreferenced MDN or a bad inbound AS2 message structure.";
-            this.logger.severe(errorMessage);
-            SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR, SystemEvent.ORIGIN_TRANSACTION, SystemEvent.TYPE_TRANSACTION_ANY);
+            SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR,
+                    SystemEvent.ORIGIN_TRANSACTION, SystemEvent.TYPE_TRANSACTION_ANY);
             event.setBody(errorMessage + "\n\nLog message: \"" + logMessage + "\"");
             event.setSubject("Unreferenced MDN or bad message structure");
             SystemEventManagerImplAS2.newEvent(event);
@@ -125,7 +149,6 @@ public class LogAccessDB {
             } catch (Exception ex) {
                 SystemEventManagerImplAS2.systemFailure(ex);
             }
-            this.logger.severe("LogAccessDB.log: " + e.getMessage());
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
@@ -148,33 +171,46 @@ public class LogAccessDB {
     /**
      * Returns the whole log of a single instance
      */
-    public List<LogEntry> getLog(Connection runtimeConnection, String messageId) {
+    public List<LogEntry> getLog(String messageId) {
         List<LogEntry> list = new ArrayList<LogEntry>();
-        PreparedStatement statement = null;
+        Connection runtimeConnectionAutoCommit = null;
         try {
-            statement = runtimeConnection.prepareStatement("SELECT * FROM messagelog WHERE messageid=? ORDER BY timestamputc");
-            statement.setString(1, messageId);
-            ResultSet result = statement.executeQuery();
-            while (result.next()) {
-                LogEntry entry = new LogEntry();
-                entry.setLevel(this.convertLevel(result.getInt("loglevel")));
-                String detailsStr = this.dbDriverManager.readTextStoredAsJavaObject(result, "details");
-                if (detailsStr != null) {
-                    entry.setMessage(detailsStr);
+            runtimeConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+            PreparedStatement statement = null;
+            try {
+                statement = runtimeConnectionAutoCommit.prepareStatement("SELECT * FROM messagelog WHERE messageid=? ORDER BY timestamputc");
+                statement.setString(1, messageId);
+                ResultSet result = statement.executeQuery();
+                while (result.next()) {
+                    LogEntry entry = new LogEntry();
+                    entry.setLevel(this.convertLevel(result.getInt("loglevel")));
+                    String detailsStr = this.dbDriverManager.readTextStoredAsJavaObject(result, "details");
+                    if (detailsStr != null) {
+                        entry.setMessage(detailsStr);
+                    }
+                    entry.setMessageId(messageId);
+                    entry.setMillis(result.getTimestamp("timestamputc", this.calendarUTC).getTime());
+                    list.add(entry);
                 }
-                entry.setMessageId(messageId);
-                entry.setMillis(result.getTimestamp("timestamputc", this.calendarUTC).getTime());
-                list.add(entry);
+            } catch (Exception e) {
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            } finally {
+                if (statement != null) {
+                    try {
+                        statement.close();
+                    } catch (Exception e) {
+                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    }
+                }
             }
         } catch (Exception e) {
-            this.logger.severe("LogAccessDB.getLog: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
-            if (statement != null) {
+            if (runtimeConnectionAutoCommit != null) {
                 try {
-                    statement.close();
+                    runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    //nop
                 }
             }
         }
@@ -205,8 +241,6 @@ public class LogAccessDB {
                 statement = runtimeConnectionNoAutoCommit.prepareStatement("DELETE FROM messagelog WHERE messageid IS NULL");
             }
             statement.execute();
-        } catch (Exception e) {
-            throw e;
         } finally {
             if (statement != null) {
                 try {
@@ -246,7 +280,6 @@ public class LogAccessDB {
             } catch (Exception ex) {
                 SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            this.logger.severe("MessageAccessDB.deleteMessage: " + e.getMessage());
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {

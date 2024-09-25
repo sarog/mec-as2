@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 13    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 14    2/05/22 10:55 Heller $
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.IStatusBar;
@@ -28,7 +28,7 @@ import javax.swing.JFrame;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class JDialogDisplayHTTPConfiguration extends JDialog {
 
@@ -105,11 +105,17 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                     if (httpServerConfigFile == null) {
                         httpServerConfigFile = "--";
                     }
+                    String httpServerUserConfigFile = response.getHTTPServerUserConfigFile();
+                    if (httpServerUserConfigFile == null) {
+                        httpServerUserConfigFile = "--";
+                    }
                     JDialogDisplayHTTPConfiguration.this.jLabelConfigFileInfo.setText("<HTML>"
                             + JDialogDisplayHTTPConfiguration.this.rb.getResourceString("label.info.configfile",
                                     new Object[]{
+                                        embeddedJettyServerVersion,
                                         "<strong>" + httpServerConfigFile + "</strong>",
-                                        embeddedJettyServerVersion})
+                                        "<strong>" + httpServerUserConfigFile + "</strong>"
+                                        })
                             + "</HTML>");
                     if (!response.isEmbeddedHTTPServerStarted()) {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(
@@ -258,7 +264,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(757, 559));
+        setSize(new java.awt.Dimension(857, 610));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

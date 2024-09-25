@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 6     7.05.19 14:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 7     5/10/22 10:10 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import javax.swing.ImageIcon;
@@ -12,23 +12,45 @@ import javax.swing.JPanel;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- *Abstract class for all preferences panels
+ * Abstract class for all preferences panels
+ *
  * @author S.Heller
- * @version: $Revision: 6 $
+ * @version: $Revision: 7 $
  */
-public abstract class PreferencesPanel extends JPanel{
+public abstract class PreferencesPanel extends JPanel {
 
-    /**Initializes the panel: loads all preferences*/
+    private String activatedPlugins = null;
+
+    /**
+     * Initializes the panel: loads all preferences
+     */
     public abstract void loadPreferences();
 
-    /**Stores the new preference settings*/
+    /**
+     * Stores the new preference settings
+     */
     public abstract void savePreferences();
 
-    /**Returns the icon resource string for the button bar*/
+    /**
+     * Returns the icon resource string for the button bar
+     */
     public abstract ImageIcon getIcon();
 
-    /**Returns the resource string for the tab name of the panel*/
+    /**
+     * Returns the resource string for the tab name of the panel
+     */
     public abstract String getTabResource();
 
+    /**
+     * Initializes the panel: pass all activated plugins
+     */
+    public void setActivatedPlugins(String activatedPlugins) {
+        this.activatedPlugins = activatedPlugins;
+    }
+
+    /**Returns if the passed plugin is activated*/
+    public boolean isPluginActivated(final String PLUGIN) {
+        return (this.activatedPlugins != null && this.activatedPlugins.contains(PLUGIN));
+    }
 
 }

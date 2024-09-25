@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerator.java 12    8.10.19 16:43 Heller $
+//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerator.java 15    24/10/22 11:58 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.math.BigInteger;
@@ -6,6 +6,7 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
+import java.security.spec.ECParameterSpec;
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -16,7 +17,10 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 
@@ -31,7 +35,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
  * This class allows to generate a private key
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class KeyGenerator {
 
@@ -57,7 +61,16 @@ public class KeyGenerator {
         SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
         //intialize with DSA/RSA/etc
         keyPairGen = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm(), BouncyCastleProvider.PROVIDER_NAME);
-        keyPairGen.initialize(generationValues.getKeySize(), rand);
+        if (generationValues.getKeyAlgorithm().startsWith("EC")) {
+            ECNamedCurveParameterSpec curveParams = ECNamedCurveTable.getParameterSpec(generationValues.getECNamedCurve());
+            ECParameterSpec ecParameterSpec = new ECNamedCurveSpec(curveParams.getName(),
+                    curveParams.getCurve(),
+                    curveParams.getG(),
+                    curveParams.getN());
+            keyPairGen.initialize(ecParameterSpec, rand);
+        } else {
+            keyPairGen.initialize(generationValues.getKeySize(), rand);
+        }
         KeyPair keyPair = keyPairGen.generateKeyPair();
         X509Certificate certificate = this.generateCertificate(generationValues, keyPair);
         KeyGenerationResult result = new KeyGenerationResult(keyPair, certificate);
@@ -102,7 +115,7 @@ public class KeyGenerator {
         X509Certificate certificate = new JcaX509CertificateConverter()
                 .setProvider(BouncyCastleProvider.PROVIDER_NAME)
                 .getCertificate(certificateHolder);
-        return( certificate );
+        return (certificate);
     }
 
     /**

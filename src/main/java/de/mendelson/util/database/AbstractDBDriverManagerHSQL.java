@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/database/AbstractDBDriverManagerHSQL.java 5     26.02.21 17:48 Heller $
+//$Header: /as2/de/mendelson/util/database/AbstractDBDriverManagerHSQL.java 7     23/08/22 11:31 Heller $
 package de.mendelson.util.database;
 
 import java.sql.SQLException;
@@ -18,7 +18,7 @@ import java.sql.ResultSet;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
 
@@ -69,7 +69,9 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
         if (statement.getConnection().getAutoCommit()) {
             throw new SQLException("Transaction " + transactionName + " started on database connection that is in auto commit mode");
         }
-        statement.execute("START TRANSACTION");
+        //since HSQLDB 2.7.0 it is required to add the isolation level to the START TRANSACTION command
+        // - READ COMMITTED was the default isolation level before so this is just added
+        statement.execute("START TRANSACTION ISOLATION LEVEL READ COMMITTED");
     }
 
     @Override
@@ -151,6 +153,18 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
             return ((byte[]) object);
         }
         return (null);
+    }
+    
+    /**
+     * Adds a limit clause to the SQL query. LIMIT is common but no used by all
+     * databases - e.g. not by the oracle database
+     *
+     * @param query
+     * @param maxRows
+     */
+    @Override
+    public String addLimitToQuery(String query, int maxRows) {
+        return (query + " LIMIT " + maxRows);
     }
 
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageParser.java 258   15.10.21 13:32 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageParser.java 261   26/09/22 10:19 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -50,6 +50,7 @@ import org.bouncycastle.cms.jcajce.JceKeyAgreeRecipientId;
 import org.bouncycastle.cms.jcajce.JceKeyTransEnvelopedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientId;
 import org.bouncycastle.cms.jcajce.ZlibExpanderProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.SMIMECompressed;
 import org.bouncycastle.mail.smime.SMIMEEnveloped;
 
@@ -64,7 +65,7 @@ import org.bouncycastle.mail.smime.SMIMEEnveloped;
  * Analyzes and builds AS2 messages
  *
  * @author S.Heller
- * @version $Revision: 258 $
+ * @version $Revision: 261 $
  */
 public class AS2MessageParser {
 
@@ -76,9 +77,6 @@ public class AS2MessageParser {
     private CertificateManager certificateManagerEncryption;
     private MecResourceBundle rb = null;
     private MecResourceBundle rbMessage = null;
-    //DB connection
-    private Connection configConnection = null;
-    private Connection runtimeConnection = null;
     private IDBDriverManager dbDriverManager = null;
 
     private final String OID_KEYENCRYPTION_RSAES_AOEP = "1.2.840.113549.1.1.7";
@@ -109,9 +107,7 @@ public class AS2MessageParser {
     /**
      * Passes a db connection to this class
      */
-    public void setDBConnection(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
+    public void setDBConnection(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
     }
 
@@ -236,8 +232,8 @@ public class AS2MessageParser {
             mdnInfo.setMessageId("<MDN_ON_" + mdnInfo.getRelatedMessageId() + ">");
         }
         mdnInfo.setDispositionState(mdnParser.getDispositionState());
-        MDNAccessDB mdnAccess = new MDNAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
-        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        MDNAccessDB mdnAccess = new MDNAccessDB(this.dbDriverManager);
+        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
         PartnerAccessDB partnerAccess = new PartnerAccessDB(this.dbDriverManager);
         //check if related message id exists in db
         if (!messageAccess.messageIdExists(mdnInfo.getRelatedMessageId())) {
@@ -411,7 +407,7 @@ public class AS2MessageParser {
      */
     public AS2Message createMessageFromRequest(byte[] rawMessageData, Properties header, String contentType) throws AS2Exception {
         AS2Message message = new AS2Message(new AS2MessageInfo());
-        if (this.configConnection == null) {
+        if (this.dbDriverManager == null) {
             throw new AS2Exception(AS2Exception.PROCESSING_ERROR,
                     "AS2MessageParser: Pass a DB connection before calling createMessageFromRequest()", message);
         }
@@ -450,7 +446,7 @@ public class AS2MessageParser {
                 messageInfo.setRequestsSyncMDN(header.getProperty("receipt-delivery-option") == null || header.getProperty("receipt-delivery-option").trim().length() == 0);
                 //check for existing partners
                 PartnerAccessDB partnerAccess = new PartnerAccessDB(this.dbDriverManager);
-                MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
                 Partner sender = partnerAccess.getPartner(messageInfo.getSenderId());
                 Partner receiver = partnerAccess.getPartner(messageInfo.getReceiverId());
                 if (sender == null) {
@@ -636,7 +632,7 @@ public class AS2MessageParser {
         if (mdnMessageInfo.getSignType() == AS2Message.SIGNATURE_NONE && mdnMessageInfo.getReceivedContentMIC() == null) {
             return;
         }
-        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
         AS2MessageInfo relatedMessageInfo = messageAccess.getLastMessageEntry(mdnMessageInfo.getRelatedMessageId());
         BCCryptoHelper helper = new BCCryptoHelper();
         if (helper.micIsEqual(mdnMessageInfo.getReceivedContentMIC(), relatedMessageInfo.getReceivedContentMIC())) {
@@ -1513,10 +1509,10 @@ public class AS2MessageParser {
         InputStream contentStream = null;
         if (certificateReceiver.getPublicKey().getAlgorithm().equals("EC")) {
             contentStream = recipient.getContentStream(
-                    new JceKeyAgreeEnvelopedRecipient(privateKeyReceiver).setProvider("BC")).getContentStream();
+                    new JceKeyAgreeEnvelopedRecipient(privateKeyReceiver).setProvider(BouncyCastleProvider.PROVIDER_NAME)).getContentStream();
         } else {
             contentStream = recipient.getContentStream(
-                    new JceKeyTransEnvelopedRecipient(privateKeyReceiver).setProvider("BC")).getContentStream();
+                    new JceKeyTransEnvelopedRecipient(privateKeyReceiver).setProvider(BouncyCastleProvider.PROVIDER_NAME)).getContentStream();
         }
         ByteArrayOutputStream memOut = new ByteArrayOutputStream();
         contentStream.transferTo(memOut);

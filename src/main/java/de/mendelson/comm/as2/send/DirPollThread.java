@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 29    20/01/22 9:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 33    24/08/22 14:57 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -10,6 +10,7 @@ import de.mendelson.comm.as2.sendorder.SendOrderSender;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.IOFileFilterRegexpMatch;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
@@ -22,13 +23,13 @@ import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -49,7 +50,7 @@ import java.util.logging.Logger;
  * Thread that polls a directory
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 33 $
  */
 public class DirPollThread implements Runnable {
 
@@ -60,8 +61,6 @@ public class DirPollThread implements Runnable {
     private boolean stopRequested = false;
     private Partner receiver = null;
     private Partner sender = null;
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private IDBDriverManager dbDriverManager;
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     //Localize the GUI
@@ -76,10 +75,10 @@ public class DirPollThread implements Runnable {
     private PreferencesAS2 preferences;
     private DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
-    public DirPollThread(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection, ClientServer clientserver,
-            CertificateManager certificateManagerEncSign, Partner sender, Partner receiver) {
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
+    public DirPollThread(IDBDriverManager dbDriverManager, ClientServer clientserver,
+            CertificateManager certificateManagerEncSign, Partner sender, Partner receiver) { 
+        Objects.requireNonNull(sender, "DirPollThread: sender must not be null");
+        Objects.requireNonNull(receiver, "DirPollThread: receiver must not be null");
         this.dbDriverManager = dbDriverManager;
         this.clientserver = clientserver;
         this.certificateManagerEncSign = certificateManagerEncSign;
@@ -193,7 +192,8 @@ public class DirPollThread implements Runnable {
      */
     public void initializeThread() {
         //allow to process 3 files threaded
-        this.sendingTheadExecutor = Executors.newFixedThreadPool(3);
+        this.sendingTheadExecutor = Executors.newFixedThreadPool(3,
+                new NamedThreadFactory("dirpoll-send"));
         String pollIgnoreList = this.receiver.getPollIgnoreListAsString();
         if (pollIgnoreList == null) {
             pollIgnoreList = "--";
@@ -348,7 +348,7 @@ public class DirPollThread implements Runnable {
                         this.sender.getName(),
                         this.receiver.getName()
                     }));
-            SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+            SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager);
             AS2Message message = orderSender.send(this.certificateManagerEncSign, this.sender, this.receiver, file.toFile(), null,
                     this.receiver.getSubject(), null);
             this.clientserver.broadcastToClients(new RefreshClientMessageOverviewList());

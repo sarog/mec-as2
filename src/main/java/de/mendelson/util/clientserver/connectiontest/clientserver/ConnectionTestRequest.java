@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestRequest.java 4     19.09.19 12:26 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestRequest.java 5     16/06/22 11:54 Heller $
 package de.mendelson.util.clientserver.connectiontest.clientserver;
 
 import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ConnectionTestRequest extends ClientServerMessage implements Serializable {
     
@@ -28,15 +28,24 @@ public class ConnectionTestRequest extends ClientServerMessage implements Serial
     private long timeout = TimeUnit.SECONDS.toMillis(2);
     /**Some additional information for the log etc*/
     private String partnerName = null;
+    private int partnerRole = ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER;
 
-    
-    public ConnectionTestRequest(String host, int port, String[] protocols) {        
+    /**
+     * @param host Host IP to test to
+     * @param port Port to test to
+     * @param protocols List of TLS protocols that are allowed
+     * @param partnerName Name of the partner to display in the log and result
+     * @param partnerRole One of the constants defined in ConnectionTest
+     */
+    public ConnectionTestRequest(String host, int port, String[] protocols, String partnerName, int partnerRole) {        
         this.protocols = protocols;
         if( this.protocols == null ){
             this.protocols = new String[0];
         }
         this.host = host;
         this.port = port;
+        this.partnerName = partnerName;
+        this.partnerRole = partnerRole;
     }
     
     /**Performs a TLS connection test with the default TLS protocols if ssl is set.
@@ -44,8 +53,10 @@ public class ConnectionTestRequest extends ClientServerMessage implements Serial
      * @param host
      * @param port
      * @param ssl 
+     * @param partnerName Name of the partner to display in the log and result
+     * @param partnerRole One of the constants defined in ConnectionTest
      */
-    public ConnectionTestRequest(String host, int port, boolean ssl) {
+    public ConnectionTestRequest(String host, int port, boolean ssl, String partnerName, int partnerRole) {
         if( ssl ){
             this.protocols = ConnectionTest.DEFAULT_TLS_PROTOCOL_LIST;
         }else{
@@ -53,6 +64,8 @@ public class ConnectionTestRequest extends ClientServerMessage implements Serial
         }
         this.host = host;
         this.port = port;
+        this.partnerName = partnerName;
+        this.partnerRole = partnerRole;
     }
 
     @Override
@@ -107,10 +120,11 @@ public class ConnectionTestRequest extends ClientServerMessage implements Serial
     }
 
     /**
-     * @param partnerName the partnerName to set
+     * @return the partnerRole
      */
-    public void setPartnerName(String partnerName) {
-        this.partnerName = partnerName;
+    public int getPartnerRole() {
+        return partnerRole;
     }
 
+    
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/ResourceBundleCreateDataSheet.java 4     4/06/18 1:35p Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/ResourceBundleCreateDataSheet.java 5     19/01/23 11:16 Heller $ 
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleCreateDataSheet extends MecResourceBundle {
 
@@ -30,12 +30,12 @@ public class ResourceBundleCreateDataSheet extends MecResourceBundle {
         {"button.cancel", "Cancel"},   
         {"progress", "Create PDF" },
         {"label.newpartner", "New partner - not in the system so far" },
-        {"label.comment", "Comment: "},
-        {"label.receipturl", "Your AS2 receipt URL: " },
-        {"label.localpartner", "Local partner: "},
-        {"label.remotepartner", "Remote partner: "},
-        { "label.encryption", "Encryption: "},
-        { "label.signature", "Digital signature: "},
+        {"label.comment", "Comment"},
+        {"label.receipturl", "Your AS2 receipt URL" },
+        {"label.localpartner", "Local partner"},
+        {"label.remotepartner", "Remote partner"},
+        { "label.encryption", "Encryption"},
+        { "label.signature", "Digital signature"},
         { "label.compression", "Data compression"},
         { "label.syncmdn", "Request sync MDN"},
         { "label.signedmdn", "Request signed MDN"},
@@ -43,7 +43,7 @@ public class ResourceBundleCreateDataSheet extends MecResourceBundle {
         {"file.written", "The communication datasheet PDF has been written to \"{0}\". Please send it to your new partner to establish a new communication link." },
         {"label.usedataencryption", "Use data encryption" },
         {"label.usedatasignature", "Use data signature"},
-        {"label.usessl", "Use SSL"},
+        {"label.usessl", "Use TLS"},
         {"label.usesessionauth", "Use session auth"},
         {"label.requestsignedeerp", "Request signed EERP"},
     };

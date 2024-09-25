@@ -1,13 +1,19 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 16    11.11.20 17:06 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 18    29/08/22 15:44 Heller $
 package de.mendelson.util.security.cert;
 
+import de.mendelson.util.ImageUtil;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-
 import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.security.DNUtil;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.List;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -15,48 +21,44 @@ import de.mendelson.util.MendelsonMultiResolutionImage;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-import de.mendelson.util.security.DNUtil;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Date;
-import java.util.List;
-
 /**
  * table model to display a configuration grid
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public class TableModelCertificates extends AbstractTableModel {
 
     public static final int ROW_HEIGHT = 20;
-    protected static final int IMAGE_HEIGHT = ROW_HEIGHT-3;
-    
+    protected static final int IMAGE_HEIGHT = ROW_HEIGHT - 3;
+
     /**
      * Icons, multi resolution
      */
-    public final static MendelsonMultiResolutionImage ICON_CERTIFICATE_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
-    public final static MendelsonMultiResolutionImage ICON_KEY_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);    
-    public final static MendelsonMultiResolutionImage ICON_INVALID_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_invalid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
-    public final static MendelsonMultiResolutionImage ICON_VALID_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_valid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
-    public final static MendelsonMultiResolutionImage ICON_ROOT_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_root.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
-    public final static MendelsonMultiResolutionImage ICON_UNTRUSTED_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_untrusted.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*2);
+    public final static MendelsonMultiResolutionImage IMAGE_CERTIFICATE_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+    public final static MendelsonMultiResolutionImage IMAGE_KEY_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+    public final static MendelsonMultiResolutionImage IMAGE_INVALID_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_invalid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+    public final static MendelsonMultiResolutionImage IMAGE_VALID_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_valid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+    public final static MendelsonMultiResolutionImage IMAGE_ROOT_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_root.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+    public final static MendelsonMultiResolutionImage IMAGE_UNTRUSTED_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_untrusted.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
 
-    public static final ImageIcon ICON_CERTIFICATE = new ImageIcon(ICON_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_KEY = new ImageIcon(ICON_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_VALID = new ImageIcon(ICON_VALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_INVALID = new ImageIcon(ICON_INVALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_CERTIFICATE_ROOT = new ImageIcon(ICON_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_CERTIFICATE_MISSING = new ImageIcon(ICON_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE = new ImageIcon(IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_KEY = new ImageIcon(IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_VALID = new ImageIcon(IMAGE_VALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_INVALID = new ImageIcon(IMAGE_INVALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE_ROOT = new ImageIcon(IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE_MISSING = new ImageIcon(IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     /*ResourceBundle to localize the headers*/
     private MecResourceBundle rb = null;
     private final List<KeystoreCertificate> data = Collections.synchronizedList(new ArrayList<KeystoreCertificate>());
+    private final List<CertificateInUseChecker> inUseCheckerList
+            = Collections.synchronizedList(new ArrayList<CertificateInUseChecker>());
 
     /**
      * Creates new table model
@@ -68,6 +70,20 @@ public class TableModelCertificates extends AbstractTableModel {
                     ResourceBundleTableModelCertificates.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
+
+    /**
+     * Adds an (optional) checker that will check if a certificate is in use. If
+     * this is not set the checker functionality will simply be disabled and the
+     * unused certificates will not be greyed out
+     *
+     * @param certificateInUseChecker The check that checks the configuration
+     * for a used certificates
+     */
+    public void addCertificateInUseChecker(CertificateInUseChecker certificateInUseChecker) {
+        synchronized (this.inUseCheckerList) {
+            this.inUseCheckerList.add(certificateInUseChecker);
         }
     }
 
@@ -84,15 +100,14 @@ public class TableModelCertificates extends AbstractTableModel {
         ((AbstractTableModel) this).fireTableDataChanged();
     }
 
-    public List<KeystoreCertificate> getCurrentCertificateList(){
+    public List<KeystoreCertificate> getCurrentCertificateList() {
         List<KeystoreCertificate> copyList = new ArrayList<KeystoreCertificate>();
-        synchronized( this.data ){
+        synchronized (this.data) {
             copyList.addAll(this.data);
         }
-        return( copyList );
+        return (copyList);
     }
-    
-    
+
     /**
      * returns the number of rows in the table
      */
@@ -143,14 +158,32 @@ public class TableModelCertificates extends AbstractTableModel {
         return ("");
     }
 
-    public ImageIcon getIconForCertificate(KeystoreCertificate certificate) {
+    /**
+     * Returns the certificate/key image without any usage checker modifications
+     * (grayed out)
+     */
+    public ImageIcon getUnmodifiedIconForCertificate(KeystoreCertificate certificate) {
+        ImageIcon icon = ICON_CERTIFICATE;
         if (certificate.getIsKeyPair()) {
-            return (ICON_KEY);
+            icon = ICON_KEY;
+        } else if (certificate.isRootCertificate()) {
+            icon = ICON_CERTIFICATE_ROOT;
+        }        
+        return (icon);
+    }
+
+    private ImageIcon getIconForCertificate(KeystoreCertificate certificate) {
+        ImageIcon icon = this.getUnmodifiedIconForCertificate(certificate);        
+        synchronized (this.inUseCheckerList) {
+            for (CertificateInUseChecker checker : this.inUseCheckerList) {
+                CertificateInUseInfo info = checker.checkUsed(certificate);
+                if (info.getUsageList().isEmpty()) {
+                    icon = ImageUtil.grayImage(icon);
+                    break;
+                }
+            }
         }
-        if (certificate.isRootCertificate()) {
-            return (ICON_CERTIFICATE_ROOT);
-        }
-        return (ICON_CERTIFICATE);
+        return (icon);
     }
 
     /**

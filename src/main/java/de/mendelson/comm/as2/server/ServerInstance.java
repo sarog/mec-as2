@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/server/ServerInstance.java 1     2/02/22 14:27 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/server/ServerInstance.java 2     4/02/22 10:18 Heller $
 package de.mendelson.comm.as2.server;
 
 /*
@@ -12,10 +12,12 @@ package de.mendelson.comm.as2.server;
  * Stores information about this unique server instance, e.g. an id
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ServerInstance {
 
+    public static final String ID_COMMUNITY_EDITION = "COMMUN";
+    
     //Max length is 6
-    public static final String ID = "COMMUN";
+    public static final String ID = ID_COMMUNITY_EDITION;
 }

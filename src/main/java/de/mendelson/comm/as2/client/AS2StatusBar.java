@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 32    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 33    17/02/22 11:31 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.comm.as2.configurationcheck.gui.JDialogIssuesList;
@@ -35,7 +35,7 @@ import javax.swing.SwingUtilities;
  * Status bar for the AS2 GUI
  *
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 33 $
  */
 public class AS2StatusBar extends JPanel implements IStatusBar {
 
@@ -67,7 +67,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     private BaseClient baseClient = null;
     private ConfigurationCheckThread checkThread = null;
     private final ScheduledExecutorService configurationCheckRefreshExecutor = Executors.newSingleThreadScheduledExecutor(
-        new NamedThreadFactory("client-configuration-check-schedule"));
+        new NamedThreadFactory("client-configuration-check"));
 
     /**
      * Creates new form AS2StatusBar

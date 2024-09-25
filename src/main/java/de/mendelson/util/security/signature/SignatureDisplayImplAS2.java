@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplayImplAS2.java 3     16.09.21 15:04 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplayImplAS2.java 4     8/12/22 11:35 Heller $
 package de.mendelson.util.security.signature;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
  * Container superclass for the signature rendering
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class SignatureDisplayImplAS2 extends SignatureDisplay{
     
@@ -20,13 +20,13 @@ public class SignatureDisplayImplAS2 extends SignatureDisplay{
      */
     public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_STRONG
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_strong.svg",
-                    ListCellRendererSignature.IMAGE_HEIGHT, ListCellRendererSignature.IMAGE_HEIGHT * 2);
+                    ListCellRendererSignature.IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_WEAK
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_weak.svg",
-                    ListCellRendererSignature.IMAGE_HEIGHT, ListCellRendererSignature.IMAGE_HEIGHT * 2);
+                    ListCellRendererSignature.IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_BROKEN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_broken.svg",
-                    ListCellRendererSignature.IMAGE_HEIGHT, ListCellRendererSignature.IMAGE_HEIGHT * 2);
+                    ListCellRendererSignature.IMAGE_HEIGHT);
     
     private MecResourceBundle rb;
     

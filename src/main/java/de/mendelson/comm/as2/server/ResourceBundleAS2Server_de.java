@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_de.java 18    11.02.21 17:28 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_de.java 20    29/04/22 17:03 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleAS2Server_de extends MecResourceBundle {
 
@@ -35,9 +35,10 @@ public class ResourceBundleAS2Server_de extends MecResourceBundle {
         {"server.startup.failed", "Es gab ein Problem beim Starten des Servers - der Start wurde abgebrochen" },
         {"server.shutdown", "{0} fährt herunter." },
         {"bind.exception", "{0}\nSie haben einen Port definiert, der derzeit von einem anderen Prozess in Ihrem System verwendet wird.\nDies kann der Client-Server-Port oder der HTTP/S-Port sein, den Sie in der HTTP-Konfiguration definiert haben.\nBitte ändern Sie Ihre Konfiguration oder stoppen Sie den anderen Prozess, bevor Sie den {1} verwenden."},
-        {"httpserver.willstart", "Integrierter HTTP Server startet" },
-        {"httpserver.running", "Integrierter HTTP Server läuft ({0})" },
         {"server.started.issues", "Warnung: Es wurden {0} Konfigurationsprobleme beim Starten des Servers erkannt." },
-        {"server.started.issue", "Warnung: Es wurde 1 Konfigurationsproblem beim Starten des Servers erkannt." },        
+        {"server.started.issue", "Warnung: Es wurde 1 Konfigurationsproblem beim Starten des Servers erkannt." }, 
+        {"server.hello", "Dies ist {0}" },
+        {"server.hello.licenseexpire", "Die Lizenz läuft in {0} Tagen aus ({1}). Sie müssen die Lizenz über den mendelson Support (service@mendelson.de) erneuern, wenn Sie sie danach noch weiter verwenden möchten." },
+        {"server.hello.licenseexpire.single", "Die Lizenz läuft in {0} Tag aus ({1}). Sie müssen die Lizenz über den mendelson Support (service@mendelson.de) erneuern, wenn Sie sie danach noch weiter verwenden möchten." },
     };
 }

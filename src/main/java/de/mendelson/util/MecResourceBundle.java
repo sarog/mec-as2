@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/MecResourceBundle.java 15    13.12.19 10:14 Heller $
+//$Header: /as2/de/mendelson/util/MecResourceBundle.java 16    1/06/22 11:07 Heller $
 package de.mendelson.util;
 
 import java.io.Serializable;
@@ -17,7 +17,7 @@ import java.util.MissingResourceException;
  * Class that implements some additional methods to the ListResourceBundle and wrapps error messages
  * if some resources are not found
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public abstract class MecResourceBundle extends ListResourceBundle implements Serializable {
     private static final long serialVersionUID = 1L;	
@@ -30,6 +30,21 @@ public abstract class MecResourceBundle extends ListResourceBundle implements Se
     @Override
     public abstract Object[][] getContents();
 
+    /**Checks if the passed resource string is available. This is useful for dynamic resources
+     * 
+     * @param resourceString Resource String that is checked
+     * @return true if the passed resource string exists in the bundle
+     */
+    public boolean containsResourceString( String resourceString ){
+        try {
+            super.getString(resourceString);
+        } catch (MissingResourceException e) {
+            return( false );
+        }
+        return( true );
+    }
+    
+    
     /**Returns the encoded string of the resource
      * @param resourceStr Resource key to read
      */

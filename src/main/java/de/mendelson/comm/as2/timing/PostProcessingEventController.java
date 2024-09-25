@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 13    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 15    28/07/22 12:45 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 15 $
  */
 public class PostProcessingEventController {
 
@@ -47,22 +47,18 @@ public class PostProcessingEventController {
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private EventExecutionThread executeThread;
     private ClientServer clientserver = null;
-    private Connection configConnection;
-    private Connection runtimeConnection;
     private CertificateManager certificateManagerEncSign;
     private MessageAccessDB messageAccess;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("postprocessing"));
     private IDBDriverManager dbDriverManager;
 
-    public PostProcessingEventController(ClientServer clientserver, Connection configConnection,
-            Connection runtimeConnection, CertificateManager certificateManagerEncSign,
+    public PostProcessingEventController(ClientServer clientserver, 
+            CertificateManager certificateManagerEncSign,
             IDBDriverManager dbDriverManager) throws Exception {
         this.clientserver = clientserver;
-        this.configConnection = configConnection;
-        this.runtimeConnection = runtimeConnection;
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.messageAccess = new MessageAccessDB(dbDriverManager, configConnection, runtimeConnection);
+        this.messageAccess = new MessageAccessDB(dbDriverManager);
         this.dbDriverManager = dbDriverManager;
     }
 
@@ -70,25 +66,19 @@ public class PostProcessingEventController {
      * Starts the embedded task that guards the files to delete
      */
     public void startEventExecution() {
-        this.executeThread = new EventExecutionThread(this.dbDriverManager, this.configConnection,
-                this.runtimeConnection);
+        this.executeThread = new EventExecutionThread(this.dbDriverManager);
         this.scheduledExecutor.scheduleWithFixedDelay(this.executeThread, 10, 10, TimeUnit.SECONDS);
     }
 
     public class EventExecutionThread implements Runnable {
 
-        //DB connection
-        private Connection configConnection;
-        private Connection runtimeConnection;
         private ProcessingEventAccessDB processingEventAccess;
         private IDBDriverManager dbDriverManager;
 
-        public EventExecutionThread(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-            this.configConnection = configConnection;
-            this.runtimeConnection = runtimeConnection;
+        public EventExecutionThread(IDBDriverManager dbDriverManager) {
             this.dbDriverManager = dbDriverManager;
             this.processingEventAccess = new ProcessingEventAccessDB(
-                    dbDriverManager, configConnection, runtimeConnection);
+                    dbDriverManager);
         }
 
         @Override
@@ -103,13 +93,13 @@ public class PostProcessingEventController {
                     ProcessingEvent event = this.processingEventAccess.getNextEventToExecuteAsTransaction(runtimeConnectionNoAutoCommit);
                     IProcessingExecution processExecution = null;
                     if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_EXECUTE_SHELL) {
-                        processExecution = new ExecuteShellCommand(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                        processExecution = new ExecuteShellCommand(this.dbDriverManager);
                         entryFound = true;
                     } else if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_MOVE_TO_DIR) {
-                        processExecution = new ExecuteMoveToDir(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+                        processExecution = new ExecuteMoveToDir(this.dbDriverManager);
                         entryFound = true;
                     } else if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
-                        processExecution = new ExecuteMoveToPartner(this.dbDriverManager, this.configConnection, this.runtimeConnection,
+                        processExecution = new ExecuteMoveToPartner(this.dbDriverManager,
                                 PostProcessingEventController.this.certificateManagerEncSign);
                         entryFound = true;
                     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 23    11.11.20 17:06 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 25    12/12/22 14:18 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 25 $
  */
 public class ResourceBundleCertificates_de extends MecResourceBundle {
 
@@ -32,6 +32,10 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"button.newkey", "Schlüssel importieren"},
         {"button.newcertificate", "Zertifikat importieren"},
         {"button.export", "Zertifikat exportieren"},
+        {"button.reference", "Verwendung anzeigen" },     
+        {"button.keycopy", "Zur {0} Verwaltung kopieren" },       
+        {"button.keycopy.tls", "TLS" },
+        {"button.keycopy.signencrypt", "Verschlüsselung/Signatur" },
         {"menu.file", "Datei" },        
         {"menu.file.close", "Beenden" },
         {"menu.import", "Import"},
@@ -72,7 +76,7 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"dialog.cert.delete.message", "Wollen Sie wirklich das Zertifikat mit dem Alias \"{0}\" löschen?"},
         {"dialog.cert.delete.title", "Zertifikat löschen"},
         {"title.cert.in.use", "Zertifikat wird verwendet" },
-        {"cert.delete.impossible", "Der Eintrag kann nicht gelöscht werden:" },
+        {"cert.delete.impossible", "Der Eintrag kann nicht gelöscht werden, er wird verwendet.\nBitte verwenden Sie \"Verwendung anzeigen\" für weitere Informationen." },
         {"module.locked", "Diese Zertifikatverwaltung wird aktuell exklusiv von einem anderen Client geöffnet, Sie können keine Änderungen vornehmen!" },
         {"label.trustanchor", "Trust anchor:" },
         {"warning.testkey", "Öffentlich verfügbarer mendelson Testschlüssel - nicht im produktiven Betrieb verwenden!" },
@@ -88,5 +92,12 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"success.deleteallexpired.text", "{0} abgelaufene und unbenutzte Schlüssel/Zertifikate wurden gelöscht" },
         {"warning.deleteallexpired.expired.but.used.title", "Benutzte Schlüssel/Zertifikate" },
         {"warning.deleteallexpired.expired.but.used.text", "{0} abgelaufene Schlüssel/Zertifikate werden in der Konfiguration verwendet und daher nicht gelöscht " },
+        {"module.locked.title", "Modul ist in Verwendung" },
+        {"module.locked.text", "Das Modul {0} wird von einem anderen Client exklusiv verwendet ({1})." },
+        {"keycopy.target.exists.title", "Eintrag exisitiert bereits im Ziel"},
+        {"keycopy.target.exists.text", "Dieser Eintrag exisiert bereits in der Zielzertifikatverwaltung (Alias {0})."},
+        {"keycopy.target.ro.title", "Ziel schreibgeschützt" },
+        {"keycopy.target.ro.text", "Operation fehlgeschlagen - Schlüsseldatei des Ziels ist schreibgeschützt." },
+        {"keycopy.success.text", "Der Eintrag [{0}] wurde erfolgreich kopiert" },
     };
 }

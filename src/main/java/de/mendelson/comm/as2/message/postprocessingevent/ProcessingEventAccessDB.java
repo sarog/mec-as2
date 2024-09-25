@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEventAccessDB.java 9     26.08.21 14:00 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEventAccessDB.java 11    9/11/22 15:15 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import java.sql.Connection;
@@ -29,7 +29,7 @@ import org.hsqldb.types.Types;
  * Access the event queue for the partner related event processing (post processing)
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class ProcessingEventAccessDB {
 
@@ -37,11 +37,6 @@ public class ProcessingEventAccessDB {
      * Logger to log information to
      */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    /**
-     * Connection to the database
-     */
-    private Connection runtimeConnection = null;
-    private Connection configConnection = null;
     private IDBDriverManager dbDriverManager = null;
 
     /**
@@ -49,9 +44,7 @@ public class ProcessingEventAccessDB {
      *
      * @param host host to connect to
      */
-    public ProcessingEventAccessDB(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.runtimeConnection = runtimeConnection;
-        this.configConnection = configConnection;
+    public ProcessingEventAccessDB(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
     }
 
@@ -72,7 +65,8 @@ public class ProcessingEventAccessDB {
             transactionStatement = runtimeConnectionNoAutoCommit.createStatement();
             //begin transaction - lock database table
             this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            this.dbDriverManager.setTableLockExclusive(transactionStatement, new String[]{"processingeventqueue"});
+            this.dbDriverManager.setTableLockExclusive(transactionStatement, 
+                    new String[]{"processingeventqueue"});
             statementSelect = runtimeConnectionNoAutoCommit.prepareStatement(
                     "SELECT * FROM processingeventqueue WHERE initdate < ? ORDER BY initdate ASC");
             statementSelect.setLong(1, System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(15));

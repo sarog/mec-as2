@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_fr.java 10    14.08.19 17:08 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_fr.java 13    7/10/22 10:37 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleNotification_fr extends MecResourceBundle {
 
@@ -31,9 +31,9 @@ public class ResourceBundleNotification_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
-        //dialog
+        {"module.name", "[NOTIFICATION MAIL]" },
         {"test.message.send", "Un e-mail de test a été envoyé à {0}."},
-        {"test.message.debug", "\nEnvoyer un processus envoi a échoué, voici quelques informations de débogage qui pourraient vous aider à:\n"},
+        {"test.message.debug", "\nEnvoyer un processus envoi a échoué.\n"},
         {"misc.message.send", "Un e-mail de notification a été envoyé à {0} ({1}-{2})."},
         {"misc.message.send.failed", "L''envoi d'un message de notification à {0} a échoué"},
         {"notification.about.event", "Cette notification se réfère à l'événement système de {0}.\nUrgence: {1}\nEnfin: {2}\nTyp: {3}\nId: {4}"},
@@ -46,6 +46,10 @@ public class ResourceBundleNotification_fr extends MecResourceBundle {
             + "Entrez le numéro unique de l''événement dans le masque de recherche."},
         {"misc.message.summary.send", "Un courriel de notification sommaire a été envoyé à {0}"},
         {"misc.message.summary.failed", "L'envoi d'un message de notification sommaire à {0} a échoué"},
-        {"do.not.reply", "Veuillez ne pas répondre à ce mail."},};
+        {"do.not.reply", "Veuillez ne pas répondre à ce mail."},
+        {"authorization.none", "AUCUN" },
+        {"authorization.oauth2", "OAUTH2" },
+        {"authorization.credentials", "Utilisateur/mot de passe" },
+    };
 
 }

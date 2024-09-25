@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleCertificateManager_de.java 13    21.09.18 15:17 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleCertificateManager_de.java 14    12/12/22 14:18 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.security.BCCryptoHelper;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleCertificateManager_de extends MecResourceBundle {
 
@@ -43,6 +43,6 @@ public class ResourceBundleCertificateManager_de extends MecResourceBundle {
         {"event.certificate.modified.subject", "{0}: Der Alias eines Zertifikats wurde verändert" },
         {"event.certificate.modified.body", "Der Zertifikatalias \"{0}\" wuerde verändert zu \"{1}\"\n\n\nDies sind die Daten des Zertifikats:\n\n{2}" },
         {"keystore." + BCCryptoHelper.KEYSTORE_JKS, "SSL/TLS Keystore" },
-        {"keystore." + BCCryptoHelper.KEYSTORE_PKCS12, "Verschlüsselungs-/Signaturkeystore" },
+        {"keystore." + BCCryptoHelper.KEYSTORE_PKCS12, "Verschlüsselungs-/Signaturkeystore" },        
     };
 }

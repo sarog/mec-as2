@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 21    10.03.21 8:56 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 23    10/06/22 10:01 Heller $
 package de.mendelson.comm.as2.log;
 
 import de.mendelson.comm.as2.message.AS2MDNInfo;
@@ -23,19 +23,17 @@ import java.io.UnsupportedEncodingException;
 /**
  * Handler to log logger data to a data base
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 23 $
  */
 public class DBLoggingHandler extends Handler {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private LogAccessDB logAccess;
-    private Connection runtimeConnectionNoAutoCommit = null; 
 
     public DBLoggingHandler(IDBDriverManager dbDriverManager) {
+        //store all log levels by default, could be overwritten
+        this.setLevel(Level.ALL);
         try {
-            this.runtimeConnectionNoAutoCommit 
-                    = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
-            this.runtimeConnectionNoAutoCommit.setAutoCommit(false);
             this.logAccess = new LogAccessDB(dbDriverManager);
         } catch (Exception e) {
             this.logger.severe("DBLoggingHandler: " + e.getMessage());
@@ -114,13 +112,12 @@ public class DBLoggingHandler extends Handler {
             if (parameter[0] instanceof AS2MessageInfo) {
                 AS2MessageInfo info = (AS2MessageInfo) parameter[0];
                 message = "[" + info.getMessageId() + "] " + message;
-                this.logAccess.logAsTransaction(this.runtimeConnectionNoAutoCommit, 
+                this.logAccess.logAsTransaction(
                         level, millis, message, info.getMessageId());
             } else if (parameter[0] instanceof AS2MDNInfo) {
                 AS2MDNInfo info = (AS2MDNInfo) parameter[0];
                 message = "[" + info.getMessageId() + "] " + message;
                 this.logAccess.logAsTransaction(
-                        this.runtimeConnectionNoAutoCommit, 
                         level, millis, message, info.getRelatedMessageId());
             }
         }

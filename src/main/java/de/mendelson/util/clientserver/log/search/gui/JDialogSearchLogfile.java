@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 11    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 12    19/01/23 9:26 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.DateChooserUI;
@@ -48,7 +48,7 @@ import javax.swing.SwingUtilities;
  * Dialog to search on the server side in the log files
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class JDialogSearchLogfile extends JDialog {
 
@@ -323,7 +323,7 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelSearch.add(jLabelStartDate, gridBagConstraints);
 
         jLabelEndDate.setText(this.rb.getResourceString("label.enddate"));
@@ -331,7 +331,7 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelSearch.add(jLabelEndDate, gridBagConstraints);
 
         jDateChooserStartDate.setMinimumSize(new java.awt.Dimension(130, 20));
@@ -414,7 +414,7 @@ public class JDialogSearchLogfile extends JDialog {
         gridBagConstraints.gridwidth = 15;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 15, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 15, 5);
         jPanelSearch.add(jLabelDescription, gridBagConstraints);
 
         jSeparator3.setOrientation(javax.swing.SwingConstants.VERTICAL);

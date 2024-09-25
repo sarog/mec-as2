@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/api/server/ServersideAPICommandProcessing.java 3     2/02/22 15:58 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/api/server/ServersideAPICommandProcessing.java 4     2/01/23 12:25 Heller $
 package de.mendelson.comm.as2.api.server;
 
 import de.mendelson.comm.as2.api.message.CommandResponse;
@@ -13,13 +13,13 @@ import de.mendelson.comm.as2.api.message.CommandResponse;
 /**
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ServersideAPICommandProcessing {
 
     public ServersideAPICommandProcessing(Object a,
                 Object b, Object c, Object d,
-                Object e, Object f, Object g, Object h){        
+                Object e, Object f){        
     }
     public CommandResponse processRequest(Object a, Object b, Object c) {        
         throw new IllegalArgumentException("Not implemented in the community edition" );

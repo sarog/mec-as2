@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/PBKDF2.java 1     9/01/15 11:48a Heller $
+//$Header: /as2/de/mendelson/util/security/PBKDF2.java 2     24/08/22 12:56 Heller $
 package de.mendelson.util.security;
 
 import java.math.BigInteger;
@@ -20,7 +20,7 @@ import javax.crypto.spec.PBEKeySpec;
  * hashes are stored using the PBKDF2 algorithm
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class PBKDF2 {
 
@@ -81,7 +81,7 @@ public class PBKDF2 {
         SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
         byte[] salt = new byte[16];
         secureRandom.nextBytes(salt);
-        return (salt.toString());
+        return (new String(salt));
     }
 
     private static String byteArrayToHex(byte[] byteArray) throws NoSuchAlgorithmException {

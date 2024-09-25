@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/JKSKeys2JKS.java 1     25/01/22 13:17 Heller $
+//$Header: /as2/de/mendelson/util/security/JKSKeys2JKS.java 2     26/09/22 10:19 Heller $
 package de.mendelson.util.security;
 
 import java.io.OutputStream;
@@ -8,6 +8,7 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.util.logging.Logger;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -21,7 +22,7 @@ import java.util.logging.Logger;
  * the JKS format
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class JKSKeys2JKS {
 
@@ -65,7 +66,7 @@ public class JKSKeys2JKS {
      * Loads ore creates a keystore to import the keys to
      */
     private KeyStore generateJKSKeyStore() throws Exception {
-        KeyStore keystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_JKS, "BC");
+        KeyStore keystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_JKS, BouncyCastleProvider.PROVIDER_NAME);
         keystore.load(null, null);
         return (keystore);
     }

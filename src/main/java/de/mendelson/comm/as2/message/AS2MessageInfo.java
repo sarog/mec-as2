@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 61    14.09.21 13:08 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 62    1/09/22 14:11 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,7 +22,7 @@ import java.util.Properties;
  * Stores all information about a as2 message
  *
  * @author S.Heller
- * @version $Revision: 61 $
+ * @version $Revision: 62 $
  */
 public class AS2MessageInfo implements AS2Info {
 
@@ -98,6 +98,8 @@ public class AS2MessageInfo implements AS2Info {
      * Allows to track this transmission later using the RPC XML interface
      */
     private String userdefinedId = null;
+    /**Stores if the transmission was transmitted using a secure connection*/
+    private boolean usesTLS = false;
 
     /**
      * These are the disposition notification options
@@ -560,6 +562,20 @@ public class AS2MessageInfo implements AS2Info {
      */
     public void setUserdefinedId(String userdefinedId) {
         this.userdefinedId = userdefinedId;
+    }
+
+    /**
+     * @return the usesTLS
+     */
+    public boolean usesTLS() {
+        return usesTLS;
+    }
+
+    /**
+     * @param usesTLS the usesTLS to set
+     */
+    public void setUsesTLS(boolean usesTLS) {
+        this.usesTLS = usesTLS;
     }
 
 }

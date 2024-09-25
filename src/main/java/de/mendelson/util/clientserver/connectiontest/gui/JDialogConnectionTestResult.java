@@ -8,12 +8,6 @@ import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.LogFormatter;
 import de.mendelson.util.log.LoggingHandlerLogEntryArray;
-import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_BLACK;
-import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_BLUE;
-import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_BROWN;
-import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_DARK_GREEN;
-import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_LIGHT_GRAY;
-import static de.mendelson.util.log.panel.LogConsolePanel.COLOR_RED;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -21,6 +15,8 @@ import de.mendelson.util.security.cert.gui.JDialogInfoOnExternalCertificate;
 import de.mendelson.util.security.cert.gui.ResourceBundleCertificates;
 import de.mendelson.util.uinotification.UINotification;
 import java.awt.Color;
+import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -52,7 +48,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Dialog to display the test result of a connection test
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 32 $
  */
 public class JDialogConnectionTestResult extends JDialog {
 
@@ -66,9 +62,18 @@ public class JDialogConnectionTestResult extends JDialog {
     private MecResourceBundle rbCerts;
 
     private static final MendelsonMultiResolutionImage IMAGE_CONNECTIONTEST
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/testconnection.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/testconnection.svg", 16);
     private static final MendelsonMultiResolutionImage IMAGE_IMPORT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/import.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/import.svg", 24);
+    private static final MendelsonMultiResolutionImage IMAGE_LOCALSTATION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/localstation.svg", 24);
+    private static final MendelsonMultiResolutionImage IMAGE_REMOTE_PARTNER
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/singlepartner.svg", 24);
+    private static final MendelsonMultiResolutionImage IMAGE_GATEWAY_PARTNER
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/singlepartner_gateway.svg", 24);
+
+    private final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
+    private final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
 
     /**
      * Creates new form JDialogTestResult
@@ -94,7 +99,9 @@ public class JDialogConnectionTestResult extends JDialog {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         initComponents();
+        this.result = result;
         this.setMultiresolutionIcons();
+        this.initializePartnerPanel();
         Color errorColor = Color.red.darker();
         Color okColor = Color.green.darker().darker();
         Color labelBackground = this.jLabelConnectionState.getBackground();
@@ -107,12 +114,13 @@ public class JDialogConnectionTestResult extends JDialog {
             this.jLabelOFTPServiceState.setVisible(true);
         }
         this.certManagerSSL = certManagerSSL;
-        this.result = result;
         this.setTitle(this.rb.getResourceString("title"));
         if (result.wasSSLTest()) {
             this.jLabelHeader.setText(this.rb.getResourceString("header.ssl", result.getTestedRemoteAddress()));
+            this.jLabelPartnerLock.setText(TEXT_SECURE_LOCK);
         } else {
             this.jLabelHeader.setText(this.rb.getResourceString("header.plain", result.getTestedRemoteAddress()));
+            this.jLabelPartnerLock.setText(TEXT_INSECURE_LOCK);
         }
         if (result.isConnectionIsPossible()) {
             this.jLabelConnectionState.setForeground(okColor);
@@ -153,9 +161,7 @@ public class JDialogConnectionTestResult extends JDialog {
         Logger testLogger = Logger.getAnonymousLogger();
         testLogger.setUseParentHandlers(false);
         JTextPaneLoggingHandler handler = new JTextPaneLoggingHandler(this.jTextPaneLog,
-                new LogFormatter(LogFormatter.FORMAT_CONSOLE));
-        this.setDefaultLogColors(handler);
-        handler.adjustColorsByContrast();
+                new LogFormatter(LogFormatter.FORMAT_CONSOLE_COLORED));
         testLogger.setLevel(Level.ALL);
         testLogger.addHandler(handler);
         testLogger.log(Level.FINE,
@@ -189,8 +195,58 @@ public class JDialogConnectionTestResult extends JDialog {
     }
 
     private void setMultiresolutionIcons() {
-        this.jLabelIcon.setIcon(new ImageIcon(IMAGE_CONNECTIONTEST.toMinResolution(32)));
+        this.setIconImages(IMAGE_CONNECTIONTEST.getResolutionVariants());
         this.jButtonImportCertificates.setIcon(new ImageIcon(IMAGE_IMPORT.toMinResolution(24)));
+        //Its possible to not display the partner panel
+        if (this.result.getSenderName() != null) {
+            this.jLabelPartnerSenderImage.setIcon(new ImageIcon(IMAGE_LOCALSTATION.toMinResolution(28)));
+            if (this.result.getPartnerRole() == ConnectionTest.PARTNER_ROLE_GATEWAY_PARTNER) {
+                this.jLabelPartnerReceiverImage.setIcon(new ImageIcon(IMAGE_GATEWAY_PARTNER.toMinResolution(28)));
+            } else {
+                this.jLabelPartnerReceiverImage.setIcon(new ImageIcon(IMAGE_REMOTE_PARTNER.toMinResolution(28)));
+            }
+        }
+    }
+
+    private void initializePartnerPanel() {
+        if (this.result.getSenderName() == null) {
+            this.jPanelPartnerDisplay.setVisible(false);
+        } else {
+            String senderName 
+                    = this.calculateMaxPartnerName(this.result.getSenderName(), 
+                            this.jLabelPartnerSenderName.getFontMetrics(this.jLabelPartnerSenderName.getFont()), 
+                            (int)this.jPanelPartnerSender.getPreferredSize().getWidth());
+            String receiverName 
+                    = this.calculateMaxPartnerName(this.result.getReceiverName(), 
+                            this.jLabelPartnerReceiverName.getFontMetrics(this.jLabelPartnerReceiverName.getFont()), 
+                            (int)this.jPanelPartnerReceiver.getPreferredSize().getWidth());            
+            this.jLabelPartnerSenderName.setText(senderName);
+            this.jLabelPartnerReceiverName.setText(receiverName);
+        }
+    }
+
+    /**Calculates the String that should be displayed as partner name in the dialog. If the width is too long
+     * it is shortened
+     * @param partnerName
+     * @param fontMetrics
+     * @param panelWidth
+     * @return 
+     */
+    private String calculateMaxPartnerName(String partnerName, FontMetrics fontMetrics, int panelWidth) {  
+        int textWidth = fontMetrics.stringWidth(partnerName);
+        if (textWidth > panelWidth * 0.75) {
+            String newName = "";
+            for (int i = 0; i < partnerName.length(); i++) {                
+                textWidth = fontMetrics.stringWidth(newName+"[..]");
+                if (textWidth > panelWidth * 0.75) {
+                    break;
+                }
+                newName += partnerName.charAt(i);
+            }
+            return( newName+"[..]");
+        }else{
+            return( partnerName );
+        }
     }
 
     /**
@@ -213,21 +269,6 @@ public class JDialogConnectionTestResult extends JDialog {
         return (exists);
     }
 
-    /**
-     * Sets some default colors for the logger levels. Overwrite these colors
-     * using the setColor method
-     *
-     */
-    public void setDefaultLogColors(JTextPaneLoggingHandler handler) {
-        handler.setColor(Level.SEVERE, COLOR_RED);
-        handler.setColor(Level.WARNING, COLOR_BROWN);
-        handler.setColor(Level.INFO, COLOR_BLACK);
-        handler.setColor(Level.CONFIG, COLOR_DARK_GREEN);
-        handler.setColor(Level.FINE, COLOR_BLUE);
-        handler.setColor(Level.FINER, COLOR_BLUE);
-        handler.setColor(Level.FINEST, COLOR_LIGHT_GRAY);
-    }
-
     private void viewCertificates() {
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         List<X509Certificate> certList = new ArrayList<X509Certificate>();
@@ -238,10 +279,10 @@ public class JDialogConnectionTestResult extends JDialog {
         while (infoDialog.importPressed()) {
             int selectedCertificateIndex = infoDialog.getCertificateIndex();
             KeyStoreUtil util = new KeyStoreUtil();
-            Provider provBC = new BouncyCastleProvider();
             X509Certificate importCertificate = certList.get(selectedCertificateIndex);
             try {
-                String alias = util.importX509Certificate(this.certManagerSSL.getKeystore(), importCertificate, provBC);
+                String alias = util.importX509Certificate(this.certManagerSSL.getKeystore(), importCertificate, 
+                        BouncyCastleProvider.PROVIDER_NAME);
                 this.certManagerSSL.saveKeystore();
                 this.certManagerSSL.rereadKeystoreCertificates();
                 UINotification.instance().addNotification(null,
@@ -251,7 +292,7 @@ public class JDialogConnectionTestResult extends JDialog {
             } catch (Throwable e) {
                 e.printStackTrace();
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_SUCCESS,
+                        UINotification.TYPE_ERROR,
                         this.rbCerts.getResourceString("certificate.import.error.title"),
                         this.rbCerts.getResourceString("certificate.import.error.message", e.getMessage()));
             }
@@ -275,7 +316,6 @@ public class JDialogConnectionTestResult extends JDialog {
 
         jSplitPane = new javax.swing.JSplitPane();
         jPanelOverview = new javax.swing.JPanel();
-        jLabelIcon = new javax.swing.JLabel();
         jLabelHeader = new javax.swing.JLabel();
         jLabelIPConnection = new javax.swing.JLabel();
         jLabelRemoteCertificatesAvailableLocal = new javax.swing.JLabel();
@@ -285,6 +325,15 @@ public class JDialogConnectionTestResult extends JDialog {
         jLabelOFTPServiceState = new javax.swing.JLabel();
         jPanelSpace = new javax.swing.JPanel();
         jButtonImportCertificates = new javax.swing.JButton();
+        jPanelPartnerDisplay = new javax.swing.JPanel();
+        jLabelPartnerArrow = new javax.swing.JLabel();
+        jLabelPartnerLock = new javax.swing.JLabel();
+        jPanelPartnerSender = new javax.swing.JPanel();
+        jLabelPartnerSenderImage = new javax.swing.JLabel();
+        jLabelPartnerSenderName = new javax.swing.JLabel();
+        jPanelPartnerReceiver = new javax.swing.JPanel();
+        jLabelPartnerReceiverImage = new javax.swing.JLabel();
+        jLabelPartnerReceiverName = new javax.swing.JLabel();
         jPanelLog = new javax.swing.JPanel();
         jScrollPane = new javax.swing.JScrollPane();
         jTextPaneLog = new javax.swing.JTextPane();
@@ -294,27 +343,22 @@ public class JDialogConnectionTestResult extends JDialog {
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         getContentPane().setLayout(new java.awt.GridBagLayout());
 
-        jSplitPane.setDividerLocation(235);
+        jSplitPane.setBorder(null);
+        jSplitPane.setDividerLocation(270);
         jSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
-        jPanelOverview.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelOverview.setLayout(new java.awt.GridBagLayout());
 
-        jLabelIcon.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/connectiontest/gui/missing_image32x32.gif"))); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.insets = new java.awt.Insets(15, 10, 10, 10);
-        jPanelOverview.add(jLabelIcon, gridBagConstraints);
-
-        jLabelHeader.setFont(new java.awt.Font("Tahoma", 1, 14)); // NOI18N
+        jLabelHeader.setFont(new java.awt.Font("Tahoma", 0, 13)); // NOI18N
         jLabelHeader.setText("<Header with URL>");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(15, 5, 10, 5);
+        gridBagConstraints.insets = new java.awt.Insets(15, 10, 10, 5);
         jPanelOverview.add(jLabelHeader, gridBagConstraints);
 
         jLabelIPConnection.setText(this.rb.getResourceString("label.connection.established"));
@@ -324,7 +368,7 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 10, 20, 5);
         jPanelOverview.add(jLabelIPConnection, gridBagConstraints);
 
         jLabelRemoteCertificatesAvailableLocal.setText(this.rb.getResourceString("label.certificates.available.local"));
@@ -332,20 +376,19 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 5;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
-        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 10, 20, 5);
         jPanelOverview.add(jLabelRemoteCertificatesAvailableLocal, gridBagConstraints);
 
         jLabelRemoteOFTPService.setText(this.rb.getResourceString("label.running.oftpservice"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
+        gridBagConstraints.insets = new java.awt.Insets(20, 10, 20, 5);
         jPanelOverview.add(jLabelRemoteOFTPService, gridBagConstraints);
 
         jLabelConnectionState.setFont(new java.awt.Font("Tahoma", 1, 12)); // NOI18N
@@ -363,7 +406,6 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(20, 5, 20, 5);
         jPanelOverview.add(jLabelCertificateState, gridBagConstraints);
@@ -372,7 +414,7 @@ public class JDialogConnectionTestResult extends JDialog {
         jLabelOFTPServiceState.setText("<STATE>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.gridheight = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.weighty = 1.0;
@@ -402,10 +444,94 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 20, 0, 0);
         jPanelOverview.add(jButtonImportCertificates, gridBagConstraints);
+
+        jPanelPartnerDisplay.setLayout(new java.awt.GridBagLayout());
+
+        jLabelPartnerArrow.setFont(new java.awt.Font("Segoe UI", 0, 18)); // NOI18N
+        jLabelPartnerArrow.setText("<html>&#10230;</html>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.insets = new java.awt.Insets(-5, 10, 15, 10);
+        jPanelPartnerDisplay.add(jLabelPartnerArrow, gridBagConstraints);
+
+        jLabelPartnerLock.setFont(new java.awt.Font("Dialog", 0, 16)); // NOI18N
+        jLabelPartnerLock.setText("<html>&#128275;</html>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.PAGE_END;
+        gridBagConstraints.insets = new java.awt.Insets(15, 0, -5, 0);
+        jPanelPartnerDisplay.add(jLabelPartnerLock, gridBagConstraints);
+
+        jPanelPartnerSender.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+        jPanelPartnerSender.setMinimumSize(new java.awt.Dimension(120, 70));
+        jPanelPartnerSender.setPreferredSize(new java.awt.Dimension(120, 70));
+        jPanelPartnerSender.setLayout(new java.awt.GridBagLayout());
+
+        jLabelPartnerSenderImage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/connectiontest/gui/missing_image24x24.gif"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 2;
+        jPanelPartnerSender.add(jLabelPartnerSenderImage, gridBagConstraints);
+
+        jLabelPartnerSenderName.setText("<sender>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanelPartnerSender.add(jLabelPartnerSenderName, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.ipadx = 5;
+        gridBagConstraints.ipady = 5;
+        jPanelPartnerDisplay.add(jPanelPartnerSender, gridBagConstraints);
+
+        jPanelPartnerReceiver.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+        jPanelPartnerReceiver.setMinimumSize(new java.awt.Dimension(120, 70));
+        jPanelPartnerReceiver.setPreferredSize(new java.awt.Dimension(120, 70));
+        jPanelPartnerReceiver.setLayout(new java.awt.GridBagLayout());
+
+        jLabelPartnerReceiverImage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/connectiontest/gui/missing_image24x24.gif"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 0, 0);
+        jPanelPartnerReceiver.add(jLabelPartnerReceiverImage, gridBagConstraints);
+
+        jLabelPartnerReceiverName.setText("<receiver>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanelPartnerReceiver.add(jLabelPartnerReceiverName, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 2;
+        gridBagConstraints.ipadx = 5;
+        gridBagConstraints.ipady = 5;
+        jPanelPartnerDisplay.add(jPanelPartnerReceiver, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 5, 5);
+        jPanelOverview.add(jPanelPartnerDisplay, gridBagConstraints);
 
         jSplitPane.setLeftComponent(jPanelOverview);
 
@@ -450,7 +576,7 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(929, 656));
+        setSize(new java.awt.Dimension(964, 712));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -471,13 +597,21 @@ public class JDialogConnectionTestResult extends JDialog {
     private javax.swing.JLabel jLabelConnectionState;
     private javax.swing.JLabel jLabelHeader;
     private javax.swing.JLabel jLabelIPConnection;
-    private javax.swing.JLabel jLabelIcon;
     private javax.swing.JLabel jLabelOFTPServiceState;
+    private javax.swing.JLabel jLabelPartnerArrow;
+    private javax.swing.JLabel jLabelPartnerLock;
+    private javax.swing.JLabel jLabelPartnerReceiverImage;
+    private javax.swing.JLabel jLabelPartnerReceiverName;
+    private javax.swing.JLabel jLabelPartnerSenderImage;
+    private javax.swing.JLabel jLabelPartnerSenderName;
     private javax.swing.JLabel jLabelRemoteCertificatesAvailableLocal;
     private javax.swing.JLabel jLabelRemoteOFTPService;
     private javax.swing.JPanel jPanelButton;
     private javax.swing.JPanel jPanelLog;
     private javax.swing.JPanel jPanelOverview;
+    private javax.swing.JPanel jPanelPartnerDisplay;
+    private javax.swing.JPanel jPanelPartnerReceiver;
+    private javax.swing.JPanel jPanelPartnerSender;
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JScrollPane jScrollPane;
     private javax.swing.JSplitPane jSplitPane;

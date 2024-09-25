@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 3     4/06/18 12:22p Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 4     16/06/22 11:54 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.io.Serializable;
@@ -16,10 +16,11 @@ import java.security.cert.X509Certificate;
  * Stores the results of a connection test
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ConnectionTestResult implements Serializable {
-
+    
+    
     public static final long serialVersionUID = 1L;
     private boolean connectionIsPossible = false;
     private boolean oftpServiceFound = false;
@@ -31,10 +32,17 @@ public class ConnectionTestResult implements Serializable {
     private String usedCipherSuite = null;
     private String[] supportedCipherSuites = null;
     private String[] enabledCipherSuites = null;    
+    private String senderName = null;
+    private String receiverName = null;
+    private int partnerRole = ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER;
 
-    public ConnectionTestResult(InetSocketAddress testedRemoteAddress, boolean wasSSLTest){
+    public ConnectionTestResult(InetSocketAddress testedRemoteAddress, boolean wasSSLTest,
+            String senderName, String receiverName, final int PARTNER_ROLE){
         this.testedRemoteAddress = testedRemoteAddress;
         this.wasSSLTest = wasSSLTest;
+        this.senderName = senderName;
+        this.receiverName = receiverName;
+        this.partnerRole = PARTNER_ROLE;
     }    
     
     public void setUsedCipherSuite( String usedCipherSuite){
@@ -48,6 +56,18 @@ public class ConnectionTestResult implements Serializable {
     public void setEnabledCipherSuites(String[] enabledCipherSuites){
         this.enabledCipherSuites = enabledCipherSuites;
     }    
+    
+    public int getPartnerRole(){
+        return( this.partnerRole );
+    }
+    
+    public String getSenderName(){
+        return( this.senderName );
+    }
+    
+    public String getReceiverName(){
+        return( this.receiverName );
+    }
     
     /**
      * @return the oftpServiceFound

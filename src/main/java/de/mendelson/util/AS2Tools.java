@@ -1,8 +1,7 @@
-//$Header: /as2/de/mendelson/util/AS2Tools.java 11    3.08.21 16:28 Heller $
+//$Header: /as2/de/mendelson/util/AS2Tools.java 12    1/06/22 14:37 Heller $
 package de.mendelson.util;
 
 import java.io.IOException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,7 +24,7 @@ import java.util.Locale;
  * Some programming tools for mendelson business integration
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class AS2Tools {
 
@@ -88,7 +87,7 @@ public class AS2Tools {
      */
     public static synchronized Path createTempFile(String prefix, String suffix) throws IOException {
         String tempDirStr = Paths.get("temp").toAbsolutePath().toString();
-        Path targetDir = Paths.get(tempDirStr + FileSystems.getDefault().getSeparator() + DATE_FORMAT_TEMP_FILE.format(new Date()));
+        Path targetDir = Paths.get(tempDirStr, DATE_FORMAT_TEMP_FILE.format(new Date()));
         if (!Files.exists(targetDir)) {
             Files.createDirectories(targetDir);
         }

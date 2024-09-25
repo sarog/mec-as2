@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 23    27/01/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 24    12/10/22 14:57 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * Controlls the certificates and checks if they will expire soon
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class CertificateExpireController {
 
@@ -109,7 +109,7 @@ public class CertificateExpireController {
                             manager.newEventCertificateWillExpire(certificate, certificateExpireDuration);
                         } catch (Exception e) {
                             String exceptionClass = "[" + e.getClass().getName() + "]";
-                            logger.severe("CertificationExpireThread: " + exceptionClass + " " + e.getMessage());
+                            logger.severe("CertificateExpireThread: " + exceptionClass + " " + e.getMessage());
                             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                         }
                     }
@@ -121,7 +121,7 @@ public class CertificateExpireController {
                         manager.newEventCertificateWillExpire(certificate, certificateExpireDuration);
                     } catch (Exception e) {
                         String exceptionClass = "[" + e.getClass().getName() + "]";
-                        logger.severe("CertificationExpireThread: " + exceptionClass + " " + e.getMessage());
+                        logger.severe("CertificateExpireThread: " + exceptionClass + " " + e.getMessage());
                         SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                     }
                 }

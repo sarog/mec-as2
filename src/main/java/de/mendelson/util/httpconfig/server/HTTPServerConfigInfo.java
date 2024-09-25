@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/httpconfig/server/HTTPServerConfigInfo.java 6     9.10.18 12:29 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfo.java 16    17/01/23 11:55 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import java.net.InetAddress;
@@ -6,12 +6,14 @@ import java.net.URL;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.Provider;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.jar.Attributes;
 import java.util.jar.Manifest;
+import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLServerSocketFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.Connector;
@@ -33,28 +35,33 @@ import org.eclipse.jetty.webapp.WebAppContext;
  * Stores information about the current HTTP server configuration
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 16 $
  */
 public class HTTPServerConfigInfo {
-   
-    private List<Listener> listenerList = new ArrayList<Listener>();
-    private List<String> excludedProtocols = new ArrayList<String>();
-    private List<String> possibleProtocols = new ArrayList<String>();
-    private List<String> excludedCiphers = new ArrayList<String>();
-    private List<String> possibleCiphers = new ArrayList<String>();
-    private List<String> deployedWars = new ArrayList<String>();
+
+    public static final String FILENAME_HTTP_SERVER_CONFIG_USER = "jetty10/jetty.config";
+
+    private final List<Listener> listenerList = new ArrayList<Listener>();
+    private final List<String> excludedProtocols = new ArrayList<String>();
+    private final List<String> possibleProtocols = new ArrayList<String>();
+    private final List<String> excludedCiphers = new ArrayList<String>();
+    private final List<String> possibleCiphers = new ArrayList<String>();
+    private final List<String> deployedWars = new ArrayList<String>();
     private String keystorePath = "";
     private boolean needClientAuthentication = false;
     private boolean embeddedHTTPServerStarted = false;
     private String receiptURLPath = "/as2/HttpReceiver";
     private String serverStatePath = "/as2/ServerState";
     private String jettyHTTPServerVersion = "unknown version";
-    private Path httpServerConfigFile;
-    private String javaVersion;
-    private boolean sslEnabled = false;
+    private final Path httpServerConfigFile;
+    private final Path httpServerUserConfigFile;
+    private final String javaVersion;
+    private boolean tlsEnabled = false;
+    private String tlsSecurityProviderName = "Unknown";
 
     private HTTPServerConfigInfo() {
-        this.httpServerConfigFile = Paths.get("./jetty9/etc/jetty.xml");        
+        this.httpServerConfigFile = Paths.get("jetty10/etc/jetty.xml");
+        this.httpServerUserConfigFile = Paths.get(FILENAME_HTTP_SERVER_CONFIG_USER);
         this.javaVersion = System.getProperty("java.version");
     }
 
@@ -126,10 +133,18 @@ public class HTTPServerConfigInfo {
     }
 
     /**
-     * @param keystorePath the keystorePath to set
+     * @param keystorePath the keystorePath to set. Might a a URL or a file
+     * system path. Will always convert this to a file system path
      */
     public void setKeystorePath(String keystorePath) {
-        this.keystorePath = keystorePath;
+        Path keystoreFile;
+        //might be a URL, check this first
+        try {
+            keystoreFile = Paths.get(new URL(keystorePath).toURI());
+        } catch (Exception e) {
+            keystoreFile = Paths.get(keystorePath);
+        }
+        this.keystorePath = keystoreFile.toAbsolutePath().toString();
     }
 
     /**
@@ -191,6 +206,7 @@ public class HTTPServerConfigInfo {
                 httpServerConfigInfo.setJettyHTTPServerVersion(versionValue);
             }
         } catch (Throwable dontcare) {
+            dontcare.printStackTrace();
             //NOP
         }
         httpServerConfigInfo.setReceiptURLPath(receiptURLPath);
@@ -198,9 +214,8 @@ public class HTTPServerConfigInfo {
         if (jettyHTTPServerInstance != null) {
             try {
                 //find out the deployed wars
-                Handler[] childHandler = jettyHTTPServerInstance.getChildHandlers();
+                Handler[] childHandler = jettyHTTPServerInstance.getChildHandlersByClass(WebAppContext.class);
                 for (Handler singleHandler : childHandler) {
-                    //System.out.println(singleHandler.getClass().getName());
                     if (singleHandler instanceof WebAppContext) {
                         WebAppContext context = (WebAppContext) singleHandler;
                         String warFilePath = context.getWar();
@@ -227,7 +242,7 @@ public class HTTPServerConfigInfo {
                         listener.setProtocol(serverConnector.getDefaultProtocol());
                         listener.setPort(serverConnector.getPort());
                         httpServerConfigInfo.addListener(listener);
-                        if( listener.getProtocol() != null && listener.getProtocol().toLowerCase().contains("ssl")){
+                        if (listener.getProtocol() != null && listener.getProtocol().toLowerCase().contains("ssl")) {
                             serverUsesSSLPort = true;
                         }
                         //collect the SLL parameter
@@ -247,7 +262,7 @@ public class HTTPServerConfigInfo {
                                 }
                                 String keystorePath = sslContextFactory.getKeyStorePath();
                                 httpServerConfigInfo.setKeystorePath(keystorePath);
-                                boolean needClientAuth = sslContextFactory.getNeedClientAuth();
+                                boolean needClientAuth = sslFactory.getSslContextFactory().getNeedClientAuth();
                                 httpServerConfigInfo.setNeedClientAuthentication(needClientAuth);
                                 SSLServerSocketFactory sslServerSocketFactory = sslContextFactory.getSslContext().getServerSocketFactory();
                                 List<String> supportedCipherSuiteList = Arrays.asList(sslServerSocketFactory.getSupportedCipherSuites());
@@ -269,7 +284,11 @@ public class HTTPServerConfigInfo {
                         }
                     }
                 }
-                httpServerConfigInfo.setSSLEnabled(serverUsesSSLPort);                
+                httpServerConfigInfo.setSSLEnabled(serverUsesSSLPort);
+                //find out TLS security provider
+                SSLContext sslContext = SSLContext.getInstance("TLS");
+                Provider usedProvider = sslContext.getProvider();
+                httpServerConfigInfo.setTLSSecurityProviderName(usedProvider.getName() + " " + usedProvider.getVersionStr());                
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -312,7 +331,7 @@ public class HTTPServerConfigInfo {
         this.receiptURLPath = receiptURLPath;
     }
 
-     /**
+    /**
      * @return the javaVersion
      */
     public String getJavaVersion() {
@@ -323,14 +342,35 @@ public class HTTPServerConfigInfo {
      * @return the sslEnabled
      */
     public boolean isSSLEnabled() {
-        return sslEnabled;
+        return tlsEnabled;
     }
 
     /**
-     * @param sslEnabled the sslEnabled to set
+     * @param tlsEnabled the tlsEnabled to set
      */
-    public void setSSLEnabled(boolean sslEnabled) {
-        this.sslEnabled = sslEnabled;
+    public void setSSLEnabled(boolean tlsEnabled) {
+        this.tlsEnabled = tlsEnabled;
+    }
+
+    /**
+     * @return the httpServerUserConfigFile
+     */
+    public Path getHTTPServerUserConfigFile() {
+        return httpServerUserConfigFile;
+    }
+
+    /**
+     * @return the securityProviderName
+     */
+    public String getTLSSecurityProviderName() {
+        return tlsSecurityProviderName;
+    }
+
+    /**
+     * @param securityProviderName the securityProviderName to set
+     */
+    public void setTLSSecurityProviderName(String tlsSecurityProviderName) {
+        this.tlsSecurityProviderName = tlsSecurityProviderName;
     }
 
     public static class Listener {
@@ -383,6 +423,7 @@ public class HTTPServerConfigInfo {
         public void setPort(int port) {
             this.port = port;
         }
+
     }
-    
+
 }

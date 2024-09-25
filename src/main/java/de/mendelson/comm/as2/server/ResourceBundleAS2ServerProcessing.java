@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing.java 13    7.12.18 9:51 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing.java 14    16/06/22 13:39 Heller $
 package de.mendelson.comm.as2.server;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleAS2ServerProcessing extends MecResourceBundle{
     
@@ -36,6 +36,7 @@ public class ResourceBundleAS2ServerProcessing extends MecResourceBundle{
         {"message.resend.oldtransaction", "This transaction has been manually resend with the new message id [{0}]" },
         {"message.resend.newtransaction", "This transaction is a resend of the existing message [{0}]" }, 
         {"message.resend.title", "Manual dispatch of data in new transaction" },
+        {"local.station", "Local station" },
     };
     
 }

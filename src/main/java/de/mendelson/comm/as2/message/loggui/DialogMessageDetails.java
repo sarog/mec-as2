@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 57    27.01.21 15:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 64    1/09/22 14:11 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -19,27 +19,24 @@ import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
-import de.mendelson.util.log.IRCColors;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
+import de.mendelson.util.log.LogFormatter;
 import de.mendelson.util.tables.JTableColumnResizer;
 import de.mendelson.util.uinotification.UINotification;
 import java.awt.Color;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.logging.LogRecord;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
-import javax.swing.text.Style;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.StyleContext;
-import javax.swing.text.StyledDocument;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -52,7 +49,7 @@ import javax.swing.text.StyledDocument;
  * Dialog to show the details of a transaction
  *
  * @author S.Heller
- * @version $Revision: 57 $
+ * @version $Revision: 64 $
  */
 public class DialogMessageDetails extends JDialog implements ListSelectionListener {
 
@@ -62,10 +59,6 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     public static final ImageIcon ICON_REMOTEPARTNER
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", 24, 48));
-    public static final ImageIcon ICON_ARROW_OUTBOUND
-            = new ImageIcon(DialogMessageDetails.class.getResource("/de/mendelson/comm/as2/message/loggui/arrow32x16.gif"));
-    public static final ImageIcon ICON_ARROW_INBOUND
-            = new ImageIcon(DialogMessageDetails.class.getResource("/de/mendelson/comm/as2/message/loggui/arrow_in32x16.gif"));
     public static final ImageIcon ICON_PENDING
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_pending.svg", 15, 48));
@@ -97,23 +90,26 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/comm_pending.svg", 170, 230));
 
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
+    private final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
+
+    private final static Logger logger = Logger.getLogger("de.mendelson.as2.client");
     /**
      * Localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private final MecResourceBundle rb;
     /**
      * Stores information about the message
      */
-    private AS2MessageInfo overviewInfo = null;
+    private final AS2MessageInfo overviewInfo;
     /**
      * Stores the payloads
      */
-    private List<AS2Payload> payloadList = null;
-    private JPanelFileDisplay jPanelFileDisplayRaw;
-    private JPanelFileDisplay jPanelFileDisplayHeader;
-    private JPanelFileDisplay[] jPanelFileDisplayPayload;
-    private BaseClient baseClient;
+    private final List<AS2Payload> payloadList;
+    private final JPanelFileDisplay jPanelFileDisplayRaw;
+    private final JPanelFileDisplay jPanelFileDisplayHeader;
+    private final JPanelFileDisplay[] jPanelFileDisplayPayload;
+    private final BaseClient baseClient;
     private Color colorRed = Color.RED.darker();
     private Color colorYellow = Color.YELLOW.darker().darker();
     private Color colorGreen = Color.GREEN.darker().darker();
@@ -143,19 +139,22 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             this.setTitle(this.rb.getResourceString("title"));
         }
         this.initComponents();
-        this.colorRed = ColorUtil.getBestContrastColorAroundForeground(this.jLabelTransactionStateDetails.getBackground(), colorRed);
-        this.colorGreen = ColorUtil.getBestContrastColorAroundForeground(this.jLabelTransactionStateDetails.getBackground(), colorGreen);
-        this.colorYellow = ColorUtil.getBestContrastColorAroundForeground(this.jLabelTransactionStateDetails.getBackground(), colorYellow);
+        this.colorRed = ColorUtil.getBestContrastColorAroundForeground(
+                this.jLabelTransactionStateDetails.getBackground(), colorRed);
+        this.colorGreen = ColorUtil.getBestContrastColorAroundForeground(
+                this.jLabelTransactionStateDetails.getBackground(), colorGreen);
+        this.colorYellow = ColorUtil.getBestContrastColorAroundForeground(
+                this.jLabelTransactionStateDetails.getBackground(), colorYellow);
         this.populateTransactionOverviewPanel(overviewInfo);
-        this.getRootPane().setDefaultButton(this.jButtonOk);        
+        this.getRootPane().setDefaultButton(this.jButtonOk);
         this.jTableMessageDetails.setRowHeight(TableModelMessageDetails.ROW_HEIGHT);
         this.jTableMessageDetails.getTableHeader().setReorderingAllowed(false);
         //first icon
         TableColumn column = this.jTableMessageDetails.getColumnModel().getColumn(0);
-        column.setMaxWidth(TableModelMessageDetails.ROW_HEIGHT + this.jTableMessageDetails.getRowMargin()*2);
+        column.setMaxWidth(TableModelMessageDetails.ROW_HEIGHT + this.jTableMessageDetails.getRowMargin() * 2);
         column.setResizable(false);
         column = this.jTableMessageDetails.getColumnModel().getColumn(2);
-        column.setMaxWidth(TableModelMessageDetails.ROW_HEIGHT + this.jTableMessageDetails.getRowMargin()*2);
+        column.setMaxWidth(TableModelMessageDetails.ROW_HEIGHT + this.jTableMessageDetails.getRowMargin() * 2);
         column.setResizable(false);
         this.displayData(overviewInfo);
         this.jTabbedPane.addTab(this.rb.getResourceString("message.raw.decrypted"), jPanelFileDisplayRaw);
@@ -186,7 +185,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         }
         //get all partner from server - just to display the icons. No full partner
         //information is required
-        PartnerListRequest partnerRequest 
+        PartnerListRequest partnerRequest
                 = new PartnerListRequest(
                         PartnerListRequest.LIST_BY_AS2_ID, PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE);
         partnerRequest.setAdditionalListOptionStr(overviewInfo.getSenderId());
@@ -196,7 +195,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         if (!partnerList.isEmpty()) {
             sender = partnerList.get(0);
         }
-        partnerRequest 
+        partnerRequest
                 = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID, PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE);
         partnerRequest.setAdditionalListOptionStr(overviewInfo.getReceiverId());
         partnerResponse = (PartnerListResponse) this.baseClient.sendSync(partnerRequest);
@@ -204,46 +203,48 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         Partner receiver = null;
         if (!partnerList.isEmpty()) {
             receiver = partnerList.get(0);
-        }        
+        }
         this.jLabelTransactionStateDetails.setVisible(false);
-        this.jLabelAS2TransmissionGraphLocalstation.setIcon(ICON_LOCALSTATION);
-        this.jLabelAS2TransmissionGraphRemotepartner.setIcon(ICON_REMOTEPARTNER);
-        if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
-            this.jLabelAS2TransmissionArrow.setIcon(ICON_ARROW_OUTBOUND);
-            if (sender == null) {
-                this.jLabelAS2TransmissionGraphLocalstation.setText(overviewInfo.getSenderId());
-            } else {
-                this.jLabelAS2TransmissionGraphLocalstation.setText(sender.getName());
-            }
-            if (receiver == null) {
-                this.jLabelAS2TransmissionGraphRemotepartner.setText(overviewInfo.getReceiverId());
-            } else {
-                this.jLabelAS2TransmissionGraphRemotepartner.setText(receiver.getName());
-            }
+        this.jLabelAS2TransmissionSender.setIcon(this.getIcon(sender));
+        this.jLabelAS2TransmissionReceiver.setIcon(this.getIcon(receiver));
+        if (sender == null) {
+            this.jLabelAS2TransmissionSender.setText(overviewInfo.getSenderId());
         } else {
-            this.jLabelAS2TransmissionArrow.setIcon(ICON_ARROW_INBOUND);
-            if (receiver == null) {
-                this.jLabelAS2TransmissionGraphLocalstation.setText(overviewInfo.getReceiverId());
-            } else {
-                this.jLabelAS2TransmissionGraphLocalstation.setText(receiver.getName());
-            }
-            if (sender == null) {
-                this.jLabelAS2TransmissionGraphRemotepartner.setText(overviewInfo.getSenderId());
-            } else {
-                this.jLabelAS2TransmissionGraphRemotepartner.setText(sender.getName());
-            }
+            this.jLabelAS2TransmissionSender.setText(sender.getName());
+        }
+        if (receiver == null) {
+            this.jLabelAS2TransmissionReceiver.setText(overviewInfo.getReceiverId());
+        } else {
+            this.jLabelAS2TransmissionReceiver.setText(receiver.getName());
+        }
+        if (overviewInfo.usesTLS()) {
+            this.jLabelTLSIcon.setText(TEXT_SECURE_LOCK);
+        } else {
+            this.jLabelTLSIcon.setText(TEXT_INSECURE_LOCK);
         }
         //display some general transaction details
         StringBuilder transactionDetailsText = new StringBuilder();
         if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
-            transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound", this.jLabelAS2TransmissionGraphRemotepartner.getText()));
+            if (overviewInfo.usesTLS()) {
+                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.secure",
+                        this.jLabelAS2TransmissionReceiver.getText()));
+            } else {
+                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.insecure",
+                        this.jLabelAS2TransmissionReceiver.getText()));
+            }
             if (overviewInfo.requestsSyncMDN()) {
                 transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.sync"));
             } else {
                 transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.async"));
             }
         } else {
-            transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound", this.jLabelAS2TransmissionGraphRemotepartner.getText()));
+            if (overviewInfo.usesTLS()) {
+                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.secure",
+                        this.jLabelAS2TransmissionReceiver.getText()));
+            } else {
+                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.insecure",
+                        this.jLabelAS2TransmissionReceiver.getText()));
+            }
             if (overviewInfo.requestsSyncMDN()) {
                 transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.sync"));
             } else {
@@ -289,14 +290,14 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                             this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.error.out",
                                     new Object[]{
                                         messageTypeStr,
-                                        this.jLabelAS2TransmissionGraphRemotepartner.getText(),
+                                        this.jLabelAS2TransmissionReceiver.getText(),
                                         dispositionState}));
                         } else {
                             this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_INBOUND_FAILED);
                             this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.error.in",
                                     new Object[]{
                                         messageTypeStr,
-                                        this.jLabelAS2TransmissionGraphRemotepartner.getText(),
+                                        this.jLabelAS2TransmissionReceiver.getText(),
                                         dispositionState
                                     }));
                             //special: If the transaction direction was inbound and the transaction state is stopped anyway but the MDN state
@@ -348,7 +349,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                 this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.ok.send",
                         new Object[]{
                             messageTypeStr,
-                            this.jLabelAS2TransmissionGraphRemotepartner.getText()
+                            this.jLabelAS2TransmissionReceiver.getText()
                         }
                 ));
                 this.jLabelTransactionStateDetails.setVisible(true);
@@ -358,7 +359,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                 this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.ok.receive",
                         new Object[]{
                             messageTypeStr,
-                            this.jLabelAS2TransmissionGraphRemotepartner.getText(),}));
+                            this.jLabelAS2TransmissionReceiver.getText(),}));
                 this.jLabelTransactionStateDetails.setVisible(true);
                 this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.ok.details"));
             }
@@ -371,44 +372,42 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     }
 
     /**
-     * Displays the message details log
+     * Returns the partner icon to display for sender and receiver
      */
-    private void displayProcessLog(JTextPaneLoggingHandler handler) {
-        StyledDocument document = (StyledDocument) this.jTextPaneLog.getDocument();
-        StyleContext context = StyleContext.getDefaultStyleContext();
-        Style currentStyle = context.getStyle(StyleContext.DEFAULT_STYLE);
-        Color defaultForegroundColor = handler.getDefaultForegroundColor();
-        List<LogEntry> entries = ((MessageLogResponse) this.baseClient.sendSync(new MessageLogRequest(overviewInfo.getMessageId()))).getList();
-        StringBuilder buffer = new StringBuilder();
-        DateFormat format = SimpleDateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-        for (int i = 0; i < entries.size(); i++) {
-            LogEntry entry = entries.get(i);
-            currentStyle.removeAttribute(StyleConstants.Foreground);
-            currentStyle.addAttribute(StyleConstants.Foreground, defaultForegroundColor);
-            buffer.append("[").append(format.format(entry.getMillis())).append("] ");
-            try {
-                document.insertString(document.getLength(), buffer.toString(), currentStyle);
-            } catch (Throwable ignore) {
-                //nop
-            }
-            buffer.setLength(0);
-            Color color = null;
-            String ircColor = handler.getColor(entry.getLevel());
-            if (ircColor == null) {
-                color = defaultForegroundColor;
+    private ImageIcon getIcon(Partner partner) {
+        if (partner != null && partner.isLocalStation()) {
+            return (ICON_LOCALSTATION);
+        }
+        return (this.ICON_REMOTEPARTNER);
+    }
+
+    /**
+     * Displays the message details log
+     *
+     * @param overviewHandler Logging handler for the main logging panel - this
+     * is just needed for the colors
+     */
+    private void displayProcessLog(JTextPaneLoggingHandler overviewHandler) {
+        Logger detailsLogger = Logger.getAnonymousLogger();
+        detailsLogger.setUseParentHandlers(false);
+        detailsLogger.setLevel(Level.ALL);
+        JTextPaneLoggingHandler detailsHandler = new JTextPaneLoggingHandler(this.jTextPaneLog,
+                new LogFormatter(LogFormatter.FORMAT_CONSOLE_COLORED));
+        detailsHandler.setLevel(Level.ALL);
+        detailsLogger.addHandler(detailsHandler);
+        detailsHandler.setColorsFrom(overviewHandler);
+        MessageLogResponse logResponse = (MessageLogResponse) this.baseClient.sendSync(new MessageLogRequest(overviewInfo.getMessageId()));
+        if (logResponse != null) {
+            if (logResponse.getException() != null) {
+                UINotification.instance().addNotification(logResponse.getException());
             } else {
-                color = IRCColors.toColor(ircColor);
+                List<LogEntry> entries = logResponse.getList();
+                for (LogEntry logEntry : entries) {
+                    LogRecord logRecord = new LogRecord(logEntry.getLevel(), logEntry.getMessage());
+                    logRecord.setInstant(new Date(logEntry.getMillis()).toInstant());
+                    detailsLogger.log(logRecord);
+                }
             }
-            currentStyle.addAttribute(StyleConstants.Foreground, color);
-            buffer.append(entry.getMessage()).append("\n");            
-            try {
-                document.insertString(document.getLength(), buffer.toString(), currentStyle);
-            } catch (Throwable ignore) {
-                //nop
-            }
-            buffer.setLength(0);
-            currentStyle.removeAttribute(StyleConstants.Foreground);
-            currentStyle.addAttribute(StyleConstants.Foreground, defaultForegroundColor);
         }
     }
 
@@ -476,11 +475,8 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
 
         jPanelMain = new javax.swing.JPanel();
         jPanelHeader = new javax.swing.JPanel();
-        jLabelAS2TransmissionGraph = new javax.swing.JLabel();
-        jLabelAS2TransmissionGraphLocalstation = new javax.swing.JLabel();
-        jLabelAS2TransmissionArrow = new javax.swing.JLabel();
-        jLabelAS2TransmissionGraphRemotepartner = new javax.swing.JLabel();
-        jLabelTransactionState = new javax.swing.JLabel();
+        jLabelAS2TransmissionSender = new javax.swing.JLabel();
+        jLabelAS2TransmissionReceiver = new javax.swing.JLabel();
         jLabelTransactionStateGeneral = new javax.swing.JLabel();
         jLabelTransactionStateDetails = new javax.swing.JLabel();
         jPanelSpace = new javax.swing.JPanel();
@@ -491,6 +487,13 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         jSeparator2 = new javax.swing.JSeparator();
         jPanelOverviewImage = new javax.swing.JPanel();
         jLabelStateOverviewImage = new javax.swing.JLabel();
+        jPanelVerticalSpace1 = new javax.swing.JPanel();
+        jPanelArrow = new javax.swing.JPanel();
+        jLabelArrow = new javax.swing.JLabel();
+        jLabelTLSIcon = new javax.swing.JLabel();
+        jPanelVerticalSpace2 = new javax.swing.JPanel();
+        jPanelSpaceHorizontal1 = new javax.swing.JPanel();
+        jPanelSpaceHorizontal2 = new javax.swing.JPanel();
         jPanelInfo = new javax.swing.JPanel();
         jSplitPane = new javax.swing.JSplitPane();
         jScrollPaneList = new javax.swing.JScrollPane();
@@ -514,70 +517,45 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         jPanelHeader.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
         jPanelHeader.setLayout(new java.awt.GridBagLayout());
 
-        jLabelAS2TransmissionGraph.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelAS2TransmissionGraph.setText(this.rb.getResourceString("label.transmissiongraph"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
-        jPanelHeader.add(jLabelAS2TransmissionGraph, gridBagConstraints);
-
-        jLabelAS2TransmissionGraphLocalstation.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/missing_image24x24.gif"))); // NOI18N
-        jLabelAS2TransmissionGraphLocalstation.setText("Local station");
+        jLabelAS2TransmissionSender.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/missing_image24x24.gif"))); // NOI18N
+        jLabelAS2TransmissionSender.setText("Sender");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
-        jPanelHeader.add(jLabelAS2TransmissionGraphLocalstation, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelHeader.add(jLabelAS2TransmissionSender, gridBagConstraints);
 
-        jLabelAS2TransmissionArrow.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/arrow32x16.gif"))); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 0, 5, 0);
-        jPanelHeader.add(jLabelAS2TransmissionArrow, gridBagConstraints);
-
-        jLabelAS2TransmissionGraphRemotepartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/missing_image24x24.gif"))); // NOI18N
-        jLabelAS2TransmissionGraphRemotepartner.setText("Remote Partner");
+        jLabelAS2TransmissionReceiver.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/message/loggui/missing_image24x24.gif"))); // NOI18N
+        jLabelAS2TransmissionReceiver.setText("Receiver");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
-        jPanelHeader.add(jLabelAS2TransmissionGraphRemotepartner, gridBagConstraints);
-
-        jLabelTransactionState.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelTransactionState.setText(this.rb.getResourceString("label.transactionstate"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
-        jPanelHeader.add(jLabelTransactionState, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelHeader.add(jLabelAS2TransmissionReceiver, gridBagConstraints);
 
         jLabelTransactionStateGeneral.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
         jLabelTransactionStateGeneral.setText("<General transaction state>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 7;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelHeader.add(jLabelTransactionStateGeneral, gridBagConstraints);
 
-        jLabelTransactionStateDetails.setFont(new java.awt.Font("Tahoma", 2, 11)); // NOI18N
+        jLabelTransactionStateDetails.setFont(new java.awt.Font("Dialog", 0, 11)); // NOI18N
+        jLabelTransactionStateDetails.setForeground(new java.awt.Color(0, 153, 0));
         jLabelTransactionStateDetails.setText("<Transaction state details>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 8;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
@@ -585,14 +563,15 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         jPanelHeader.add(jLabelTransactionStateDetails, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 9;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelHeader.add(jPanelSpace, gridBagConstraints);
 
-        jLabelTransmissionDescription.setFont(new java.awt.Font("Tahoma", 2, 11)); // NOI18N
+        jLabelTransmissionDescription.setFont(new java.awt.Font("Dialog", 0, 11)); // NOI18N
         jLabelTransmissionDescription.setText("<Transmission description>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -627,8 +606,8 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 5;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridheight = 6;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 10;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         jPanelHeader.add(jPanelSep2, gridBagConstraints);
 
@@ -651,10 +630,64 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 6;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridheight = 6;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 7;
+        gridBagConstraints.gridheight = 10;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         jPanelHeader.add(jPanelOverviewImage, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 0);
+        jPanelHeader.add(jPanelVerticalSpace1, gridBagConstraints);
+
+        jPanelArrow.setLayout(new java.awt.GridBagLayout());
+
+        jLabelArrow.setFont(new java.awt.Font("Dialog", 0, 18)); // NOI18N
+        jLabelArrow.setText("<HTML>&#x27F6;</HTML>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTH;
+        gridBagConstraints.insets = new java.awt.Insets(-5, 0, 0, 0);
+        jPanelArrow.add(jLabelArrow, gridBagConstraints);
+
+        jLabelTLSIcon.setText("<html>&#128274;</html>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.PAGE_END;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, -5, 0);
+        jPanelArrow.add(jLabelTLSIcon, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
+        jPanelHeader.add(jPanelArrow, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 0, 0);
+        jPanelHeader.add(jPanelVerticalSpace2, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridheight = 4;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 5);
+        jPanelHeader.add(jPanelSpaceHorizontal1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 4;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 5);
+        jPanelHeader.add(jPanelSpaceHorizontal2, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -726,7 +759,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
 
         getContentPane().add(jPanelMain, java.awt.BorderLayout.CENTER);
 
-        setSize(new java.awt.Dimension(1131, 728));
+        setSize(new java.awt.Dimension(1155, 784));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -744,15 +777,15 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     }//GEN-LAST:event_closeDialog
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonOk;
-    private javax.swing.JLabel jLabelAS2TransmissionArrow;
-    private javax.swing.JLabel jLabelAS2TransmissionGraph;
-    private javax.swing.JLabel jLabelAS2TransmissionGraphLocalstation;
-    private javax.swing.JLabel jLabelAS2TransmissionGraphRemotepartner;
+    private javax.swing.JLabel jLabelAS2TransmissionReceiver;
+    private javax.swing.JLabel jLabelAS2TransmissionSender;
+    private javax.swing.JLabel jLabelArrow;
     private javax.swing.JLabel jLabelStateOverviewImage;
-    private javax.swing.JLabel jLabelTransactionState;
+    private javax.swing.JLabel jLabelTLSIcon;
     private javax.swing.JLabel jLabelTransactionStateDetails;
     private javax.swing.JLabel jLabelTransactionStateGeneral;
     private javax.swing.JLabel jLabelTransmissionDescription;
+    private javax.swing.JPanel jPanelArrow;
     private javax.swing.JPanel jPanelButton;
     private javax.swing.JPanel jPanelHeader;
     private javax.swing.JPanel jPanelInfo;
@@ -762,6 +795,10 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     private javax.swing.JPanel jPanelSep;
     private javax.swing.JPanel jPanelSep2;
     private javax.swing.JPanel jPanelSpace;
+    private javax.swing.JPanel jPanelSpaceHorizontal1;
+    private javax.swing.JPanel jPanelSpaceHorizontal2;
+    private javax.swing.JPanel jPanelVerticalSpace1;
+    private javax.swing.JPanel jPanelVerticalSpace2;
     private javax.swing.JScrollPane jScrollPaneList;
     private javax.swing.JScrollPane jScrollPaneLog;
     private javax.swing.JSeparator jSeparator1;

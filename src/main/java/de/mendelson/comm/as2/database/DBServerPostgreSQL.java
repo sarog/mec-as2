@@ -1,7 +1,5 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBServerPostgreSQL.java 2     2/02/22 13:06 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBServerPostgreSQL.java 3     2/01/23 13:16 Heller $
 package de.mendelson.comm.as2.database;
-
-import de.mendelson.util.database.IDBDriverManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,12 +12,12 @@ import de.mendelson.util.database.IDBDriverManager;
  * Class to start a dedicated SQL database server
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  * @since build 70
  */
 public class DBServerPostgreSQL implements IDBServer {
 
-    public DBServerPostgreSQL(IDBDriverManager driverManager, DBServerInformation dbServerInformation) throws Exception {
+    public DBServerPostgreSQL(Object a, Object b, Object c) throws Exception {
     }
 
     /**
@@ -47,6 +45,11 @@ public class DBServerPostgreSQL implements IDBServer {
      */
     @Override
     public void shutdown() {
+        throw new IllegalAccessError();
+    }
+    
+     @Override
+    public DBClientInformation getDBClientInformation() {        
         throw new IllegalAccessError();
     }
 

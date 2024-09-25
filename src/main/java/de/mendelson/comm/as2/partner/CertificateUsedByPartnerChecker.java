@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/CertificateUsedByPartnerChecker.java 5     27.07.21 15:33 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/CertificateUsedByPartnerChecker.java 7     29/08/22 15:20 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
@@ -10,8 +10,10 @@ import de.mendelson.util.security.cert.CertificateInUseInfo;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -20,17 +22,17 @@ import java.util.ResourceBundle;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Checks if a certificate is in use by a partner
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class CertificateUsedByPartnerChecker implements CertificateInUseChecker {
 
-    private MecResourceBundle rb;
-    private BaseClient baseClient;
+    private final MecResourceBundle rb;
+    private final BaseClient baseClient;
+    private final Map<String, CertificateInUseInfo> infoMap = new ConcurrentHashMap<String, CertificateInUseInfo>();
 
     public CertificateUsedByPartnerChecker(BaseClient baseClient) {
         //load resource bundle
@@ -41,28 +43,65 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         this.baseClient = baseClient;
+        this.loadCertificateInUseInformation();
     }
 
-    @Override
-    public List<CertificateInUseInfo> checkUsed(KeystoreCertificate cert) {
-        List<CertificateInUseInfo> list = new ArrayList<CertificateInUseInfo>();
+    /**
+     * Loads all the used certificates and their usage into the info Map
+     */
+    private void loadCertificateInUseInformation() {
         PartnerListResponse response = (PartnerListResponse) this.baseClient.sendSync(
                 new PartnerListRequest(PartnerListRequest.LIST_ALL), Partner.TIMEOUT_PARTNER_REQUEST);
         List<Partner> partnerList = response.getList();
+        //build up list of all fingerprints that are in use
+        List<String> fingerprintList = new ArrayList<String>();
         for (Partner singlePartner : partnerList) {
             String cryptFingerprint = singlePartner.getCryptFingerprintSHA1();
-            String signFingerprint = singlePartner.getSignFingerprintSHA1();
-            if (cert.getFingerPrintSHA1().equals(cryptFingerprint)) {
-                CertificateInUseInfo info = new CertificateInUseInfo(
-                        this.rb.getResourceString("used.crypt", singlePartner.getName()));
-                list.add(info);
+            if (!fingerprintList.contains(cryptFingerprint)) {
+                fingerprintList.add(cryptFingerprint);
             }
-            if (cert.getFingerPrintSHA1().equals(signFingerprint)) {
-                CertificateInUseInfo info = new CertificateInUseInfo(
-                        this.rb.getResourceString("used.sign", singlePartner.getName()));
-                list.add(info);
+            String signFingerprint = singlePartner.getSignFingerprintSHA1();
+            if (!fingerprintList.contains(signFingerprint)) {
+                fingerprintList.add(signFingerprint);
             }
         }
-        return (list);
+        for (String fingerPrintSHA1 : fingerprintList) {
+            CertificateInUseInfo info = new CertificateInUseInfo(fingerPrintSHA1);
+            for (Partner singlePartner : partnerList) {
+                String cryptFingerprint = singlePartner.getCryptFingerprintSHA1();
+                String signFingerprint = singlePartner.getSignFingerprintSHA1();
+                int partnerType = CertificateInUseInfo.PARTNER_REMOTE;
+                if (singlePartner.isLocalStation()) {
+                    partnerType = CertificateInUseInfo.PARTNER_LOCALSTATION;
+                }
+                if (fingerPrintSHA1.equals(cryptFingerprint)) {
+                    info.addUsage(partnerType,
+                            singlePartner.getName(),
+                            this.rb.getResourceString("used.crypt"));
+                }
+                if (fingerPrintSHA1.equals(signFingerprint)) {
+                    info.addUsage(partnerType,
+                            singlePartner.getName(),
+                            this.rb.getResourceString("used.sign"));
+                }
+            }
+            this.infoMap.put(fingerPrintSHA1, info);
+        }
+
     }
+
+    /**
+     * Checks if and for which cryptographic operation a passed certificated is
+     * used in the product. Will return detailed information about the usage
+     */
+    @Override
+    public CertificateInUseInfo checkUsed(KeystoreCertificate certificate) {
+        String fingerPrintSHA1 = certificate.getFingerPrintSHA1();
+        if( this.infoMap.containsKey(fingerPrintSHA1)){
+            return( this.infoMap.get(fingerPrintSHA1));
+        }else{
+            return( new CertificateInUseInfo(fingerPrintSHA1));
+        }
+    }
+
 }

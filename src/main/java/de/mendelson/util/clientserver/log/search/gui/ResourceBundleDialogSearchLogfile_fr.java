@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/ResourceBundleDialogSearchLogfile_fr.java 2     27.09.21 17:12 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/ResourceBundleDialogSearchLogfile_fr.java 3     19/01/23 9:26 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleDialogSearchLogfile_fr extends MecResourceBundle {
 
@@ -34,8 +34,8 @@ public class ResourceBundleDialogSearchLogfile_fr extends MecResourceBundle {
         {"no.data.messageid", "**Il n''y a pas de données de journal pour le numéro de message AS2 \"{0}\" dans la période sélectionnée. Veuillez utiliser le numéro complet du message comme chaîne de recherche." },        
         {"no.data.mdnid", "**Il n''y a pas de données de journal pour le numéro MDN \"{0}\" dans la période sélectionnée. Veuillez utiliser le numéro MDN complet comme chaîne de recherche, que vous pouvez trouver dans le journal d''une transmission." },        
         {"no.data.uid", "**Il n'y a pas de données de journal pour le numéro MDN \"{0}\" dans la période sélectionnée. Veuillez utiliser le numéro MDN complet comme chaîne de recherche, que vous pouvez trouver dans le journal d''une transmission." },        
-        {"label.startdate", "Début: " },
-        {"label.enddate", "Fin: " },
+        {"label.startdate", "Début" },
+        {"label.enddate", "Fin" },
         {"button.close", "Fermer" },
         {"label.search", "Journal de recherche" },
         {"label.info", "<html>Veuillez définir une période de temps, entrez un numéro de message AS2 complet ou le numéro complet d''un MDN pour trouver toutes les entrées du journal sur le serveur - puis appuyez sur le bouton \"Rechercher le journal\". Vous pouvez définir le numéro défini par l'utilisateur pour chaque transaction lorsque vous envoyez les données au serveur en cours d''exécution depuis la ligne de commande.</html>" },

@@ -1,14 +1,13 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 22    26.08.21 14:00 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 27    7/10/22 10:37 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManager;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.sql.Connection;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.Properties;
@@ -27,24 +26,18 @@ import java.util.logging.Logger;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 27 $
  */
 public class NotificationImplAS2 extends Notification {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final String MODULE_NAME;
     /**
      * localize your output
      */
     private MecResourceBundle rb = null;
 
-    /**
-     * Will not perform a lookup in the db but take the passed notification data
-     * object
-     */
-    public NotificationImplAS2(NotificationData notificationData, 
-            IDBDriverManager dbDriverManager, 
-            Connection configConnection, Connection runtimeConnection) {
-        super(notificationData, new NotificationAccessDBImplAS2(dbDriverManager, configConnection, runtimeConnection));
+    public NotificationImplAS2() {
         //Load resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -53,21 +46,7 @@ public class NotificationImplAS2 extends Notification {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
-    }
-
-    /**
-     * Constructor without notification data, will perform a lookup in the db
-     */
-    public NotificationImplAS2(IDBDriverManager dbDriverManager,Connection configConnection, Connection runtimeConnection) {
-        super(new NotificationAccessDBImplAS2(dbDriverManager, configConnection, runtimeConnection));
-        //Load resourcebundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleNotification.class.getName());
-        } //load up  resourcebundle
-        catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+        MODULE_NAME = rb.getResourceString( "module.name");
     }
 
     @Override
@@ -79,14 +58,13 @@ public class NotificationImplAS2 extends Notification {
      * Sends out the notification
      */
     @Override
-    public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) {
-        NotificationDataImplAS2 notificationData = (NotificationDataImplAS2)this.getNotificationData(false);
+    public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf, NotificationData notificationData) {
         if (systemEventsToNotifyUserOf.size() <= notificationData.getMaxNotificationsPerMin()) {
             //send out single notifications
             for (SystemEvent event : systemEventsToNotifyUserOf) {
                 try {
-                    this.sendMail(AS2ServerVersion.getProductName(), event);
-                    this.logger.fine(this.rb.getResourceString("misc.message.send",
+                    this.sendMail(AS2ServerVersion.getProductName(), event, notificationData, false);
+                    logger.fine(MODULE_NAME + " " + this.rb.getResourceString("misc.message.send",
                             new Object[]{
                                 notificationData.getNotificationMail(),
                                 event.originToTextLocalized(),
@@ -132,28 +110,28 @@ public class NotificationImplAS2 extends Notification {
             //send out summary of system events
             SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_SYSTEM, SystemEvent.TYPE_OTHER);
             event.setSubject(this.rb.getResourceString("notification.summary",
-                    new Object[]{                        
+                    new Object[]{
                         String.valueOf(systemEventsToNotifyUserOf.size())
                     }));
             StringBuilder infoText = new StringBuilder();
-            infoText.append( this.rb.getResourceString("notification.summary.info"));
-            
-            StringBuilder summary = new StringBuilder();            
+            infoText.append(this.rb.getResourceString("notification.summary.info"));
+
+            StringBuilder summary = new StringBuilder();
             for (SystemEvent singleEvent : systemEventsToNotifyUserOf) {
-                summary.append("[" + singleEvent.getHumanReadableTimestamp() + "]: ");
-                summary.append("(" + singleEvent.severityToTextLocalized().toUpperCase() + ")");
-                summary.append(" ").append(singleEvent.originToTextLocalized());
-                summary.append("/").append(singleEvent.typeToTextLocalized());
-                summary.append("\n").append("id: " + singleEvent.getId());
-                summary.append("\n").append(singleEvent.getSubject());
-                summary.append("\n\n");
+                summary.append("[" + singleEvent.getHumanReadableTimestamp() + "]: ")
+                        .append("(" + singleEvent.severityToTextLocalized().toUpperCase() + ")")
+                        .append(" ").append(singleEvent.originToTextLocalized())
+                        .append("/").append(singleEvent.typeToTextLocalized())
+                        .append("\n").append("id: " + singleEvent.getId())
+                        .append("\n").append(singleEvent.getSubject())
+                        .append("\n\n");
             }
             event.setBody(
                     infoText.toString()
                     + "\n\n\n"
                     + summary.toString());
             try {
-                this.sendMail(AS2ServerVersion.getProductName(), event);
+                this.sendMail(AS2ServerVersion.getProductName(), event, notificationData, false);
                 SystemEvent notificationSuccessEvent = new SystemEvent(SystemEvent.SEVERITY_INFO,
                         SystemEvent.ORIGIN_SYSTEM, SystemEvent.TYPE_NOTIFICATION_SEND_SUCCESS);
                 notificationSuccessEvent.setSubject(this.rb.getResourceString("misc.message.summary.send",
@@ -172,7 +150,6 @@ public class NotificationImplAS2 extends Notification {
                         + summary.toString());
                 SystemEventManagerImplAS2.newEvent(notificationSuccessEvent);
             }
-
         }
     }
 
@@ -181,8 +158,8 @@ public class NotificationImplAS2 extends Notification {
      *
      */
     @Override
-    public void sendTest(String userName, String processOriginHost) throws Exception {
-        NotificationDataImplAS2 notificationData = (NotificationDataImplAS2)this.getNotificationData(false);
+    public void sendTest(String userName, String processOriginHost,
+            NotificationData notificationData) throws Exception {
         String templateName = "template_notification_test";
         Properties replacement = new Properties();
         replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
@@ -191,30 +168,41 @@ public class NotificationImplAS2 extends Notification {
         replacement.setProperty("${MAILHOST}", notificationData.getMailServer());
         replacement.setProperty("${MAILPORT}", String.valueOf(notificationData.getMailServerPort()));
         String connectionSecurity = "NONE";
-        if (notificationData.getConnectionSecurity() == NotificationData.SECURITY_SSL) {
-            connectionSecurity = "SSL/TSL";
-        } else if (notificationData.getConnectionSecurity() == NotificationData.SECURITY_START_SSL) {
-            connectionSecurity = "STARTSSL";
+        if (notificationData.getConnectionSecurity() == NotificationData.SECURITY_TLS) {
+            connectionSecurity = "TLS";
+        } else if (notificationData.getConnectionSecurity() == NotificationData.SECURITY_START_TLS) {
+            connectionSecurity = "STARTTLS";
         }
         replacement.setProperty("${CONNECTIONSECURITY}", connectionSecurity);
-        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_USER, 
+        String authorization = this.rb.getResourceString( "authorization.none");
+        if( notificationData.usesSMTPAuthCredentials()){
+            authorization = this.rb.getResourceString( "authorization.credentials");
+        }else if( notificationData.usesSMTPAuthOAuth2()){
+            authorization = this.rb.getResourceString( "authorization.oauth2");
+        }
+        replacement.setProperty("${AUTHORIZATION}", authorization);
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_USER,
                 SystemEvent.TYPE_CONNECTIVITY_TEST);
         event.readFromNotificationTemplate(templateName, replacement);
         event.setProcessOriginHost(processOriginHost);
         event.setUser(userName);
-        this.sendMail(AS2ServerVersion.getProductName(), event);
-        this.logger.fine(this.rb.getResourceString("test.message.send", notificationData.getNotificationMail()));
+        String traceStr = this.sendMail(AS2ServerVersion.getProductName(), event, notificationData, true);
+        logger.fine(MODULE_NAME + " " + this.rb.getResourceString("test.message.send", notificationData.getNotificationMail()));
+        if( traceStr != null && traceStr.trim().length() > 0 ){
+            traceStr = MODULE_NAME + " " + AS2Tools.replace(traceStr, "\n", "\n" + MODULE_NAME + " ");
+        }
+        logger.fine(traceStr);
         SystemEventManagerImplAS2.newEvent(event);
     }
 
     @Override
     public String getNotificationSubjectServerIdentification() {
-        return( "[" + AS2ServerVersion.getProductName() + "@" + SystemEventManager.getHostname() + "]");
+        return ("[" + AS2ServerVersion.getProductName() + "@" + SystemEventManager.getHostname() + "]");
     }
 
     @Override
     public String getNotificationFooter() {
-        return( this.rb.getResourceString("do.not.reply"));
+        return (this.rb.getResourceString("do.not.reply"));
     }
 
 }

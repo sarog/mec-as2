@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MDNAccessDB.java 27    26.08.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MDNAccessDB.java 33    29/11/22 10:07 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -8,7 +8,6 @@ import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -27,46 +26,24 @@ import java.util.logging.Logger;
  * Access MDN
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 33 $
  */
 public class MDNAccessDB {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    /**
-     * Connection to the database
-     */
-    private Connection runtimeConnection;
-    private Connection configConnection;
-    private IDBDriverManager dbDriverManager;
-    private Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-    private MessageAccessDB messageAccess;
-    
+    private static final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final IDBDriverManager dbDriverManager;
+    private final Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     /**
      * Creates new MDNAccessDB
      *
      * @param host host to connect to
      */
-    public MDNAccessDB(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.runtimeConnection = runtimeConnection;
-        this.configConnection = configConnection;
+    public MDNAccessDB(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
-        this.messageAccess = new MessageAccessDB(dbDriverManager, configConnection, runtimeConnection);
-    }
-
-    /**
-     * Creates new MDNAccessDB
-     *
-     * @param host host to connect to
-     */
-    public MDNAccessDB(MessageAccessDB messageAccess) {
-        this.runtimeConnection = messageAccess.getRuntimeConnection();
-        this.configConnection = messageAccess.getConfigConnection();
-        this.dbDriverManager = messageAccess.getDBDriverManager();
-        this.messageAccess = messageAccess;        
     }
 
     /**
@@ -74,51 +51,66 @@ public class MDNAccessDB {
      */
     public List<AS2MDNInfo> getMDN(String relatedMessageId) {
         List<AS2MDNInfo> messageList = new ArrayList<AS2MDNInfo>();
-        ResultSet result = null;
-        PreparedStatement statement = null;
+        Connection runtimeConnectionAutoCommit = null;
         try {
-            statement = this.runtimeConnection.prepareStatement("SELECT * FROM mdn WHERE relatedmessageid=? ORDER BY initdateutc ASC");
-            statement.setString(1, relatedMessageId);
-            result = statement.executeQuery();
-            while (result.next()) {
-                AS2MDNInfo info = new AS2MDNInfo();
-                info.setMessageId(result.getString("messageid"));
-                info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
-                info.setDirection(result.getInt("direction"));
-                info.setRelatedMessageId(result.getString("relatedmessageid"));
-                info.setRawFilename(result.getString("rawfilename"));
-                info.setReceiverId(result.getString("receiverid"));
-                info.setSenderId(result.getString("senderid"));
-                info.setSignType(result.getInt("signature"));
-                info.setState(result.getInt("state"));
-                info.setHeaderFilename(result.getString("headerfilename"));
-                info.setSenderHost(result.getString("senderhost"));
-                info.setUserAgent(result.getString("useragent"));
-                info.setDispositionState(result.getString("dispositionstate"));
-                info.setRemoteMDNText(this.dbDriverManager.readTextStoredAsJavaObject(result, "mdntext"));
-                messageList.add(info);
-            }
-            return (messageList);
-        } catch (Exception e) {
-            this.logger.severe("MDNAccessDB.getMDN: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-            return (null);
-        } finally {
-            if (result != null) {
-                try {
-                    result.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            runtimeConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+            ResultSet result = null;
+            PreparedStatement statement = null;
+            try {
+                statement = runtimeConnectionAutoCommit.prepareStatement(
+                        "SELECT * FROM mdn WHERE relatedmessageid=? ORDER BY initdateutc ASC");
+                statement.setString(1, relatedMessageId);
+                result = statement.executeQuery();
+                while (result.next()) {
+                    AS2MDNInfo info = new AS2MDNInfo();
+                    info.setMessageId(result.getString("messageid"));
+                    info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
+                    info.setDirection(result.getInt("direction"));
+                    info.setRelatedMessageId(result.getString("relatedmessageid"));
+                    info.setRawFilename(result.getString("rawfilename"));
+                    info.setReceiverId(result.getString("receiverid"));
+                    info.setSenderId(result.getString("senderid"));
+                    info.setSignType(result.getInt("signature"));
+                    info.setState(result.getInt("state"));
+                    info.setHeaderFilename(result.getString("headerfilename"));
+                    info.setSenderHost(result.getString("senderhost"));
+                    info.setUserAgent(result.getString("useragent"));
+                    info.setDispositionState(result.getString("dispositionstate"));
+                    info.setRemoteMDNText(this.dbDriverManager.readTextStoredAsJavaObject(result, "mdntext"));
+                    messageList.add(info);
+                }
+            } catch (Exception e) {
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                return (null);
+            } finally {
+                if (result != null) {
+                    try {
+                        result.close();
+                    } catch (Exception e) {
+                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    }
+                }
+                if (statement != null) {
+                    try {
+                        statement.close();
+                    } catch (Exception e) {
+                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                    }
                 }
             }
-            if (statement != null) {
+        } catch (Exception e) {
+            this.logger.severe("MessageAccessDB.getMessageCount(state): " + e.getMessage());
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+        } finally {
+            if (runtimeConnectionAutoCommit != null) {
                 try {
-                    statement.close();
+                    runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                    //nop
                 }
             }
         }
+        return (messageList);
     }
 
     /**
@@ -132,7 +124,8 @@ public class MDNAccessDB {
         String messageId = info.getRelatedMessageId();
         String transactionName = "MDN_init_update";
         //check if a related message exists        
-        if (!this.messageAccess.messageIdExists(messageId)) {
+        MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
+        if (!messageAccess.messageIdExists(messageId)) {
             throw new RuntimeException("Unexpected MDN received. The inbound MDN references a message with the AS2 message id \"" + messageId + "\" that does not exist in the system.");
         }
         try {
@@ -141,7 +134,8 @@ public class MDNAccessDB {
             statement = runtimeConnectionNoAutoCommit.createStatement();
             //start transaction
             this.dbDriverManager.startTransaction(statement, transactionName);
-            this.dbDriverManager.setTableLockINSERTAndUPDATE(statement, new String[]{"mdn"});
+            this.dbDriverManager.setTableLockINSERTAndUPDATE(statement,
+                    new String[]{"mdn"});
             int updatedEntries = this.updateMDN(info, runtimeConnectionNoAutoCommit);
             if (updatedEntries == 0) {
                 this.initializeMDN(info, runtimeConnectionNoAutoCommit);
@@ -155,7 +149,6 @@ public class MDNAccessDB {
             } catch (Exception ex) {
                 SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            this.logger.severe("MessageAccessDB.deleteMessage: " + e.getMessage());
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
@@ -169,7 +162,7 @@ public class MDNAccessDB {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    //nop
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -198,10 +191,6 @@ public class MDNAccessDB {
             //condition
             statement.setString(9, info.getMessageId());
             updatedEntries = statement.executeUpdate();
-        } catch (SQLException e) {
-            this.logger.severe("MDNAccessDB.updateMDN: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-            throw e;
         } finally {
             if (statement != null) {
                 try {
@@ -216,7 +205,7 @@ public class MDNAccessDB {
 
     /**
      * Checks if the MDN id does already exist in the database. In this case an
-     * error occured - a MDNs message id has to be unique
+     * error occurred - a MDNs message id has to be unique
      */
     private void checkForUniqueMDNMessageId(AS2MDNInfo info, Connection runtimeConnectionNoAutoCommit) throws Exception {
         PreparedStatement statement = null;
@@ -240,7 +229,6 @@ public class MDNAccessDB {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    this.logger.severe("MDNAccessDB.checkForUniqueMDNMessageId: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
@@ -248,7 +236,6 @@ public class MDNAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MDNAccessDB.checkForUniqueMDNMessageId: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
@@ -263,7 +250,10 @@ public class MDNAccessDB {
         PreparedStatement statement = null;
         try {
             statement = runtimeConnectionNoAutoCommit.prepareStatement(
-                    "INSERT INTO mdn(messageid,relatedmessageid,initdateutc,direction,rawfilename,receiverid,senderid,signature,state,headerfilename,senderhost,useragent,mdntext,dispositionstate)"
+                    "INSERT INTO mdn(messageid,relatedmessageid,initdateutc,"
+                    + "direction,rawfilename,receiverid,"
+                    + "senderid,signature,state,headerfilename,"
+                    + "senderhost,useragent,mdntext,dispositionstate)"
                     + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             statement.setString(1, info.getMessageId());
             statement.setString(2, info.getRelatedMessageId());
@@ -280,16 +270,11 @@ public class MDNAccessDB {
             this.dbDriverManager.setTextParameterAsJavaObject(statement, 13, info.getRemoteMDNText());
             statement.setString(14, info.getDispositionState());
             statement.executeUpdate();
-        } catch (SQLException e) {
-            this.logger.severe("MDNAccessDB.initializeMDN: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-            throw e;
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MDNAccessDB.initializeMDN: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
@@ -300,7 +285,8 @@ public class MDNAccessDB {
      * Returns all file names of files that could be deleted for a passed
      * message info
      */
-    public List<String> getRawFilenamesToDelete(List<String> messageIds, Connection runtimeConnectionNoAutoCommit) {
+    public List<String> getRawFilenamesToDelete(List<String> messageIds,
+            Connection runtimeConnectionNoAutoCommit) throws Exception {
         List<String> filenameList = new ArrayList<String>();
         ResultSet result = null;
         PreparedStatement statement = null;
@@ -328,15 +314,11 @@ public class MDNAccessDB {
                     filenameList.add(headerFilename);
                 }
             }
-        } catch (Exception e) {
-            this.logger.severe("MDNAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    this.logger.severe("MDNAccessDB.getRawFilenamesToDelete: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
@@ -344,7 +326,6 @@ public class MDNAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MDNAccessDB.getRawFilenamesToDelete: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }

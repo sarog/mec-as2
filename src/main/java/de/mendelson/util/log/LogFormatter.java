@@ -1,12 +1,16 @@
-//$Header: /converteride/de/mendelson/util/log/LogFormatter.java 20    3.01.19 17:01 Heller $
+//$Header: /as2/de/mendelson/util/log/LogFormatter.java 22    19/10/22 15:32 Heller $
 package de.mendelson.util.log;
 
+import java.awt.Color;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
+import java.util.logging.Level;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -47,11 +51,13 @@ public class LogFormatter extends Formatter {
      */
     public static final int FORMAT_CONSOLE = 1;
     public static final int FORMAT_LOGFILE = 2;
+    public static final int FORMAT_CONSOLE_COLORED = 3;
 
     private int formatType = FORMAT_CONSOLE;
 
-    private DateFormat datetimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-    private DateFormat timeFormat = SimpleDateFormat.getTimeInstance(DateFormat.MEDIUM);
+    private final DateFormat datetimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+    private final DateFormat timeFormat = SimpleDateFormat.getTimeInstance(DateFormat.MEDIUM);
+    private final Map<Level, String> colorMap = new ConcurrentHashMap<Level, String>();
 
     public LogFormatter(final int HEADER_TYPE) {
         super();
@@ -64,6 +70,13 @@ public class LogFormatter extends Formatter {
     protected void addOutputToLog(int formatType, StringBuilder builder, Object[] recordParameter) {
     }
 
+    /**Sets a level color, this makes only sense if the type is FORMAT_CONSOLE_COLORED
+     * @param ansiColor One of the colors defined in the class ANSI, e.g. ANSI.COLOR_SYSTEM_GREEN
+     */
+    public void setColor( Level level, String ansiColor){
+        this.colorMap.put( level, ansiColor );
+    }
+        
     /**
      * Very fast approach and a little bit tricky: It takes advantage of the
      * fact that any number can be represented by the addition of powers of 2.
@@ -102,6 +115,39 @@ public class LogFormatter extends Formatter {
             header.append("[");
             header.append(this.timeFormat.format(record.getMillis()));
             header.append("] ");
+            Object[] recordParameter = record.getParameters();
+            if (recordParameter != null) {
+                this.addOutputToLog(this.formatType, header, recordParameter);
+            }
+            StringBuilder linesBuilder = new StringBuilder();
+            linesBuilder.append(super.formatMessage(record));
+            if (record.getThrown() != null) {
+                try {
+                    StringWriter stringWriter = new StringWriter();
+                    PrintWriter printWriter = new PrintWriter(stringWriter);
+                    record.getThrown().printStackTrace(printWriter);
+                    printWriter.close();
+                    linesBuilder.append(stringWriter.toString());
+                } catch (Exception ex) {
+                }
+            }
+            StringBuilder fullLine = new StringBuilder();
+            String[] lines = linesBuilder.toString().split("\\n");
+            if (lines != null) {
+                for (String line : lines) {
+                    fullLine.append(header);
+                    fullLine.append(line);
+                    fullLine.append(System.lineSeparator());
+                }
+            }
+            return (fullLine.toString());
+        }if (this.formatType == FORMAT_CONSOLE_COLORED) {
+            StringBuilder header = new StringBuilder();
+            header.append(ANSI.RESET);
+            header.append("[");
+            header.append(this.timeFormat.format(record.getMillis()));
+            header.append("] ");
+            header.append( this.colorMap.getOrDefault(record.getLevel(), ""));
             Object[] recordParameter = record.getParameters();
             if (recordParameter != null) {
                 this.addOutputToLog(this.formatType, header, recordParameter);

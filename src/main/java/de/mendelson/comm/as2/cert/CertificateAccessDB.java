@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cert/CertificateAccessDB.java 22    26.01.21 14:10 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cert/CertificateAccessDB.java 24    29/11/22 13:17 Heller $
 package de.mendelson.comm.as2.cert;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -22,18 +22,23 @@ import java.util.logging.Logger;
  */
 /**
  * Access the certificate lists in the database
+ *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 24 $
  */
 public class CertificateAccessDB {
 
-    /**Logger to log information to*/
+    /**
+     * Logger to log information to
+     */
     private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
 
     public CertificateAccessDB() {
     }
 
-    /**Returns the list of certificates used by the passed partner*/
+    /**
+     * Returns the list of certificates used by the passed partner
+     */
     public void loadPartnerCertificateInformation(Partner partner, Connection configConnection) {
         PreparedStatement statement = null;
         ResultSet result = null;
@@ -69,8 +74,10 @@ public class CertificateAccessDB {
         }
     }
 
-    /**Stores the actual partner certificate list of a partner*/
-    public void storePartnerCertificateInformationList(Partner partner, Connection configConnection) {
+    /**
+     * Stores the actual partner certificate list of a partner
+     */
+    public void storePartnerCertificateInformationList(Partner partner, Connection configConnection) throws Exception {
         this.deletePartnerCertificateInformationList(partner, configConnection);
         Collection<PartnerCertificateInformation> list = partner.getPartnerCertificateInformationList().asList();
         for (PartnerCertificateInformation certInfo : list) {
@@ -82,9 +89,6 @@ public class CertificateAccessDB {
                 statement.setString(2, certInfo.getFingerprintSHA1());
                 statement.setInt(3, certInfo.getCategory());
                 statement.execute();
-            } catch (SQLException e) {
-                this.logger.severe("storePartnerCertificateInformationList: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (statement != null) {
                     try {
@@ -97,25 +101,21 @@ public class CertificateAccessDB {
         }
     }
 
-    /**Deletes the actual partner certificate list of a partner. A config connection is passed to allow the storing process
-     * in a transactional way
+    /**
+     * Deletes the actual partner certificate list of a partner. A config
+     * connection is passed to allow the storing process in a transactional way
      */
-    public void deletePartnerCertificateInformationList(Partner partner, Connection configConnection) {
+    public void deletePartnerCertificateInformationList(Partner partner, Connection configConnection) throws Exception {
         PreparedStatement statement = null;
         try {
             statement = configConnection.prepareStatement("DELETE FROM certificates WHERE partnerid=?");
-            statement.setEscapeProcessing(true);
             statement.setInt(1, partner.getDBId());
             statement.execute();
-        } catch (SQLException e) {
-            this.logger.severe("CertificateAccessDB.deletePartnerCertificateInformationList: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    this.logger.severe("CertificateAccessDB.deletePartnerCertificateInformationList: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }

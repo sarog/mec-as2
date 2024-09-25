@@ -1,7 +1,5 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/notification/NotificationAccessDB.java 4     5.10.18 9:17 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationAccessDB.java 5     28/07/22 13:06 Heller $
 package de.mendelson.util.systemevents.notification;
-
-import java.sql.Connection;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,7 +12,7 @@ import java.sql.Connection;
  * Interface for all notification access implementations
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public interface NotificationAccessDB {
 
@@ -27,9 +25,5 @@ public interface NotificationAccessDB {
      * Inserts a new notification date entry into the database
      */
     public void updateNotification(NotificationData data);
-    
-    public Connection getConfigConnection();
-    
-    public Connection getRuntimeConnection();
-    
+        
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/IDBServer.java 2     20.08.20 15:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/IDBServer.java 3     14/06/22 16:02 Heller $
 package de.mendelson.comm.as2.database;
 
 /*
@@ -12,7 +12,7 @@ package de.mendelson.comm.as2.database;
  * Interface for all DB Servers
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  * @since build 70
  */
 public interface IDBServer {
@@ -21,6 +21,9 @@ public interface IDBServer {
     /**Returns the product information of the database*/
     public DBServerInformation getDBServerInformation();
 
+    /**Returns the product information of the database driver*/
+    public DBClientInformation getDBClientInformation();
+    
     public void ensureServerIsRunning() throws Exception;
     
     /**

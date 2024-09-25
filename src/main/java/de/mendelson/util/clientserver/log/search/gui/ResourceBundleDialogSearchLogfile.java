@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/ResourceBundleDialogSearchLogfile.java 2     27.09.21 17:12 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/ResourceBundleDialogSearchLogfile.java 3     19/01/23 9:26 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleDialogSearchLogfile extends MecResourceBundle {
 
@@ -34,8 +34,8 @@ public class ResourceBundleDialogSearchLogfile extends MecResourceBundle {
         {"no.data.messageid", "**There is no log data in that time range that matches the AS2 message id \"{0}\". Please enter the full message id into the search field." },        
         {"no.data.mdnid", "**There is no log data in that time range that matches the MDN id \"{0}\". Please enter the full MDN id into the search field." },       
         {"no.data.uid", "**There is no log data in that time range that matches the user defined id \"{0}\". Please use the full user defined id you have defined for a transmission." },       
-        {"label.startdate", "Start: " },
-        {"label.enddate", "End: " },
+        {"label.startdate", "Start" },
+        {"label.enddate", "End" },
         {"button.close", "Close" },
         {"label.search", "Log search" },
         {"label.info", "<html>Please enter a full AS2 message id or a full MDN id into the search field to find all log entries in the server side log files for the defined date period - then press the \"Log search\" button. The user defined id could be set for each transaction using the command line send process.</html>" },

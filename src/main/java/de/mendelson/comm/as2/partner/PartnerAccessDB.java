@@ -1,20 +1,23 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerAccessDB.java 86    26.08.21 14:00 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerAccessDB.java 94    29/11/22 16:03 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.cert.CertificateAccessDB;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.oauth2.OAuth2AccessDB;
+import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManager;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.logging.Logger;
+import java.sql.Types;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -27,7 +30,7 @@ import java.util.logging.Logger;
  * Implementation of a server log for the mendelson as2 server database
  *
  * @author S.Heller
- * @version $Revision: 86 $
+ * @version $Revision: 94 $
  */
 public class PartnerAccessDB {
 
@@ -38,8 +41,10 @@ public class PartnerAccessDB {
     /**
      * Access the certificates
      */
-    private CertificateAccessDB certificateAccess;
-    private PartnerEventAccessDB eventAccess;    
+    private final CertificateAccessDB certificateAccess;
+    private final PartnerEventAccessDB eventAccess;
+    private final OAuth2AccessDB oAuth2Access;
+    private final static SystemEventManager systemEventManager = new SystemEventManagerImplAS2();
 
     /**
      * Returns the full partner data
@@ -49,7 +54,7 @@ public class PartnerAccessDB {
      * Return incomplete partner requests - for faster UI client-server requests
      */
     public static final int DATA_COMPLETENESS_NAMES_AS2ID_TYPE = 101;
-    private IDBDriverManager dbDriverManager;
+    private final IDBDriverManager dbDriverManager;
 
     /**
      *
@@ -60,23 +65,25 @@ public class PartnerAccessDB {
         this.dbDriverManager = dbDriverManager;
         this.certificateAccess = new CertificateAccessDB();
         this.eventAccess = new PartnerEventAccessDB();
+        this.oAuth2Access = new OAuth2AccessDB(dbDriverManager, systemEventManager);
     }
 
     /**
-     * Requires a query to select partners from the DB. 
-     * Works in a transaction context on the passed database connection
+     * Requires a query to select partners from the DB. Works in a transaction
+     * context on the passed database connection
      *
      * @param dataCompleteness Allows to get partner object with lesser
      * information
      */
-    private List<Partner> getPartnerByQuery(String query, String parameter, int dataCompleteness, Connection configConnectionNoAutoCommit) throws Exception{
+    private List<Partner> getPartnerByQuery(String query, String parameter, int dataCompleteness,
+            Connection configConnectionNoAutoCommit) throws Exception {
         List<Partner> partnerList = new ArrayList<Partner>();
         PreparedStatement preparedStatement = null;
         ResultSet result = null;
         try {
             preparedStatement = configConnectionNoAutoCommit.prepareStatement(query);
-            if( parameter != null ){
-                preparedStatement.setString( 1, parameter);
+            if (parameter != null) {
+                preparedStatement.setString(1, parameter);
             }
             result = preparedStatement.executeQuery();
             while (result.next()) {
@@ -100,11 +107,11 @@ public class PartnerAccessDB {
                     partner.setCompressionType(result.getInt("msgcompression"));
                     partner.setSignedMDN(result.getInt("signedmdn") == 1);
                     partner.setKeepOriginalFilenameOnReceipt(result.getInt("keeporiginalfilenameonreceipt") == 1);
-                    HTTPAuthentication authentication = partner.getAuthentication();
+                    HTTPAuthentication authentication = partner.getAuthenticationCredentialsMessage();
                     authentication.setUser(result.getString("httpauthuser"));
                     authentication.setPassword(result.getString("httpauthpass"));
                     authentication.setEnabled(result.getInt("usehttpauth") == 1);
-                    HTTPAuthentication asyncAuthentication = partner.getAuthenticationAsyncMDN();
+                    HTTPAuthentication asyncAuthentication = partner.getAuthenticationCredentialsAsyncMDN();
                     asyncAuthentication.setUser(result.getString("httpauthuserasnymdn"));
                     asyncAuthentication.setPassword(result.getString("httpauthpassasnymdn"));
                     asyncAuthentication.setEnabled(result.getInt("usehttpauthasyncmdn") == 1);
@@ -124,16 +131,26 @@ public class PartnerAccessDB {
                     partner.setEnableDirPoll(result.getInt("enabledirpoll") == 1);
                     //ensure to have a valid partner DB id before loading the releated data
                     this.certificateAccess.loadPartnerCertificateInformation(partner, configConnectionNoAutoCommit);
-                    this.loadHttpHeader(partner, configConnectionNoAutoCommit);
+                    this.loadHTTPHeaderIntoPartner(partner, configConnectionNoAutoCommit);
                     this.eventAccess.loadPartnerEvents(partner, configConnectionNoAutoCommit);
+                    partner.setUseOAuth2Message(result.getInt("useoauth2message") == 1);
+                    int oAuth2ReferenceMessage = result.getInt("oauth2idmessage");
+                    if (!result.wasNull()) {
+                        OAuth2Config oAuth2ConfigMessage = this.oAuth2Access.getOAuth2Config(oAuth2ReferenceMessage, configConnectionNoAutoCommit);
+                        partner.setOAuth2Message(oAuth2ConfigMessage);
+                    }
+                    partner.setUseOAuth2MDN(result.getInt("useoauth2mdn") == 1);
+                    int oAuth2ReferenceMDN = result.getInt("oauth2idmdn");
+                    if (!result.wasNull()) {
+                        OAuth2Config oAuth2ConfigMDN = this.oAuth2Access.getOAuth2Config(oAuth2ReferenceMDN, configConnectionNoAutoCommit);
+                        partner.setOAuth2MDN(oAuth2ConfigMDN);
+                    }
                 }
                 partnerList.add(partner);
             }
             Collections.sort(partnerList);
             return (partnerList);
-        } catch (Exception e) {            
-            throw e;
-        } finally {            
+        } finally {
             if (preparedStatement != null) {
                 try {
                     preparedStatement.close();
@@ -147,13 +164,13 @@ public class PartnerAccessDB {
                 } catch (Exception e) {
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
-            }            
+            }
         }
     }
-    
+
     /**
-     * Requires a query to select partners from the DB. Establishes a new connection to the
-     * database and gets the data transactional
+     * Requires a query to select partners from the DB. Establishes a new
+     * connection to the database and gets the data transactional
      *
      * @param dataCompleteness Allows to get partner object with lesser
      * information
@@ -165,7 +182,7 @@ public class PartnerAccessDB {
         Connection configConnectionNoAutoCommit = null;
         String transactionName = "Partner_read";
         try {
-            configConnectionNoAutoCommit = this.getDBDriverManager().getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
             configConnectionNoAutoCommit.setAutoCommit(false);
             configConnectionNoAutoCommit.setReadOnly(true);
             statement = configConnectionNoAutoCommit.createStatement();
@@ -183,7 +200,7 @@ public class PartnerAccessDB {
                 SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("PartnerAccessDB.getPartnerByQuery: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);            
+            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {
@@ -191,7 +208,7 @@ public class PartnerAccessDB {
                 } catch (Exception e) {
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
-            }            
+            }
             if (configConnectionNoAutoCommit != null) {
                 try {
                     configConnectionNoAutoCommit.close();
@@ -217,12 +234,13 @@ public class PartnerAccessDB {
     public List<Partner> getAllPartner() {
         return (this.getAllPartner(DATA_COMPLETENESS_FULL));
     }
-    
+
     /**
      * Returns all partner stored in the DB with all information, even the local
-     * station. The transactional context of the passed connection has to be handled outside
+     * station. The transactional context of the passed connection has to be
+     * handled outside
      */
-    public List<Partner> getAllPartner(int dataCompleteness, Connection configConnectionNoAutoCommit) throws Exception{
+    public List<Partner> getAllPartner(int dataCompleteness, Connection configConnectionNoAutoCommit) throws Exception {
         return (this.getPartnerByQuery("SELECT * FROM partner", null, dataCompleteness, configConnectionNoAutoCommit));
     }
 
@@ -255,17 +273,50 @@ public class PartnerAccessDB {
     }
 
     /**
-     * Updates a single partner in the database by creating a new DB connection
+     * Updates a single partner to the database by creating a new DB connection
      */
     public void updatePartner(Partner partner) {
         Connection configConnectionNoAutoCommit = null;
+        Statement transactionStatement = null;
         try {
-            configConnectionNoAutoCommit = this.getDBDriverManager().getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
             configConnectionNoAutoCommit.setAutoCommit(false);
-            this.updatePartner(partner, configConnectionNoAutoCommit);
+
+            String transactionName = "PartnerAccessDB_updatePartner";
+            try {
+                transactionStatement = configConnectionNoAutoCommit.createStatement();
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                this.dbDriverManager.setTableLockDELETE(
+                        transactionStatement,
+                        new String[]{
+                            "partner",
+                            "certificates",
+                            "partnerevent",
+                            "httpheader",
+                            "partnersystem",
+                            "oauth2"
+                        });
+                this.updatePartner(partner, configConnectionNoAutoCommit);
+                this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+            } catch (Exception e) {
+                try {
+                    //an error occured - rollback transaction and release all locks
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
+                } catch (Exception ex) {
+                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                }
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            }
         } catch (Exception e) {
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
+            if (transactionStatement != null) {
+                try {
+                    transactionStatement.close();
+                } catch (Exception e) {
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                }
+            }
             if (configConnectionNoAutoCommit != null) {
                 try {
                     configConnectionNoAutoCommit.close();
@@ -275,30 +326,16 @@ public class PartnerAccessDB {
             }
         }
     }
-    
+
     /**
      * Updates a single partner in the db
      */
     /**
      * Inserts a new partner into the database
      */
-    public void updatePartner(Partner partner, Connection configConnectionNoAutoCommit) {
+    public void updatePartner(Partner partner, Connection configConnectionNoAutoCommit) throws Exception {
         PreparedStatement preparedStatement = null;
-        Statement statement = null;
-        String transactionName = "Partner_update";
         try {
-            statement = configConnectionNoAutoCommit.createStatement();
-            this.dbDriverManager.startTransaction(statement, transactionName);
-            //start transaction - these tables have to be locked first
-            this.getDBDriverManager().setTableLockINSERTAndUPDATE(
-                    statement,
-                    new String[]{
-                        "partner",
-                        "certificates",
-                        "partnerevent",
-                        "httpheader",
-                        "partnersystem"
-                    });
             preparedStatement = configConnectionNoAutoCommit.prepareStatement(
                     "UPDATE partner SET "
                     + "as2ident=?,partnername=?,islocal=?,sign=?,encrypt=?,email=?,url=?,"
@@ -311,7 +348,8 @@ public class PartnerAccessDB {
                     + "notifyreceiveenabled=?,notifysendreceiveenabled=?,"
                     + "contenttransferencoding=?,httpversion=?,"
                     + "maxpollfiles=?,partnercontact=?,partneraddress=?,algidentprotatt=?,"
-                    + "enabledirpoll=? "
+                    + "enabledirpoll=?,useoauth2message=?,useoauth2mdn=?,"
+                    + "oauth2idmessage=?,oauth2idmdn=? "
                     + "WHERE id=?");
             preparedStatement.setString(1, partner.getAS2Identification());
             preparedStatement.setString(2, partner.getName());
@@ -328,12 +366,12 @@ public class PartnerAccessDB {
             preparedStatement.setInt(13, partner.getPollInterval());
             preparedStatement.setInt(14, partner.getCompressionType());
             preparedStatement.setInt(15, partner.isSignedMDN() ? 1 : 0);
-            preparedStatement.setInt(16, partner.getAuthentication().isEnabled() ? 1 : 0);
-            preparedStatement.setString(17, partner.getAuthentication().getUser());
-            preparedStatement.setString(18, partner.getAuthentication().getPassword());
-            preparedStatement.setInt(19, partner.getAuthenticationAsyncMDN().isEnabled() ? 1 : 0);
-            preparedStatement.setString(20, partner.getAuthenticationAsyncMDN().getUser());
-            preparedStatement.setString(21, partner.getAuthenticationAsyncMDN().getPassword());
+            preparedStatement.setInt(16, partner.getAuthenticationCredentialsMessage().isEnabled() ? 1 : 0);
+            preparedStatement.setString(17, partner.getAuthenticationCredentialsMessage().getUser());
+            preparedStatement.setString(18, partner.getAuthenticationCredentialsMessage().getPassword());
+            preparedStatement.setInt(19, partner.getAuthenticationCredentialsAsyncMDN().isEnabled() ? 1 : 0);
+            preparedStatement.setString(20, partner.getAuthenticationCredentialsAsyncMDN().getUser());
+            preparedStatement.setString(21, partner.getAuthenticationCredentialsAsyncMDN().getPassword());
             preparedStatement.setInt(22, partner.getKeepOriginalFilenameOnReceipt() ? 1 : 0);
             this.dbDriverManager.setTextParameterAsJavaObject(preparedStatement, 23, partner.getComment());
             preparedStatement.setInt(24, partner.getNotifySend());
@@ -349,34 +387,30 @@ public class PartnerAccessDB {
             this.dbDriverManager.setTextParameterAsJavaObject(preparedStatement, 34, partner.getContactCompany());
             preparedStatement.setInt(35, partner.getUseAlgorithmIdentifierProtectionAttribute() ? 1 : 0);
             preparedStatement.setInt(36, partner.isEnableDirPoll() ? 1 : 0);
+            preparedStatement.setInt(37, partner.usesOAuth2Message() ? 1 : 0);
+            preparedStatement.setInt(38, partner.usesOAuth2MDN() ? 1 : 0);
+            if (partner.getOAuth2Message() != null) {
+                this.oAuth2Access.insertOrUpdateOAuth2(partner.getOAuth2Message(), configConnectionNoAutoCommit);
+                preparedStatement.setInt(39, partner.getOAuth2Message().getDBId());
+            } else {
+                preparedStatement.setNull(39, Types.INTEGER);
+            }
+            if (partner.getOAuth2MDN() != null) {
+                this.oAuth2Access.insertOrUpdateOAuth2(partner.getOAuth2MDN(), configConnectionNoAutoCommit);
+                preparedStatement.setInt(40, partner.getOAuth2MDN().getDBId());
+            } else {
+                preparedStatement.setNull(40, Types.INTEGER);
+            }
             //where statement
-            preparedStatement.setInt(37, partner.getDBId());
-            preparedStatement.execute();
+            preparedStatement.setInt(41, partner.getDBId());
+            preparedStatement.executeUpdate();
             this.storeHTTPHeader(partner, configConnectionNoAutoCommit);
             this.certificateAccess.storePartnerCertificateInformationList(partner, configConnectionNoAutoCommit);
             this.eventAccess.storePartnerEvents(partner, configConnectionNoAutoCommit);
-            //all ok - finish transaction and release all locks
-            this.dbDriverManager.commitTransaction(statement, transactionName);
-        } catch (Exception e) {
-            try {
-                //an error occured - rollback transaction and release all locks
-                this.dbDriverManager.rollbackTransaction(statement);
-            } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-            }
-            this.logger.severe("updatePartner: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (preparedStatement != null) {
                 try {
                     preparedStatement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
-            if (statement != null) {
-                try {
-                    statement.close();
                 } catch (Exception e) {
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
@@ -390,13 +424,44 @@ public class PartnerAccessDB {
      */
     public void deletePartner(Partner partner) {
         Connection configConnectionNoAutoCommit = null;
+        Statement transactionStatement = null;
+        String transactionName = "PartnerAccess_delete";
         try {
-            configConnectionNoAutoCommit = this.getDBDriverManager().getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
             configConnectionNoAutoCommit.setAutoCommit(false);
-            this.deletePartner(partner, configConnectionNoAutoCommit);
+            transactionStatement = configConnectionNoAutoCommit.createStatement();
+            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+            this.dbDriverManager.setTableLockDELETE(
+                    transactionStatement,
+                    new String[]{
+                        "partner",
+                        "certificates",
+                        "partnerevent",
+                        "httpheader",
+                        "partnersystem"
+                    });
+            try {
+                this.deletePartner(partner, configConnectionNoAutoCommit);
+                this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+            } catch (Exception e) {
+                try {
+                    //an error occured - rollback transaction and release all locks
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
+                } catch (Exception ex) {
+                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                }
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            }
         } catch (Exception e) {
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
+            if (transactionStatement != null) {
+                try {
+                    transactionStatement.close();
+                } catch (Exception e) {
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                }
+            }
             if (configConnectionNoAutoCommit != null) {
                 try {
                     configConnectionNoAutoCommit.close();
@@ -408,56 +473,33 @@ public class PartnerAccessDB {
     }
 
     /**
-     * Deletes a single partner from the database, transactional
+     * Deletes a single partner from the database
      */
-    public void deletePartner(Partner partner, Connection configConnectionNoAutoCommit) {
+    public void deletePartner(Partner partner, Connection configConnectionNoAutoCommit) throws Exception {
         PreparedStatement preparedStatement = null;
-        Statement statement = null;
-        PartnerSystemAccessDB partnerSystemAccess = new PartnerSystemAccessDB(this);
-        String transactionName = "Partner_delete";
         try {
-            statement = configConnectionNoAutoCommit.createStatement();
-            this.dbDriverManager.startTransaction(statement, transactionName);
-            //start transaction - these tables have to be locked first
-            this.getDBDriverManager().setTableLockDELETE(
-                    statement,
-                    new String[]{
-                        "partner",
-                        "certificates",
-                        "partnerevent",
-                        "httpheader",
-                        "partnersystem"
-                    });
+            PartnerSystemAccessDB partnerSystemAccess = new PartnerSystemAccessDB(this.dbDriverManager);
             this.deleteHTTPHeader(partner, configConnectionNoAutoCommit);
             this.certificateAccess.deletePartnerCertificateInformationList(partner, configConnectionNoAutoCommit);
-            this.eventAccess.deletePartnerEvents(partner, configConnectionNoAutoCommit);            
+            this.eventAccess.deletePartnerEvents(partner, configConnectionNoAutoCommit);
             partnerSystemAccess.deletePartnerSystem(partner, configConnectionNoAutoCommit);
-            preparedStatement = configConnectionNoAutoCommit.prepareStatement("DELETE FROM partner WHERE id=?");
+            preparedStatement = configConnectionNoAutoCommit.prepareStatement(
+                    "DELETE FROM partner WHERE id=?");
             preparedStatement.setInt(1, partner.getDBId());
-            preparedStatement.execute();
-            //all ok - finish transaction and release all locks
-            this.dbDriverManager.commitTransaction(statement, transactionName);
-        } catch (SQLException e) {
-            try {
-                //an error occured - rollback transaction and release all locks
-                this.dbDriverManager.rollbackTransaction(statement);
-            } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+            preparedStatement.executeUpdate();
+            //this worked fine - try to delete oauth2 references which might fail because they might be used somewhere else
+            OAuth2Config oauth2Message = partner.getOAuth2Message();
+            if (oauth2Message != null) {
+                this.oAuth2Access.deleteOAuth2(oauth2Message.getDBId());
             }
-            this.logger.severe("PartnerAccessDB.deletePartner: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, preparedStatement);
+            OAuth2Config oauth2MDN = partner.getOAuth2MDN();
+            if (oauth2MDN != null) {
+                this.oAuth2Access.deleteOAuth2(oauth2MDN.getDBId());
+            }
         } finally {
             if (preparedStatement != null) {
                 try {
                     preparedStatement.close();
-                } catch (Exception e) {
-                    this.logger.severe("PartnerAccessDB.deletePartner: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
-            if (statement != null) {
-                try {
-                    statement.close();
                 } catch (Exception e) {
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
@@ -470,13 +512,45 @@ public class PartnerAccessDB {
      */
     public void insertPartner(Partner partner) {
         Connection configConnectionNoAutoCommit = null;
+        Statement transactionStatement = null;
         try {
-            configConnectionNoAutoCommit = this.getDBDriverManager().getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
             configConnectionNoAutoCommit.setAutoCommit(false);
-            this.insertPartner(partner, configConnectionNoAutoCommit);
+            String transactionName = "PartnerAccessDB_insertPartner";
+            try {
+                transactionStatement = configConnectionNoAutoCommit.createStatement();
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                //start transaction - these tables have to be locked first. Delete is required because
+                //the HTTP header is deleted
+                this.dbDriverManager.setTableLockDELETE(transactionStatement,
+                        new String[]{
+                            "partner",
+                            "certificates",
+                            "partnerevent",
+                            "httpheader",
+                            "oauth2"
+                        });
+                this.insertPartner(partner, configConnectionNoAutoCommit);
+                this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+            } catch (Exception e) {
+                try {
+                    //an error occured - rollback transaction and release all locks
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
+                } catch (Exception ex) {
+                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                }
+                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            }
         } catch (Exception e) {
             SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
+            if (transactionStatement != null) {
+                try {
+                    transactionStatement.close();
+                } catch (Exception e) {
+                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                }
+            }
             if (configConnectionNoAutoCommit != null) {
                 try {
                     configConnectionNoAutoCommit.close();
@@ -486,8 +560,7 @@ public class PartnerAccessDB {
             }
         }
     }
-    
-    
+
     /**
      * Inserts a new partner into the database. This has to happen transactional
      * as data is stored in multiple tables and other processes may read
@@ -495,19 +568,7 @@ public class PartnerAccessDB {
      */
     public void insertPartner(Partner partner, Connection configConnectionNoAutoCommit) throws Exception {
         PreparedStatement preparedStatement = null;
-        Statement statement = null;
-        String transactionName = "Partner_insert";
         try {
-            statement = configConnectionNoAutoCommit.createStatement();
-            this.dbDriverManager.startTransaction(statement, transactionName);
-            //start transaction - these tables have to be locked first
-            this.getDBDriverManager().setTableLockINSERTAndUPDATE(statement, 
-                    new String[]{
-                        "partner",
-                        "certificates",
-                        "partnerevent",
-                        "httpheader"
-                    });
             preparedStatement = configConnectionNoAutoCommit.prepareStatement(
                     "INSERT INTO partner("
                     + "as2ident,partnername,islocal,sign,encrypt,email,url,mdnurl,"
@@ -518,9 +579,10 @@ public class PartnerAccessDB {
                     + "partnercomment,notifysend,notifyreceive,notifysendreceive,"
                     + "notifysendenabled,notifyreceiveenabled,notifysendreceiveenabled,"
                     + "contenttransferencoding,httpversion,"
-                    + "maxpollfiles,partnercontact,partneraddress,algidentprotatt,enabledirpoll"
+                    + "maxpollfiles,partnercontact,partneraddress,algidentprotatt,enabledirpoll,"
+                    + "useoauth2message,useoauth2mdn,oauth2idmessage,oauth2idmdn"
                     + ")VALUES("
-                    + "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    + "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             preparedStatement.setString(1, partner.getAS2Identification());
             preparedStatement.setString(2, partner.getName());
             preparedStatement.setInt(3, partner.isLocalStation() ? 1 : 0);
@@ -536,12 +598,12 @@ public class PartnerAccessDB {
             preparedStatement.setInt(13, partner.getPollInterval());
             preparedStatement.setInt(14, partner.getCompressionType());
             preparedStatement.setInt(15, partner.isSignedMDN() ? 1 : 0);
-            preparedStatement.setInt(16, partner.getAuthentication().isEnabled() ? 1 : 0);
-            preparedStatement.setString(17, partner.getAuthentication().getUser());
-            preparedStatement.setString(18, partner.getAuthentication().getPassword());
-            preparedStatement.setInt(19, partner.getAuthenticationAsyncMDN().isEnabled() ? 1 : 0);
-            preparedStatement.setString(20, partner.getAuthenticationAsyncMDN().getUser());
-            preparedStatement.setString(21, partner.getAuthenticationAsyncMDN().getPassword());
+            preparedStatement.setInt(16, partner.getAuthenticationCredentialsMessage().isEnabled() ? 1 : 0);
+            preparedStatement.setString(17, partner.getAuthenticationCredentialsMessage().getUser());
+            preparedStatement.setString(18, partner.getAuthenticationCredentialsMessage().getPassword());
+            preparedStatement.setInt(19, partner.getAuthenticationCredentialsAsyncMDN().isEnabled() ? 1 : 0);
+            preparedStatement.setString(20, partner.getAuthenticationCredentialsAsyncMDN().getUser());
+            preparedStatement.setString(21, partner.getAuthenticationCredentialsAsyncMDN().getPassword());
             preparedStatement.setInt(22, partner.getKeepOriginalFilenameOnReceipt() ? 1 : 0);
             this.dbDriverManager.setTextParameterAsJavaObject(preparedStatement, 23, partner.getComment());
             preparedStatement.setInt(24, partner.getNotifySend());
@@ -557,23 +619,25 @@ public class PartnerAccessDB {
             this.dbDriverManager.setTextParameterAsJavaObject(preparedStatement, 34, partner.getContactCompany());
             preparedStatement.setInt(35, partner.getUseAlgorithmIdentifierProtectionAttribute() ? 1 : 0);
             preparedStatement.setInt(36, partner.isEnableDirPoll() ? 1 : 0);
-            preparedStatement.execute();
+            preparedStatement.setInt(37, partner.usesOAuth2Message() ? 1 : 0);
+            preparedStatement.setInt(38, partner.usesOAuth2MDN() ? 1 : 0);
+            if (partner.getOAuth2Message() != null) {
+                this.oAuth2Access.insertOrUpdateOAuth2(partner.getOAuth2Message(), configConnectionNoAutoCommit);
+                preparedStatement.setInt(39, partner.getOAuth2Message().getDBId());
+            } else {
+                preparedStatement.setNull(39, Types.INTEGER);
+            }
+            if (partner.getOAuth2MDN() != null) {
+                this.oAuth2Access.insertOrUpdateOAuth2(partner.getOAuth2MDN(), configConnectionNoAutoCommit);
+                preparedStatement.setInt(40, partner.getOAuth2MDN().getDBId());
+            } else {
+                preparedStatement.setNull(40, Types.INTEGER);
+            }
+            preparedStatement.executeUpdate();
             partner.setDBId(this.getDBIdForPartner(partner.getAS2Identification(), configConnectionNoAutoCommit));
             this.storeHTTPHeader(partner, configConnectionNoAutoCommit);
             this.certificateAccess.storePartnerCertificateInformationList(partner, configConnectionNoAutoCommit);
             this.eventAccess.storePartnerEvents(partner, configConnectionNoAutoCommit);
-            //all ok - finish transaction and release all locks
-            this.dbDriverManager.commitTransaction(statement, transactionName);
-        } catch (SQLException e) {
-            try {
-                //an error occured - rollback transaction and release all locks
-                this.dbDriverManager.rollbackTransaction(statement);
-            } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-            }
-            this.logger.severe("PartnerAccessDB.insertPartner: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, preparedStatement);
-            throw e;
         } finally {
             if (preparedStatement != null) {
                 try {
@@ -583,13 +647,7 @@ public class PartnerAccessDB {
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
+
         }
     }
 
@@ -601,7 +659,7 @@ public class PartnerAccessDB {
      * @param configConnection
      * @return
      */
-    private int getDBIdForPartner(String as2ident, Connection configConnection) {
+    private int getDBIdForPartner(String as2ident, Connection configConnection) throws Exception {
         PreparedStatement statement = null;
         ResultSet result = null;
         try {
@@ -610,13 +668,9 @@ public class PartnerAccessDB {
             result = statement.executeQuery();
             if (result.next()) {
                 return (result.getInt("id"));
+            } else {
+                return (-1);
             }
-        } catch (SQLException e) {
-            this.logger.severe("PartnerAccessDB.getDBIdForPartner: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-        } catch (Exception e) {
-            this.logger.severe("PartnerAccessDB.getDBIdForPartner: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (result != null) {
                 try {
@@ -634,7 +688,7 @@ public class PartnerAccessDB {
                 }
             }
         }
-        return (-1);
+
     }
 
     /**
@@ -673,8 +727,7 @@ public class PartnerAccessDB {
         }
         return (partner.get(0));
     }
-    
-    
+
     /**
      * Loads a specified partner from the DB
      *
@@ -693,7 +746,7 @@ public class PartnerAccessDB {
      * loads the partner specific http headers from the db and assigns it to the
      * passed partner
      */
-    private void loadHttpHeader(Partner partner, Connection configConnection) {
+    private void loadHTTPHeaderIntoPartner(Partner partner, Connection configConnection) throws Exception {
         int partnerId = partner.getDBId();
         PreparedStatement statement = null;
         ResultSet result = null;
@@ -707,18 +760,11 @@ public class PartnerAccessDB {
                 header.setValue(result.getString("headervalue"));
                 partner.addHttpHeader(header);
             }
-        } catch (SQLException e) {
-            this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-        } catch (Exception e) {
-            this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
@@ -726,7 +772,6 @@ public class PartnerAccessDB {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    this.logger.severe("PartnerAccessDB.loadHttpHeader: " + e.getMessage());
                     SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
@@ -736,18 +781,12 @@ public class PartnerAccessDB {
     /**
      * Deletes a single partners http header from the database
      */
-    private void deleteHTTPHeader(Partner partner, Connection configConnection) {
+    private void deleteHTTPHeader(Partner partner, Connection configConnection) throws Exception {
         PreparedStatement statement = null;
         try {
             statement = configConnection.prepareStatement("DELETE FROM httpheader WHERE partnerid=?");
             statement.setInt(1, partner.getDBId());
-            statement.execute();
-        } catch (SQLException e) {
-            this.logger.severe("PartnerAccessDB.deleteHttpHeader: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-        } catch (Exception e) {
-            this.logger.severe("PartnerAccessDB.deleteHttpHeader: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            statement.executeUpdate();
         } finally {
             if (statement != null) {
                 try {
@@ -762,7 +801,7 @@ public class PartnerAccessDB {
     /**
      * Updates a single partners http header in the db
      */
-    private void storeHTTPHeader(Partner partner, Connection configConnectionNoAutoCommit) {
+    private void storeHTTPHeader(Partner partner, Connection configConnectionNoAutoCommit) throws Exception {
         this.deleteHTTPHeader(partner, configConnectionNoAutoCommit);
         //clear unused headers in the partner object
         partner.deleteEmptyHttpHeader();
@@ -770,17 +809,12 @@ public class PartnerAccessDB {
         for (PartnerHttpHeader header : headerList) {
             PreparedStatement statement = null;
             try {
-                statement = configConnectionNoAutoCommit.prepareStatement("INSERT INTO httpheader(partnerid,headerkey,headervalue)VALUES(?,?,?)");
+                statement = configConnectionNoAutoCommit.prepareStatement(
+                        "INSERT INTO httpheader(partnerid,headerkey,headervalue)VALUES(?,?,?)");
                 statement.setInt(1, partner.getDBId());
                 statement.setString(2, header.getKey());
                 statement.setString(3, header.getValue());
-                statement.execute();
-            } catch (SQLException e) {
-                this.logger.severe("PartnerAccessDB.storeHttpHeader: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-            } catch (Exception e) {
-                this.logger.severe("PartnerAccessDB.storeHttpHeader: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                statement.executeUpdate();
             } finally {
                 if (statement != null) {
                     try {
@@ -792,11 +826,5 @@ public class PartnerAccessDB {
             }
         }
     }
-
-    /**
-     * @return the dbDriverManager
-     */
-    public IDBDriverManager getDBDriverManager() {
-        return dbDriverManager;
-    }
+    
 }

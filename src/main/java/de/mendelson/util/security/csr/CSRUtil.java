@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/csr/CSRUtil.java 14    20.05.20 10:42 Heller $
+//$Header: /as2/de/mendelson/util/security/csr/CSRUtil.java 16    26/09/22 10:19 Heller $
 package de.mendelson.util.security.csr;
 
 import de.mendelson.util.MecResourceBundle;
@@ -58,7 +58,7 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
  * Handles csr related activities on a certificate
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 16 $
  */
 public class CSRUtil {
 
@@ -130,7 +130,8 @@ public class CSRUtil {
             builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
         }
         PKCS10CertificationRequest csr = builder.build(sigGen);
-        ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder().setProvider(new BouncyCastleProvider()).build(cert);
+        ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(cert);
         boolean verified = csr.isSignatureValid(verifier);
         if (!verified) {
             throw new Exception(this.rb.getResourceString("verification.failed"));
@@ -142,10 +143,10 @@ public class CSRUtil {
      * Generates a PKCS10 CertificationRequest. The passed private key must not
      * be trusted
      */
-    public PKCS10CertificationRequest generateCSR(CertificateManager manager, String alias) throws Exception {
-        PrivateKey key = manager.getPrivateKey(alias);
+    public PKCS10CertificationRequest generateCSR(CertificateManager manager, String privateKeyAlias) throws Exception {
+        PrivateKey key = manager.getPrivateKey(privateKeyAlias);
         KeyStoreUtil keystoreUtil = new KeyStoreUtil();
-        Certificate[] certchain = manager.getCertificateChain(alias);
+        Certificate[] certchain = manager.getCertificateChain(privateKeyAlias);
         X509Certificate[] x509Certchain = new X509Certificate[certchain.length];
         for (int i = 0; i < certchain.length; i++) {
             x509Certchain[i] = (X509Certificate) certchain[i];

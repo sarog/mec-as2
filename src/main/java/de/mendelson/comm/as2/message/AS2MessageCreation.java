@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 63    15.10.21 12:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 66    26/09/22 10:19 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
@@ -52,6 +52,7 @@ import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedDataStreamGenerator;
 import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
 import org.bouncycastle.cms.jcajce.ZlibCompressor;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.SMIMECompressedGenerator;
 import org.bouncycastle.mail.smime.SMIMEException;
 import org.bouncycastle.operator.jcajce.JcaAlgorithmParametersConverter;
@@ -67,7 +68,7 @@ import org.bouncycastle.operator.jcajce.JcaAlgorithmParametersConverter;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 63 $
+ * @version $Revision: 66 $
  */
 public class AS2MessageCreation {
 
@@ -77,8 +78,6 @@ public class AS2MessageCreation {
     private CertificateManager signatureCertManager = null;
     private CertificateManager encryptionCertManager = null;
     //Database connection
-    private Connection runtimeConnection = null;
-    private Connection configConnection = null;
     private IDBDriverManager dbDriverManager = null;
 
     public AS2MessageCreation(CertificateManager signatureCertManager, CertificateManager encryptionCertManager) {
@@ -106,9 +105,7 @@ public class AS2MessageCreation {
     /**
      * Passes a database connection to this class to allow logging functionality
      */
-    public void setServerResources(IDBDriverManager dbDriverManager, Connection configConnection, Connection runtimeConnection) {
-        this.runtimeConnection = runtimeConnection;
-        this.configConnection = configConnection;
+    public void setServerResources(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
     }
 
@@ -541,8 +538,8 @@ public class AS2MessageCreation {
             //nop
         }
         info.setUserdefinedId(userdefinedId);
-        if (this.runtimeConnection != null) {
-            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+        if (this.dbDriverManager != null) {
+            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
             messageAccess.initializeOrUpdateMessage(info);
         }
         if (this.logger != null) {
@@ -557,8 +554,8 @@ public class AS2MessageCreation {
         for (AS2Payload as2Payload : payloads) {
             //add payload
             message.addPayload(as2Payload);
-            if (this.runtimeConnection != null) {
-                MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, this.configConnection, this.runtimeConnection);
+            if (this.dbDriverManager != null) {
+                MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
                 messageAccess.initializeOrUpdateMessage(info);
             }
             //no MIME message: single payload, unsigned, no CEM
@@ -750,52 +747,52 @@ public class AS2MessageCreation {
             encryptedOutput = new DeferredFileOutputStream(20 * 1024 * 1024, "as2encryptdata_", ".mem", null);
             if (encryptionType == AS2Message.ENCRYPTION_3DES) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_DES) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_CBC, 56)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_RC2_40) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 40)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_RC2_64) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 64)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_RC2_128) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 128)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_RC2_196) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 196)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_AES_128) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_AES_192) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CBC)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_AES_256) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_RC4_40) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(
                         new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 40)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_RC4_56) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(
                         new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 56)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_RC4_128) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(
                         new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 128)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_AES_128_RSAES_AOEP) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_AES_192_RSAES_AOEP) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CBC)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             } else if (encryptionType == AS2Message.ENCRYPTION_AES_256_RSAES_AOEP) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC)
-                        .setProvider("BC").build());
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
             }
             if (out == null) {
                 throw new Exception("Internal failure: Unsupported encryption type " + encryptionType + " during the encryption process (encryptDataToMessage)");

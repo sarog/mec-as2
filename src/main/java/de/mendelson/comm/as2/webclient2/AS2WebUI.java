@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/AS2WebUI.java 63    27/01/22 17:19 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/AS2WebUI.java 69    22/11/22 8:41 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.annotations.Theme;
@@ -44,6 +44,7 @@ import com.vaadin.ui.themes.ValoTheme;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
 import de.mendelson.comm.as2.database.DBDriverManagerMySQL;
+import de.mendelson.comm.as2.database.DBDriverManagerOracleDB;
 import de.mendelson.comm.as2.database.DBDriverManagerPostgreSQL;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
@@ -52,7 +53,6 @@ import de.mendelson.util.clientserver.AnonymousTextClient;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
 import de.mendelson.util.clientserver.about.ServerInfoResponse;
 import de.mendelson.util.clientserver.user.User;
-import java.sql.Connection;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import de.mendelson.comm.as2.message.AS2Message;
@@ -96,7 +96,7 @@ import java.util.logging.Logger;
  * Main frame for the web interface
  *
  * @author S.Heller
- * @version $Revision: 63 $
+ * @version $Revision: 69 $
  */
 @Theme("valo")
 public class AS2WebUI extends UI {
@@ -157,6 +157,8 @@ public class AS2WebUI extends UI {
     private boolean pluginActivatedHA = false;
     private boolean pluginActivatedPostgreSQL = false;
     private boolean pluginActivatedMySQL = false;
+    private boolean pluginActivatedOracleDB = false;
+    private boolean webinterfaceActivated = false;
 
     /**
      * This is the entry point of you application as denoted in your web.xml
@@ -181,6 +183,9 @@ public class AS2WebUI extends UI {
             if (response.getException() != null) {
                 throw response.getException();
             }
+            this.webinterfaceActivated = response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
+                    != null && response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
+                            .contains(ServerPlugins.PLUGIN_WEBINTERFACE);
             this.pluginActivatedHA = response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
                     != null && response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
                             .contains(ServerPlugins.PLUGIN_HA);
@@ -190,13 +195,19 @@ public class AS2WebUI extends UI {
             this.pluginActivatedMySQL = response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
                     != null && response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
                             .contains(ServerPlugins.PLUGIN_MYSQL);
+            this.pluginActivatedOracleDB = response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
+                    != null && response.getProperties().getProperty(ServerInfoRequest.PLUGINS)
+                            .contains(ServerPlugins.PLUGIN_ORACLE_DB);
             if (this.pluginActivatedPostgreSQL) {
                 this.dbDriverManager = DBDriverManagerPostgreSQL.instance();
             } else if (this.pluginActivatedMySQL) {
                 this.dbDriverManager = DBDriverManagerMySQL.instance();
+            }else if (this.pluginActivatedOracleDB) {
+                this.dbDriverManager = DBDriverManagerOracleDB.instance();
             } else {
                 this.dbDriverManager = DBDriverManagerHSQL.instance();
             }
+            this.dbDriverManager.setupConnectionPool();
         } catch (Throwable e) {
             throw new RuntimeException(e);
         } finally {
@@ -225,9 +236,8 @@ public class AS2WebUI extends UI {
         RESOURCE_IMAGE_LOCALSTATION = new FileResource(new File("/VAADIN/theme/mendelson/images/localstation.svg"));
         RESOURCE_IMAGE_SINGLEPARTNER = new FileResource(new File("/VAADIN/theme/mendelson/images/singlepartner.svg"));
         RESOURCE_IMAGE_USER = new FileResource(new File("/VAADIN/theme/mendelson/images/origin_user.svg"));
-        //establish database connection
         try {
-            this.checkVersionMatch();
+            this.checkRunningPermission();
         } catch (Exception e) {
             e.printStackTrace();
             new Notification("Fatal", e.getMessage(),
@@ -251,6 +261,26 @@ public class AS2WebUI extends UI {
             }
         });
         this.resizeGrid(Page.getCurrent().getBrowserWindowHeight());
+    }
+
+    /**
+     * Checks if the web interface might run
+     */
+    private void checkRunningPermission() throws Exception {
+        if (!this.webinterfaceActivated) {
+            throw new Exception("This web interface license has not been activated so far. "
+                    + "Please ask the mendelson support for an activation key.");
+        }
+        this.checkVersionMatch();
+    }
+
+    /**
+     * Returns the version of this class
+     */
+    public static String getVersion() {
+        String revision = "$Revision: 69 $";
+        return (revision.substring(revision.indexOf(":") + 1,
+                revision.lastIndexOf("$")).trim());
     }
 
     /**
@@ -696,12 +726,8 @@ public class AS2WebUI extends UI {
         int sumError = 0;
         int sumAllInSystem = 0;
         //load message data
-        Connection configConnection = null;
-        Connection runtimeConnection = null;
         try {
-            configConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            runtimeConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
-            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager, configConnection, runtimeConnection);
+            MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
             MessageOverviewFilter filter = new MessageOverviewFilter();
             sumAllInSystem = messageAccess.getMessageCount();
             //1000 transactions max
@@ -753,19 +779,6 @@ public class AS2WebUI extends UI {
             new Notification("Problem", "[" + e.getClass().getSimpleName() + "] " + e.getMessage(),
                     Notification.Type.WARNING_MESSAGE, true)
                     .show(Page.getCurrent());
-        } finally {
-            if (configConnection != null) {
-                try {
-                    configConnection.close();
-                } catch (Exception e) {
-                }
-            }
-            if (runtimeConnection != null) {
-                try {
-                    runtimeConnection.close();
-                } catch (Exception e) {
-                }
-            }
         }
     }
 
@@ -814,33 +827,41 @@ public class AS2WebUI extends UI {
             @Override
             public void onLogin(LoginEvent event) {
                 try {
-                    String username = event.getLoginParameter("username");
-                    String password = event.getLoginParameter("password");
-                    UserAccess access = new UserAccess(Logger.getAnonymousLogger());
-                    User foundUser = access.readUser(username);
-                    if (foundUser == null
-                            || foundUser.getPasswdCrypted() == null
-                            || !PBKDF2.validatePassword(password, foundUser.getPasswdCrypted())
-                            || !foundUser.getPermission(1).equals("FULL")) {
-                        new Notification("Login failed",
-                                "Wrong credentials or no permission to access the system",
-                                Notification.Type.WARNING_MESSAGE, true)
+                    checkRunningPermission();
+                    try {
+                        String username = event.getLoginParameter("username");
+                        String password = event.getLoginParameter("password");
+                        UserAccess access = new UserAccess(Logger.getAnonymousLogger());
+                        User foundUser = access.readUser(username);
+                        if (foundUser == null
+                                || foundUser.getPasswdCrypted() == null
+                                || !PBKDF2.validatePassword(password, foundUser.getPasswdCrypted())
+                                || !foundUser.getPermission(1).equals("FULL")) {
+                            new Notification("Login failed",
+                                    "Wrong credentials or no permission to access the system",
+                                    Notification.Type.WARNING_MESSAGE, true)
+                                    .show(Page.getCurrent());
+                        } else {
+                            //login accepted
+                            AS2WebUI.this.user = foundUser;
+                            AS2WebUI.this.labelUsername.setCaption(generateImageLabelHTMLTextWithPadding(RESOURCE_IMAGE_USER, 24, 24, -7)
+                                    + AS2WebUI.this.user.getName());
+                            AS2WebUI.this.mainWindowLayout.removeComponent(AS2WebUI.this.welcomeLayout);
+                            AS2WebUI.this.mainWindowLayout.addComponentsAndExpand(AS2WebUI.this.mainPanel);
+                            AS2WebUI.this.mainWindowLayout.setExpandRatio(AS2WebUI.this.mainPanel, 1f);
+                            AS2WebUI.this.refreshOverviewTableData();
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                        new Notification("Service not available",
+                                "Login currently not possible - please try later",
+                                Notification.Type.ERROR_MESSAGE, true)
                                 .show(Page.getCurrent());
-                    } else {
-                        //login accepted
-                        AS2WebUI.this.user = foundUser;
-                        AS2WebUI.this.labelUsername.setCaption(generateImageLabelHTMLTextWithPadding(RESOURCE_IMAGE_USER, 24, 24, -7)
-                                + AS2WebUI.this.user.getName());
-                        AS2WebUI.this.mainWindowLayout.removeComponent(AS2WebUI.this.welcomeLayout);
-                        AS2WebUI.this.mainWindowLayout.addComponentsAndExpand(AS2WebUI.this.mainPanel);
-                        AS2WebUI.this.mainWindowLayout.setExpandRatio(AS2WebUI.this.mainPanel, 1f);
-                        AS2WebUI.this.refreshOverviewTableData();
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
-                    new Notification("Service not available",
-                            "Login currently not possible - please try later",
-                            Notification.Type.WARNING_MESSAGE, true)
+                    new Notification("Fatal", e.getMessage(),
+                            Notification.Type.ERROR_MESSAGE, true)
                             .show(Page.getCurrent());
                 }
             }

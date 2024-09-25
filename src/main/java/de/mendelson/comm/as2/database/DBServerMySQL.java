@@ -1,24 +1,7 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBServerMySQL.java 2     2/02/22 13:45 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBServerMySQL.java 3     2/01/23 13:16 Heller $
 package de.mendelson.comm.as2.database;
 
-import de.mendelson.comm.as2.AS2ServerVersion;
-import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
-import de.mendelson.util.systemevents.SystemEvent;
-import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-import java.util.TimeZone;
-import java.util.logging.Logger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -31,12 +14,12 @@ import java.util.logging.Logger;
  * Class to start a dedicated SQL database server
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  * @since build 70
  */
 public class DBServerMySQL implements IDBServer {
 
-    public DBServerMySQL(IDBDriverManager driverManager, DBServerInformation dbServerInformation) throws Exception {
+    public DBServerMySQL(Object a, Object b, Object c) throws Exception {
     }
 
     /**
@@ -64,6 +47,11 @@ public class DBServerMySQL implements IDBServer {
      */
     @Override
     public void shutdown() {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public DBClientInformation getDBClientInformation() {        
         throw new IllegalAccessError();
     }
 

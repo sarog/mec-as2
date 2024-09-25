@@ -1,13 +1,16 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JPanelCertificates.java 50    23.09.21 12:27 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JPanelCertificates.java 56    12/12/22 14:18 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.AllowModificationCallback;
 import de.mendelson.util.clientserver.GUIClient;
+import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.util.security.cert.CertificateInUseChecker;
 import de.mendelson.util.security.cert.CertificateInUseInfo;
+import de.mendelson.util.security.cert.CertificateInUseInfo.SingleCertificateInUseInfo;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.KeyCopyHandler;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.TableModelCertificates;
 import de.mendelson.util.security.cert.clientserver.RefreshKeystoreCertificates;
@@ -55,11 +58,11 @@ import javax.swing.table.TableModel;
  * Panel to configure the Certificates
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 56 $
  */
 public class JPanelCertificates extends JPanel implements ListSelectionListener, PopupMenuListener {
 
-    private Logger logger = null;
+    private final Logger logger;
     /**
      * Title used to render sub dialogs
      */
@@ -72,12 +75,13 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
     private String keystoreType;
     private MecResourceBundle rb = null;
     public static final ImageIcon ICON_CERTIFICATE_ROOT
-            = new ImageIcon(TableModelCertificates.ICON_ROOT_MULTIRESOLUTION.toMinResolution(16));
+            = new ImageIcon(TableModelCertificates.IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(16));
     public static final ImageIcon ICON_CERTIFICATE_UNTRUSTED
-            = new ImageIcon(TableModelCertificates.ICON_UNTRUSTED_MULTIRESOLUTION.toMinResolution(16));
-    private final List<CertificateInUseChecker> inUseChecker
+            = new ImageIcon(TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(16));
+    private final List<CertificateInUseChecker> inUseCheckerList
             = Collections.synchronizedList(new ArrayList<CertificateInUseChecker>());
     private List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
+    private KeyCopyHandler keyCopyHandler = null;
     /**
      * Image size for the popup menus
      */
@@ -90,8 +94,9 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
      */
     private JLabel jLabelTrustAnchorValueAlternate = null;
     private JLabel jLabelWarnings = null;
+    private final String moduleName;
 
-    private GUIClient guiClient;
+    private final GUIClient guiClient;
 
     /**
      * Creates new form JPanelPartnerConfig
@@ -100,11 +105,12 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
      * used in TLS and ENC/Sign environment and there is a unique key required
      * for persistent settings this String should help
      */
-    public JPanelCertificates(Logger logger, ListSelectionListener additionalListener, GUIClient guiClient,
-            String moduleName) {
+    public JPanelCertificates(Logger logger, ListSelectionListener additionalListener,
+            GUIClient guiClient, String moduleName) {
         if (moduleName == null) {
             moduleName = "";
         }
+        this.moduleName = moduleName;
         this.logger = logger;
         this.guiClient = guiClient;
         //load resource bundle
@@ -117,7 +123,7 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         initComponents();
         //add row sorter
         RowSorter<TableModel> sorter = new PersistentTableRowSorter<TableModel>(this.jTable.getModel(),
-                this.getClass().getName() + "_" + moduleName);
+                this.getClass().getName() + "_" + this.moduleName);
         this.jTable.setRowHeight(TableModelCertificates.ROW_HEIGHT);
         this.jTable.setRowSorter(sorter);
         this.jTable.getTableHeader().setReorderingAllowed(false);
@@ -140,6 +146,8 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         this.jMenuItemPopupExportCert.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(this.imageSizePopup)));
         this.jMenuItemPopupExportKey.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(this.imageSizePopup)));
         this.jMenuItemPopupRenameAlias.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EDIT_MULTIRESOLUTION.toMinResolution(this.imageSizePopup)));
+        this.jMenuItemPopupReference.setIcon(new ImageIcon(JDialogCertificates.IMAGE_REFERENCE.toMinResolution(this.imageSizePopup)));
+        this.jMenuItemPopupKeyCopy.setIcon(new ImageIcon(JDialogCertificates.IMAGE_KEYCOPY.toMinResolution(this.imageSizePopup)));
     }
 
     /**
@@ -153,10 +161,10 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         for (KeystoreCertificate certificate : certificateList) {
             if (certificate.getNotAfter().before(currentDate)) {
                 //this is an expired certificate but perhaps it is in use - then it should not be deleted
-                synchronized (this.inUseChecker) {
-                    for (CertificateInUseChecker checker : this.inUseChecker) {
-                        List<CertificateInUseInfo> usedList = checker.checkUsed(certificate);
-                        if (usedList == null || usedList.isEmpty()) {
+                synchronized (this.inUseCheckerList) {
+                    for (CertificateInUseChecker checker : this.inUseCheckerList) {
+                        CertificateInUseInfo info = checker.checkUsed(certificate);
+                        if (info.isEmpty()) {
                             //unused expired certificate
                             expiredList.add(certificate);
                         } else {
@@ -265,6 +273,13 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
     public void addKeystore(CertificateManager manager) {
         this.manager = manager;
         this.keystoreType = manager.getKeystoreType();
+        if (this.moduleName.equals(ModuleLock.MODULE_ENCSIGN_KEYSTORE)) {
+            this.jMenuItemPopupKeyCopy.setText(this.rb.getResourceString("button.keycopy",
+                    this.rb.getResourceString("button.keycopy.tls")));
+        } else {
+            this.jMenuItemPopupKeyCopy.setText(this.rb.getResourceString("button.keycopy",
+                    this.rb.getResourceString("button.keycopy.signencrypt")));
+        }
         this.refreshData();
         JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
         if (this.jTable.getRowCount() > 0) {
@@ -276,9 +291,16 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         return (!this.manager.canWrite());
     }
 
+    /**
+     * Adds the functionality to check if a certificate is in use and should not
+     * be deleted
+     *
+     * @param checker
+     */
     protected void addCertificateInUseChecker(CertificateInUseChecker checker) {
-        synchronized (this.inUseChecker) {
-            this.inUseChecker.add(checker);
+        synchronized (this.inUseCheckerList) {
+            this.inUseCheckerList.add(checker);
+            ((TableModelCertificates) this.jTable.getModel()).addCertificateInUseChecker(checker);
         }
     }
 
@@ -574,7 +596,7 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
                     repeatLoop = false;
                 }
             }
-            //ensure that the slectedCertificate is always the last one in the path - it might be the same cert with an other
+            //ensure that the selectedCertificate is always the last one in the path - it might be the same cert with an other
             //alias, too after this delete algorithm
             if (selectedCertificate != null) {
                 list.remove(list.size() - 1);
@@ -598,7 +620,8 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
                     usedDisplayLabel.setText("Root certificate");
                 } else if (certificate.isSelfSigned()) {
                     //figure out the icon used to render the cert entry in the table
-                    usedDisplayLabel.setIcon(((TableModelCertificates) this.jTable.getModel()).getIconForCertificate(certificate));
+                    usedDisplayLabel.setIcon(((TableModelCertificates) this.jTable.getModel())
+                            .getUnmodifiedIconForCertificate(certificate));
                     usedDisplayLabel.setText("Self signed");
                 } else {
                     PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(this.manager.getKeystore(), this.manager.getX509CertificateList());
@@ -643,25 +666,7 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
                         this.jTable.getRowCount() - 1, this.jTable.getRowCount() - 1);
             }
         } catch (Throwable e) {
-            this.logger.severe(e.getMessage());
-        }
-    }
-
-    /**
-     * Renames the selected alias
-     */
-    protected void performEditParameter() {
-        try {
-            KeystoreCertificate certificate = ((TableModelCertificates) this.jTable.getModel()).getParameter(this.jTable.getSelectedRow());
-            JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(
-                    JFrame.class, this);
-            JDialogRenameEntry dialog = new JDialogRenameEntry(parent, 
-                    this.manager, certificate.getAlias(), this.keystoreType, this.manager.getKeystorePass());
-            dialog.setVisible(true);
-            this.manager.saveKeystore();
-            this.refreshData();
-        } catch (Throwable e) {
-            this.logger.severe(e.getMessage());
+            UINotification.instance().addNotification(e);
         }
     }
 
@@ -673,11 +678,16 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         KeystoreCertificate selectedCertificate = this.getSelectedCertificate();
         String oldAlias = selectedCertificate.getAlias();
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        JDialogRenameEntry dialog = new JDialogRenameEntry(parent, this.manager, oldAlias, 
+        JDialogRenameEntry dialog = new JDialogRenameEntry(parent, this.manager, oldAlias,
                 this.keystoreType, this.manager.getKeystorePass());
         dialog.setVisible(true);
         String newAlias = dialog.getNewAlias();
         dialog.dispose();
+        try {
+            this.manager.saveKeystore();
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
         //signal the server that there are changes in the keystore
         RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
         JPanelCertificates.this.guiClient.sendAsync(signal);
@@ -687,23 +697,20 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
 
     protected void deleteSelectedCertificate() {
         KeystoreCertificate selectedCertificate = this.getSelectedCertificate();
-        StringBuilder builder = new StringBuilder();
-        synchronized (this.inUseChecker) {
-            for (CertificateInUseChecker checker : this.inUseChecker) {
-                for (CertificateInUseInfo singleInfo : checker.checkUsed(selectedCertificate)) {
-                    if (builder.length() > 0) {
-                        builder.append("\n");
-                    }
-                    builder.append(singleInfo.getMessage());
+        boolean inUse = false;
+        synchronized (this.inUseCheckerList) {
+            for (CertificateInUseChecker checker : this.inUseCheckerList) {
+                CertificateInUseInfo singleInfo = checker.checkUsed(selectedCertificate);
+                if (!singleInfo.isEmpty()) {
+                    inUse = true;
                 }
             }
         }
-        if (builder.length() > 0) {
-            UINotification.instance().addNotification(null,
+        if (inUse) {
+            UINotification.instance().addNotification(JDialogCertificates.IMAGE_DELETE_MULTIRESOLUTION,
                     UINotification.TYPE_WARNING,
                     this.rb.getResourceString("title.cert.in.use"),
-                    this.rb.getResourceString("cert.delete.impossible")
-                    + "\n\n" + builder.toString());
+                    this.rb.getResourceString("cert.delete.impossible"));
             return;
         }
         //ask the user if the cert should be really deleted, all data is lost
@@ -723,7 +730,7 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
             this.refreshData();
             this.certificateDeleted(selectedRow);
         } catch (Throwable e) {
-            this.logger.warning(e.getMessage());
+            UINotification.instance().addNotification(e);
         }
     }
 
@@ -752,9 +759,55 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
                     preselectionAlias);
             dialog.setVisible(true);
         } catch (Exception e) {
-            this.logger.severe(e.getMessage());
+            UINotification.instance().addNotification(e);
         }
 
+    }
+
+    /**
+     * Displays a dialog that shows information about the usage of the selected
+     * certificate
+     */
+    protected void displayReference() {
+        List<SingleCertificateInUseInfo> infoList = new ArrayList<SingleCertificateInUseInfo>();
+        KeystoreCertificate selectedCertificate = this.getSelectedCertificate();
+        synchronized (this.inUseCheckerList) {
+            for (CertificateInUseChecker checker : this.inUseCheckerList) {
+                CertificateInUseInfo info = checker.checkUsed(selectedCertificate);
+                if (!info.isEmpty()) {
+                    infoList.addAll(info.getUsageList());
+                }
+            }
+        }
+        JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        JDialogCertificateReference dialog = new JDialogCertificateReference(parent, infoList, selectedCertificate);
+        dialog.setVisible(true);
+    }
+
+    /**
+     * Checks if a reference functionality has been attached to the certificate
+     * manager. This is only the case if a CertificateInUseChecker has been
+     * attached. This should be the case for enc/signature manager only as in
+     * the TLS manager there is no partner assigned to a certificate/key
+     */
+    protected boolean isReferenceFunctionAvailable() {
+        synchronized (this.inUseCheckerList) {
+            return (!this.inUseCheckerList.isEmpty());
+        }
+    }
+
+    public void keycopy() {
+        if (this.keyCopyHandler != null) {
+            try {
+                int selectedRow = this.jTable.getSelectedRow();
+                if (selectedRow >= 0) {
+                    KeystoreCertificate cert = ((TableModelCertificates) this.jTable.getModel()).getParameter(selectedRow);
+                    this.keyCopyHandler.copyEntry(cert);
+                }
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
+        }
     }
 
     /**
@@ -770,6 +823,8 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         jMenuItemPopupExportKey = new javax.swing.JMenuItem();
         jMenuItemPopupExportCert = new javax.swing.JMenuItem();
         jMenuItemPopupRenameAlias = new javax.swing.JMenuItem();
+        jMenuItemPopupReference = new javax.swing.JMenuItem();
+        jMenuItemPopupKeyCopy = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItemPopupDeleteEntry = new javax.swing.JMenuItem();
         jSplitPane = new javax.swing.JSplitPane();
@@ -812,6 +867,24 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
             }
         });
         jPopupMenu.add(jMenuItemPopupRenameAlias);
+
+        jMenuItemPopupReference.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
+        jMenuItemPopupReference.setText(this.rb.getResourceString("button.reference"));
+        jMenuItemPopupReference.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemPopupReferenceActionPerformed(evt);
+            }
+        });
+        jPopupMenu.add(jMenuItemPopupReference);
+
+        jMenuItemPopupKeyCopy.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
+        jMenuItemPopupKeyCopy.setText(this.rb.getResourceString("button.keycopy"));
+        jMenuItemPopupKeyCopy.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemPopupKeyCopyActionPerformed(evt);
+            }
+        });
+        jPopupMenu.add(jMenuItemPopupKeyCopy);
         jPopupMenu.add(jSeparator1);
 
         jMenuItemPopupDeleteEntry.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
@@ -941,6 +1014,18 @@ private void jMenuItemPopupExportCertActionPerformed(java.awt.event.ActionEvent 
     }
     this.exportSelectedCertificate();
 }//GEN-LAST:event_jMenuItemPopupExportCertActionPerformed
+
+    private void jMenuItemPopupReferenceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPopupReferenceActionPerformed
+        if (!this.isOperationAllowed(false)) {
+            return;
+        }
+        this.displayReference();
+    }//GEN-LAST:event_jMenuItemPopupReferenceActionPerformed
+
+    private void jMenuItemPopupKeyCopyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPopupKeyCopyActionPerformed
+        this.keycopy();
+    }//GEN-LAST:event_jMenuItemPopupKeyCopyActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JCheckBox jCheckBoxShowCACertificates;
     private javax.swing.JEditorPane jEditorPaneInfo;
@@ -949,6 +1034,8 @@ private void jMenuItemPopupExportCertActionPerformed(java.awt.event.ActionEvent 
     private javax.swing.JMenuItem jMenuItemPopupDeleteEntry;
     private javax.swing.JMenuItem jMenuItemPopupExportCert;
     private javax.swing.JMenuItem jMenuItemPopupExportKey;
+    private javax.swing.JMenuItem jMenuItemPopupKeyCopy;
+    private javax.swing.JMenuItem jMenuItemPopupReference;
     private javax.swing.JMenuItem jMenuItemPopupRenameAlias;
     private javax.swing.JPopupMenu jPopupMenu;
     private javax.swing.JScrollPane jScrollPaneInfo;
@@ -974,9 +1061,14 @@ private void jMenuItemPopupExportCertActionPerformed(java.awt.event.ActionEvent 
             this.jMenuItemPopupExportCert.setEnabled(selectedCertificate != null);
             this.jMenuItemPopupExportKey.setEnabled(selectedCertificate != null
                     && selectedCertificate.getIsKeyPair());
-            //later enhancement possible here
             this.jMenuItemPopupDeleteEntry.setEnabled(operationAllowed && !this.keystoreIsReadonly());
             this.jMenuItemPopupRenameAlias.setEnabled(operationAllowed && !this.keystoreIsReadonly());
+            synchronized (this.inUseCheckerList) {
+                this.jMenuItemPopupReference.setEnabled(selectedCertificate != null
+                        && !this.inUseCheckerList.isEmpty()
+                );
+            }
+            this.jMenuItemPopupKeyCopy.setEnabled(this.keyCopyHandler != null);
         }
     }
 
@@ -1003,5 +1095,25 @@ private void jMenuItemPopupExportCertActionPerformed(java.awt.event.ActionEvent 
     public void setImageSizePopup(int imageSizePopup) {
         this.imageSizePopup = imageSizePopup;
         this.setMultiresolutionIcons();
+    }
+
+    /**
+     * Allows to copy a selected entry of the keystore manager to another
+     * keystore manager of the system
+     *
+     * @return the keyCopyHandler
+     */
+    public KeyCopyHandler getKeyCopyHandler() {
+        return keyCopyHandler;
+    }
+
+    /**
+     * Allows to copy a selected entry of the keystore manager to another
+     * keystore manager of the system
+     *
+     * @param keyCopyHandler the keyCopyHandler to set
+     */
+    public void setKeyCopyHandler(KeyCopyHandler keyCopyHandler) {
+        this.keyCopyHandler = keyCopyHandler;
     }
 }
