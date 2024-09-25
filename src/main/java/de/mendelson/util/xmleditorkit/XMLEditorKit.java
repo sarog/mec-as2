@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/xmleditorkit/XMLEditorKit.java 2     16.10.19 11:30 Heller $
+//$Header: /as2/de/mendelson/util/xmleditorkit/XMLEditorKit.java 3     2/11/23 14:03 Heller $
 package de.mendelson.util.xmleditorkit;
 
 import java.awt.Cursor;
@@ -45,11 +45,11 @@ import javax.swing.text.ViewFactory;
  * XML Editor Kit - based on code from Stanislav Lapitsky
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class XMLEditorKit extends StyledEditorKit {
 
-    private ViewFactory defaultFactory = new XMLEditorKitViewFactory();
+    private final ViewFactory defaultFactory = new XMLEditorKitViewFactory();
 
     @Override
     public ViewFactory getViewFactory() {
@@ -157,7 +157,7 @@ public class XMLEditorKit extends StyledEditorKit {
     }
 
     
-    private MouseListener lstCollapse = new MouseAdapter() {
+    private final MouseListener lstCollapse = new MouseAdapter() {
         @Override
         public void mouseClicked(MouseEvent evt) {
             JEditorPane src = (JEditorPane) evt.getSource();
@@ -204,7 +204,7 @@ public class XMLEditorKit extends StyledEditorKit {
     };
 
     Cursor oldCursor;
-    MouseMotionListener lstMoveCollapse = new MouseMotionAdapter() {
+    final MouseMotionListener lstMoveCollapse = new MouseMotionAdapter() {
         @Override
         public void mouseMoved(MouseEvent evt) {
             JEditorPane src = (JEditorPane) evt.getSource();

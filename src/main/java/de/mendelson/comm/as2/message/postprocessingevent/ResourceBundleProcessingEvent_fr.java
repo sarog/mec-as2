@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent_fr.java 3     10.09.20 12:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent_fr.java 4     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleProcessingEvent_fr extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

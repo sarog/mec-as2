@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 5     26.09.19 9:37 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 9     5/12/23 8:58 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -22,12 +22,12 @@ import javax.swing.JPanel;
  * Panel that takes a single system event and displays it
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 9 $
  */
 public class JPanelDisplaySingleSystemEvent extends JPanel {
 
-    private MecResourceBundle rb;
-    private DateFormat detailedDateTimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    private final MecResourceBundle rb;
+    private final DateFormat detailedDateTimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
 
     /**
      * Creates new form JPanelDisplaySingleSystemEvent
@@ -58,6 +58,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         this.jEditorPaneEventBody.setText(null);
         this.jLabelOrigin.setIcon(null);
         this.jLabelSeverity.setIcon(null);
+        this.jLabelCategory.setIcon(null);
         this.jLabelEventDateContent.setText("--");
         this.jLabelEventTypeContent.setText("--");
         this.jTextFieldEventIdContent.setText("--");
@@ -70,6 +71,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         this.jEditorPaneEventBody.setText(event.getBody());
         this.jLabelOrigin.setIcon(event.getOriginIconMultiResolution(24));
         this.jLabelSeverity.setIcon(event.getSeverityIconMultiResolution(24));
+        this.jLabelCategory.setIcon(event.getCategoryIconMultiResolution(24));
         if (event.getUser().equals(SystemEvent.USER_SERVER_PROCESS)) {
             this.jLabelEventOwnerContent.setText(this.rb.getResourceString("user.server.process"));
         } else {
@@ -97,6 +99,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         jTextFieldSubjectContent = new javax.swing.JTextField();
         jLabelSeverity = new javax.swing.JLabel();
         jLabelOrigin = new javax.swing.JLabel();
+        jLabelCategory = new javax.swing.JLabel();
         jPanelAdditionalInfo = new javax.swing.JPanel();
         jLabelEventOwner = new javax.swing.JLabel();
         jLabelEventOriginHost = new javax.swing.JLabel();
@@ -148,10 +151,16 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(15, 0, 5, 5);
         add(jLabelOrigin, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(15, 0, 5, 5);
+        add(jLabelCategory, gridBagConstraints);
 
         jPanelAdditionalInfo.setLayout(new java.awt.GridBagLayout());
 
-        jLabelEventOwner.setText("Owner:");
+        jLabelEventOwner.setText("Owner");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
@@ -160,7 +169,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelAdditionalInfo.add(jLabelEventOwner, gridBagConstraints);
 
-        jLabelEventOriginHost.setText("Host:");
+        jLabelEventOriginHost.setText("Host");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 6;
         gridBagConstraints.gridy = 3;
@@ -179,7 +188,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelAdditionalInfo.add(jLabelEventOwnerContent, gridBagConstraints);
 
-        jLabelEventId.setText("Id:");
+        jLabelEventId.setText("Id");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 6;
         gridBagConstraints.gridy = 4;
@@ -187,7 +196,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 5);
         jPanelAdditionalInfo.add(jLabelEventId, gridBagConstraints);
 
-        jLabelEventDate.setText("Date:");
+        jLabelEventDate.setText("Date");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
@@ -206,7 +215,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelAdditionalInfo.add(jLabelEventDateContent, gridBagConstraints);
 
-        jLabelEventType.setText("Type:");
+        jLabelEventType.setText("Type");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
@@ -264,6 +273,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JEditorPane jEditorPaneEventBody;
+    private javax.swing.JLabel jLabelCategory;
     private javax.swing.JLabel jLabelEventDate;
     private javax.swing.JLabel jLabelEventDateContent;
     private javax.swing.JLabel jLabelEventId;

@@ -1,7 +1,9 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServer.java 2     10/02/22 15:40 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServer.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,11 +15,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ConfigurationChangedOnServer extends ClientServerMessage implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static final int TYPE_SERVER_PREFERENCES = 1;
     public static final int TYPE_NOTIFICATION_SETTINGS = 2;
@@ -45,4 +47,9 @@ public class ConfigurationChangedOnServer extends ClientServerMessage implements
         return( "Configuration changed on server" );
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
+    
 }

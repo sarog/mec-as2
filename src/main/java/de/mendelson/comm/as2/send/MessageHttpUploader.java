@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 202   16/12/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 214   9/11/23 10:09 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
@@ -24,12 +24,11 @@ import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.security.cert.KeystoreStorage;
-import de.mendelson.util.security.cert.KeystoreStorageImplFile;
+import de.mendelson.util.security.cert.KeystoreStorageImplDB;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
@@ -42,7 +41,6 @@ import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -51,6 +49,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -120,7 +119,7 @@ import org.apache.http.ssl.SSLContexts;
  * Class to allow HTTP multipart uploads
  *
  * @author S.Heller
- * @version $Revision: 202 $
+ * @version $Revision: 214 $
  */
 public class MessageHttpUploader {
 
@@ -157,10 +156,6 @@ public class MessageHttpUploader {
     /**
      * Creates new message uploader instance
      *
-     * @param hostname Name of the host to connect to
-     * @param username Name of the user that will connect to the remote ftp
-     * server
-     * @param password password to connect to the ftp server
      */
     public MessageHttpUploader() throws Exception {
         //Load default resourcebundle
@@ -185,10 +180,6 @@ public class MessageHttpUploader {
      * Sets keystore parameter for TLS sending. This is only necessary if HTTPS
      * is the protocol used for the message POST
      *
-     * @param truststore Truststore file
-     * @param truststorePass Password for the truststore
-     * @param certstore Keystore file
-     * @param certstorePass Password for the keystore
      */
     public void setSSLParameter(KeystoreStorage certStore, KeystoreStorage trustStore) {
         this.certStore = certStore;
@@ -268,7 +259,7 @@ public class MessageHttpUploader {
             //- its a TLS Problem or a timeout problem
             if (returnCode > 0) {
                 //no connection
-                new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                SystemEventManagerImplAS2.instance().newEventConnectionProblem(receiver, message.getAS2Info(),
                         this.rb.getResourceString("error.noconnection"),
                         this.rb.getResourceString("hint.httpcode.signals.problem",
                                 String.valueOf(returnCode)));
@@ -302,10 +293,10 @@ public class MessageHttpUploader {
             AS2MessageInfo messageInfo = (AS2MessageInfo) message.getAS2Info();
             if (messageInfo.requestsSyncMDN()) {
                 //check if the received MDN is just empty
-                if(( this.getResponseHeader() == null || this.getResponseHeader().length == 0)
-                        && (this.getResponseData() == null || this.getResponseData().length == 0)){
+                if ((this.getResponseHeader() == null || this.getResponseHeader().length == 0)
+                        && (this.getResponseData() == null || this.getResponseData().length == 0)) {
                     throw new Exception(this.rb.getResourceString("answer.no.sync.mdn.empty"));
-                }                
+                }
                 //perform a check if the answer really contains a MDN or is just an empty HTTP 200 with some header data
                 //this check looks for the existance of some key header values
                 boolean as2FromExists = false;
@@ -399,7 +390,7 @@ public class MessageHttpUploader {
                                 SystemEvent.TYPE_FILE_DELETE);
                         event.setSubject(event.typeToTextLocalized());
                         event.setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
-                        SystemEventManagerImplAS2.newEvent(event);
+                        SystemEventManagerImplAS2.instance().newEvent(event);
                     }
                 }
             }
@@ -453,27 +444,6 @@ public class MessageHttpUploader {
             requestConfigBuilder.setLocalAddress(connectionParameter.getLocalAddress());
         }
         return (requestConfigBuilder.build());
-    }
-
-    /**
-     * Generate Preemptive Basic Authentication header. This will create a
-     * HttpClientContext object which has to be used for the POST execution
-     *
-     * @param credentialsProvider
-     * @param authentication
-     */
-    private HttpClientContext generateHttpClientContextForBasicAuth(
-            HttpHost targetHost,
-            CredentialsProvider credentialsProvider, HTTPAuthentication authentication) {
-        UsernamePasswordCredentials credentials
-                = new UsernamePasswordCredentials(authentication.getUser(), authentication.getPassword());
-        credentialsProvider.setCredentials(AuthScope.ANY, credentials);
-        AuthCache authCache = new BasicAuthCache();
-        authCache.put(targetHost, new BasicScheme());
-        HttpClientContext httpClientContext = HttpClientContext.create();
-        httpClientContext.setCredentialsProvider(credentialsProvider);
-        httpClientContext.setAuthCache(authCache);
-        return (httpClientContext);
     }
 
     /**
@@ -542,7 +512,7 @@ public class MessageHttpUploader {
                 } else {
                     receiptURL = new URL(receiver.getURL());
                 }
-            }           
+            }
             //create the http client
             HttpClientBuilder clientBuilder = HttpClients.custom();
             if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
@@ -550,21 +520,10 @@ public class MessageHttpUploader {
             }
             clientBuilder.setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE);
             HttpHost targetHost = new HttpHost(receiptURL.getHost(), receiptURL.getPort(), receiptURL.getProtocol());
-            boolean credentialAuthUsed = false;
-            CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
-            HttpClientContext httpClientContext = null;
-            if (receiver.getAuthenticationCredentialsMessage().isEnabled()) {
-                credentialAuthUsed = true;
-                httpClientContext = this.generateHttpClientContextForBasicAuth(
-                        targetHost, credentialsProvider, receiver.getAuthenticationCredentialsMessage());
-            }
             ProxyObject proxy = connectionParameter.getProxy();
             if (proxy != null && proxy.getHost() != null) {
-                credentialAuthUsed = true;
-                this.addProxy(proxy, clientBuilder, credentialsProvider, message);
-            }
-            if (credentialAuthUsed) {
-                clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+                CredentialsProvider proxyCredentialsProvider = new BasicCredentialsProvider();
+                this.addProxy(proxy, clientBuilder, proxyCredentialsProvider, message);
             }
             httpClient = clientBuilder.build();
             filePost = new HttpPost(receiptURL.toExternalForm());
@@ -576,6 +535,18 @@ public class MessageHttpUploader {
                 filePost.setProtocolVersion(HttpVersion.HTTP_1_0);
             } else if (connectionParameter.getHttpProtocolVersion().equals(HttpConnectionParameter.HTTP_1_1)) {
                 filePost.setProtocolVersion(HttpVersion.HTTP_1_1);
+            }
+            //add basic authentication
+            HTTPAuthentication basicAuthentication = null;
+            if (message.isMDN()) {
+                basicAuthentication = receiver.getAuthenticationCredentialsAsyncMDN();
+            } else {
+                basicAuthentication = receiver.getAuthenticationCredentialsMessage();
+            }
+            if (basicAuthentication.isEnabled()) {
+                filePost.addHeader("Authorization", this.generateBasicAuth(
+                        basicAuthentication.getUser(), basicAuthentication.getPassword()
+                ));
             }
             filePost.addHeader("as2-version", "1.2");
             filePost.addHeader("ediint-features", ediintFeatures);
@@ -606,7 +577,7 @@ public class MessageHttpUploader {
             filePost.addHeader("from", sender.getEmail());
             filePost.addHeader("connection", "close, TE");
             //the data header must be always in english locale else there would be special
-            //french characters (e.g. 13 déc. 2011 16:28:56 CET) which is not allowed after 
+            //french characters (e.g. 13 dï¿½c. 2011 16:28:56 CET) which is not allowed after 
             //RFC 4130           
             DateFormat format = new SimpleDateFormat("EE, dd MMM yyyy HH:mm:ss zz", Locale.US);
             filePost.addHeader("date", format.format(new Date()));
@@ -758,18 +729,13 @@ public class MessageHttpUploader {
             postEntity.setContentType(contentType);
             filePost.setEntity(postEntity);
             //setup oauth2 header
-            if(message.isMDN()){
-                this.setOAuth2Header( filePost, receiver.usesOAuth2MDN(), receiver.getOAuth2MDN() );
-            }else{
-                this.setOAuth2Header( filePost, receiver.usesOAuth2Message(), receiver.getOAuth2Message());
-            } 
-            this.updateUploadHTTPHeaderWithUserDefinedHeaders(filePost, receiver);
-            if (httpClientContext != null) {
-                //use preemtive basic authentication
-                httpResponse = httpClient.execute(targetHost, filePost, httpClientContext);
+            if (message.isMDN()) {
+                this.setOAuth2Header(filePost, receiver.usesOAuth2MDN(), receiver.getOAuth2MDN());
             } else {
-                httpResponse = httpClient.execute(targetHost, filePost);
+                this.setOAuth2Header(filePost, receiver.usesOAuth2Message(), receiver.getOAuth2Message());
             }
+            this.updateUploadHTTPHeaderWithUserDefinedHeaders(filePost, receiver);
+            httpResponse = httpClient.execute(targetHost, filePost);
             if (httpResponse != null) {
                 this.responseData = this.readEntityData(httpResponse);
                 this.responseStatusLine = httpResponse.getStatusLine();
@@ -802,7 +768,7 @@ public class MessageHttpUploader {
                                     new Object[]{
                                         String.valueOf(statusCode) + " "
                                         + URLDecoder.decode(this.responseStatusLine == null ? ""
-                                                : this.responseStatusLine.getReasonPhrase(), "UTF-8")
+                                                : this.responseStatusLine.getReasonPhrase(), StandardCharsets.UTF_8)
                                     }), message.getAS2Info());
                 }
             }
@@ -826,7 +792,7 @@ public class MessageHttpUploader {
                         }
                         errorMessage.append("]");
                     }
-                    new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                    SystemEventManagerImplAS2.instance().newEventConnectionProblem(receiver, message.getAS2Info(),
                             errorMessage.toString(), this.rb.getResourceString("hint.SSLPeerUnverifiedException"));
                     errorMessage.append("\n").append(this.rb.getResourceString("hint.SSLPeerUnverifiedException"));
                 }
@@ -843,7 +809,7 @@ public class MessageHttpUploader {
                         }
                         errorMessage.append("]");
                     }
-                    new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                    SystemEventManagerImplAS2.instance().newEventConnectionProblem(receiver, message.getAS2Info(),
                             errorMessage.toString(), this.rb.getResourceString("hint.ConnectTimeoutException"));
                     errorMessage.append("\n").append(this.rb.getResourceString("hint.ConnectTimeoutException"));
                 }
@@ -859,7 +825,7 @@ public class MessageHttpUploader {
                         }
                         errorMessage.append("]");
                     }
-                    new SystemEventManagerImplAS2().newEventConnectionProblem(receiver, message.getAS2Info(),
+                    SystemEventManagerImplAS2.instance().newEventConnectionProblem(receiver, message.getAS2Info(),
                             errorMessage.toString(), this.rb.getResourceString("hint.SSLException"));
                     errorMessage.append("\n").append(this.rb.getResourceString("hint.SSLException"));
                 }
@@ -878,37 +844,32 @@ public class MessageHttpUploader {
         return (statusCode);
     }
 
+    private String generateBasicAuth(String username, String password) {
+        return ("Basic " + Base64.getEncoder().encodeToString((username + ":" + password).getBytes()));
+    }
+
     private SSLConnectionSocketFactory generateSSLFactory(HttpConnectionParameter connectionParameter,
             AS2Info as2Info) throws Exception {
-        String trustStoreFilename = null;
-        char[] trustStorePass = null;
-        char[] certStorePass = null;
-        String certStoreFilename = null;
-        
-        //TLS key stores not set so far: take the preferences data from the server preferences
+
+        //TLS key stores not set so far: take the trust store from the system
         if (this.certStore == null) {
-            trustStoreFilename = Paths.get(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).toAbsolutePath().toString();
-            certStoreFilename = Paths.get(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).toAbsolutePath().toString();
-            trustStorePass = this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-            certStorePass = this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();            
-        }else{
-            trustStoreFilename = Paths.get(this.trustStore.getOriginalKeystoreFilename()).toAbsolutePath().toString();
-            certStoreFilename = Paths.get(this.certStore.getOriginalKeystoreFilename()).toAbsolutePath().toString();
-            trustStorePass = this.trustStore.getKeystorePass();
-            certStorePass = this.certStore.getKeystorePass();         
+            this.trustStore = new KeystoreStorageImplDB(
+                    SystemEventManagerImplAS2.instance(),
+                    this.dbDriverManager,
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS,
+                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_JKS
+            );
+            this.certStore = this.trustStore;
         }
         SSLContext sslcontext = null;
         if (connectionParameter.getTrustAllRemoteServerCertificates()) {
             SSLContextBuilder builder = SSLContexts.custom()
-                    .loadTrustMaterial(new File(trustStoreFilename), trustStorePass,
-                            new TrustSelfSignedStrategy());
+                    .loadTrustMaterial(this.trustStore.getKeystore(), new TrustSelfSignedStrategy());
             sslcontext = builder.build();
         } else {
             sslcontext = SSLContexts.custom()
-                    .loadTrustMaterial(new File(trustStoreFilename), trustStorePass,
-                            new TrustSelfSignedStrategy())
-                    .loadKeyMaterial(new File(certStoreFilename), certStorePass,
-                            certStorePass)
+                    .loadTrustMaterial(this.trustStore.getKeystore(), new TrustSelfSignedStrategy())
+                    .loadKeyMaterial(this.certStore.getKeystore(), this.certStore.getKeystorePass())
                     .build();
         }
         // Allowed SSL/TLS protocols as client
@@ -1010,13 +971,15 @@ public class MessageHttpUploader {
         return (subjectBuilder.toString());
     }
 
-    /**Generates a authorization header for OAuth2 if this is required*/
-    private void setOAuth2Header(HttpPost post, boolean useOAuth2, OAuth2Config config){
-        if( useOAuth2 && config != null){
+    /**
+     * Generates a authorization header for OAuth2 if this is required
+     */
+    private void setOAuth2Header(HttpPost post, boolean useOAuth2, OAuth2Config config) {
+        if (useOAuth2 && config != null) {
             post.setHeader("Authorization", "Bearer " + config.getAccessTokenStr());
         }
     }
-    
+
     /**
      * Updates the passed post HTTP headers with the headers defined for the
      * receiver
@@ -1027,7 +990,7 @@ public class MessageHttpUploader {
             PartnerHttpHeader headerReplacement = receiver.getHttpHeader(singleHeader.getName());
             if (headerReplacement != null) {
                 //a value to replace is set
-                if (headerReplacement.getValue() != null && headerReplacement.getValue().length() > 0) {
+                if (headerReplacement.getValue() != null && !headerReplacement.getValue().isEmpty()) {
                     post.setHeader(singleHeader.getName(), headerReplacement.getValue());
                 } else {
                     //no value to replace is set: delete the header
@@ -1040,7 +1003,7 @@ public class MessageHttpUploader {
         List<PartnerHttpHeader> additionalHeaders = receiver.getAllNonListedHttpHeader(usedHeaderKeys);
         for (PartnerHttpHeader additionalHeader : additionalHeaders) {
             //add the header if a value is set
-            if (additionalHeader.getValue() != null && additionalHeader.getValue().length() > 0) {
+            if (additionalHeader.getValue() != null && !additionalHeader.getValue().isEmpty()) {
                 post.setHeader(additionalHeader.getKey(), additionalHeader.getValue());
             }
         }
@@ -1075,7 +1038,7 @@ public class MessageHttpUploader {
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 202 $";
+        String revision = "$Revision: 214 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -1161,11 +1124,11 @@ public class MessageHttpUploader {
     private class DefaultHostnameVerifierTrustedOnly implements HostnameVerifier {
 
         private final AS2Info as2Info;
-        
-        public DefaultHostnameVerifierTrustedOnly(AS2Info as2Info){
+
+        public DefaultHostnameVerifierTrustedOnly(AS2Info as2Info) {
             this.as2Info = as2Info;
         }
-        
+
         @Override
         public boolean verify(String hostname, SSLSession session) {
             try {
@@ -1173,10 +1136,10 @@ public class MessageHttpUploader {
                 if (certificates != null && certificates.length > 0) {
                     X509Certificate certificate = (X509Certificate) certificates[0];
                     if (this.isSelfSigned(certificate)) {
-                        if( logger != null ){
+                        if (logger != null) {
                             logger.log(Level.INFO,
-                                        rb.getResourceString("strict.hostname.check.skipped.selfsigned"),
-                                        this.as2Info);
+                                    rb.getResourceString("strict.hostname.check.skipped.selfsigned"),
+                                    this.as2Info);
                         }
                         return (true);
                     }

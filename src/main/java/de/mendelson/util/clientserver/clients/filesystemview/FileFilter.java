@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileFilter.java 4     15.11.18 10:52 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileFilter.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.io.Serializable;
@@ -16,11 +16,11 @@ import java.nio.file.Path;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class FileFilter implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public FileFilter() {
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/upgrade/DBScriptTo20.java 10    27.08.21 16:59 Heller $
+//$Header: /as2/de/mendelson/upgrade/DBScriptTo20.java 12    2/11/23 15:53 Heller $
 package de.mendelson.upgrade;
 
 import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
@@ -33,11 +33,11 @@ import de.mendelson.util.database.IDBDriverManager;
 /**
  * Update as2, must be applied for versions < 2012
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class DBScriptTo20 {
     
-    private DBDriverManagerHSQL dbDriverManager = DBDriverManagerHSQL.instance();
+    private final DBDriverManagerHSQL dbDriverManager = DBDriverManagerHSQL.instance();
 
     private void performUpdate()throws Throwable{
         boolean updateRequired = this.updateIsRequired();
@@ -187,7 +187,7 @@ public class DBScriptTo20 {
                     ConsoleProgressBar.print(newPerc, 20, 90);
                 }
                 line = reader.readLine();
-                if (line != null && line.trim().length() > 0) {
+                if (line != null && !line.trim().isEmpty()) {
                     String[] token = line.split(":");
                     String query = "UPDATE " + token[0] + " SET " + token[3] + "=? WHERE " + token[1] + "=?";
                     PreparedStatement statement = connection.prepareStatement(query);
@@ -410,7 +410,6 @@ public class DBScriptTo20 {
         /**
          * Decodes Base64 data into octects
          *
-         * @param binaryData Byte array containing Base64 data
          * @return Array containind decoded data.
          */
         public static byte[] decode(String encoded) {

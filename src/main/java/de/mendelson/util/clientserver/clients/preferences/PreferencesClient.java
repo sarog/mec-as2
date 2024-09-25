@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/PreferencesClient.java 5     26.08.21 14:00 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/PreferencesClient.java 6     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
 import de.mendelson.util.clientserver.BaseClient;
@@ -13,11 +13,11 @@ import de.mendelson.util.clientserver.BaseClient;
 /**
  * Requests and preferences from and sets new values to the server
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class PreferencesClient {
 
-    private BaseClient baseClient;
+    private final BaseClient baseClient;
     private long syncTimeout = BaseClient.TIMEOUT_SYNC_RECEIVE;
 
     public PreferencesClient(BaseClient baseClient, long syncTimeout) {
@@ -31,7 +31,6 @@ public class PreferencesClient {
 
     /**Returns a single string value from the preferences or the default
      *if it is not found
-     *@param key one of the class internal constants
      * @return In case of an error during the sync request an empty string is returned
      */
     public String get(final String KEY) {
@@ -48,7 +47,6 @@ public class PreferencesClient {
 
     /**Returns a single string value from the preferences or the default
      *if it is not found
-     *@param key one of the class internal constants
      * @return In case of an error during the sync request an empty string is returned
      */
     public String getDefaultValue(final String KEY) {

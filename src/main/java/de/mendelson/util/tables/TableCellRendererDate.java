@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/tables/TableCellRendererDate.java 2     26.07.12 13:46 Heller $
+//$Header: /as2/de/mendelson/util/tables/TableCellRendererDate.java 3     2/11/23 14:03 Heller $
 package de.mendelson.util.tables;
 import java.awt.Color;
 import java.awt.Component;
@@ -17,11 +17,11 @@ import javax.swing.table.*;
 /** 
  * Renders the special classes in the task list table
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class TableCellRendererDate extends DefaultTableCellRenderer implements TableCellRenderer {
 
-    private DateFormat format;
+    private final DateFormat format;
 
     /**
      * Creates a default table cell renderer.

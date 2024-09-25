@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMessageDeleteController_de.java 8     1.02.21 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMessageDeleteController_de.java 9     2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.timing;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleMessageDeleteController_de extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToDir.java 11    24/08/22 14:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToDir.java 14    24/11/23 13:29 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -32,13 +32,13 @@ import java.util.logging.Logger;
  * message receipt
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class ExecuteMoveToDir implements IProcessingExecution {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private MessageAccessDB messageAccess;
-    private PartnerAccessDB partnerAccess;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final MessageAccessDB messageAccess;
+    private final PartnerAccessDB partnerAccess;
     /**
      * Localize your GUI!
      */
@@ -89,7 +89,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
         Partner messageReceiver = this.partnerAccess.getPartner(messageInfo.getReceiverId());
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String targetDirStr = event.getParameter().get(0);
-        if (payload != null && payload.size() > 0) {
+        if (payload != null && !payload.isEmpty()) {
             this.logger.log(Level.INFO, this.rb.getResourceString("executing.send",
                     new Object[]{
                         messageSender.getName(),
@@ -116,7 +116,19 @@ public class ExecuteMoveToDir implements IProcessingExecution {
                             StandardCopyOption.REPLACE_EXISTING);
                     this.logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir.success"), messageInfo);
                 } catch (Exception e) {
-                    throw new PostprocessingException(e.getMessage(), messageSender, messageReceiver);
+                    StringBuilder errorBuilder = new StringBuilder();
+                    if (e.getCause() != null) {
+                        errorBuilder.append("[")
+                                .append(e.getCause().getClass().getSimpleName())
+                                .append("] ")
+                                .append(e.getCause().getMessage())
+                                .append(" -- ");
+                    }
+                    errorBuilder.append("[")
+                            .append(e.getClass().getSimpleName())
+                            .append("] ")
+                            .append(e.getMessage());
+                    throw new PostprocessingException(errorBuilder.toString(), messageSender, messageReceiver);
                 }
             }
         } else {
@@ -139,7 +151,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
         Partner messageReceiver = this.partnerAccess.getPartner(messageInfo.getReceiverId());
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String targetDirStr = event.getParameter().get(0);
-        if (payload != null && payload.size() > 0) {
+        if (payload != null && !payload.isEmpty()) {
             this.logger.log(Level.INFO, this.rb.getResourceString("executing.receipt",
                     new Object[]{
                         messageSender.getName(),

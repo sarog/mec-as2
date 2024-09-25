@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/log/search/ServerSideLogfileFilter.java 3     5.12.18 16:16 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileFilter.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import java.io.Serializable;
@@ -14,11 +14,11 @@ import java.io.Serializable;
  * Filter the client could define to perform a server side system log file search
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ServerSideLogfileFilter implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private long startDate = System.currentTimeMillis();
     private long endDate = System.currentTimeMillis();

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 15    24/08/22 14:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 17    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.log.LogAccessDB;
@@ -18,7 +18,6 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
 import java.io.PrintStream;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -37,15 +36,15 @@ import java.util.logging.Logger;
  * message receipt
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class ExecuteShellCommand implements IProcessingExecution {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private MessageAccessDB messageAccess;
-    private MDNAccessDB mdnAccess;
-    private PartnerAccessDB partnerAccess;
-    private IDBDriverManager dbDriverManager;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final MessageAccessDB messageAccess;
+    private final MDNAccessDB mdnAccess;
+    private final PartnerAccessDB partnerAccess;
+    private final IDBDriverManager dbDriverManager;
     /**
      * Localize your GUI!
      */
@@ -105,7 +104,7 @@ public class ExecuteShellCommand implements IProcessingExecution {
         Partner messageReceiver = this.partnerAccess.getPartner(messageInfo.getReceiverId());
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String rawCommand = event.getParameter().get(0);
-        if (payload != null && payload.size() > 0) {
+        if (payload != null && !payload.isEmpty()) {
             this.logger.log(Level.INFO, this.rb.getResourceString("executing.send",
                     new Object[]{
                         messageSender.getName(),

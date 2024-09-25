@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/datatransfer/TransferClientWithProgress.java 4     17.02.21 11:49 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/TransferClientWithProgress.java 5     2/11/23 14:02 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.ProgressPanel;
@@ -15,11 +15,11 @@ import java.io.InputStream;
 /**
  * Requests downloads from and sends new uploads to the server
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class TransferClientWithProgress extends TransferClient {
 
-    private ProgressPanel progressPanel;
+    private final ProgressPanel progressPanel;
 
     public TransferClientWithProgress(BaseClient baseClient, ProgressPanel progressPanel) {
         super(baseClient);

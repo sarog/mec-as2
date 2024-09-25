@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEventAccessDB.java 11    9/11/22 15:15 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEventAccessDB.java 13    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import java.sql.Connection;
@@ -29,20 +29,19 @@ import org.hsqldb.types.Types;
  * Access the event queue for the partner related event processing (post processing)
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 13 $
  */
 public class ProcessingEventAccessDB {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private IDBDriverManager dbDriverManager = null;
 
     /**
      * Creates new message I/O log and connects to localhost
      *
-     * @param host host to connect to
      */
     public ProcessingEventAccessDB(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
@@ -97,38 +96,38 @@ public class ProcessingEventAccessDB {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
                 this.logger.severe("ProcessingEventAccessDB.getNext: " + ex.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("ProcessingEventAccessDB.getNextEventToExecute: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, debugStatement);            
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, debugStatement);            
             return (null);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statementSelect != null) {
                 try {
                     statementSelect.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statementSelect);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statementSelect);
                 }
             }
             if (statementDelete != null) {
                 try {
                     statementDelete.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statementDelete);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statementDelete);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -167,31 +166,31 @@ public class ProcessingEventAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("ProcessingEventAccessDB.addEventToExecute: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("ProcessingEventAccessDB.addEventToExecute: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -215,8 +214,7 @@ public class ProcessingEventAccessDB {
     
     /**Serializes a list to a single string
      * 
-     * @param list
-     * @return 
+     * @return
      */
     private List<String> deserializeList( String entry){
         List<String> list = new ArrayList<String>();

@@ -1,9 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/JDialogGlobalChange.java 3     26/08/22 14:26 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/JDialogGlobalChange.java 5     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.gui.global;
 
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.partner.Partner;
-import de.mendelson.comm.as2.preferences.PreferencesPanelMDN;
 import de.mendelson.util.JTextFieldLimitDocument;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -28,7 +27,7 @@ import javax.swing.JFrame;
  * application
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class JDialogGlobalChange extends JDialog {
 
@@ -40,8 +39,8 @@ public class JDialogGlobalChange extends JDialog {
                     AS2Gui.IMAGE_SIZE_DIALOG);
 
     private final MecResourceBundle rb;
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
-    private List<Partner> partnerList;
+    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final List<Partner> partnerList;
 
     public JDialogGlobalChange(JFrame parent, List<Partner> partnerList) {
         super(parent, true);

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration.java 12    17/01/23 11:06 Heller $ 
+//$Header: /as2/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration.java 13    2/11/23 15:53 Heller $ 
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleDisplayHTTPConfiguration extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

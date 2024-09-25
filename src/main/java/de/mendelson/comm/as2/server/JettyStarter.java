@@ -1,9 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/server/JettyStarter.java 4     2/05/22 10:33 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/JettyStarter.java 11    31/10/23 14:18 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfoProcessor;
+import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.KeystoreStorage;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.InputStream;
@@ -24,6 +27,9 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
 import java.util.logging.Logger;
+import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 
 /*
@@ -37,7 +43,7 @@ import java.util.logging.Logger;
  * Helper class that starts up the internal jetty web server
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 11 $
  */
 public class JettyStarter {
 
@@ -45,9 +51,13 @@ public class JettyStarter {
     private final MecResourceBundle rb;
     private HTTPServerConfigInfo httpServerConfigInfo = null;
     private final Logger logger;
+    private final KeystoreStorage tlsStorage;
+    private final JettyCertificateRefreshController certificateRefreshController;
 
-    public JettyStarter(Logger logger) {
+    public JettyStarter(Logger logger, KeystoreStorage tlsStorage, IDBDriverManager dbDriverManager) {
         this.logger = logger;
+        this.tlsStorage = tlsStorage;
+        this.certificateRefreshController = new JettyCertificateRefreshController(logger, dbDriverManager);
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleJettyStarter.class.getName());
@@ -63,7 +73,7 @@ public class JettyStarter {
      */
     public Server startWebserver() throws Exception {
         this.logger.info(MODULE_NAME + " " + this.rb.getResourceString("httpserver.willstart"));
-        SystemEventManagerImplAS2.newEvent(
+        SystemEventManagerImplAS2.instance().newEvent(
                 SystemEvent.SEVERITY_INFO,
                 SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,
@@ -96,9 +106,9 @@ public class JettyStarter {
                 String keyStr = key.toString();
                 String valueStr = userConfiguration.getProperty(key.toString());
                 userConfigurationMap.put(keyStr, valueStr);
-                this.logger.info( MODULE_NAME + " " + this.rb.getResourceString("userconfiguration.setvar",
+                this.logger.info(MODULE_NAME + " " + this.rb.getResourceString("userconfiguration.setvar",
                         new Object[]{
-                            keyStr, 
+                            keyStr,
                             valueStr
                         }));
             }
@@ -153,9 +163,19 @@ public class JettyStarter {
                 }
             }
             );
+            //define the TLS system keystore for the jetty access 
+            Connector[] connector = tempHTTPServer.getConnectors();
+            for (Connector conn : connector) {
+                if (conn.getConnectionFactory("ssl") != null) {
+                    SslConnectionFactory sslConnectionFactory = (SslConnectionFactory) conn.getConnectionFactory("ssl");
+                    SslContextFactory sslContextFactory = sslConnectionFactory.getSslContextFactory();  
+                    sslContextFactory.setKeyStore(this.tlsStorage.getKeystore());
+                    sslContextFactory.setKeyStorePassword(new String(tlsStorage.getKeystorePass()));
+                    certificateRefreshController.addRefreshControl(sslContextFactory);
+                }
+            }
             tempHTTPServer.start();
             //ensure the wars have been deployed
-
             for (Handler handler : tempHTTPServer.getChildHandlersByClass(WebAppContext.class
             )) {
                 WebAppContext context = (WebAppContext) handler;
@@ -169,7 +189,7 @@ public class JettyStarter {
                                 + context.getUnavailableException().getClass().getSimpleName()
                                 + "] " + context.getUnavailableException().getMessage()
                             }));
-                    SystemEventManagerImplAS2.newEvent(
+                    SystemEventManagerImplAS2.instance().newEvent(
                             SystemEvent.SEVERITY_WARNING,
                             SystemEvent.ORIGIN_SYSTEM,
                             SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,
@@ -188,10 +208,13 @@ public class JettyStarter {
             }
             this.httpServerConfigInfo = HTTPServerConfigInfo.computeHTTPServerConfigInfo(tempHTTPServer, true,
                     "/as2/HttpReceiver", "/as2/ServerState");
-            HTTPServerConfigInfoProcessor infoProcessor = new HTTPServerConfigInfoProcessor(this.getHttpServerConfigInfo());
+            CertificateManager certificateManagerTLS = new CertificateManager(this.logger);
+            certificateManagerTLS.loadKeystoreCertificates(this.tlsStorage);
+            HTTPServerConfigInfoProcessor infoProcessor = new HTTPServerConfigInfoProcessor(
+                    this.getHttpServerConfigInfo(), certificateManagerTLS);
             StringBuilder body = new StringBuilder();
             body.append(infoProcessor.getMiscConfigurationText());
-            SystemEventManagerImplAS2.newEvent(SystemEvent.SEVERITY_INFO,
+            SystemEventManagerImplAS2.instance().newEvent(SystemEvent.SEVERITY_INFO,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_HTTP_SERVER_RUNNING,
                     rb.getResourceString("httpserver.running",
@@ -199,7 +222,7 @@ public class JettyStarter {
                     body.toString());
             return (tempHTTPServer);
         } catch (Exception e) {
-            SystemEventManagerImplAS2.newEvent(
+            SystemEventManagerImplAS2.instance().newEvent(
                     SystemEvent.SEVERITY_ERROR,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,

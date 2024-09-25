@@ -1,21 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MDNParser.java 29    3.08.21 17:48 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MDNParser.java 34    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
-import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.logging.Logger;
 import javax.mail.BodyPart;
 import javax.mail.MessagingException;
 import javax.mail.Multipart;
@@ -38,18 +32,27 @@ import javax.mail.util.ByteArrayDataSource;
  * Parses MDNs, this is NOT thread safe!
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 34 $
  */
 public class MDNParser {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * Contains the details message of the MDN
      */
     private String mdnDetails;
-    private Properties dispositionProperties = new Properties();
-    private String dispositionState;
-    private MecResourceBundle rb;
+    private final Properties dispositionProperties = new Properties();
+    private String dispositionState = null;
+    private final static MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleMDNParser.class.getName());
+        } //load up  resourcebundle
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
+    
     /**
      * contains the parsed MIC is it has been transfered
      */
@@ -60,15 +63,7 @@ public class MDNParser {
      */
     private String relatedMessageId = null;
 
-    public MDNParser() {
-        //Load resourcebundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleMDNParser.class.getName());
-        } //load up  resourcebundle
-        catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+    public MDNParser() {        
     }
 
     /**
@@ -79,8 +74,8 @@ public class MDNParser {
      */
     public void parseMDNData(AS2Message message, byte[] data, String contentType) throws Exception {
         //no content type defined? Throw an exception
-        if (contentType == null || contentType.trim().length() == 0) {
-            throw new Exception(this.rb.getResourceString("invalid.mdn.nocontenttype"));
+        if (contentType == null || contentType.trim().isEmpty()) {
+            throw new Exception(rb.getResourceString("invalid.mdn.nocontenttype"));
         }
         //encrypted AS2 message found, MDNs are not encrypted
         if (contentType.startsWith("application/pkcs7-mime")) {
@@ -213,7 +208,7 @@ public class MDNParser {
             } catch (MessagingException structureException) {
                 StringBuilder errorMessage = new StringBuilder(structureException.getMessage());
                 errorMessage.insert(0, "[" + structureException.getClass().getSimpleName() + "@extractMessageDispositionDetailsFromMDN] ");
-                throw new Exception(this.rb.getResourceString("structure.failure.mdn", errorMessage));
+                throw new Exception(rb.getResourceString("structure.failure.mdn", errorMessage));
             }
         }
     }

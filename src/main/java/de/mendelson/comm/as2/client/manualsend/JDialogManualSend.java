@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 40    20/01/23 10:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 43    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -42,7 +42,7 @@ import javax.swing.SwingUtilities;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 43 $
  */
 public class JDialogManualSend extends JDialog {
 
@@ -52,18 +52,18 @@ public class JDialogManualSend extends JDialog {
      * ResourceBundle to localize the GUI
      */
     private MecResourceBundle rb = null;
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
-    private List<Partner> localStations = new ArrayList<Partner>();
+    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final List<Partner> localStations = new ArrayList<Partner>();
     //DB connection for the partner access
-    private BaseClient baseClient;
-    private AS2StatusBar statusbar;
+    private final BaseClient baseClient;
+    private final AS2StatusBar statusbar;
     private final MendelsonMultiResolutionImage IMAGE_MANUAL_SEND
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/send.svg", 32, 48);
     /**
      * String that is displayed while the client uploads data to the server to
      * send
      */
-    private String uploadDisplay;
+    private final String uploadDisplay;
 
     /**
      * Creates new form JDialogPartnerConfig
@@ -162,7 +162,7 @@ public class JDialogManualSend extends JDialog {
      */
     private void setButtonState() {
         if (this.jRadioButtonSendFile.isSelected()) {
-            this.jButtonOk.setEnabled(this.jTextFieldFilename1.getText().length() > 0);
+            this.jButtonOk.setEnabled(!this.jTextFieldFilename1.getText().isEmpty());
         } else {
             this.jButtonOk.setEnabled(true);
         }
@@ -196,7 +196,7 @@ public class JDialogManualSend extends JDialog {
             List<String> uploadHashs = new ArrayList<String>();
             List<Path> files = new ArrayList<Path>();
             files.add(Paths.get(this.jTextFieldFilename1.getText()));
-            if (this.jTextFieldFilename2.isVisible() && this.jTextFieldFilename2.getText().trim().length() > 0) {
+            if (this.jTextFieldFilename2.isVisible() && !this.jTextFieldFilename2.getText().trim().isEmpty()) {
                 files.add(Paths.get(this.jTextFieldFilename2.getText()));
             }
             for (Path uploadFile : files) {
@@ -504,6 +504,7 @@ public class JDialogManualSend extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
         jPanelEdit.add(jPanelSpace, gridBagConstraints);
 
         buttonGroup.add(jRadioButtonSendFile);

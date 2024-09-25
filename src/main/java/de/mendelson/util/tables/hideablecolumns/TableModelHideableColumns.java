@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/util/tables/hideablecolumns/TableModelHideableColumns.java 4     10/01/15 3:59p Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/TableModelHideableColumns.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,7 +20,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the columns in the columns config dialog
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class TableModelHideableColumns extends AbstractTableModel {
 
@@ -56,9 +56,7 @@ public class TableModelHideableColumns extends AbstractTableModel {
     public void passNewData(List<HideableColumn> newData) {
         synchronized (this.columnArray) {
             this.columnArray.clear();
-            for (HideableColumn column : newData) {
-                this.columnArray.add(column);
-            }
+            this.columnArray.addAll(newData);
         }
         this.fireTableDataChanged();
     }

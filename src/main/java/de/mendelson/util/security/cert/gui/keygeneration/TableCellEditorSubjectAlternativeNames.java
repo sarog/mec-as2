@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/keygeneration/TableCellEditorSubjectAlternativeNames.java 1     6/01/17 10:39a Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TableCellEditorSubjectAlternativeNames.java 2     2/11/23 14:03 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import java.awt.Component;
@@ -13,7 +13,6 @@ import javax.swing.AbstractCellEditor;
 import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JTable;
-import javax.swing.JTextField;
 import javax.swing.table.TableCellEditor;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -26,7 +25,7 @@ import javax.swing.table.TableCellEditor;
 /**
  * Cell editor for Columns of the class type ScriptPropertiesObject
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class TableCellEditorSubjectAlternativeNames
         extends AbstractCellEditor implements TableCellEditor {
@@ -47,8 +46,8 @@ public class TableCellEditorSubjectAlternativeNames
      * will not initiate until a click occurs.
      */
     private int clickCountToStart = 1;
-    private List<String> allValuesList;
-    private JComboBox comboBox = new JComboBox();
+    private final List<String> allValuesList;
+    private final JComboBox comboBox = new JComboBox();
 
 
     public TableCellEditorSubjectAlternativeNames(List<String> allValuesList) {

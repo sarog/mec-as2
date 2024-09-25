@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AbstractAS2Server.java 4     11.11.11 11:32 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AbstractAS2Server.java 5     24/10/23 14:06 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * Server root for the mendelson client/server architecture
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public abstract class AbstractAS2Server {
 
@@ -28,7 +28,7 @@ public abstract class AbstractAS2Server {
         this.startTime = new Date().getTime();
     }
 
-    public abstract void start() throws Exception;
+    public abstract void start(boolean importTLS, boolean importSignEnc) throws Exception;
 
     public abstract int getPort();
 

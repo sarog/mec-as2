@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_de.java 10    7.12.18 11:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_de.java 13    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem;
 import de.mendelson.comm.as2.cem.messages.TrustResponse;
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleCEM_de extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -34,12 +34,12 @@ public class ResourceBundleCEM_de extends MecResourceBundle{
         {"cem.structure.info", "Anzahl der Trust Requests in der eingegangenen CEM Struktur: {0}" },
         {"transmitted.certificate.info", "Das übermittelte Zertifikat hat die Kennwerte IssuerDN=\"{0}\" und Seriennummer \"{1}\"." },
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN +".cert.already.imported", "Das übermittelte CEM Zertifikat existiert bereits in dem System [enc/sign] (Alias {0}), der Import wurde übersprungen."},
-        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.already.imported", "Das übermittelte CEM Zertifikat existiert bereits in dem System [TLS/SSL] (Alias {0}), der Import wurde übersprungen."},
+        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.already.imported", "Das übermittelte CEM Zertifikat existiert bereits in dem System [TLS] (Alias {0}), der Import wurde übersprungen."},
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN +".cert.imported.success", "Das übermittelte CEM Zertifikat wurde erfolgreich in das System importiert [enc/sign] (Alias {0})."},
-        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.imported.success", "Das übermittelte CEM Zertifikat wurde erfolgreich in das System importiert [SSL/TLS] (Alias {0})."},
+        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.imported.success", "Das übermittelte CEM Zertifikat wurde erfolgreich in das System importiert [TLS] (Alias {0})."},
         {"category." + CEMEntry.CATEGORY_CRYPT, "Verschlüsselung" },
         {"category." + CEMEntry.CATEGORY_SIGN, "Signatur" },
-        {"category." + CEMEntry.CATEGORY_SSL, "SSL" },
+        {"category." + CEMEntry.CATEGORY_TLS, "SSL" },
         {"state." + CEMEntry.STATUS_ACCEPTED_INT, "Akzeptiert von {0}" },
         {"state." + CEMEntry.STATUS_PENDING_INT, "Noch keine Antwort von {0}" },
         {"state." + CEMEntry.STATUS_REJECTED_INT, "Abgelehnt von {0}" },

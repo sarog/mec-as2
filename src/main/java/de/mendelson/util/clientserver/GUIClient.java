@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/GUIClient.java 37    24/02/22 14:20 Heller $
+//$Header: /mec_as4/de/mendelson/util/clientserver/GUIClient.java 40    10/01/24 9:51 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.connectionprogress.JDialogConnectionProgress;
 import de.mendelson.util.clientserver.gui.JDialogLogin;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -39,12 +40,12 @@ import javax.swing.SwingUtilities;
  * GUI Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 40 $
  */
 public abstract class GUIClient extends JFrame implements ClientSessionHandlerCallback {
 
-    private BaseClient client = null;
-    private MecResourceBundle rb = null;
+    private final BaseClient client;
+    private final MecResourceBundle rb;
     private final List<ClientsideMessageProcessor> messageProcessorList = Collections.synchronizedList(new ArrayList<ClientsideMessageProcessor>());
     private String serverProductName = null;
 
@@ -89,7 +90,8 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
             throw new RuntimeException("GUIClient.connect: No logger set.");
         }
         ProgressRun progress = new ProgressRun(address);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newSingleThreadExecutor(
+                new NamedThreadFactory("clientserver-guiclient-connect"));
         executor.submit(progress);
         executor.shutdown();
         boolean connected = false;
@@ -118,10 +120,10 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
         if (loginStateMessage.getServerHelloMessages() != null) {
             for (ServerHelloMessage helloMessage : loginStateMessage.getServerHelloMessages()) {
                 Level logLevel = Level.CONFIG;
-                if( helloMessage.getLevel() == ServerHelloMessage.LEVEL_SEVERE){
-                    logLevel= Level.SEVERE;
-                }else if(helloMessage.getLevel() == ServerHelloMessage.LEVEL_WARNING){
-                    logLevel= Level.WARNING;
+                if (helloMessage.getLevel() == ServerHelloMessage.LEVEL_SEVERE) {
+                    logLevel = Level.SEVERE;
+                } else if (helloMessage.getLevel() == ServerHelloMessage.LEVEL_WARNING) {
+                    logLevel = Level.WARNING;
                 }
                 this.log(logLevel, helloMessage.getMessage());
             }
@@ -197,7 +199,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
     }
 
     /**
-     * Sends a message async to the server
+     * Sends a message asynchronous to the server
      */
     public void sendAsync(ClientServerMessage message) {
         this.getBaseClient().sendAsync(message);
@@ -325,7 +327,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
     private class ProgressRun implements Runnable {
 
         private boolean keepRunning = true;
-        private InetSocketAddress address;
+        private final InetSocketAddress address;
 
         public ProgressRun(InetSocketAddress address) {
             this.address = address;

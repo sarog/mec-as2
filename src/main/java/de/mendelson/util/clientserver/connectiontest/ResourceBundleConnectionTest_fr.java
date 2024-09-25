@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 8     20/06/22 11:22 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 10    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -32,7 +32,8 @@ public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
     static final Object[][] CONTENTS = {
         {"tag", "Test de connexion sur {0}"},
         {"timeout.set", "Réglage du délai d''attente sur {0}ms"},
-        {"test.start.ssl", "Démarrer la vérification de la connexion sur {0} à l''aide de la connexion SSL/TLS. N''oubliez pas que pendant ce test, votre client fera confiance à tous les certificats de serveur et ignorera votre keystore TLS - ce qui signifie qu''il n''est pas assuré que votre keystore TLS est configuré correctement même si ce test est réussi."},
+        {"test.start.ssl", "Démarrer la vérification de la connexion sur {0} à l''aide de la connexion TLS. "
+            + "N''oubliez pas que pendant ce test, votre client fera confiance à tous les certificats de serveur et ignorera votre keystore TLS - ce qui signifie qu''il n''est pas assuré que votre keystore TLS est configuré correctement même si ce test est réussi."},
         {"test.start.plain", "Démarrage du contrôle de connexion sur {0} à l''aide de la connexion PLAIN....."},
         {"connection.problem", "Impossible d''atteindre {0} - problème d'infrastructure ou mauvaise adresse saisie"},
         {"connection.success", "Connexion à {0} établie avec succès"},
@@ -52,8 +53,8 @@ public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
         {"certificate.ca", "CA Certificat"},
         {"certificate.enduser", "Certificat d''utilisateur final"},
         {"certificate.selfsigned", "Auto-signé"},
-        {"certificate.does.not.exist.local", "Ce certificat n''existe pas dans votre keystore TLS/SSL local - veuillez l''importer."},
-        {"certificate.does.exist.local", "Ce certificat existe dans votre keystore TLS/SSL local, l''alias est \"{0}\""},
+        {"certificate.does.not.exist.local", "Ce certificat n''existe pas dans votre keystore TLS local - veuillez l''importer."},
+        {"certificate.does.exist.local", "Ce certificat existe dans votre keystore TLS local, l''alias est \"{0}\""},
         {"test.connection.direct", "Une connexion IP directe est utilisée"},
         {"test.connection.proxy.auth", "La connexion utilise le proxy {0} avec authentification (Utilisateur \"{1}\")"},
         {"test.connection.proxy.noauth", "La connexion utilise le proxy {0} sans authentification"},

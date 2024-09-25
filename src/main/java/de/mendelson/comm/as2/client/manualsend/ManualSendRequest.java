@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendRequest.java 12    28.07.21 14:58 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendRequest.java 14    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.util.clientserver.clients.datatransfer.UploadRequestFile;
@@ -17,12 +17,12 @@ import java.util.List;
  * Message for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class ManualSendRequest extends UploadRequestFile implements Serializable {
 
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String senderAS2Id = null;
     //If the sender AS2 name is used this results always in a AS2 id lookup on the server side!
     //Better use the AS2 id if this is known
@@ -31,13 +31,13 @@ public class ManualSendRequest extends UploadRequestFile implements Serializable
     //If the receivers AS2 name is used this results always in a AS2 id lookup on the server side!
     //Better use the AS2 id if this is known
     private String receiverAS2Name = null;
-    private List<String> filenames = new ArrayList<String>();
+    private final List<String> filenames = new ArrayList<String>();
     private String resendMessageId = null;
     private String userdefinedId = null;
-    private List<String> uploadHashs = new ArrayList<String>();
+    private final List<String> uploadHashs = new ArrayList<String>();
     private String subject = null;
     private boolean sendTestdata = false;
-    private List<String> payloadContentTypes = new ArrayList<String>();
+    private final List<String> payloadContentTypes = new ArrayList<String>();
 
     @Override
     public String toString() {
@@ -52,7 +52,6 @@ public class ManualSendRequest extends UploadRequestFile implements Serializable
     }
 
     /**
-     * @param sender the sender to set
      */
     public void setSenderAS2Id(String senderAS2Id) {
         this.senderAS2Id = senderAS2Id;
@@ -66,7 +65,6 @@ public class ManualSendRequest extends UploadRequestFile implements Serializable
     }
 
     /**
-     * @param receiver the receiver to set
      */
     public void setReceiverAS2Id(String receiverAS2Id) {
         this.receiverAS2Id = receiverAS2Id;

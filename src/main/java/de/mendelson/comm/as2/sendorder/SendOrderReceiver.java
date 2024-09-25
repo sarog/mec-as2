@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 50    16/12/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 55    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -18,8 +18,6 @@ import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.oauth2.OAuth2Util;
-import de.mendelson.util.security.cert.KeystoreStorage;
-import de.mendelson.util.systemevents.SystemEventManager;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -49,7 +47,7 @@ import java.util.logging.Logger;
  * send process for each message
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 55 $
  */
 public class SendOrderReceiver {
 
@@ -57,15 +55,14 @@ public class SendOrderReceiver {
     private final MecResourceBundle rb;
     private final SendOrderAccessDB sendOrderAccess;
     private final ClientServer clientserver;
-    private final PreferencesAS2 preferences = new PreferencesAS2();
+    private final PreferencesAS2 preferences;
     private final MessageStoreHandler messageStoreHandler;
     private final MessageAccessDB messageAccess;
     private final IDBDriverManager dbDriverManager;
     private SendOrderReceiverThread sendOrderReceiverThread = null;
     private final ScheduledExecutorService scheduledExecutor
             = Executors.newSingleThreadScheduledExecutor(
-                    new NamedThreadFactory("sendorder-receiver"));
-    private final SystemEventManager systemEventManager = new SystemEventManagerImplAS2();
+                    new NamedThreadFactory("sendorder-receiver"));    
 
     public SendOrderReceiver(ClientServer clientserver, IDBDriverManager dbDriverManager) throws Exception {
         //Load default resourcebundle
@@ -81,6 +78,7 @@ public class SendOrderReceiver {
         this.messageAccess = new MessageAccessDB(dbDriverManager);
         this.messageStoreHandler = new MessageStoreHandler(dbDriverManager);
         this.clientserver = clientserver;
+        preferences = new PreferencesAS2(dbDriverManager);
     }
 
     public void execute() {
@@ -143,7 +141,7 @@ public class SendOrderReceiver {
                     waitingOrders.addAll(sendOrderAccess.getNext(possibleNewConnections));
                 }
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.systemFailure(e);
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             }
             //process the found orders
             try {
@@ -160,7 +158,7 @@ public class SendOrderReceiver {
                     threadExecutor.execute(connectionRunner);
                 }
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.systemFailure(e);
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             }
 
         }
@@ -257,13 +255,13 @@ public class SendOrderReceiver {
                     if (order.getMessage().isMDN()) {
                         if (order.getReceiver().usesOAuth2MDN() && order.getReceiver().getOAuth2MDN() != null) {
                             OAuth2Util.ensureValidAccessToken(dbDriverManager,
-                                    systemEventManager,
+                                    SystemEventManagerImplAS2.instance(),
                                     order.getReceiver().getOAuth2MDN());
                         }
                     } else {
                         if (order.getReceiver().usesOAuth2Message() && order.getReceiver().getOAuth2Message() != null) {
                             OAuth2Util.ensureValidAccessToken(dbDriverManager,
-                                    systemEventManager,
+                                    SystemEventManagerImplAS2.instance(),
                                     order.getReceiver().getOAuth2Message());
                         }
                     }
@@ -325,7 +323,7 @@ public class SendOrderReceiver {
                 int maxRetryCount = preferences.getInt(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT);
                 //to many retries: cancel the transaction
                 if (retryCount > maxRetryCount) {
-                    if (e.getMessage() != null && e.getMessage().trim().length() > 0) {
+                    if (e.getMessage() != null && !e.getMessage().trim().isEmpty()) {
                         logger.log(Level.WARNING, e.getMessage(), order.getMessage().getAS2Info());
                     }
                     logger.log(Level.SEVERE, rb.getResourceString("max.retry.reached",
@@ -333,7 +331,7 @@ public class SendOrderReceiver {
                     sendOrderAccess.delete(order.getDbId());
                     this.processUploadError(order);
                 } else {
-                    if (e.getMessage() != null && e.getMessage().trim().length() > 0) {
+                    if (e.getMessage() != null && !e.getMessage().trim().isEmpty()) {
                         logger.log(Level.WARNING, e.getMessage(), order.getMessage().getAS2Info());
                     }
                     logger.log(Level.WARNING, rb.getResourceString("retry",

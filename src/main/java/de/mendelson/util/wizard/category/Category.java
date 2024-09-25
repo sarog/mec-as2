@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/wizard/category/Category.java 2     5.11.19 16:38 Heller $
+//$Header: /as2/de/mendelson/util/wizard/category/Category.java 3     2/11/23 14:03 Heller $
 package de.mendelson.util.wizard.category;
 
 import java.util.ArrayList;
@@ -16,11 +16,11 @@ import java.util.List;
  * Object that stores the contents of a category. A category is a tab in the
  * JDialogCategory panel
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class Category{
     
-    private List<Subcategory> subcategoryList = new ArrayList<Subcategory>();
+    private final List<Subcategory> subcategoryList = new ArrayList<Subcategory>();
     
     /**The categories title
      */

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/TableModelCertificateReference.java 2     7/04/22 10:33 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/TableModelCertificateReference.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -24,7 +24,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display all files that are open and save/close them
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class TableModelCertificateReference extends AbstractTableModel {
 
@@ -44,7 +44,7 @@ public class TableModelCertificateReference extends AbstractTableModel {
     
     private final List<CertificateInUseInfo.SingleCertificateInUseInfo> useList = Collections.synchronizedList(new ArrayList<CertificateInUseInfo.SingleCertificateInUseInfo>());
 
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
 
     /**
      * Load resources

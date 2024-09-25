@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandler.java 29    11/02/22 13:14 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandler.java 30    2/11/23 14:02 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -24,7 +24,7 @@ import org.apache.mina.core.session.IoSession;
  * Client side protocol handler
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 30 $
  */
 public class ClientSessionHandler extends IoHandlerAdapter {
 
@@ -172,7 +172,6 @@ public class ClientSessionHandler extends IoHandlerAdapter {
      * Inform the callback that a sync request failed
      *
      * @param request sync request that failed
-     * @param the exception that was thrown
      */
     public void syncRequestFailed(ClientServerMessage request, ClientServerMessage response, Throwable throwable) {
         this.callback.syncRequestFailed(request, response, throwable);

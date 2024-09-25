@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker_de.java 19    6.12.18 16:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker_de.java 21    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class ResourceBundleAS2MessagePacker_de extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -33,7 +33,7 @@ public class ResourceBundleAS2MessagePacker_de extends MecResourceBundle{
         {"mdn.details", "Details der ausgehenden MDN: {0}" },
         {"message.compressed", "Die ausgehenden Nutzdaten wurden von {0} auf {1} komprimiert." },
         {"message.compressed.unknownratio", "Die ausgehenden Nutzdaten wurden komprimiert." },
-        {"mdn.signed", "Ausgehende MDN wurde mit dem Algorithmus \"{0}\" signiert." },
+        {"mdn.signed", "Ausgehende MDN wurde mit dem Algorithmus \"{0}\" signiert, der Schlüsselalias ist \"{1}\"" },
         {"mdn.notsigned", "Ausgehende MDN wurde nicht signiert." },
         {"mdn.creation.start", "Erstelle ausgehende MDN, setze Nachrichten Id auf \"{0}\"."},
         {"message.creation.start", "Erstelle ausgehende AS2 Nachricht, setze Nachrichten Id auf \"{0}\"."},

@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/QuotaResetRequest.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/QuotaResetRequest.java 5     2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.statistic.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,13 +17,13 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class QuotaResetRequest extends ClientServerMessage implements Serializable {
     
-    public static final long serialVersionUID = 1L;
-    private String localStationId;
-    private String partnerId;
+    private static final long serialVersionUID = 1L;
+    private final String localStationId;
+    private final String partnerId;
     
     public QuotaResetRequest(String localStationId, String partnerId) {
         this.localStationId = localStationId;
@@ -47,4 +49,8 @@ public class QuotaResetRequest extends ClientServerMessage implements Serializab
         return partnerId;
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
 }

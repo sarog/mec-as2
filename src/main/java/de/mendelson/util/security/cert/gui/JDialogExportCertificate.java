@@ -1,13 +1,20 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 21    18/11/22 15:00 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 25    2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecFileChooser;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.TextOverlay;
+import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import de.mendelson.util.security.cert.ListCellRendererCertificates;
+import de.mendelson.util.security.cert.clientserver.CertificateExportRequest;
+import de.mendelson.util.security.cert.clientserver.CertificateExportResponse;
 import de.mendelson.util.uinotification.UINotification;
+import java.io.ByteArrayInputStream;
+import java.io.OutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.cert.CertPath;
@@ -27,25 +34,22 @@ import javax.swing.SwingUtilities;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 25 $
  */
 public class JDialogExportCertificate extends JDialog {
 
     /**
      * ResourceBundle to localize the GUI
      */
-    private MecResourceBundle rb = null;
-    protected static final String PEM = "PEM";
-    protected static final String DER = "DER";
-    protected static final String PKCS7 = "PKCS#7";
-    protected static final String SSH2 = "SSH2";
-    private CertificateManager manager = null;
-    private Logger logger = Logger.getAnonymousLogger();
+    private final MecResourceBundle rb;
+    private final CertificateManager manager;
+    private final Logger logger = Logger.getAnonymousLogger();
+    private final BaseClient baseClient;
 
     /**
      * @param manager Manages all certificates
      */
-    public JDialogExportCertificate(JFrame parent, CertificateManager manager,
+    public JDialogExportCertificate(JFrame parent, BaseClient baseClient, CertificateManager manager,
             String selectedAlias, Logger logger) {
         super(parent, true);
         //load resource bundle
@@ -56,31 +60,41 @@ public class JDialogExportCertificate extends JDialog {
             throw new RuntimeException("Oops..resource bundle "
                     + e.getClassName() + " not found.");
         }
+        this.baseClient = baseClient;
         this.setTitle(this.rb.getResourceString("title"));
         initComponents();
         TextOverlay.addTo(jTextFieldExportFile,
                 this.rb.getResourceString("label.exportfile.hint"));
-        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
+        this.setMultiresolutionIcons();
         this.manager = manager;
         this.getRootPane().setDefaultButton(this.jButtonOk);
         //fill data into comboboxes
-        this.jComboBoxExportFormat.addItem(new ExportFormat(DER));
-        this.jComboBoxExportFormat.addItem(new ExportFormat(PEM));
-        this.jComboBoxExportFormat.addItem(new ExportFormat(PKCS7));
-        this.jComboBoxExportFormat.addItem(new ExportFormat(SSH2));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_DER));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PEM));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_SSH2));
+        KeystoreCertificate selectedCert = this.manager.getKeystoreCertificate(selectedAlias);
         List<KeystoreCertificate> list = this.manager.getKeyStoreCertificateList();
         for (KeystoreCertificate cert : list) {
-            this.jComboBoxAlias.addItem(cert.getAlias());
+            this.jComboBoxCertificates.addItem(cert);
         }
-        this.jComboBoxAlias.setSelectedItem(selectedAlias);
+        this.jComboBoxCertificates.setRenderer(new ListCellRendererCertificates());
+        this.jComboBoxCertificates.setSelectedItem(selectedCert);
         this.setButtonState();
+    }
+
+    /**
+     * Overwrite the designers icons by multi resolution icons
+     */
+    private void setMultiresolutionIcons() {
+        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
     }
 
     /**
      * Sets the ok and cancel buttons of this GUI
      */
     private void setButtonState() {
-        this.jButtonOk.setEnabled(this.jTextFieldExportFile.getText().length() > 0);
+        this.jButtonOk.setEnabled(!this.jTextFieldExportFile.getText().isEmpty());
     }
 
     /**
@@ -131,43 +145,58 @@ public class JDialogExportCertificate extends JDialog {
     /**
      * Finally exports the certificate
      */
-    private void performExport() {
+    private void performCertificateExport() {
         KeyStoreUtil util = new KeyStoreUtil();
         try {
-            String alias = this.jComboBoxAlias.getSelectedItem().toString();
-            String exportFilename = this.jTextFieldExportFile.getText();
+            KeystoreCertificate selectedCertificate
+                    = (KeystoreCertificate) this.jComboBoxCertificates.getSelectedItem();
             ExportFormat exportFormat = (ExportFormat) this.jComboBoxExportFormat.getSelectedItem();
-            if (exportFormat.getType().equals(PEM)) {
+            CertificateExportRequest request = new CertificateExportRequest(
+                    this.manager.getStorageUsage(), selectedCertificate.getFingerPrintSHA1(),
+                    exportFormat.getType());
+            CertificateExportResponse response = (CertificateExportResponse) this.baseClient.sendSync(request);
+            if (response.getException() != null) {
+                throw response.getException();
+            }
+            byte[] exportData = response.getExportData();
+            String exportFilename = this.jTextFieldExportFile.getText();
+            if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_PEM)) {
                 if (!exportFilename.toLowerCase().endsWith(".cer")) {
                     exportFilename += ".cer";
                 }
-                util.exportX509CertificatePEM(
-                        this.manager.getKeystore(), alias, exportFilename);
-            } else if (exportFormat.getType().equals(DER)) {
+            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_DER)) {
                 if (!exportFilename.toLowerCase().endsWith(".cer")) {
                     exportFilename += ".cer";
                 }
-                util.exportX509CertificateDER(this.manager.getKeystore(), alias, exportFilename);
-            } else if (exportFormat.getType().equals(PKCS7)) {
+            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7)) {
                 if (!exportFilename.toLowerCase().endsWith(".p7b")) {
                     exportFilename += ".p7b";
                 }
-                List<X509Certificate> list = this.computeTrustChain(alias);
-                X509Certificate[] certArray = new X509Certificate[list.size()];
-                list.toArray(certArray);
-                Path[] files = util.exportX509CertificatePKCS7(certArray, exportFilename);
-            } else if (exportFormat.getType().equals(SSH2)) {
+            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_SSH2)) {
                 if (!exportFilename.toLowerCase().endsWith(".pub")) {
                     exportFilename += ".pub";
                 }
-                util.exportPublicKeySSH2(this.manager.getPublicKey(alias), exportFilename);
             }
-            String exportFilenameDisplay = Paths.get(exportFilename).toAbsolutePath().toString();
-            UINotification.instance().addNotification(null,
-                    UINotification.TYPE_SUCCESS,
-                    this.rb.getResourceString("certificate.export.success.title"),
-                    this.rb.getResourceString("certificate.export.success.message", 
-                            exportFilenameDisplay));
+            Path file = Paths.get(exportFilename);
+            if (exportData != null) {
+                OutputStream outStream = null;
+                ByteArrayInputStream inStream = new ByteArrayInputStream(exportData);
+                try {
+                    outStream = Files.newOutputStream(file);
+                    inStream.transferTo(outStream);
+                } finally {
+                    inStream.close();
+                }
+                outStream.close();
+                String exportFilenameDisplay = Paths.get(exportFilename).toAbsolutePath().toString();
+                UINotification.instance().addNotification(null,
+                        UINotification.TYPE_SUCCESS,
+                        this.rb.getResourceString("certificate.export.success.title"),
+                        this.rb.getResourceString("certificate.export.success.message",
+                                exportFilenameDisplay));
+            } else {
+                throw new Exception(this.rb.getResourceString("error.empty.certificate"));
+            }
         } catch (Throwable e) {
             UINotification.instance().addNotification(null,
                     UINotification.TYPE_ERROR,
@@ -195,8 +224,10 @@ public class JDialogExportCertificate extends JDialog {
         jPanel3 = new javax.swing.JPanel();
         jComboBoxExportFormat = new javax.swing.JComboBox();
         jLabelAlias = new javax.swing.JLabel();
-        jComboBoxAlias = new javax.swing.JComboBox();
+        jComboBoxCertificates = new javax.swing.JComboBox<>();
         jButtonBrowse = new javax.swing.JButton();
+        jPanelSpace1 = new javax.swing.JPanel();
+        jPanelSpace2 = new javax.swing.JPanel();
         jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
@@ -218,7 +249,7 @@ public class JDialogExportCertificate extends JDialog {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelExportFile, gridBagConstraints);
 
         jTextFieldExportFile.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -229,6 +260,7 @@ public class JDialogExportCertificate extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
@@ -237,20 +269,25 @@ public class JDialogExportCertificate extends JDialog {
         jLabelExportEncoding.setText(this.rb.getResourceString( "label.exportformat"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelExportEncoding, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridy = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelEdit.add(jPanel3, gridBagConstraints);
+
+        jComboBoxExportFormat.setMinimumSize(new java.awt.Dimension(250, 24));
+        jComboBoxExportFormat.setPreferredSize(new java.awt.Dimension(250, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelEdit.add(jComboBoxExportFormat, gridBagConstraints);
@@ -258,17 +295,18 @@ public class JDialogExportCertificate extends JDialog {
         jLabelAlias.setText(this.rb.getResourceString( "label.alias"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelAlias, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
-        jPanelEdit.add(jComboBoxAlias, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 10);
+        jPanelEdit.add(jComboBoxCertificates, gridBagConstraints);
 
         jButtonBrowse.setText("..");
         jButtonBrowse.setToolTipText(this.rb.getResourceString( "button.browse"));
@@ -279,10 +317,24 @@ public class JDialogExportCertificate extends JDialog {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelEdit.add(jButtonBrowse, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelEdit.add(jPanelSpace1, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelEdit.add(jPanelSpace2, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -321,7 +373,7 @@ public class JDialogExportCertificate extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(445, 278));
+        setSize(new java.awt.Dimension(500, 327));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -343,14 +395,14 @@ public class JDialogExportCertificate extends JDialog {
 
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
         this.setVisible(false);
-        this.performExport();
+        this.performCertificateExport();
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonBrowse;
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonOk;
-    private javax.swing.JComboBox jComboBoxAlias;
+    private javax.swing.JComboBox<KeystoreCertificate> jComboBoxCertificates;
     private javax.swing.JComboBox jComboBoxExportFormat;
     private javax.swing.JLabel jLabelAlias;
     private javax.swing.JLabel jLabelExportEncoding;
@@ -359,13 +411,15 @@ public class JDialogExportCertificate extends JDialog {
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelEdit;
+    private javax.swing.JPanel jPanelSpace1;
+    private javax.swing.JPanel jPanelSpace2;
     private javax.swing.JTextField jTextFieldExportFile;
     // End of variables declaration//GEN-END:variables
 
     public static class ExportFormat {
 
-        private String type;
-        private MecResourceBundle rb;
+        private final String type;
+        private final MecResourceBundle rb;
 
         public ExportFormat(String type) {
             this.type = type;

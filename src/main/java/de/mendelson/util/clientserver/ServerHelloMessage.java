@@ -1,6 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/ServerHelloMessage.java 1     24/02/22 12:55 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ServerHelloMessage.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /*
@@ -14,16 +17,17 @@ import java.io.Serializable;
  * Message that is sent from the server to the client once the client logged in
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 4 $
  */
-public class ServerHelloMessage implements Serializable{
+public class ServerHelloMessage extends ClientServerMessage implements Serializable{
 
+    private static final long serialVersionUID = 1L;
+    
     public static final int LEVEL_DEBUG = 1;
     public static final int LEVEL_INFO = 2;
     public static final int LEVEL_WARNING = 3;
     public static final int LEVEL_SEVERE = 4;
-    
-    public static final long serialVersionUID = 1L;
+        
     private final String message;    
     private int level = LEVEL_DEBUG;
     
@@ -64,7 +68,10 @@ public class ServerHelloMessage implements Serializable{
         return message;
     }
 
-    
+    /**Prevent an overwrite of the readObject method for deserialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 
 }

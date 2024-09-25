@@ -1,12 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 89    18/10/22 17:48 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 94    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
-import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.partner.gui.ResourceBundlePartnerPanel;
 import de.mendelson.comm.as2.send.HttpConnectionParameter;
+import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -33,11 +33,11 @@ import org.w3c.dom.NodeList;
  * Stores all information about a business partner
  *
  * @author S.Heller
- * @version $Revision: 89 $
+ * @version $Revision: 94 $
  */
 public class Partner implements Serializable, Comparable, Cloneable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     //setup a much longer timeout than the default for the partner sync client-server requests 
     //- this should be reachable even if the system is under high load
     public static final long TIMEOUT_PARTNER_REQUEST = TimeUnit.MINUTES.toMillis(5);
@@ -54,7 +54,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * Name of the partner, defined in the PIP server
      */
     private String name;
-    private PartnerCertificateInformationList partnerCertificateList = new PartnerCertificateInformationList();
+    private PartnerCertificateInformationList partnerCertificateList
+            = new PartnerCertificateInformationList();
     private int encryptionType = AS2Message.ENCRYPTION_3DES;
     private int signType = AS2Message.SIGNATURE_SHA1;
     private String email = "sender@as2server.com";
@@ -108,7 +109,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
     private String contactCompany = null;
     private String contactAS2 = null;
     private int contentTransferEncoding = AS2Message.CONTENT_TRANSFER_ENCODING_BINARY;
-    private PartnerEventInformation partnerEvents = new PartnerEventInformation();
+    private final PartnerEventInformation partnerEvents = new PartnerEventInformation();
     /**
      * Partner specific http headers
      */
@@ -129,6 +130,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
     private boolean useOAuth2MDN = false;
     private OAuth2Config oauth2Message = null;
     private OAuth2Config oauth2MDN = null;
+    private boolean overwriteLocalStationSecurity = false;
 
     public Partner() {
     }
@@ -154,7 +156,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
         synchronized (this.httpHeader) {
             for (int i = this.httpHeader.size() - 1; i >= 0; i--) {
                 PartnerHttpHeader header = this.httpHeader.get(i);
-                if (header.getKey() == null || header.getKey().trim().length() == 0) {
+                if (header.getKey() == null || header.getKey().trim().isEmpty()) {
                     this.httpHeader.remove(i);
                 }
             }
@@ -180,7 +182,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * Expected is a comma separated list of poll ignores
      */
     public void setPollIgnoreListString(String pollIgnoreStr) {
-        if (pollIgnoreStr == null || pollIgnoreStr.trim().length() == 0) {
+        if (pollIgnoreStr == null || pollIgnoreStr.trim().isEmpty()) {
             this.pollIgnoreList = null;
         } else {
             StringTokenizer tokenizer = new StringTokenizer(pollIgnoreStr, ",");
@@ -225,7 +227,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
         if (!messagePath.toString().endsWith(serverSideFileSeparator)) {
             messagePath.append(serverSideFileSeparator);
         }
-        messagePath.append(MessageStoreHandler.convertToValidFilename(this.getName()));
+        messagePath.append(AS2Tools.convertToValidFilename(this.getName()));
         return (messagePath.toString());
     }
 
@@ -289,6 +291,28 @@ public class Partner implements Serializable, Comparable, Cloneable {
     }
 
     /**
+     * Sets a new sign cert to overwrite the local station settings this
+     * partner.
+     */
+    public void setSignOverwriteLocalstationFingerprintSHA1(String fingerprintSHA1) {
+        PartnerCertificateInformation signInfo = new PartnerCertificateInformation(
+                fingerprintSHA1,
+                PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION);
+        this.setCertificateInformation(signInfo);
+    }
+
+    /**
+     * Sets a new crypt cert to overwrite the local station settings this
+     * partner.
+     */
+    public void setCryptOverwriteLocalstationFingerprintSHA1(String fingerprintSHA1) {
+        PartnerCertificateInformation signInfo = new PartnerCertificateInformation(
+                fingerprintSHA1,
+                PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION);
+        this.setCertificateInformation(signInfo);
+    }
+
+    /**
      * Sets a new encryption cert to this partner. This is a convenience method
      * to set a cert info of the category CRYPT, overwriting prio 1 and set the
      * new cert to accepted
@@ -327,10 +351,51 @@ public class Partner implements Serializable, Comparable, Cloneable {
     }
 
     /**
+     * Returns the alias used for signing messages - overwrite local station
+     * settings. This returns the cert category
+     * CATEGORY_SIGN_OVERWRITE_LOCALSTATION
+     */
+    public String getSignOverwriteLocalstationFingerprintSHA1() {
+        PartnerCertificateInformation signInfo
+                = this.getCertificateInformation(
+                        PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION);
+        if (signInfo != null) {
+            return (signInfo.getFingerprintSHA1());
+        } else {
+            return (null);
+        }
+    }
+
+    /**
+     * Returns the cert used for decrypting messages - overwrite local station
+     * settings. This returns the cert category
+     * CATEGORY_CRYPT_OVERWRITE_LOCALSTATION
+     */
+    public String getCryptOverwriteLocalstationFingerprintSHA1() {
+        PartnerCertificateInformation cryptInfo
+                = this.getCertificateInformation(
+                        PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION);
+        if (cryptInfo != null) {
+            return (cryptInfo.getFingerprintSHA1());
+        } else {
+            return (null);
+        }
+    }
+
+    /**
      * Overwrite the existing cert list
      */
-    public void setPartnerCertificateInformationList(PartnerCertificateInformationList list) {
-        this.partnerCertificateList = list;
+    public void setPartnerCertificateInformationList(PartnerCertificateInformationList newInfo) {
+        this.setCertificateInformation(
+                newInfo.getPartnerCertificate(PartnerCertificateInformation.CATEGORY_CRYPT));
+        this.setCertificateInformation(
+                newInfo.getPartnerCertificate(PartnerCertificateInformation.CATEGORY_SIGN));
+        this.setCertificateInformation(
+                newInfo.getPartnerCertificate(PartnerCertificateInformation.CATEGORY_TLS));
+        this.setCertificateInformation(
+                newInfo.getPartnerCertificate(PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION));
+        this.setCertificateInformation(
+                newInfo.getPartnerCertificate(PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION));
     }
 
     /**
@@ -510,7 +575,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
     }
 
     public void setComment(String comment) {
-        if (comment == null || comment.length() == 0) {
+        if (comment == null || comment.isEmpty()) {
             this.comment = null;
         } else {
             this.comment = comment;
@@ -668,12 +733,12 @@ public class Partner implements Serializable, Comparable, Cloneable {
         }
         if (this.authenticationCredentialsMessage.isEnabled()) {
             builder.append(rbPartnerPanel.getResourceString("label.httpauth.credentials.message")).append(" (Msg): ");
-            builder.append(this.authenticationCredentialsMessage.getUser() + "/" 
+            builder.append(this.authenticationCredentialsMessage.getUser() + "/"
                     + this.authenticationCredentialsMessage.getPassword()).append("\n");
         }
         if (this.authenticationCredentialsAsyncMDN.isEnabled()) {
             builder.append(rbPartnerPanel.getResourceString("label.httpauth.credentials.asyncmdn")).append(" (MDN): ");
-            builder.append(this.authenticationCredentialsAsyncMDN.getUser() + "/" 
+            builder.append(this.authenticationCredentialsAsyncMDN.getUser() + "/"
                     + this.authenticationCredentialsAsyncMDN.getPassword()).append("\n");
         }
         return (builder.toString());
@@ -693,7 +758,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
         builder.append(offset).append("<partner>\n");
         builder.append(offset).append("\t<name>").append(this.toCDATA(this.name)).append("</name>\n");
         builder.append(offset).append("\t<as2ident>").append(this.toCDATA(this.as2Identification)).append("</as2ident>\n");
-        builder.append( this.partnerEvents.toXML(level+1));        
+        builder.append(this.partnerEvents.toXML(level + 1));
         //partner comments:
         //comment, contactAS2, contactCompany
         if (this.comment != null) {
@@ -719,6 +784,19 @@ public class Partner implements Serializable, Comparable, Cloneable {
         if (signAlias != null) {
             builder.append(offset).append("\t<signalias>").append(this.toCDATA(signAlias)).append("</signalias>\n");
         }
+        String signAliasOverwriteLocal = certmanagerEncSign.getAliasByFingerprint(this.getSignOverwriteLocalstationFingerprintSHA1());
+        if (signAliasOverwriteLocal != null) {
+            builder.append(offset).append("\t<signaliasoverwritelocal>")
+                    .append(this.toCDATA(signAliasOverwriteLocal)).append("</signaliasoverwritelocal>\n");
+        }
+        String cryptAliasOverwriteLocal = certmanagerEncSign.getAliasByFingerprint(this.getCryptOverwriteLocalstationFingerprintSHA1());
+        if (cryptAliasOverwriteLocal != null) {
+            builder.append(offset).append("\t<cryptaliasoverwritelocal>")
+                    .append(this.toCDATA(cryptAliasOverwriteLocal)).append("</cryptaliasoverwritelocal>\n");
+        }
+        builder.append(offset).append("\t<overwritelocalstationsecurity>").append(
+                String.valueOf(this.isOverwriteLocalStationSecurity())
+        ).append("</overwritelocalstationsecurity>\n");
         builder.append(offset).append("\t<subject>").append(this.toCDATA(this.subject)).append("</subject>\n");
         builder.append(offset).append("\t<url>").append(this.toCDATA(this.url)).append("</url>\n");
         builder.append(offset).append("\t<compression>").append(String.valueOf(this.compressionType)).append("</compression>\n");
@@ -747,14 +825,14 @@ public class Partner implements Serializable, Comparable, Cloneable {
         if (this.authenticationCredentialsAsyncMDN != null) {
             builder.append(this.authenticationCredentialsAsyncMDN.toXML(level + 1, "asyncmdn"));
         }
-        if( this.oauth2Message != null ){
+        if (this.oauth2Message != null) {
             builder.append(this.oauth2Message.toXML(level + 1, "standard", this.useOAuth2Message));
         }
-        if( this.oauth2MDN != null ){
+        if (this.oauth2MDN != null) {
             builder.append(this.oauth2MDN.toXML(level + 1, "asyncmdn", this.useOAuth2MDN));
         }
         synchronized (this.httpHeader) {
-            if (this.httpHeader != null && this.httpHeader.size() > 0) {
+            if (this.httpHeader != null && !this.httpHeader.isEmpty()) {
                 for (PartnerHttpHeader singleHeader : this.httpHeader) {
                     builder.append("\t<httpheader>\n");
                     builder.append("\t\t<key>").append(this.toCDATA(singleHeader.getKey())).append("</key>\n");
@@ -794,8 +872,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
                 } else if (key.equals("as2ident")) {
                     partner.setAS2Identification(value);
                 } else if (key.equals("events")) {
-                    PartnerEventInformation.fromXML( partner, property );
-                }  else if (key.equals("comment")) {
+                    PartnerEventInformation.fromXML(partner, property);
+                } else if (key.equals("comment")) {
                     partner.setComment(value);
                 } else if (key.equals("commentcontact")) {
                     partner.setContactAS2(value);
@@ -819,6 +897,22 @@ public class Partner implements Serializable, Comparable, Cloneable {
                         KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
                         if (certificate != null) {
                             partner.setSignFingerprintSHA1(manager.getKeystoreCertificate(value).getFingerPrintSHA1());
+                        }
+                    }
+                } else if (key.equals("signaliasoverwritelocal")) {
+                    if (manager != null) {
+                        KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
+                        if (certificate != null) {
+                            partner.setSignOverwriteLocalstationFingerprintSHA1(
+                                    manager.getKeystoreCertificate(value).getFingerPrintSHA1());
+                        }
+                    }
+                }else if (key.equals("cryptaliasoverwritelocal")) {
+                    if (manager != null) {
+                        KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
+                        if (certificate != null) {
+                            partner.setCryptOverwriteLocalstationFingerprintSHA1(
+                                    manager.getKeystoreCertificate(value).getFingerPrintSHA1());
                         }
                     }
                 } else if (key.equals("subject")) {
@@ -876,8 +970,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
                             }
                         }
                     }
-                    if (httpHeader.getKey() != null && httpHeader.getKey().trim().length() > 0
-                            && httpHeader.getValue() != null && httpHeader.getValue().trim().length() > 0) {
+                    if (httpHeader.getKey() != null && !httpHeader.getKey().trim().isEmpty()
+                            && httpHeader.getValue() != null && !httpHeader.getValue().trim().isEmpty()) {
                         partner.addHttpHeader(httpHeader);
                     }
                 }
@@ -959,7 +1053,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
         synchronized (this.httpHeader) {
             list.addAll(this.httpHeader);
         }
-        return (this.httpHeader);
+        return (list);
     }
 
     /**
@@ -1011,11 +1105,13 @@ public class Partner implements Serializable, Comparable, Cloneable {
     @Override
     public Object clone() {
         try {
-            Partner clonedPartner = (Partner) super.clone();            
+            Partner clonedPartner = (Partner) super.clone();
             clonedPartner.partnerCertificateList = new PartnerCertificateInformationList();
             clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN));
             clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT));
-            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SSL));
+            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_TLS));
+            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION));
+            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION));
             return (clonedPartner);
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();
@@ -1119,7 +1215,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * @return the oauth2Message
      */
     public OAuth2Config getOAuth2Message() {
-        return(this.oauth2Message);
+        return (this.oauth2Message);
     }
 
     /**
@@ -1133,7 +1229,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
      * @return the oauth2MDN
      */
     public OAuth2Config getOAuth2MDN() {
-        return( this.oauth2MDN);
+        return (this.oauth2MDN);
     }
 
     /**
@@ -1141,6 +1237,22 @@ public class Partner implements Serializable, Comparable, Cloneable {
      */
     public void setOAuth2MDN(OAuth2Config oauth2MDN) {
         this.oauth2MDN = oauth2MDN;
+    }
+
+    /**
+     * Indicates if not the local stations security certs should be used for the
+     * security but just this partners settings if he is a remote partner
+     */
+    public boolean isOverwriteLocalStationSecurity() {
+        return overwriteLocalStationSecurity;
+    }
+
+    /**
+     * Indicates if not the local stations security certs should be used for the
+     * security but just this partners settings if he is a remote partner
+     */
+    public void setOverwriteLocalStationSecurity(boolean overwriteLocalStationSecurity) {
+        this.overwriteLocalStationSecurity = overwriteLocalStationSecurity;
     }
 
 }

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServerNotification.java 1     10/02/22 14:21 Helle $
+//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServerNotification.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
 import java.io.Serializable;
@@ -12,15 +12,14 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class ConfigurationChangedOnServerNotification extends ConfigurationChangedOnServer implements Serializable{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     /**
-     * 
-     * @param TYPE One of the static class constants TYPE_SERVER_PREFERENCES, TYPE_NOTIFICATION_SETTINGS
+     *
      */
     public ConfigurationChangedOnServerNotification(){
         super( ConfigurationChangedOnServer.TYPE_NOTIFICATION_SETTINGS);

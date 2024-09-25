@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableCellRendererPartner.java 5     27.07.21 15:33 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableCellRendererPartner.java 7     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -18,7 +18,7 @@ import javax.swing.table.TableCellRenderer;
 /** 
  * Renders a partner in a JTable column
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class TableCellRendererPartner extends DefaultTableCellRenderer implements TableCellRenderer {
 
@@ -28,7 +28,7 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     private static final ImageIcon ICON_REMOTE
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", 16, 32));
-    private BaseClient baseClient;
+    private final BaseClient baseClient;
 
     /**
      * Creates a default table cell renderer.
@@ -75,11 +75,11 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
             PartnerListRequest request = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID);
             request.setAdditionalListOptionStr((String) value);
             List<Partner> partnerList = ((PartnerListResponse)this.baseClient.sendSync(request, Partner.TIMEOUT_PARTNER_REQUEST)).getList();
-            if( partnerList != null && partnerList.size() > 0 ){
+            if( partnerList != null && !partnerList.isEmpty()){
                 this.renderPartner(partnerList.get(0));
             }else {
                 //partner does not exist: just display the AS2 id
-                this.setIcon(this.ICON_LOCAL);
+                this.setIcon(ICON_LOCAL);
                 this.setText((String) value);
             }            
         }
@@ -89,9 +89,9 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     /**Renders the partner entry in the table*/
     private void renderPartner(Partner partner) {
         if (partner.isLocalStation()) {
-            this.setIcon(this.ICON_LOCAL);
+            this.setIcon(ICON_LOCAL);
         } else {
-            this.setIcon(this.ICON_REMOTE);
+            this.setIcon(ICON_REMOTE);
         }
         this.setText(partner.toString());
     }

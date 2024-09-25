@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 4     16/06/22 11:54 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.io.Serializable;
@@ -16,12 +16,12 @@ import java.security.cert.X509Certificate;
  * Stores the results of a connection test
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ConnectionTestResult implements Serializable {
     
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private boolean connectionIsPossible = false;
     private boolean oftpServiceFound = false;
     private X509Certificate[] foundCertificates = null;

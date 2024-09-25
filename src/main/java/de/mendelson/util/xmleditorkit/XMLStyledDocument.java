@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/xmleditorkit/XMLStyledDocument.java 3     16.10.19 12:49 Heller $
+//$Header: /as2/de/mendelson/util/xmleditorkit/XMLStyledDocument.java 4     2/11/23 14:03 Heller $
 package de.mendelson.util.xmleditorkit;
 
 import de.mendelson.util.ColorUtil;
@@ -23,21 +23,21 @@ import javax.swing.text.StyleConstants;
  * contrast for the UIs editor pane background color
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 
 public class XMLStyledDocument extends DefaultStyledDocument {
 
-    public static String TAG_ELEMENT = "tag_element";
-    public static String TAG_ROW_START_ELEMENT = "tag_row_start_element";
-    public static String TAG_ROW_END_ELEMENT = "tag_row_end_element";
+    public static final String TAG_ELEMENT = "tag_element";
+    public static final String TAG_ROW_START_ELEMENT = "tag_row_start_element";
+    public static final String TAG_ROW_END_ELEMENT = "tag_row_end_element";
 
-    public static SimpleAttributeSet BRACKET_ATTRIBUTES = new SimpleAttributeSet();
-    public static SimpleAttributeSet TAGNAME_ATTRIBUTES = new SimpleAttributeSet();
-    public static SimpleAttributeSet ATTRIBUTENAME_ATTRIBUTES = new SimpleAttributeSet();
-    public static SimpleAttributeSet ATTRIBUTEVALUE_ATTRIBUTES = new SimpleAttributeSet();
-    public static SimpleAttributeSet PLAIN_ATTRIBUTES = new SimpleAttributeSet();
-    public static SimpleAttributeSet COMMENT_ATTRIBUTES = new SimpleAttributeSet();
+    public static final SimpleAttributeSet BRACKET_ATTRIBUTES = new SimpleAttributeSet();
+    public static final SimpleAttributeSet TAGNAME_ATTRIBUTES = new SimpleAttributeSet();
+    public static final SimpleAttributeSet ATTRIBUTENAME_ATTRIBUTES = new SimpleAttributeSet();
+    public static final SimpleAttributeSet ATTRIBUTEVALUE_ATTRIBUTES = new SimpleAttributeSet();
+    public static final SimpleAttributeSet PLAIN_ATTRIBUTES = new SimpleAttributeSet();
+    public static final SimpleAttributeSet COMMENT_ATTRIBUTES = new SimpleAttributeSet();
 
     static {
         Color editorPaneBackgroundColor = UIManager.getColor("EditorPane.background");

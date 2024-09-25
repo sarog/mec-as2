@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry.java 6     15/12/22 10:27 Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry.java 8     2/11/23 15:53 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleRenameEntry extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -34,7 +34,6 @@ public class ResourceBundleRenameEntry extends MecResourceBundle {
         {"button.cancel", "Cancel"},
         {"label.newalias", "New alias"},
         {"label.newalias.hint", "The alias that should be used in the future"},
-        {"label.keypairpass", "Key password"},
         {"title", "Rename alias ({0})"},
         {"alias.exists.title", "Alias rename failed" },
         {"alias.exists.message", "The alias \"{0}\" does already exist in that keystore." },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBMigrationVersionMismatchException.java 1     28.07.21 9:43 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBMigrationVersionMismatchException.java 2     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.database.migration.clientserver;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,11 +12,11 @@ package de.mendelson.comm.as2.database.migration.clientserver;
  * Exception for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class HSQLDBMigrationVersionMismatchException extends Exception {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private int requiredVersionConfigDB = -1;
     private int requiredVersionRuntimeDB = -1;
     private int foundVersionRuntimeDB = -1;

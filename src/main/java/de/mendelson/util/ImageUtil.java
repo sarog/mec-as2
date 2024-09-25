@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/ImageUtil.java 13    17/01/23 15:26 Heller $
+//$Header: /as2/de/mendelson/util/ImageUtil.java 14    2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import java.awt.AlphaComposite;
@@ -31,7 +31,7 @@ import javax.swing.ImageIcon;
  * Class that contains routines for the image processing
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ImageUtil {
 
@@ -267,7 +267,6 @@ public class ImageUtil {
     /**
      * Generates a disabled image from a passed MultiResolutionImage.
      *
-     * @param sourceImage
      * @return
      */
     public static MendelsonMultiResolutionImage generateDisabledImage(MendelsonMultiResolutionImage sourceImageMultiResolution) {

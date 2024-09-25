@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogCertificateReference.java 3     7/04/22 10:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogCertificateReference.java 5     2/11/23 14:03 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.security.cert.CertificateInUseInfo;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import de.mendelson.util.tables.JTableColumnResizer;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -17,7 +18,7 @@ import javax.swing.table.TableColumn;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class JDialogCertificateReference extends JDialog {
 
@@ -29,7 +30,6 @@ public class JDialogCertificateReference extends JDialog {
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/reference.svg", 16, 64);
     
     /**
-     * @param manager Manages all certificates
      */
     public JDialogCertificateReference(JFrame parent,
             List<CertificateInUseInfo.SingleCertificateInUseInfo> infoList,
@@ -54,6 +54,7 @@ public class JDialogCertificateReference extends JDialog {
         this.jTable.setRowHeight(TableModelCertificateReference.ROW_HEIGHT);        
         ((TableModelCertificateReference)this.jTable.getModel()).passNewData(infoList);        
         this.jTable.setTableHeader(null);
+        JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
         if( certificate.getIsKeyPair()){
             this.jLabelInfo.setText( this.rb.getResourceString("label.info.key", certificate.getAlias()));
         }else{
@@ -178,7 +179,7 @@ public class JDialogCertificateReference extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(435, 398));
+        setSize(new java.awt.Dimension(555, 398));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

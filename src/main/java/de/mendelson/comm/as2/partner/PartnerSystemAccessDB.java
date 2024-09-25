@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 27    15/11/22 9:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 30    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * system, it will be displayed in the partner panel
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 30 $
  */
 public class PartnerSystemAccessDB {
 
@@ -40,8 +40,6 @@ public class PartnerSystemAccessDB {
 
     /**
      *
-     * @param analyzeConnection Any database connection just to analyze metadata
-     * of the database
      */
     public PartnerSystemAccessDB(IDBDriverManager dbDriverManager) {
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
@@ -88,11 +86,11 @@ public class PartnerSystemAccessDB {
                 return (list);
             } catch (SQLException e) {
                 logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
                 return (null);
             } catch (Exception e) {
                 logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 return (null);
             } finally {
                 if (result != null) {
@@ -100,26 +98,26 @@ public class PartnerSystemAccessDB {
                         result.close();
                     } catch (Exception e) {
                         logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        this.logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (configConnectionAutoCommit != null) {
                 try {
                     configConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -151,11 +149,11 @@ public class PartnerSystemAccessDB {
                 }
             } catch (SQLException e) {
                 logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
                 return (null);
             } catch (Exception e) {
                 logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 return (null);
             } finally {
                 if (result != null) {
@@ -163,7 +161,7 @@ public class PartnerSystemAccessDB {
                         result.close();
                     } catch (Exception e) {
                         logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
@@ -171,18 +169,18 @@ public class PartnerSystemAccessDB {
                         statement.close();
                     } catch (Exception e) {
                         logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (configConnectionAutoCommit != null) {
                 try {
                     configConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -231,7 +229,7 @@ public class PartnerSystemAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -267,17 +265,17 @@ public class PartnerSystemAccessDB {
                 //an error occured - rollback transaction and release all table locks
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             e.printStackTrace();
-            this.logger.severe("PartnerSystemAccessDB.insertOrUpdatePartnerSystem: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("PartnerSystemAccessDB.insertOrUpdatePartnerSystem: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (configConnectionNoAutoCommit != null) {
@@ -311,7 +309,7 @@ public class PartnerSystemAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/balloontip/BalloonToolTip.java 9     14/06/22 10:05 Heller $
+//$Header: /oftp2/de/mendelson/util/balloontip/BalloonToolTip.java 12    28/11/23 12:26 Heller $
 package de.mendelson.util.balloontip;
 
 import java.awt.AlphaComposite;
@@ -37,18 +37,24 @@ import javax.swing.border.EmptyBorder;
  * direct in the UI
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class BalloonToolTip extends JToolTip {
 
     protected static final int BORDER_GAP = 10;
-    private final int TRIANGLE_SIZE = 10;
-    private final int ARC = 10;
+    private static final int TRIANGLE_SIZE = 10;
+    private static final int ARC = 10;
     protected static final int BORDER_STROKE_SIZE = 1;
     private Font font;
     private Color borderColor = Color.DARK_GRAY;
     private Color backgoundColor = Color.LIGHT_GRAY;
     private Color foregoundColor = Color.BLACK;
+
+    public final static int TRIANGLE_ALIGNMENT_CENTER = 1;
+    public final static int TRIANGLE_ALIGNMENT_TOP = 2;
+    public final static int TRIANGLE_ALIGNMENT_BOTTOM = 3;
+
+    private int triangleAlignment = TRIANGLE_ALIGNMENT_TOP;
 
     public BalloonToolTip() {
         super();
@@ -71,19 +77,21 @@ public class BalloonToolTip extends JToolTip {
                 BORDER_GAP,
                 BORDER_GAP + TRIANGLE_SIZE));
         this.setOpaque(true);
-        /**2022-05: There seems to be a bug in the java tooltip management. If the user manages 
-         * to bring the mouse onto the tooltip while it is displayed (requires a really fast mouse), the tooltip
-         * will not be disabled and stay visible until the user moves the mouse again to a new tool
-         * tip element. This listener will simply set the visibility to false if the user manages 
-         * it to move the mouse that fast
+        /**
+         * 2022-05: There seems to be a bug in the java tooltip management. If
+         * the user manages to bring the mouse onto the tooltip while it is
+         * displayed (requires a really fast mouse), the tooltip will not be
+         * disabled and stay visible until the user moves the mouse again to a
+         * new tool tip element. This listener will simply set the visibility to
+         * false if the user manages it to move the mouse that fast
          */
-        this.addMouseListener(new MouseAdapter() {            
+        this.addMouseListener(new MouseAdapter() {
 
-            @Override            
+            @Override
             public void mouseEntered(MouseEvent e) {
                 BalloonToolTip.this.setVisible(false);
             }
-            
+
         });
     }
 
@@ -126,7 +134,7 @@ public class BalloonToolTip extends JToolTip {
     @Override
     public void paint(Graphics g) {
         //do not display a tooltip for a disabled component
-        if( !this.getComponent().isEnabled()){
+        if (!this.getComponent().isEnabled()) {
             return;
         }
         Graphics2D g2 = (Graphics2D) g.create();
@@ -154,20 +162,19 @@ public class BalloonToolTip extends JToolTip {
         // - where the alpha channel is a value from 0 (full transparency) to 255 (solid)
         g2.setColor(this.backgoundColor);
         g2.fill(balloonArea);
-
         // draw the balloon border
         g2.setColor(this.borderColor);
         g2.setStroke(new BasicStroke(BORDER_STROKE_SIZE));
         g2.draw(balloonArea);
         g2.dispose();
-
         //generate the text label and render it
         String toolTipText = this.getComponent().getToolTipText();
         JLabel textLabel = new JLabel(toolTipText);
         textLabel.setFont(this.font);
         textLabel.setSize(textLabel.getPreferredSize());
         Graphics2D g2Text = (Graphics2D) g.create(BORDER_GAP + TRIANGLE_SIZE, BORDER_GAP,
-                this.getWidth() - BORDER_GAP - TRIANGLE_SIZE, this.getHeight() - BORDER_GAP);
+                this.getWidth() - BORDER_GAP - TRIANGLE_SIZE,
+                this.getHeight() - BORDER_GAP);
         g2Text.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
         g2Text.setColor(this.foregoundColor);
@@ -181,22 +188,45 @@ public class BalloonToolTip extends JToolTip {
      * Creates the shape for the balloon
      */
     private Shape createBalloonShape() {
+        int balloonHeight = this.getHeight() - 2 * BORDER_STROKE_SIZE;
+        int balloonWidth = this.getWidth() - TRIANGLE_SIZE - 2 * BORDER_STROKE_SIZE;
+        int triangleOffsetY = 0;
+        if (this.getTriangleAlignment() == TRIANGLE_ALIGNMENT_TOP) {
+            triangleOffsetY = (int) (balloonHeight / 4);
+        } else if (this.getTriangleAlignment() == TRIANGLE_ALIGNMENT_BOTTOM) {
+            triangleOffsetY = -(int) (balloonHeight / 4);
+        }
         Shape balloonShape = new RoundRectangle2D.Float(TRIANGLE_SIZE, BORDER_STROKE_SIZE,
-                this.getWidth() - TRIANGLE_SIZE - 2 * BORDER_STROKE_SIZE,
-                this.getHeight() - 2 * BORDER_STROKE_SIZE,
+                balloonWidth,
+                balloonHeight,
                 ARC, ARC);
         Polygon triangle = new Polygon();
         int triangleX = (int) (balloonShape.getBounds2D().getX());
-        int triangleY = (int) (balloonShape.getBounds2D().getCenterY());
-        triangle.addPoint(triangleX
-                - TRIANGLE_SIZE, triangleY);
-        triangle.addPoint(triangleX, triangleY
-                - TRIANGLE_SIZE);
-        triangle.addPoint(triangleX, triangleY
-                + TRIANGLE_SIZE);
+        int triangleY = (int) (balloonShape.getBounds2D().getCenterY()) - triangleOffsetY;
+        triangle.addPoint(triangleX - TRIANGLE_SIZE, triangleY);
+        triangle.addPoint(triangleX, triangleY - TRIANGLE_SIZE);
+        triangle.addPoint(triangleX, triangleY + TRIANGLE_SIZE);
         Area balloonArea = new Area(balloonShape);
         balloonArea.add(new Area(triangle));
         return (balloonArea);
+    }
+
+    /**
+     * @return the triangleAlignment. Returns the alignment of the pointer, the
+     * triangle. It might contain the values TRIANGLE_ALIGNMENT_CENTER,
+     * TRIANGLE_ALIGNMENT_TOP, TRIANGLE_ALIGNMENT_BOTTOM
+     */
+    public int getTriangleAlignment() {
+        return triangleAlignment;
+    }
+
+    /**
+     * @param triangleAlignment the triangleAlignment to set. One of
+     * TRIANGLE_ALIGNMENT_CENTER, TRIANGLE_ALIGNMENT_TOP,
+     * TRIANGLE_ALIGNMENT_BOTTOM
+     */
+    public void setTriangleAlignment(int triangleAlignment) {
+        this.triangleAlignment = triangleAlignment;
     }
 
 }

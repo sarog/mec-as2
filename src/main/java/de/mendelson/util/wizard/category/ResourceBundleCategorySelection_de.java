@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/wizard/category/ResourceBundleCategorySelection_de.java 2     24/08/22 17:33 Heller $
+//$Header: /as2/de/mendelson/util/wizard/category/ResourceBundleCategorySelection_de.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.wizard.category;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleCategorySelection_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelConnectivity.java 4     19/08/22 16:16 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelConnectivity.java 6     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -23,7 +23,7 @@ import javax.swing.ImageIcon;
  * Panel to define the interface preferences
  *
  * @author S.Heller
- * @version: $Revision: 4 $
+ * @version: $Revision: 6 $
  */
 public class PreferencesPanelConnectivity extends PreferencesPanel {
 
@@ -36,6 +36,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     private String oldHTTPPort = "";
     private String oldHTTPSPort = "";
     private String oldConnectionCountInbound = "";
+    private String preferencesStrAtLoadTime = "";
 
     /**
      * Localize the GUI
@@ -45,7 +46,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     /**
      * GUI prefs
      */
-    private PreferencesClient preferences;
+    private final PreferencesClient preferences;
 
     /**
      * Creates new form PreferencesPanelDirectories
@@ -118,8 +119,40 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         this.jLabelWarningJettyConfigAccess1.setVisible(!jettySettingsCouldBeChanged);
         this.jLabelWarningJettyConfigAccess2.setVisible(!jettySettingsCouldBeChanged);
         this.jLabelWarningJettyConfigAccess3.setVisible(!jettySettingsCouldBeChanged);
+        this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
+    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
+    private String captureSettingsToStr(){
+        StringBuilder builder = new StringBuilder();
+        builder.append( PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES ).append("=")
+                .append( this.jCheckBoxTrustAllServerCerts.isSelected()).append(";");
+        builder.append( PreferencesAS2.TLS_STRICT_HOST_CHECK ).append("=")
+                .append( this.jCheckBoxStrictHostnameCheck.isSelected()).append(";");
+        builder.append( PreferencesAS2.HTTP_SEND_TIMEOUT ).append("=")
+                .append( this.jTextFieldSendHttpTimeout.getText()).append(";");
+        builder.append( PreferencesAS2.MAX_CONNECTION_RETRY_COUNT ).append("=")
+                .append( this.jTexFieldRetryCount.getText()).append(";");
+        builder.append( PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S ).append("=")
+                .append( this.jTextFieldRetryWaittime.getText()).append(";");
+        builder.append( PreferencesAS2.MAX_OUTBOUND_CONNECTIONS ).append("=")
+                .append( this.jTextFieldOutboundConnections.getText()).append(";");
+        builder.append( PreferencesAS2.HTTP_LISTEN_PORT ).append("=")
+                .append( this.jTextFieldHTTPPort.getText()).append(";");
+        builder.append( PreferencesAS2.HTTPS_LISTEN_PORT ).append("=")
+                .append( this.jTextFieldHTTPSPort.getText()).append(";");
+        builder.append( PreferencesAS2.MAX_INBOUND_CONNECTIONS ).append("=")
+                .append( this.jTextFieldInboundConnections.getText()).append(";");
+        return( builder.toString() );
+    }
+    
+    
+    @Override
+    public boolean preferencesAreModified() {
+        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+    }
+    
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 22    10/02/22 11:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 24    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -22,7 +22,7 @@ import javax.swing.ImageIcon;
  * Panel to define the proxy settings
  *
  * @author S.Heller
- * @version: $Revision: 22 $
+ * @version: $Revision: 24 $
  */
 public class PreferencesPanelProxy extends PreferencesPanel {
 
@@ -31,7 +31,8 @@ public class PreferencesPanelProxy extends PreferencesPanel {
      */
     private MecResourceBundle rb = null;
 
-    private PreferencesClient preferences;
+    private final PreferencesClient preferences;
+    private String preferencesStrAtLoadTime = "";
 
     private final MendelsonMultiResolutionImage IMAGE_PROXY
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/proxy.svg",
@@ -85,8 +86,33 @@ public class PreferencesPanelProxy extends PreferencesPanel {
         this.jCheckBoxUseProxy.setSelected(this.preferences.getBoolean(PreferencesAS2.PROXY_USE));
         this.jCheckBoxUseProxyAuthentification.setSelected(this.preferences.getBoolean(PreferencesAS2.AUTH_PROXY_USE));
         this.setButtonState();
+        this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
+    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
+    private String captureSettingsToStr(){
+        StringBuilder builder = new StringBuilder();
+        builder.append( PreferencesAS2.PROXY_HOST ).append("=")
+                .append( this.jTextFieldProxyURL.getText()).append(";");        
+        builder.append( PreferencesAS2.PROXY_PORT ).append("=")
+                .append( this.jTextFieldProxyPort.getText()).append(";");        
+        builder.append( PreferencesAS2.AUTH_PROXY_USER ).append("=")
+                .append( this.jTextFieldProxyUser.getText()).append(";");
+        builder.append( PreferencesAS2.AUTH_PROXY_PASS ).append("=")
+                .append( new String(this.jPasswordFieldProxyPass.getPassword())).append(";");
+        builder.append( PreferencesAS2.PROXY_USE ).append("=")
+                .append( this.jCheckBoxUseProxy.isSelected()).append(";");
+        builder.append( PreferencesAS2.AUTH_PROXY_USE ).append("=")
+                .append( this.jCheckBoxUseProxyAuthentification.isSelected()).append(";");
+        return( builder.toString() );
+    }
+    
+    
+    @Override
+    public boolean preferencesAreModified() {
+        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+    }
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

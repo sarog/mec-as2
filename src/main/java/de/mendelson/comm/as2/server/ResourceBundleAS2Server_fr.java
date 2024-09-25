@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_fr.java 18    29/04/22 17:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_fr.java 20    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 18 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleAS2Server_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -29,7 +29,12 @@ public class ResourceBundleAS2Server_fr extends MecResourceBundle {
     static final Object[][] CONTENTS = {
         {"fatal.limited.strength", "La force principale limitée a été détectée dans le JVM. Veuillez installer le \"Unlimited jurisdiction key strength policy\" dossiers avant de courir le serveur " + AS2ServerVersion.getProductName() + "." },
         {"server.willstart", "{0} commence maintenant"},
-        {"server.start.details", "{0} paramètre:\n\nDémarrer le serveur HTTP intégré: {1}\nAutoriser les connexions client-serveur à partir d''autres hôtes: {2}\nMémoire: {3}\nVersion Java : {4}\nUtilisateur du système: {5}"},
+        {"server.start.details", "{0} paramètre:\n\nDémarrer le serveur HTTP intégré: {1}\n"
+            + "Autoriser les connexions client-serveur à partir d''autres hôtes: {2}\n"
+            + "Mémoire: {3}\n"
+            + "Version Java : {4}\n"
+            + "Utilisateur du système: {5}\n"
+            + "Identification du système: {6}"},
         {"server.started", "Démarrage du " + AS2ServerVersion.getFullProductName() + " dans {0} ms."},
         {"server.already.running", "Une instance de " + AS2ServerVersion.getProductName() + " semble déjà en cours.\nIl est aussi possible qu''une instance précédente du programme ne s''est pas terminée correctement. Si vous êtes sûr qu''aucune autre instance n''est en cours\nmerci de supprimer le fichier de lock \"{0}\" (Date de démarrage {1}) et redémarrer le serveur."},
         {"server.nohttp", "Le HTTP serveur intégré n''a pas été commencé." },  

@@ -1,10 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 23    10/06/22 10:01 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 24    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.log;
 
 import de.mendelson.comm.as2.message.AS2MDNInfo;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.server.AS2Server;
-import java.sql.Connection;
+
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -23,7 +23,7 @@ import java.io.UnsupportedEncodingException;
 /**
  * Handler to log logger data to a data base
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class DBLoggingHandler extends Handler {
 

@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 12    7/10/22 17:42 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MessageOverviewFilter.java 14    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.partner.Partner;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /*
@@ -14,11 +16,11 @@ import java.io.Serializable;
 /**
  * Filter to apply for the message overview
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class MessageOverviewFilter implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     public static final int DIRECTION_ALL = 0;
     public static final int DIRECTION_IN = AS2MessageInfo.DIRECTION_IN;
@@ -177,6 +179,11 @@ public class MessageOverviewFilter implements Serializable{
      */
     public void setUserdefinedId(String userdefinedId) {
         this.userdefinedId = userdefinedId;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
     
 }

@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/util/security/cert/CertificateInUseInfo.java 3     29/08/22 15:20 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/CertificateInUseInfo.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -17,38 +18,44 @@ import java.util.Objects;
  * Contains information about the use of a certificate
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
-public class CertificateInUseInfo implements Serializable{
+public class CertificateInUseInfo implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int PARTNER_REMOTE = 1;
     public static final int PARTNER_GATEWAY = 2;
     public static final int PARTNER_ROUTED = 3;
     public static final int PARTNER_LOCALSTATION = 4;
     public static final int PARTNER_LOCALSTATION_VIRTUAL = 5;
 
-    private List<SingleCertificateInUseInfo> singleUsageList = new ArrayList<SingleCertificateInUseInfo>();
+    private final List<SingleCertificateInUseInfo> singleUsageList
+            = Collections.synchronizedList(new ArrayList<SingleCertificateInUseInfo>());
     private final String fingerprintSHA1;
 
     public CertificateInUseInfo(String fingerprintSHA1) {
         this.fingerprintSHA1 = fingerprintSHA1;
     }
 
-    public boolean isEmpty(){
-        return( this.singleUsageList.isEmpty() );
+    public boolean isEmpty() {
+        synchronized (this.singleUsageList) {
+            return (this.singleUsageList.isEmpty());
+        }
     }
-    
-    public List<SingleCertificateInUseInfo> getUsageList(){
+
+    public List<SingleCertificateInUseInfo> getUsageList() {
         List<SingleCertificateInUseInfo> list = new ArrayList<SingleCertificateInUseInfo>();
-        list.addAll(this.singleUsageList);
-        return( list );
+        synchronized (this.singleUsageList) {
+            list.addAll(this.singleUsageList);
+        }
+        return (list);
     }
-    
-    
+
     public void addUsage(final int PARTNER_TYPE, String partnerName, String details) {
         SingleCertificateInUseInfo info = new SingleCertificateInUseInfo(PARTNER_TYPE, partnerName, details);
-        this.singleUsageList.add(info);
+        synchronized (this.singleUsageList) {
+            this.singleUsageList.add(info);
+        }
     }
 
     /**
@@ -56,12 +63,14 @@ public class CertificateInUseInfo implements Serializable{
      */
     public String getMessageAsText() {
         StringBuilder builder = new StringBuilder();
-        for (SingleCertificateInUseInfo info : this.singleUsageList) {
-            builder.append(info.getPartnerName())
-                    .append(" (")
-                    .append(info.getDetails())
-                    .append(")")
-                    .append("\n");
+        synchronized (this.singleUsageList) {
+            for (SingleCertificateInUseInfo info : this.singleUsageList) {
+                builder.append(info.getPartnerName())
+                        .append(" (")
+                        .append(info.getDetails())
+                        .append(")")
+                        .append("\n");
+            }
         }
         return (builder.toString());
     }
@@ -93,15 +102,16 @@ public class CertificateInUseInfo implements Serializable{
     @Override
     public int hashCode() {
         int hash = 7;
-        hash = 67 * hash + Objects.hashCode(this.singleUsageList);
+        synchronized (this.singleUsageList) {
+            hash = 67 * hash + Objects.hashCode(this.singleUsageList);
+        }
         hash = 67 * hash + Objects.hashCode(this.fingerprintSHA1);
         return hash;
     }
-    
-    
-    public static class SingleCertificateInUseInfo implements Serializable{
 
-        public static final long serialVersionUID = 1L;
+    public static class SingleCertificateInUseInfo implements Serializable {
+
+        private static final long serialVersionUID = 1L;
         private final int TYPE;
         private final String partnerName;
         private final String details;

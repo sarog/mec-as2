@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/tables/hideablecolumns/TableColumnModelHideable.java 3     10.07.15 16:08 Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/TableColumnModelHideable.java 4     2/11/23 14:03 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -17,14 +17,14 @@ import javax.swing.table.TableColumnModel;
 /**
  * Wrapper to a table model, allows to hide columns
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class TableColumnModelHideable implements TableColumnModel{
     
     private TableColumnModel model = null;
     
-    private Map<Object,HideableColumn>columnMap = new HashMap<Object,HideableColumn>();
-    private Map<Integer,HideableColumn>positionMap = new HashMap<Integer,HideableColumn>();
+    private final Map<Object,HideableColumn>columnMap = new HashMap<Object,HideableColumn>();
+    private final Map<Integer,HideableColumn>positionMap = new HashMap<Integer,HideableColumn>();
     
     public TableColumnModelHideable( TableColumnModel model ){
         this.model = model;

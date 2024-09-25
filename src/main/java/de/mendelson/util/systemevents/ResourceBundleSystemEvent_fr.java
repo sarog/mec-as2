@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_fr.java 24    24/02/22 17:04 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_fr.java 28    12/12/23 14:44 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 28 $
  */
 public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -35,6 +35,7 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_CERTIFICATE_DEL, "Certificat (supprimer)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_EXCHANGE_ANY, "Certificat (échange)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_EXCHANGE_REQUEST_RECEIVED, "Certificat (échange demande entrante)"},
+        {"type." + SystemEvent.TYPE_CERTIFICATE_IMPORT_KEYSTORE, "Certificat (Importation des clés)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_EXPIRE, "Certificat (expire)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_MODIFY, "Certificat (alias modifié)"},
         {"type." + SystemEvent.TYPE_CONNECTIVITY_ANY, "Connectivité"},
@@ -45,7 +46,7 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_DATABASE_INITIALIZATION, "Base de données (Initialisation)"},
         {"type." + SystemEvent.TYPE_NOTIFICATION_ANY, "Notification"},
         {"type." + SystemEvent.TYPE_NOTIFICATION_SEND_FAILED, "Envoi de la notification (échec)"},
-        {"type." + SystemEvent.TYPE_NOTIFICATION_SEND_SUCCESS, "Envoi de l'avis (succès)"},
+        {"type." + SystemEvent.TYPE_NOTIFICATION_SEND_SUCCESS, "Envoi de l''avis (succès)"},
         {"type." + SystemEvent.TYPE_PARTNER_ADD, "Partenaire (ajouter)"},
         {"type." + SystemEvent.TYPE_PARTNER_DEL, "Partenaire (supprimer)"},
         {"type." + SystemEvent.TYPE_PARTNER_MODIFY, "Partenaire (modifier)"},
@@ -61,16 +62,16 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_MAIN_SERVER_SHUTDOWN, "Arrêt du serveur"},
         {"type." + SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN, "Démarrage du serveur"},
         {"type." + SystemEvent.TYPE_DATABASE_SERVER_STARTUP_BEGIN, "Démarrage du serveur de base de données"},
-        {"type." + SystemEvent.TYPE_DATABASE_SERVER_RUNNING, "Serveur de base de données en cours d'exécution"},
+        {"type." + SystemEvent.TYPE_DATABASE_SERVER_RUNNING, "Serveur de base de données en cours d''exécution"},
         {"type." + SystemEvent.TYPE_DATABASE_SERVER_SHUTDOWN, "Arrêt du serveur de base de données"},
         {"type." + SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN, "Démarrage du serveur HTTP"},
-        {"type." + SystemEvent.TYPE_HTTP_SERVER_RUNNING, "Serveur HTTP en cours d'exécution"},
+        {"type." + SystemEvent.TYPE_HTTP_SERVER_RUNNING, "Serveur HTTP en cours d''exécution"},
         {"type." + SystemEvent.TYPE_HTTP_SERVER_SHUTDOWN, "Arrêt du serveur HTTP"},
         {"type." + SystemEvent.TYPE_TRFC_SERVER_STARTUP_BEGIN, "Démarrage du serveur TRFC"},
-        {"type." + SystemEvent.TYPE_TRFC_SERVER_RUNNING, "Serveur TRFC en cours d'exécution"},
+        {"type." + SystemEvent.TYPE_TRFC_SERVER_RUNNING, "Serveur TRFC en cours d''exécution"},
         {"type." + SystemEvent.TYPE_TRFC_SERVER_SHUTDOWN, "Arrêt du serveur TRFC"},
         {"type." + SystemEvent.TYPE_TRFC_SERVER_STATE, "Statut du serveur TRFC"},
-        {"type." + SystemEvent.TYPE_SCHEDULER_SERVER_STARTUP_BEGIN, "Démarrage de l'ordonnanceur"},      
+        {"type." + SystemEvent.TYPE_SCHEDULER_SERVER_STARTUP_BEGIN, "Démarrage de l''ordonnanceur"},      
         {"type." + SystemEvent.TYPE_SCHEDULER_SERVER_RUNNING, "Planificateur en cours d''exécution"},      
         {"type." + SystemEvent.TYPE_SCHEDULER_SERVER_SHUTDOWN, "Arrêt de l''ordonnanceur"},  
         {"type." + SystemEvent.TYPE_TRANSACTION_ANY, "Transaction"},
@@ -98,6 +99,8 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Déconnexion utilisateur"},
         {"type." + SystemEvent.TYPE_OTHER, "Autre"},
         {"type." + SystemEvent.TYPE_PORT_LISTENER, "L''auditeur du port"},
+        {"type." + SystemEvent.TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION, "Configuration du certificat"},
+        {"type." + SystemEvent.TYPE_XML_INTERFACE_PARTNER_MODIFICATION, "Configuration du partenaire"},
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "Système" },
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaction" },
         {"origin." + SystemEvent.ORIGIN_USER, "Utilisateur" },
@@ -117,5 +120,6 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_TRANSACTION, "Transaction"},
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "Opération sur fichier" },
         {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Opération interface utilisateur" },
+        {"category." + SystemEvent.CATEGORY_XML_INTERFACE, "Interface XML" },
     };
 }

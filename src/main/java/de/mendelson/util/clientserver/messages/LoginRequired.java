@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequired.java 3     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequired.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import de.mendelson.util.clientserver.user.User;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,11 +17,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class LoginRequired extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private User user;
 
     @Override
@@ -39,5 +41,10 @@ public class LoginRequired extends ClientServerMessage implements Serializable {
      */
     public void setUser(User user) {
         this.user = user;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 }

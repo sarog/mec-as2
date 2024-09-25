@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 10    24/08/22 14:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 12    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -33,21 +33,21 @@ import java.util.logging.Logger;
  * defined remote partner
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class ExecuteMoveToPartner implements IProcessingExecution {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private MessageAccessDB messageAccess;
-    private MDNAccessDB mdnAccess;
-    private PartnerAccessDB partnerAccess;
-    private CertificateManager certificateManagerEncSign;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final MessageAccessDB messageAccess;
+    private final MDNAccessDB mdnAccess;
+    private final PartnerAccessDB partnerAccess;
+    private final CertificateManager certificateManagerEncSign;
 
     /**
      * Localize your GUI!
      */
     private MecResourceBundle rb = null;
-    private IDBDriverManager dbDriverManager;
+    private final IDBDriverManager dbDriverManager;
 
     public ExecuteMoveToPartner(IDBDriverManager dbDriverManager,
             CertificateManager certificateManagerEncSign) {
@@ -104,7 +104,7 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
             throw new PostprocessingException(this.rb.getResourceString("targetpartner.does.not.exist", targetPartnerAS2Id),
                     messageSender, messageReceiver);
         }
-        if (payload != null && payload.size() > 0) {
+        if (payload != null && !payload.isEmpty()) {
             this.logger.log(Level.INFO, this.rb.getResourceString("executing.send",
                     new Object[]{
                         messageSender.getName(),
@@ -164,7 +164,7 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
                     this.rb.getResourceString("targetpartner.does.not.exist", targetPartnerAS2Id),
                     messageSender, messageReceiver);
         }
-        if (payload != null && payload.size() > 0) {
+        if (payload != null && !payload.isEmpty()) {
             this.logger.log(Level.INFO, this.rb.getResourceString("executing.receipt",
                     new Object[]{
                         messageSender.getName(),

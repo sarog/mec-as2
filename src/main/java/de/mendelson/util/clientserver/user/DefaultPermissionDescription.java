@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/user/DefaultPermissionDescription.java 4     4/06/18 12:32p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/DefaultPermissionDescription.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.user;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -10,12 +10,12 @@ package de.mendelson.util.clientserver.user;
 /**
  * Describe all permissions
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class DefaultPermissionDescription implements PermissionDescription{
 
     /**PermissionDescription extends Serializable*/
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public DefaultPermissionDescription(){        
     }
 

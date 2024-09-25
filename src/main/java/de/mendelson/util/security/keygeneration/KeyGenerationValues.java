@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 10    21/10/22 17:12 Heller $
+//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 14    2/11/23 14:03 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.util.ArrayList;
@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 /**
  * Stores key values for the generation process
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 14 $
  */
 public class KeyGenerationValues {
 
@@ -26,6 +26,8 @@ public class KeyGenerationValues {
     public static final String KEYALGORITHM_RSA = KeyGenerator.KEYALGORITHM_RSA;
     public static final String KEYALGORITHM_ECDSA = KeyGenerator.KEYALGORITHM_ECDSA;
     public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = "SHA256WithRSA";
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA = "SHA512WithRSA";
+    public static final String SIGNATUREALGORITHM_SHA1_WITH_RSA = "SHA1WithRSA";
 
     private String keyAlgorithm = KEYALGORITHM_RSA;
     private int keySize = 2048;
@@ -40,8 +42,9 @@ public class KeyGenerationValues {
     private String signatureAlgorithm = "SHA256WithRSA";
     private KeyUsage keyExtension = null;
     private ExtendedKeyUsage extendedKeyExtension = null;
-    private List<GeneralName> subjectAlternativeNames = new ArrayList<GeneralName>();
+    private final List<GeneralName> subjectAlternativeNames = new ArrayList<GeneralName>();
     private String ecNamedCurve = null;
+    private boolean generateSKI = false;
 
     /**
      * @return RSA/DSA etc
@@ -233,7 +236,6 @@ public class KeyGenerationValues {
     }
 
     /**
-     * @param subjectAlternativeName the subjectAlternativeName to add
      */
     public void addSubjectAlternativeName(GeneralName name) {
         this.subjectAlternativeNames.add( name );
@@ -251,5 +253,19 @@ public class KeyGenerationValues {
      */
     public void setECNamedCurve(String ecNamedCurve) {
         this.ecNamedCurve = ecNamedCurve;
+    }
+
+    /**
+     * @return the generateSKI
+     */
+    public boolean generateSKI() {
+        return generateSKI;
+    }
+
+    /**
+     * @param generateSKI the generateSKI to set
+     */
+    public void setGenerateSKI(boolean generateSKI) {
+        this.generateSKI = generateSKI;
     }
 }

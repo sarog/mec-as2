@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/user/User.java 7     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/User.java 9     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.user;
 
 import de.mendelson.util.security.PBKDF2;
@@ -18,12 +18,12 @@ import java.util.Map;
  * A single user for the client server system
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class User implements Serializable {
 
-    public static final long serialVersionUID = 1L;
-    private Map<Integer, String> permissions = new HashMap<Integer, String>();
+    private static final long serialVersionUID = 1L;
+    private final Map<Integer, String> permissions = new HashMap<Integer, String>();
     private String name = null;
     private String passwdCrypted = null;
     private PermissionDescription permissionDescription = new DefaultPermissionDescription();
@@ -61,9 +61,9 @@ public class User implements Serializable {
             User user = new User();
             user.setName(token[0]);
             //set the password
-            if (token.length > 0 && token[1] != null && token[1].length() > 0) {
+            if (token.length > 0 && token[1] != null && !token[1].isEmpty()) {
                 user.setPasswdCrypted(cryptPassword(token[1].toCharArray()));
-            } else if (token.length > 1 && token[2] != null && token[2].length() > 0) {
+            } else if (token.length > 1 && token[2] != null && !token[2].isEmpty()) {
                 user.setPasswdCrypted(token[2]);
             }
             int permissionOffset = 3;
@@ -113,7 +113,7 @@ public class User implements Serializable {
         while (iterator.hasNext()) {
             Integer index = iterator.next();
             String entry = this.permissions.get(index);
-            if (entry != null && entry.length() > 0) {
+            if (entry != null && !entry.isEmpty()) {
                 if (!first) {
                     buffer.append(",");
                 } else {

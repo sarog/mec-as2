@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MessageDeleteController.java 48    25/11/22 11:50 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/MessageDeleteController.java 52    27/10/23 17:35 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -44,30 +44,31 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 48 $
+ * @version $Revision: 52 $
  */
 public class MessageDeleteController {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private PreferencesAS2 preferences = new PreferencesAS2();
-    private MessageDeleteThread deleteThread;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final PreferencesAS2 preferences;
+    private final MessageDeleteThread deleteThread;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("old-transactions-housekeeping"));
-    private ClientServer clientserver = null;
-    private MecResourceBundle rb = null;
-    private MecResourceBundle rbTime = null;
-    private LogAccessDB logAccess;
-    private IDBDriverManager dbDriverManager;
-    private MessageAccessDB messageAccess;
+    private final ClientServer clientserver;
+    private final MecResourceBundle rb;
+    private final MecResourceBundle rbTime;
+    private final LogAccessDB logAccess;
+    private final IDBDriverManager dbDriverManager;
+    private final MessageAccessDB messageAccess;
 
     public MessageDeleteController(ClientServer clientserver, IDBDriverManager dbDriverManager) {
         this.clientserver = clientserver;
         this.dbDriverManager = dbDriverManager;
         this.logAccess = new LogAccessDB(dbDriverManager);
         this.messageAccess = new MessageAccessDB(this.dbDriverManager);
+        this.preferences = new PreferencesAS2(dbDriverManager);
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -83,13 +84,13 @@ public class MessageDeleteController {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        this.deleteThread = new MessageDeleteThread();
     }
 
     /**
      * Starts the embedded task that guards the log
      */
     public void startAutoDeleteControl() {
-        this.deleteThread = new MessageDeleteThread();
         this.scheduledExecutor.scheduleWithFixedDelay(this.deleteThread, 1, 1, TimeUnit.MINUTES);
     }
 
@@ -120,7 +121,7 @@ public class MessageDeleteController {
                 } catch (Exception e) {
                     deleteLog.append("[" + rb.getResourceString("delete.failed")
                             + "]: (" + e.getClass().getSimpleName() + ")  " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_FILE_OPERATION_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_FILE_OPERATION_ANY);
                     new File(rawfilename).deleteOnExit();
                 }
                 deleteLog.append("  ");
@@ -176,10 +177,10 @@ public class MessageDeleteController {
                 //an error occured - rollback transaction and release all table locks
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("MessageAccessDB.deleteMessagesFromLog: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
@@ -248,13 +249,13 @@ public class MessageDeleteController {
                         }
                     } catch (Throwable e) {
                         logger.severe("MessageDeleteThread: [" + e.getClass().getSimpleName() + "]:" + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                     }
                 }
             } catch (Throwable e) {
                 //final try/catch - this thead must not stop!
                 logger.severe("MessageDeleteThread: [" + e.getClass().getSimpleName() + "]:" + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
             }
         }
 
@@ -293,7 +294,7 @@ public class MessageDeleteController {
             builder.append("---").append(System.lineSeparator());
             builder.append(transactionDeleteLog);
             event.setBody(builder.toString());
-            SystemEventManagerImplAS2.newEvent(event);
+            SystemEventManagerImplAS2.instance().newEvent(event);
         }
 
     }

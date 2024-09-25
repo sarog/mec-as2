@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/ConsoleProgressBar.java 3     29.04.11 9:48 Heller $
+//$Header: /as2/de/mendelson/util/ConsoleProgressBar.java 4     2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import java.text.DecimalFormat;
@@ -14,11 +14,11 @@ import java.text.DecimalFormatSymbols;
 /**
  * Progress bar to display on the console
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ConsoleProgressBar {
 
-    private static DecimalFormat format = new DecimalFormat("##0.00");
+    private static final DecimalFormat format = new DecimalFormat("##0.00");
 
     static {
         DecimalFormatSymbols symbols = new DecimalFormatSymbols();

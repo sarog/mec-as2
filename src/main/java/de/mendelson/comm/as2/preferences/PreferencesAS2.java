@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 75    9/11/22 15:46 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 89    7/11/23 15:34 Heller $
 package de.mendelson.comm.as2.preferences;
 
+import de.mendelson.util.preferences.PreferencesCache;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.server.ServerInstance;
@@ -23,6 +24,9 @@ import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.List;
+import java.util.logging.Logger;
+import java.util.logging.Level;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -35,21 +39,24 @@ import java.sql.ResultSet;
  * Class to manage the preferences of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 75 $
+ * @version $Revision: 89 $
  */
 public class PreferencesAS2 {
 
-    static MecResourceBundle rb;
+    private final static MecResourceBundle rb;
 
     static {
         //load resource bundle
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundlePreferences.class.getName());
+                    ResourceBundlePreferencesAS2.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
+
+    private final static PreferencesCache SERVERSIDE_PREFERENCES_CACHE = new PreferencesCache(TimeUnit.SECONDS.toMillis(5));
+
     /**
      * Position of the client frame X
      */
@@ -72,23 +79,10 @@ public class PreferencesAS2 {
     public static final String LANGUAGE = "language";
     public static final String COUNTRY = "country";
     /**
-     * Directory the messageparts are stored in
+     * Directory the message parts are stored in
      */
     public static final String DIR_MSG = "dirmsg";
     public static final String ASYNC_MDN_TIMEOUT = "asyncmdntimeout";
-    /**
-     * keystore for user defined certs in https
-     */
-    public static final String KEYSTORE_HTTPS_SEND = "httpsendkeystore";
-    /**
-     * password for user defined certs keystore in https
-     */
-    public static final String KEYSTORE_HTTPS_SEND_PASS = "httpsendkeystorepass";
-    /**
-     * password for the encryption/signature keystore
-     */
-    public static final String KEYSTORE_PASS = "keystorepass";
-    public static final String KEYSTORE = "keystore";
     public static final String AUTH_PROXY_USER = "proxyuser";
     public static final String AUTH_PROXY_PASS = "proxypass";
     public static final String AUTH_PROXY_USE = "proxyuseauth";
@@ -128,6 +122,9 @@ public class PreferencesAS2 {
     public static final String HTTPS_LISTEN_PORT = "jetty.ssl.port";
     public static final String EMBEDDED_HTTP_SERVER_SETTINGS_ACCESSIBLE = "embeddedhttpserversettingsaccessible";
     public static final String MAX_INBOUND_CONNECTIONS = "jetty.connectionlimit.maxConnections";
+    public static final String NOTIFICATION_SMTP_TIMEOUT = "notificationsmtptimeout";
+    public static final String NOTIFICATION_SMTP_CONNECTION_TIMEOUT = "notificationsmtpconnectiontimeout";
+    public static final String SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG = "showoverwritelocalstationsecurity";
 
     private IDBDriverManager dbDriverManager = null;
 
@@ -135,55 +132,58 @@ public class PreferencesAS2 {
      * Server side properties are stored in the database - client side
      * properties are stored in the java preferences
      */
-    private final String[] SERVER_SIDE_PROPERTIES = new String[]{
-        DIR_MSG,
-        ASYNC_MDN_TIMEOUT,
-        KEYSTORE_HTTPS_SEND,
-        KEYSTORE,
-        AUTH_PROXY_USER,
-        AUTH_PROXY_PASS,
-        AUTH_PROXY_USE,
-        AUTO_MSG_DELETE,
-        AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S,
-        AUTO_MSG_DELETE_OLDERTHAN,
-        AUTO_MSG_DELETE_LOG,
-        AUTO_STATS_DELETE,
-        AUTO_STATS_DELETE_OLDERTHAN,
-        AUTO_LOGDIR_DELETE,
-        AUTO_LOGDIR_DELETE_OLDERTHAN,
-        LOG_POLL_PROCESS,
-        PROXY_HOST,
-        PROXY_PORT,
-        PROXY_USE,
-        RECEIPT_PARTNER_SUBDIR,
-        HTTP_SEND_TIMEOUT,
-        CEM,
-        WRITE_OUTBOUND_STATUS_FILE,
-        MAX_CONNECTION_RETRY_COUNT,
-        MAX_OUTBOUND_CONNECTIONS,
-        CONNECTION_RETRY_WAIT_TIME_IN_S,
-        TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES,
-        TLS_STRICT_HOST_CHECK
-    };
+    private final List<String> SERVER_SIDE_PROPERTIES
+            = Arrays.asList(
+                    new String[]{
+                        DIR_MSG,
+                        ASYNC_MDN_TIMEOUT,
+                        AUTH_PROXY_USER,
+                        AUTH_PROXY_PASS,
+                        AUTH_PROXY_USE,
+                        AUTO_MSG_DELETE,
+                        AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S,
+                        AUTO_MSG_DELETE_OLDERTHAN,
+                        AUTO_MSG_DELETE_LOG,
+                        AUTO_STATS_DELETE,
+                        AUTO_STATS_DELETE_OLDERTHAN,
+                        AUTO_LOGDIR_DELETE,
+                        AUTO_LOGDIR_DELETE_OLDERTHAN,
+                        LOG_POLL_PROCESS,
+                        PROXY_HOST,
+                        PROXY_PORT,
+                        PROXY_USE,
+                        RECEIPT_PARTNER_SUBDIR,
+                        HTTP_SEND_TIMEOUT,
+                        CEM,
+                        WRITE_OUTBOUND_STATUS_FILE,
+                        MAX_CONNECTION_RETRY_COUNT,
+                        MAX_OUTBOUND_CONNECTIONS,
+                        CONNECTION_RETRY_WAIT_TIME_IN_S,
+                        TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES,
+                        TLS_STRICT_HOST_CHECK
+                    });
 
     /**
      * These properties are constant. You could try to change them but they will
      * always return the default value
      */
-    private final String[] CONSTANT_PROPERTIES = new String[]{
-        KEYSTORE_HTTPS_SEND_PASS,
-        KEYSTORE_PASS,
-        EMBEDDED_HTTP_SERVER_STARTED
-    };
+    private final List<String> CONSTANT_PROPERTIES
+            = Arrays.asList(
+                    new String[]{                        
+                        EMBEDDED_HTTP_SERVER_STARTED,
+                        NOTIFICATION_SMTP_CONNECTION_TIMEOUT,
+                        NOTIFICATION_SMTP_TIMEOUT
+                    });
 
     /**
      * These properties are stored in the embedded jetty properties file
      */
-    private final String[] JETTY_PROPERTIES = new String[]{
-        HTTP_LISTEN_PORT,
-        HTTPS_LISTEN_PORT,
-        MAX_INBOUND_CONNECTIONS
-    };
+    private final List<String> JETTY_PROPERTIES = Arrays.asList(
+            new String[]{
+                HTTP_LISTEN_PORT,
+                HTTPS_LISTEN_PORT,
+                MAX_INBOUND_CONNECTIONS
+            });
 
     /**
      * Initialize the preferences
@@ -210,19 +210,19 @@ public class PreferencesAS2 {
      *
      * @param KEY key to store properties with in the preferences
      */
-    public String getDefaultValue(final String KEY) {
+    public static String getDefaultValue(final String KEY) {
         if (KEY.equals(FRAME_X)) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Dimension dialogSize = new Dimension(
-                    Integer.valueOf(this.getDefaultValue(FRAME_WIDTH)).intValue(),
-                    Integer.valueOf(this.getDefaultValue(FRAME_HEIGHT)).intValue());
+                    Integer.valueOf(getDefaultValue(FRAME_WIDTH)).intValue(),
+                    Integer.valueOf(getDefaultValue(FRAME_HEIGHT)).intValue());
             return (String.valueOf((screenSize.width - dialogSize.width) / 2));
         }
         if (KEY.equals(FRAME_Y)) {
             Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
             Dimension dialogSize = new Dimension(
-                    Integer.valueOf(this.getDefaultValue(FRAME_WIDTH)).intValue(),
-                    Integer.valueOf(this.getDefaultValue(FRAME_HEIGHT)).intValue());
+                    Integer.valueOf(getDefaultValue(FRAME_WIDTH)).intValue(),
+                    Integer.valueOf(getDefaultValue(FRAME_HEIGHT)).intValue());
             return (String.valueOf((screenSize.height - dialogSize.height) / 2));
         }
         if (KEY.equals(FRAME_WIDTH)) {
@@ -246,19 +246,7 @@ public class PreferencesAS2 {
         //message part directory
         if (KEY.equals(DIR_MSG)) {
             return (new File(System.getProperty("user.dir")).getAbsolutePath() + FileSystems.getDefault().getSeparator() + "messages");
-        }
-        if (KEY.equals(KEYSTORE_HTTPS_SEND)) {
-            return ("jetty10/etc/keystore");
-        }
-        if (KEY.equals(KEYSTORE)) {
-            return ("certificates.p12");
-        }
-        if (KEY.equals(KEYSTORE_HTTPS_SEND_PASS)) {
-            return ("test");
-        }
-        if (KEY.equals(KEYSTORE_PASS)) {
-            return ("test");
-        }
+        }        
         if (KEY.equals(AUTH_PROXY_PASS)) {
             return ("mypass");
         }
@@ -384,19 +372,93 @@ public class PreferencesAS2 {
         if (KEY.equals(MAX_INBOUND_CONNECTIONS)) {
             return ("1000");
         }
-        throw new IllegalArgumentException("No defaults defined for prefs key " + KEY + " in " + this.getClass().getName());
+        if( KEY.equals(NOTIFICATION_SMTP_CONNECTION_TIMEOUT)){
+            return( String.valueOf(TimeUnit.SECONDS.toMillis(15)));
+        }
+        if( KEY.equals(NOTIFICATION_SMTP_TIMEOUT)){
+            return( String.valueOf(TimeUnit.SECONDS.toMillis(15)));
+        }
+        if( KEY.equals(SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG)){
+            return( "FALSE");
+        }
+        throw new IllegalArgumentException("No defaults defined for prefs key " + KEY + " in " + PreferencesAS2.class.getName());
+    }
+
+    /**
+     * Resets all preferences to the default value if the key is a server side stored key
+     *
+     * @param key
+     */
+    public void resetAllServerValuesToDefaultValue(Logger logger) {
+        for( String key:this.SERVER_SIDE_PROPERTIES){
+            this.resetToDefaultValue(logger, key);
+        }
+    } 
+    
+    /**
+     * Deletes the passed key from the user defined settings - this will result
+     * in reading the default value the next time it is requested
+     *
+     */
+    public void resetToDefaultValue(Logger logger, final String KEY) {
+        boolean resetPerformed = false;
+        if (isServerSideProperty(KEY)) {
+            PreparedStatement statement = null;
+            if (this.dbDriverManager == null) {
+                this.setDBDriverManagerByPluginCheck();
+            }
+            Connection configConnection = null;
+            try {
+                configConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+                statement = configConnection.prepareStatement("DELETE FROM serversettings WHERE vkey=?");
+                statement.setString(1, KEY);
+                int rows = statement.executeUpdate();
+                resetPerformed = rows == 1;
+                if (resetPerformed) {
+                    SERVERSIDE_PREFERENCES_CACHE.remove(KEY);
+                }
+            } catch (Exception e) {
+                SystemEventManagerImplAS2.instance().systemFailure(e);
+            } finally {
+                if (statement != null) {
+                    try {
+                        statement.close();
+                    } catch (Exception e) {
+                        //nop                       
+                    }
+                }
+                if (configConnection != null) {
+                    try {
+                        configConnection.close();
+                    } catch (Exception e) {
+                        //nop                       
+                    }
+                }
+            }
+        } else {
+            Preferences preferences = Preferences.userNodeForPackage(AS2ServerVersion.class);
+            preferences.remove(KEY);
+        }
+        if (resetPerformed) {
+            String moduleName = rb.getResourceString("module.name");
+            String localizedKey = rb.getResourceString(KEY);
+            logger.log(Level.WARNING, moduleName + " " + rb.getResourceString("setting.reset", localizedKey));
+        }
     }
 
     /**
      * Returns a single string value from the preferences or the default if it
      * is not found
      *
-     * @param key one of the class internal constants
      */
     public String get(final String KEY) {
         String value = this.readSetting(KEY);
         if (value == null) {
-            return (this.getDefaultValue(KEY));
+            value = getDefaultValue(KEY);
+            if (this.isServerSideProperty(KEY)) {
+                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+            }
+            return (value);
         } else {
             return (value);
         }
@@ -410,7 +472,7 @@ public class PreferencesAS2 {
      * @param value value to set
      */
     public void put(final String KEY, String value) {
-        if (value == null || value.length() == 0) {
+        if (value == null || value.isEmpty()) {
             this.deleteSetting(KEY);
         } else {
             this.writeSetting(KEY, value);
@@ -434,10 +496,12 @@ public class PreferencesAS2 {
     public int getInt(final String KEY) {
         String value = this.readSetting(KEY);
         if (value == null) {
-            return (Integer.valueOf(this.getDefaultValue(KEY)));
-        } else {
-            return (Integer.valueOf(value).intValue());
+            value = getDefaultValue(KEY);
+            if (this.isServerSideProperty(KEY)) {
+                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+            }
         }
+        return (Integer.valueOf(value).intValue());
     }
 
     /**
@@ -457,10 +521,12 @@ public class PreferencesAS2 {
     public boolean getBoolean(final String KEY) {
         String value = this.readSetting(KEY);
         if (value == null) {
-            return (Boolean.valueOf(this.getDefaultValue(KEY)));
-        } else {
-            return (Boolean.valueOf(value).booleanValue());
+            value = getDefaultValue(KEY);
+            if (this.isServerSideProperty(KEY)) {
+                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+            }
         }
+        return (Boolean.valueOf(value).booleanValue());
     }
 
     /**
@@ -470,10 +536,12 @@ public class PreferencesAS2 {
     public boolean getBoolean(final String KEY, boolean defaultValue) {
         String value = this.readSetting(KEY);
         if (value == null) {
-            return (defaultValue);
-        } else {
-            return (Boolean.valueOf(value).booleanValue());
+            value = String.valueOf(defaultValue);
+            if (this.isServerSideProperty(KEY)) {
+                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+            }
         }
+        return (Boolean.valueOf(value).booleanValue());
     }
 
     /**
@@ -484,7 +552,7 @@ public class PreferencesAS2 {
      * @return
      */
     private boolean isServerSideProperty(String KEY) {
-        return (Arrays.asList(SERVER_SIDE_PROPERTIES).contains(KEY));
+        return (SERVER_SIDE_PROPERTIES.contains(KEY));
     }
 
     /**
@@ -495,7 +563,7 @@ public class PreferencesAS2 {
      * @return
      */
     private boolean isConstantProperty(String KEY) {
-        return (Arrays.asList(CONSTANT_PROPERTIES).contains(KEY));
+        return (CONSTANT_PROPERTIES.contains(KEY));
     }
 
     /**
@@ -505,7 +573,7 @@ public class PreferencesAS2 {
      * @return
      */
     private boolean isJettyProperty(String KEY) {
-        return (Arrays.asList(JETTY_PROPERTIES).contains(KEY));
+        return (JETTY_PROPERTIES.contains(KEY));
     }
 
     /**
@@ -517,50 +585,56 @@ public class PreferencesAS2 {
      */
     private String readSetting(String KEY) {
         if (isConstantProperty(KEY)) {
-            return (this.getDefaultValue(KEY));
+            return (getDefaultValue(KEY));
         }
         if (isJettyProperty(KEY)) {
             JettyConfigfileHandler handler = JettyConfigfileHandler.instance();
-            return (handler.getValue(KEY, this.getDefaultValue(KEY)));
+            return (handler.getValue(KEY, getDefaultValue(KEY)));
         }
         if (isServerSideProperty(KEY)) {
-            PreparedStatement statement = null;
-            if (this.dbDriverManager == null) {
-                this.setDBDriverManagerByPluginCheck();
-            }
-            Connection configConnection = null;
-            ResultSet result = null;
-            try {
-                configConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-                statement = configConnection.prepareStatement("SELECT vvalue FROM serversettings WHERE vkey=?");
-                statement.setString(1, KEY);
-                result = statement.executeQuery();
-                if (result.next()) {
-                    String value = result.getString("vvalue");
-                    return (value);
+            String cachedValue = SERVERSIDE_PREFERENCES_CACHE.get(KEY);
+            if (cachedValue != null) {
+                return (cachedValue);
+            } else {
+                PreparedStatement statement = null;
+                if (this.dbDriverManager == null) {
+                    this.setDBDriverManagerByPluginCheck();
                 }
-            } catch (Exception e) {
-                SystemEventManagerImplAS2.systemFailure(e);
-            } finally {
-                if (result != null) {
-                    try {
-                        result.close();
-                    } catch (Exception e) {
-                        //nop                       
+                Connection configConnection = null;
+                ResultSet result = null;
+                try {
+                    configConnection = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+                    statement = configConnection.prepareStatement("SELECT vvalue FROM serversettings WHERE vkey=?");
+                    statement.setString(1, KEY);
+                    result = statement.executeQuery();
+                    if (result.next()) {
+                        String value = result.getString("vvalue");
+                        SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+                        return (value);
                     }
-                }
-                if (statement != null) {
-                    try {
-                        statement.close();
-                    } catch (Exception e) {
-                        //nop                       
+                } catch (Exception e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
+                } finally {
+                    if (result != null) {
+                        try {
+                            result.close();
+                        } catch (Exception e) {
+                            //nop                       
+                        }
                     }
-                }
-                if (configConnection != null) {
-                    try {
-                        configConnection.close();
-                    } catch (Exception e) {
-                        //nop                       
+                    if (statement != null) {
+                        try {
+                            statement.close();
+                        } catch (Exception e) {
+                            //nop                       
+                        }
+                    }
+                    if (configConnection != null) {
+                        try {
+                            configConnection.close();
+                        } catch (Exception e) {
+                            //nop                       
+                        }
                     }
                 }
             }
@@ -597,7 +671,7 @@ public class PreferencesAS2 {
                     String transactionName = "PreferencesAS2_writeSetting";
                     statementTransaction = configConnectionNoAutoCommit.createStatement();
                     dbDriverManager.startTransaction(statementTransaction, transactionName);
-                    dbDriverManager.setTableLockINSERTAndUPDATE(statementTransaction, 
+                    dbDriverManager.setTableLockINSERTAndUPDATE(statementTransaction,
                             new String[]{"serversettings"});
                     //try to update existing row
                     statementUpdate = configConnectionNoAutoCommit.prepareStatement("UPDATE serversettings SET vvalue=? WHERE vkey=?");
@@ -612,40 +686,41 @@ public class PreferencesAS2 {
                         statementInsert.executeUpdate();
                     }
                     this.dbDriverManager.commitTransaction(statementTransaction, transactionName);
+                    SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
                 } catch (Exception e) {
                     try {
                         this.dbDriverManager.rollbackTransaction(statementTransaction);
                     } catch (Exception ex) {
-                        SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                     }
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 } finally {
                     if (statementUpdate != null) {
                         try {
                             statementUpdate.close();
                         } catch (Exception e) {
-                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                         }
                     }
                     if (statementInsert != null) {
                         try {
                             statementInsert.close();
                         } catch (Exception e) {
-                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                         }
                     }
                     if (statementTransaction != null) {
                         try {
                             statementTransaction.close();
                         } catch (Exception e) {
-                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                         }
                     }
                     if (configConnectionNoAutoCommit != null) {
                         try {
                             configConnectionNoAutoCommit.close();
                         } catch (Exception e) {
-                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                         }
                     }
                 }
@@ -687,19 +762,20 @@ public class PreferencesAS2 {
                 String transactionName = "PreferencesAS2_deleteSetting";
                 statementTransactionControl = configConnection.createStatement();
                 this.dbDriverManager.startTransaction(statementTransactionControl, transactionName);
-                this.dbDriverManager.setTableLockDELETE(statementTransactionControl, 
+                this.dbDriverManager.setTableLockDELETE(statementTransactionControl,
                         new String[]{"serversettings"});
                 statementDelete = configConnection.prepareStatement("DELETE FROM serversettings WHERE vkey=?");
                 statementDelete.setString(1, KEY);
                 statementDelete.executeUpdate();
                 this.dbDriverManager.commitTransaction(statementTransactionControl, transactionName);
+                SERVERSIDE_PREFERENCES_CACHE.remove(KEY);
             } catch (Exception e) {
                 try {
                     this.dbDriverManager.rollbackTransaction(statementTransactionControl);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex);
                 }
-                SystemEventManagerImplAS2.systemFailure(e);
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             } finally {
                 if (statementDelete != null) {
                     try {
@@ -732,5 +808,15 @@ public class PreferencesAS2 {
             }
         }
     }
+    
+    /**
+     * Clears the server side preferences cache. This might be required in HA mode 
+     * if there are multiple nodes working on the same preferences and a request needs to get
+     * the current stored value in the database
+     */
+    public void clearCache(){
+        SERVERSIDE_PREFERENCES_CACHE.clear();
+    }
+    
 
 }

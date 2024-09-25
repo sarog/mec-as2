@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration_fr.java 10    17/01/23 11:06 Heller $ 
+//$Header: /as2/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration_fr.java 12    2/11/23 15:53 Heller $ 
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleDisplayHTTPConfiguration_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -34,7 +34,7 @@ public class ResourceBundleDisplayHTTPConfiguration_fr extends MecResourceBundle
         {"tab.misc", "General"},
         {"tab.cipher", "Chiffrement TLS"},
         {"tab.protocols", "Protocoles TLS"},
-        {"no.ssl.enabled", "La prise en charge SSL n''était pas activée dans le serveur HTTP sous-jacent.\nVeuillez modifier le fichier de configuration {0}\nselon la documentation et redémarrer le serveur." },        
+        {"no.ssl.enabled", "La prise en charge TLS n''était pas activée dans le serveur HTTP sous-jacent.\nVeuillez modifier le fichier de configuration {0}\nselon la documentation et redémarrer le serveur." },        
         {"no.embedded.httpserver", "Vous n''avez pas démarré le serveur HTTP sous-jacent.\nAucune information n'est disponible." },                
     };
 }

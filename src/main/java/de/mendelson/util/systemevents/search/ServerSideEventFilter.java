@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/search/ServerSideEventFilter.java 2     12.10.18 12:19 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/search/ServerSideEventFilter.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.search;
 
 import java.io.Serializable;
@@ -14,11 +14,11 @@ import java.io.Serializable;
  * Filter the client could define to perform a server side system event search
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ServerSideEventFilter implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private long startDate = System.currentTimeMillis();
     private long endDate = System.currentTimeMillis();

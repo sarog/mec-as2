@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 27    24/02/22 17:04 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 34    12/12/23 14:44 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 34 $
  */
 public class ResourceBundleSystemEvent_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -36,6 +36,7 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_CERTIFICATE_EXCHANGE_REQUEST_RECEIVED, "Zertifikataustausch (eingehende Anfrage)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_EXPIRE, "Zertifikat läuft aus"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_MODIFY, "Zertifikat (Alias verändert)"},
+        {"type." + SystemEvent.TYPE_CERTIFICATE_IMPORT_KEYSTORE, "Zertifikat (Keystore Import)"},
         {"type." + SystemEvent.TYPE_CONNECTIVITY_ANY, "Verbindung"},
         {"type." + SystemEvent.TYPE_CONNECTIVITY_TEST, "Verbindungstest"},
         {"type." + SystemEvent.TYPE_DATABASE_ANY, "Datenbank"},
@@ -97,6 +98,8 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Benutzertrennung"},
         {"type." + SystemEvent.TYPE_OTHER, "Unspezifiziert"},
         {"type." + SystemEvent.TYPE_PORT_LISTENER, "Empfangsport"},
+        {"type." + SystemEvent.TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION, "Zertifikatkonfiguration"},
+        {"type." + SystemEvent.TYPE_XML_INTERFACE_PARTNER_MODIFICATION, "Partnerkonfiguration"},
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "System"},
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaktion"},
         {"origin." + SystemEvent.ORIGIN_USER, "Benutzer"},
@@ -116,5 +119,6 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_TRANSACTION, "Transaktion"},
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "Dateioperation" },
         {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Client Operation" },
+        {"category." + SystemEvent.CATEGORY_XML_INTERFACE, "XML Schnittstelle" },
     };
 }

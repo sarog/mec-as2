@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/TransferClient.java 15    28.07.21 14:01 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/datatransfer/TransferClient.java 17    10/11/23 11:16 Helle $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.SyncRequestTransportLevelException;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Requests downloads from and sends new uploads to the server
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class TransferClient {
 
@@ -27,8 +27,8 @@ public class TransferClient {
      * Set a timeout of 30s for these requests
      */
     public static final long TIMEOUT = TimeUnit.SECONDS.toMillis(45);
-    private BaseClient baseClient;
-    
+    private final BaseClient baseClient;
+
     public static final int CHUNK_SIZE_IN_BYTES = 50000;
 
     public TransferClient(BaseClient baseClient) {
@@ -66,9 +66,9 @@ public class TransferClient {
 
     /**
      * Sends the data of the inputstream synced to the server and returns a
-     * unique number from the server for the upload process.
-     * Warning: This does also transfer files with the size of 0 bytes to the server
-     * Please be aware of this at the server side
+     * unique number from the server for the upload process. Warning: This does
+     * also transfer files with the size of 0 bytes to the server Please be
+     * aware of this at the server side
      */
     public String uploadChunked(InputStream inStream) throws Throwable {
         String targetHash = null;
@@ -80,9 +80,13 @@ public class TransferClient {
                 uploadRequest.setTargetHash(targetHash);
                 UploadResponseChunk response
                         = (UploadResponseChunk) this.getBaseClient().sendSync(uploadRequest, TIMEOUT);
-                if (response != null) {
-                    targetHash = response.getTargetHash();
+                if (response == null) {
+                    throw new SyncRequestTransportLevelException();
                 }
+                if (response.getException() != null) {
+                    throw response.getException();
+                }
+                targetHash = response.getTargetHash();
                 //special case: the transferred file has the size 0
                 if (data.length == 0) {
                     break;

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplayImplAS2.java 4     8/12/22 11:35 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplayImplAS2.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.security.signature;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
  * Container superclass for the signature rendering
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class SignatureDisplayImplAS2 extends SignatureDisplay{
     
@@ -28,7 +28,7 @@ public class SignatureDisplayImplAS2 extends SignatureDisplay{
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_broken.svg",
                     ListCellRendererSignature.IMAGE_HEIGHT);
     
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
     
     
     public SignatureDisplayImplAS2( Integer wrappedValue ){

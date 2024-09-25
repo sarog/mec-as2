@@ -15,12 +15,10 @@ import de.mendelson.util.security.cert.gui.JDialogInfoOnExternalCertificate;
 import de.mendelson.util.security.cert.gui.ResourceBundleCertificates;
 import de.mendelson.util.uinotification.UINotification;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,7 +33,6 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -48,7 +45,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Dialog to display the test result of a connection test
  *
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 35 $
  */
 public class JDialogConnectionTestResult extends JDialog {
 
@@ -56,10 +53,10 @@ public class JDialogConnectionTestResult extends JDialog {
     public static final int CONNECTION_TEST_AS2 = ConnectionTest.CONNECTION_TEST_AS2;
     public static final int CONNECTION_TEST_AS4 = ConnectionTest.CONNECTION_TEST_AS4;
 
-    private ConnectionTestResult result;
+    private final ConnectionTestResult result;
     private MecResourceBundle rb = null;
-    private CertificateManager certManagerSSL;
-    private MecResourceBundle rbCerts;
+    private final CertificateManager certManagerSSL;
+    private final MecResourceBundle rbCerts;
 
     private static final MendelsonMultiResolutionImage IMAGE_CONNECTIONTEST
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/testconnection.svg", 16);
@@ -259,7 +256,7 @@ public class JDialogConnectionTestResult extends JDialog {
         boolean exists = true;
         for (X509Certificate remoteCertificate : remoteCertificates) {
             KeystoreCertificate testCert = new KeystoreCertificate();
-            testCert.setCertificate(remoteCertificate);
+            testCert.setCertificate(remoteCertificate, null);
             String fingerPrint = testCert.getFingerPrintSHA1();
             if (certManagerSSL.getKeystoreCertificateByFingerprintSHA1(fingerPrint) == null) {
                 exists = false;
@@ -281,8 +278,7 @@ public class JDialogConnectionTestResult extends JDialog {
             KeyStoreUtil util = new KeyStoreUtil();
             X509Certificate importCertificate = certList.get(selectedCertificateIndex);
             try {
-                String alias = util.importX509Certificate(this.certManagerSSL.getKeystore(), importCertificate, 
-                        BouncyCastleProvider.PROVIDER_NAME);
+                String alias = util.importX509Certificate(this.certManagerSSL.getKeystore(), importCertificate);
                 this.certManagerSSL.saveKeystore();
                 this.certManagerSSL.rereadKeystoreCertificates();
                 UINotification.instance().addNotification(null,

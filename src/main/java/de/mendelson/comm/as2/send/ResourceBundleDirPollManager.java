@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager.java 19    19/01/22 16:17 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager.java 20    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleDirPollManager extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

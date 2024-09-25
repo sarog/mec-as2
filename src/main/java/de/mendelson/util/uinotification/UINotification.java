@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/uinotification/UINotification.java 28    11/05/22 9:45 Heller $
+//$Header: /as2/de/mendelson/util/uinotification/UINotification.java 29    2/11/23 14:03 Heller $
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.ColorUtil;
@@ -37,7 +37,7 @@ import javax.swing.UIManager;
  * Main UI Notification
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 29 $
  */
 public class UINotification implements INotificationHandler {
 
@@ -632,10 +632,6 @@ public class UINotification implements INotificationHandler {
     }
 
     /**
-     * @param interactionType Defines in which format notifications should be
-     * displayed. One of
-     * UINotificiation.INTERACTION_TYPE_INTERNAL_STACKED_FRAMES,
-     * UINotification.INTERACTION_TYPE_MESSAGE_DIALOGS
      */
     public void setInteractionType(final int INTERACTION_TYPE) {
         this.interactionType = INTERACTION_TYPE;

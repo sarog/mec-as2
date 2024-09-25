@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/console/ConsoleLogin.java 1     10.09.10 14:48 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/console/ConsoleLogin.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.console;
 
 import java.io.Console;
@@ -13,11 +13,11 @@ import java.io.Console;
 /**
  * Class that performs a login on the console
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class ConsoleLogin {
 
-    private Console console;
+    private final Console console;
     private char[] pass = null;
     private String user = null;
 
@@ -28,7 +28,7 @@ public class ConsoleLogin {
     public void readUserPass() {
         while (this.getUser() == null || this.getPass() == null) {
             this.user = console.readLine("Enter your user name: ");
-            if (this.getUser() == null || this.getUser().length() == 0) {
+            if (this.getUser() == null || this.getUser().isEmpty()) {
                 System.out.println();
                 System.out.println("No user name entered");
                 this.user = null;

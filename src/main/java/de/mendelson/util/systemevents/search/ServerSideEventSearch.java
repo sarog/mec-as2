@@ -1,11 +1,10 @@
-//$Header: /as2/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 11    1/06/22 14:49 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 12    2/11/23 14:03 Heller $
 package de.mendelson.util.systemevents.search;
 
 import de.mendelson.util.systemevents.SystemEvent;
 import java.io.IOException;
 import java.io.StringReader;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -57,7 +56,7 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class ServerSideEventSearch {
 

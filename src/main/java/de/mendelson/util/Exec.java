@@ -1,7 +1,11 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/Exec.java 13    20-01-17 9:22a Heller $
+//$Header: /hpcxml/de/mendelson/util/Exec.java 14    1/09/23 13:10 Heller $
 package de.mendelson.util;
 
-import java.io.*;
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PrintStream;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -13,7 +17,7 @@ import java.io.*;
 /**
  * Executes a native command
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class Exec {
 
@@ -75,12 +79,12 @@ public class Exec {
         return (this.start(command, null, null));
     }
 
-    /**Thread that reads continuesly the output/input stream data from the 
-     *native thread and redirects it to a printstream*/
+    /**Thread that reads contiguously the output/input stream data from the 
+     *native thread and redirects it to a print stream*/
     public static class StreamPumper extends Thread {
 
         /**Reader to read the data from*/
-        private BufferedInputStream inStream;
+        private final BufferedInputStream inStream;
         private boolean endOfStream = false;
         private final int SLEEP_TIME = 3;
         private final int BUFFER_SIZE = 2048;
@@ -108,6 +112,7 @@ public class Exec {
         }
 
         /**Start method of the thread*/
+        @Override
         public void run() {
             try {
                 try {

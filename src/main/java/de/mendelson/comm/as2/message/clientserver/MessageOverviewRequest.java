@@ -1,9 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewRequest.java 3     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewRequest.java 5     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
 import de.mendelson.comm.as2.message.MessageOverviewFilter;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -13,26 +16,27 @@ import java.io.Serializable;
  */
 /**
  * Msg for the client server protocol
+ *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
-public class MessageOverviewRequest extends ClientServerMessage implements Serializable{
+public class MessageOverviewRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private MessageOverviewFilter filter = null;
     private String messageId = null;
 
-    public MessageOverviewRequest(String messageId){
+    public MessageOverviewRequest(String messageId) {
         this.messageId = messageId;
     }
-    
-    public MessageOverviewRequest(MessageOverviewFilter filter){
+
+    public MessageOverviewRequest(MessageOverviewFilter filter) {
         this.filter = filter;
     }
 
     @Override
-    public String toString(){
-        return( "Message overview request" );
+    public String toString() {
+        return ("Message overview request");
     }
 
     /**
@@ -49,7 +53,11 @@ public class MessageOverviewRequest extends ClientServerMessage implements Seria
         return messageId;
     }
 
-   
+    /**
+     * Prevent an overwrite of the readObject method for de-serialization
+     */
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException {
+        inStream.defaultReadObject();
+    }
 
-    
 }

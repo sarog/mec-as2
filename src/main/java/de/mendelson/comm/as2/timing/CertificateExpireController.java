@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 24    12/10/22 14:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 28    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -26,41 +26,38 @@ import java.util.logging.Logger;
  * Controlls the certificates and checks if they will expire soon
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 28 $
  */
 public class CertificateExpireController {
 
-    private int[] daysToExpire = new int[]{10, 3, 1};
+    private final int[] daysToExpire = new int[]{10, 3, 1};
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private CertificateManager managerSSL;
-    private CertificateManager managerEncSign;
-    private CertificationExpireThread expireThread;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final CertificateManager managerSSL;
+    private final CertificateManager managerEncSign;
+    private final CertificationExpireThread expireThread;
     private final ScheduledExecutorService expireCheckScheduler = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("certificate-expire-check"));
 
     public CertificateExpireController(CertificateManager managerEncSign, CertificateManager managerSSL) {        
         this.managerEncSign = managerEncSign;
         this.managerSSL = managerSSL;
+        this.expireThread = new CertificationExpireThread();
     }
 
     /**
      * Starts the embedded task that guards the log
      */
     public void startCertExpireControl() {
-        this.expireThread = new CertificationExpireThread();
+        
         this.expireCheckScheduler.scheduleWithFixedDelay(this.expireThread, 0, 1, TimeUnit.DAYS);
     }
 
     /**
      * Computes and returns the number of days between the two passed dates
      *
-     * @param date1 first date
-     * @param date2 second date
-     * @param dateFormat1 Format of the first date
-     * @param dateFormat2 Format of the second date
      */
     private static int getDayDiff(Date firstDate, Date secondDate) {
         Calendar calendar = Calendar.getInstance();
@@ -90,7 +87,7 @@ public class CertificateExpireController {
                 List<KeystoreCertificate> sslList = managerSSL.getKeyStoreCertificateList();
                 this.checkCertificates(sslList);
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.systemFailure(e);
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             }
         }
 
@@ -102,27 +99,24 @@ public class CertificateExpireController {
                 int certificateExpireDuration = CertificateExpireController.getCertificateExpireDuration(certificate);
                 //The certificate has not been expired so far
                 for (int expireDuration : daysToExpire) {
-                    if (certificateExpireDuration == expireDuration) {
-                        SystemEventManagerImplAS2 manager
-                                = new SystemEventManagerImplAS2();
+                    if (certificateExpireDuration == expireDuration) {                        
                         try {
-                            manager.newEventCertificateWillExpire(certificate, certificateExpireDuration);
+                            SystemEventManagerImplAS2.instance().newEventCertificateWillExpire(certificate, certificateExpireDuration);
                         } catch (Exception e) {
                             String exceptionClass = "[" + e.getClass().getName() + "]";
                             logger.severe("CertificateExpireThread: " + exceptionClass + " " + e.getMessage());
-                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                         }
                     }
                 }
                 //The certificate has been already expired
-                if (certificateExpireDuration <= 0) {
-                    SystemEventManagerImplAS2 manager = new SystemEventManagerImplAS2();
+                if (certificateExpireDuration <= 0) {                    
                     try {
-                        manager.newEventCertificateWillExpire(certificate, certificateExpireDuration);
+                        SystemEventManagerImplAS2.instance().newEventCertificateWillExpire(certificate, certificateExpireDuration);
                     } catch (Exception e) {
                         String exceptionClass = "[" + e.getClass().getName() + "]";
                         logger.severe("CertificateExpireThread: " + exceptionClass + " " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                     }
                 }
             }

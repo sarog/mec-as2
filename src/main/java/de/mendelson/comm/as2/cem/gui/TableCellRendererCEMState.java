@@ -1,9 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMState.java 8     14.05.13 10:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMState.java 10    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
 import de.mendelson.comm.as2.partner.Partner;
-import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.util.clientserver.BaseClient;
@@ -20,16 +19,16 @@ import javax.swing.table.TableCellRenderer;
 /** 
  * Renders the CEM state column
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class TableCellRendererCEMState extends DefaultTableCellRenderer implements TableCellRenderer {
 
-    private DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
-    private Color colorAccepted = new Color(166, 247, 164);
-    private Color colorRejected = new Color(255, 145, 145);
-    private Color colorPending = new Color(255, 255, 183);
+    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+    private final Color colorAccepted = new Color(166, 247, 164);
+    private final Color colorRejected = new Color(255, 145, 145);
+    private final Color colorPending = new Color(255, 255, 183);
 
-    private BaseClient baseClient;
+    private final BaseClient baseClient;
 
     /**
      * Creates a default table cell renderer.
@@ -76,7 +75,7 @@ public class TableCellRendererCEMState extends DefaultTableCellRenderer implemen
             PartnerListRequest request = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID);
             request.setAdditionalListOptionStr(receiverName);
             List<Partner> partnerList = ((PartnerListResponse)this.baseClient.sendSync(request)).getList();
-            if( partnerList != null && partnerList.size() > 0 ){
+            if( partnerList != null && !partnerList.isEmpty()){
                 receiverName = partnerList.get(0).getName();
             }
             int state = entry.getCemState();            

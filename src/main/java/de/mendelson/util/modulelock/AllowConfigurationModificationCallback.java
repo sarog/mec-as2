@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/moduleLock/AllowConfigurationModificationCallback.java 3     4/03/18 1:25p Heller $
+//$Header: /as2/de/mendelson/util/modulelock/AllowConfigurationModificationCallback.java 4     2/11/23 14:03 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.modulelock.message.ModuleLockRequest;
@@ -23,15 +23,15 @@ import javax.swing.JOptionPane;
  * Handles the refresh for a locked module, executed on the client side.
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class AllowConfigurationModificationCallback implements AllowModificationCallback {
 
-    private String moduleName;
-    private JFrame parent;
-    private boolean hadLockAtOpenTime;
-    private BaseClient baseClient;
-    private MecResourceBundle rb;
+    private final String moduleName;
+    private final JFrame parent;
+    private final boolean hadLockAtOpenTime;
+    private final BaseClient baseClient;
+    private final MecResourceBundle rb;
 
     public AllowConfigurationModificationCallback(JFrame parent, BaseClient baseClient, String moduleName, boolean hasLock) {
         this.moduleName = moduleName;

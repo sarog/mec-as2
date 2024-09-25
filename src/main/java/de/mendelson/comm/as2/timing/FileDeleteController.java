@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 18    1/06/22 14:49 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 22    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -6,11 +6,11 @@ import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.IOFileFilterCreationDate;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.NamedThreadFactory;
+import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -25,6 +25,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -37,22 +38,23 @@ import java.util.stream.Collectors;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 22 $
  */
 public class FileDeleteController {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private PreferencesAS2 preferences = new PreferencesAS2();
-    private TmpFileDeleteThread tempFileDeleteThread;
-    private LogFileDeleteThread logFileDeleteThread;
-    private MecResourceBundle rb = null;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final PreferencesAS2 preferences;
+    private final TmpFileDeleteThread tempFileDeleteThread;
+    private final LogFileDeleteThread logFileDeleteThread;
+    private final MecResourceBundle rb;
     private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1,
             new NamedThreadFactory("file-delete-control"));
 
-    public FileDeleteController() {
+    public FileDeleteController(IDBDriverManager dbDriverManager) {
+        this.preferences = new PreferencesAS2(dbDriverManager);
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -61,22 +63,16 @@ public class FileDeleteController {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        this.tempFileDeleteThread = new TmpFileDeleteThread();
+        this.logFileDeleteThread = new LogFileDeleteThread();
     }
 
     /**
      * Starts the embedded task that guards the files to delete
      */
-    public void startAutoDeleteControl() {
-        this.tempFileDeleteThread = new TmpFileDeleteThread();
-        //schedule the thread
-        int initialDelay = 15;
-        int period = 30;
-        this.scheduledExecutor.scheduleWithFixedDelay(this.tempFileDeleteThread, initialDelay, period, TimeUnit.MINUTES);
-        this.logFileDeleteThread = new LogFileDeleteThread();
-        //schedule the thread
-        initialDelay = 30;
-        period = 30;
-        this.scheduledExecutor.scheduleWithFixedDelay(this.logFileDeleteThread, initialDelay, period, TimeUnit.MINUTES);
+    public void startAutoDeleteControl() {        
+        this.scheduledExecutor.scheduleWithFixedDelay(this.tempFileDeleteThread, 15, 30, TimeUnit.MINUTES);        
+        this.scheduledExecutor.scheduleWithFixedDelay(this.logFileDeleteThread, 30, 30, TimeUnit.MINUTES);
     }
 
     /**
@@ -126,9 +122,13 @@ public class FileDeleteController {
      * fails
      */
     public void deleteDirectoryRecursive(Path dir) throws IOException {
-        List<Path> pathsToDelete = Files.walk(dir)
-                .sorted(Comparator.reverseOrder())
-                .collect(Collectors.toList());
+        List<Path> pathsToDelete = new ArrayList<Path>();
+        //try-with-resource pattern to close the file stream
+        try(Stream<Path> stream = Files.walk(dir)){
+            pathsToDelete.addAll(
+                    stream.sorted(Comparator.reverseOrder())
+                    .collect(Collectors.toList()));
+        }
         for (Path path : pathsToDelete) {
             Files.deleteIfExists(path);
         }
@@ -175,7 +175,7 @@ public class FileDeleteController {
                             eventSeverity, SystemEvent.ORIGIN_SYSTEM, SystemEvent.TYPE_FILE_DELETE);
                     event.setSubject(rb.getResourceString("delete.title.log"));
                     event.setBody(deleteLog.toString());
-                    SystemEventManagerImplAS2.newEvent(event);
+                    SystemEventManagerImplAS2.instance().newEvent(event);
                 }
             }
         }
@@ -242,7 +242,7 @@ public class FileDeleteController {
                             eventSeverity, SystemEvent.ORIGIN_SYSTEM, SystemEvent.TYPE_FILE_DELETE);
                     event.setSubject(rb.getResourceString("delete.title"));
                     event.setBody(deleteLog.toString());
-                    SystemEventManagerImplAS2.newEvent(event);
+                    SystemEventManagerImplAS2.instance().newEvent(event);
                 }
             }
         }

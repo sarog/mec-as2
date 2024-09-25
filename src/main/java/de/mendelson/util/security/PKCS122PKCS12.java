@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/PKCS122PKCS12.java 10    26/09/22 10:19 Heller $
+//$Header: /oftp2/de/mendelson/util/security/PKCS122PKCS12.java 13    3/11/23 10:16 Heller $
 package de.mendelson.util.security;
 
 import java.io.InputStream;
@@ -10,7 +10,6 @@ import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.util.logging.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.PasswordFinder;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -24,20 +23,20 @@ import org.bouncycastle.openssl.PasswordFinder;
  * other pkcs12 keystore
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
-public class PKCS122PKCS12 implements PasswordFinder {
+public class PKCS122PKCS12{
 
     private Logger logger = Logger.getAnonymousLogger();
     /**
      * Keystore to use, if this is not set a new one will be created
      */
-    private KeyStore keystore = null;
+    private KeyStore targetKeystore = null;
     /**
      * Default pass for a new created keystore, overwrite this by using the
      * setKeyStore() method
      */
-    private char[] keystorePass = "test".toCharArray();
+    private char[] targetKeystorePass = "test".toCharArray();
 
     /**
      * Creates a new instance of PEMUtil
@@ -53,38 +52,44 @@ public class PKCS122PKCS12 implements PasswordFinder {
     }
 
     /**
-     * @param importKeystoreStream Stream that contains a keystore in pkcs12
-     * format
+     * @param sourceKeyStore The keystore where to export the key to
+     * @param keyAlias The alias of the key to export
      */
-    public void importKey(KeyStore sourceKeyStore, String alias) throws Exception {
-        if (sourceKeyStore.isKeyEntry(alias)) {
-            Key importKey = sourceKeyStore.getKey(alias, new char[]{});
-            Certificate[] certs = sourceKeyStore.getCertificateChain(alias);
+    public void exportKeyFrom(KeyStore sourceKeyStore, String keyAlias) throws Exception {
+        if (sourceKeyStore.isKeyEntry(keyAlias)) {
+            Key key = sourceKeyStore.getKey(keyAlias, null);
+            Certificate[] certs = sourceKeyStore.getCertificateChain(keyAlias);
             if (certs == null || certs.length == 0) {
-                throw new Exception("PKCS#12 import: private key with alias " + alias + " does not contain a certificate.");
+                throw new Exception("PKCS#12 import: private key with alias " + keyAlias + " does not contain a certificate.");
             }
-            KeyStore store = this.keystore;
-            if (store == null) {
-                store = this.generateKeyStore();
+            KeyStore targetStore = this.targetKeystore;
+            if (targetStore == null) {
+                targetStore = this.generateKeyStore();
+            }
+            String targetKeyAlias = keyAlias;
+            int count = 1;
+            //rename the alias for the target if it already exists in the target store
+            while( targetStore.containsAlias(targetKeyAlias)){
+                targetKeyAlias = keyAlias + "_" + String.valueOf(count);
+                count++;
             }
             //PKCS12 keys dont have a password
-            store.setKeyEntry(alias, importKey, "dummy".toCharArray(), certs);
+            targetStore.setKeyEntry(targetKeyAlias, key, null, certs);
         } else {
-            throw new Exception("PKCS#12 import: keystore doesn't contain a private key with alias " + alias);
+            throw new Exception("PKCS#12 export: The source keystore doesn't contain a private key with the alias " + keyAlias);
         }
     }
 
     /**
-     * @param importKeystoreStream Stream that contains a keystore in pkcs12
-     * format
+     * @param providerName The name of the crypto provider, e.g. BouncyCastleProvider.PROVIDER_NAME
      */
-    public void importKey(InputStream sourceKeystoreStream, char[] sourceKeypass,
-            String alias) throws Exception {
+    public void exportKeyFrom(InputStream sourceKeystoreStream, char[] sourceKeypass,
+            String alias, String providerName) throws Exception {
         //open keystore
         KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
-                BouncyCastleProvider.PROVIDER_NAME);
+                providerName);
         sourceKeystore.load(sourceKeystoreStream, sourceKeypass);
-        this.importKey(sourceKeystore, alias);
+        this.exportKeyFrom(sourceKeystore, alias);
     }
 
     /**
@@ -102,35 +107,24 @@ public class PKCS122PKCS12 implements PasswordFinder {
      * Sets an already existing keystore to this class. Without an existing
      * keystore a new one is created
      */
-    public void setTargetKeyStore(KeyStore keystore, char[] keystorePass) {
-        this.keystore = keystore;
-        this.keystorePass = keystorePass;
+    public void setTargetKeyStore(KeyStore targetKeystore, char[] targetKeystorePass) {
+        this.targetKeystore = targetKeystore;
+        this.targetKeystorePass = targetKeystorePass;
     }
 
     /**
      * Saves the passed keystore
      *
-     * @param keystorePass Password for the keystore
-     * @param filename Filename where to save the keystore to
      */
-    public void saveKeyStore(KeyStore keystore, char[] keystorePass,
-            Path file) throws Exception {
+    public void saveTargetKeyStoreTo(Path file) throws Exception {
         OutputStream out = null;
         try {
             out = Files.newOutputStream(file);
-            keystore.store(out, keystorePass);
+            this.targetKeystore.store(out, this.targetKeystorePass);
         } finally {
             if (out != null) {
                 out.close();
             }
         }
-    }
-
-    /**
-     * makes this a PasswordFinder
-     */
-    @Override
-    public char[] getPassword() {
-        return "dummy".toCharArray();
     }
 }

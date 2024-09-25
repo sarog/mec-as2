@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectFile.java 4     16.11.18 14:00 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectFile.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.net.URI;
@@ -16,11 +16,11 @@ import javax.swing.Icon;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class FileObjectFile extends FileObject {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private boolean hidden = false;
     private boolean readOnly = false;
     private boolean executable = false;

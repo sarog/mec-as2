@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 58    28/07/22 13:06 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 61    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -11,7 +11,6 @@ import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -38,28 +37,29 @@ import java.util.logging.Logger;
  * and sends them
  *
  * @author S.Heller
- * @version $Revision: 58 $
+ * @version $Revision: 61 $
  */
 public class DirPollManager {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private CertificateManager certificateManager;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final CertificateManager certificateManager;
     /**
      * Stores all poll threads key: partner DB id, value: pollThread
      */
-    private final Map<String, DirPollThread> mapPollThread = Collections.synchronizedMap(new HashMap<String, DirPollThread>());
+    private final Map<String, DirPollThread> mapPollThread 
+            = Collections.synchronizedMap(new HashMap<String, DirPollThread>());
     /**
      * Executor service for all poll threads, with n poll threads at the same
      * time
      */
-    private ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(5,
+    private final ScheduledThreadPoolExecutor scheduledExecutor = new ScheduledThreadPoolExecutor(5,
             new NamedThreadFactory("dir-poll"));
     /**
      * Localize the GUI
      */
-    private MecResourceBundle rb = null;
-    private ClientServer clientserver;
-    private IDBDriverManager dbDriverManager;
+    private final MecResourceBundle rb;
+    private final ClientServer clientserver;
+    private final IDBDriverManager dbDriverManager;
 
     public DirPollManager(CertificateManager certificateManager, 
             ClientServer clientserver, IDBDriverManager dbDriverManager) throws Exception {
@@ -195,6 +195,7 @@ public class DirPollManager {
                         String relationShipId = sender.getDBId() + "_" + receiver.getDBId();
                         if (id.equals(relationShipId)) {
                             idFound = true;
+                            break;
                         }
                     }
                 }
@@ -254,7 +255,7 @@ public class DirPollManager {
                 bodyBuilder.append(rb.getResourceString("none")).append("\n");
             }
             event.setBody(bodyBuilder.toString());
-            SystemEventManagerImplAS2.newEvent(event);
+            SystemEventManagerImplAS2.instance().newEvent(event);
         }
     }
 
@@ -269,7 +270,8 @@ public class DirPollManager {
         synchronized (this.mapPollThread) {
             this.mapPollThread.put(localStation.getDBId() + "_" + partner.getDBId(), thread);
             thread.initializeThread();
-            ScheduledFuture future = this.scheduledExecutor.scheduleWithFixedDelay(thread, 5000, thread.getPollIntervalInMS(), TimeUnit.MILLISECONDS);
+            ScheduledFuture future = this.scheduledExecutor.scheduleWithFixedDelay(thread, 5000, 
+                    thread.getPollIntervalInMS(), TimeUnit.MILLISECONDS);
             //set the future to the thread to have the possibility to cancel it later and 
             //remove it from the schedulers internal queue
             thread.setFuture(future);

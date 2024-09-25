@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogSendCEM.java 35    27.08.19 16:10 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogSendCEM.java 37    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.clientserver.CEMSendRequest;
@@ -40,7 +40,7 @@ import javax.swing.SwingUtilities;
  * application
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 37 $
  */
 public class DialogSendCEM extends JDialog {
 
@@ -48,9 +48,9 @@ public class DialogSendCEM extends JDialog {
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg", 32, 64);
     
     private MecResourceBundle rb = null;
-    private CertificateManager certificateManagerEncSign;
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
-    private BaseClient baseClient;
+    private final CertificateManager certificateManagerEncSign;
+    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final BaseClient baseClient;
 
     public DialogSendCEM(JFrame parent, CertificateManager certificateManagerEncSign,
             BaseClient baseClient) {
@@ -367,7 +367,7 @@ public class DialogSendCEM extends JDialog {
                     notInformedBuilder.append(partner.getName());
                 }
             }
-            if( notInformedBuilder.toString().length() > 0 ){
+            if(!notInformedBuilder.toString().isEmpty()){
                 this.logger.log(Level.FINE, this.rb.getResourceString("cem.not.informed", notInformedBuilder));
             }
         } else {

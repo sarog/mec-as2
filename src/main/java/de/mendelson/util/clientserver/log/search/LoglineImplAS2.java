@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/LoglineImplAS2.java 1     7.12.18 12:25 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/LoglineImplAS2.java 2     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import java.io.Serializable;
@@ -19,11 +19,11 @@ import org.apache.lucene.document.StringField;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class LoglineImplAS2 extends Logline implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static final String KEY_MESSAGEID = "msgid";
     public static final String KEY_MDNID = "mdnid";

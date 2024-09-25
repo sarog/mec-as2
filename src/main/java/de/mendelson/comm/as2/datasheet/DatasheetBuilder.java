@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 17    16.09.21 15:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 20    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.datasheet;
 
 import de.intarsys.pdf.cds.CDSRectangle;
@@ -46,19 +46,19 @@ import java.util.ResourceBundle;
  * Class that is responsible for the creation of a PDF file
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 20 $
  */
 public class DatasheetBuilder {
 
-    private PDDocument document;
-    private Partner localStation;
-    private Partner remotePartner;
+    private final PDDocument document;
+    private final Partner localStation;
+    private final Partner remotePartner;
     private PDAcroForm form = null;
     private final int LEFT_MARGIN = 60;
     private final int MAX_LINE_LENGTH = 32;
-    private DatasheetInformation localInformation;
-    private DateFormat format = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM);
-    private MecResourceBundle rbMessage;
+    private final DatasheetInformation localInformation;
+    private final DateFormat format = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM);
+    private final MecResourceBundle rbMessage;
 
     public DatasheetBuilder(Partner localStation, Partner remotePartner, DatasheetInformation localInformation) {
         this.localInformation = localInformation;
@@ -524,7 +524,7 @@ public class DatasheetBuilder {
             this.addAttachment(page, "encryptdata.p7b", "Encrypt data to us using this certificate", this.localInformation.getCertEncryptData());
         }
         if (this.localInformation.getCertSSL() != null) {
-            this.addAttachment(page, "ssl.p7b", "Use this certificate for the SSL connection", this.localInformation.getCertSSL());
+            this.addAttachment(page, "ssl.p7b", "Use this certificate for the TLS connection", this.localInformation.getCertSSL());
         }
         if (this.localInformation.getCertVerifySignature() != null) {
             this.addAttachment(page, "verifysignature.p7b", "Verify our data signature using this certificate", this.localInformation.getCertVerifySignature());

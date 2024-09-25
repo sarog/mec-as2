@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/CEMSystemActivity.java 4     26.02.10 15:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/CEMSystemActivity.java 6     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -18,14 +18,14 @@ import java.util.ResourceBundle;
 /**
  * Helper class state stores beneath the cem protocol issues what the system will really do with the entry
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class CEMSystemActivity {
 
     private String text = "";
     private int state = CEMEntry.STATUS_ACCEPTED_INT;
-    private MecResourceBundle rb;
-    private DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+    private final MecResourceBundle rb;
+    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
     public CEMSystemActivity(CEMEntry entry) {
         //load resource bundle

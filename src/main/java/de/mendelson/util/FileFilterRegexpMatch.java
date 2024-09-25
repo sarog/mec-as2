@@ -1,8 +1,7 @@
- //$Header: /mendelson_business_integration/de/mendelson/util/FileFilterRegexpMatch.java 7     19.10.11 10:13 Heller $
+ //$Header: /as2/de/mendelson/util/FileFilterRegexpMatch.java 8     2/11/23 14:02 Heller $
 package de.mendelson.util;
 import java.io.File;
 import java.io.FileFilter;
-import java.io.FilenameFilter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -18,7 +17,7 @@ import java.util.regex.Pattern;
  * File filter that stores lists of wildcard pattern to match file lists. There
  * are positive and negative patterns possible (matching/nonmatching).
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 
 
@@ -26,11 +25,11 @@ public class FileFilterRegexpMatch implements FileFilter{
     
     /**List of matching conditions, the file will go through if it matches any
      *of these conditions*/
-    private List<Pattern> matchingList = new ArrayList<Pattern>();
+    private final List<Pattern> matchingList = new ArrayList<Pattern>();
     
     /**List of nonmatching conditions, the file will not go through if it matches any
      *of these conditions*/
-    private List<Pattern> nonmatchingList = new ArrayList<Pattern>();
+    private final List<Pattern> nonmatchingList = new ArrayList<Pattern>();
     
     
     /** Creates a new instance of FileMatcher */

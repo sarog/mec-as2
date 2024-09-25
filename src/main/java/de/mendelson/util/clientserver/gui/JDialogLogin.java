@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/gui/JDialogLogin.java 6     22.09.21 17:47 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/gui/JDialogLogin.java 8     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,7 +11,6 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.JRootPane;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -23,7 +22,7 @@ import javax.swing.JRootPane;
 /**
  * Login dialog for server authentication
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class JDialogLogin extends JDialog {
 
@@ -71,7 +70,7 @@ public class JDialogLogin extends JDialog {
 
     public void setDefaultUser(String defaultUser) {
         this.jTextFieldUser.setText(defaultUser);
-        if (defaultUser != null && defaultUser.length() > 0) {
+        if (defaultUser != null && !defaultUser.isEmpty()) {
             this.jTextFieldUser.setSelectionStart(0);
             this.jTextFieldUser.setSelectionEnd(defaultUser.length());
         }

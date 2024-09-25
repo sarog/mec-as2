@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 27    15.12.20 11:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 28    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.util.AS2Tools;
@@ -36,7 +36,7 @@ import javax.swing.JPanel;
  * Panel to display the content of a file
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 28 $
  */
 public class JPanelFileDisplay extends JPanel {
 
@@ -51,7 +51,7 @@ public class JPanelFileDisplay extends JPanel {
      * Resourcebundle to localize the GUI
      */
     private MecResourceBundle rb = null;
-    private BaseClient baseClient;
+    private final BaseClient baseClient;
 
     /**
      * Creates new form JPanelFunctionGraph

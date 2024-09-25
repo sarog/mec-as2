@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ListCellRendererCertificates.java 9     29/08/22 15:21 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ListCellRendererCertificates.java 10    2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -25,12 +25,12 @@ import javax.swing.SwingConstants;
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class ListCellRendererCertificates extends JLabel implements ListCellRenderer {
 
     protected static final int IMAGE_HEIGHT = 18;
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
 
     /**
      * Constructs a default renderer object for an item in a list.

@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/util/uinotification/NotificationPanel.java 18    10/05/22 12:57 Heller $
+//$Header: /oftp2/de/mendelson/util/uinotification/NotificationPanel.java 20    12/04/23 10:59 Heller $
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Rectangle;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -19,7 +20,7 @@ import javax.swing.JPanel;
  * Panel that contains the notification information
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 20 $
  */
 public class NotificationPanel extends JPanel {
 
@@ -42,15 +43,23 @@ public class NotificationPanel extends JPanel {
 
     private MendelsonMultiResolutionImage image;
     /**
-     * Will cut the details text in any case if the length exceeds this value
+     * Will cut the details text in any case if the length exceeds these values.
+     * If the text is longer than the standard length the system will scale down
+     * the font to allow longer messages
      */
-    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH = 150;
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_NO_SCALEDOWN = 80;
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1 
+            = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_NO_SCALEDOWN + 60;
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2 
+            = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1 + 60;
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_3 
+            = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2 + 100;
 
     /**
      * Indicates if the graphic unit supports user defined shapes
      */
     private boolean graphicSupportsShapedWindows = false;
-    
+
     /**
      * @param image Image to display - there is a default if this is null
      * @param NOTIFICATION_TYPE One of UINotification.TYPE_OK,
@@ -83,7 +92,7 @@ public class NotificationPanel extends JPanel {
         if (this.graphicSupportsShapedWindows) {
             this.jPanelNotificationTypeBar.setType(ShapedPanel.TYPE_ROUNDED_EDGES_LEFT);
             this.jPanelCross.setType(ShapedPanel.TYPE_ROUNDED_EDGES_RIGHT);
-        }else{
+        } else {
             this.jPanelNotificationTypeBar.setType(ShapedPanel.TYPE_NO_ROUNDED_EDGES);
             this.jPanelCross.setType(ShapedPanel.TYPE_NO_ROUNDED_EDGES);
         }
@@ -98,8 +107,22 @@ public class NotificationPanel extends JPanel {
                 DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK);
         this.jLabelNotificationTitle.setText(notificationTitle);
         if (notificationDetails != null) {
-            if (notificationDetails.length() > MAX_NOTIFICATION_DETAILS_TEXT_LENGTH) {
-                notificationDetails = notificationDetails.substring(0, MAX_NOTIFICATION_DETAILS_TEXT_LENGTH - 1);
+            int fontDecrement;
+            if (notificationDetails.length() < MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_NO_SCALEDOWN) {
+                fontDecrement = 0;
+            } else if (notificationDetails.length() < MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1) {
+                fontDecrement = 1;
+            } else if (notificationDetails.length() < MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2) {
+                fontDecrement = 2;
+            } else if (notificationDetails.length() < MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_3) {
+                fontDecrement = 3;
+            } else {
+                fontDecrement = 4;
+                notificationDetails = notificationDetails.substring(0, MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_3 - 1);
+            }
+            if (fontDecrement != 0) {
+                Font currentFont = this.jLabelNotificationDetails.getFont();
+                this.jLabelNotificationDetails.setFont(currentFont.deriveFont((float) (currentFont.getSize() - fontDecrement)));
             }
             this.jLabelNotificationDetails.setText("<HTML>" + notificationDetails + "</HTML>");
         } else {

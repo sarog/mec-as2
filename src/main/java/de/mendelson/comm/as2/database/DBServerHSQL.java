@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/DBServerHSQL.java 21    23/11/22 16:50 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/DBServerHSQL.java 26    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -45,7 +45,7 @@ import org.hsqldb.server.ServerConstants;
  * Class to start a dedicated SQL database server
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 26 $
  * @since build 70
  */
 public class DBServerHSQL implements IDBServer {
@@ -54,11 +54,11 @@ public class DBServerHSQL implements IDBServer {
     /**
      * Resourcebundle to localize messages of the DB server
      */
-    private static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
     /**
      * Log messages
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final static String MODULE_NAME;
     /**
      * Database object
@@ -130,7 +130,7 @@ public class DBServerHSQL implements IDBServer {
             versionRuntime = dbProperties.getProperty("version");
         }
         if (versionConfig.startsWith("1") || versionRuntime.startsWith("1")) {
-            throw new UpgradeRequiredException(this.rb.getResourceString("upgrade.required"));
+            throw new UpgradeRequiredException(rb.getResourceString("upgrade.required"));
         }
     }
 
@@ -157,11 +157,11 @@ public class DBServerHSQL implements IDBServer {
         //The system level property hsqldb.reconfig_logging=false is required to avoid 
         //configuration of java.util.logging. Otherwise configuration takes place.
         System.setProperty("hsqldb.reconfig_logging", "false");
-        SystemEventManagerImplAS2.newEvent(
+        SystemEventManagerImplAS2.instance().newEvent(
                 SystemEvent.SEVERITY_INFO,
                 SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_DATABASE_SERVER_STARTUP_BEGIN,
-                this.rb.getResourceString("dbserver.startup"),
+                rb.getResourceString("dbserver.startup"),
                 "");
         this.server = new Server();
         this.dbServerInformation.setHost("localhost");
@@ -197,7 +197,7 @@ public class DBServerHSQL implements IDBServer {
         memStream.close();
         this.server.setLogWriter(null);
         this.server.setErrWriter(null);
-        return (memStream.toString(StandardCharsets.UTF_8.name()));
+        return (memStream.toString(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -258,11 +258,11 @@ public class DBServerHSQL implements IDBServer {
             this.dbServerInformation.setJDBCVersion(data.getJDBCMajorVersion() + "." + data.getJDBCMinorVersion());
             this.logger.info(MODULE_NAME + " " + rb.getResourceString("dbserver.running.embedded",
                     new Object[]{data.getDatabaseProductName() + " " + data.getDatabaseProductVersion()}));
-            SystemEventManagerImplAS2.newEvent(
+            SystemEventManagerImplAS2.instance().newEvent(
                     SystemEvent.SEVERITY_INFO,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_DATABASE_SERVER_RUNNING,
-                    this.rb.getResourceString("dbserver.running.embedded",
+                    rb.getResourceString("dbserver.running.embedded",
                             new Object[]{
                                 data.getDatabaseProductName()
                                 + " "
@@ -270,11 +270,11 @@ public class DBServerHSQL implements IDBServer {
                             }),
                     startupLog);
         } catch (Exception e) {
-            SystemEventManagerImplAS2.newEvent(
+            SystemEventManagerImplAS2.instance().newEvent(
                     SystemEvent.SEVERITY_ERROR,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_DATABASE_SERVER_RUNNING,
-                    this.rb.getResourceString("dbserver.startup"),
+                    rb.getResourceString("dbserver.startup"),
                     startupLog + "\n"
                     + "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
             this.logger.severe(MODULE_NAME + " " + "DBServer.startup: " + e.getMessage());
@@ -283,14 +283,14 @@ public class DBServerHSQL implements IDBServer {
                 try {
                     configConnection.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
             if (runtimeConnection != null) {
                 try {
                     runtimeConnection.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
@@ -415,14 +415,14 @@ public class DBServerHSQL implements IDBServer {
                     foundVersion = result.getInt("maxversion");
                 }
             } catch (Exception e) {
-                SystemEventManagerImplAS2.systemFailure(e);
+                SystemEventManagerImplAS2.instance().systemFailure(e);
                 Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).warning(e.getMessage());
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e);
+                        SystemEventManagerImplAS2.instance().systemFailure(e);
                         Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).warning(e.getMessage());
                     }
                 }
@@ -430,19 +430,19 @@ public class DBServerHSQL implements IDBServer {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e);
+                        SystemEventManagerImplAS2.instance().systemFailure(e);
                         Logger.getLogger(AS2Server.SERVER_LOGGER_NAME).warning(e.getMessage());
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         } finally {
             if (connection != null) {
                 try {
                     connection.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
@@ -452,7 +452,6 @@ public class DBServerHSQL implements IDBServer {
     /**
      * Update the database if this is necessary.
      *
-     * @param connection connection to the database
      * @param DB_TYPE of the database that should be created, as defined in this
      * class MecDriverManager
      */
@@ -488,7 +487,7 @@ public class DBServerHSQL implements IDBServer {
                         rb.getResourceString("database." + DB_TYPE),
                         String.valueOf(requiredDBVersion),
                         String.valueOf(foundVersion)}));
-            SystemEventManagerImplAS2.newEvent(event);
+            SystemEventManagerImplAS2.instance().newEvent(event);
             System.exit(-1);
         }
         //check if the found version is lesser than the required version!
@@ -512,7 +511,7 @@ public class DBServerHSQL implements IDBServer {
                             rb.getResourceString("database." + DB_TYPE));
                     event.setBody(rb.getResourceString("update.error.hsqldb",
                             new Object[]{String.valueOf(i), String.valueOf(i + 1)}));
-                    SystemEventManagerImplAS2.newEvent(event);
+                    SystemEventManagerImplAS2.instance().newEvent(event);
                     System.exit(-1);
                 }
                 //set new version to the database
@@ -526,7 +525,7 @@ public class DBServerHSQL implements IDBServer {
                 event.setSubject(rb.getResourceString("update.successfully", dbName));
                 event.setBody(rb.getResourceString("update.progress.version.end",
                         new Object[]{String.valueOf(newActualVersion), dbName}));
-                SystemEventManagerImplAS2.newEvent(event);
+                SystemEventManagerImplAS2.instance().newEvent(event);
             }
             this.logger.info(MODULE_NAME + " " + rb.getResourceString("update.successfully", dbName));
         }
@@ -536,7 +535,6 @@ public class DBServerHSQL implements IDBServer {
      * Sets the new DB version to the passed number if the update was
      * successfully
      *
-     * @param connection DB connection to use
      * @param version new DB version the update has updated to
      */
     private void setNewDBVersion(final int DB_TYPE, int version) {
@@ -550,23 +548,23 @@ public class DBServerHSQL implements IDBServer {
             //fill in values
             statement.setInt(1, version);
             statement.setTimestamp(2, new Timestamp(System.currentTimeMillis()), Calendar.getInstance(TimeZone.getTimeZone("UTC")));
-            statement.setString(3, "by " + AS2ServerVersion.getFullProductName() + " auto updater");
+            statement.setString(3, AS2ServerVersion.getFullProductName() + ": update");
             statement.executeUpdate();
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
             if( connection != null ){
                 try {
                     connection.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }            
         }
@@ -606,13 +604,13 @@ public class DBServerHSQL implements IDBServer {
             } catch (Exception e) {
             }
         }
-        SystemEventManagerImplAS2.newEvent(
+        SystemEventManagerImplAS2.instance().newEvent(
                 SystemEvent.SEVERITY_INFO,
                 SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_DATABASE_SERVER_SHUTDOWN,
-                this.rb.getResourceString("dbserver.shutdown"),
+                rb.getResourceString("dbserver.shutdown"),
                 "");
-        String shutdownMessage = this.rb.getResourceString("dbserver.shutdown");
+        String shutdownMessage = rb.getResourceString("dbserver.shutdown");
         System.out.println(shutdownMessage);
     }
 
@@ -681,25 +679,25 @@ public class DBServerHSQL implements IDBServer {
                 try {
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (updateConnectionNoAutoCommit != null) {
                 try {
                     updateConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

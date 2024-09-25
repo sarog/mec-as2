@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelLog.java 5     5.11.19 10:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelLog.java 7     2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,7 +20,7 @@ import javax.swing.ImageIcon;
  * Panel to define special log events
  *
  * @author S.Heller
- * @version: $Revision: 5 $
+ * @version: $Revision: 7 $
  */
 public class PreferencesPanelLog extends PreferencesPanel {
 
@@ -36,7 +36,8 @@ public class PreferencesPanelLog extends PreferencesPanel {
     /**
      * GUI prefs
      */
-    private PreferencesClient preferences;
+    private final PreferencesClient preferences;
+    private String preferencesStrAtLoadTime = "";
 
     /**
      * Creates new form PreferencesPanelDirectories
@@ -61,12 +62,26 @@ public class PreferencesPanelLog extends PreferencesPanel {
     public void loadPreferences() {
         this.jCheckBoxLogAutoMessageDelete.setSelected(this.preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE_LOG));
         this.jCheckBoxLogPollProcess.setSelected(this.preferences.getBoolean(PreferencesAS2.LOG_POLL_PROCESS));
+        this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
-    private void settingsChanged() {
-
+    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
+    private String captureSettingsToStr(){
+        StringBuilder builder = new StringBuilder();
+        builder.append( PreferencesAS2.AUTO_MSG_DELETE_LOG ).append("=")
+                .append( this.jCheckBoxLogAutoMessageDelete.isSelected()).append(";");
+        builder.append( PreferencesAS2.LOG_POLL_PROCESS ).append("=")
+                .append( this.jCheckBoxLogPollProcess.isSelected()).append(";");        
+        return( builder.toString() );
     }
-
+    
+    
+    @Override
+    public boolean preferencesAreModified() {
+        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+    }
+    
+    
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always

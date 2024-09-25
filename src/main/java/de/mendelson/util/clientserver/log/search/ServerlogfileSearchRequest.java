@@ -1,7 +1,9 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/log/search/ServerlogfileSearchRequest.java 1     5.12.18 12:14 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerlogfileSearchRequest.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,12 +17,12 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 4 $
  */
 public class ServerlogfileSearchRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
-    private ServerSideLogfileFilter filter;
+    private static final long serialVersionUID = 1L;
+    private final ServerSideLogfileFilter filter;
     
     public ServerlogfileSearchRequest(ServerSideLogfileFilter filter) {
         this.filter = filter;
@@ -38,5 +40,9 @@ public class ServerlogfileSearchRequest extends ClientServerMessage implements S
         return( this.filter );
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 }

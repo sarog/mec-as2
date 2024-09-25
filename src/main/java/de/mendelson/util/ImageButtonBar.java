@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/ImageButtonBar.java 14    16/05/22 12:55 Heller $
+//$Header: /as2/de/mendelson/util/ImageButtonBar.java 16    2/11/23 15:53 Heller $
 package de.mendelson.util;
 
 import com.l2fprod.common.swing.JButtonBar;
@@ -33,13 +33,13 @@ import javax.swing.SwingConstants;
  * the following way: 1.initialize it 2.Add panels to it by addButton()
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 16 $
  */
 public class ImageButtonBar extends JPanel {
 
     public static final int VERTICAL = JButtonBar.VERTICAL;
     public static final int HORIZONTAL = JButtonBar.HORIZONTAL;
-    private JButtonBar bar;
+    private final JButtonBar bar;
     private final List<ImageButtonComponent> componentsList
             = Collections.synchronizedList(new ArrayList<ImageButtonComponent>());
     private final Map<String, JToggleButton> internalButtonMap
@@ -79,7 +79,6 @@ public class ImageButtonBar extends JPanel {
      *
      * @param icon Icon to display
      * @param text Text that is assigned to the icon
-     * @param panel Assigned component
      * @param initialSelected selects the component initial if set
      * @param internalName Name that should be used for the button if you would
      * like to select it later using the setSelectedButton method, might be null
@@ -97,7 +96,6 @@ public class ImageButtonBar extends JPanel {
      *
      * @param icon Icon to display
      * @param text Text that is assigned to the icon
-     * @param panel Assigned component
      * @param initialSelected selects the component initial if set
      */
     public ImageButtonBar addButton(ImageIcon icon, String text, JComponent[] components, boolean initialSelected) {
@@ -109,7 +107,6 @@ public class ImageButtonBar extends JPanel {
      *
      * @param icon Icon to display
      * @param text Text that is assigned to the icon (and displayed below)
-     * @param panel Assigned component - this is shown once the button is selected
      * @param initialSelected selects the component initial if set
      */
     public ImageButtonBar addButton(ImageIcon icon, String text, JComponent component, boolean initialSelected) {
@@ -254,8 +251,8 @@ public class ImageButtonBar extends JPanel {
 
     private static class ImageButtonBarAbstractActionImpl extends AbstractAction {
 
-        private ImageButtonComponent ownComponents;
-        private List<ImageButtonComponent> componentList;
+        private final ImageButtonComponent ownComponents;
+        private final List<ImageButtonComponent> componentList;
 
         public ImageButtonBarAbstractActionImpl(ImageButtonComponent ownComponents, List<ImageButtonComponent> componentList) {
             super(ownComponents.getText(), ownComponents.getIcon());

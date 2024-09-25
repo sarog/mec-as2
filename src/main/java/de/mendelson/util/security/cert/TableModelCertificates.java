@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 18    29/08/22 15:44 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 25    14/12/23 15:42 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.ImageUtil;
@@ -9,6 +9,8 @@ import javax.swing.table.AbstractTableModel;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.security.DNUtil;
+import de.mendelson.util.security.keygeneration.KeyGenerator;
+import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -25,7 +27,7 @@ import java.util.List;
  * table model to display a configuration grid
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 25 $
  */
 public class TableModelCertificates extends AbstractTableModel {
 
@@ -36,17 +38,17 @@ public class TableModelCertificates extends AbstractTableModel {
      * Icons, multi resolution
      */
     public final static MendelsonMultiResolutionImage IMAGE_CERTIFICATE_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_KEY_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_INVALID_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_invalid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_invalid.svg", IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_VALID_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_valid.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_valid.svg", IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_ROOT_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_root.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_root.svg", IMAGE_HEIGHT);
     public final static MendelsonMultiResolutionImage IMAGE_UNTRUSTED_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_untrusted.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_untrusted.svg", IMAGE_HEIGHT);
 
     public static final ImageIcon ICON_CERTIFICATE = new ImageIcon(IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_KEY = new ImageIcon(IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
@@ -55,8 +57,8 @@ public class TableModelCertificates extends AbstractTableModel {
     public static final ImageIcon ICON_CERTIFICATE_ROOT = new ImageIcon(IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_CERTIFICATE_MISSING = new ImageIcon(IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     /*ResourceBundle to localize the headers*/
-    private MecResourceBundle rb = null;
-    private final List<KeystoreCertificate> data = Collections.synchronizedList(new ArrayList<KeystoreCertificate>());
+    private final MecResourceBundle rb;
+    private final List<KeystoreCertificate> listData = Collections.synchronizedList(new ArrayList<KeystoreCertificate>());
     private final List<CertificateInUseChecker> inUseCheckerList
             = Collections.synchronizedList(new ArrayList<CertificateInUseChecker>());
 
@@ -90,20 +92,19 @@ public class TableModelCertificates extends AbstractTableModel {
     /**
      * Passes data to the model and fires a table data update
      *
-     * @param list new data to display
      */
     public void setNewData(List<KeystoreCertificate> data) {
-        synchronized (this.data) {
-            this.data.clear();
-            this.data.addAll(data);
+        synchronized (this.listData) {
+            this.listData.clear();
+            this.listData.addAll(data);
         }
         ((AbstractTableModel) this).fireTableDataChanged();
     }
 
     public List<KeystoreCertificate> getCurrentCertificateList() {
         List<KeystoreCertificate> copyList = new ArrayList<KeystoreCertificate>();
-        synchronized (this.data) {
-            copyList.addAll(this.data);
+        synchronized (this.listData) {
+            copyList.addAll(this.listData);
         }
         return (copyList);
     }
@@ -113,8 +114,8 @@ public class TableModelCertificates extends AbstractTableModel {
      */
     @Override
     public int getRowCount() {
-        synchronized (this.data) {
-            return (this.data.size());
+        synchronized (this.listData) {
+            return (this.listData.size());
         }
     }
 
@@ -146,12 +147,15 @@ public class TableModelCertificates extends AbstractTableModel {
             return (this.rb.getResourceString("header.expire"));
         }
         if (col == 4) {
-            return (this.rb.getResourceString("header.length"));
+            return (this.rb.getResourceString("header.algorithm"));
         }
         if (col == 5) {
-            return (this.rb.getResourceString("header.organization"));
+            return (this.rb.getResourceString("header.length"));
         }
         if (col == 6) {
+            return (this.rb.getResourceString("header.organization"));
+        }
+        if (col == 7) {
             return (this.rb.getResourceString("header.ca"));
         }
         //should not happen
@@ -162,18 +166,20 @@ public class TableModelCertificates extends AbstractTableModel {
      * Returns the certificate/key image without any usage checker modifications
      * (grayed out)
      */
-    public ImageIcon getUnmodifiedIconForCertificate(KeystoreCertificate certificate) {
-        ImageIcon icon = ICON_CERTIFICATE;
+    public ImageIcon getUnmodifiedIconForCertificate(KeystoreCertificate certificate, int size) {
+        ImageIcon icon;
         if (certificate.getIsKeyPair()) {
-            icon = ICON_KEY;
+            icon = new ImageIcon(IMAGE_KEY_MULTIRESOLUTION.toMinResolution(size));
         } else if (certificate.isRootCertificate()) {
-            icon = ICON_CERTIFICATE_ROOT;
-        }        
+            icon = new ImageIcon(IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(size));
+        } else {
+            icon = new ImageIcon(IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(size));
+        }
         return (icon);
     }
 
     private ImageIcon getIconForCertificate(KeystoreCertificate certificate) {
-        ImageIcon icon = this.getUnmodifiedIconForCertificate(certificate);        
+        ImageIcon icon = this.getUnmodifiedIconForCertificate(certificate, IMAGE_HEIGHT);
         synchronized (this.inUseCheckerList) {
             for (CertificateInUseChecker checker : this.inUseCheckerList) {
                 CertificateInUseInfo info = checker.checkUsed(certificate);
@@ -192,8 +198,8 @@ public class TableModelCertificates extends AbstractTableModel {
     @Override
     public Object getValueAt(int row, int col) {
         KeystoreCertificate certificate = null;
-        synchronized (this.data) {
-            certificate = this.data.get(row);
+        synchronized (this.listData) {
+            certificate = this.listData.get(row);
         }
         if (col == 0) {
             return (this.getIconForCertificate(certificate));
@@ -213,12 +219,31 @@ public class TableModelCertificates extends AbstractTableModel {
             return (certificate.getNotAfter());
         }
         if (col == 4) {
-            return (String.valueOf(certificate.getPublicKeyLength()));
+            StringBuilder builder = new StringBuilder();
+            builder.append(certificate.getPublicKeyAlgorithm())
+                    .append("/")
+                    .append(KeyGenerator.signatureAlgorithmToDisplay(certificate.getSigAlgName()));
+            if (certificate.getPublicKeyAlgorithm().equals("EC")) {
+                ECPublicKey publicKey = (ECPublicKey) certificate.getX509Certificate().getPublicKey();
+                try {
+                    String curveName = certificate.getCurveName(publicKey);
+                    if (!curveName.isEmpty()) {
+                        curveName = curveName.substring(0, 1).toUpperCase() + curveName.substring(1);
+                        builder.append("/")
+                                .append(curveName);
+                    }
+                } catch (Throwable e) {
+                }
+            }
+            return (builder.toString());
         }
         if (col == 5) {
-            return (DNUtil.getOrganization(certificate.getX509Certificate(), DNUtil.SUBJECT));
+            return (String.valueOf(certificate.getPublicKeyLength()));
         }
         if (col == 6) {
+            return (DNUtil.getOrganization(certificate.getX509Certificate(), DNUtil.SUBJECT));
+        }
+        if (col == 7) {
             return (DNUtil.getCommonName(certificate.getX509Certificate(), DNUtil.ISSUER));
         }
         return ("");
@@ -228,7 +253,8 @@ public class TableModelCertificates extends AbstractTableModel {
      * Swing GUI checks which cols are editable.
      */
     @Override
-    public boolean isCellEditable(int row, int col) {
+    public boolean isCellEditable(int row, int col
+    ) {
         return (false);
     }
 
@@ -238,7 +264,8 @@ public class TableModelCertificates extends AbstractTableModel {
      * @param col requested column
      */
     @Override
-    public Class getColumnClass(int col) {
+    public Class getColumnClass(int col
+    ) {
         return (new Class[]{
             ImageIcon.class,
             ImageIcon.class,
@@ -253,15 +280,15 @@ public class TableModelCertificates extends AbstractTableModel {
      * Returns the certificate at the passed row
      */
     public KeystoreCertificate getParameter(int row) {
-        synchronized (this.data) {
-            return (this.data.get(row));
+        synchronized (this.listData) {
+            return (this.listData.get(row));
         }
     }
 
     public KeystoreCertificate[] getCertificatesAsArray() {
-        synchronized (this.data) {
-            KeystoreCertificate[] certArray = new KeystoreCertificate[this.data.size()];
-            certArray = this.data.toArray(certArray);
+        synchronized (this.listData) {
+            KeystoreCertificate[] certArray = new KeystoreCertificate[this.listData.size()];
+            certArray = this.listData.toArray(certArray);
             return (certArray);
         }
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNInfo.java 8     1/09/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNInfo.java 12    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -15,11 +15,11 @@ import java.util.Properties;
 /**
  * Stores all information about a as2 message
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 12 $
  */
 public class AS2MDNInfo implements AS2Info {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String messageId;
     private String senderId;
     private String receiverId;
@@ -39,7 +39,7 @@ public class AS2MDNInfo implements AS2Info {
      */
     private int signType = AS2Message.SIGNATURE_UNKNOWN;
     /**This is the product name submitted in the user agent header*/
-    private String useragent = null;
+    private String useragent;
     private int direction = AS2MessageInfo.DIRECTION_UNKNOWN;
     /**Possible are
      * AS2Message.STATE_STATE_FINISHED

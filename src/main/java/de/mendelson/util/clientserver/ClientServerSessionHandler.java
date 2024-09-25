@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 48    2/09/22 11:32 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 50    23/01/24 10:08 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -19,7 +19,7 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSession;
-import javax.net.ssl.SSLSocket;
+
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
@@ -36,7 +36,7 @@ import org.apache.mina.core.write.WriteToClosedSessionException;
  * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 48 $
+ * @version $Revision: 50 $
  */
 public class ClientServerSessionHandler extends IoHandlerAdapter {
 
@@ -48,6 +48,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
      */
     private PermissionDescription permissionDescription = null;
     private Logger logger = Logger.getAnonymousLogger();
+    private final UserAccess userAccess = new UserAccess(this.logger);
     /**
      * Synchronized structure to perform user defined processing on the server
      * depending on the incoming message object type
@@ -61,7 +62,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
      * Stores all sessions
      */
     private final List<IoSession> sessions = Collections.synchronizedList(new ArrayList<IoSession>());
-    private PasswordValidationHandler loginHandler;
+    private final PasswordValidationHandler loginHandler;
     /**
      * Allows to access the server for special messages without a required login
      */
@@ -74,7 +75,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     private ClientServerSessionHandlerCallback callback = null;
     private String[] validClientIds = null;
     private final int maxClients;
-    private SystemEventManager eventManager;
+    private final SystemEventManager eventManager;
 
     public ClientServerSessionHandler(Logger logger, String[] validClientIds, int maxClients, SystemEventManager eventManager) {
         if (logger != null) {
@@ -220,10 +221,9 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         } else {
             //it is a login request
             if (message instanceof LoginRequest) {
-                LoginRequest loginRequest = (LoginRequest) message;
-                UserAccess access = new UserAccess(this.logger);
+                LoginRequest loginRequest = (LoginRequest) message;                
                 //validate passwd first, close session if it fails
-                User definedUser = access.readUser(loginRequest.getUserName());
+                User definedUser = userAccess.readUser(loginRequest.getUserName());
                 if (definedUser != null && this.permissionDescription != null) {
                     definedUser.setPermissionDescription(this.permissionDescription);
                 }

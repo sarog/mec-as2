@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleDialogSubjectAlternativeNames_de.java 3     4/06/18 1:35p Hel $
+//$Header: /as4/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleDialogSubjectAlternativeNames_de.java 7     6/11/23 11:38 Hel $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the converter IDE internal editor frame - if you want to
  * localize eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleDialogSubjectAlternativeNames_de extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

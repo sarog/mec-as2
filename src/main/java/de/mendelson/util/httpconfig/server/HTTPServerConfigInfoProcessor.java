@@ -1,15 +1,19 @@
-//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 14    17/01/23 11:55 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 18    2/11/23 15:53 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationRequest;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationResponse;
+import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -27,17 +31,18 @@ import org.apache.mina.core.session.IoSession;
  * Processes a http config request on the server side
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 18 $
  */
 public class HTTPServerConfigInfoProcessor {
 
-    private HTTPServerConfigInfo httpServerConfigInfo;
-    private MecResourceBundle rb;
+    private final HTTPServerConfigInfo httpServerConfigInfo;
+    private final MecResourceBundle rb;
     private String miscConfigurationText = "No HTTP server found";
     private String protocolConfigurationText = "No HTTP server found";
     private String cipherConfigurationText = "No HTTP server found";
 
-    public HTTPServerConfigInfoProcessor(HTTPServerConfigInfo httpServerConfigInfo) {
+    public HTTPServerConfigInfoProcessor(HTTPServerConfigInfo httpServerConfigInfo,
+            CertificateManager certificateManagerTLS) {
         this.httpServerConfigInfo = httpServerConfigInfo;
         //Load default resourcebundle
         try {
@@ -48,13 +53,13 @@ public class HTTPServerConfigInfoProcessor {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         if( httpServerConfigInfo != null){
-            this.miscConfigurationText = this.generateMiscConfigurationText();
+            this.miscConfigurationText = this.generateMiscConfigurationText(certificateManagerTLS);
             this.protocolConfigurationText = this.generateProtocolConfigurationText();
             this.cipherConfigurationText = this.generateCipherConfigurationText();
         }
     }
 
-    private String generateMiscConfigurationText() {
+    private String generateMiscConfigurationText(CertificateManager certificateManagerTLS) {
         List<HTTPServerConfigInfo.Listener> listenerList = this.httpServerConfigInfo.getListener();
         List<String> receiptURLList = new ArrayList<String>();
         List<String> serverStateURLList = new ArrayList<String>();
@@ -113,11 +118,25 @@ public class HTTPServerConfigInfoProcessor {
             logBuilder.append("\n");
         }
         if (this.httpServerConfigInfo.isSSLEnabled()) {
-            if (this.httpServerConfigInfo.getKeystorePath() != null) {
-                Path keystoreFile = Paths.get(this.httpServerConfigInfo.getKeystorePath());
-                logBuilder.append(this.rb.getResourceString("http.server.config.keystorepath",
-                        keystoreFile.normalize().toAbsolutePath()));
-                logBuilder.append("\n");
+            //find out key
+            KeystoreCertificate tlsKey = null;
+            for( KeystoreCertificate key:certificateManagerTLS.getKeyStoreCertificateList()){
+                if( key.getIsKeyPair()){
+                    tlsKey = key;
+                    break;
+                }
+            }
+            if( tlsKey == null ){
+                logBuilder.append(this.rb.getResourceString("http.server.config.tlskey.none")).append("\n");
+            }else{
+                DateFormat format = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM);
+                logBuilder.append(this.rb.getResourceString("http.server.config.tlskey.info",
+                        new Object[]{
+                            tlsKey.getAlias(),
+                            tlsKey.getFingerPrintSHA1(),
+                            tlsKey.getSerialNumberDEC(),
+                            format.format(tlsKey.getNotAfter())
+                        })).append("\n");
             }
             logBuilder.append(this.rb.getResourceString("http.server.config.clientauthentication",
                     String.valueOf(this.httpServerConfigInfo.needsClientAuthentication())));
@@ -297,7 +316,7 @@ public class HTTPServerConfigInfoProcessor {
         String[] words = source.split(" ");
         for (String word : words) {
             if (line.length() + word.length() < lineLength) {
-                if (line.length() > 0) {
+                if (!line.isEmpty()) {
                     line = line + " ";
                 }
                 line = line + word;
@@ -306,7 +325,7 @@ public class HTTPServerConfigInfoProcessor {
                 line = word;
             }
         }
-        if (line.length() > 0) {
+        if (!line.isEmpty()) {
             lineList.add(line);
         }
         String result = String.join("\n", lineList);

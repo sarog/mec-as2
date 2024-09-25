@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/DateChooserUI.java 5     25.10.19 16:51 Heller $
+//$Header: /as4/de/mendelson/util/DateChooserUI.java 7     22/11/23 12:30 Heller $
 package de.mendelson.util;
 
 import com.toedter.calendar.JCalendar;
@@ -7,7 +7,6 @@ import com.toedter.calendar.JDayChooser;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -27,12 +26,12 @@ import javax.swing.plaf.PanelUI;
  * jDateChooser.setUI(new DateChooserUI());
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class DateChooserUI extends PanelUI {
 
     private static final MendelsonMultiResolutionImage IMAGE_CALENDAR
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/calendar.svg", 14, 28);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/calendar.svg", 16);
 
     public static ComponentUI createUI(JComponent c) {
         return new DateChooserUI();
@@ -46,7 +45,7 @@ public class DateChooserUI extends PanelUI {
         Color panelBackgroundColor = UIManager.getColor("Panel.background");
         JDateChooser datechooser = (JDateChooser) component;
         JButton selectionButton = datechooser.getCalendarButton();
-        selectionButton.setIcon(new ImageIcon(IMAGE_CALENDAR.toMinResolution(14)));
+        selectionButton.setIcon(new ImageIcon(IMAGE_CALENDAR.toMinResolution(16)));
         JCalendar calendar = datechooser.getJCalendar();
         Color decorationBackgroundColor = panelBackgroundColor.darker();
         calendar.setDecorationBackgroundColor(decorationBackgroundColor);

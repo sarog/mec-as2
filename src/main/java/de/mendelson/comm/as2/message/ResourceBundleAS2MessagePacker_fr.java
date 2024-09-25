@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker_fr.java 11    6.12.18 16:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker_fr.java 13    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 11 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleAS2MessagePacker_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -38,7 +38,7 @@ public class ResourceBundleAS2MessagePacker_fr extends MecResourceBundle {
         {"mdn.details", "Détails MDN: {0}"},
         {"message.compressed", "Contenu sortant compressé de {0} à {1}."},
         {"message.compressed.unknownratio", "Contenu sortant compressé."},
-        {"mdn.signed", "Le MDN sortant a été signé avec l''algorithme \"{0}\"."},
+        {"mdn.signed", "Le MDN sortant a été signé avec l''algorithme \"{0}\", l''alias clé est \"{1}\"."},
         {"mdn.notsigned", "Le MDN sortant n''a pas été signé."},
         {"mdn.creation.start", "Génération sortant MDN, la mise en identifiant de message à \"{0}\"."},
         {"message.creation.start", "Génération sortant message AS2, la mise en identifiant de message à \"{0}\"."},

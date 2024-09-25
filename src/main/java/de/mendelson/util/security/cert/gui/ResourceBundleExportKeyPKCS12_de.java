@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_de.java 5     7/12/22 16:31 Heller $ 
+//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_de.java 12    6/11/23 11:38 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleExportKeyPKCS12_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -34,17 +34,23 @@ public class ResourceBundleExportKeyPKCS12_de extends MecResourceBundle {
         {"button.cancel", "Abbrechen"},
         {"button.browse", "Durchsuchen"},
         {"keystore.contains.nokeys", "Dieser Keystore beihaltet keine privaten Schlüssel."},
+        {"label.exportdir", "Export Verzeichnis"},
+        {"label.exportdir.hint", "Verzeichnis, in dem der Schlüsselspeicher erstellt werden soll (PKCS#12)"},
+        {"label.exportdir.help", "<HTML><strong>Export Verzeichnis</strong><br><br>"
+            + "Bitte geben Sie hier das Exportverzeichnis an, in das der private Schlüssel exportiert werden soll.<br>"
+            + "Aus Sicherheitsgründen wird der Schlüssel nicht auf den Client transferiert, daher ist nur ein Speichern auf Serverseite möglich.<br><br>"
+            + "Das System wird in diesem Verzeichnis eine Speicherdatei erzeugen, die einen Datumsstempel beinhaltet."
+            + "</HTML>"},
         {"label.exportkey", "Dateiname"},
         {"label.exportkey.hint", "Zu erstellende export Keystore Datei (PKCS#12)"},
         {"label.keypass", "Passwort"},
         {"label.keypass.hint", "Passwort für exportierten Keystore"},
         {"title", "Schlüssel in Keystore exportieren (PKCS#12 format)"},
-        {"filechooser.key.export", "Bitte wählen Sie den PKCS#12 Keystore für den Export"},
-        {"key.export.success.message", "Der Schlüssel wurde erfolgreich exportiert."},
+        {"filechooser.key.export", "Bitte wählen Sie das Exportverzeichnis auf dem Server"},
         {"key.export.success.title", "Erfolg"},
         {"key.export.error.message", "Es gab einen Fehler beim Export.\n{0}"},
         {"key.export.error.title", "Fehler"},
         {"label.alias", "Schlüssel"},
-        {"key.exported.to.file", "Der Schlüssel \"{0}\" wurde in den Keystore \"{1}\" exportiert."},};
+        {"key.exported.to.file", "Der Schlüssel \"{0}\" wurde in die PKCS#12 Datei \"{1}\" exportiert."},};
 
 }

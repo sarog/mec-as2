@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/signature/ResourceBundleSignatureAS2.java 1     16.09.21 14:27 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/ResourceBundleSignatureAS2.java 2     2/11/23 15:53 Heller $
 package de.mendelson.util.security.signature;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleSignatureAS2 extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

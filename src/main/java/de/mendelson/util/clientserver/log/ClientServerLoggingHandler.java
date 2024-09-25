@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/log/ClientServerLoggingHandler.java 3     11.05.10 14:48 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/ClientServerLoggingHandler.java 4     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.log;
 
 import de.mendelson.util.clientserver.ClientServerSessionHandler;
@@ -17,11 +17,11 @@ import java.util.logging.LogRecord;
 /**
  * Handler to log logger data via the client-server interface
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ClientServerLoggingHandler extends Handler {
 
-    private ClientServerSessionHandler sessionHandler;
+    private final ClientServerSessionHandler sessionHandler;
 
     public ClientServerLoggingHandler(ClientServerSessionHandler sessionHandler) {
         this.sessionHandler = sessionHandler;

@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/moduleLock/message/ModuleLockRequest.java 2     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/modulelock/message/ModuleLockRequest.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.modulelock.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,17 +15,17 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class ModuleLockRequest extends ClientServerMessage implements Serializable{
         
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int TYPE_SET = 1;
     public static final int TYPE_RELEASE = 2;
     public static final int TYPE_REFRESH = 3;
     public static final int TYPE_LOCK_INFO = 4;
     
-    private String moduleName;
+    private final String moduleName;
     private int type = TYPE_SET;
 
     public ModuleLockRequest( String moduleName, int type ){
@@ -50,5 +52,9 @@ public class ModuleLockRequest extends ClientServerMessage implements Serializab
         return moduleName;
     }
     
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 }

@@ -1,25 +1,29 @@
-//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 33    17/02/22 11:31 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 41    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.comm.as2.configurationcheck.gui.JDialogIssuesList;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckRequest;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckResponse;
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.ProgressPanel;
 import de.mendelson.util.clientserver.BaseClient;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.swing.ImageIcon;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
@@ -35,39 +39,39 @@ import javax.swing.SwingUtilities;
  * Status bar for the AS2 GUI
  *
  * @author S.Heller
- * @version $Revision: 33 $
+ * @version $Revision: 41 $
  */
 public class AS2StatusBar extends JPanel implements IStatusBar {
 
-    private final static int ICON_HEIGHT = 18;
+    private final static int ICON_HEIGHT = 22;
 
-    private MecResourceBundle rb;
-    public static final MendelsonMultiResolutionImage IMAGE_WARNING
+    private final MecResourceBundle rb;
+    public static final MendelsonMultiResolutionImage IMAGE_WRENCH
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/warning_sign.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+                    "/de/mendelson/comm/as2/client/wrench.svg", ICON_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_PENDING
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_pending.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+                    "/de/mendelson/comm/as2/client/state_pending.svg", ICON_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_STOPPED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_stopped.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+                    "/de/mendelson/comm/as2/client/state_stopped.svg", ICON_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_FINISHED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_finished.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+                    "/de/mendelson/comm/as2/client/state_finished.svg", ICON_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_SERVED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_all.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+                    "/de/mendelson/comm/as2/client/state_all.svg", ICON_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_ALL
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_all_sum.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+                    "/de/mendelson/comm/as2/client/state_all_sum.svg", ICON_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_ALL_SELECTED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_allselected.svg", ICON_HEIGHT, ICON_HEIGHT * 2);
+                    "/de/mendelson/comm/as2/client/state_allselected.svg", ICON_HEIGHT);
     private ModuleStarter moduleStarter;
     private BaseClient baseClient = null;
     private ConfigurationCheckThread checkThread = null;
     private final ScheduledExecutorService configurationCheckRefreshExecutor = Executors.newSingleThreadScheduledExecutor(
-        new NamedThreadFactory("client-configuration-check"));
+            new NamedThreadFactory("client-configuration-check"));
 
     /**
      * Creates new form AS2StatusBar
@@ -82,6 +86,10 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         }
         initComponents();
         this.setMultiresolutionIcons();
+        Color colorBadgeBackground = ColorUtil.getBestContrastColorAroundForeground(this.jPanelConfigurationIssues.getBackground(),
+                Color.RED.darker());
+        Color colorBadgeForeground = ColorUtil.getBestContrastColorAroundForeground(colorBadgeBackground, Color.WHITE);
+        this.notificationBadgeButton.setNotificationBadgeColors(colorBadgeBackground, colorBadgeForeground);
     }
 
     private void setMultiresolutionIcons() {
@@ -94,6 +102,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                 jLabelTransactionsServed.setIcon(new ImageIcon(IMAGE_SERVED.toMinResolution(ICON_HEIGHT)));
                 jLabelTransactionsAll.setIcon(new ImageIcon(IMAGE_ALL.toMinResolution(ICON_HEIGHT)));
                 jLabelTransactionsSelected.setIcon(new ImageIcon(IMAGE_ALL_SELECTED.toMinResolution(ICON_HEIGHT)));
+                notificationBadgeButton.setIcon(new ImageIcon(IMAGE_WRENCH.toMinResolution(ICON_HEIGHT)));
             }
 
         });
@@ -185,13 +194,16 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jPanelSep3 = new javax.swing.JPanel();
         jSeparator8 = new javax.swing.JSeparator();
         jPanelSep4 = new javax.swing.JPanel();
-        jSeparator9 = new javax.swing.JSeparator();
+        jPanelEmpty123 = new javax.swing.JPanel();
         jPanelSep5 = new javax.swing.JPanel();
         jSeparator10 = new javax.swing.JSeparator();
         jPanelSep8 = new javax.swing.JPanel();
         jSeparator13 = new javax.swing.JSeparator();
         jPanelEmpty = new javax.swing.JPanel();
+        jPanelConfigurationIssues = new javax.swing.JPanel();
         jLabelConfigurationIssue = new javax.swing.JLabel();
+        notificationBadgeButton = new de.mendelson.util.NotificationBadgeButton();
+        jSeparator1 = new javax.swing.JSeparator();
         jLabelHost = new javax.swing.JLabel();
         progressPanel = new de.mendelson.util.ProgressPanel();
         jPanelSep6 = new javax.swing.JPanel();
@@ -207,8 +219,11 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
 
         jPanelMain.setLayout(new java.awt.GridBagLayout());
 
+        jPanelTransactionCount.setMinimumSize(new java.awt.Dimension(350, 24));
+        jPanelTransactionCount.setPreferredSize(new java.awt.Dimension(350, 24));
         jPanelTransactionCount.setLayout(new java.awt.GridBagLayout());
 
+        jLabelTransactionsAll.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelTransactionsAll.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsAll.setText("0");
         jLabelTransactionsAll.setToolTipText(this.rb.getResourceString( "count.all.available"));
@@ -218,6 +233,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsAll, gridBagConstraints);
 
+        jLabelTransactionsServed.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelTransactionsServed.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsServed.setText("0");
         jLabelTransactionsServed.setToolTipText(this.rb.getResourceString( "count.all.served"));
@@ -227,6 +243,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsServed, gridBagConstraints);
 
+        jLabelTransactionsOk.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelTransactionsOk.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsOk.setText("0");
         jLabelTransactionsOk.setToolTipText(this.rb.getResourceString( "count.ok"));
@@ -236,6 +253,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsOk, gridBagConstraints);
 
+        jLabelTransactionsPending.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelTransactionsPending.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsPending.setText("0");
         jLabelTransactionsPending.setToolTipText(this.rb.getResourceString( "count.pending"));
@@ -245,6 +263,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsPending, gridBagConstraints);
 
+        jLabelTransactionsFailure.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelTransactionsFailure.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsFailure.setText("0");
         jLabelTransactionsFailure.setToolTipText(this.rb.getResourceString( "count.failure"));
@@ -254,6 +273,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         jPanelTransactionCount.add(jLabelTransactionsFailure, gridBagConstraints);
 
+        jLabelTransactionsSelected.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelTransactionsSelected.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image16x16.gif"))); // NOI18N
         jLabelTransactionsSelected.setText("0");
         jLabelTransactionsSelected.setToolTipText(this.rb.getResourceString( "count.selected"));
@@ -309,18 +329,14 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         jPanelTransactionCount.add(jPanelSep3, gridBagConstraints);
 
         jPanelSep4.setLayout(new java.awt.GridBagLayout());
-
-        jSeparator9.setOrientation(javax.swing.SwingConstants.VERTICAL);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 5);
-        jPanelSep4.add(jSeparator9, gridBagConstraints);
+        jPanelSep4.add(jPanelEmpty123, new java.awt.GridBagConstraints());
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 11;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.weightx = 1.0;
         jPanelTransactionCount.add(jPanelSep4, gridBagConstraints);
 
         jPanelSep5.setLayout(new java.awt.GridBagLayout());
@@ -360,27 +376,59 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         gridBagConstraints.weighty = 1.0;
         jPanelMain.add(jPanelTransactionCount, gridBagConstraints);
 
-        jPanelEmpty.setPreferredSize(new java.awt.Dimension(125, 20));
+        jPanelEmpty.setMinimumSize(new java.awt.Dimension(446, 24));
+        jPanelEmpty.setPreferredSize(new java.awt.Dimension(125, 24));
         jPanelEmpty.setLayout(new java.awt.GridBagLayout());
 
+        jPanelConfigurationIssues.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jPanelConfigurationIssuesMouseClicked(evt);
+            }
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                jPanelConfigurationIssuesMouseEntered(evt);
+            }
+        });
+        jPanelConfigurationIssues.setLayout(new java.awt.GridBagLayout());
+
+        jLabelConfigurationIssue.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelConfigurationIssue.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
         jLabelConfigurationIssue.setText("Not connected");
         jLabelConfigurationIssue.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
-        jLabelConfigurationIssue.addMouseListener(new java.awt.event.MouseAdapter() {
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.weightx = 1.0;
+        jPanelConfigurationIssues.add(jLabelConfigurationIssue, gridBagConstraints);
+
+        notificationBadgeButton.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
-                jLabelConfigurationIssueMouseClicked(evt);
+                notificationBadgeButtonMouseClicked(evt);
             }
             public void mouseEntered(java.awt.event.MouseEvent evt) {
-                jLabelConfigurationIssueMouseEntered(evt);
+                notificationBadgeButtonMouseEntered(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 2;
+        jPanelConfigurationIssues.add(notificationBadgeButton, gridBagConstraints);
+
+        jSeparator1.setOrientation(javax.swing.SwingConstants.VERTICAL);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
+        jPanelConfigurationIssues.add(jSeparator1, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelEmpty.add(jLabelConfigurationIssue, gridBagConstraints);
+        jPanelEmpty.add(jPanelConfigurationIssues, gridBagConstraints);
 
+        jLabelHost.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelHost.setText("Not connected");
         jLabelHost.setHorizontalTextPosition(javax.swing.SwingConstants.LEFT);
         jLabelHost.setMaximumSize(new java.awt.Dimension(1000, 16));
@@ -455,18 +503,32 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         add(jPanelMain, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
-    private void jLabelConfigurationIssueMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelConfigurationIssueMouseClicked
-        if (evt.getClickCount() == 2) {
+    private void jPanelConfigurationIssuesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanelConfigurationIssuesMouseClicked
+       if (evt.getClickCount() == 2) {
             //double clicked on the issue panel
         }
-    }//GEN-LAST:event_jLabelConfigurationIssueMouseClicked
+    }//GEN-LAST:event_jPanelConfigurationIssuesMouseClicked
 
-    private void jLabelConfigurationIssueMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelConfigurationIssueMouseEntered
+    private void jPanelConfigurationIssuesMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanelConfigurationIssuesMouseEntered
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        int x = (int)this.jPanelConfigurationIssues.getLocationOnScreen().getX();
+        int y = (int)this.getLocationOnScreen().getY();
         JDialogIssuesList dialog = new JDialogIssuesList(parent, this.baseClient,
-                this.jLabelConfigurationIssue.getLocationOnScreen(), this.moduleStarter);
+                new Point(x, y), this.moduleStarter);
         dialog.setVisible(true);
-    }//GEN-LAST:event_jLabelConfigurationIssueMouseEntered
+    }//GEN-LAST:event_jPanelConfigurationIssuesMouseEntered
+
+    private void notificationBadgeButtonMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_notificationBadgeButtonMouseEntered
+        //buttons eat up mouse events
+        JComponent source = (JComponent) evt.getSource();
+        source.getParent().dispatchEvent(evt);
+    }//GEN-LAST:event_notificationBadgeButtonMouseEntered
+
+    private void notificationBadgeButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_notificationBadgeButtonMouseClicked
+       //buttons eat up mouse events
+       JComponent source = (JComponent) evt.getSource();
+       source.getParent().dispatchEvent(evt);
+    }//GEN-LAST:event_notificationBadgeButtonMouseClicked
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabelConfigurationIssue;
@@ -477,7 +539,9 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     private javax.swing.JLabel jLabelTransactionsPending;
     private javax.swing.JLabel jLabelTransactionsSelected;
     private javax.swing.JLabel jLabelTransactionsServed;
+    private javax.swing.JPanel jPanelConfigurationIssues;
     private javax.swing.JPanel jPanelEmpty;
+    private javax.swing.JPanel jPanelEmpty123;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JPanel jPanelSep1;
     private javax.swing.JPanel jPanelSep2;
@@ -488,6 +552,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     private javax.swing.JPanel jPanelSep7;
     private javax.swing.JPanel jPanelSep8;
     private javax.swing.JPanel jPanelTransactionCount;
+    private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator10;
     private javax.swing.JSeparator jSeparator11;
     private javax.swing.JSeparator jSeparator12;
@@ -495,7 +560,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     private javax.swing.JSeparator jSeparator6;
     private javax.swing.JSeparator jSeparator7;
     private javax.swing.JSeparator jSeparator8;
-    private javax.swing.JSeparator jSeparator9;
+    private de.mendelson.util.NotificationBadgeButton notificationBadgeButton;
     private de.mendelson.util.ProgressPanel progressPanel;
     // End of variables declaration//GEN-END:variables
 
@@ -513,7 +578,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            jLabelConfigurationIssue.setIcon(null);
+                            notificationBadgeButton.setText("");
                             String text = rb.getResourceString("no.configuration.issues");
                             jLabelConfigurationIssue.setText(text);
                             int labelWidth = computeStringWidth(text) + 10;
@@ -524,18 +589,16 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                     SwingUtilities.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            String text;
-                            if (issueCount > 1) {
-                                text = rb.getResourceString("configuration.issue.multiple", String.valueOf(issueCount));
-                            } else {
-                                text = rb.getResourceString("configuration.issue.single", String.valueOf(issueCount));
-                            }
+                            String text = rb.getResourceString("configuration.issue");
                             jLabelConfigurationIssue.setText(text);
-                            jLabelConfigurationIssue.setIcon(new ImageIcon(IMAGE_WARNING.toMinResolution(ICON_HEIGHT)));
+                            notificationBadgeButton.setText(String.valueOf(issueCount));
                             //contents with some gap result in the label width
                             final int labelWidth = computeStringWidth(text)
-                                    + new ImageIcon(IMAGE_WARNING.toMinResolution(ICON_HEIGHT)).getIconWidth() + 10;
-                            jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, ICON_HEIGHT));
+                                    + new ImageIcon(IMAGE_WRENCH.toMinResolution(ICON_HEIGHT)).getIconWidth() + 10;
+                            jPanelConfigurationIssues.setPreferredSize(new Dimension(
+                                    labelWidth
+                                    + 10
+                                    + (int) notificationBadgeButton.getPreferredSize().getWidth(), ICON_HEIGHT));
                         }
                     });
                 }

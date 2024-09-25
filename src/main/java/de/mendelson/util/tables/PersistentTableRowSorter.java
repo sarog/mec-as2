@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/tables/PersistentTableRowSorter.java 2     30.11.21 11:08 Heller $
+//$Header: /as2/de/mendelson/util/tables/PersistentTableRowSorter.java 3     2/11/23 14:03 Heller $
 package de.mendelson.util.tables;
 
 import java.util.List;
@@ -20,12 +20,12 @@ import javax.swing.table.TableRowSorter;
  * persistent if the user leaves a dialog etc and reopens it later.
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class PersistentTableRowSorter<M extends TableModel> extends TableRowSorter {
 
     private final static Map<String, List> KEY_MAP = new ConcurrentHashMap<String, List>();
-    private String uniqueId;
+    private final String uniqueId;
 
     /**
      * Requires a unique id that will identify the row sorter for a new request

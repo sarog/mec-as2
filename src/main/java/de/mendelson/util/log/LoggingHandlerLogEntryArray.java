@@ -1,4 +1,4 @@
-//$Header: /mec_as4/de/mendelson/util/log/LoggingHandlerLogEntryArray.java 7     7.01.21 13:49 Heller $
+//$Header: /as2/de/mendelson/util/log/LoggingHandlerLogEntryArray.java 9     2/11/23 15:53 Heller $
 package de.mendelson.util.log;
 
 import java.io.Serializable;
@@ -20,11 +20,11 @@ import java.util.logging.LogRecord;
  * Handler to log output to a StringBuilder
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class LoggingHandlerLogEntryArray extends Handler {
 
-    private List<LogEntry> out;
+    private final List<LogEntry> out;
 
     public LoggingHandlerLogEntryArray(List<LogEntry> out) {
         this.out = out;
@@ -107,7 +107,7 @@ public class LoggingHandlerLogEntryArray extends Handler {
 
     public static class LogEntry implements Serializable{
 
-        public static final long serialVersionUID = 1L;
+        private static final long serialVersionUID = 1L;
         private Level level;
         private long millis;
         private String message;

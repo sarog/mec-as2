@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/modulelock/ResourceBundleModuleLock_de.java 3     1.11.18 10:28 Heller $
+//$Header: /as2/de/mendelson/util/modulelock/ResourceBundleModuleLock_de.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleModuleLock_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -28,7 +28,7 @@ public class ResourceBundleModuleLock_de extends MecResourceBundle {
         {ModuleLock.MODULE_ENCSIGN_KEYSTORE, "Zertifikatverwaltung (Verschlüsselungs-/Signatur)" },
         {ModuleLock.MODULE_PARTNER, "Partnerverwaltung" },
         {ModuleLock.MODULE_SERVER_SETTINGS, "Servereinstellungen" },
-        {ModuleLock.MODULE_SSL_KEYSTORE, "Zertifikatverwaltung (SSL)" },
+        {ModuleLock.MODULE_SSL_KEYSTORE, "Zertifikatverwaltung (TLS)" },
         {"modifications.notallowed.message", "Änderungen sind im Moment nicht möglich" },
         {"configuration.changed.otherclient", "Ein anderer Client könnte Änderungen im Modul {0} vorgenommen haben.\nBitte öffnen Sie diese Konfigurationsoberfläche erneut, um die aktuelle Konfiguration neu zu laden." },
         {"configuration.locked.otherclient", "Das Modul {0} ist exklusiv von einem anderen Client geöffnet,\nSie können aktuell keine Änderungen vornehmen.\nDetails des anderen Clients:\nIP: {1}\nBenutzer: {2}\nProzess id: {3}" },                

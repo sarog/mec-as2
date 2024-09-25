@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/console/LoggingHandlerConsole.java 2     5.01.11 10:47 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/console/LoggingHandlerConsole.java 3     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.console;
 
 import java.io.Console;
@@ -17,11 +17,11 @@ import java.util.logging.LogRecord;
 /**
  * Handler to log output to a console
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class LoggingHandlerConsole extends Handler {
 
-    private Console console;
+    private final Console console;
 
     public LoggingHandlerConsole(Console console) {
         this.console = console;

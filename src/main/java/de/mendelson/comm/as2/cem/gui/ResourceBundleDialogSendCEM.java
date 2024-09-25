@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleDialogSendCEM.java 7     6/22/18 1:48p Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleDialogSendCEM.java 9     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDialogSendCEM extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -39,7 +39,7 @@ public class ResourceBundleDialogSendCEM extends MecResourceBundle{
         {"cem.not.informed", "The following partners have not been informed via CEM, please send the certificate using an other channel, e.g. email: {0}" },
         {"partner.all", "--All partner--" },
         {"partner.cem.hint", "Partner systems must support CEM to be listed here" },
-        {"purpose.ssl", "SSL/TLS" },
+        {"purpose.ssl", "TLS" },
         {"purpose.encryption", "Encryption" },
         {"purpose.signature", "Digital signature" },
     };

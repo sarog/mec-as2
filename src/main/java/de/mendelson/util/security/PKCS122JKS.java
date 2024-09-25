@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/PKCS122JKS.java 4     26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/util/security/PKCS122JKS.java 5     2/11/23 14:03 Heller $
 package de.mendelson.util.security;
 
 import java.io.InputStream;
@@ -24,7 +24,7 @@ import org.bouncycastle.openssl.PasswordFinder;
  * other JKS keystore
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class PKCS122JKS implements PasswordFinder {
 
@@ -53,8 +53,6 @@ public class PKCS122JKS implements PasswordFinder {
     }
 
     /**
-     * @param importKeystoreStream Stream that contains a keystore in pkcs12
-     * format
      */
     public void importKey(KeyStore sourceKeyStore, String alias) throws Exception {
         if (sourceKeyStore.isKeyEntry(alias)) {
@@ -74,8 +72,6 @@ public class PKCS122JKS implements PasswordFinder {
     }
 
     /**
-     * @param importKeystoreStream Stream that contains a keystore in pkcs12
-     * format
      */
     public void importKey(InputStream sourceKeystoreStream, char[] sourceKeypass,
             String alias) throws Exception {
@@ -110,7 +106,6 @@ public class PKCS122JKS implements PasswordFinder {
      * Saves the passed keystore
      *
      * @param keystorePass Password for the keystore
-     * @param filename Filename where to save the keystore to
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass, Path file) throws Exception {
         OutputStream out = null;

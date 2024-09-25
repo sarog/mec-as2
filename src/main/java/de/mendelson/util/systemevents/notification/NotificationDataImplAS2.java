@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 9     13/10/22 10:05 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 13    2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.oauth2.OAuth2Config;
@@ -17,11 +17,11 @@ import org.w3c.dom.NodeList;
 /**
  * Implementation of a server log for the as2 server database
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class NotificationDataImplAS2 extends NotificationData implements Serializable{
    
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     private String notificationMail = null;
     private String mailServer = null;
@@ -33,6 +33,7 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
     private boolean notifyResendDetected = true;
     private boolean notifyConnectionProblem = false;
     private boolean notifyPostprocessingProblem = false;
+    private boolean notifyClientServerProblem = false;
     /**Makes no sense but some mail servers require this to be a valid email from the same host to prevent SPAM sending*/
     private String replyTo = null;
     private boolean useSMTPAuthCredentials = false;
@@ -115,6 +116,7 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
         builder.append(offset).append("\t<notifysystemfailure>").append(String.valueOf(this.notifySystemFailure)).append("</notifysystemfailure>\n");
         builder.append(offset).append("\t<notifycem>").append(String.valueOf(this.notifyCEM)).append("</notifycem>\n");
         builder.append(offset).append("\t<notifyconnectionproblem>").append(String.valueOf(this.notifyConnectionProblem)).append("</notifyconnectionproblem>\n");
+        builder.append(offset).append("\t<notifyclientserverproblem>").append(String.valueOf(this.notifyClientServerProblem)).append("</notifyclientserverproblem>\n");
         builder.append(offset).append("\t<replyto>").append(this.toCDATA(this.replyTo)).append("</replyto>\n");
         builder.append(offset).append("\t<maxnotificationspermin>").append(this.toCDATA(String.valueOf(this.maxNotificationsPerMin))).append("</maxnotificationspermin>\n");
         builder.append(offset).append("\t<useauthorizationcredentials>").append(this.toCDATA(String.valueOf(this.useSMTPAuthCredentials))).append("</useauthorizationcredentials>\n");
@@ -122,7 +124,7 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
         builder.append(offset).append("\t<authorizationcredentialspass>").append(this.toCDATA(String.valueOf(this.smtpPass==null?"":new String(this.smtpPass)))).append("</authorizationcredentialspass>\n");
         builder.append(offset).append("\t<useauthorizationoauth2>").append(this.toCDATA(String.valueOf(this.useSMTPAuthOAuth2))).append("</useauthorizationoauth2>\n");
         if( this.oAuth2Config != null ){
-            builder.append(offset).append(this.oAuth2Config.toXML(level+1, offset, this.useSMTPAuthOAuth2));
+            builder.append(offset).append(this.oAuth2Config.toXML(level+1, "notification", this.useSMTPAuthOAuth2));
         }
         builder.append(offset).append("</notification>\n");
         return (builder.toString());
@@ -190,7 +192,6 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
     }
  
     /**
-     * @param useSMTHAuth the useSMTHAuth to set
      */    
     public void setUsesSMTPAuthCredentials(boolean useSMTPAuthCredentials) {
         this.useSMTPAuthCredentials = useSMTPAuthCredentials;
@@ -202,7 +203,6 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
     }
  
     /**
-     * @param useSMTHAuth the useSMTHAuth to set
      */    
     public void setUsesSMTPAuthOAuth2(boolean useSMTPAuthOAuth2) {
         this.useSMTPAuthOAuth2 = useSMTPAuthOAuth2;
@@ -304,7 +304,6 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
     }
 
     /**
-     * @param notifyConnectionProblems the notifyConnectionProblems to set
      */
     public void setNotifyConnectionProblem(boolean notifyConnectionProblem) {
         this.notifyConnectionProblem = notifyConnectionProblem;
@@ -332,6 +331,20 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
     
     public void setOAuth2Config(OAuth2Config oAuth2Config){
         this.oAuth2Config = oAuth2Config;
+    }
+
+    /**
+     * @return the notifyClientServerProblem
+     */
+    public boolean notifyClientServerProblem() {
+        return notifyClientServerProblem;
+    }
+
+    /**
+     * @param notifyClientServerProblem the notifyClientServerProblem to set
+     */
+    public void setNotifyClientServerProblem(boolean notifyClientServerProblem) {
+        this.notifyClientServerProblem = notifyClientServerProblem;
     }
 
     

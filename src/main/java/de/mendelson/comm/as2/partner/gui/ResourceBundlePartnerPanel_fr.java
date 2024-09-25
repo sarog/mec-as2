@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel_fr.java 50    19/01/23 10:00 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel_fr.java 59    20/12/23 14:12 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 50 $
+ * @version $Revision: 59 $
  */
 public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -28,7 +28,7 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Configuration des partenaires"},
         {"label.name", "Nom"},
         {"label.name.help", "<HTML><strong>Nom</strong><br><br>"
@@ -46,30 +46,41 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.partnercomment", "Commentaire"},
         {"label.url", "URL de réception"},
         {"label.url.help", "<HTML><strong>URL de réception</strong><br><br>"
-            + "Il s''agit de l'URL de votre partenaire via laquelle son système AS2 est accessible.<br>"
+            + "Il s''agit de l''URL de votre partenaire via laquelle son système AS2 est accessible.<br>"
             + "Veuillez spécifier cette URL au format <strong>PROTOCOL://HOST:PORT/CHEMIN</strong>, où le "
             + "<strong>PROTOCOL</strong> doit être l''un des formats \"http\" ou \"https\". <strong>HOST</strong> "
             + "indique l''hôte du serveur AS2 de votre partenaire. <strong>PORT</strong> est le port de réception de "
-            + "votre partenaire. Si elle n''est pas spécifiée, la valeur \"80\" sera fixée. <strong>CHEMIN</strong> est le "
-            + "chemin de réception, par exemple \"/as2/HttpReceiver\".</HTML>"},
+            + "votre partenaire.<strong>CHEMIN</strong> est le "
+            + "chemin de réception, par exemple \"/as2/HttpReceiver\".<br><br>"
+            + "L''entrée entière est marquée comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
+            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL."
+            + "</HTML>"},
         {"label.mdnurl", "URL des MDN"},
         {"label.mdnurl.help", "<HTML><strong>URL des MDN</strong> (<strong>M</strong>essage <strong>D</strong>elivery <strong>N</strong>otification)<br><br>"
             + "C''est l''URL que votre partenaire utilisera pour le MDN asynchrone entrant vers cette station locale. Dans le cas synchrone, "
             + "cette valeur n''est pas utilisée, car le MDN est envoyé sur le canal de retour de la connexion sortante.<br>"
             + "Veuillez spécifier cette URL au format <strong>PROTOCOL://HOST:PORT/CHEMIN</strong>. <br><strong>PROTOCOLE</strong> "
             + "doit être l''un de \"http\" ou \"https\".<br><strong>HOST</strong> indique votre propre hôte de serveur AS2.<br>"
-            + "<strong>PORT</strong> est le port de réception de votre système AS2. S''il n''est pas spécifié, "
-            + "la valeur \"80\" sera définie.<br><strong>CHEMIN</strong> indique le "
-            + "chemin de réception, par exemple \"/as2/HttpReceiver\".</HTML>"},
+            + "<strong>PORT</strong> est le port de réception de votre système AS2. <strong>CHEMIN</strong> indique le "
+            + "chemin de réception, par exemple \"/as2/HttpReceiver\"."
+            + "L''entrée entière est marquée comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
+            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL."
+            + "</HTML>"},
         {"label.signalias.key", "Clef privée (Création de signature)"},
         {"label.signalias.key.help", "<HTML><strong>Clef privée (Création de signature)</strong><br><br>"
             + "Veuillez sélectionner ici une clé privée disponible dans le gestionnaire de certificats (signature/chiffrement) du système.<br>"
-            + "Avec cette clé, vous créez une signature numérique pour les messages sortants destinés à tous les partenaires distants."
+            + "Avec cette clé, vous créez une signature numérique pour les messages sortants destinés à tous les partenaires distants.<br><br>"
+            + "Comme vous êtes le seul à posséder la clé privée placée ici, vous êtes également le seul à pouvoir signer les données. "
+            + "Vos partenaires peuvent vérifier cette signature avec le certificat - ce qui garantit que les données n''ont pas été "
+            + "modifiées et que vous êtes l''expéditeur."
             + "</HTML>"},
         {"label.cryptalias.key", "Clef privée (Décryptage)"},
         {"label.cryptalias.key.help", "<HTML><strong>Clef privée (Décryptage)</strong><br><br>"
             + "Veuillez sélectionner ici une clé privée disponible dans le gestionnaire de certificats (signature/chiffrement) du système.<br>"
-            + "Si les messages entrants de n''importe quel partenaire sont cryptés pour cette station locale, cette clé est utilisée pour le décryptage."
+            + "Si les messages entrants de n''importe quel partenaire sont cryptés pour cette station locale, cette clé est utilisée pour le décryptage.<br><br>"
+            + "Comme vous êtes le seul à posséder la clé privée que vous avez placée ici, vous êtes également le seul à pouvoir "
+            + "décrypter les données que vos partenaires ont cryptées avec votre certificat. Chaque partenaire peut donc crypter "
+            + "des données pour vous - mais vous seul pouvez les décrypter."
             + "</HTML>"},
         {"label.signalias.cert", "Certificat du partenaire (Vérification de la signature)"},
         {"label.signalias.cert.help", "<HTML><strong>Certificat du partenaire (Vérification de la signature)</strong><br><br>"
@@ -93,12 +104,23 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "</HTML>"},
         {"label.email", "E-mail"},
         {"label.email.help", "<HTML><strong>E-mail</strong><br><br>"
-            + "Cette valeur fait partie de la description du protocole AS2 mais n'est en fait actuellement pas du tout utilisée."
+            + "Cette valeur fait partie de la description du protocole AS2 mais n''est en fait actuellement pas du tout utilisée."
             + "</HTML>"},
         {"label.email.hint", "Non utilisé ou validé dans le protocole AS2"},
         {"label.localstation", "Station locale"},
         {"label.localstation.help", "<HTML><strong>Station locale</strong><br><br>"
-            + "Il existe deux types de partenaires: Les stations locales et les partenaires distants. Une station locale représente votre propre système."
+            + "Il existe deux types de partenaires:<br><br>"
+            + "<table border=\"0\">"
+            + "<tr>"
+            + "<td style=\"padding-left: 10px\"><img src=\"/de/mendelson/comm/as2/partner/gui/localstation.svg\" height=\"20\" width=\"20\"></td>"
+            + "<td>Les stations locales</td>"
+            + "</tr>"
+            + "<tr>"
+            + "<td style=\"padding-left: 10px\"><img src=\"/de/mendelson/comm/as2/partner/gui/singlepartner.svg\" height=\"20\" width=\"20\"></td>"
+            + "<td>Les partenaires distants</td>"
+            + "</tr>"
+            + "</table><br>"
+            + "Une station locale représente votre propre système."
             + "</HTML>"},
         {"label.compression", "Compresser les messages sortants (nécessite une solution AS2 1.1 en face)"},
         {"label.usecommandonreceipt", "Sur réception de message:"},
@@ -108,7 +130,10 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.keepfilenameonreceipt.help", "<HTML><strong>Garder le nom de fichier original sur réception</strong><br><br>"
             + "Si cette option est activée, le système tente d''extraire le nom de fichier original des messages AS2 entrants "
             + "et d''enregistrer le fichier transmis sous ce nom afin qu''il puisse être traité en conséquence.<br>"
-            + "Cette option ne fonctionnera que si l''expéditeur a ajouté les informations relatives au nom de fichier original. Si vous l''activez, veillez à ce que votre partenaire envoie des noms de fichiers uniques.</HTML>"},
+            + "Cette option ne fonctionnera que si l''expéditeur a ajouté les informations relatives au nom de fichier original. "
+            + "Si vous l''activez, veillez à ce que votre partenaire envoie des noms de fichiers uniques.<br><br>"
+            + "Si le nom de fichier extrait n''est pas un nom de fichier valide, il sera remplacé par un nom de fichier valide, "
+            + "un avertissement d''événement système POSTPROCESSING sera émis et le traitement se poursuivra.</HTML>"},
         {"label.address", "Adresse"},
         {"label.notes.help", "<HTML><strong>Notes</strong><br><br>"
             + "Vous trouverez ici la possibilité de prendre des notes sur ce partenaire pour votre propre usage."
@@ -154,8 +179,9 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.signedmdn.help", "<HTML><strong>MDN signés</strong><br><br>"
             + "Ce paramètre vous permet d''indiquer au système partenaire pour les messages AS2 sortants que vous souhaitez un accusé de réception signé (MDN).<br>"
             + "Bien que cette option semble logique au premier abord, elle est malheureusement problématique. En effet, lorsque le MDN du partenaire est reçu, la transaction est terminée. "
-            + "Si la vérification de la signature du MDN est effectuée et échoue, il n''est plus possible d'informer le partenaire de ce problème. "
-            + "Une interruption de la transaction n''est plus possible - la transaction est déjà terminée. La vérification de la signature du MDN en mode automatique n'a donc aucun sens. "
+            + "Si la vérification de la signature du MDN est effectuée et échoue, il n''est plus possible d''informer le partenaire de ce problème. "
+            + "Une interruption de la transaction n''est plus possible - la transaction est déjà terminée. La vérification de la signature du MDN en mode automatique "
+            + "n''a donc aucun sens. "
             + "Le protocole AS2 prescrit ici que l''application doit résoudre ce problème logique, ce qui n''est pas possible.<br>"
             + "La solution AS2 de mendelson affiche un avertissement en cas d''échec de la vérification de la signature MDN.<br><br>"
             + "Il existe encore une particularité de ce réglage : si un problème est survenu lors du traitement côté partenaire, le MDN peut toujours être non signé - indépendamment de ce réglage."
@@ -165,7 +191,7 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "La surveillance des répertoires ira chercher à intervalles réguliers un nombre défini de fichiers dans le répertoire surveillé et les traitera. "
             + "Il faut s''assurer qu''à ce moment-là, le fichier soit "
             + "présent dans son intégralité. Si vous copiez régulièrement des fichiers dans le répertoire surveillé, il peut arriver que des chevauchements temporels se produisent, "
-            + "c''est-à-dire qu''un fichier soit récupéré alors qu''il n'est pas encore entièrement disponible. "
+            + "c''est-à-dire qu''un fichier soit récupéré alors qu''il n''est pas encore entièrement disponible. "
             + "C''est pourquoi, si vous copiez les fichiers dans le répertoire surveillé à l''aide d''une opération non atomique, vous devriez choisir une extension de nom de fichier au moment du processus de copie qui sera ignorée par le processus de surveillance. Une fois que le fichier entier est dans le répertoire surveillé "
             + "répertoire, vous pouvez supprimer l''extension de nom de fichier à l''aide d''une opération atomique (move, mv, rename) et le fichier complet est récupéré. "
             + "<br>La liste des extensions de nom de fichier est une liste d''extensions séparées par des virgules, par exemple \"*.tmp, *.upload\"."
@@ -189,12 +215,14 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.httpauth.credentials.message", "Authentification HTTP basique"},
         {"label.httpauth.credentials.message.user", "Utilisateur"},
         {"label.httpauth.credentials.message.pass", "Mot de passe"},
-        {"label.httpauth.oauth2.message", "OAuth2"},
+        {"label.httpauth.oauth2.authorizationcode.message", "OAuth2 (Authorization code)"},
+        {"label.httpauth.oauth2.clientcredentials.message", "OAuth2 (Client credentials)"},
         {"label.httpauth.asyncmdn", "Authentification des MDN asynchrones sortants"},
         {"label.httpauth.credentials.asyncmdn", "Authentification HTTP basique"},
         {"label.httpauth.credentials.asyncmdn.user", "Utilisateur"},
         {"label.httpauth.credentials.asyncmdn.pass", "Mot de passe"},
-        {"label.httpauth.oauth2.asyncmdn", "OAuth2"},
+        {"label.httpauth.oauth2.authorizationcode.asyncmdn", "OAuth2 (Authorization code)"},
+        {"label.httpauth.oauth2.clientcredentials.asyncmdn", "OAuth2 (Client credentials)"},
         {"label.notify.send", "Notifier lors d''un dépassement de quota sur message envoyé"},
         {"label.notify.receive", "Notifier lors d''un dépassement de quota sur message reçu"},
         {"label.notify.sendreceive", "Notifier lors d''un dépassement de quota sur message envoyé ou reçu"},
@@ -202,19 +230,31 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"header.httpheadervalue", "Valeur"},
         {"httpheader.add", "Ajouter "},
         {"httpheader.delete", "Éliminer"},
-        {"label.as2version", "Version AS2:"},
-        {"label.productname", "Nom du produit:"},
-        {"label.features", "Fonctionnalités:"},
-        {"label.features.cem", "Certificat d'échange via CEM"},
+        {"label.as2version", "Version AS2"},
+        {"label.productname", "Nom du produit"},
+        {"label.features", "Fonctionnalités"},
+        {"label.features.cem", "Certificat d''échange via CEM"},
         {"label.features.ma", "Plusieurs pièces jointes"},
         {"label.features.compression", "Compression"},
-        {"partnerinfo", "Votre partenaire transmet avec chaque message AS2 quelques informations à propos de ses capacités de système AS2. Il s'agit d'une liste de fonctions qui a été transmise par votre partenaire."},
+        {"partnerinfo", "Votre partenaire transmet avec chaque message AS2 quelques informations à propos de ses capacités de système AS2. "
+            + "Il s''agit d''une liste de fonctions qui a été transmise par votre partenaire."},
         {"partnersystem.noinfo", "Aucune information n''est disponible, qu''il y avait déjà une transaction?"},
         {"label.httpversion", "Version du protocole HTTP"},
+        {"label.httpversion.help", "<HTML><strong>Version du protocole HTTP</strong><br><br>"
+            + "Les versions suivantes du protocole HTTP sont définies:"
+            + "<ul>"
+            + "<li>HTTP/1.0 (RFC 1945)</li>"
+            + "<li>HTTP/1.1 (RFC 2616)</li>"
+            + "<li>HTTP/2.0 (RFC 9113)</li>"
+            + "<li>HTTP/3.0 (RFC 9114)</li>"
+            + "</ul>"
+            + "AS2 utilise principalement HTTP 1.1.<br><br>"
+            + "Indice: Il <strong>ne s''agit pas</strong> de la version TLS!"
+            + "</HTML>"},
         {"label.test.connection", "Connexion de test"},
         {"label.mdn.description", "<HTML>Le MDN (Message Delivery Notification) est la confirmation du message AS2. Cette section définit le comportement de votre partenaire pour vos messages AS2 sortants.</HTML>"},
         {"label.algorithmidentifierprotection", "<HTML>Utiliser l''attribut de protection de l''identificateur d''algorithme dans la signature (recommandé), voir RFC 6211</HTML>"},
-        {"tooltip.button.editevent", "Modifier l'événement"},
+        {"tooltip.button.editevent", "Modifier l''événement"},
         {"tooltip.button.addevent", "Créer un nouvel événement"},
         {"label.httpauthentication.credentials.help", "<HTML><strong>Authentification d''accès de base HTTP</strong><br><br>"
             + "Veuillez configurer ici l''authentification d''accès de base HTTP si celle-ci est activée du côté "
@@ -224,5 +264,16 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "client TLS (via des certificats), aucun réglage n''est nécessaire ici. Dans ce cas, veuillez "
             + "importer les certificats du partenaire via le gestionnaire de certificats TLS - le système se "
             + "chargera alors de l''authentification du client TLS."
+            + "</HTML>"},
+        {"label.overwrite.security", "Remplacer les paramètres de sécurité de la station locale"},
+        {"label.keep.security", "Utiliser les paramètres de sécurité de la station locale"},
+        {"label.overwrite.crypt", "Décrypter les messages entrants"},
+        {"label.overwrite.crypt.help", "<HTML><strong>Décrypter les messages entrants</strong><br><br>"
+            + "Cette clé est utilisée pour décrypter les messages entrants de ce partenaire - "
+            + "au lieu de la clé paramétrée de la station locale correspondante."
+            + "</HTML>"},
+        {"label.overwrite.sign", "Signer les messages sortants"},
+        {"label.overwrite.sign.help", "<HTML><strong>Signer les messages sortants</strong><br><br>"
+            + "Cette clé est utilisée pour signer les messages sortants destinés à ce partenaire - à la place de la clé définie pour la station locale concernée."
             + "</HTML>"},};
 }

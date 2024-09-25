@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/tables/hideablecolumns/TableCellRendererHideableColumnString.java 1     10.07.15 14:21 Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/TableCellRendererHideableColumnString.java 2     2/11/23 15:53 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import javax.swing.table.TableCellRenderer;
  * Renders a partner in a JTable column
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class TableCellRendererHideableColumnString extends DefaultTableCellRenderer implements TableCellRenderer {
 
@@ -68,7 +68,7 @@ public class TableCellRendererHideableColumnString extends DefaultTableCellRende
         this.setFont(table.getFont());
         if (value instanceof String) {
             String displayValue = (String) value;
-            if( displayValue.trim().length() == 0 ){            
+            if(displayValue.trim().isEmpty()){
                 displayValue = this.rb.getResourceString("header.icon");
             }
             this.setText(displayValue);

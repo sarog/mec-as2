@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_de.java 46    26.08.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_de.java 50    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 46 $
+ * @version $Revision: 50 $
  */
 public class ResourceBundleAS2MessageParser_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -67,5 +67,10 @@ public class ResourceBundleAS2MessageParser_de extends MecResourceBundle {
         {"original.filename.found", "Der originale Dateiname wurde vom Sender als \"{0}\" übertragen." },
         {"original.filename.undefined", "Der Originaldateiname wurde nicht übertragen." },
         {"data.not.compressed", "Die eingegangenen AS2 Daten sind unkomprimiert." },
+        {"invalid.original.filename.title", "Ungültiger Originaldateiname in Transaktion entdeckt" },
+        {"invalid.original.filename.body", "Das System extrahierte einen ungültigen Originaldateinamen in der Transaktion {0} von {1} nach {2}.\n"
+            + "Der gefundene Dateiname \"{3}\" wurde durch \"{4}\" ersetzt und die Verarbeitung mit diesem neuen Dateinamen fortgesetzt. "
+            + "Dies kann Auswirkungen auf Ihren Verarbeitungsablauf haben, da Dateinamen manchmal Metadaten enthalten." },
+        {"invalid.original.filename.log", "Ungültiger Originaldateiname in Transaktion entdeckt. \"{0}\" wird ersetzt durch \"{1}\" und Verarbeitung wird fortgesetzt." },
     };
 }

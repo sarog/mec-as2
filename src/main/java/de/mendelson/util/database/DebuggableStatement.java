@@ -1,4 +1,4 @@
-//$Header: /mec_oftp2/de/mendelson/util/database/DebuggableStatement.java 6     2/02/22 10:16 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggableStatement.java 7     2/11/23 14:03 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Connection;
@@ -20,14 +20,14 @@ import java.util.logging.Logger;
  * Database statement that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class DebuggableStatement implements Statement {
 
-    private Statement statement;
+    private final Statement statement;
     private Logger connectionLogger = null;
     private String connectionName = "Unknown connection";
-    private DebuggableConnection connection;
+    private final DebuggableConnection connection;
     /**
      * Counter for the unique query ids
      */

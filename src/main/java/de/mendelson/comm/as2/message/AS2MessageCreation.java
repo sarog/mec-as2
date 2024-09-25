@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 66    26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 73    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
@@ -16,7 +17,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
-import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,7 +26,6 @@ import java.security.PrivateKey;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.security.spec.MGF1ParameterSpec;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.List;
@@ -68,29 +67,31 @@ import org.bouncycastle.operator.jcajce.JcaAlgorithmParametersConverter;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 66 $
+ * @version $Revision: 73 $
  */
 public class AS2MessageCreation {
 
     private Logger logger = null;
-    private MecResourceBundle rb = null;
-    private MecResourceBundle rbMessage = null;
-    private CertificateManager signatureCertManager = null;
-    private CertificateManager encryptionCertManager = null;
-    //Database connection
-    private IDBDriverManager dbDriverManager = null;
+    private final static MecResourceBundle rb;
+    private final static MecResourceBundle rbMessage;
 
-    public AS2MessageCreation(CertificateManager signatureCertManager, CertificateManager encryptionCertManager) {
-        //Load resourcebundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleAS2MessagePacker.class.getName());
-            this.rbMessage = (MecResourceBundle) ResourceBundle.getBundle(
+            rbMessage = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleAS2Message.class.getName());
         } //load up  resourcebundle
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+
+    private final CertificateManager signatureCertManager;
+    private final CertificateManager encryptionCertManager;
+    private IDBDriverManager dbDriverManager = null;
+
+    public AS2MessageCreation(CertificateManager signatureCertManager, CertificateManager encryptionCertManager) {
         this.signatureCertManager = signatureCertManager;
         this.encryptionCertManager = encryptionCertManager;
     }
@@ -161,7 +162,7 @@ public class AS2MessageCreation {
         message.setRawData(message.getPayload(0).getData());
         message.setDecryptedRawData(message.getPayload(0).getData());
         if (this.logger != null) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("message.notsigned",
+            this.logger.log(Level.INFO, rb.getResourceString("message.notsigned",
                     new Object[]{
                         info.getMessageId()
                     }), info);
@@ -173,8 +174,7 @@ public class AS2MessageCreation {
         //2822 headers, since these are sometimes altered or reordered by
         //Mail Transport Agents (MTAs).
         String digestOIDSHA1 = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA1);
-        String mic = null;
-        cryptoHelper.calculateMIC(new ByteArrayInputStream(message.getPayload(0).getData()), digestOIDSHA1);
+        String mic = cryptoHelper.calculateMIC(new ByteArrayInputStream(message.getPayload(0).getData()), digestOIDSHA1);
         info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA1);
         //add compression
         if (receiver.getCompressionType() == AS2Message.COMPRESSION_ZLIB) {
@@ -196,11 +196,11 @@ public class AS2MessageCreation {
             //compression ratio in this case.
             if (compressedSize == -1) {
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("message.compressed.unknownratio"), info);
+                    this.logger.log(Level.INFO, rb.getResourceString("message.compressed.unknownratio"), info);
                 }
             } else {
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("message.compressed",
+                    this.logger.log(Level.INFO, rb.getResourceString("message.compressed",
                             new Object[]{
                                 AS2Tools.getDataSizeDisplay(uncompressedSize),
                                 AS2Tools.getDataSizeDisplay(compressedSize)
@@ -217,7 +217,7 @@ public class AS2MessageCreation {
         //no encryption
         if (info.getEncryptionType() == AS2Message.ENCRYPTION_NONE) {
             if (this.logger != null) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("message.notencrypted"), info);
+                this.logger.log(Level.INFO, rb.getResourceString("message.notencrypted"), info);
             }
             message.setRawData(message.getDecryptedRawData());
         } else {
@@ -243,12 +243,21 @@ public class AS2MessageCreation {
         if (info.getSignType() != AS2Message.SIGNATURE_NONE) {
             MimeMultipart signedPart = this.signContentPart(info, contentPart, sender, receiver);
             if (this.logger != null) {
-                String signAlias = this.signatureCertManager.getAliasByFingerprint(sender.getSignFingerprintSHA1());
-                this.logger.log(Level.INFO, this.rb.getResourceString("message.signed",
-                        new Object[]{
-                            signAlias,
-                            this.rbMessage.getResourceString("signature." + receiver.getSignType())
-                        }), info);
+                if (receiver.isOverwriteLocalStationSecurity() && receiver.getSignOverwriteLocalstationFingerprintSHA1() != null) {
+                    String signAlias = this.signatureCertManager.getAliasByFingerprint(receiver.getSignOverwriteLocalstationFingerprintSHA1());
+                    this.logger.log(Level.INFO, rb.getResourceString("message.signed",
+                            new Object[]{
+                                signAlias,
+                                rbMessage.getResourceString("signature." + receiver.getSignType())
+                            }), info);
+                } else {
+                    String signAlias = this.signatureCertManager.getAliasByFingerprint(sender.getSignFingerprintSHA1());
+                    this.logger.log(Level.INFO, rb.getResourceString("message.signed",
+                            new Object[]{
+                                signAlias,
+                                rbMessage.getResourceString("signature." + receiver.getSignType())
+                            }), info);
+                }
             }
             messagePart.setContent(signedPart);
             messagePart.saveChanges();
@@ -258,7 +267,7 @@ public class AS2MessageCreation {
                 MimeMultipart unsignedPart = new MimeMultipart();
                 unsignedPart.addBodyPart((MimeBodyPart) contentPart);
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("message.notsigned"), info);
+                    this.logger.log(Level.INFO, rb.getResourceString("message.notsigned"), info);
                 }
                 messagePart.setContent(unsignedPart);
             } else if (contentPart instanceof MimeMultipart) {
@@ -324,7 +333,8 @@ public class AS2MessageCreation {
      * @param payloadContentTypes If this is null the receivers content type
      * will be taken
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] payloadContentTypes) throws Exception {
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            Path[] payloadFiles, String[] payloadContentTypes) throws Exception {
         String[] originalFilenames = new String[payloadFiles.length];
         for (int i = 0; i < originalFilenames.length; i++) {
             originalFilenames[i] = payloadFiles[i].getFileName().toString().replace(' ', '_');
@@ -339,14 +349,16 @@ public class AS2MessageCreation {
      * @deprecated Use the same method with Path[] parameter instead
      */
     @Deprecated(since = "2020")
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames) throws Exception {
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            File[] payloadFiles, String[] originalFilenames) throws Exception {
         return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, null));
     }
 
     /**
      * Builds up a new message from the passed message parts
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] originalFilenames,
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            Path[] payloadFiles, String[] originalFilenames,
             String[] payloadContentTypes) throws Exception {
         return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, null,
                 receiver.getSubject(), payloadContentTypes));
@@ -358,7 +370,8 @@ public class AS2MessageCreation {
      * @deprecated Use the same method with Path[] parameter instead
      */
     @Deprecated(since = "2020")
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames, String userdefinedId,
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            File[] payloadFiles, String[] originalFilenames, String userdefinedId,
             String subject) throws Exception {
         return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, userdefinedId, subject,
                 null));
@@ -367,7 +380,8 @@ public class AS2MessageCreation {
     /**
      * Builds up a new message from the passed message parts
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] originalFilenames, String userdefinedId,
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            Path[] payloadFiles, String[] originalFilenames, String userdefinedId,
             String subject, String[] payloadContentTypes) throws Exception {
         return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, userdefinedId, subject,
                 payloadContentTypes));
@@ -382,7 +396,8 @@ public class AS2MessageCreation {
      * @deprecated Use the same method with Path[] parameter instead
      */
     @Deprecated(since = "2020")
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, int messageType, String subject) throws Exception {
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            File[] payloadFiles, int messageType, String subject) throws Exception {
         return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), messageType, subject));
     }
 
@@ -393,7 +408,8 @@ public class AS2MessageCreation {
      * @param messageType one of the message types defined in the class
      * AS2Message
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, int messageType, String subject) throws Exception {
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            Path[] payloadFiles, int messageType, String subject) throws Exception {
         String[] originalFilenames = new String[payloadFiles.length];
         for (int i = 0; i < originalFilenames.length; i++) {
             originalFilenames[i] = payloadFiles[i].getFileName().toString().replace(' ', '_');
@@ -410,7 +426,8 @@ public class AS2MessageCreation {
      * @deprecated Use the same method with Path[] parameter instead
      */
     @Deprecated(since = "2020")
-    public AS2Message createMessage(Partner sender, Partner receiver, File[] payloadFiles, String[] originalFilenames,
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            File[] payloadFiles, String[] originalFilenames,
             int messageType, String userdefinedId, String subject) throws Exception {
         return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, messageType, userdefinedId,
                 subject, null));
@@ -426,15 +443,16 @@ public class AS2MessageCreation {
      * - the array length must match the array length of the payloadFiles
      * AS2Message
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, Path[] payloadFiles, String[] originalFilenames,
+    public AS2Message createMessage(Partner sender, Partner receiver,
+            Path[] payloadFiles, String[] originalFilenames,
             int messageType, String userdefinedId, String subject, String[] payloadContentTypes) throws Exception {
         if (payloadFiles == null || payloadFiles.length == 0) {
             throw new IllegalArgumentException("AS2MessageCreation.createMessage(): No payload files");
         }
-        if (payloadFiles.length > 0 && originalFilenames != null && originalFilenames.length != payloadFiles.length) {
+        if (originalFilenames != null && originalFilenames.length != payloadFiles.length) {
             throw new IllegalArgumentException("AS2MessageCreation.createMessage(): The number of passed payloadfiles and originalfilenames must match");
         }
-        if (payloadFiles.length > 0 && payloadContentTypes != null && payloadContentTypes.length != payloadFiles.length) {
+        if (payloadContentTypes != null && payloadContentTypes.length != payloadFiles.length) {
             throw new IllegalArgumentException("AS2MessageCreation.createMessage(): The number of passed payloadfiles and payloadContentTypes must match");
         }
         //build the original filenames from the passed payload files as they are not passed to the method
@@ -475,7 +493,9 @@ public class AS2MessageCreation {
                 payload.setContentType(payloadContentTypes[i]);
                 payloads[i] = payload;
             } finally {
-                inStream.close();
+                if( inStream != null ){
+                    inStream.close();
+                }
             }
         }
         return (this.createMessage(sender, receiver, payloads, messageType, null, userdefinedId, subject));
@@ -544,7 +564,7 @@ public class AS2MessageCreation {
         }
         if (this.logger != null) {
             this.logger.log(Level.FINE,
-                    this.rb.getResourceString("message.creation.start",
+                    rb.getResourceString("message.creation.start",
                             info.getMessageId()), info);
         }
         //create message object to return
@@ -604,7 +624,7 @@ public class AS2MessageCreation {
                         + MimeUtility.encodeText(newFilename,
                                 StandardCharsets.UTF_8.displayName(), "B")
                         + "\"");
-            }            
+            }
             contentPartList.add(bodyPart);
         }
         Part contentPart = null;
@@ -639,11 +659,11 @@ public class AS2MessageCreation {
             //compression ratio in this case.
             if (uncompressedSize == -1 || compressedSize == -1) {
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("message.compressed.unknownratio"), info);
+                    this.logger.log(Level.INFO, rb.getResourceString("message.compressed.unknownratio"), info);
                 }
             } else {
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("message.compressed",
+                    this.logger.log(Level.INFO, rb.getResourceString("message.compressed",
                             new Object[]{
                                 AS2Tools.getDataSizeDisplay(uncompressedSize),
                                 AS2Tools.getDataSizeDisplay(compressedSize)
@@ -708,7 +728,7 @@ public class AS2MessageCreation {
         } else {
             message.setRawData(message.getDecryptedRawData());
             if (this.logger != null) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("message.notencrypted"), info);
+                this.logger.log(Level.INFO, rb.getResourceString("message.notencrypted"), info);
             }
         }
         return (message);
@@ -742,9 +762,14 @@ public class AS2MessageCreation {
         CMSEnvelopedDataStreamGenerator dataGenerator = cryptoHelper.generateCMSEnvelopedDataStreamGenerator(certificate, keyTransportScheme);
         DeferredFileOutputStream encryptedOutput = null;
         OutputStream out = null;
-        try {
+        try {            
+            DeferredFileOutputStream.Builder streamBuilder =  DeferredFileOutputStream.builder();
             //if the data is less then 20MB perform the operaion in memory else stream to disk
-            encryptedOutput = new DeferredFileOutputStream(20 * 1024 * 1024, "as2encryptdata_", ".mem", null);
+            streamBuilder.setThreshold(20 * 1024 * 1024);
+            streamBuilder.setPrefix("as2encryptdata_");
+            streamBuilder.setSuffix(".mem");
+            streamBuilder.setDirectory(Paths.get(AS2Tools.getDailyTempDir()).toFile());
+            encryptedOutput = streamBuilder.get();
             if (encryptionType == AS2Message.ENCRYPTION_3DES) {
                 out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC)
                         .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
@@ -833,16 +858,16 @@ public class AS2MessageCreation {
                         SystemEvent.TYPE_FILE_DELETE);
                 event.setSubject(event.typeToTextLocalized());
                 event.setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
-                SystemEventManagerImplAS2.newEvent(event);
+                SystemEventManagerImplAS2.instance().newEvent(event);
             }
             message.setRawData(memOut.toByteArray());
         }
         if (this.logger != null) {
             String cryptAlias = this.encryptionCertManager.getAliasByFingerprint(receiver.getCryptFingerprintSHA1());
-            this.logger.log(Level.INFO, this.rb.getResourceString("message.encrypted",
+            this.logger.log(Level.INFO, rb.getResourceString("message.encrypted",
                     new Object[]{
                         cryptAlias,
-                        this.rbMessage.getResourceString("encryption." + receiver.getEncryptionType())
+                        rbMessage.getResourceString("encryption." + receiver.getEncryptionType())
                     }), info);
         }
     }
@@ -960,24 +985,38 @@ public class AS2MessageCreation {
      * Signs the passed data and returns it
      */
     private MimeMultipart signContent(AS2MessageInfo info, MimeMessage message, Partner sender, Partner receiver) throws Exception {
-        PrivateKey senderKey = this.signatureCertManager.getPrivateKeyByFingerprintSHA1(sender.getSignFingerprintSHA1());
+        if( sender == null ){
+            throw new Exception( "AS2MessageCreation.signContent: Sender is not set for the signature process");
+        }
+        if( receiver == null ){
+            throw new Exception( "AS2MessageCreation.signContent: Receiver is not set for the signature process");
+        }
+        String signKeyFingerprintSHA1;
+        if (receiver.isOverwriteLocalStationSecurity() && receiver.getSignOverwriteLocalstationFingerprintSHA1() != null) {
+            signKeyFingerprintSHA1 = receiver.getSignOverwriteLocalstationFingerprintSHA1();
+        } else {
+            signKeyFingerprintSHA1 = sender.getSignFingerprintSHA1();
+        }
+        if (signKeyFingerprintSHA1 == null) {
+            throw new Exception("AS2MessageCreation.signContent: Outbound signature private key is not defined for the send process from "
+                    + sender.getName() + " to " + receiver.getName());
+        }
+        PrivateKey senderKey = this.signatureCertManager.getPrivateKeyByFingerprintSHA1(signKeyFingerprintSHA1);
+        String senderSignAlias = this.signatureCertManager.getAliasByFingerprint(signKeyFingerprintSHA1);
         if (senderKey == null) {
             throw new Exception("AS2MessageCreation.signContent: Key with serial " + sender.getSignFingerprintSHA1()
                     + " does not exist in the keystore.");
         }
-        String senderSignAlias = this.signatureCertManager.getAliasByFingerprint(sender.getSignFingerprintSHA1());
         Certificate[] chain = this.signatureCertManager.getCertificateChain(senderSignAlias);
         String digest = this.getDigestForInternalSignType(receiver.getSignType());
         BCCryptoHelper helper = new BCCryptoHelper();
-        boolean useAlgorithmIdentifierProtectionAttribute = true;
-        if (receiver != null) {
-            useAlgorithmIdentifierProtectionAttribute = receiver.getUseAlgorithmIdentifierProtectionAttribute();
-        }
+        boolean useAlgorithmIdentifierProtectionAttribute = receiver.getUseAlgorithmIdentifierProtectionAttribute();
         if (this.logger != null && !useAlgorithmIdentifierProtectionAttribute) {
-            this.logger.log(Level.WARNING, this.rb.getResourceString("signature.no.aipa"), info);
+            this.logger.log(Level.WARNING, rb.getResourceString("signature.no.aipa"), info);
         }
         MimeMultipart signedMultipart = helper.sign(message, chain, senderKey, digest,
-                useAlgorithmIdentifierProtectionAttribute);
+                useAlgorithmIdentifierProtectionAttribute,
+                AS2Server.CRYPTO_PROVIDER.getProviderEncSign().getProvider().getName());
         return (signedMultipart);
     }
 
@@ -985,17 +1024,38 @@ public class AS2MessageCreation {
      * Signs the passed message and returns it
      */
     private MimeMultipart signContent(AS2MessageInfo info, MimeBodyPart body, Partner sender, Partner receiver) throws Exception {
-        PrivateKey senderKey = this.signatureCertManager.getPrivateKeyByFingerprintSHA1(sender.getSignFingerprintSHA1());
-        String senderSignAlias = this.signatureCertManager.getAliasByFingerprint(sender.getSignFingerprintSHA1());
+        if( sender == null ){
+            throw new Exception( "AS2MessageCreation.signContent: Sender is not set for the signature process");
+        }
+        if( receiver == null ){
+            throw new Exception( "AS2MessageCreation.signContent: Receiver is not set for the signature process");
+        }
+        String signKeyFingerprintSHA1;
+        if (receiver.isOverwriteLocalStationSecurity() && receiver.getSignOverwriteLocalstationFingerprintSHA1() != null) {
+            signKeyFingerprintSHA1 = receiver.getSignOverwriteLocalstationFingerprintSHA1();
+        } else {
+            signKeyFingerprintSHA1 = sender.getSignFingerprintSHA1();
+        }
+        if (signKeyFingerprintSHA1 == null) {
+            throw new Exception("AS2MessageCreation.signContent: Outbound signature private key is not defined for the send process from "
+                    + sender.getName() + " to " + receiver.getName());
+        }
+        PrivateKey senderKey = this.signatureCertManager.getPrivateKeyByFingerprintSHA1(signKeyFingerprintSHA1);
+        String senderSignAlias = this.signatureCertManager.getAliasByFingerprint(signKeyFingerprintSHA1);
+        if (senderKey == null) {
+            throw new Exception("AS2MessageCreation.signContent: Key with serial " + sender.getSignFingerprintSHA1()
+                    + " does not exist in the keystore.");
+        }
         Certificate[] chain = this.signatureCertManager.getCertificateChain(senderSignAlias);
         String digest = this.getDigestForInternalSignType(receiver.getSignType());
         BCCryptoHelper helper = new BCCryptoHelper();
         boolean useAlgorithmIdentifierProtectionAttribute = receiver.getUseAlgorithmIdentifierProtectionAttribute();
         if (this.logger != null && !useAlgorithmIdentifierProtectionAttribute) {
-            this.logger.log(Level.WARNING, this.rb.getResourceString("signature.no.aipa"), info);
+            this.logger.log(Level.WARNING, rb.getResourceString("signature.no.aipa"), info);
         }
         MimeMultipart signedMultipart = helper.sign(body, chain, senderKey, digest,
-                useAlgorithmIdentifierProtectionAttribute);
+                useAlgorithmIdentifierProtectionAttribute,
+                AS2Server.CRYPTO_PROVIDER.getProviderEncSign().getProvider().getName());
         return (signedMultipart);
     }
 

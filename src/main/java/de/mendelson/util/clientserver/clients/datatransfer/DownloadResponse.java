@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponse.java 10    3.03.20 10:26 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponse.java 11    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -17,11 +17,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public abstract class DownloadResponse extends ClientServerResponse implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private byte[] data = null;
     private long size = 0;
 

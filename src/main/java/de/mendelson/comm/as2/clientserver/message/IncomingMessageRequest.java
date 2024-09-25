@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 4     1/09/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 6     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Properties;
 /*
@@ -16,11 +18,11 @@ import java.util.Properties;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class IncomingMessageRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String contentType = null;
     private String remoteHost = null;
     private Properties header = new Properties();
@@ -94,4 +96,9 @@ public class IncomingMessageRequest extends ClientServerMessage implements Seria
         this.usesTLS = usesTLS;
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
+    
 }

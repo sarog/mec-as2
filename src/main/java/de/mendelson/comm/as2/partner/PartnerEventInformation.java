@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 10    10/01/23 9:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 12    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.partner.gui.event.PartnerEventResource;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,11 +24,11 @@ import org.w3c.dom.NodeList;
  * Stores event information of a partner
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class PartnerEventInformation implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static final int PROCESS_EXECUTE_SHELL = ProcessingEvent.PROCESS_EXECUTE_SHELL;
     public static final int PROCESS_MOVE_TO_PARTNER = ProcessingEvent.PROCESS_MOVE_TO_PARTNER;
@@ -439,7 +441,7 @@ public class PartnerEventInformation implements Serializable {
             return (false);
         }
         for (String parameter : this.parameteronsendsuccess) {
-            if (parameter != null && parameter.trim().length() > 0) {
+            if (parameter != null && !parameter.trim().isEmpty()) {
                 return (true);
             }
         }
@@ -451,7 +453,7 @@ public class PartnerEventInformation implements Serializable {
             return (false);
         }
         for (String parameter : this.parameteronsenderror) {
-            if (parameter != null && parameter.trim().length() > 0) {
+            if (parameter != null && !parameter.trim().isEmpty()) {
                 return (true);
             }
         }
@@ -463,7 +465,7 @@ public class PartnerEventInformation implements Serializable {
             return (false);
         }
         for (String parameter : this.parameteronreceipt) {
-            if (parameter != null && parameter.trim().length() > 0) {
+            if (parameter != null && !parameter.trim().isEmpty()) {
                 return (true);
             }
         }
@@ -480,6 +482,11 @@ public class PartnerEventInformation implements Serializable {
         } else {
             throw new IllegalArgumentException("PartnerEventInformation.hasParameter(): Undefined event type " + EVENT_TYPE);
         }
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
     
 }

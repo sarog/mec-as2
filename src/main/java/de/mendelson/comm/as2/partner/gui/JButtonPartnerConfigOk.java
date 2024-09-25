@@ -1,8 +1,9 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 4     18.12.20 10:40 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 7     20/12/23 14:12 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
 import java.awt.Color;
+import java.net.URL;
 import java.util.List;
 import javax.swing.JButton;
 import javax.swing.JTextField;
@@ -17,10 +18,11 @@ import javax.swing.UIManager;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Ok Button for the partner config
+ * Ok Button for the partner config. This checks if there is any error in the
+ * partner config and renders the fields that are erroneous
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class JButtonPartnerConfigOk extends JButton {
 
@@ -29,7 +31,7 @@ public class JButtonPartnerConfigOk extends JButton {
     private final Color errorColor = new Color(255, 204, 204);
     private JTreePartner tree;
     private JTextField jTextFieldName;
-    private JTextField jTextFieldURL;
+    private JTextField jTextFieldReceiptURL;
     private JTextField jTextFieldMDNURL;
     private JTextField jTextFieldAS2Id;
     private boolean changesAllowed;
@@ -42,7 +44,7 @@ public class JButtonPartnerConfigOk extends JButton {
         this.changesAllowed = changesAllowed;
         this.jTextFieldName = jTextFieldName;
         this.jTextFieldAS2Id = jTextFieldAS2Id;
-        this.jTextFieldURL = jTextFieldURL;
+        this.jTextFieldReceiptURL = jTextFieldURL;
         this.jTextFieldMDNURL = jTextFieldMDNURL;
     }
 
@@ -60,58 +62,103 @@ public class JButtonPartnerConfigOk extends JButton {
         boolean error = false;
         if (!checkPartner.isLocalStation()) {
             //no local station
-            if (receiverURL == null || (!receiverURL.startsWith("http://") && !receiverURL.startsWith("https://"))) {
+            if (receiverURL == null || (!receiverURL.startsWith("http://")
+                    && !receiverURL.startsWith("https://"))) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
-                    this.jTextFieldURL.setBackground(this.errorColor);
+                    this.jTextFieldReceiptURL.setBackground(this.errorColor);
                 }
                 error = true;
             } else {
+                try {
+                    URL testURL = new URL(receiverURL);
+                    //no port defined
+                    if (testURL.getPort() == -1) {
+                        //graphical modifications for current displayed partner only!
+                        if (this.remotePartner.equals(checkPartner)) {
+                            this.jTextFieldReceiptURL.setBackground(this.errorColor);
+                        }
+                        error = true;
+                    }
+                } catch (Exception e) {
+                    //graphical modifications for current displayed partner only!
+                    if (this.remotePartner.equals(checkPartner)) {
+                        this.jTextFieldReceiptURL.setBackground(this.errorColor);
+                    }
+                    error = true;
+                }
+            }
+            if (!error) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
-                    this.jTextFieldURL.setBackground(UIManager.getDefaults().getColor("TextField.background"));
+                    this.jTextFieldReceiptURL.setBackground(UIManager.getDefaults().getColor("TextField.background"));
                 }
             }
         } else {
             //local station
-            if (mdnURL == null || (!mdnURL.startsWith("http://") && !mdnURL.startsWith("https://"))) {
+            if (mdnURL == null
+                    || (!mdnURL.startsWith("http://") && !mdnURL.startsWith("https://"))) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
                     this.jTextFieldMDNURL.setBackground(this.errorColor);
                 }
                 error = true;
             } else {
+                try {
+                    URL testURL = new URL(mdnURL);
+                    //no port defined
+                    if (testURL.getPort() == -1) {
+                        //graphical modifications for current displayed partner only!
+                        if (this.remotePartner.equals(checkPartner)) {
+                            this.jTextFieldMDNURL.setBackground(this.errorColor);
+                        }
+                        error = true;
+                    }
+                } catch (Exception e) {
+                    //graphical modifications for current displayed partner only!
+                    if (this.remotePartner.equals(checkPartner)) {
+                        this.jTextFieldMDNURL.setBackground(this.errorColor);
+                    }
+                    error = true;
+                }
+            }
+            if (!error) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
-                    this.jTextFieldURL.setBackground(UIManager.getDefaults().getColor("TextField.background"));
+                    this.jTextFieldMDNURL.setBackground(
+                            UIManager.getDefaults().getColor("TextField.background"));
                 }
             }
         }
         return (error);
     }
 
-    /**Returns the number of partner names found in the passed partner list*/
-    private int getNameCountInList( String partnerName, List<Partner> partnerList){
+    /**
+     * Returns the number of partner names found in the passed partner list
+     */
+    private int getNameCountInList(String partnerName, List<Partner> partnerList) {
         int count = 0;
-        for( Partner partner:partnerList){
-            if( partner.getName().equals(partnerName)){
+        for (Partner partner : partnerList) {
+            if (partner.getName().equals(partnerName)) {
                 count++;
             }
         }
-        return( count );
+        return (count);
     }
-    
-    /**Returns the number of as2 ids names found in the passed partner list*/
-    private int getAS2IdCountInList( String as2Id, List<Partner> partnerList){
+
+    /**
+     * Returns the number of as2 ids names found in the passed partner list
+     */
+    private int getAS2IdCountInList(String as2Id, List<Partner> partnerList) {
         int count = 0;
-        for( Partner partner:partnerList){
-            if( partner.getAS2Identification().equals(as2Id)){
+        for (Partner partner : partnerList) {
+            if (partner.getAS2Identification().equals(as2Id)) {
                 count++;
             }
         }
-        return( count );
+        return (count);
     }
-    
+
     /**
      * Checks if new name is unique and changes color in textfield if not
      */
@@ -119,10 +166,11 @@ public class JButtonPartnerConfigOk extends JButton {
         boolean error = false;
         String newName = checkPartner.getName();
         int nameCount = this.getNameCountInList(newName, partnerList);
-        if (newName != null && newName.trim().length() > 0 && nameCount == 1) {
+        if (newName != null && !newName.trim().isEmpty() && nameCount == 1) {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
-                this.jTextFieldName.setBackground(UIManager.getDefaults().getColor("TextField.background"));
+                this.jTextFieldName.setBackground(
+                        UIManager.getDefaults().getColor("TextField.background"));
             }
         } else {
             //graphical modifications for current displayed partner only!
@@ -133,10 +181,11 @@ public class JButtonPartnerConfigOk extends JButton {
         }
         String newAS2Id = checkPartner.getAS2Identification();
         int idCount = this.getAS2IdCountInList(newAS2Id, partnerList);
-        if (newAS2Id != null && newAS2Id.trim().length() > 0 && idCount == 1) {
+        if (newAS2Id != null && !newAS2Id.trim().isEmpty() && idCount == 1) {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
-                this.jTextFieldAS2Id.setBackground(UIManager.getDefaults().getColor("TextField.background"));
+                this.jTextFieldAS2Id.setBackground(
+                        UIManager.getDefaults().getColor("TextField.background"));
             }
         } else {
             //graphical modifications for current displayed partner only!

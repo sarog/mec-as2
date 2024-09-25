@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 26    13.12.21 8:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 27    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -26,11 +26,11 @@ import java.util.logging.Logger;
  * AS2 message to a specified sender
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 27 $
  */
 public class RawMessageSender {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
 
     /**
      * Creates new raw message sender

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 83    9/11/22 15:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 86    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -56,7 +56,7 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * Dialog to configure the partner of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 83 $
+ * @version $Revision: 86 $
  */
 public class JDialogPartnerConfig extends JDialog {
 
@@ -67,22 +67,26 @@ public class JDialogPartnerConfig extends JDialog {
     /**
      * List of all available partner
      */
-    private List<Partner> partnerList = new ArrayList<Partner>();
-    private JPanelPartner panelEditPartner = null;
-    private JTreePartner jTreePartner = null;
-    private CertificateManager certificateManagerEncSign;
-    private CertificateManager certificateManagerSSL;
-    private GUIClient guiClient;
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
-    private AS2StatusBar status;
-    private List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
-    private LockClientInformation lockKeeper;
+    private final List<Partner> partnerList = new ArrayList<Partner>();
+    private final JPanelPartner panelEditPartner;
+    private final JTreePartner jTreePartner;
+    private final CertificateManager certificateManagerEncSign;
+    private final CertificateManager certificateManagerSSL;
+    private final GUIClient guiClient;
+    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final AS2StatusBar status;
+    private final List<AllowModificationCallback> allowModificationCallbackList 
+            = new ArrayList<AllowModificationCallback>();
+    private final LockClientInformation lockKeeper;
     private final static MendelsonMultiResolutionImage IMAGE_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", AS2Gui.IMAGE_SIZE_TOOLBAR);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", 
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_COPY
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg", AS2Gui.IMAGE_SIZE_TOOLBAR);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg", 
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_ADD
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", AS2Gui.IMAGE_SIZE_TOOLBAR);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", 
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_PARTNER_GROUP
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/global/partner_group.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
@@ -206,6 +210,10 @@ public class JDialogPartnerConfig extends JDialog {
         return (true);
     }
 
+    public void setDisplayOverwriteLocalstationSecurity(boolean display) {
+        this.panelEditPartner.setDisplayOverwriteLocalstationSecurity(display);
+    }
+    
     public void setDisplayNotificationPanel(boolean display) {
         this.panelEditPartner.setDisplayNotificationPanel(display);
     }

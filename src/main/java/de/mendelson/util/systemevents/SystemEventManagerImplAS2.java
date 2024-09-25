@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 24    13/10/22 11:16 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 30    23/11/23 12:21 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,21 +14,17 @@ import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.statistic.QuotaAccessDB;
 import de.mendelson.comm.as2.statistic.StatisticOverviewEntry;
-import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.DebuggablePreparedStatement;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
-import de.mendelson.util.systemevents.notification.ResourceBundleNotification;
 import java.nio.file.Path;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.MissingResourceException;
 import java.util.Properties;
-import java.util.ResourceBundle;
 
 
 /*
@@ -42,14 +38,26 @@ import java.util.ResourceBundle;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 30 $
  */
 public class SystemEventManagerImplAS2 extends SystemEventManager {
 
+    private static SystemEventManagerImplAS2 instance;
+    
     /**
-     * Constructor without notification data, will perform a lookup in the db
+     * Singleton for the whole application
      */
-    public SystemEventManagerImplAS2() {
+    public static synchronized SystemEventManagerImplAS2 instance() {
+        if (instance == null) {
+            instance = new SystemEventManagerImplAS2();
+        }
+        return instance;
+    }
+    
+    /**
+     * Prevent a direct instance by new()
+     */
+    private SystemEventManagerImplAS2() {
     }
 
     public void newEventResendDetected(AS2MessageInfo newMessageInfo, AS2MessageInfo alreadyExistingMessageInfo,
@@ -71,7 +79,6 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
 
     /**
      * 
-     * @param messageInfo might be null if this is unknown
      * @param sender might be null if this is unknown
      * @param receiver might be null if this is unknown
      * @throws Exception 
@@ -164,9 +171,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      */
     public void newEventPartnerSendQuotaExceededCheck(Partner localStation, Partner partner,
             IDBDriverManager dbDriverManager) {
-        StatisticOverviewEntry entry = null;
         QuotaAccessDB access = new QuotaAccessDB(dbDriverManager);
-        entry = access.getStatisticOverview(
+        StatisticOverviewEntry entry = access.getStatisticOverview(
                 localStation.getAS2Identification(), partner.getAS2Identification());
         if (partner.isNotifySendEnabled() && partner.getNotifySend() == entry.getSendMessageCount()) {
             String template = "template_notification_sendquota_exceeded";
@@ -193,9 +199,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      */
     public void newEventPartnerReceiveQuotaExceededCheck(Partner localStation, Partner partner,
             IDBDriverManager dbDriverManager) {
-        StatisticOverviewEntry entry = null;
         QuotaAccessDB access = new QuotaAccessDB(dbDriverManager);
-        entry = access.getStatisticOverview(
+        StatisticOverviewEntry entry = access.getStatisticOverview(
                 localStation.getAS2Identification(), partner.getAS2Identification());
         if (partner.isNotifyReceiveEnabled() && partner.getNotifyReceive() == entry.getReceivedMessageCount()) {
             String template = "template_notification_receivequota_exceeded";
@@ -218,13 +223,12 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
     /**
      * Sends a notification if an outbound connection problem occured
      *
-     * @param partner
      */
     public void newEventConnectionProblem(Partner receiver, AS2Info as2Info, String errorMessage, String hint) {
         String template = "template_notification_connectionproblem";
         Properties replacement = new Properties();
         replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
-        replacement.setProperty("${HOST}", SystemEventManagerImplAS2.getHostname());
+        replacement.setProperty("${HOST}", this.getHostname());
         replacement.setProperty("${PARTNER}", receiver.getName());
         replacement.setProperty("${URL}", receiver.getURL());
         replacement.setProperty("${MESSAGE}", errorMessage);
@@ -245,7 +249,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * work - like system shutdown or system startup Then use this method - it
      * will just create a new system event entry, nothing more
      */
-    public static void newEvent(int severity, int origin, int type, String subject, String body) {
+    @Override
+    public void newEvent(int severity, int origin, int type, String subject, String body) {
         SystemEvent event = new SystemEvent(severity, origin, type);
         event.setBody(body);
         event.setSubject(subject);
@@ -257,10 +262,10 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * work - like system shutdown or system startup Then use this method - it
      * will just create a new system event entry, nothing more
      */
-    public static void newEvent(SystemEvent event) {
-        SystemEventManagerImplAS2 eventManager = new SystemEventManagerImplAS2();
+    @Override
+    public void newEvent(SystemEvent event) {        
         try {
-            eventManager.storeEventToFile(event);
+            this.storeEventToFile(event);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -272,7 +277,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * problem and will display additional information about SQL parameters of
      * the query of a statement
      */
-    public static void systemFailure(Throwable exception, int eventType, PreparedStatement statement) {
+    @Override
+    public void systemFailure(Throwable exception, int eventType, PreparedStatement statement) {
         if (AS2Server.inShutdownProcess) {
             return;
         }
@@ -310,7 +316,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * Convenience method to send a notification to the administrator that
      * something unexpected happened to the system
      */
-    public static void systemFailure(Throwable exception, int eventType) {
+    @Override
+    public void systemFailure(Throwable exception, int eventType) {
         systemFailure(exception, eventType, null);
     }
 
@@ -318,7 +325,8 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
      * Convenience method to send a notification to the administrator that
      * something unexpected happened to the system
      */
-    public static void systemFailure(Throwable exception) {
+    @Override
+    public void systemFailure(Throwable exception) {
         systemFailure(exception, SystemEvent.TYPE_OTHER, null);
     }
 
@@ -516,21 +524,6 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
     @Override
     public Path getStorageMainDir() {                
         return (AS2Server.LOG_DIR);
-    }
-
-    @Override
-    public void handleSystemFailure(Throwable exception, int eventType, PreparedStatement statement) {
-        SystemEventManagerImplAS2.systemFailure(exception, eventType, statement);
-    }
-
-    @Override
-    public void handleSystemFailure(Throwable exception, int eventType) {
-        SystemEventManagerImplAS2.systemFailure(exception, eventType);
-    }
-
-    @Override
-    public void handleSystemFailure(Throwable exception) {
-        SystemEventManagerImplAS2.systemFailure(exception);
     }
     
 }

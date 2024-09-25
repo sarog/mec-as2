@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/ResourceBundleKeyStoreUtil.java 6     31.07.19 10:58 Heller $
+//$Header: /as2/de/mendelson/util/security/ResourceBundleKeyStoreUtil.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.security;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleKeyStoreUtil extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ServerLogMessage.java 5     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ServerLogMessage.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.logging.Level;
 /*
@@ -13,11 +15,11 @@ import java.util.logging.Level;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ServerLogMessage extends ClientServerMessage implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private Level level = Level.INFO;
         
     private String message = null;
@@ -57,5 +59,9 @@ public class ServerLogMessage extends ClientServerMessage implements Serializabl
         return( "Server message '" + this.getMessage() + "'");
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 }

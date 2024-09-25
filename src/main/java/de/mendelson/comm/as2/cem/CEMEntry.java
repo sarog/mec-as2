@@ -1,7 +1,6 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMEntry.java 9     19.09.18 14:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMEntry.java 12    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem;
 
-import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.util.MecResourceBundle;
 import java.io.Serializable;
 import java.util.MissingResourceException;
@@ -18,15 +17,15 @@ import java.util.ResourceBundle;
 /**
  * Container that stores certificate information where the respond by date requests to change a certificate
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class CEMEntry implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     public static final int CATEGORY_CRYPT = 1;
     public static final int CATEGORY_SIGN = 2;
-    public static final int CATEGORY_SSL = 3;
+    public static final int CATEGORY_TLS = 3;
     public static final int STATUS_PENDING_INT = 1;
     public static final int STATUS_REJECTED_INT = 2;
     public static final int STATUS_ACCEPTED_INT = 3;

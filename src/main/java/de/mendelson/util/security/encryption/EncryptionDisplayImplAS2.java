@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 4     8/12/22 11:35 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.security.encryption;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
  * Container superclass for the encryption rendering
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
     
@@ -28,7 +28,7 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_broken.svg",
                     ListCellRendererEncryption.IMAGE_HEIGHT);
     
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
     
     
     public EncryptionDisplayImplAS2( Integer wrappedValue ){

@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 16    24/11/22 10:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 20    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -17,11 +19,11 @@ import java.util.ResourceBundle;
  * Contains a single configuration issue
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 20 $
  */
 public class ConfigurationIssue implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int NO_KEY_IN_TLS_KEYSTORE = 1;
     public static final int MULTIPLE_KEYS_IN_TLS_KEYSTORE = 2;
     public static final int CERTIFICATE_EXPIRED_TLS = 3;
@@ -36,13 +38,10 @@ public class ConfigurationIssue implements Serializable {
     public static final int KEY_MISSING_SIGN_LOCAL_STATION = 12;
     public static final int USE_OF_TEST_KEYS_IN_TLS = 13;
     public static final int JVM_32_BIT = 14;
-    public static final int DIFFERENT_KEYSTORES_TLS = 15;
-    public static final int WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT = 16;
-    public static final int TOO_MANY_DIR_POLLS = 17;
-    public static final int KEYSTORE_TLS_RO = 18;
-    public static final int KEYSTORE_SIGN_ENCRYPT_RO = 19;
+    public static final int WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT = 15;
+    public static final int TOO_MANY_DIR_POLLS = 16;
 
-    private int issueId;
+    private final int issueId;
     private String details = null;
     private String subject = null;
     private String hint = null;
@@ -76,8 +75,7 @@ public class ConfigurationIssue implements Serializable {
                 || this.issueId == CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER
                 || this.issueId == KEY_MISSING_ENC_LOCAL_STATION
                 || this.issueId == KEY_MISSING_SIGN_LOCAL_STATION
-                || this.issueId == USE_OF_TEST_KEYS_IN_TLS
-                || this.issueId == DIFFERENT_KEYSTORES_TLS);
+                || this.issueId == USE_OF_TEST_KEYS_IN_TLS);
     }
     
     /**
@@ -116,10 +114,13 @@ public class ConfigurationIssue implements Serializable {
     }
 
     /**
-     * @param Sets additional parameter for the hint to display. Has to match the resourcebundle parameter for the hint
      */
     public void setHintParameter(Object[] parameter) {
         this.hint = rb.getResourceString("hint." + String.valueOf(this.issueId), parameter);
     }
     
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
 }

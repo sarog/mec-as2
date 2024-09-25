@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/AS2WebUI.java 69    22/11/22 8:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/AS2WebUI.java 71    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.annotations.Theme;
@@ -96,7 +96,7 @@ import java.util.logging.Logger;
  * Main frame for the web interface
  *
  * @author S.Heller
- * @version $Revision: 69 $
+ * @version $Revision: 71 $
  */
 @Theme("valo")
 public class AS2WebUI extends UI {
@@ -108,9 +108,9 @@ public class AS2WebUI extends UI {
     /**
      * Format the date display
      */
-    private VerticalLayout mainWindowLayout = new VerticalLayout();
-    private Panel mainPanel = new Panel();
-    private VerticalLayout mainPanelLayout = new VerticalLayout();
+    private final VerticalLayout mainWindowLayout = new VerticalLayout();
+    private final Panel mainPanel = new Panel();
+    private final VerticalLayout mainPanelLayout = new VerticalLayout();
     private FileResource RESOURCE_IMAGE_IN;
     private FileResource RESOURCE_IMAGE_OUT;
     private FileResource RESOURCE_IMAGE_PENDING;
@@ -127,18 +127,18 @@ public class AS2WebUI extends UI {
      */
     private WebBrowser browser = null;
     private User user = null;
-    private Label labelUsername = new Label();
+    private final Label labelUsername = new Label();
     private Grid<GridOverviewRow> overviewGrid = new Grid<GridOverviewRow>();
     /**
      * Footer
      */
-    private Label footerTransactionSum = new Label();
-    private Label footerTransactionOkSum = new Label();
-    private Label footerTransactionPendingSum = new Label();
-    private Label footerTransactionErrorSum = new Label();
-    private Label footerTransactionSumAllInSystem = new Label();
+    private final Label footerTransactionSum = new Label();
+    private final Label footerTransactionOkSum = new Label();
+    private final Label footerTransactionPendingSum = new Label();
+    private final Label footerTransactionErrorSum = new Label();
+    private final Label footerTransactionSumAllInSystem = new Label();
     private Panel footerPanel;
-    private GridLayout welcomeLayout = new GridLayout(2, 2);
+    private final GridLayout welcomeLayout = new GridLayout(2, 2);
     private final IDBDriverManager dbDriverManager;
     private ComboBox<PartnerEntry> comboboxFilterLocalstation = null;
     private ComboBox<PartnerEntry> comboboxFilterRemotestation = null;
@@ -278,7 +278,7 @@ public class AS2WebUI extends UI {
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 69 $";
+        String revision = "$Revision: 71 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -526,7 +526,6 @@ public class AS2WebUI extends UI {
      * Returns the offset of a timezone given by its id. Will return something
      * like "-08:00"
      *
-     * @param timezoneId
      * @return
      */
     private String getTimezoneOffsetAsString(String timezoneIdStr) {
@@ -1046,9 +1045,9 @@ public class AS2WebUI extends UI {
     /**
      * Entry for the filter combo boxes
      */
-    private final class PartnerEntry {
+    private static final class PartnerEntry {
 
-        private Partner partner;
+        private final Partner partner;
 
         public PartnerEntry(Partner partner) {
             this.partner = partner;

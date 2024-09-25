@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ValueChangedListener.java 1     15.02.06 16:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ValueChangedListener.java 2     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import java.util.*;
@@ -13,7 +13,7 @@ import java.util.*;
 /**
  *Listener that listens to changes in a table
  * @author  S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public interface ValueChangedListener extends EventListener {
     public abstract void valueChanged(ValueChangedEvent e);
@@ -21,13 +21,13 @@ public interface ValueChangedListener extends EventListener {
     public class ValueChangedEvent extends EventObject {
         
         /*the row that has changed*/
-        private int row;
+        private final int row;
         
         /*the col that has changed*/
-        private int col;
+        private final int col;
         
         /*the new value*/
-        private Object value;
+        private final Object value;
         
         /**returns the row that changed*/
         public int getRow() {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/user/AddUser.java 1     17.01.11 15:46 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/user/AddUser.java 2     3/11/23 9:57 Heller $
 package de.mendelson.util.clientserver.user;
 
 import java.util.logging.Logger;
@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 /**
  * Add a single user to the password file
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class AddUser {
 
@@ -28,7 +28,7 @@ public class AddUser {
     }
 
     /**Method to start the server on from the command line*/
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         String name = null;
         String passwd = null;
         int optind;

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/TableModelSystemEvents.java 12    4.06.19 10:57 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/gui/TableModelSystemEvents.java 15    5/12/23 8:58 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -24,15 +24,15 @@ import javax.swing.table.AbstractTableModel;
  * Model to display all files that are open and save/close them
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class TableModelSystemEvents extends AbstractTableModel {
 
-    public static final int ROW_HEIGHT = 20;
+    public static final int ROW_HEIGHT = 22;
     private static final int IMAGE_HEIGHT = ROW_HEIGHT-3;
     private final List<SystemEvent> systemEventList = Collections.synchronizedList(new ArrayList<SystemEvent>());
 
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
 
     /**
      * Load resources
@@ -109,7 +109,7 @@ public class TableModelSystemEvents extends AbstractTableModel {
         } else if (col == 2) {
             return (new Date(event.getTimestamp()));
         } else if (col == 3) {
-            return (event.categoryToTextLocalized());
+            return (event);
         }else {
             return (event.typeToTextLocalized());
         }
@@ -143,7 +143,7 @@ public class TableModelSystemEvents extends AbstractTableModel {
             ImageIcon.class,
             ImageIcon.class,
             Date.class,
-            String.class,
+            SystemEvent.class,
             String.class,}[col]);
     }
 

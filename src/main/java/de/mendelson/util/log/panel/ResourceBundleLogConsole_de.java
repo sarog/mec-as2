@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/panel/ResourceBundleLogConsole_de.java 2     4/06/18 1:35p Heller $ 
+//$Header: /as4/de/mendelson/util/log/panel/ResourceBundleLogConsole_de.java 5     6/11/23 11:38 Heller $ 
 package de.mendelson.util.log.panel;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleLogConsole_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

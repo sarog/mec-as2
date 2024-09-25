@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateUsedByPartnerChecker.java 4     7/04/22 10:33 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateUsedByPartnerChecker.java 6     2/11/23 15:52 Heller $ 
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleCertificateUsedByPartnerChecker extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -31,6 +31,9 @@ public class ResourceBundleCertificateUsedByPartnerChecker extends MecResourceBu
      */
     static final Object[][] CONTENTS = {
         {"used.crypt", "data encryption"},
-        {"used.sign", "data signature"},};
+        {"used.sign", "data signature"},
+        {"used.crypt.overwritelocalsecurity", "data decryption (local security overwrite)"},
+        {"used.sign.overwritelocalsecurity", "data signing (local security overwrite)"},
+    };
 
 }

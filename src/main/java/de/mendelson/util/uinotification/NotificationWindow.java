@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/util/uinotification/NotificationWindow.java 21    10/05/22 13:18 Heller $package de.mendelson.util.uinotification;
+//$Header: /as2/de/mendelson/util/uinotification/NotificationWindow.java 23    2/11/23 14:03 Heller $package de.mendelson.util.uinotification;
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.NamedThreadFactory;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -38,7 +39,7 @@ import javax.swing.event.MouseInputListener;
  * Single notification panel
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 23 $
  */
 public class NotificationWindow extends JWindow implements MouseInputListener {
 
@@ -52,7 +53,7 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
     private final long THREAD_WAIT_TIME_STEPS_IN_MS = 25;
 
     private final Runnable fadeout;
-    private INotificationHandler notificationHandler;
+    private final INotificationHandler notificationHandler;
     private boolean graphicSupportsTranslucentWindows = false;
     private boolean graphicSupportsShapedWindows = false;
 
@@ -215,13 +216,13 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
         this.add(this.notificationPanel, BorderLayout.CENTER);
 
         this.fadeout = new Runnable() {
-            float fadeInTime = (float) notificationDisplayTimeFadeIn;
-            float fadeoutTime = (float) notificationDisplayTimeFadeout;
-            float fullOpacityLoss = 1f - (float) VISIBLE_OPACITY_THRESHOLD;
-            float fadeoutStepCount = (float) notificationDisplayTimeFadeout / (float) THREAD_WAIT_TIME_STEPS_IN_MS;
-            float opacityLossPerStep = fullOpacityLoss / fadeoutStepCount;
-            float fadeInStepCount = (float) notificationDisplayTimeFadeIn / (float) THREAD_WAIT_TIME_STEPS_IN_MS;
-            float opacityGainPerStep = (1f - (float) (VISIBLE_OPACITY_THRESHOLD)) / fadeInStepCount;
+            final float fadeInTime = (float) notificationDisplayTimeFadeIn;
+            final float fadeoutTime = (float) notificationDisplayTimeFadeout;
+            final float fullOpacityLoss = 1f - (float) VISIBLE_OPACITY_THRESHOLD;
+            final float fadeoutStepCount = (float) notificationDisplayTimeFadeout / (float) THREAD_WAIT_TIME_STEPS_IN_MS;
+            final float opacityLossPerStep = fullOpacityLoss / fadeoutStepCount;
+            final float fadeInStepCount = (float) notificationDisplayTimeFadeIn / (float) THREAD_WAIT_TIME_STEPS_IN_MS;
+            final float opacityGainPerStep = (1f - (float) (VISIBLE_OPACITY_THRESHOLD)) / fadeInStepCount;
 
             @Override
             public void run() {
@@ -346,7 +347,8 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
     public void setVisible(boolean flag) {
         super.setVisible(flag);
         if (flag) {
-            ExecutorService executor = Executors.newSingleThreadExecutor();
+            ExecutorService executor = Executors.newSingleThreadExecutor(
+                    new NamedThreadFactory("ui-notification-fadeout"));
             executor.submit(this.fadeout);
             executor.shutdown();
         }

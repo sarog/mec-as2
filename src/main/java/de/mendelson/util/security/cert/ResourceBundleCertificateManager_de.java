@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleCertificateManager_de.java 14    12/12/22 14:18 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/ResourceBundleCertificateManager_de.java 21    6/11/23 11:38 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.security.BCCryptoHelper;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 21 $
  */
 public class ResourceBundleCertificateManager_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -42,7 +42,9 @@ public class ResourceBundleCertificateManager_de extends MecResourceBundle {
         {"event.certificate.deleted.body", "Das folgende Zertifikat wurde aus dem System gelöscht:\n\n{0}" },
         {"event.certificate.modified.subject", "{0}: Der Alias eines Zertifikats wurde verändert" },
         {"event.certificate.modified.body", "Der Zertifikatalias \"{0}\" wuerde verändert zu \"{1}\"\n\n\nDies sind die Daten des Zertifikats:\n\n{2}" },
-        {"keystore." + BCCryptoHelper.KEYSTORE_JKS, "SSL/TLS Keystore" },
-        {"keystore." + BCCryptoHelper.KEYSTORE_PKCS12, "Verschlüsselungs-/Signaturkeystore" },        
+        {"keystore." + BCCryptoHelper.KEYSTORE_JKS, "TLS Keystore" },
+        {"keystore." + BCCryptoHelper.KEYSTORE_PKCS12, "Verschlüsselungs-/Signaturkeystore" },
+        {"keystore." + BCCryptoHelper.KEYSTORE_PKCS11, "HSM/PKCS#11" },
+        {"access.problem", "Zugriffsprobleme auf {0}" },        
     };
 }

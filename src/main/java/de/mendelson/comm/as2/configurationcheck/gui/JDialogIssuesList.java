@@ -1,13 +1,5 @@
-///$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogIssuesList.java 3     24.02.20 15:20 Heller $
+///$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogIssuesList.java 7     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.configurationcheck.gui;
-
-/*
- * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
- *
- * This software is subject to the license agreement set forth in the license.
- * Please read and agree to all terms before using this software.
- * Other product and brand names are trademarks of their respective owners.
- */
 import de.mendelson.comm.as2.client.ModuleStarter;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckRequest;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckResponse;
@@ -15,6 +7,7 @@ import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
 import de.mendelson.comm.as2.configurationcheck.ResourceBundleConfigurationIssue;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
+
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
 import java.awt.KeyEventDispatcher;
@@ -34,22 +27,31 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+/*
+ * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
+ *
+ * This software is subject to the license agreement set forth in the license.
+ * Please read and agree to all terms before using this software.
+ * Other product and brand names are trademarks of their respective owners.
+ */
+
 
 /**
  * List of functions, useful for auto complete
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 7 $
  */
 public class JDialogIssuesList extends JDialog implements FocusListener, MouseMotionListener {
 
-    private KeyEventDispatcherIssuesList keyEventDispatcher = new KeyEventDispatcherIssuesList();
-    private BaseClient baseClient = null;
-    private Point origin;
-    private MecResourceBundle rb;
-    private ModuleStarter moduleStarter;
+    private final KeyEventDispatcherIssuesList keyEventDispatcher = new KeyEventDispatcherIssuesList();
+    private final BaseClient baseClient;
+    private final Point origin;
+    private final MecResourceBundle rb;
+    private final ModuleStarter moduleStarter;
     private final List<ConfigurationIssue> issues = Collections.synchronizedList(new ArrayList<ConfigurationIssue>());
-    private JFrame parent;
+    private final JFrame parent;
+    private final ComponentListener componentListenerParent;
 
     public JDialogIssuesList(JFrame parent, BaseClient baseClient, Point origin, ModuleStarter moduleStarter) {
         super(parent, false);
@@ -66,12 +68,12 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
         this.origin = origin;
         initComponents();
         this.jList.addFocusListener(this);
+        this.jList.setFont( this.jList.getFont().deriveFont((float)12));
         this.addFocusListener(this);
         this.jScrollPaneList.addFocusListener(this);
         this.populateList();
         this.setBounds();
-        //on any parent frame move, hide etc this should vanish
-        this.parent.addComponentListener(new ComponentListener() {
+        this.componentListenerParent = new ComponentListener() {
             @Override
             public void componentResized(ComponentEvent e) {
                 JDialogIssuesList.this.setVisible(false);
@@ -90,8 +92,9 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
             public void componentHidden(ComponentEvent e) {
                 JDialogIssuesList.this.setVisible(false);
             }
-
-        });
+        };        
+        //on any parent frame move, hide etc this should vanish
+        this.parent.addComponentListener(this.componentListenerParent);
     }
 
     public int getRowHeight() {
@@ -132,9 +135,11 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
      * been found on the OS
      */
     private int computeStringWidth(String text) {
-        Graphics2D g = (Graphics2D) this.jLabelInternalUse.getGraphics();
-        FontMetrics metrics = g.getFontMetrics(this.jLabelInternalUse.getFont());
-        return ((int) Math.ceil(metrics.getStringBounds(text, g).getWidth()));
+        Graphics2D g2d = (Graphics2D) this.jList.getGraphics().create();
+        FontMetrics metrics = g2d.getFontMetrics(this.jList.getFont());        
+        int width = (int) Math.ceil(metrics.getStringBounds(text, g2d).getWidth());
+        g2d.dispose();
+        return (width);
     }
 
     private void populateList() {
@@ -166,6 +171,7 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
         } else {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(this.keyEventDispatcher);
             this.jList.removeMouseMotionListener(this);
+            this.parent.removeComponentListener(this.componentListenerParent);
         }
         super.setVisible(flag);
     }
@@ -206,12 +212,15 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
                     displayIssueDetailsDialog();
                     setVisible(false);
+                    dispose();
                 }
                 if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
                     setVisible(false);
+                    dispose();
                 }
                 if (e.getKeyCode() != KeyEvent.VK_UP && e.getKeyCode() != KeyEvent.VK_DOWN) {
                     setVisible(false);
+                    dispose();
                 }
             }
             return false;
@@ -225,6 +234,7 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
     @Override
     public void focusLost(FocusEvent e) {
         this.setVisible(false);
+        dispose();
     }
 
     /**
@@ -236,7 +246,6 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jLabelInternalUse = new javax.swing.JLabel();
         jScrollPaneList = new javax.swing.JScrollPane();
         jList = new javax.swing.JList();
 
@@ -244,14 +253,13 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
         setUndecorated(true);
         setResizable(false);
         getContentPane().setLayout(new java.awt.GridBagLayout());
-        getContentPane().add(jLabelInternalUse, new java.awt.GridBagConstraints());
 
         jScrollPaneList.setBorder(javax.swing.BorderFactory.createEtchedBorder(javax.swing.border.EtchedBorder.RAISED));
         jScrollPaneList.setHorizontalScrollBarPolicy(javax.swing.ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER);
         jScrollPaneList.setVerticalScrollBarPolicy(javax.swing.ScrollPaneConstants.VERTICAL_SCROLLBAR_NEVER);
 
         jList.setModel(new javax.swing.AbstractListModel() {
-            String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
+            final String[] strings = { "Item 1", "Item 2", "Item 3", "Item 4", "Item 5" };
             public int getSize() { return strings.length; }
             public Object getElementAt(int i) { return strings[i]; }
         });
@@ -274,7 +282,6 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
         displayIssueDetailsDialog();
     }//GEN-LAST:event_jListMouseClicked
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JLabel jLabelInternalUse;
     private javax.swing.JList jList;
     private javax.swing.JScrollPane jScrollPaneList;
     // End of variables declaration//GEN-END:variables

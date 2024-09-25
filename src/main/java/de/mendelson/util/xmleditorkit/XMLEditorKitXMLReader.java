@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/xmleditorkit/XMLEditorKitXMLReader.java 5     16.10.19 11:30 Heller $
+//$Header: /as2/de/mendelson/util/xmleditorkit/XMLEditorKitXMLReader.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.xmleditorkit;
 
 import java.io.IOException;
@@ -27,11 +27,11 @@ import org.w3c.dom.NodeList;
  * XML Editor Kit - based on code from Stanislav Lapitsky
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class XMLEditorKitXMLReader {
 
-    static XMLEditorKitXMLReader instance = new XMLEditorKitXMLReader();
+    static final XMLEditorKitXMLReader instance = new XMLEditorKitXMLReader();
 
     private XMLEditorKitXMLReader() {
 
@@ -182,7 +182,7 @@ public class XMLEditorKitXMLReader {
                     elementSpec = new DefaultStyledDocument.ElementSpec(tagRowStartAttributs, DefaultStyledDocument.ElementSpec.StartTagType);
                     specsList.add(elementSpec);
                     String plainTextNodeValue = childNode.getNodeValue();
-                    if (plainTextNodeValue != null && plainTextNodeValue.trim().length() > 0) {
+                    if (plainTextNodeValue != null && !plainTextNodeValue.trim().isEmpty()) {
                         //do not add an additional line if the content of the node is just whitespace..else it looks weird if there are just CR LFs in the content
                         elementSpec = new DefaultStyledDocument.ElementSpec(XMLStyledDocument.PLAIN_ATTRIBUTES, DefaultStyledDocument.ElementSpec.ContentType, plainTextNodeValue.toCharArray(), 0, plainTextNodeValue.length());
                         specsList.add(elementSpec);

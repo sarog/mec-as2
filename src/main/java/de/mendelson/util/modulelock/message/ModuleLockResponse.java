@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/moduleLock/message/ModuleLockResponse.java 2     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/modulelock/message/ModuleLockResponse.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.modulelock.message;
 
 import de.mendelson.util.modulelock.LockClientInformation;
@@ -15,11 +15,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ModuleLockResponse extends ClientServerResponse implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private LockClientInformation lockKeeper = null;
     private boolean success = false;
     

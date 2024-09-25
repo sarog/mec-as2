@@ -1,8 +1,10 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestRequest.java 5     16/06/22 11:54 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestRequest.java 8     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.connectiontest.clientserver;
 
 import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.concurrent.TimeUnit;
 /*
@@ -17,14 +19,14 @@ import java.util.concurrent.TimeUnit;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class ConnectionTestRequest extends ClientServerMessage implements Serializable {
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String[] protocols = ConnectionTest.DEFAULT_TLS_PROTOCOL_LIST;
     private String host = null;
-    private int port;
+    private final int port;
     private long timeout = TimeUnit.SECONDS.toMillis(2);
     /**Some additional information for the log etc*/
     private String partnerName = null;
@@ -48,16 +50,16 @@ public class ConnectionTestRequest extends ClientServerMessage implements Serial
         this.partnerRole = partnerRole;
     }
     
-    /**Performs a TLS connection test with the default TLS protocols if ssl is set.
+    /**Performs a TLS connection test with the default TLS protocols if tls is set.
      * To specify the used protocols use the other constructor
      * @param host
      * @param port
-     * @param ssl 
+     * @param tls 
      * @param partnerName Name of the partner to display in the log and result
      * @param partnerRole One of the constants defined in ConnectionTest
      */
-    public ConnectionTestRequest(String host, int port, boolean ssl, String partnerName, int partnerRole) {
-        if( ssl ){
+    public ConnectionTestRequest(String host, int port, boolean tls, String partnerName, int partnerRole) {
+        if( tls ){
             this.protocols = ConnectionTest.DEFAULT_TLS_PROTOCOL_LIST;
         }else{
             this.protocols = new String[0];
@@ -126,5 +128,9 @@ public class ConnectionTestRequest extends ClientServerMessage implements Serial
         return partnerRole;
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 }

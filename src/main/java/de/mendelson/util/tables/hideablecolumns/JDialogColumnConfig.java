@@ -1,4 +1,4 @@
-//$Header: /mec_as4/de/mendelson/util/tables/hideablecolumns/JDialogColumnConfig.java 6     9.01.20 13:20 Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/JDialogColumnConfig.java 7     2/11/23 14:03 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 
 import de.mendelson.util.MecResourceBundle;
@@ -27,7 +27,7 @@ import javax.swing.table.TableColumn;
  * Dialog to configure the visibility of columns
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class JDialogColumnConfig extends JDialog {
 
@@ -42,7 +42,6 @@ public class JDialogColumnConfig extends JDialog {
     /**
      * Creates new form JDialogRowInfo
      *
-     * @param logRow Row to display the information from
      */
     public JDialogColumnConfig(JFrame parent, TableColumnModelHideable columnModel,
             TableColumnHiddenStateListener tableColumnHiddenStateListener) {

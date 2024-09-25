@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ResourceBundleManualSend_fr.java 7     19/01/23 11:19 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ResourceBundleManualSend_fr.java 8     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleManualSend_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

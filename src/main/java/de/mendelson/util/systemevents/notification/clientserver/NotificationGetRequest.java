@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationGetRequest.java 1     25.09.18 12:30 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationGetRequest.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.notification.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,11 +17,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class NotificationGetRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     public NotificationGetRequest() {
     }
@@ -27,6 +29,11 @@ public class NotificationGetRequest extends ClientServerMessage implements Seria
     @Override
     public String toString() {
         return ("Load notification data");
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
     
 }

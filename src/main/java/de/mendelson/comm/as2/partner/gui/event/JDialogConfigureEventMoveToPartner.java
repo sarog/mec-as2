@@ -1,14 +1,12 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToPartner.java 4     18.12.20 14:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToPartner.java 6     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
-import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
-import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.gui.ListCellRendererPartner;
 import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.clientserver.BaseClient;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -28,15 +26,15 @@ import javax.swing.JFrame;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class JDialogConfigureEventMoveToPartner extends JDialog {
 
     private final MecResourceBundle rb;
-    private JFrame parent;
-    private Partner eventPartner;
-    private int eventType;
-    private List<Partner> partnerList;
+    private final JFrame parent;
+    private final Partner eventPartner;
+    private final int eventType;
+    private final List<Partner> partnerList;
 
     public JDialogConfigureEventMoveToPartner(JFrame parent, List<Partner> partnerList,
             Partner eventPartner, final int EVENT_TYPE) {
@@ -95,7 +93,7 @@ public class JDialogConfigureEventMoveToPartner extends JDialog {
             if (this.eventPartner.getPartnerEvents().getProcess(this.eventType)
                     == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
                 List<String> parameter = this.eventPartner.getPartnerEvents().getParameter(this.eventType);
-                if (parameter.size() > 0) {
+                if (!parameter.isEmpty()) {
                     for (Partner partner : this.partnerList) {
                         if (partner.getAS2Identification().equals(parameter.get(0))) {
                             this.jComboBoxPartner.setSelectedItem(partner);

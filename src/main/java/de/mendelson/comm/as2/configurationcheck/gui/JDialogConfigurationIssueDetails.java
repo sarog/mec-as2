@@ -1,10 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 11    24/11/22 10:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 14    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.configurationcheck.gui;
 
 import de.mendelson.comm.as2.client.ModuleStarter;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
 import de.mendelson.util.AS2Tools;
-import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.Color;
@@ -29,17 +28,17 @@ import javax.swing.JDialog;
  * This is a dialog that contains additional information about a single issue
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class JDialogConfigurationIssueDetails extends JDialog {
 
     private final static MendelsonMultiResolutionImage IMAGE_WARNING_SIGN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/configurationcheck/gui/warning_sign.svg", 38, 60);
 
-    private ModuleStarter moduleStarter;
-    private List<ConfigurationIssue> issueList;
+    private final ModuleStarter moduleStarter;
+    private final List<ConfigurationIssue> issueList;
     private int currentIssueIndex;
-    private MecResourceBundle rbIssueDetails;
+    private final MecResourceBundle rbIssueDetails;
 
     /**
      * Creates new form JDialogConfigurationIssueDetails
@@ -85,7 +84,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                     String.valueOf(this.issueList.size())
                 }));
         String shortDescription = selectedIssue.getSubject();
-        if( selectedIssue.getDetails() != null && selectedIssue.getDetails().trim().length() > 0 ){
+        if( selectedIssue.getDetails() != null && !selectedIssue.getDetails().trim().isEmpty()){
             shortDescription = shortDescription + " (" + selectedIssue.getDetails() + ")";
         }
         String longDescription = selectedIssue.getHintAsHTML();
@@ -131,10 +130,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                 break;
             case ConfigurationIssue.KEY_MISSING_SIGN_LOCAL_STATION:
                 this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.partner"));
-                break;
-            case ConfigurationIssue.DIFFERENT_KEYSTORES_TLS:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.config"));
-                break;    
+                break;            
             default:
                 this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.generic"));
                 break;
@@ -177,10 +173,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                 break;
             case ConfigurationIssue.KEY_MISSING_SIGN_LOCAL_STATION:
                 this.moduleStarter.displayPartnerManager(selectedIssue.getDetails());
-                break;
-            case ConfigurationIssue.DIFFERENT_KEYSTORES_TLS:
-                this.moduleStarter.displayPreferences("tab.security");
-                break;    
+                break;             
         }
     }
 

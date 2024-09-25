@@ -1,8 +1,10 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemRequest.java 3     18.12.20 14:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemRequest.java 5     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,11 +18,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class PartnerSystemRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     public static final int TYPE_LIST_ALL = 1;
     public static final int TYPE_LIST_SINGLE = 2;
@@ -56,5 +58,10 @@ public class PartnerSystemRequest extends ClientServerMessage implements Seriali
      */
     public int getType() {
         return type;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 }

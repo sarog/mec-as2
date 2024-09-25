@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_de.java 12    7/10/22 10:37 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_de.java 17    12/12/23 14:44 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize 
  * eagle to your language, please contact us: localize@mendelson.de
  * @author  S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleNotification_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -29,7 +29,7 @@ public class ResourceBundleNotification_de extends MecResourceBundle {
         {"module.name", "[EMAIL BENACHRICHTIGUNG]" },
         {"test.message.send", "Eine Testnachricht wurde geschickt an {0}."},
         {"test.message.debug", "\nDer Nachrichtenversand schlug fehl.\n" },        
-        {"misc.message.send", "Eine Benachrichtigungsmail wurde an {0} geschickt ({1}-{2})."},
+        {"misc.message.send", "Eine Benachrichtigungsmail wurde an {0} geschickt ({1}-{2}-{3})."},
         {"misc.message.send.failed", "Das Senden einer Benachrichtigungsmail an {0} schlug fehl"},
         {"notification.about.event", "Diese Benachrichtigung bezieht sich auf das Systemereignis von {0}.\nDringlichkeit: {1}\nQuelle: {2}\nTyp: {3}\nId: {4}" },
         {"notification.summary", "Zusammenfassung von {0} Systemereignissen" },
@@ -45,6 +45,8 @@ public class ResourceBundleNotification_de extends MecResourceBundle {
         {"do.not.reply", "Bitte antworten Sie nicht auf diese Nachricht."},      
         {"authorization.none", "KEINE" },
         {"authorization.oauth2", "OAUTH2" },
+        {"authorization.oauth2.authorizationcode", "Authorization code" },
+        {"authorization.oauth2.clientcredentials", "Client credentials" },
         {"authorization.credentials", "Benutzer/Passwort" },
     };
 }

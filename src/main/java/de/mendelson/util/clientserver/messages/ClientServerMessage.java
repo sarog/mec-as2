@@ -1,9 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerMessage.java 8     31.10.18 13:55 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerMessage.java 12    24/11/23 11:42 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
+import java.util.concurrent.atomic.AtomicLong;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -14,31 +14,29 @@ import java.lang.management.RuntimeMXBean;
 /**
  * Superclass of all messages for the client server protocol
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 12 $
  */
 public class ClientServerMessage implements Serializable{
        
-    public static final long serialVersionUID = 1L;
-    private static long referenceIdCounter = 0;
+    private static final long serialVersionUID = 1L;
+    private static final AtomicLong referenceIdCounter = new AtomicLong(0);
     private long referenceId = 0;
     private boolean _syncRequest = false;
-    private String pid;
+    private final String pid;
 
     public ClientServerMessage(){
         this.referenceId = getNextReferenceId();
         this.pid = ManagementFactory.getRuntimeMXBean().getName();        
     }
-
+    
     /**Returns the next unique reference id, thread safe*/
-    public static synchronized long getNextReferenceId(){
-        referenceIdCounter++;
-        return( referenceIdCounter);
+    private static long getNextReferenceId(){
+        return( referenceIdCounter.addAndGet(1L));        
     }
 
     public Long getReferenceId(){
         return( Long.valueOf(this.referenceId));
     }
-
    
     /** Internal method, do NOT use it
      * @return the _syncRequest

@@ -1,9 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEvent.java 12    5/08/22 9:18 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEvent.java 14    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2MDNInfo;
 import de.mendelson.comm.as2.message.AS2Message;
-import java.sql.Connection;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
@@ -32,13 +31,13 @@ import java.util.logging.Level;
  * panel
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class ProcessingEvent implements Serializable {
 
     
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static final int TYPE_SEND_SUCCESS = 1;
     public static final int TYPE_SEND_FAILURE = 2;
@@ -49,7 +48,7 @@ public class ProcessingEvent implements Serializable {
     public static final int PROCESS_MOVE_TO_DIR = 3;
     
     
-    public static MecResourceBundle rb;
+    public static final MecResourceBundle rb;
     static{
         //Load resourcebundle
         try {
@@ -62,20 +61,20 @@ public class ProcessingEvent implements Serializable {
     }
 
     
-    private static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private static final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * Related message/mdn id
      */
-    private String messageId;
-    private String mdnId;
+    private final String messageId;
+    private final String mdnId;
     /**
      * Date of this message
      */
-    private long initDate;
+    private final long initDate;
     /**
      * Command to execute
      */
-    private List<String> parameter = new ArrayList<String>();
+    private final List<String> parameter = new ArrayList<String>();
     private int eventType = -1;
     private int processType = -1;
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation_de.java 3     6/21/18 5:22p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation_de.java 4     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleCertificateInformation_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

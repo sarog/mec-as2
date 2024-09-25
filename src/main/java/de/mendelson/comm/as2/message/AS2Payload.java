@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 19    24/08/22 12:55 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 23    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.ByteArrayOutputStream;
@@ -22,11 +22,11 @@ import java.nio.file.StandardOpenOption;
  * have multiple attachments in as2 transmission
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 23 $
  */
 public class AS2Payload implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     /**
      * Original filename of the sender, mustnt be provided
@@ -39,11 +39,11 @@ public class AS2Payload implements Serializable {
     private String payloadFilename = null;
     /**
      * Content id of this payload. May be null but is important for CEM because
-     * the different certificates are refrenced by their content id header
+     * the different certificates are referenced by their content id header
      */
     private String contentId = null;
     /**
-     * contenttype of this payload. Is not important any may be null for normal
+     * content type of this payload. Is not important any may be null for normal
      * AS2 messages but is important for CEM because the description xml is
      * identified by its content type
      */

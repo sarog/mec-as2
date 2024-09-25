@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/messages/LoginState.java 21    24/08/22 17:33 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginState.java 23    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import de.mendelson.util.clientserver.ServerHelloMessage;
@@ -18,11 +18,11 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 23 $
  */
 public class LoginState extends ClientServerResponse implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int STATE_AUTHENTICATION_SUCCESS = 1;
     public static final int STATE_AUTHENTICATION_FAILURE = 2;
     public static final int STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED = 3;
@@ -72,7 +72,6 @@ public class LoginState extends ClientServerResponse implements Serializable {
     }
 
     /**
-     * @param serverHelloMessage the serverHelloMessage to set
      */
     public void setServerHelloMessages(List<ServerHelloMessage> serverHelloMessages) {
         this.serverHelloMessages = serverHelloMessages;

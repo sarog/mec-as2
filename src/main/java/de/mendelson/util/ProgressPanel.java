@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ProgressPanel.java 16    17/02/22 11:30 Heller $
+//$Header: /as2/de/mendelson/util/ProgressPanel.java 17    2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import java.util.ArrayList;
@@ -19,7 +19,7 @@ import javax.swing.SwingUtilities;
  * Progress panel to display status information.
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class ProgressPanel extends JPanel {
 
@@ -219,8 +219,8 @@ public class ProgressPanel extends JPanel {
      */
     private static class ProgressRequest {
 
-        private String display;
-        private String uniqueId;
+        private final String display;
+        private final String uniqueId;
         private boolean indeterminate = false;
         private int minValue = 0;
         private int maxValue = 0;

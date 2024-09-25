@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 64    1/09/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 65    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -49,7 +49,7 @@ import javax.swing.table.TableColumn;
  * Dialog to show the details of a transaction
  *
  * @author S.Heller
- * @version $Revision: 64 $
+ * @version $Revision: 65 $
  */
 public class DialogMessageDetails extends JDialog implements ListSelectionListener {
 
@@ -378,7 +378,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         if (partner != null && partner.isLocalStation()) {
             return (ICON_LOCALSTATION);
         }
-        return (this.ICON_REMOTEPARTNER);
+        return (ICON_REMOTEPARTNER);
     }
 
     /**
@@ -451,7 +451,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             }
             this.jPanelFileDisplayHeader.displayFile(headerFilename, false);
             try {
-                if (this.payloadList.size() > 0) {
+                if (!this.payloadList.isEmpty()) {
                     for (int i = 0; i < payloadList.size(); i++) {
                         String payloadFilename = this.payloadList.get(i).getPayloadFilename();
                         this.jPanelFileDisplayPayload[i].displayFile(payloadFilename, true);

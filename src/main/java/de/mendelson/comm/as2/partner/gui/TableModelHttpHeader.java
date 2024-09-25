@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableModelHttpHeader.java 6     10.01.13 13:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableModelHttpHeader.java 7     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -18,7 +18,7 @@ import de.mendelson.util.MecResourceBundle;
  * Table model to display the properties to set
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class TableModelHttpHeader extends AbstractTableModel {
 
@@ -31,7 +31,6 @@ public class TableModelHttpHeader extends AbstractTableModel {
     /**
      * Creates new preferences table model
      *
-     * @param rb Resourcebundle to localize the header rows
      */
     public TableModelHttpHeader() {
         //load resource bundle
@@ -46,7 +45,6 @@ public class TableModelHttpHeader extends AbstractTableModel {
     /**
      * Passes data to the model and fires a table data update
      *
-     * @param newData data array, may be null to delete the actual data contents
      */
     public void passNewData(Partner partner) {
         this.partner = partner;
@@ -73,7 +71,6 @@ public class TableModelHttpHeader extends AbstractTableModel {
     /**
      * Passes a new single value to the array
      *
-     * @param header new header to add to the partner
      */
     public void deleteRow(int row) {
         synchronized (this.array) {

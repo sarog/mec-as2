@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 37    5/08/22 9:18 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 42    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -35,16 +35,16 @@ import java.util.logging.Logger;
  * Controls the timed deletion of as2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 42 $
  */
 public class MDNReceiptController {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private PreferencesAS2 preferences = new PreferencesAS2();
-    private MDNCheckThread checkThread;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final PreferencesAS2 preferences;
+    private final MDNCheckThread checkThread;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
         new NamedThreadFactory("mdn-receipt-control"));
     /**
@@ -52,7 +52,7 @@ public class MDNReceiptController {
      */
     private ClientServer clientserver = null;
     private MecResourceBundle rb = null;
-    private IDBDriverManager dbDriverManager;
+    private final IDBDriverManager dbDriverManager;
 
     public MDNReceiptController(ClientServer clientserver, IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
@@ -65,13 +65,14 @@ public class MDNReceiptController {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        this.preferences = new PreferencesAS2(dbDriverManager);
+        this.checkThread = new MDNCheckThread();
     }
 
     /**
      * Starts the embedded task that guards the log
      */
     public void startMDNCheck() {
-        this.checkThread = new MDNCheckThread();
         this.scheduledExecutor.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
     }
 
@@ -85,7 +86,7 @@ public class MDNReceiptController {
                 this.messageAccess = new MessageAccessDB(dbDriverManager);
             } catch (Exception e) {
                 logger.severe("MDNCheckThread: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         }
 
@@ -108,15 +109,15 @@ public class MDNReceiptController {
                         } catch (Exception e) {
                             //this thread MUST not stop on any error!
                             logger.severe(Thread.currentThread().getName() + ": " + e.getMessage());
-                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                         }
                     }
-                    if (overviewList.size() > 0) {
+                    if (!overviewList.isEmpty()) {
                         clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
                     }
                 }
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
             }
         }
     }

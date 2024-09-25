@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AS2Server.java 170   19/10/22 15:33 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AS2Server.java 191   23/11/23 10:22 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
@@ -40,7 +40,6 @@ import de.mendelson.util.log.LogFormatterAS2;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreStorage;
-import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import de.mendelson.util.systemevents.notification.SystemEventNotificationController;
@@ -65,12 +64,17 @@ import org.eclipse.jetty.server.Server;
 import de.mendelson.comm.as2.database.IDBServer;
 import de.mendelson.comm.as2.ha.ClientLogRefreshController;
 import de.mendelson.comm.as2.ha.HAInstanceController;
+import de.mendelson.comm.as2.ha.ServerCertificateRefreshControllerHA;
 import de.mendelson.comm.as2.ha.ServerInstanceHA;
 import de.mendelson.util.clientserver.ServerHelloMessage;
 import de.mendelson.util.clientserver.ServerHelloMessageGenerator;
+import de.mendelson.util.clientserver.about.ServerInfoRequest;
 import de.mendelson.util.database.IDBDriverManager;
-import de.mendelson.util.log.ANSI;
 import de.mendelson.util.log.ConsoleHandlerStdout;
+import de.mendelson.util.modulelock.ModuleLockReleaseController;
+import de.mendelson.util.security.CryptoProvider;
+import de.mendelson.util.security.cert.KeystoreStorageImplDB;
+import de.mendelson.util.security.keydata.KeydataAccessDB;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
@@ -86,7 +90,7 @@ import java.util.ArrayList;
  * Class to start the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 170 $
+ * @version $Revision: 191 $
  * @since build 68
  */
 public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, ServerHelloMessageGenerator {
@@ -121,8 +125,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     private DirPollManager pollManager = null;
     private ConfigurationCheckController configCheckController = null;
     private CertificateManager certificateManagerEncSign = null;
-    private CertificateManager certificateManagerSSL = null;
-    private ClientServer clientserver;
+    private CertificateManager certificateManagerTLS = null;
+    private final ClientServer clientserver;
     private ClientServerSessionHandlerLocalhost clientServerSessionHandler = null;
     /**
      * Sets if all clients may connect to this server or only clients from the
@@ -153,7 +157,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     private MDNReceiptController receiptController = null;
     private StatisticDeleteController statsDeleteController = null;
     private SystemEventNotificationController notificationController = null;
-    private Handler loggingHandlerSystemOut = new ConsoleHandlerStdout();
+    private final Handler loggingHandlerSystemOut = new ConsoleHandlerStdout();
+    public final static CryptoProvider CRYPTO_PROVIDER = new CryptoProvider();
+    private ServerCertificateRefreshControllerHA serverCertificateRefreshController = null;
 
     /**
      * Creates a new AS2 server and starts it
@@ -165,7 +171,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
      * @param startPlugins Starts the plugins if there are any in the system
      *
      */
-    public AS2Server(boolean startHTTPServer, boolean allowAllClients, boolean startPlugins) throws Exception {
+    public AS2Server(boolean startHTTPServer, boolean allowAllClients, boolean startPlugins,
+            boolean importTLS, boolean importSignEnc) throws Exception {
         //Load default resourcebundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -178,8 +185,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         this.initializeLogger();
         this.logger.info(rb.getResourceString("server.willstart", AS2ServerVersion.getFullProductName()));
         this.logger.info(Copyright.getCopyrightMessage());
-        System.setProperty("mendelson.as2.embeddedhttpserver", startHTTPServer?"TRUE":"FALSE");
-        this.fireSystemEventServerStartupBegins();        
+        System.setProperty("mendelson.as2.embeddedhttpserver", startHTTPServer ? "TRUE" : "FALSE");
+        this.fireSystemEventServerStartupBegins();
         this.allowAllClients = allowAllClients;
         PLUGINS.setStartPlugins(startPlugins);
         this.performStartupChecks();
@@ -189,11 +196,56 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         this.clientserver.setProductName(AS2ServerVersion.getFullProductName());
         this.initializeServerInstanceHA();
         this.setupClientServerSessionHandler();
-        this.start();
+        this.start(importTLS, importSignEnc);
         //stop logging to the console here
         this.logger.removeHandler(this.loggingHandlerSystemOut);
         //start the partner poll threads
         this.pollManager.start();
+    }
+
+    /**
+     * If there is any other value in the internal keystore settings than the
+     * default value and the HA plugin is not active this will reset all
+     * settings back to the default settings. This is also required for any
+     * update from mendelson AS2 older than build 580 where the keystore
+     * settings have been changed by the user
+     */
+    private void handleKeystoreSettings(boolean importTLS, boolean importSignEnc) throws Exception {
+        KeydataAccessDB keydataAccessDB = new KeydataAccessDB(this.dbDriverManager, SystemEventManagerImplAS2.instance());
+        Path keystoreFileEncSign = Paths.get("certificates.p12");
+        if (importSignEnc) {
+            byte[] keystoreData = Files.readAllBytes(keystoreFileEncSign);
+            keydataAccessDB.updateKeydata(keystoreData,
+                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_PKCS12,
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN);
+            keydataAccessDB.logKeystoreImport(this.logger, 
+                    keystoreFileEncSign, 
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN,
+                    KeydataAccessDB.REASON_IMPORT_COMMAND_LINE_SETTINGS);
+        } else {
+            keydataAccessDB.insertKeydataFromFileIfItDoesNotExistInDB(
+                    this.logger,
+                    keystoreFileEncSign,
+                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_PKCS12,
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN);
+        }
+        Path keystoreFileTLS = Paths.get("jetty10/etc/keystore");
+        if (importTLS) {
+            byte[] keystoreData = Files.readAllBytes(keystoreFileTLS);
+            keydataAccessDB.updateKeydata(keystoreData,
+                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_JKS,
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS);
+            keydataAccessDB.logKeystoreImport(this.logger, 
+                    keystoreFileTLS, 
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS,
+                    KeydataAccessDB.REASON_IMPORT_COMMAND_LINE_SETTINGS);
+        } else {
+            keydataAccessDB.insertKeydataFromFileIfItDoesNotExistInDB(
+                    this.logger,
+                    keystoreFileTLS,
+                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_JKS,
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS);
+        }
     }
 
     private void fireSystemEventServerStartupBegins() {
@@ -205,9 +257,10 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     Boolean.toString(this.allowAllClients),
                     AS2Tools.getDataSizeDisplay(Runtime.getRuntime().maxMemory()),
                     System.getProperty("java.version"),
-                    System.getProperty("user.name")
+                    System.getProperty("user.name"),
+                    ServerInstance.ID
                 });
-        SystemEventManagerImplAS2.newEvent(
+        SystemEventManagerImplAS2.instance().newEvent(
                 SystemEvent.SEVERITY_INFO,
                 SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
@@ -243,14 +296,15 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     Boolean.toString(this.allowAllClients),
                     AS2Tools.getDataSizeDisplay(Runtime.getRuntime().maxMemory()),
                     System.getProperty("java.version"),
-                    System.getProperty("user.name")
+                    System.getProperty("user.name"),
+                    ServerInstance.ID
                 });
         int severity = SystemEvent.SEVERITY_INFO;
         if (!configurationIssues.isEmpty()) {
             StringBuilder issueListStr = new StringBuilder();
             for (ConfigurationIssue issue : configurationIssues) {
                 issueListStr.append("*").append(issue.getSubject());
-                if (issue.getDetails() != null && issue.getDetails().trim().length() > 0) {
+                if (issue.getDetails() != null && !issue.getDetails().trim().isEmpty()) {
                     issueListStr.append(" (").append(issue.getDetails()).append(")");
                 }
                 issueListStr.append("\n");
@@ -270,7 +324,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                         + body;
             }
         }
-        SystemEventManagerImplAS2.newEvent(severity,
+        SystemEventManagerImplAS2.instance().newEvent(severity,
                 SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_MAIN_SERVER_RUNNING,
                 subject, body);
@@ -290,7 +344,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
             this.logger.severe(this.rb.getResourceString("fatal.limited.strength"));
             String subject
                     = this.rb.getResourceString("fatal.limited.strength");
-            SystemEventManagerImplAS2.newEvent(
+            SystemEventManagerImplAS2.instance().newEvent(
                     SystemEvent.SEVERITY_ERROR,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
@@ -300,26 +354,27 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     }
 
     @Override
-    public void start() throws Exception {
+    public void start(boolean importTLS, boolean importSignEnc) throws Exception {
         try {
             this.ensureRunningDBServer();
-            this.startHTTPServer();
+            this.handleKeystoreSettings(importTLS, importSignEnc);
             this.certificateManagerEncSign = new CertificateManager(this.logger);
-            KeystoreStorage signEncStorage = new KeystoreStorageImplFile(
-                    this.preferences.get(PreferencesAS2.KEYSTORE),
-                    this.preferences.get(PreferencesAS2.KEYSTORE_PASS).toCharArray(),
-                    KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
-                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+            KeystoreStorage signEncStorage = new KeystoreStorageImplDB(
+                    SystemEventManagerImplAS2.instance(),
+                    this.dbDriverManager,
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN,
+                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_PKCS12
             );
             this.certificateManagerEncSign.loadKeystoreCertificates(signEncStorage);
-            this.certificateManagerSSL = new CertificateManager(this.logger);
-            KeystoreStorage sslStorage = new KeystoreStorageImplFile(
-                    this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND),
-                    this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),
-                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
-                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+            this.certificateManagerTLS = new CertificateManager(this.logger);
+            KeystoreStorage tlsStorage = new KeystoreStorageImplDB(
+                    SystemEventManagerImplAS2.instance(),
+                    this.dbDriverManager,
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS,
+                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_JKS
             );
-            this.certificateManagerSSL.loadKeystoreCertificates(sslStorage);
+            this.certificateManagerTLS.loadKeystoreCertificates(tlsStorage);
+            this.startHTTPServer(tlsStorage);
             this.startSendOrderReceiver();
             this.initializeAdditionalLogger();
             //start control threads
@@ -329,7 +384,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
             this.logDeleteController = new MessageDeleteController(
                     this.clientserver, this.dbDriverManager);
             this.logDeleteController.startAutoDeleteControl();
-            this.fileDeleteController = new FileDeleteController();
+            this.fileDeleteController = new FileDeleteController(this.dbDriverManager);
             this.fileDeleteController.startAutoDeleteControl();
             this.statsDeleteController = new StatisticDeleteController(this.dbDriverManager);
             this.statsDeleteController.startAutoDeleteControl();
@@ -345,36 +400,45 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                                 this.clientserver);
                 this.clientLogRefreshController.startHALogRefreshControl();
             }
+            if (PLUGINS.isActivated(ServerPlugins.PLUGIN_HA)) {
+                this.serverCertificateRefreshController
+                        = new ServerCertificateRefreshControllerHA(this.dbDriverManager,
+                                SystemEventManagerImplAS2.instance());
+                this.serverCertificateRefreshController.startRefreshControl(
+                        this.certificateManagerEncSign, this.certificateManagerTLS);
+            }
             this.haInstanceController = new HAInstanceController(this, this.dbDriverManager);
             this.haInstanceController.start();
             this.eventController
-                    = new PostProcessingEventController(this.clientserver,                            
-                            this.certificateManagerEncSign, 
+                    = new PostProcessingEventController(this.clientserver,
+                            this.certificateManagerEncSign,
                             this.dbDriverManager);
             this.eventController.startEventExecution();
-            this.pollManager = new DirPollManager(this.certificateManagerEncSign, 
+            this.pollManager = new DirPollManager(this.certificateManagerEncSign,
                     this.clientserver, this.dbDriverManager);
             this.configCheckController = new ConfigurationCheckController(
                     this.certificateManagerEncSign,
-                    this.certificateManagerSSL,                    
+                    this.certificateManagerTLS,
                     this.httpServerConfigInfo, this.pollManager,
                     this.dbDriverManager);
             this.clientServerSessionHandler.addServerProcessing(
                     new AS2ServerProcessing(this.clientserver, this.pollManager,
-                            this.certificateManagerEncSign, this.certificateManagerSSL, this.dbDriverManager,
+                            this.certificateManagerEncSign, this.certificateManagerTLS, this.dbDriverManager,
                             this.configCheckController, this.httpServerConfigInfo, this.dbServerInformation,
                             this.dbClientInformation));
             this.expireController = new CertificateExpireController(this.certificateManagerEncSign,
-                    this.certificateManagerSSL);
+                    this.certificateManagerTLS);
             this.expireController.startCertExpireControl();
             this.configCheckController.start();
-            this.lockReleaseController = new ModuleLockReleaseController(this.dbDriverManager);
+            this.lockReleaseController = new ModuleLockReleaseController(
+                    this.dbDriverManager, SystemEventManagerImplAS2.instance(),
+                    AS2Server.SERVER_LOGGER_NAME);
             this.lockReleaseController.startLockReleaseControl();
             this.cemController = new CertificateCEMController(
                     this.clientserver, this.dbDriverManager, this.certificateManagerEncSign);
             this.cemController.start();
             this.notificationController = new SystemEventNotificationControllerImplAS2(
-                    this.getLogger(), 
+                    this.getLogger(),
                     this.dbDriverManager);
             Runtime.getRuntime().addShutdownHook(new AS2ShutdownThread(this.dbServer));
             //listen for inbound client connects
@@ -386,7 +450,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                 issueDetails.append("(" + issue.getDetails() + ")");
                 issueDetails.append("\n\n");
                 issueDetails.append(this.html2txt(issue.getHintAsHTML()));
-                SystemEventManagerImplAS2.newEvent(
+                SystemEventManagerImplAS2.instance().newEvent(
                         SystemEvent.SEVERITY_WARNING,
                         SystemEvent.ORIGIN_SYSTEM,
                         SystemEvent.TYPE_SERVER_CONFIGURATION_CHECK,
@@ -396,7 +460,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
             this.logger.info(rb.getResourceString("server.started",
                     String.valueOf(System.currentTimeMillis() - this.startTime)));
         } catch (BindException e) {
-            SystemEventManagerImplAS2.newEvent(
+            SystemEventManagerImplAS2.instance().newEvent(
                     SystemEvent.SEVERITY_ERROR,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
@@ -412,7 +476,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     }));
             throw bindException;
         } catch (Exception e) {
-            SystemEventManagerImplAS2.newEvent(
+            SystemEventManagerImplAS2.instance().newEvent(
                     SystemEvent.SEVERITY_ERROR,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
@@ -457,7 +521,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         this.loggingHandlerSystemOut.setLevel(Level.ALL);
         this.logger.addHandler(this.loggingHandlerSystemOut);
         this.logger.setUseParentHandlers(false);
-        
+
     }
 
     /**
@@ -481,7 +545,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         this.clientServerSessionHandler = new ClientServerSessionHandlerLocalhost(this.logger,
                 new String[]{AS2ServerVersion.getFullProductName()}, this.allowAllClients,
                 this.preferences.getBoolean(PreferencesAS2.COMMUNITY_EDITION) ? 1 : -1,
-                new SystemEventManagerImplAS2()
+                SystemEventManagerImplAS2.instance()
         );
         this.clientServerSessionHandler.setAnonymousProcessing(new AnonymousProcessingAS2());
         this.clientserver.setSessionHandler(this.clientServerSessionHandler);
@@ -516,7 +580,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                         lockFile.toAbsolutePath().toString(),
                         format.format(new java.util.Date(lastModificationTime))
                     }));
-            SystemEventManagerImplAS2.newEvent(
+            SystemEventManagerImplAS2.instance().newEvent(
                     SystemEvent.SEVERITY_ERROR,
                     SystemEvent.ORIGIN_SYSTEM,
                     SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
@@ -572,10 +636,10 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     /**
      * Starts the embedded web server if requested
      */
-    private Server startHTTPServer() throws Exception {
+    private Server startHTTPServer(KeystoreStorage tlsStorage) throws Exception {
         //start the HTTP server if this is requested
         if (System.getProperty("mendelson.as2.embeddedhttpserver", "TRUE").equalsIgnoreCase("TRUE")) {
-            JettyStarter starter = new JettyStarter(this.logger);
+            JettyStarter starter = new JettyStarter(this.logger, tlsStorage, this.dbDriverManager);
             starter.startWebserver();
             this.httpServerConfigInfo = starter.getHttpServerConfigInfo();
         } else {
@@ -750,15 +814,37 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         return ec2Id;
     }
 
+    public static String getLicenseType() {
+        //figure out the license type
+        if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_HA)
+                || AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_ORACLE_DB)) {
+            return (ServerInfoRequest.VALUE_LICENSE_TYPE_ENTERPRISE_HA);
+        } else if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_MYSQL)
+                || AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_POSTGRESQL)
+                || AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_REST_API)
+                || AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_JAVA_API)
+                || AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_XML_API)
+                || AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_OAUTH2)) {
+            return (ServerInfoRequest.VALUE_LICENSE_TYPE_PROFESSIONAL);
+        } else {
+            return (ServerInfoRequest.VALUE_LICENSE_TYPE_ENTRY);
+        }
+    }
+
     /**
      * Makes this a ServerHelloMessageGenerator
      */
     @Override
     public List<ServerHelloMessage> generateServerHelloMessages() {
         List<ServerHelloMessage> serverHelloList = new ArrayList<ServerHelloMessage>();
+        String productName = AS2ServerVersion.getFullProductName();
+        String licenseType = AS2Server.getLicenseType();
+        if (!licenseType.equals(ServerInfoRequest.VALUE_LICENSE_TYPE_ENTRY)) {
+            productName = productName + " " + licenseType;
+        }
         serverHelloList.add(
                 new ServerHelloMessage(this.rb.getResourceString("server.hello",
-                        AS2ServerVersion.getFullProductName())));
+                        productName)));
         if (AS2Server.PLUGINS.licenseWillExpire()) {
             if (AS2Server.PLUGINS.getLicenseExpiresInDays() == 1) {
                 serverHelloList.add(

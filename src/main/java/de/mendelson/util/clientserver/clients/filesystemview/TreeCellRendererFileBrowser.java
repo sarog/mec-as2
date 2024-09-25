@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/TreeCellRendererFileBrowser.java 10    29.10.19 11:25 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/TreeCellRendererFileBrowser.java 11    2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.ColorUtil;
@@ -24,7 +24,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * TreeCellRenderer that will display the icons of the config tree
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class TreeCellRendererFileBrowser extends DefaultTreeCellRenderer {
 
@@ -37,7 +37,7 @@ public class TreeCellRendererFileBrowser extends DefaultTreeCellRenderer {
      */
     private DefaultMutableTreeNode selectedNode = null;
     private boolean expanded = false;
-    private FileSystemView clientSideFileSystemView;
+    private final FileSystemView clientSideFileSystemView;
     private Color COLOR_FOREGROUND_EXECUTABLE = Color.green.darker().darker();
 
     /**

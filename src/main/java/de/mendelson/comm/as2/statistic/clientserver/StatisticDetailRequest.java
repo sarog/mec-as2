@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/StatisticDetailRequest.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/StatisticDetailRequest.java 5     2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.statistic.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,18 +20,18 @@ import org.jfree.data.time.SimpleTimePeriod;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class StatisticDetailRequest extends ClientServerMessage implements Serializable {
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String as2IdentificationLocal;
     private String as2IdentificationPartner;
     private int direction;
     
-    private List<SimpleTimePeriod> periods = new ArrayList<SimpleTimePeriod>();
-    private List<Integer> states = new ArrayList<Integer>();
-    private List<String> seriesName = new ArrayList<String>();
+    private final List<SimpleTimePeriod> periods = new ArrayList<SimpleTimePeriod>();
+    private final List<Integer> states = new ArrayList<Integer>();
+    private final List<String> seriesName = new ArrayList<String>();
     
     public StatisticDetailRequest() {
     }
@@ -107,6 +109,11 @@ public class StatisticDetailRequest extends ClientServerMessage implements Seria
      */
     public List<String> getSeriesName() {
         return seriesName;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 
 }

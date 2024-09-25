@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewRequest.java 5     15.11.18 11:59 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewRequest.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,11 +16,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class FileSystemViewRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int TYPE_LIST_ROOTS = 1;
     public static final int TYPE_LIST_CHILDREN = 2;
     public static final int TYPE_GET_ABSOLUTE_PATH_STR = 3;
@@ -68,4 +70,9 @@ public class FileSystemViewRequest extends ClientServerMessage implements Serial
         this.requestFilePath = requestFilePath;
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
+    
 }

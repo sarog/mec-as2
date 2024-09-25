@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 22    7/06/22 16:28 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 24    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -25,7 +25,7 @@ import javax.swing.SwingUtilities;
 /**
  *Panel to define the directory preferences
  * @author S.Heller
- * @version: $Revision: 22 $
+ * @version: $Revision: 24 $
  */
 public class PreferencesPanelDirectories extends PreferencesPanel {
 
@@ -36,8 +36,9 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
     /**Localize the GUI*/
     private MecResourceBundle rb = null;
     /**GUI prefs*/
-    private PreferencesClient preferences;
-    private BaseClient baseClient;
+    private final PreferencesClient preferences;
+    private final BaseClient baseClient;
+    private String preferencesStrAtLoadTime = "";
 
     /** Creates new form PreferencesPanelDirectories */
     public PreferencesPanelDirectories(BaseClient baseClient) {
@@ -82,8 +83,27 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         ((TableModelPreferencesDir) this.jTable.getModel()).passNewData(list);
         JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
         this.jCheckBoxReceiverSubdirectory.setSelected(this.preferences.getBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR));
+        this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
+    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
+    private String captureSettingsToStr(){
+        StringBuilder builder = new StringBuilder();
+        PreferencesObjectKeyValue directory = ((TableModelPreferencesDir) this.jTable.getModel()).getPreference(0);
+        String currentPath = directory.getValue();
+        builder.append( PreferencesAS2.DIR_MSG ).append("=")
+                .append( currentPath).append(";");
+        builder.append( PreferencesAS2.RECEIPT_PARTNER_SUBDIR ).append("=")
+                .append( this.jCheckBoxReceiverSubdirectory.isSelected()).append(";");        
+        return( builder.toString() );
+    }
+    
+    @Override
+    public boolean preferencesAreModified() {
+        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+    }
+    
+    
     /**Modifies the selected row in the table*/
     private void modifySelection() {
         PreferencesObjectKeyValue directory = ((TableModelPreferencesDir) this.jTable.getModel()).getPreference(this.jTable.getSelectedRow());

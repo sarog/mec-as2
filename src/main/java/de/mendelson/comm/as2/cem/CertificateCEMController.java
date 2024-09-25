@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CertificateCEMController.java 17    28/07/22 9:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CertificateCEMController.java 21    1/11/23 11:29 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -14,7 +14,6 @@ import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.sql.Connection;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -32,21 +31,21 @@ import java.util.logging.Logger;
  * Controller that executes CEM events
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 21 $
  */
 public class CertificateCEMController {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private IDBDriverManager dbDriverManager;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final IDBDriverManager dbDriverManager;
     /**
      * Stores the certificates
      */
-    private CertificateManager certificateManager;
-    private ClientServer clientserver;
-    private CEMControllerThread checkThread;
+    private final CertificateManager certificateManager;
+    private final ClientServer clientserver;
+    private final CEMControllerThread checkThread;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("cem-controller"));
 
@@ -56,10 +55,10 @@ public class CertificateCEMController {
         this.certificateManager = certificateManager;
         this.dbDriverManager = dbDriverManager;
         this.clientserver = clientserver;
+        this.checkThread = new CEMControllerThread();
     }
 
-    public void start() {
-        this.checkThread = new CEMControllerThread();
+    public void start() {        
         this.scheduledExecutor.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
     }
 
@@ -77,7 +76,7 @@ public class CertificateCEMController {
             } catch (Throwable e) {
                 e.printStackTrace();
                 logger.severe("CertificateCEMController: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e);
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             }
         }
 
@@ -91,8 +90,6 @@ public class CertificateCEMController {
                     = new PartnerAccessDB(dbDriverManager);
             CEMAccessDB cemAccess = new CEMAccessDB(dbDriverManager);
             List<CEMEntry> certificateChangeList = cemAccess.getCertificatesToChange();
-            SystemEventManagerImplAS2 eventManager
-                    = new SystemEventManagerImplAS2();
             for (CEMEntry entry : certificateChangeList) {
                 Partner partner = partnerAccess.getPartner(entry.getInitiatorAS2Id());
                 KeystoreCertificate referencedCert = certificateManager.getKeystoreCertificateByIssuerDNAndSerial(
@@ -106,7 +103,7 @@ public class CertificateCEMController {
                 logger.fine(partner.getPartnerCertificateInformationList()
                         .getCertificatePurposeDescription(certificateManager, partner, entry.getCategory()));
                 try {
-                    eventManager.newEventCertificateChangeShouldHappenNowByCEM(certificateManager, partner, entry.getCategory());
+                    SystemEventManagerImplAS2.instance().newEventCertificateChangeShouldHappenNowByCEM(certificateManager, partner, entry.getCategory());
                 } catch (Exception e) {
                     logger.warning("CertificateCEMController: Notification@handleCertificateChanges " + e.getMessage());
                 }
@@ -137,7 +134,7 @@ public class CertificateCEMController {
                                 entry.getReceiverAS2Id(), CEMEntry.CATEGORY_SIGN,
                                 entry.getRequestId(), CEMEntry.STATUS_PROCESSING_ERROR_INT);
                         cemAccess.setPendingRequestsToState(entry.getInitiatorAS2Id(),
-                                entry.getReceiverAS2Id(), CEMEntry.CATEGORY_SSL,
+                                entry.getReceiverAS2Id(), CEMEntry.CATEGORY_TLS,
                                 entry.getRequestId(), CEMEntry.STATUS_PROCESSING_ERROR_INT);
                     }
                 }

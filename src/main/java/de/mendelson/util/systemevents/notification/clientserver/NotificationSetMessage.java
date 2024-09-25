@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationSetMessage.java 1     25.09.18 12:30 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationSetMessage.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.notification.clientserver;
 
 import de.mendelson.util.systemevents.notification.NotificationData;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,11 +18,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class NotificationSetMessage extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private NotificationData data = null;
 
     public NotificationSetMessage() {
@@ -43,5 +45,10 @@ public class NotificationSetMessage extends ClientServerMessage implements Seria
      */
     public void setData(NotificationData data) {
         this.data = data;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 }

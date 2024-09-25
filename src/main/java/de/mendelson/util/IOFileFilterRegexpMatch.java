@@ -1,9 +1,7 @@
- //$Header: /as2/de/mendelson/util/IOFileFilterRegexpMatch.java 4     24/08/22 12:55 Heller $
+ //$Header: /as2/de/mendelson/util/IOFileFilterRegexpMatch.java 5     2/11/23 14:02 Heller $
 package de.mendelson.util;
 
-import java.io.File;
 import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,7 +20,7 @@ import java.util.regex.Pattern;
  * are positive and negative patterns possible (matching/nonmatching).
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class IOFileFilterRegexpMatch implements DirectoryStream.Filter {
 
@@ -30,12 +28,12 @@ public class IOFileFilterRegexpMatch implements DirectoryStream.Filter {
      * List of matching conditions, the file will go through if it matches any
      * of these conditions
      */
-    private List<Pattern> matchingList = new ArrayList<Pattern>();
+    private final List<Pattern> matchingList = new ArrayList<Pattern>();
     /**
      * List of nonmatching conditions, the file will not go through if it
      * matches any of these conditions
      */
-    private List<Pattern> nonmatchingList = new ArrayList<Pattern>();
+    private final List<Pattern> nonmatchingList = new ArrayList<Pattern>();
 
     /**
      * Creates a new instance of FileMatcher

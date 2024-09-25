@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/csr/CSRUtil.java 16    26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/util/security/csr/CSRUtil.java 22    2/11/23 15:53 Heller $
 package de.mendelson.util.security.csr;
 
 import de.mendelson.util.MecResourceBundle;
@@ -25,7 +25,9 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -58,11 +60,11 @@ import org.bouncycastle.pkcs.PKCS10CertificationRequestBuilder;
  * Handles csr related activities on a certificate
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 22 $
  */
 public class CSRUtil {
 
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
 
     public CSRUtil() {
         //load resource bundle
@@ -109,34 +111,61 @@ public class CSRUtil {
      * Generates a PKCS10 CertificationRequest. The passed private key must not
      * be trusted
      */
-    public PKCS10CertificationRequest createCSR(String dn, PrivateKey key, X509Certificate cert) throws Exception {
+    public PKCS10CertificationRequest createCSR(String dn, PrivateKey key, X509Certificate certificate) throws Exception {
         X500Name x500DNName = new X500Name(dn);
         AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA1withRSA");
         AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
         AsymmetricKeyParameter privateKeyAsymKeyParam = PrivateKeyFactory.createKey(key.getEncoded());
-        ContentSigner sigGen = new BcRSAContentSignerBuilder(sigAlgId, digAlgId).build(privateKeyAsymKeyParam);
-        SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(cert.getPublicKey().getEncoded());
-        PKCS10CertificationRequestBuilder builder = new PKCS10CertificationRequestBuilder(x500DNName, subPubKeyInfo);
+        ContentSigner contentSigner = new BcRSAContentSignerBuilder(sigAlgId, digAlgId).build(privateKeyAsymKeyParam);
+        SubjectPublicKeyInfo subPubKeyInfo = SubjectPublicKeyInfo.getInstance(certificate.getPublicKey().getEncoded());
+        PKCS10CertificationRequestBuilder pkcs10Builder = new PKCS10CertificationRequestBuilder(x500DNName, subPubKeyInfo);
         /*
          * Add SubjectAlternativeNames (SANs) using the ExtensionsGenerator
          */
-        List<GeneralName> sanList = this.getSubjectAlternativeNames(cert);
+        List<GeneralName> sanList = this.getSubjectAlternativeNames(certificate);
         if (!sanList.isEmpty()) {
             ExtensionsGenerator extGen = new ExtensionsGenerator();
             GeneralName[] sanArray = new GeneralName[sanList.size()];
             sanList.toArray(sanArray);
             GeneralNames subjectAltNames = new GeneralNames(sanArray);
             extGen.addExtension(Extension.subjectAlternativeName, false, subjectAltNames);
-            builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
+            pkcs10Builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest, extGen.generate());
         }
-        PKCS10CertificationRequest csr = builder.build(sigGen);
+        //add SKI to the PKCS10 request if this exists in the certificate
+        byte[] ski = this.getSubjectKeyIdentifier(certificate);
+        if (ski != null && ski.length > 0) {
+            ExtensionsGenerator extGen = new ExtensionsGenerator();
+            extGen.addExtension(Extension.subjectKeyIdentifier, false, ski);
+            pkcs10Builder.addAttribute(PKCSObjectIdentifiers.pkcs_9_at_extensionRequest,
+                    extGen.generate());
+        }
+        PKCS10CertificationRequest csr = pkcs10Builder.build(contentSigner);
         ContentVerifierProvider verifier = new JcaContentVerifierProviderBuilder()
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(cert);
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(certificate);
         boolean verified = csr.isSignatureValid(verifier);
         if (!verified) {
             throw new Exception(this.rb.getResourceString("verification.failed"));
         }
         return (csr);
+    }
+
+    /**
+     * Returns the SKI of the passed certificate or an empty list if there is none
+     */
+    private byte[] getSubjectKeyIdentifier(X509Certificate certificate) {
+        byte[] extensionValue = certificate.getExtensionValue("2.5.29.14");
+        if (extensionValue == null) {
+            //there is no such extension: return empty list
+            return (new byte[0]);
+        }
+        try {
+            byte[] octedBytes = ((ASN1OctetString) ASN1Primitive.fromByteArray(extensionValue)).getOctets();
+            DEROctetString octetStr = (DEROctetString) ASN1Primitive.fromByteArray(octedBytes);
+            byte[] identifier = octetStr.getOctets();
+            return (identifier);
+        } catch (Throwable e) {
+            return (new byte[0]);
+        }
     }
 
     /**
@@ -193,11 +222,22 @@ public class CSRUtil {
     }
 
     /**
+     * Writes a CSR to a file, PEM encoded
+     */
+    public void storeCSRPEM(String csrStrPEM, Path outFile) throws Exception {
+        Files.writeString(outFile, csrStrPEM);
+    }
+
+    /**
      * Imports the answer of the CA which looks like a certificate. The patched
      * certificate will be updated with the cert chain that is included in the
      * returned signed certificate.
      *
+     * @deprecated The private key operations are done on the server side one -
+     * makes this code is moved to the server processing
+     *
      */
+    @Deprecated(since = "2023")
     public boolean importCSRReply(CertificateManager manager, String alias, Path csrResponseFile) throws Throwable {
         PrivateKey key = manager.getPrivateKey(alias);
         PublicKey publicKey = manager.getPublicKey(alias);
@@ -237,7 +277,7 @@ public class CSRUtil {
         }
     }
 
-    private List<X509Certificate> buildNewTrustChain(CertificateManager manager, X509Certificate certReply)
+    public List<X509Certificate> buildNewTrustChain(CertificateManager manager, X509Certificate certReply)
             throws Exception {
         Map<X500Principal, List<X509Certificate>> knownCerts = manager.getIssuerCertificateMap();
         LinkedList<X509Certificate> newTrustChain = new LinkedList<X509Certificate>();
@@ -278,11 +318,9 @@ public class CSRUtil {
      * of the chain (with user certificate first, and root certificate last in
      * the array).
      *
-     * @param alias the alias name
-     * @param userCert the user certificate of the alias
      * @param replyCerts the chain provided in the reply
      */
-    private List<X509Certificate> validateReply(List<X509Certificate> replyCerts) throws Exception {
+    public List<X509Certificate> validateReply(List<X509Certificate> replyCerts) throws Exception {
         // order the certs in the reply (bottom-up).
         X509Certificate tmpCert = null;
         Principal issuer = replyCerts.get(0).getIssuerDN();

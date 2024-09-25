@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server.java 20    29/04/22 17:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server.java 22    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 22 $
  */
 public class ResourceBundleAS2Server extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -28,7 +28,13 @@ public class ResourceBundleAS2Server extends MecResourceBundle {
     static final Object[][] CONTENTS = {
         {"fatal.limited.strength", "Limited key strength has been detected in the JVM. Please install the \"Unlimited jurisdiction key strength policy files\" before running the " + AS2ServerVersion.getProductName() + " server." },
         {"server.willstart", "{0} is starting"},        
-        {"server.start.details", "{0} parameter:\n\nStart integrated HTTP server: {1}\nAllow client-server connections from other hosts: {2}\nHeap memory: {3}\nJava version: {4}\nSystem user: {5}"},
+        {"server.start.details", "{0} parameter:\n\nStart integrated HTTP server: {1}\n"
+            + "Allow client-server connections from other hosts: {2}\n"
+            + "Heap memory: {3}\n"
+            + "Java version: {4}\n"
+            + "System user: {5}\n"
+            + "System id: {6}"
+        },
         {"server.started", AS2ServerVersion.getFullProductName() + " startup in {0} ms."},
         {"server.already.running", "An instance of " + AS2ServerVersion.getProductName() + " seems to be already running.\nIt is also possible that the previous instance of the program did not exit correctly. If you are sure that no other instance is running\nplease delete the lock file \"{0}\" (start date {1}) and restart the server."},
         {"server.nohttp", "The integrated HTTP server has not been started." },

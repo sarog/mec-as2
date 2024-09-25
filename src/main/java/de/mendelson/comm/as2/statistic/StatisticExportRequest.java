@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/statistic/StatisticExportRequest.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/statistic/StatisticExportRequest.java 3     2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.statistic;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -14,11 +14,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class StatisticExportRequest extends DownloadRequest implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private long startDate = 0;
     private long endDate = 0;
     private long timestep = 0;

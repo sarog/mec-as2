@@ -1,15 +1,16 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplByteArray.java 5     1.10.18 17:03 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplByteArray.java 12    9/11/23 9:52 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.KeyStoreUtil;
-import de.mendelson.util.security.cert.clientserver.KeystoreStorageImplClientServer;
+
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 
 /*
@@ -22,25 +23,23 @@ import java.util.Map;
 /**
  * Keystore storage implementation that relies on a byte array
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 12 $
  */
 public class KeystoreStorageImplByteArray implements KeystoreStorage {
 
-    public static final int KEYSTORE_USAGE_SSL = KeystoreStorageImplClientServer.KEYSTORE_USAGE_SSL;
-    public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN;
+    public static final int KEYSTORE_USAGE_SSL = KeystoreStorageImplFile.KEYSTORE_USAGE_TLS;
+    public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
     public static final String KEYSTORE_STORAGE_TYPE_JKS = BCCryptoHelper.KEYSTORE_JKS;
     public static final String KEYSTORE_STORAGE_TYPE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
     
     private KeyStore keystore = null;
     private char[] keystorePass = null;
-    private KeyStoreUtil keystoreUtil = new KeyStoreUtil();
+    private final KeyStoreUtil keystoreUtil = new KeyStoreUtil();
     private int keystoreUsage = KEYSTORE_USAGE_ENC_SIGN;
     private String keystoreStorageType = KEYSTORE_STORAGE_TYPE_PKCS12;
 
     /**
-     * @param keystoreFilename
      * @param keystorePass
-     * @param type keystore type as defined in the class BCCryptoHelper
      */
     public KeystoreStorageImplByteArray(byte[] keystoreBytes, char[] keystorePass, final int KEYSTORE_USAGE,
             final String KEYSTORE_STORAGE_TYPE) throws Exception {
@@ -69,6 +68,17 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
         throw new IllegalAccessException("KeystoreStorageImplByteArray: save() is not available for byte array implementation of storage.");
     }
 
+    @Override
+    public void loadKeystoreFromServer() throws Exception{
+        throw new IllegalAccessException("KeystoreStorageImplByteArray: loadKeystoreFromServer() is not available for byte array implementation of storage.");
+    }
+    
+    @Override
+    public void replaceAllEntriesAndSave(List<KeystoreCertificate> oldList, List<KeystoreCertificate> newList) throws Exception {
+        throw new IllegalAccessException("KeystoreStorageImplByteArray: replaceAllEntriesAndSave() is not available for byte array implementation of storage.");
+    }
+    
+    
     @Override
     public Key getKey(String alias) throws Exception {
         Key key = this.keystore.getKey(alias, this.keystorePass);
@@ -120,16 +130,6 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
     @Override
     public boolean isKeyEntry(String alias) throws Exception {
         return (this.keystore.isKeyEntry(alias));
-    }
-
-    @Override
-    public String getOriginalKeystoreFilename() {
-        return( "");
-    }
-
-    @Override
-    public boolean canWrite() {
-        return( false );
     }
 
     @Override

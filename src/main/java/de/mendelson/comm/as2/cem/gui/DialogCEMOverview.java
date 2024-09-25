@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 42    14.10.19 15:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 44    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -50,7 +50,7 @@ import javax.swing.event.ListSelectionListener;
  * Gives an overview on all CEM messages
  *
  * @author S.Heller
- * @version $Revision: 42 $
+ * @version $Revision: 44 $
  */
 public class DialogCEMOverview extends JDialog implements ListSelectionListener, ClientsideMessageProcessor {
 
@@ -66,14 +66,14 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
     /**
      * Manages all internal certificates
      */
-    private CertificateManager certificateManagerEncSign;
+    private final CertificateManager certificateManagerEncSign;
     /**
      * localizes the GUI
      */
-    private MecResourceBundle rb;
-    private GUIClient guiClient;
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
-    private JTextPaneLoggingHandler handler;
+    private final MecResourceBundle rb;
+    private final GUIClient guiClient;
+    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final JTextPaneLoggingHandler handler;
 
     /**
      * Creates new form DialogCEMOverview

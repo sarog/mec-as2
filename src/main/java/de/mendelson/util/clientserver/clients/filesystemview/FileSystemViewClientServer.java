@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewClientServer.java 7     28.10.19 16:31 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewClientServer.java 8     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.clientserver.BaseClient;
@@ -17,11 +17,11 @@ import java.util.concurrent.TimeUnit;
  * Handles the access to remote directories
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class FileSystemViewClientServer {
 
-    private BaseClient baseClient;
+    private final BaseClient baseClient;
     private FileFilter fileFilter = null;
 
     public FileSystemViewClientServer(BaseClient baseClient) {

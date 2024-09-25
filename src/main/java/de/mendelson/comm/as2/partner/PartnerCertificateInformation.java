@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerCertificateInformation.java 15    7/03/18 10:32a Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerCertificateInformation.java 18    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -15,14 +15,16 @@ import java.io.Serializable;
  * Stores a certificate or key used by a partner. Every partner of a communication may use
  * several certificates with several priorities
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 18 $
  */
 public class PartnerCertificateInformation implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int CATEGORY_CRYPT = CEMEntry.CATEGORY_CRYPT;
     public static final int CATEGORY_SIGN = CEMEntry.CATEGORY_SIGN;
-    public static final int CATEGORY_SSL = CEMEntry.CATEGORY_SSL;
+    public static final int CATEGORY_TLS = CEMEntry.CATEGORY_TLS;
+    public static final int CATEGORY_SIGN_OVERWRITE_LOCALSTATION = 4;
+    public static final int CATEGORY_CRYPT_OVERWRITE_LOCALSTATION = 5;
     private int category = CATEGORY_CRYPT;
     /**The fingerprint id as used in the keystore*/
     private String fingerprintSHA1;
@@ -43,7 +45,7 @@ public class PartnerCertificateInformation implements Serializable {
      * @return 
      */
     public boolean isEmpty(){
-        return( this.fingerprintSHA1 == null || this.fingerprintSHA1.trim().length() == 0);
+        return( this.fingerprintSHA1 == null || this.fingerprintSHA1.trim().isEmpty());
     }
     
     /**

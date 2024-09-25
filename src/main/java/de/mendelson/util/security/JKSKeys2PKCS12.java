@@ -1,12 +1,12 @@
-//$Header: /as2/de/mendelson/util/security/JKSKeys2PKCS12.java 6     26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/util/security/JKSKeys2PKCS12.java 9     2/11/23 14:03 Heller $
 package de.mendelson.util.security;
 
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
-import java.security.interfaces.RSAPrivateCrtKey;
 import java.util.logging.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -22,7 +22,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * the pkcs#12 format
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class JKSKeys2PKCS12 {
 
@@ -39,13 +39,13 @@ public class JKSKeys2PKCS12 {
      * @param jksKeyPassword JKS Key pass
      * @param alias alias of the key, used in both import and exported keystore
      */
-    public void exportKey(KeyStore jksKeyStore, char[] jksKeyPassword, String alias) throws Exception {
-        //extract key
-        RSAPrivateCrtKey jksPrivateCrtKey = (RSAPrivateCrtKey) jksKeyStore.getKey(alias, jksKeyPassword);
-        Certificate jksCert = jksKeyStore.getCertificate(alias);
-        //Get Certificate Chain
+    public void exportKeyFrom(KeyStore jksKeyStore, char[] jksKeyPassword, String alias) throws Exception {
+        try{
+        //extract key, for both EC and RSA
+        Key jksPrivateKey = jksKeyStore.getKey(alias, jksKeyPassword);
+        //Get certificate chain
         Certificate[] jksCerts = jksKeyStore.getCertificateChain(alias);
-        if (jksPrivateCrtKey == null || jksCerts == null) {
+        if (jksPrivateKey == null || jksCerts == null) {
             this.logger.severe("I didn't find a private key entry with the alias \"" + alias + "\" in the JKS keystore");
             return;
         }
@@ -54,7 +54,12 @@ public class JKSKeys2PKCS12 {
             pkcs12Keystore = this.generatePKCS12KeyStore();
         }
         //pkcs12 has no key password
-        pkcs12Keystore.setKeyEntry(alias, jksPrivateCrtKey, "dummy".toCharArray(), jksCerts);
+        pkcs12Keystore.setKeyEntry(alias, jksPrivateKey, "dummy".toCharArray(), jksCerts);
+        }
+        catch( Exception e ){
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public void setTargetKeyStore(KeyStore keystore) {
@@ -75,7 +80,6 @@ public class JKSKeys2PKCS12 {
      * Saves the passed keystore
      *
      * @param keystorePass Password for the keystore
-     * @param filename Filename where to save the keystore to
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass,
             Path file) throws Exception {

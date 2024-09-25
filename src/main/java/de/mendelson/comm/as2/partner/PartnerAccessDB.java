@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerAccessDB.java 94    29/11/22 16:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerAccessDB.java 100   2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.cert.CertificateAccessDB;
@@ -7,7 +7,6 @@ import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.oauth2.OAuth2AccessDB;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.systemevents.SystemEvent;
-import de.mendelson.util.systemevents.SystemEventManager;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,21 +29,20 @@ import java.sql.Types;
  * Implementation of a server log for the mendelson as2 server database
  *
  * @author S.Heller
- * @version $Revision: 94 $
+ * @version $Revision: 100 $
  */
 public class PartnerAccessDB {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * Access the certificates
      */
     private final CertificateAccessDB certificateAccess;
     private final PartnerEventAccessDB eventAccess;
     private final OAuth2AccessDB oAuth2Access;
-    private final static SystemEventManager systemEventManager = new SystemEventManagerImplAS2();
 
     /**
      * Returns the full partner data
@@ -58,14 +56,12 @@ public class PartnerAccessDB {
 
     /**
      *
-     * @param analyzeConnection Any database connection required to check the
-     * metadata for the DB data types
      */
     public PartnerAccessDB(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
         this.certificateAccess = new CertificateAccessDB();
         this.eventAccess = new PartnerEventAccessDB();
-        this.oAuth2Access = new OAuth2AccessDB(dbDriverManager, systemEventManager);
+        this.oAuth2Access = new OAuth2AccessDB(dbDriverManager, SystemEventManagerImplAS2.instance());
     }
 
     /**
@@ -129,6 +125,7 @@ public class PartnerAccessDB {
                     partner.setMaxPollFiles(result.getInt("maxpollfiles"));
                     partner.setUseAlgorithmIdentifierProtectionAttribute(result.getInt("algidentprotatt") == 1);
                     partner.setEnableDirPoll(result.getInt("enabledirpoll") == 1);
+                    partner.setOverwriteLocalStationSecurity(result.getInt("overwritelocalsecurity")==1);
                     //ensure to have a valid partner DB id before loading the releated data
                     this.certificateAccess.loadPartnerCertificateInformation(partner, configConnectionNoAutoCommit);
                     this.loadHTTPHeaderIntoPartner(partner, configConnectionNoAutoCommit);
@@ -144,7 +141,7 @@ public class PartnerAccessDB {
                     if (!result.wasNull()) {
                         OAuth2Config oAuth2ConfigMDN = this.oAuth2Access.getOAuth2Config(oAuth2ReferenceMDN, configConnectionNoAutoCommit);
                         partner.setOAuth2MDN(oAuth2ConfigMDN);
-                    }
+                    }                    
                 }
                 partnerList.add(partner);
             }
@@ -155,14 +152,14 @@ public class PartnerAccessDB {
                 try {
                     preparedStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -197,16 +194,16 @@ public class PartnerAccessDB {
                 //an error occured - rollback transaction and release all table locks
                 this.dbDriverManager.rollbackTransaction(statement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("PartnerAccessDB.getPartnerByQuery: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (configConnectionNoAutoCommit != null) {
@@ -303,18 +300,18 @@ public class PartnerAccessDB {
                     //an error occured - rollback transaction and release all locks
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (configConnectionNoAutoCommit != null) {
@@ -349,7 +346,7 @@ public class PartnerAccessDB {
                     + "contenttransferencoding=?,httpversion=?,"
                     + "maxpollfiles=?,partnercontact=?,partneraddress=?,algidentprotatt=?,"
                     + "enabledirpoll=?,useoauth2message=?,useoauth2mdn=?,"
-                    + "oauth2idmessage=?,oauth2idmdn=? "
+                    + "oauth2idmessage=?,oauth2idmdn=?,overwritelocalsecurity=? "
                     + "WHERE id=?");
             preparedStatement.setString(1, partner.getAS2Identification());
             preparedStatement.setString(2, partner.getName());
@@ -401,8 +398,9 @@ public class PartnerAccessDB {
             } else {
                 preparedStatement.setNull(40, Types.INTEGER);
             }
+            preparedStatement.setInt(41, partner.isOverwriteLocalStationSecurity()? 1 : 0);
             //where statement
-            preparedStatement.setInt(41, partner.getDBId());
+            preparedStatement.setInt(42, partner.getDBId());
             preparedStatement.executeUpdate();
             this.storeHTTPHeader(partner, configConnectionNoAutoCommit);
             this.certificateAccess.storePartnerCertificateInformationList(partner, configConnectionNoAutoCommit);
@@ -412,7 +410,7 @@ public class PartnerAccessDB {
                 try {
                     preparedStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -448,18 +446,18 @@ public class PartnerAccessDB {
                     //an error occured - rollback transaction and release all locks
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (configConnectionNoAutoCommit != null) {
@@ -501,7 +499,7 @@ public class PartnerAccessDB {
                 try {
                     preparedStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -537,18 +535,18 @@ public class PartnerAccessDB {
                     //an error occured - rollback transaction and release all locks
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (configConnectionNoAutoCommit != null) {
@@ -580,9 +578,9 @@ public class PartnerAccessDB {
                     + "notifysendenabled,notifyreceiveenabled,notifysendreceiveenabled,"
                     + "contenttransferencoding,httpversion,"
                     + "maxpollfiles,partnercontact,partneraddress,algidentprotatt,enabledirpoll,"
-                    + "useoauth2message,useoauth2mdn,oauth2idmessage,oauth2idmdn"
+                    + "useoauth2message,useoauth2mdn,oauth2idmessage,oauth2idmdn,overwritelocalsecurity"
                     + ")VALUES("
-                    + "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+                    + "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
             preparedStatement.setString(1, partner.getAS2Identification());
             preparedStatement.setString(2, partner.getName());
             preparedStatement.setInt(3, partner.isLocalStation() ? 1 : 0);
@@ -633,6 +631,7 @@ public class PartnerAccessDB {
             } else {
                 preparedStatement.setNull(40, Types.INTEGER);
             }
+            preparedStatement.setInt(41, partner.isOverwriteLocalStationSecurity()? 1 : 0);
             preparedStatement.executeUpdate();
             partner.setDBId(this.getDBIdForPartner(partner.getAS2Identification(), configConnectionNoAutoCommit));
             this.storeHTTPHeader(partner, configConnectionNoAutoCommit);
@@ -644,7 +643,7 @@ public class PartnerAccessDB {
                     preparedStatement.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerAccessDB.insertPartner: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
 
@@ -677,14 +676,14 @@ public class PartnerAccessDB {
                     result.close();
                 } catch (Exception e) {
                     this.logger.severe("PartnerAccessDB.getDBIdForPartner: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -697,6 +696,9 @@ public class PartnerAccessDB {
      * @return null if the partner does not exist
      */
     public Partner getPartner(String as2ident) {
+        if( as2ident == null ){
+            return( null );
+        }
         return (this.getPartnerByAS2Id(as2ident, DATA_COMPLETENESS_FULL));
     }
 
@@ -706,6 +708,9 @@ public class PartnerAccessDB {
      * @return null if the partner does not exist
      */
     public Partner getPartnerByAS2Id(String as2ident, int dataCompleteness) {
+        if( as2ident == null ){
+            return( null );
+        }
         String query = "SELECT * FROM partner WHERE as2ident=?";
         List<Partner> partner = this.getPartnerByQuery(query, as2ident, dataCompleteness);
         if (partner == null || partner.isEmpty()) {
@@ -765,14 +770,14 @@ public class PartnerAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -792,7 +797,7 @@ public class PartnerAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -820,7 +825,7 @@ public class PartnerAccessDB {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }

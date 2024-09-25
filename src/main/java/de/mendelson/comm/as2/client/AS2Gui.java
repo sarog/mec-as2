@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 43    2/01/23 16:47 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 46    29/11/23 14:46 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.httpconfig.gui.JDialogDisplayHTTPConfiguration;
@@ -71,12 +71,17 @@ import de.mendelson.util.clientserver.messages.ServerInfo;
 import de.mendelson.util.log.LogFormatter;
 import de.mendelson.util.log.LogFormatterAS2;
 import de.mendelson.util.log.panel.LogConsolePanel;
+import de.mendelson.util.modulelock.AllowConfigurationModificationCallback;
+import de.mendelson.util.modulelock.LockClientInformation;
+import de.mendelson.util.modulelock.LockRefreshThread;
 import de.mendelson.util.modulelock.ModuleLock;
+import de.mendelson.util.modulelock.message.ModuleLockRequest;
+import de.mendelson.util.modulelock.message.ModuleLockResponse;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.DefaultKeyCopyHandler;
 import de.mendelson.util.security.cert.KeyCopyHandler;
 import de.mendelson.util.security.cert.KeystoreStorage;
-import de.mendelson.util.security.cert.KeystoreStorageImplFile;
+import de.mendelson.util.security.cert.clientserver.KeyCopyRequest;
 import de.mendelson.util.security.cert.clientserver.KeystoreStorageImplClientServer;
 import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import de.mendelson.util.security.cert.gui.ResourceBundleCertificates;
@@ -172,7 +177,7 @@ import java.util.concurrent.ScheduledExecutorService;
  * Main GUI for the control of the mendelson AS2 server
  *
  * @author S.Heller
- * @version $Revision: 43 $
+ * @version $Revision: 46 $
  */
 public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorterListener,
         ClientsideMessageProcessor, MouseListener, PopupMenuListener, ModuleStarter,
@@ -189,69 +194,69 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     /**
      * Icons, multi resolution
      */
-    private static final MendelsonMultiResolutionImage ICON_DELETE
+    private static final MendelsonMultiResolutionImage IMAGE_DELETE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/delete.svg", IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage IMAGE_FILTER
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/filter.svg", IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage IMAGE_FILTER_ACTIVE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/filter_active.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_MESSAGE_DETAILS
+    private static final MendelsonMultiResolutionImage IMAGE_MESSAGE_DETAILS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/messagedetails.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_CERTIFICATE
+    private static final MendelsonMultiResolutionImage IMAGE_CERTIFICATE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_MANUAL_SEND
+    private static final MendelsonMultiResolutionImage IMAGE_MANUAL_SEND
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/send.svg",
                     IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_TOOLBAR * 2);
-    private static final MendelsonMultiResolutionImage ICON_PARTNER
+    private static final MendelsonMultiResolutionImage IMAGE_PARTNER
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/singlepartner.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_STOP
+    private static final MendelsonMultiResolutionImage IMAGE_STOP
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/stop.svg",
                     IMAGE_SIZE_TOOLBAR);
-    private static final MendelsonMultiResolutionImage ICON_COLUMN
+    private static final MendelsonMultiResolutionImage IMAGE_COLUMN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/tables/hideablecolumns/column.svg",
                     IMAGE_SIZE_TOOLBAR);
-    private static final MendelsonMultiResolutionImage ICON_LOG_SEARCH
+    private static final MendelsonMultiResolutionImage IMAGE_LOG_SEARCH
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/log/search/gui/magnifying_glass.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_PORTS
+    private static final MendelsonMultiResolutionImage IMAGE_PORTS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/httpconfig/gui/ports.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_EXIT
+    private static final MendelsonMultiResolutionImage IMAGE_EXIT
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/exit.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_PREFERENCES
+    private static final MendelsonMultiResolutionImage IMAGE_PREFERENCES
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/preferences.svg",
                     IMAGE_SIZE_MENU_ITEM);
     public static final MendelsonMultiResolutionImage IMAGE_PRODUCT_LOGO_WITH_TEXT
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/logo_open_source_with_text.svg",
-                    100, 180);
+                    100);
     private final static MendelsonMultiResolutionImage IMAGE_PRODUCT_LOGO
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/logo_open_source.svg",
                     16, 128);
-    private static final MendelsonMultiResolutionImage ICON_PENDING
+    private static final MendelsonMultiResolutionImage IMAGE_PENDING
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_pending.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_STOPPED
+    private static final MendelsonMultiResolutionImage IMAGE_STOPPED
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_stopped.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private static final MendelsonMultiResolutionImage ICON_FINISHED
+    private static final MendelsonMultiResolutionImage IMAGE_FINISHED
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_finished.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private final static MendelsonMultiResolutionImage ICON_HIDE
+    private final static MendelsonMultiResolutionImage IMAGE_HIDE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/hide.svg",
                     IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2,
                     SVGScalingOption.KEEP_HEIGHT);
-    private final static MendelsonMultiResolutionImage ICON_SYSINFO
+    private final static MendelsonMultiResolutionImage IMAGE_SYSINFO
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/sysinfo.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private final static MendelsonMultiResolutionImage ICON_CEM
+    private final static MendelsonMultiResolutionImage IMAGE_CEM
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg",
                     IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage IMAGE_NEW_VERSION
@@ -259,23 +264,22 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     private final static MendelsonMultiResolutionImage IMAGE_HOURGLASS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/hourglass.svg",
                     IMAGE_SIZE_MENU_ITEM,
-                    IMAGE_SIZE_TOOLBAR * 2);
-    private static final MendelsonMultiResolutionImage IMAGE_PREFERENCES
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/preferences.svg",
-                    IMAGE_SIZE_MENU_ITEM,
-                    IMAGE_SIZE_TOOLBAR * 2);
-
+                    IMAGE_SIZE_TOOLBAR * 2);    
+    private static final MendelsonMultiResolutionImage IMAGE_SHOP
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/shop.svg",
+                    IMAGE_SIZE_MENU_ITEM);
+    
     /**
      * Preferences of the application
      */
-    private PreferencesAS2 clientPreferences = new PreferencesAS2();
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final PreferencesAS2 clientPreferences = new PreferencesAS2();
+    private final static Logger logger = Logger.getLogger("de.mendelson.as2.client");
     /**
      * Resourcebundle to localize the GUI
      */
-    private MecResourceBundle rb;
-    private MecResourceBundle rbCertGui;
-    private MecResourceBundle rbPreferences;
+    private final MecResourceBundle rb;
+    private final MecResourceBundle rbCertGui;
+    private final MecResourceBundle rbPreferences;
     /**
      * actual loaded helpset
      */
@@ -295,15 +299,15 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     /**
      * Host to connect to
      */
-    private String host;
-    private String username;
-    private String password;
+    private final String host;
+    private final String username;
+    private final String password;
     /**
      * Refresh thread for the transaction overview - schedules the refresh
      * requests
      */
-    private RefreshThread refreshThread = new RefreshThread();
-    private LogConsolePanel consolePanel;
+    private final RefreshThread refreshThread = new RefreshThread();
+    private final LogConsolePanel consolePanel;
     /**
      * This dialog is just hidden, never closed
      */
@@ -462,12 +466,11 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     "Convert flat files, EDIFACT, SAP IDos, VDA, inhouse formats? <a href='mailto:service@mendelson.de?subject=Please%20inform%20me%20about%20your%20converter%20solution'>Ask us</a> for the mendelson EDI converter.",
                     "For commercial support of this software please buy a license at <a href='http://mendelson-e-c.com/as2'>the mendelson AS2</a> website.",
                     "Have a look at the <a href='http://www.mendelson-e-c.com/mbi'>mendelson business integration</a> for a powerful EDI solution.",
-                    "The <a href='mailto:service@mendelson.de?subject=Please%20inform%20me%20about%20your%20RosettaNet%20solution'>mendelson RosettaNet solution</a> supports RNIF 1.1 and RNIF 2.0.",
                     "The <a href='http://www.mendelson-e-c.com/converter'>mendelson converter IDE</a> is the graphical mapper for the mendelson converter.",
                     "To process any XML data and convert it to EDIFACT, VDA, flat files, IDocs and inhouse formats use <a href='http://www.mendelson-e-c.com/converter'>the mendelson converter</a>.",
                     "To transmit your EDI data via HTTP/S please <a href='mailto:info@mendelson.de?subject=Please%20inform%20me%20about%20your%20HTTPS%20solution'>ask us</a> for the mendelson HTTPS solution.",
                     "If you have questions regarding this product please refer to the <a href='http://mendelson-e-c.com/forum'>mendelson community</a>.",
-                    "Looking for e-SENS AS4, ENTSOG AS4, Peppol AS4 or ebXML AS4 software? Try the <a href='http://mendelson-e-c.com/as4'>mendelson AS4</a> solution!",});
+                    "Looking for BDEW AS4, e-SENS AS4, ENTSOG AS4, Peppol AS4 or ebXML AS4 software? Try the <a href='http://mendelson-e-c.com/as4'>mendelson AS4</a> solution!",});
         this.initializeUINotification(displayMode);
         this.connect(new InetSocketAddress(host, clientServerCommPort), 5000);
         Runnable updateCheckThread = new Runnable() {
@@ -537,35 +540,36 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     private void setMultiresolutionIcons() {
         this.jButtonNewVersion.setIcon(new ImageIcon(IMAGE_NEW_VERSION.toMinResolution(18)));
         this.jButtonFilter.setIcon(new ImageIcon(IMAGE_FILTER.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jButtonDeleteMessage.setIcon(new ImageIcon(ICON_DELETE.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jMenuItemPopupDeleteMessage.setIcon(new ImageIcon(ICON_DELETE.toMinResolution(IMAGE_SIZE_POPUP)));
-        this.jButtonMessageDetails.setIcon(new ImageIcon(ICON_MESSAGE_DETAILS.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jMenuItemPopupMessageDetails.setIcon(new ImageIcon(ICON_MESSAGE_DETAILS.toMinResolution(IMAGE_SIZE_POPUP)));
-        this.jButtonCertificatesSignEncrypt.setIcon(new ImageIcon(ICON_CERTIFICATE.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jButtonCertificatesTLS.setIcon(new ImageIcon(ICON_CERTIFICATE.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jMenuItemCertificatesSSL.setIcon(new ImageIcon(ICON_CERTIFICATE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemCertificatesSignCrypt.setIcon(new ImageIcon(ICON_CERTIFICATE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuFileCertificates.setIcon(new ImageIcon(ICON_CERTIFICATE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemFileSend.setIcon(new ImageIcon(ICON_MANUAL_SEND.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemPopupSendAgain.setIcon(new ImageIcon(ICON_MANUAL_SEND.toMinResolution(IMAGE_SIZE_POPUP)));
-        this.jButtonPartner.setIcon(new ImageIcon(ICON_PARTNER.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jMenuItemPartner.setIcon(new ImageIcon(ICON_PARTNER.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemDatasheet.setIcon(new ImageIcon(ICON_PARTNER.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemSearchInServerLog.setIcon(new ImageIcon(ICON_LOG_SEARCH.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jToggleButtonStopRefresh.setIcon(new ImageIcon(ICON_STOP.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jButtonConfigureColumns.setIcon(new ImageIcon(ICON_COLUMN.toMinResolution(IMAGE_SIZE_TOOLBAR)));
-        this.jMenuItemHTTPServerInfo.setIcon(new ImageIcon(ICON_PORTS.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemFileExit.setIcon(new ImageIcon(ICON_EXIT.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jButtonDeleteMessage.setIcon(new ImageIcon(IMAGE_DELETE.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jMenuItemPopupDeleteMessage.setIcon(new ImageIcon(IMAGE_DELETE.toMinResolution(IMAGE_SIZE_POPUP)));
+        this.jButtonMessageDetails.setIcon(new ImageIcon(IMAGE_MESSAGE_DETAILS.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jMenuItemPopupMessageDetails.setIcon(new ImageIcon(IMAGE_MESSAGE_DETAILS.toMinResolution(IMAGE_SIZE_POPUP)));
+        this.jButtonCertificatesSignEncrypt.setIcon(new ImageIcon(IMAGE_CERTIFICATE.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jButtonCertificatesTLS.setIcon(new ImageIcon(IMAGE_CERTIFICATE.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jMenuItemCertificatesSSL.setIcon(new ImageIcon(IMAGE_CERTIFICATE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemCertificatesSignCrypt.setIcon(new ImageIcon(IMAGE_CERTIFICATE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuFileCertificates.setIcon(new ImageIcon(IMAGE_CERTIFICATE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemFileSend.setIcon(new ImageIcon(IMAGE_MANUAL_SEND.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemPopupSendAgain.setIcon(new ImageIcon(IMAGE_MANUAL_SEND.toMinResolution(IMAGE_SIZE_POPUP)));
+        this.jButtonPartner.setIcon(new ImageIcon(IMAGE_PARTNER.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jMenuItemPartner.setIcon(new ImageIcon(IMAGE_PARTNER.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemDatasheet.setIcon(new ImageIcon(IMAGE_PARTNER.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemSearchInServerLog.setIcon(new ImageIcon(IMAGE_LOG_SEARCH.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jToggleButtonStopRefresh.setIcon(new ImageIcon(IMAGE_STOP.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jButtonConfigureColumns.setIcon(new ImageIcon(IMAGE_COLUMN.toMinResolution(IMAGE_SIZE_TOOLBAR)));
+        this.jMenuItemHTTPServerInfo.setIcon(new ImageIcon(IMAGE_PORTS.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemFileExit.setIcon(new ImageIcon(IMAGE_EXIT.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
         this.jMenuItemHelpAbout.setIcon(new ImageIcon(IMAGE_PRODUCT_LOGO.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
         this.jMenuItemHelpSystem.setIcon(new ImageIcon(IMAGE_PRODUCT_LOGO.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemFilePreferences.setIcon(new ImageIcon(ICON_PREFERENCES.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jLabelFilterShowError.setIcon(new ImageIcon(ICON_STOPPED.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jLabelFilterShowOk.setIcon(new ImageIcon(ICON_FINISHED.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jLabelFilterShowPending.setIcon(new ImageIcon(ICON_PENDING.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jButtonHideFilter.setIcon(new ImageIcon(ICON_HIDE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemSystemEvents.setIcon(new ImageIcon(ICON_SYSINFO.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemCEMManager.setIcon(new ImageIcon(ICON_CEM.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
-        this.jMenuItemCEMSend.setIcon(new ImageIcon(ICON_CEM.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemFilePreferences.setIcon(new ImageIcon(IMAGE_PREFERENCES.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jLabelFilterShowError.setIcon(new ImageIcon(IMAGE_STOPPED.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jLabelFilterShowOk.setIcon(new ImageIcon(IMAGE_FINISHED.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jLabelFilterShowPending.setIcon(new ImageIcon(IMAGE_PENDING.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jButtonHideFilter.setIcon(new ImageIcon(IMAGE_HIDE.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemSystemEvents.setIcon(new ImageIcon(IMAGE_SYSINFO.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemCEMManager.setIcon(new ImageIcon(IMAGE_CEM.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jMenuItemCEMSend.setIcon(new ImageIcon(IMAGE_CEM.toMinResolution(IMAGE_SIZE_MENU_ITEM)));
+        this.jButtonShop.setIcon(new ImageIcon(IMAGE_SHOP.toMinResolution(IMAGE_SIZE_TOOLBAR)));
     }
 
     /**
@@ -637,7 +641,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
      *
      */
     private void initializeDesktopIntegration() {
-        //sets the applicatin icons in multiple resolutions
+        //sets the application icons in multiple resolutions
         this.setIconImages(IMAGE_PRODUCT_LOGO.getResolutionVariants());
         // Moves the main Menu Bar to where the Mac OS users expect it - this property is ignored on
         //other platforms
@@ -850,20 +854,15 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
 
     private void createDatasheet() {
         try {
-            PreferencesClient client = new PreferencesClient(this.getBaseClient());
-            char[] keystorePassEncSign = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-            String keystoreNameEncSign = client.get(PreferencesAS2.KEYSTORE);
-            char[] keystorePassSSL = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-            String keystoreNameSSL = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
-            KeystoreStorage storageEncSign = new KeystoreStorageImplFile(
-                    keystoreNameEncSign, keystorePassEncSign,
-                    KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
-                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+            KeystoreStorage storageEncSign = new KeystoreStorageImplClientServer(
+                    this.getBaseClient(),
+                    KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN,
+                    KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_PKCS12
             );
-            KeystoreStorage storageSSL = new KeystoreStorageImplFile(
-                    keystoreNameSSL, keystorePassSSL,
-                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
-                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+            KeystoreStorage storageSSL = new KeystoreStorageImplClientServer(
+                    this.getBaseClient(),
+                    KeystoreStorageImplClientServer.KEYSTORE_USAGE_SSL,
+                    KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_JKS
             );
             CertificateManager certificateManagerEncSign = new CertificateManager(this.getLogger());
             certificateManagerEncSign.loadKeystoreCertificates(storageEncSign);
@@ -1074,7 +1073,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                                         tempFile = AS2Tools.createTempFile(originalFilename, "");
                                         outStream = Files.newOutputStream(tempFile);
                                         inStream = response.getDataStream();
-                                        AS2Gui.this.copyStreams(inStream, outStream);
+                                        inStream.transferTo(outStream);
                                         outStream.flush();
                                     } catch (Throwable e) {
                                         AS2Gui.this.logger.severe(e.getMessage());
@@ -1131,7 +1130,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         };
         Executors.newSingleThreadExecutor().submit(runnable);
     }
-
 
     /**
      * The client received a message from the server
@@ -1203,26 +1201,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         }
     }
 
-    /**
-     * Copies all data from one stream to another
-     */
-    private void copyStreams(InputStream in, OutputStream out) throws IOException {
-        BufferedInputStream inStream = new BufferedInputStream(in);
-        BufferedOutputStream outStream = new BufferedOutputStream(out);
-        //copy the contents to an output stream
-        byte[] buffer = new byte[1024];
-        int read = 1024;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = inStream.read(buffer);
-            if (read > 0) {
-                outStream.write(buffer, 0, read);
-            }
-        }
-        outStream.flush();
-    }
-
     @Override
     public void displayCertificateManagerSSL(final String selectedAlias) {
         final String uniqueId = this.getClass().getName() + ".displayKeystoreManagerSSL." + System.currentTimeMillis();
@@ -1233,46 +1211,47 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 //display wait indicator
                 AS2Gui.this.as2StatusBar.startProgressIndeterminate(AS2Gui.this.rb.getResourceString("menu.file.certificate"), uniqueId);
                 try {
-                    //ask the server for the password
-                    PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
-                    char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-                    String filename = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
-                    dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), 
-                            AS2Gui.this, AS2Gui.this.rbCertGui.getResourceString("title.ssl"),
+                    AS2Gui.this.jMenuFileCertificates.setEnabled(false);
+                    AS2Gui.this.jButtonCertificatesSignEncrypt.setEnabled(false);
+                    AS2Gui.this.jButtonCertificatesTLS.setEnabled(false);
+                    dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this,
+                            AS2Gui.this.rbCertGui.getResourceString("title.ssl"),
                             AS2ServerVersion.getFullProductName(), false,
                             ModuleLock.MODULE_SSL_KEYSTORE, null);
                     dialog.setImageSizePopup(AS2Gui.IMAGE_SIZE_POPUP);
                     dialog.setSelectionByAlias(selectedAlias);
-                    KeystoreStorage storage = new KeystoreStorageImplFile(
-                            filename, keystorePass,
-                            KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
-                            KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+                    KeystoreStorage storage = new KeystoreStorageImplClientServer(
+                            AS2Gui.this.getBaseClient(),
+                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_SSL,
+                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_JKS
                     );
                     dialog.initialize(storage);
-                    char[] keystorePassTLS = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-                    String keystoreNameTLS = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);                    
                     KeyCopyHandler keycopyHandler = new DefaultKeyCopyHandler(
-                            AS2Gui.this.getBaseClient(), 
-                            keystoreNameTLS, keystorePassTLS, 
-                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_SSL,
-                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_JKS, 
-                            ModuleLock.MODULE_SSL_KEYSTORE);
+                            AS2Gui.this.getBaseClient(),
+                            KeyCopyRequest.KEYSTORE_USAGE_TLS,
+                            KeyCopyRequest.KEYSTORE_USAGE_ENC_SIGN,
+                            ModuleLock.MODULE_ENCSIGN_KEYSTORE);
                     dialog.setKeyCopyHandler(keycopyHandler);
                 } catch (Throwable e) {
                     e.printStackTrace();
-                    AS2Gui.this.getLogger().severe("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                    UINotification.instance().addNotification(e);
                 } finally {
                     AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                     if (dialog != null) {
                         dialog.setVisible(true);
                     }
+                    AS2Gui.this.jMenuFileCertificates.setEnabled(true);
+                    AS2Gui.this.jButtonCertificatesSignEncrypt.setEnabled(true);
+                    AS2Gui.this.jButtonCertificatesTLS.setEnabled(true);
                 }
             }
         };
-        Executors.newSingleThreadExecutor().submit(runnable);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(runnable);
+        executor.shutdown();
     }
 
-    @Override
+     @Override
     public void displayCertificateManagerEncSign(String selectedAlias) {
         final String uniqueId = this.getClass().getName() + ".displayKeystoreManagerSignEncrypt." + System.currentTimeMillis();
         Runnable runnable = new Runnable() {
@@ -1281,45 +1260,49 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 JDialogCertificates dialog = null;
                 //display wait indicator
                 AS2Gui.this.as2StatusBar.startProgressIndeterminate(AS2Gui.this.rb.getResourceString("menu.file.certificate"), uniqueId);
-                try {
-                    //ask the server for the password
-                    PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
-                    char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-                    String keystoreName = client.get(PreferencesAS2.KEYSTORE);
-                    dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this,
+                AS2Gui.this.jMenuFileCertificates.setEnabled(false);
+                AS2Gui.this.jButtonCertificatesSignEncrypt.setEnabled(false);
+                AS2Gui.this.jButtonCertificatesTLS.setEnabled(false);
+                try {                    
+                    dialog = new JDialogCertificates(AS2Gui.this, AS2Gui.this.getLogger(), AS2Gui.this, 
                             AS2Gui.this.rbCertGui.getResourceString("title.signencrypt"),
                             AS2ServerVersion.getFullProductName(), false,
                             ModuleLock.MODULE_ENCSIGN_KEYSTORE, null);
                     dialog.setImageSizePopup(AS2Gui.IMAGE_SIZE_POPUP);
-                    KeystoreStorage storage = new KeystoreStorageImplFile(
-                            keystoreName, keystorePass,
-                            KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
-                            KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+                    KeystoreStorage storage = new KeystoreStorageImplClientServer(
+                            AS2Gui.this.getBaseClient(),
+                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN,
+                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_PKCS12
                     );
                     dialog.initialize(storage);
-                    char[] keystorePassEncSign = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-                    String keystoreNameEncSign = client.get(PreferencesAS2.KEYSTORE);  
-                    KeyCopyHandler keycopyHandler = new DefaultKeyCopyHandler(
-                            AS2Gui.this.getBaseClient(), 
-                            keystoreNameEncSign, keystorePassEncSign, 
-                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN,
-                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_PKCS12, 
-                            ModuleLock.MODULE_ENCSIGN_KEYSTORE);
-                    dialog.setKeyCopyHandler(keycopyHandler);
                     CertificateUsedByPartnerChecker checker = new CertificateUsedByPartnerChecker(AS2Gui.this.getBaseClient());
                     dialog.addCertificateInUseChecker(checker);
+                    dialog.addAllowModificationCallback(new AllowConfigurationModificationCallback((JFrame) AS2Gui.this,
+                            AS2Gui.this.getBaseClient(),
+                            ModuleLock.MODULE_ENCSIGN_KEYSTORE, true));
+                    KeyCopyHandler keycopyHandler = new DefaultKeyCopyHandler(
+                            AS2Gui.this.getBaseClient(),                             
+                            KeyCopyRequest.KEYSTORE_USAGE_ENC_SIGN,
+                            KeyCopyRequest.KEYSTORE_USAGE_TLS,
+                            ModuleLock.MODULE_SSL_KEYSTORE);
+                    dialog.setKeyCopyHandler(keycopyHandler);
                 } catch (Throwable e) {
-                    AS2Gui.this.getLogger().severe("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                    UINotification.instance().addNotification(e);
                     e.printStackTrace();
                 } finally {
                     AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                     if (dialog != null) {
                         dialog.setVisible(true);
                     }
-                }
+                    AS2Gui.this.jMenuFileCertificates.setEnabled(true);
+                    AS2Gui.this.jButtonCertificatesSignEncrypt.setEnabled(true);
+                    AS2Gui.this.jButtonCertificatesTLS.setEnabled(true);
+                }                
             }
         };
-        Executors.newSingleThreadExecutor().submit(runnable);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(runnable);
+        executor.shutdown();
     }
 
     private void displayHelpSystem() {
@@ -1404,51 +1387,87 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 //display wait indicator
                 AS2Gui.this.as2StatusBar.startProgressIndeterminate(
                         AS2Gui.this.rb.getResourceString("menu.file.partner"), uniqueId);
+                //try to set an exclusive lock on this module
+                ModuleLockRequest request = new ModuleLockRequest(ModuleLock.MODULE_PARTNER, ModuleLockRequest.TYPE_SET);
+                ModuleLockResponse response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
+                boolean hasLock = response.wasSuccessful();
+                LockClientInformation lockKeeper = response.getLockKeeper();
+                LockRefreshThread lockRefresher = null;
                 try {
+                    AS2Gui.this.jButtonPartner.setEnabled(false);
+                    AS2Gui.this.jMenuItemPartner.setEnabled(false);
+                    if (hasLock) {
+                        lockRefresher = new LockRefreshThread(AS2Gui.this.getBaseClient(), ModuleLock.MODULE_PARTNER);
+                        ExecutorService executor = Executors.newSingleThreadExecutor();
+                        executor.submit(lockRefresher);
+                        executor.shutdown();
+                    }
                     PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
-                    CertificateManager certificateManagerEncSign = new CertificateManager(AS2Gui.this.logger);
-                    char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-                    String keystoreName = client.get(PreferencesAS2.KEYSTORE);
-                    KeystoreStorage storage = new KeystoreStorageImplFile(
-                            keystoreName, keystorePass,
-                            KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
-                            KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+                    CertificateManager certificateManagerEncSign = new CertificateManager(logger);
+                    KeystoreStorage storage = new KeystoreStorageImplClientServer(
+                            AS2Gui.this.getBaseClient(), 
+                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN,
+                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_PKCS12
                     );
                     certificateManagerEncSign.loadKeystoreCertificates(storage);
-                    CertificateManager certificateManagerSSL = new CertificateManager(AS2Gui.this.logger);
-                    keystorePass = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray();
-                    keystoreName = client.get(PreferencesAS2.KEYSTORE_HTTPS_SEND);
-                    storage = new KeystoreStorageImplFile(
-                            keystoreName, keystorePass,
-                            KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
-                            KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+                    CertificateManager certificateManagerSLL = new CertificateManager(AS2Gui.logger);                    
+                    storage = new KeystoreStorageImplClientServer(
+                            AS2Gui.this.getBaseClient(), 
+                            KeystoreStorageImplClientServer.KEYSTORE_USAGE_SSL,
+                            KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_JKS
                     );
-                    certificateManagerSSL.loadKeystoreCertificates(storage);
+                    certificateManagerSLL.loadKeystoreCertificates(storage);
                     PartnerSystemResponse systemresponse
                             = (PartnerSystemResponse) AS2Gui.this.getBaseClient().sendSync(
                                     new PartnerSystemRequest(PartnerSystemRequest.TYPE_LIST_ALL));
                     dialog = new JDialogPartnerConfig(AS2Gui.this,
                             AS2Gui.this,
-                            AS2Gui.this.as2StatusBar, true, null,
+                            AS2Gui.this.as2StatusBar, hasLock, lockKeeper,
                             certificateManagerEncSign,
-                            certificateManagerSSL, systemresponse.getPartnerSystems(),
+                            certificateManagerSLL, systemresponse.getPartnerSystems(),
                             "");
                     if (partnername != null) {
                         dialog.setPreselectedPartner(partnername);
                     }
-                    dialog.setDisplayNotificationPanel(false);
-                    dialog.setDisplayHttpHeaderPanel(false);
-                } catch (Exception e) {
+                    boolean showQuota = client.getBoolean(PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG);
+                    boolean displayHeader = client.getBoolean(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG);
+                    boolean displayOverwriteLocalStationSecuritySettings = client.getBoolean(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG);
+                    dialog.setDisplayOverwriteLocalstationSecurity(displayOverwriteLocalStationSecuritySettings);
+                    dialog.setDisplayNotificationPanel(showQuota);
+                    dialog.setDisplayHttpHeaderPanel(displayHeader);
+                    dialog.addAllowModificationCallback(new AllowConfigurationModificationCallback((JFrame) AS2Gui.this,
+                            AS2Gui.this.getBaseClient(),
+                            ModuleLock.MODULE_PARTNER, hasLock));
+                } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
                     e.printStackTrace();
                 } finally {
                     AS2Gui.this.as2StatusBar.stopProgressIfExists(uniqueId);
                     if (dialog != null) {
-                        dialog.setVisible(true);
+                        try {
+                            dialog.setVisible(true);
+                        } catch (Throwable e) {
+                            UINotification.instance().addNotification(e);
+                            e.printStackTrace();
+                        }
                     }
+                    //we had the lock: stop the refresher thread and release the lock. If this doesnt work somehow because the connection is lost
+                    //there is a watchdog in the server that will kill locks that are not refreshed for some time
+                    if (hasLock) {
+                        if (lockRefresher != null) {
+                            lockRefresher.pleaseStop();
+                        }
+                        request = new ModuleLockRequest(ModuleLock.MODULE_PARTNER, ModuleLockRequest.TYPE_RELEASE);
+                        response = (ModuleLockResponse) AS2Gui.this.getBaseClient().sendSync(request);
+                    }
+                    AS2Gui.this.jButtonPartner.setEnabled(true);
+                    AS2Gui.this.jMenuItemPartner.setEnabled(true);
                 }
             }
         };
-        Executors.newSingleThreadExecutor().submit(runnable);
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(runnable);
+        executor.shutdown();
     }
 
     /**
@@ -1466,6 +1485,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         jSeparator9 = new javax.swing.JPopupMenu.Separator();
         jMenuItemPopupDeleteMessage = new javax.swing.JMenuItem();
         jToolBar = new javax.swing.JToolBar();
+        jButtonShop = new javax.swing.JButton();
         jButtonPartner = new javax.swing.JButton();
         jButtonCertificatesSignEncrypt = new javax.swing.JButton();
         jButtonCertificatesTLS = new javax.swing.JButton();
@@ -1569,6 +1589,18 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
 
         jToolBar.setFloatable(false);
         jToolBar.setRollover(true);
+
+        jButtonShop.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image24x24.gif"))); // NOI18N
+        jButtonShop.setText(this.rb.getResourceString( "buy.license"));
+        jButtonShop.setFocusable(false);
+        jButtonShop.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonShop.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonShop.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonShopActionPerformed(evt);
+            }
+        });
+        jToolBar.add(jButtonShop);
 
         jButtonPartner.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/client/missing_image24x24.gif"))); // NOI18N
         jButtonPartner.setText(this.rb.getResourceString( "menu.file.partner" ));
@@ -2260,40 +2292,35 @@ private void jComboBoxFilterDirectionActionPerformed(java.awt.event.ActionEvent 
 
 private void jMenuItemCEMManagerActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemCEMManagerActionPerformed
     try {
-        PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
-        CertificateManager certificateManagerEncSign = new CertificateManager(AS2Gui.this.logger);
-        char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-        String keystoreName = client.get(PreferencesAS2.KEYSTORE);
-        KeystoreStorage storage = new KeystoreStorageImplFile(
-                keystoreName, keystorePass,
-                KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
-                KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+        CertificateManager certificateManagerEncSign = new CertificateManager(logger);
+        KeystoreStorage storage = new KeystoreStorageImplClientServer(
+                AS2Gui.this.getBaseClient(), 
+                KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN,
+                KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_PKCS12
         );
         certificateManagerEncSign.loadKeystoreCertificates(storage);
         DialogCEMOverview cemOverview = new DialogCEMOverview(this, (GUIClient) this,
                 certificateManagerEncSign, this.consolePanel.getHandler());
         cemOverview.setVisible(true);
     } catch (Exception e) {
-        this.logger.severe("[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+        logger.severe("[" + e.getClass().getSimpleName() + "] " + e.getMessage());
     }
 }//GEN-LAST:event_jMenuItemCEMManagerActionPerformed
 
 private void jMenuItemCEMSendActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemCEMSendActionPerformed
     try {
         PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
-        CertificateManager certificateManagerEncSign = new CertificateManager(AS2Gui.this.logger);
-        char[] keystorePass = client.get(PreferencesAS2.KEYSTORE_PASS).toCharArray();
-        String keystoreName = client.get(PreferencesAS2.KEYSTORE);
-        KeystoreStorage storage = new KeystoreStorageImplFile(
-                keystoreName, keystorePass,
-                KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN,
-                KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_PKCS12
+        CertificateManager certificateManagerEncSign = new CertificateManager(logger);
+        KeystoreStorage storage = new KeystoreStorageImplClientServer(
+                AS2Gui.this.getBaseClient(), 
+                KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN,
+                KeystoreStorageImplClientServer.KEYSTORE_STORAGE_TYPE_PKCS12
         );
         certificateManagerEncSign.loadKeystoreCertificates(storage);
         DialogSendCEM dialog = new DialogSendCEM(this, certificateManagerEncSign, this.getBaseClient());
         dialog.setVisible(true);
     } catch (Exception e) {
-        this.logger.severe("[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+        logger.severe("[" + e.getClass().getSimpleName() + "] " + e.getMessage());
     }
 }//GEN-LAST:event_jMenuItemCEMSendActionPerformed
 
@@ -2349,6 +2376,17 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
         }
     }//GEN-LAST:event_jButtonNewVersionActionPerformed
 
+    private void jButtonShopActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonShopActionPerformed
+        try {
+            URI uri = new URI("https://shop.mendelson-e-c.com/buyas2professional");
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().browse(uri);
+            }
+        } catch (Exception e) {
+            this.getLogger().severe(e.getMessage());
+        }
+    }//GEN-LAST:event_jButtonShopActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private de.mendelson.comm.as2.client.AS2StatusBar as2StatusBar;
     private de.mendelson.comm.as2.client.BrowserLinkedPanel browserLinkedPanel;
@@ -2361,6 +2399,7 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
     private javax.swing.JButton jButtonMessageDetails;
     private javax.swing.JButton jButtonNewVersion;
     private javax.swing.JButton jButtonPartner;
+    private javax.swing.JButton jButtonShop;
     private javax.swing.JCheckBox jCheckBoxFilterShowOk;
     private javax.swing.JCheckBox jCheckBoxFilterShowPending;
     private javax.swing.JCheckBox jCheckBoxFilterShowStopped;

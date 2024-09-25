@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventAccessDB.java 8     29/11/22 10:07 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventAccessDB.java 11    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -24,14 +24,14 @@ import java.util.logging.Logger;
  * Access the partner events in the database
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 11 $
  */
 public class PartnerEventAccessDB {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
 
     public PartnerEventAccessDB() {
     }
@@ -63,14 +63,14 @@ public class PartnerEventAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -96,7 +96,6 @@ public class PartnerEventAccessDB {
     /**
      * Serializes a list to a single string
      *
-     * @param list
      * @return
      */
     private List<String> deserializeList(String entry) {
@@ -161,7 +160,7 @@ public class PartnerEventAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -184,7 +183,7 @@ public class PartnerEventAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

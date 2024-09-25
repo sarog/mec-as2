@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MessageAccessDB.java 142   9/12/22 14:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MessageAccessDB.java 148   2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -32,21 +32,20 @@ import java.util.logging.Logger;
  * Implementation of a server log for the as2 server database
  *
  * @author S.Heller
- * @version $Revision: 142 $
+ * @version $Revision: 148 $
  */
 public class MessageAccessDB {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
     private final IDBDriverManager dbDriverManager;
 
     /**
      * Creates new message I/O log and connects to localhost
      *
-     * @param host host to connect to
      */
     public MessageAccessDB(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
@@ -71,27 +70,27 @@ public class MessageAccessDB {
                     counter = result.getInt("messagecount");
                 }
             } catch (Exception e) {
-                this.logger.severe("MessageAccessDB.getMessageCount(state): " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("MessageAccessDB.getMessageCount(state): " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("MessageAccessDB.getMessageCount(state): " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.getMessageCount(state): " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -121,27 +120,27 @@ public class MessageAccessDB {
                     counter = result.getInt("messagecount");
                 }
             } catch (Exception e) {
-                this.logger.severe("getMessageCount: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("getMessageCount: " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("MessageAccessDB.getMessageCount: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.getMessageCount: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -178,27 +177,27 @@ public class MessageAccessDB {
                     state = result.getInt("state");
                 }
             } catch (Exception e) {
-                this.logger.severe("getMessageState: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("getMessageState: " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 try {
                     if (result != null) {
                         result.close();
                     }
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
                 try {
                     if (statement != null) {
                         statement.close();
                     }
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("MessageAccessDB.getMessageState: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.getMessageState: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -229,12 +228,12 @@ public class MessageAccessDB {
                 try {
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
@@ -247,7 +246,7 @@ public class MessageAccessDB {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
@@ -257,7 +256,6 @@ public class MessageAccessDB {
      * Sets the corresponding message status to the new value. This will change
      * the state in any case without any check
      *
-     * @param state one of the states defined in the class AS2Message
      */
     private void setMessageState(Connection runtimeConnectionNoAutoCommit,
             String messageId, int fromState, int toState) throws Exception {
@@ -274,7 +272,7 @@ public class MessageAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -284,11 +282,10 @@ public class MessageAccessDB {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
-                    SystemEventManagerImplAS2 eventManager = new SystemEventManagerImplAS2();
                     try {
-                        eventManager.newEventTransactionError(messageId, dbDriverManager);
+                        SystemEventManagerImplAS2.instance().newEventTransactionError(messageId, dbDriverManager);
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e);
+                        SystemEventManagerImplAS2.instance().systemFailure(e);
                     }
                 }
             };
@@ -342,27 +339,27 @@ public class MessageAccessDB {
                     payloadList.add(payload);
                 }
             } catch (Exception e) {
-                this.logger.severe("MessageAccessDB.getPayload: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("MessageAccessDB.getPayload: " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("MessageAccessDB.getPayload: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.getPayload: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -413,29 +410,29 @@ public class MessageAccessDB {
                     return (result.getString("messageid"));
                 }
             } catch (Exception e) {
-                this.logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
                 return (null);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        logger.severe("MessageAccessDB.getMessageIdByUserdefinedId: " + e.getMessage());
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -490,32 +487,32 @@ public class MessageAccessDB {
                     return (info);
                 }
             } catch (Exception e) {
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
                 return (null);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
                     runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -572,33 +569,33 @@ public class MessageAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            this.logger.severe("MessageAccessDB.getMessageOverview(messageid): " + e.getMessage());
+            logger.severe("MessageAccessDB.getMessageOverview(messageid): " + e.getMessage());
             e.printStackTrace();
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, selectStatement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, selectStatement);
         } finally {
             if (result != null) {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.getMessageOverview(messageid): " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.getMessageOverview(messageid): " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (selectStatement != null) {
                 try {
                     selectStatement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.getMessageOverview(messageid): " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.getMessageOverview(messageid): " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -767,28 +764,28 @@ public class MessageAccessDB {
                     messageList.add(0, info);
                 }
             } catch (Exception e) {
-                this.logger.severe("MessageAccessDB.getMessageOverview(filter): " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("MessageAccessDB.getMessageOverview(filter): " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessageOverview(filter): " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        logger.severe("MessageAccessDB.getMessageOverview(filter): " + e.getMessage());
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessageOverview(filter): " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        logger.severe("MessageAccessDB.getMessageOverview(filter): " + e.getMessage());
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -844,16 +841,16 @@ public class MessageAccessDB {
                 try {
                     result.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.getRawFilenamesToDelete: " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.getRawFilenamesToDelete: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.getRawFilenamesToDelete: " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -927,35 +924,35 @@ public class MessageAccessDB {
                 try {
                     mdnDeleteStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (payload1DeleteStatement != null) {
                 try {
                     payload1DeleteStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (payload2DeleteStatement != null) {
                 try {
                     payload1DeleteStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (message1DeleteStatement != null) {
                 try {
                     message1DeleteStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (message2DeleteStatement != null) {
                 try {
                     message2DeleteStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -992,23 +989,23 @@ public class MessageAccessDB {
                 //an error occured - rollback transaction and release all table locks
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            this.logger.severe("MessageAccessDB.deleteMessage: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.deleteMessage: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1042,25 +1039,25 @@ public class MessageAccessDB {
                 try {
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
@@ -1083,7 +1080,7 @@ public class MessageAccessDB {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1096,13 +1093,13 @@ public class MessageAccessDB {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             this.updateFilenamesAsTransaction(runtimeConnectionNoAutoCommit, info);
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         } finally {
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
@@ -1131,23 +1128,23 @@ public class MessageAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            this.logger.severe("MessageAccessDB.updateFilenames: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            logger.severe("MessageAccessDB.updateFilenames: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1160,13 +1157,13 @@ public class MessageAccessDB {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             this.updateSubjectAsTransaction(runtimeConnectionNoAutoCommit, info);
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         } finally {
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
@@ -1193,24 +1190,24 @@ public class MessageAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            this.logger.severe("MessageAccessDB.updateSubject: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            logger.severe("MessageAccessDB.updateSubject: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.updateSubject: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.updateSubject: " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1234,31 +1231,38 @@ public class MessageAccessDB {
                 try {
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                this.logger.severe("MessageAccessDB.incResendCounter: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                logger.severe("MessageAccessDB.incResendCounter: " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
     }
 
+    /**
+     * Requires a INSERT/UPDATE lock on the table messages
+     *
+     * @param runtimeConnectionNoAutoCommit
+     * @param messageId
+     * @throws Exception
+     */
     private void incResendCounter(Connection runtimeConnectionNoAutoCommit, String messageId) throws Exception {
         PreparedStatement statementUpdate = null;
         PreparedStatement statementSelect = null;
@@ -1279,25 +1283,13 @@ public class MessageAccessDB {
             statementUpdate.executeUpdate();
         } finally {
             if (result != null) {
-                try {
-                    result.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
+                result.close();
             }
             if (statementSelect != null) {
-                try {
-                    statementSelect.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
+                statementSelect.close();
             }
             if (statementUpdate != null) {
-                try {
-                    statementUpdate.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
+                statementUpdate.close();
             }
         }
     }
@@ -1329,16 +1321,16 @@ public class MessageAccessDB {
                 //an error occured - rollback transaction and release all table locks
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            this.logger.severe("MessageAccessDB.insertPayloads: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.insertPayloads: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
@@ -1354,6 +1346,7 @@ public class MessageAccessDB {
     /**
      * Writes the payload and original filenames to the database, deleting all
      * entries first (only if a payload has been passed)
+     * This needs a DELETE lock on the table payload
      */
     private void insertPayloads(String messageId, List<AS2Payload> payloadList,
             Connection runtimeConnectionNoAutoCommit) throws Exception {
@@ -1384,8 +1377,8 @@ public class MessageAccessDB {
                         try {
                             statementInsert.close();
                         } catch (Exception e) {
-                            this.logger.severe("MessageAccessDB.insertPayload: " + e.getMessage());
-                            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                            logger.severe("MessageAccessDB.insertPayload: " + e.getMessage());
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                         }
                     }
                 }
@@ -1395,8 +1388,8 @@ public class MessageAccessDB {
                 try {
                     statementDelete.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.insertPayload: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.insertPayload: " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1406,7 +1399,6 @@ public class MessageAccessDB {
      * Initializes or updates a messages in the database. If the message id
      * already exists it is updated
      *
-     * @param message
      */
     public void initializeOrUpdateMessage(AS2MessageInfo info) {
         Statement transactionStatement = null;
@@ -1432,18 +1424,18 @@ public class MessageAccessDB {
                     //an error occured - rollback transaction and release all table locks
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
@@ -1503,8 +1495,8 @@ public class MessageAccessDB {
                 try {
                     preparedStatement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.initializeMessage: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.initializeMessage: " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1513,7 +1505,7 @@ public class MessageAccessDB {
     /**
      * Updates an existing message in the database and returns a value != 0 if
      * this was successful - means the message id did already exist and has been
-     * updated
+     * updated. This needs a DELETE lock on the table payload and messages
      */
     private int updateMessage(AS2MessageInfo info, Connection runtimeConnectionNoAutoCommit) throws Exception {
         PreparedStatement preparedStatement = null;
@@ -1562,8 +1554,9 @@ public class MessageAccessDB {
                 try {
                     preparedStatement.close();
                 } catch (Exception e) {
-                    this.logger.severe("MessageAccessDB.updateMessage: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    logger.severe("MessageAccessDB.updateMessage: "
+                            + "[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -1573,8 +1566,6 @@ public class MessageAccessDB {
     /**
      * Returns a list of all messages that are older than the passed timestamp
      *
-     * @param state pass -1 for any state else only messages of the requested
-     * state are returned
      */
     public List<AS2MessageInfo> getMessagesSendOlderThan(long yourCurrentTimezoneTime) {
         List<AS2MessageInfo> messageList = new ArrayList<AS2MessageInfo>();
@@ -1616,35 +1607,34 @@ public class MessageAccessDB {
                     messageList.add(info);
                 }
             } catch (Exception e) {
-                this.logger.severe("MessageAccessDB.getMessagesSendOlderThan: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("MessageAccessDB.getMessagesSendOlderThan: "
+                        + "[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+                e.printStackTrace();
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessagesSendOlderThan: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessagesSendOlderThan: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("MessageAccessDB.getMessagesSendOlderThan: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.getMessagesSendOlderThan: "
+                    + "[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+            e.printStackTrace();
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
                     runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    //nop
                 }
             }
         }
@@ -1699,29 +1689,29 @@ public class MessageAccessDB {
                     messageList.add(info);
                 }
             } catch (Exception e) {
-                this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                logger.severe("MessageAccessDB.getMessagesSendOlderThan: "
+                        + "[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+                e.printStackTrace();
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("MessageAccessDB.getMessagesOlderThan: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.getMessagesSendOlderThan: "
+                    + "[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+            e.printStackTrace();
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -1782,29 +1772,29 @@ public class MessageAccessDB {
                     messageList.add(info);
                 }
             } catch (Exception e) {
-                this.logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        this.logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            logger.severe("MessageAccessDB.getMessagesYoungerThan: " + e.getMessage());
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {

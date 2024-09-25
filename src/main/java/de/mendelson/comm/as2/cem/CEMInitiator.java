@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 41    15/11/22 9:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 44    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -28,7 +28,7 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.sql.Connection;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -48,26 +48,25 @@ import java.util.logging.Logger;
  * Initiates a CEM request
  *
  * @author S.Heller
- * @version $Revision: 41 $
+ * @version $Revision: 44 $
  */
 public class CEMInitiator {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * Stores the certificates
      */
-    private CertificateManager certificateManagerEncSign;
-    private IDBDriverManager dbDriverManager;
-    private PartnerAccessDB partnerAccess;
-    private MecResourceBundle rb;
+    private final CertificateManager certificateManagerEncSign;
+    private final IDBDriverManager dbDriverManager;
+    private final PartnerAccessDB partnerAccess;
+    private final MecResourceBundle rb;
 
     /**
      * Creates new message I/O log and connects to localhost
      *
-     * @param host host to connect to
      */
     public CEMInitiator(IDBDriverManager dbDriverManager, CertificateManager certificateManagerEncSign) {
         //load resource bundle
@@ -195,9 +194,11 @@ public class CEMInitiator {
             throws Exception {
         KeyStoreUtil util = new KeyStoreUtil();
         String tempDir = System.getProperty("java.io.tmpdir");
-        Path[] exportFile = util.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
-                certificate.getAlias(), tempDir + certContentId + ".p7c");
-        return (exportFile[0]);
+        byte[] exportData = util.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
+                certificate.getAlias());
+        Path exportFile = Paths.get(tempDir, certContentId + ".p7c" );
+        Files.write(exportFile, exportData);        
+        return (exportFile);
     }
 
     private Path storeRequest(EDIINTCertificateExchangeRequest request) throws Exception {

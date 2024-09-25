@@ -1,11 +1,10 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationAccessDBImplAS2.java 11    13/10/22 11:16 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationAccessDBImplAS2.java 17    2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.oauth2.OAuth2AccessDB;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.systemevents.SystemEvent;
-import de.mendelson.util.systemevents.SystemEventManager;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,12 +23,11 @@ import java.sql.Types;
  * Stores the notification data for the AS2
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 17 $
  */
 public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
 
-    private final IDBDriverManager dbDriverManager;
-    private final static SystemEventManager systemEventManager = new SystemEventManagerImplAS2();
+    private final IDBDriverManager dbDriverManager;    
 
     public NotificationAccessDBImplAS2(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
@@ -72,16 +70,21 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
                     data.setNotifyPostprocessingProblem(result.getInt("notifypostprocessing") == 1 ? true : false);
                     int oAuth2Id = result.getInt("smtpoauth2id");
                     if (!result.wasNull()) {
-                        OAuth2AccessDB oauth2Access = new OAuth2AccessDB(this.dbDriverManager, systemEventManager);
+                        OAuth2AccessDB oauth2Access = new OAuth2AccessDB(this.dbDriverManager, SystemEventManagerImplAS2.instance());
                         OAuth2Config config = oauth2Access.getOAuth2Config(oAuth2Id, configConnectionAutoCommit);
                         if (config != null) {
                             data.setOAuth2Config(config);
+                        } else {
+                            data.setUsesSMTPAuthOAuth2(false);
                         }
+                    } else {
+                        data.setUsesSMTPAuthOAuth2(false);
                     }
+                    data.setNotifyClientServerProblem(result.getInt("notifyclientserver") == 1 ? true : false);
                     return (data);
                 }
             } catch (Exception e) {
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
                 e.printStackTrace();
                 return (null);
             } finally {
@@ -89,25 +92,25 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
                     try {
                         result.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (configConnectionAutoCommit != null) {
                 try {
                     configConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -131,16 +134,16 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
             this.dbDriverManager.startTransaction(transactionStatement, transactionName);
             this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
                     new String[]{
-                        "oauth2","notification"});
+                        "oauth2", "notification"});
             if (data.getOAuth2Config() != null) {
-                OAuth2AccessDB oauth2Access = new OAuth2AccessDB(this.dbDriverManager, systemEventManager);
+                OAuth2AccessDB oauth2Access = new OAuth2AccessDB(this.dbDriverManager, SystemEventManagerImplAS2.instance());
                 oauth2Access.insertOrUpdateOAuth2(data.getOAuth2Config(), configConnectionNoAutoCommit);
             }
             statement = configConnectionNoAutoCommit.prepareStatement(
                     "UPDATE notification SET mailhost=?,mailhostport=?,notificationemailaddress=?,"
                     + "notifycertexpire=?,notifytransactionerror=?,notifycem=?,notifysystemfailure=?,replyto=?,usesmtpauth=?,"
                     + "smtpauthuser=?,smtpauthpass=?,notifyresend=?,security=?,maxnotificationspermin=?,notifyconnectionproblem=?,"
-                    + "notifypostprocessing=?,usesmtpoauth2=?,smtpoauth2id=?");
+                    + "notifypostprocessing=?,usesmtpoauth2=?,smtpoauth2id=?,notifyclientserver=?");
             statement.setString(1, data.getMailServer());
             statement.setInt(2, data.getMailServerPort());
             statement.setString(3, data.getNotificationMail());
@@ -166,40 +169,41 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
             statement.setInt(15, data.notifyConnectionProblem() ? 1 : 0);
             statement.setInt(16, data.notifyPostprocessingProblem() ? 1 : 0);
             statement.setInt(17, data.usesSMTPAuthOAuth2() ? 1 : 0);
-            if( data.getOAuth2Config() != null ){
+            if (data.getOAuth2Config() != null) {
                 statement.setInt(18, data.getOAuth2Config().getDBId());
-            }else{
+            } else {
                 statement.setNull(18, Types.INTEGER);
             }
+            statement.setInt(19, data.notifyClientServerProblem() ? 1 : 0);
             statement.executeUpdate();
             this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
         } catch (Exception e) {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (configConnectionNoAutoCommit != null) {
                 try {
                     configConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

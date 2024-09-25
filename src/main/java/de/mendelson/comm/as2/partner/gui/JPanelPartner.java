@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JPanelPartner.java 178   19/01/23 11:08 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JPanelPartner.java 192   20/12/23 14:12 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -6,7 +6,6 @@ import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.client.AS2StatusBar;
 import de.mendelson.util.security.signature.ListCellRendererSignature;
 import de.mendelson.comm.as2.message.AS2Message;
-import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
@@ -19,9 +18,11 @@ import de.mendelson.comm.as2.partner.gui.event.ResourceBundlePartnerEvent;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.send.HttpConnectionParameter;
 import de.mendelson.comm.as2.server.ServerPlugins;
+import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.TextOverlay;
+import de.mendelson.util.balloontip.JPanelUIHelpLabel;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewRequest;
 import de.mendelson.util.clientserver.clients.filesystemview.FileSystemViewResponse;
@@ -32,6 +33,7 @@ import de.mendelson.util.clientserver.connectiontest.clientserver.ConnectionTest
 import de.mendelson.util.clientserver.connectiontest.gui.JDialogConnectionTestResult;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.oauth2.gui.JDialogOAuth2Config;
+import de.mendelson.util.oauth2.gui.JDialogOAuth2ConfigClientCredentials;
 import de.mendelson.util.passwordfield.PasswordOverlay;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -87,7 +89,7 @@ import javax.swing.text.AbstractDocument;
  * Panel to edit a single partner
  *
  * @author S.Heller
- * @version $Revision: 178 $
+ * @version $Revision: 192 $
  */
 public class JPanelPartner extends JPanel {
 
@@ -103,16 +105,16 @@ public class JPanelPartner extends JPanel {
      */
     private Partner partner = null;
     private DefaultMutableTreeNode partnerNode = null;
-    private JTreePartner tree = null;
+    private final JTreePartner tree;
     private final CertificateManager certificateManagerEncSign;
     private final CertificateManager certificateManagerSSL;
     private JButtonPartnerConfigOk buttonOk = null;
     private final PreferencesClient preferences;
-    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private boolean displayNotificationPanel = false;
     private boolean displayHttpHeaderPanel = false;
-    private BaseClient baseClient;
-    private AS2StatusBar statusbar;
+    private boolean displayOverwriteLocalstationSecurity = false;
+    private final BaseClient baseClient;
+    private final AS2StatusBar statusbar;
     private String serverSideFileSeparator = "/";
     private String serverSideMessageDirectoryAbsolute = "messages";
     /**
@@ -125,13 +127,13 @@ public class JPanelPartner extends JPanel {
     private Component lastSelectedPanel = null;
 
     private final static MendelsonMultiResolutionImage IMAGE_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", 24);
     private final static MendelsonMultiResolutionImage IMAGE_ADD
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", 24);
     private final static MendelsonMultiResolutionImage IMAGE_EDIT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/event/edit.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/event/edit.svg", 24);
     private final static MendelsonMultiResolutionImage IMAGE_TESTCONNECTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/testconnection.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/testconnection.svg", 24);
     private final static MendelsonMultiResolutionImage IMAGE_SYNC_MDN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/sync_mdn.svg", 90, 130);
     private final static MendelsonMultiResolutionImage IMAGE_ASYNC_MDN
@@ -140,13 +142,13 @@ public class JPanelPartner extends JPanel {
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/oauth2/gui/oauth2.svg", 24);
 
     private final String activatedPlugins;
-    
+
     /**
      * Creates new form JPanelFunctionGraph
      */
     public JPanelPartner(BaseClient baseClient, JTreePartner tree,
             CertificateManager certificateManagerEncSign,
-            CertificateManager certificateManagerSSL,
+            CertificateManager certificateManagerTLS,
             JButtonPartnerConfigOk buttonOk,
             AS2StatusBar statusbar, boolean changesAllowed,
             List<PartnerSystem> partnerSystemList, String activatedPlugins) {
@@ -178,7 +180,7 @@ public class JPanelPartner extends JPanel {
         PasswordOverlay.addTo(this.jPasswordFieldHttpPassAsyncMDN);
         this.setMultiresolutionIcons();
         this.initializeHelp();
-        this.buttonOk.initialize(tree, this.jTextFieldName, this.jTextFieldId, this.jTextFieldURL, this.jTextFieldMDNURL,
+        this.buttonOk.initialize(tree, this.jTextFieldName, this.jTextFieldId, this.jTextFieldReceiptURL, this.jTextFieldMDNURL,
                 changesAllowed);
         //some disabled checkboxes should still have black text: wrapp their text in html tags
         this.jCheckBoxEdiintFeaturesCEM.setText("<html>" + this.jCheckBoxEdiintFeaturesCEM.getText() + "</html>");
@@ -192,7 +194,7 @@ public class JPanelPartner extends JPanel {
         this.jComboBoxHTTPProtocolVersion.addItem(HttpConnectionParameter.HTTP_1_0);
         this.jComboBoxHTTPProtocolVersion.addItem(HttpConnectionParameter.HTTP_1_1);
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.certificateManagerSSL = certificateManagerSSL;
+        this.certificateManagerSSL = certificateManagerTLS;
         this.jComboBoxSignType.setRenderer(new ListCellRendererSignature(this.jComboBoxSignType));
         this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_NONE)));
         this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_SHA1)));
@@ -236,9 +238,15 @@ public class JPanelPartner extends JPanel {
         Collections.sort(sortedEncSignCertificateList);
         this.jComboBoxSignCert.setRenderer(new ListCellRendererCertificates());
         this.jComboBoxCryptCert.setRenderer(new ListCellRendererCertificates());
+        this.jComboBoxOverwriteLocalStationCryptKey.setRenderer(new ListCellRendererCertificates());
+        this.jComboBoxOverwriteLocalstationSignKey.setRenderer(new ListCellRendererCertificates());
         for (KeystoreCertificate cert : sortedEncSignCertificateList) {
             this.jComboBoxSignCert.addItem(cert);
             this.jComboBoxCryptCert.addItem(cert);
+            if (cert.getIsKeyPair()) {
+                this.jComboBoxOverwriteLocalStationCryptKey.addItem(cert);
+                this.jComboBoxOverwriteLocalstationSignKey.addItem(cert);
+            }
         }
         this.jTableHttpHeader.getSelectionModel().addListSelectionListener(new ListSelectionListener() {
             @Override
@@ -260,11 +268,13 @@ public class JPanelPartner extends JPanel {
         }
     }
 
-     /**Returns if the passed plugin is activated*/
+    /**
+     * Returns if the passed plugin is activated
+     */
     public boolean isPluginActivated(final String PLUGIN) {
         return (this.activatedPlugins != null && this.activatedPlugins.contains(PLUGIN));
     }
-    
+
     /**
      * Updates the text in a TextPane without triggering a document listener.
      * Its important not to remove _all_ listeners but just the listeners that
@@ -332,7 +342,6 @@ public class JPanelPartner extends JPanel {
     /**
      * Sets a radio button value value without triggering an event
      *
-     * @param combobox to set the item in
      */
     private void setUIValueWithoutEvent(JRadioButton radioButton, boolean state) {
         ActionListener[] actionListener = radioButton.getActionListeners();
@@ -344,7 +353,8 @@ public class JPanelPartner extends JPanel {
             radioButton.addActionListener(listener);
         }
     }
-
+    
+    
     private void setMultiresolutionIcons() {
         this.jButtonHttpHeaderAdd.setIcon(new ImageIcon(IMAGE_ADD.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
         this.jButtonHttpHeaderRemove.setIcon(new ImageIcon(IMAGE_DELETE.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
@@ -357,14 +367,16 @@ public class JPanelPartner extends JPanel {
         this.jButtonEditEventOnSendError.setIcon(new ImageIcon(IMAGE_EDIT.toMinResolution(20)));
         this.jButtonAddEventOnSendSuccess.setIcon(new ImageIcon(IMAGE_ADD.toMinResolution(20)));
         this.jButtonEditEventOnSendSuccess.setIcon(new ImageIcon(IMAGE_EDIT.toMinResolution(20)));
-        this.jButtonOAuth2Message.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
-        this.jButtonOAuth2MDN.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
+        this.jButtonOAuth2AuthorizationCodeMessage.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
+        this.jButtonOAuth2ClientCredentialsMessage.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
+        this.jButtonOAuth2AuthorizationCodeMDN.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
+        this.jButtonOAuth2ClientCredentialsMDN.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
     }
 
     private void initializeHelp() {
         this.jPanelUIHelpLocalstation.setToolTip(this.rb, "label.localstation.help");
         this.jPanelUIHelpKeepFilename.setToolTip(this.rb, "label.keepfilenameonreceipt.help");
-        this.jPanelUIHelpKeepFilename.setTooltipWidth(300);
+        this.jPanelUIHelpKeepFilename.setTooltipWidth(350);
     }
 
     private void testConnection() {
@@ -378,7 +390,7 @@ public class JPanelPartner extends JPanel {
                     //display wait indicator
                     JPanelPartner.this.statusbar.startProgressIndeterminate(
                             JPanelPartner.this.rb.getResourceString("label.test.connection"), uniqueId);
-                    String urlStr = JPanelPartner.this.jTextFieldURL.getText();
+                    String urlStr = JPanelPartner.this.jTextFieldReceiptURL.getText();
                     URL url = new URL(urlStr);
                     int port = 80;
                     if (url.getPort() > 0) {
@@ -419,11 +431,15 @@ public class JPanelPartner extends JPanel {
         executor.shutdown();
     }
 
-    public void setDisplayNotificationPanel(boolean display) {
+    protected void setDisplayOverwriteLocalstationSecurity(boolean display) {
+        this.displayOverwriteLocalstationSecurity = display;
+    }
+
+    protected void setDisplayNotificationPanel(boolean display) {
         this.displayNotificationPanel = display;
     }
 
-    public void setDisplayHttpHeaderPanel(boolean display) {
+    protected void setDisplayHttpHeaderPanel(boolean display) {
         this.displayHttpHeaderPanel = display;
     }
 
@@ -449,7 +465,7 @@ public class JPanelPartner extends JPanel {
         this.buttonOk.computeErrorState();
         this.jTextFieldId.setText(partner.getAS2Identification());
         this.jTextFieldName.setText(partner.getName());
-        this.jTextFieldURL.setText(partner.getURL());
+        this.jTextFieldReceiptURL.setText(partner.getURL());
         this.jTextFieldMDNURL.setText(partner.getMdnURL());
         this.jTextFieldEMail.setText(partner.getEmail());
         this.setUIValueWithoutEvent(this.jCheckBoxLocalStation, partner.isLocalStation());
@@ -458,15 +474,28 @@ public class JPanelPartner extends JPanel {
         this.setUIValueWithoutEvent(this.jComboBoxCryptCert, this.certificateManagerEncSign.getKeystoreCertificateByFingerprintSHA1(
                 partner.getCryptFingerprintSHA1()));
         if (partner.isLocalStation()) {
+            this.jPanelOverwriteLocalStationSecurity.setVisible(false);
             this.jPanelUIHelpLabelCryptAlias.setText(this.rb.getResourceString("label.cryptalias.key"));
             this.jPanelUIHelpLabelCryptAlias.setToolTipText(this.rb.getResourceString("label.cryptalias.key.help"));
             this.jPanelUIHelpLabelSignAlias.setText(this.rb.getResourceString("label.signalias.key"));
             this.jPanelUIHelpLabelSignAlias.setToolTipText(this.rb.getResourceString("label.signalias.key.help"));
         } else {
+            this.jPanelOverwriteLocalStationSecurity.setVisible(this.displayOverwriteLocalstationSecurity);
+            this.setUIValueWithoutEvent(this.jRadioButtonKeepLocalstationSecurity,
+                    !this.partner.isOverwriteLocalStationSecurity());
+            this.setUIValueWithoutEvent(this.jRadioButtonOverwriteLocalstationSecurity,
+                    this.partner.isOverwriteLocalStationSecurity());
+            this.setUIValueWithoutEvent(this.jComboBoxOverwriteLocalStationCryptKey,
+                    this.certificateManagerEncSign.getKeystoreCertificateByFingerprintSHA1(
+                            this.partner.getCryptOverwriteLocalstationFingerprintSHA1()));
+            this.setUIValueWithoutEvent(this.jComboBoxOverwriteLocalstationSignKey,
+                    this.certificateManagerEncSign.getKeystoreCertificateByFingerprintSHA1(
+                            this.partner.getSignOverwriteLocalstationFingerprintSHA1()));
             this.jPanelUIHelpLabelCryptAlias.setText(this.rb.getResourceString("label.cryptalias.cert"));
             this.jPanelUIHelpLabelCryptAlias.setToolTipText(this.rb.getResourceString("label.cryptalias.cert.help"));
             this.jPanelUIHelpLabelSignAlias.setText(this.rb.getResourceString("label.signalias.cert"));
             this.jPanelUIHelpLabelSignAlias.setToolTipText(this.rb.getResourceString("label.signalias.cert.help"));
+
         }
         this.setUIValueWithoutEvent(this.jComboBoxSignType, new SignatureDisplayImplAS2(Integer.valueOf(partner.getSignType())));
         this.setUIValueWithoutEvent(this.jComboBoxEncryptionType, new EncryptionDisplayImplAS2(Integer.valueOf(partner.getEncryptionType())));
@@ -502,7 +531,7 @@ public class JPanelPartner extends JPanel {
         this.jTextFieldHttpAuthAsyncMDNUser.setText(this.partner.getAuthenticationCredentialsAsyncMDN().getUser());
         this.jPasswordFieldHttpPassAsyncMDN.setText(this.partner.getAuthenticationCredentialsAsyncMDN().getPassword());
         this.setUIValueWithoutEvent(this.jCheckBoxKeepFilenameOnReceipt, this.partner.getKeepOriginalFilenameOnReceipt());
-        if (this.partner.getComment() != null && this.partner.getComment().length() > 0) {
+        if (this.partner.getComment() != null && !this.partner.getComment().isEmpty()) {
             this.setUIValueWithoutEvent(this.jTextPanePartnerComment,
                     this.partner.getComment(),
                     this.partner::setComment);
@@ -511,7 +540,7 @@ public class JPanelPartner extends JPanel {
                     "",
                     this.partner::setComment);
         }
-        if (this.partner.getContactCompany() != null && this.partner.getContactCompany().length() > 0) {
+        if (this.partner.getContactCompany() != null && !this.partner.getContactCompany().isEmpty()) {
             this.setUIValueWithoutEvent(this.jTextPanePartnerAddress,
                     this.partner.getContactCompany(),
                     this.partner::setContactCompany);
@@ -520,7 +549,7 @@ public class JPanelPartner extends JPanel {
                     "",
                     this.partner::setContactCompany);
         }
-        if (this.partner.getContactAS2() != null && this.partner.getContactAS2().length() > 0) {
+        if (this.partner.getContactAS2() != null && !this.partner.getContactAS2().isEmpty()) {
             this.setUIValueWithoutEvent(this.jTextPanePartnerContact,
                     this.partner.getContactAS2(),
                     this.partner::setContactAS2);
@@ -550,18 +579,28 @@ public class JPanelPartner extends JPanel {
         this.setUIValueWithoutEvent(this.jCheckBoxEnableDirPoll, partner.isEnableDirPoll());
         this.handleVisibilityStateOfWidgets();
         this.disableEnableWidgets();
-        if( this.partner.usesOAuth2Message() && this.isPluginActivated(ServerPlugins.PLUGIN_OAUTH2)){
-            this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthOAuth2Message, true);
-        }else if( this.partner.getAuthenticationCredentialsMessage().isEnabled()){
+        if (this.partner.usesOAuth2Message() && this.isPluginActivated(ServerPlugins.PLUGIN_OAUTH2)) {
+            OAuth2Config config = this.partner.getOAuth2Message();
+            if (config.getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1) {
+                this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage, true);
+            } else {
+                this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthOAuth2ClientCredentialsMessage, true);
+            }
+        } else if (this.partner.getAuthenticationCredentialsMessage().isEnabled()) {
             this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthCredentialsMessage, true);
-        }else{
+        } else {
             this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthNoneMessage, true);
         }
-        if( this.partner.usesOAuth2MDN() && this.isPluginActivated(ServerPlugins.PLUGIN_OAUTH2)){
-            this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthOAuth2MDN, true);
-        }else if( this.partner.getAuthenticationCredentialsMessage().isEnabled()){
+        if (this.partner.usesOAuth2MDN() && this.isPluginActivated(ServerPlugins.PLUGIN_OAUTH2)) {
+            OAuth2Config config = this.partner.getOAuth2Message();
+            if (config.getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1) {
+                this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN, true);
+            } else {
+                this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthOAuth2ClientCredentialsMDN, true);
+            }
+        } else if (this.partner.getAuthenticationCredentialsMessage().isEnabled()) {
             this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthCredentialsMDN, true);
-        }else{
+        } else {
             this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthNoneMDN, true);
         }
         this.updateHttpAuthState();
@@ -576,6 +615,7 @@ public class JPanelPartner extends JPanel {
             //ignore, not every panel that was selected for the last partner must be available for this
             //partner
         }
+        this.setButtonState();
     }
 
     /**
@@ -648,10 +688,18 @@ public class JPanelPartner extends JPanel {
         this.jPasswordFieldHttpPassAsyncMDN.setEditable(this.jRadioButtonHttpAuthCredentialsMDN.isSelected());
         this.jPasswordFieldHttpPassAsyncMDN.setEnabled(this.jRadioButtonHttpAuthCredentialsMDN.isSelected());
         boolean oAuth2Enabled = this.isPluginActivated(ServerPlugins.PLUGIN_OAUTH2);
-        this.jRadioButtonHttpAuthOAuth2MDN.setEnabled(oAuth2Enabled);
-        this.jRadioButtonHttpAuthOAuth2Message.setEnabled(oAuth2Enabled);
-        this.jButtonOAuth2Message.setEnabled( oAuth2Enabled && this.jRadioButtonHttpAuthOAuth2Message.isSelected());
-        this.jButtonOAuth2MDN.setEnabled( oAuth2Enabled && this.jRadioButtonHttpAuthOAuth2MDN.isSelected());
+        this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN.setEnabled(oAuth2Enabled);
+        this.jRadioButtonHttpAuthOAuth2ClientCredentialsMDN.setEnabled(oAuth2Enabled);
+        this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage.setEnabled(oAuth2Enabled);
+        this.jRadioButtonHttpAuthOAuth2ClientCredentialsMessage.setEnabled(oAuth2Enabled);
+        this.jButtonOAuth2AuthorizationCodeMessage.setEnabled(
+                oAuth2Enabled && this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage.isSelected());
+        this.jButtonOAuth2ClientCredentialsMessage.setEnabled(
+                oAuth2Enabled && this.jRadioButtonHttpAuthOAuth2ClientCredentialsMessage.isSelected());
+        this.jButtonOAuth2AuthorizationCodeMDN.setEnabled(
+                oAuth2Enabled && this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN.isSelected());
+        this.jButtonOAuth2ClientCredentialsMDN.setEnabled(
+                oAuth2Enabled && this.jRadioButtonHttpAuthOAuth2ClientCredentialsMDN.isSelected());
     }
 
     /**
@@ -682,14 +730,14 @@ public class JPanelPartner extends JPanel {
         StringBuilder pollDirStr = new StringBuilder();
         pollDirStr.append(this.serverSideMessageDirectoryAbsolute);
         pollDirStr.append(this.serverSideFileSeparator);
-        pollDirStr.append(MessageStoreHandler.convertToValidFilename(finalPartner.getName()));
+        pollDirStr.append(AS2Tools.convertToValidFilename(finalPartner.getName()));
         pollDirStr.append(this.serverSideFileSeparator);
         pollDirStr.append("outbox");
         //for single local stations display add the name of the local station, else display <localstation>
         List<Partner> localStations = this.tree.getLocalStations();
         String localStationDir = "<localstation>";
         if (localStations.size() == 1) {
-            localStationDir = MessageStoreHandler.convertToValidFilename(localStations.get(0).getName());
+            localStationDir = AS2Tools.convertToValidFilename(localStations.get(0).getName());
         }
         this.jTextFieldPollDir.setText(pollDirStr + serverSideFileSeparator + localStationDir);
     }
@@ -711,8 +759,8 @@ public class JPanelPartner extends JPanel {
 
     private void setButtonState() {
         if (this.partner != null) {
-            this.jTextFieldURL.setEditable(!this.partner.isLocalStation());
-            this.jTextFieldURL.setEnabled(!this.partner.isLocalStation());
+            this.jTextFieldReceiptURL.setEditable(!this.partner.isLocalStation());
+            this.jTextFieldReceiptURL.setEnabled(!this.partner.isLocalStation());
             this.jTextFieldEMail.setEnabled(this.partner.isLocalStation());
             this.jTextFieldEMail.setEditable(this.partner.isLocalStation());
             this.jPanelUIHelpLabelSignType.setVisible(!this.partner.isLocalStation());
@@ -729,6 +777,10 @@ public class JPanelPartner extends JPanel {
             this.jTextFieldNotifyReceive.setEditable(this.partner.isNotifyReceiveEnabled());
             this.jTextFieldNotifySendReceive.setEnabled(this.partner.isNotifySendReceiveEnabled());
             this.jTextFieldNotifySendReceive.setEditable(this.partner.isNotifySendReceiveEnabled());
+            this.jComboBoxOverwriteLocalStationCryptKey.setEnabled( 
+                    this.jRadioButtonOverwriteLocalstationSecurity.isSelected());
+            this.jComboBoxOverwriteLocalstationSignKey.setEnabled( 
+                    this.jRadioButtonOverwriteLocalstationSecurity.isSelected());
             this.renderEvents();
         }
     }
@@ -906,14 +958,46 @@ public class JPanelPartner extends JPanel {
         this.renderEvents();
     }
 
-    private void setupOAuth2Message() {
+    private void setupOAuth2ClientCredentialsMessage() {
         JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         if (this.partner != null) {
             OAuth2Config config = null;
             if (this.partner.getOAuth2Message() == null) {
                 config = new OAuth2Config();
             } else {
-                config = this.partner.getOAuth2Message();
+                try {
+                    config = (OAuth2Config) (this.partner.getOAuth2Message().clone());
+                } catch (Exception e) {
+                    UINotification.instance().addNotification(e);
+                }
+            }
+            JDialogOAuth2ConfigClientCredentials dialog
+                    = new JDialogOAuth2ConfigClientCredentials(parentFrame,
+                            this.baseClient,
+                            config,
+                            AS2ServerVersion.getProductName()
+                    );
+            dialog.setVisible(true);
+            if (dialog.okPressed()) {
+                this.partner.setOAuth2Message(config);
+            }
+            dialog.dispose();
+            this.displayOAuth2();
+        }
+    }
+
+    private void setupOAuth2AuthorizationCodeMessage() {
+        JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        if (this.partner != null) {
+            OAuth2Config config = null;
+            if (this.partner.getOAuth2Message() == null) {
+                config = new OAuth2Config();
+            } else {
+                try {
+                    config = (OAuth2Config) (this.partner.getOAuth2Message().clone());
+                } catch (Exception e) {
+                    UINotification.instance().addNotification(e);
+                }
             }
             JDialogOAuth2Config dialog = new JDialogOAuth2Config(parentFrame,
                     this.baseClient,
@@ -927,17 +1011,21 @@ public class JPanelPartner extends JPanel {
             }
             dialog.dispose();
             this.displayOAuth2();
-        }        
+        }
     }
-    
-    private void setupOAuth2MDN() {
+
+    private void setupOAuth2AuthorizationCodeMDN() {
         JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         if (this.partner != null) {
             OAuth2Config config = null;
             if (this.partner.getOAuth2MDN() == null) {
                 config = new OAuth2Config();
             } else {
-                config = this.partner.getOAuth2MDN();
+                try {
+                    config = (OAuth2Config) (this.partner.getOAuth2MDN().clone());
+                } catch (Exception e) {
+                    UINotification.instance().addNotification(e);
+                }
             }
             JDialogOAuth2Config dialog = new JDialogOAuth2Config(parentFrame,
                     this.baseClient,
@@ -951,23 +1039,66 @@ public class JPanelPartner extends JPanel {
             }
             dialog.dispose();
             this.displayOAuth2();
-        }        
+        }
+    }
+
+    private void setupOAuth2ClientCredentialsMDN() {
+        JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        if (this.partner != null) {
+            OAuth2Config config = null;
+            if (this.partner.getOAuth2MDN() == null) {
+                config = new OAuth2Config();
+            } else {
+                try {
+                    config = (OAuth2Config) (this.partner.getOAuth2MDN().clone());
+                } catch (Exception e) {
+                    UINotification.instance().addNotification(e);
+                }
+            }
+            JDialogOAuth2ConfigClientCredentials dialog
+                    = new JDialogOAuth2ConfigClientCredentials(parentFrame,
+                            this.baseClient,
+                            config,
+                            AS2ServerVersion.getProductName()
+                    );
+            dialog.setVisible(true);
+            if (dialog.okPressed()) {
+                this.partner.setOAuth2MDN(config);
+            }
+            dialog.dispose();
+            this.displayOAuth2();
+        }
     }
 
     private void displayOAuth2() {
         if (this.partner == null || this.partner.getOAuth2Message() == null) {
-            this.jTextFieldOAuth2Message.setText("--");
+            this.jTextFieldOAuth2AuthorizationCodeMessage.setText("--");
+            this.jTextFieldOAuth2ClientCredentialsMessage.setText("--");
         } else {
-            this.jTextFieldOAuth2Message.setText(this.partner.getOAuth2Message().toString());
+            OAuth2Config config = this.partner.getOAuth2Message();
+            if (config.getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1) {
+                this.jTextFieldOAuth2AuthorizationCodeMessage.setText(config.toString());
+                this.jTextFieldOAuth2ClientCredentialsMessage.setText("--");
+            } else {
+                this.jTextFieldOAuth2AuthorizationCodeMessage.setText("--");
+                this.jTextFieldOAuth2ClientCredentialsMessage.setText(config.toString());
+            }
         }
         if (this.partner == null || this.partner.getOAuth2MDN() == null) {
-            this.jTextFieldOAuth2MDN.setText("--");
+            this.jTextFieldOAuth2AuthorizationCodeMDN.setText("--");
+            this.jTextFieldOAuth2ClientCredentialsMDN.setText("--");
         } else {
-            this.jTextFieldOAuth2MDN.setText(this.partner.getOAuth2MDN().toString());
+            OAuth2Config config = this.partner.getOAuth2Message();
+            if (config.getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1) {
+                this.jTextFieldOAuth2AuthorizationCodeMDN.setText(config.toString());
+                this.jTextFieldOAuth2ClientCredentialsMDN.setText("--");
+            } else {
+                this.jTextFieldOAuth2AuthorizationCodeMDN.setText("--");
+                this.jTextFieldOAuth2ClientCredentialsMDN.setText(config.toString());
+            }
         }
     }
-    
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -980,10 +1111,11 @@ public class JPanelPartner extends JPanel {
         buttonGroupSyncAsyncMDN = new javax.swing.ButtonGroup();
         buttonGroupAuthenticationMessage = new javax.swing.ButtonGroup();
         buttonGroupAuthenticationMDN = new javax.swing.ButtonGroup();
+        buttonGroupOverwriteLocalStationSecurity = new javax.swing.ButtonGroup();
         jTabbedPane = new javax.swing.JTabbedPane();
         jPanelSend = new javax.swing.JPanel();
         jPanelSendMain = new javax.swing.JPanel();
-        jTextFieldURL = new javax.swing.JTextField();
+        jTextFieldReceiptURL = new javax.swing.JTextField();
         jTextFieldSubject = new javax.swing.JTextField();
         jTextFieldContentType = new javax.swing.JTextField();
         jPanelSpace14 = new javax.swing.JPanel();
@@ -992,13 +1124,15 @@ public class JPanelPartner extends JPanel {
         jSeparator1 = new javax.swing.JSeparator();
         jComboBoxContentTransferEncoding = new javax.swing.JComboBox();
         jLabelContentTransferEncoding = new javax.swing.JLabel();
-        jLabelHTTPProtocolVersion = new javax.swing.JLabel();
         jComboBoxHTTPProtocolVersion = new javax.swing.JComboBox();
         jButtonTestConnection = new javax.swing.JButton();
         jPanelUIHelpLabelURL = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelSubject = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelContentType = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelSpace42 = new javax.swing.JPanel();
+        jPanelUIHelpLabelProtocolVersion = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelSpace43 = new javax.swing.JPanel();
+        jPanelSpace44 = new javax.swing.JPanel();
         jPanelMDN = new javax.swing.JPanel();
         jPanelMDNMain = new javax.swing.JPanel();
         jTextFieldMDNURL = new javax.swing.JTextField();
@@ -1020,6 +1154,7 @@ public class JPanelPartner extends JPanel {
         jCheckBoxSignedMDN = new javax.swing.JCheckBox();
         jPanelUIHelpSignedMDN = new de.mendelson.util.balloontip.JPanelUIHelp();
         jPanelSpacer14 = new javax.swing.JPanel();
+        jPanelSpace34333 = new javax.swing.JPanel();
         jPanelDirPoll = new javax.swing.JPanel();
         jPanelPollOptions = new javax.swing.JPanel();
         jLabelPollDir = new javax.swing.JLabel();
@@ -1065,16 +1200,24 @@ public class JPanelPartner extends JPanel {
         HttpAuthNoneMDN = new javax.swing.JLabel();
         jPanelSpace345 = new javax.swing.JPanel();
         jPanelSpace485 = new javax.swing.JPanel();
-        jPanelOAuth2MDN = new javax.swing.JPanel();
-        jTextFieldOAuth2MDN = new javax.swing.JTextField();
-        jButtonOAuth2MDN = new javax.swing.JButton();
+        jPanelOAuth2AuthorizationCodeMDN = new javax.swing.JPanel();
+        jTextFieldOAuth2AuthorizationCodeMDN = new javax.swing.JTextField();
+        jButtonOAuth2AuthorizationCodeMDN = new javax.swing.JButton();
         jPanelSpaceX11 = new javax.swing.JPanel();
-        jRadioButtonHttpAuthOAuth2MDN = new javax.swing.JRadioButton();
-        jPanelOAuth2Message = new javax.swing.JPanel();
-        jTextFieldOAuth2Message = new javax.swing.JTextField();
-        jButtonOAuth2Message = new javax.swing.JButton();
+        jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN = new javax.swing.JRadioButton();
+        jRadioButtonHttpAuthOAuth2ClientCredentialsMDN = new javax.swing.JRadioButton();
+        jTextFieldOAuth2ClientCredentialsMDN = new javax.swing.JTextField();
+        jButtonOAuth2ClientCredentialsMDN = new javax.swing.JButton();
+        jPanelSpaceX14 = new javax.swing.JPanel();
+        jPanelOAuth2AuthorizationCodeMessage = new javax.swing.JPanel();
+        jTextFieldOAuth2AuthorizationCodeMessage = new javax.swing.JTextField();
+        jButtonOAuth2AuthorizationCodeMessage = new javax.swing.JButton();
         jPanelSpaceX12 = new javax.swing.JPanel();
-        jRadioButtonHttpAuthOAuth2Message = new javax.swing.JRadioButton();
+        jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage = new javax.swing.JRadioButton();
+        jRadioButtonHttpAuthOAuth2ClientCredentialsMessage = new javax.swing.JRadioButton();
+        jTextFieldOAuth2ClientCredentialsMessage = new javax.swing.JTextField();
+        jButtonOAuth2ClientCredentialsMessage = new javax.swing.JButton();
+        jPanelSpaceX13 = new javax.swing.JPanel();
         jPanelHTTPHeader = new javax.swing.JPanel();
         jScrollPaneHttpHeader = new javax.swing.JScrollPane();
         jTableHttpHeader = new javax.swing.JTable();
@@ -1156,6 +1299,16 @@ public class JPanelPartner extends JPanel {
         jPanelUIHelpLabelSignAlias = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelSignType = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelEncryptionType = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelOverwriteLocalStationSecurity = new javax.swing.JPanel();
+        jPanelUIHelpLabelOverwriteCryptAliasLocalStation = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jComboBoxOverwriteLocalStationCryptKey = new javax.swing.JComboBox();
+        jPanelUIHelpLabelOverwriteLocalstationSignAlias = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jComboBoxOverwriteLocalstationSignKey = new javax.swing.JComboBox();
+        jRadioButtonOverwriteLocalstationSecurity = new javax.swing.JRadioButton();
+        jRadioButtonKeepLocalstationSecurity = new javax.swing.JRadioButton();
+        jPanelSpace585 = new javax.swing.JPanel();
+        jPanelSpace89582 = new javax.swing.JPanel();
+        jPanelSpace455 = new javax.swing.JPanel();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -1167,9 +1320,9 @@ public class JPanelPartner extends JPanel {
         jPanelSendMain.setMinimumSize(new java.awt.Dimension(20, 20));
         jPanelSendMain.setLayout(new java.awt.GridBagLayout());
 
-        jTextFieldURL.addKeyListener(new java.awt.event.KeyAdapter() {
+        jTextFieldReceiptURL.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
-                jTextFieldURLKeyReleased(evt);
+                jTextFieldReceiptURLKeyReleased(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -1179,7 +1332,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(15, 5, 5, 5);
-        jPanelSendMain.add(jTextFieldURL, gridBagConstraints);
+        jPanelSendMain.add(jTextFieldReceiptURL, gridBagConstraints);
 
         jTextFieldSubject.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
@@ -1210,9 +1363,10 @@ public class JPanelPartner extends JPanel {
         jPanelSendMain.add(jTextFieldContentType, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 15;
+        gridBagConstraints.gridy = 17;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelSendMain.add(jPanelSpace14, gridBagConstraints);
 
         jCheckBoxCompress.setText(this.rb.getResourceString( "label.compression"));
@@ -1254,26 +1408,18 @@ public class JPanelPartner extends JPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridy = 13;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelSendMain.add(jComboBoxContentTransferEncoding, gridBagConstraints);
 
         jLabelContentTransferEncoding.setText("Content Transfer Encoding");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridy = 13;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelSendMain.add(jLabelContentTransferEncoding, gridBagConstraints);
-
-        jLabelHTTPProtocolVersion.setText(this.rb.getResourceString("label.httpversion"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 12;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
-        jPanelSendMain.add(jLabelHTTPProtocolVersion, gridBagConstraints);
 
         jComboBoxHTTPProtocolVersion.setMinimumSize(new java.awt.Dimension(50, 22));
         jComboBoxHTTPProtocolVersion.setPreferredSize(new java.awt.Dimension(50, 22));
@@ -1284,9 +1430,9 @@ public class JPanelPartner extends JPanel {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridy = 15;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelSendMain.add(jComboBoxHTTPProtocolVersion, gridBagConstraints);
 
         jButtonTestConnection.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image24x24.gif"))); // NOI18N
@@ -1308,6 +1454,7 @@ public class JPanelPartner extends JPanel {
 
         jPanelUIHelpLabelURL.setToolTipText(this.rb.getResourceString( "label.url.help"));
         jPanelUIHelpLabelURL.setText(this.rb.getResourceString( "label.url"));
+        jPanelUIHelpLabelURL.setTooltipWidth(300);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
@@ -1333,11 +1480,34 @@ public class JPanelPartner extends JPanel {
         jPanelSendMain.add(jPanelUIHelpLabelContentType, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 14;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 5);
+        jPanelSendMain.add(jPanelSpace42, gridBagConstraints);
+
+        jPanelUIHelpLabelProtocolVersion.setToolTipText(this.rb.getResourceString("label.httpversion.help"));
+        jPanelUIHelpLabelProtocolVersion.setText(this.rb.getResourceString("label.httpversion"));
+        jPanelUIHelpLabelProtocolVersion.setTriangleAlignment(JPanelUIHelpLabel.TRIANGLE_ALIGNMENT_CENTER);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 15;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        jPanelSendMain.add(jPanelUIHelpLabelProtocolVersion, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 11;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelSendMain.add(jPanelSpace43, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 9;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelSendMain.add(jPanelSpace42, gridBagConstraints);
+        jPanelSendMain.add(jPanelSpace44, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -1370,7 +1540,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 12;
-        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridwidth = 7;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -1379,20 +1549,20 @@ public class JPanelPartner extends JPanel {
 
         jLabelIconSyncMDN.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 2, 0, 15);
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 2, 0, 2);
         jPanelMDNMain.add(jLabelIconSyncMDN, gridBagConstraints);
 
         jLabelIconAsyncMDN.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image32x32.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridwidth = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 2, 0, 15);
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 2, 0, 2);
         jPanelMDNMain.add(jLabelIconAsyncMDN, gridBagConstraints);
 
         jLabelMDNDescription.setFont(new java.awt.Font("Dialog", 0, 14)); // NOI18N
@@ -1408,11 +1578,9 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 2;
         gridBagConstraints.gridheight = 5;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.insets = new java.awt.Insets(1, 20, 1, 20);
         jPanelMDNMain.add(jPanelSpacherMDN, gridBagConstraints);
 
         jPanelUIHelpLabelMDNURL.setToolTipText(this.rb.getResourceString( "label.mdnurl.help"));
@@ -1541,6 +1709,15 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelMDNMain.add(jPanelSpacer14, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridheight = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+        jPanelMDNMain.add(jPanelSpace34333, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -2002,12 +2179,12 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelHttpAuthData.add(jPanelSpace485, gridBagConstraints);
 
-        jPanelOAuth2MDN.setLayout(new java.awt.GridBagLayout());
+        jPanelOAuth2AuthorizationCodeMDN.setLayout(new java.awt.GridBagLayout());
 
-        jTextFieldOAuth2MDN.setEditable(false);
-        jTextFieldOAuth2MDN.setText("--");
-        jTextFieldOAuth2MDN.setMinimumSize(new java.awt.Dimension(200, 22));
-        jTextFieldOAuth2MDN.setPreferredSize(new java.awt.Dimension(200, 22));
+        jTextFieldOAuth2AuthorizationCodeMDN.setEditable(false);
+        jTextFieldOAuth2AuthorizationCodeMDN.setText("--");
+        jTextFieldOAuth2AuthorizationCodeMDN.setMinimumSize(new java.awt.Dimension(200, 22));
+        jTextFieldOAuth2AuthorizationCodeMDN.setPreferredSize(new java.awt.Dimension(200, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
@@ -2015,20 +2192,20 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelOAuth2MDN.add(jTextFieldOAuth2MDN, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMDN.add(jTextFieldOAuth2AuthorizationCodeMDN, gridBagConstraints);
 
-        jButtonOAuth2MDN.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
-        jButtonOAuth2MDN.setMargin(new java.awt.Insets(2, 2, 2, 2));
-        jButtonOAuth2MDN.addActionListener(new java.awt.event.ActionListener() {
+        jButtonOAuth2AuthorizationCodeMDN.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jButtonOAuth2AuthorizationCodeMDN.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        jButtonOAuth2AuthorizationCodeMDN.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonOAuth2MDNActionPerformed(evt);
+                jButtonOAuth2AuthorizationCodeMDNActionPerformed(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        jPanelOAuth2MDN.add(jButtonOAuth2MDN, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMDN.add(jButtonOAuth2AuthorizationCodeMDN, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 5;
         gridBagConstraints.gridy = 4;
@@ -2036,13 +2213,13 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
-        jPanelOAuth2MDN.add(jPanelSpaceX11, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMDN.add(jPanelSpaceX11, gridBagConstraints);
 
-        buttonGroupAuthenticationMDN.add(jRadioButtonHttpAuthOAuth2MDN);
-        jRadioButtonHttpAuthOAuth2MDN.setText(this.rb.getResourceString("label.httpauth.oauth2.asyncmdn"));
-        jRadioButtonHttpAuthOAuth2MDN.addItemListener(new java.awt.event.ItemListener() {
+        buttonGroupAuthenticationMDN.add(jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN);
+        jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN.setText(this.rb.getResourceString("label.httpauth.oauth2.authorizationcode.asyncmdn"));
+        jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                jRadioButtonHttpAuthOAuth2MDNItemStateChanged(evt);
+                jRadioButtonHttpAuthOAuth2AuthorizationCodeMDNItemStateChanged(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -2050,21 +2227,69 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelOAuth2MDN.add(jRadioButtonHttpAuthOAuth2MDN, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMDN.add(jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN, gridBagConstraints);
+
+        buttonGroupAuthenticationMDN.add(jRadioButtonHttpAuthOAuth2ClientCredentialsMDN);
+        jRadioButtonHttpAuthOAuth2ClientCredentialsMDN.setText(this.rb.getResourceString("label.httpauth.oauth2.clientcredentials.asyncmdn"));
+        jRadioButtonHttpAuthOAuth2ClientCredentialsMDN.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jRadioButtonHttpAuthOAuth2ClientCredentialsMDNItemStateChanged(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelOAuth2AuthorizationCodeMDN.add(jRadioButtonHttpAuthOAuth2ClientCredentialsMDN, gridBagConstraints);
+
+        jTextFieldOAuth2ClientCredentialsMDN.setEditable(false);
+        jTextFieldOAuth2ClientCredentialsMDN.setText("--");
+        jTextFieldOAuth2ClientCredentialsMDN.setMinimumSize(new java.awt.Dimension(200, 22));
+        jTextFieldOAuth2ClientCredentialsMDN.setPreferredSize(new java.awt.Dimension(200, 22));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelOAuth2AuthorizationCodeMDN.add(jTextFieldOAuth2ClientCredentialsMDN, gridBagConstraints);
+
+        jButtonOAuth2ClientCredentialsMDN.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jButtonOAuth2ClientCredentialsMDN.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        jButtonOAuth2ClientCredentialsMDN.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonOAuth2ClientCredentialsMDNActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        jPanelOAuth2AuthorizationCodeMDN.add(jButtonOAuth2ClientCredentialsMDN, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelOAuth2AuthorizationCodeMDN.add(jPanelSpaceX14, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 19;
         gridBagConstraints.gridwidth = 7;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        jPanelHttpAuthData.add(jPanelOAuth2MDN, gridBagConstraints);
+        jPanelHttpAuthData.add(jPanelOAuth2AuthorizationCodeMDN, gridBagConstraints);
 
-        jPanelOAuth2Message.setLayout(new java.awt.GridBagLayout());
+        jPanelOAuth2AuthorizationCodeMessage.setLayout(new java.awt.GridBagLayout());
 
-        jTextFieldOAuth2Message.setEditable(false);
-        jTextFieldOAuth2Message.setText("--");
-        jTextFieldOAuth2Message.setMinimumSize(new java.awt.Dimension(200, 22));
-        jTextFieldOAuth2Message.setPreferredSize(new java.awt.Dimension(200, 22));
+        jTextFieldOAuth2AuthorizationCodeMessage.setEditable(false);
+        jTextFieldOAuth2AuthorizationCodeMessage.setText("--");
+        jTextFieldOAuth2AuthorizationCodeMessage.setMinimumSize(new java.awt.Dimension(200, 22));
+        jTextFieldOAuth2AuthorizationCodeMessage.setPreferredSize(new java.awt.Dimension(200, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
@@ -2072,20 +2297,20 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelOAuth2Message.add(jTextFieldOAuth2Message, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMessage.add(jTextFieldOAuth2AuthorizationCodeMessage, gridBagConstraints);
 
-        jButtonOAuth2Message.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
-        jButtonOAuth2Message.setMargin(new java.awt.Insets(2, 2, 2, 2));
-        jButtonOAuth2Message.addActionListener(new java.awt.event.ActionListener() {
+        jButtonOAuth2AuthorizationCodeMessage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jButtonOAuth2AuthorizationCodeMessage.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        jButtonOAuth2AuthorizationCodeMessage.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonOAuth2MessageActionPerformed(evt);
+                jButtonOAuth2AuthorizationCodeMessageActionPerformed(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        jPanelOAuth2Message.add(jButtonOAuth2Message, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMessage.add(jButtonOAuth2AuthorizationCodeMessage, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 5;
         gridBagConstraints.gridy = 4;
@@ -2093,13 +2318,18 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
-        jPanelOAuth2Message.add(jPanelSpaceX12, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMessage.add(jPanelSpaceX12, gridBagConstraints);
 
-        buttonGroupAuthenticationMessage.add(jRadioButtonHttpAuthOAuth2Message);
-        jRadioButtonHttpAuthOAuth2Message.setText(this.rb.getResourceString("label.httpauth.oauth2.message"));
-        jRadioButtonHttpAuthOAuth2Message.addItemListener(new java.awt.event.ItemListener() {
+        buttonGroupAuthenticationMessage.add(jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage);
+        jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage.setText(this.rb.getResourceString("label.httpauth.oauth2.authorizationcode.message"));
+        jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                jRadioButtonHttpAuthOAuth2MessageItemStateChanged(evt);
+                jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageItemStateChanged(evt);
+            }
+        });
+        jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageActionPerformed(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -2107,14 +2337,62 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelOAuth2Message.add(jRadioButtonHttpAuthOAuth2Message, gridBagConstraints);
+        jPanelOAuth2AuthorizationCodeMessage.add(jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage, gridBagConstraints);
+
+        buttonGroupAuthenticationMessage.add(jRadioButtonHttpAuthOAuth2ClientCredentialsMessage);
+        jRadioButtonHttpAuthOAuth2ClientCredentialsMessage.setText(this.rb.getResourceString("label.httpauth.oauth2.clientcredentials.message"));
+        jRadioButtonHttpAuthOAuth2ClientCredentialsMessage.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jRadioButtonHttpAuthOAuth2ClientCredentialsMessageItemStateChanged(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelOAuth2AuthorizationCodeMessage.add(jRadioButtonHttpAuthOAuth2ClientCredentialsMessage, gridBagConstraints);
+
+        jTextFieldOAuth2ClientCredentialsMessage.setEditable(false);
+        jTextFieldOAuth2ClientCredentialsMessage.setText("--");
+        jTextFieldOAuth2ClientCredentialsMessage.setMinimumSize(new java.awt.Dimension(200, 22));
+        jTextFieldOAuth2ClientCredentialsMessage.setPreferredSize(new java.awt.Dimension(200, 22));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelOAuth2AuthorizationCodeMessage.add(jTextFieldOAuth2ClientCredentialsMessage, gridBagConstraints);
+
+        jButtonOAuth2ClientCredentialsMessage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jButtonOAuth2ClientCredentialsMessage.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        jButtonOAuth2ClientCredentialsMessage.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonOAuth2ClientCredentialsMessageActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        jPanelOAuth2AuthorizationCodeMessage.add(jButtonOAuth2ClientCredentialsMessage, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 5;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelOAuth2AuthorizationCodeMessage.add(jPanelSpaceX13, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 8;
         gridBagConstraints.gridwidth = 7;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        jPanelHttpAuthData.add(jPanelOAuth2Message, gridBagConstraints);
+        jPanelHttpAuthData.add(jPanelOAuth2AuthorizationCodeMessage, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -2826,11 +3104,14 @@ public class JPanelPartner extends JPanel {
         jPanelSecurityMain.add(jComboBoxSignCert, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 9;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelSecurityMain.add(jPanelSpace2, gridBagConstraints);
 
+        jComboBoxSignType.setMinimumSize(new java.awt.Dimension(180, 24));
+        jComboBoxSignType.setPreferredSize(new java.awt.Dimension(180, 24));
         jComboBoxSignType.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBoxSignTypeActionPerformed(evt);
@@ -2840,12 +3121,13 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelSecurityMain.add(jComboBoxSignType, gridBagConstraints);
 
+        jComboBoxEncryptionType.setMinimumSize(new java.awt.Dimension(180, 24));
+        jComboBoxEncryptionType.setPreferredSize(new java.awt.Dimension(180, 24));
         jComboBoxEncryptionType.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 jComboBoxEncryptionTypeActionPerformed(evt);
@@ -2855,7 +3137,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelSecurityMain.add(jComboBoxEncryptionType, gridBagConstraints);
@@ -2935,6 +3217,115 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelSecurityMain.add(jPanelUIHelpLabelEncryptionType, gridBagConstraints);
+
+        jPanelOverwriteLocalStationSecurity.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
+        jPanelOverwriteLocalStationSecurity.setLayout(new java.awt.GridBagLayout());
+
+        jPanelUIHelpLabelOverwriteCryptAliasLocalStation.setToolTipText(this.rb.getResourceString( "label.overwrite.crypt.help"));
+        jPanelUIHelpLabelOverwriteCryptAliasLocalStation.setText(this.rb.getResourceString( "label.overwrite.crypt"));
+        jPanelUIHelpLabelOverwriteCryptAliasLocalStation.setTooltipWidth(250);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(0, 25, 0, 0);
+        jPanelOverwriteLocalStationSecurity.add(jPanelUIHelpLabelOverwriteCryptAliasLocalStation, gridBagConstraints);
+
+        jComboBoxOverwriteLocalStationCryptKey.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBoxOverwriteLocalStationCryptKeyActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
+        jPanelOverwriteLocalStationSecurity.add(jComboBoxOverwriteLocalStationCryptKey, gridBagConstraints);
+
+        jPanelUIHelpLabelOverwriteLocalstationSignAlias.setToolTipText(this.rb.getResourceString( "label.overwrite.sign.help"));
+        jPanelUIHelpLabelOverwriteLocalstationSignAlias.setText(this.rb.getResourceString( "label.overwrite.sign"));
+        jPanelUIHelpLabelOverwriteLocalstationSignAlias.setTooltipWidth(250);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(0, 25, 0, 0);
+        jPanelOverwriteLocalStationSecurity.add(jPanelUIHelpLabelOverwriteLocalstationSignAlias, gridBagConstraints);
+
+        jComboBoxOverwriteLocalstationSignKey.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jComboBoxOverwriteLocalstationSignKeyActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
+        jPanelOverwriteLocalStationSecurity.add(jComboBoxOverwriteLocalstationSignKey, gridBagConstraints);
+
+        buttonGroupOverwriteLocalStationSecurity.add(jRadioButtonOverwriteLocalstationSecurity);
+        jRadioButtonOverwriteLocalstationSecurity.setText(this.rb.getResourceString("label.overwrite.security"));
+        jRadioButtonOverwriteLocalstationSecurity.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonOverwriteLocalstationSecurityActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelOverwriteLocalStationSecurity.add(jRadioButtonOverwriteLocalstationSecurity, gridBagConstraints);
+
+        buttonGroupOverwriteLocalStationSecurity.add(jRadioButtonKeepLocalstationSecurity);
+        jRadioButtonKeepLocalstationSecurity.setSelected(true);
+        jRadioButtonKeepLocalstationSecurity.setText(this.rb.getResourceString("label.keep.security"));
+        jRadioButtonKeepLocalstationSecurity.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jRadioButtonKeepLocalstationSecurityActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelOverwriteLocalStationSecurity.add(jRadioButtonKeepLocalstationSecurity, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
+        jPanelOverwriteLocalStationSecurity.add(jPanelSpace585, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(1, 3, 1, 3);
+        jPanelOverwriteLocalStationSecurity.add(jPanelSpace89582, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.insets = new java.awt.Insets(5, 20, 5, 10);
+        jPanelSecurityMain.add(jPanelOverwriteLocalStationSecurity, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelSecurityMain.add(jPanelSpace455, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -3067,7 +3458,7 @@ public class JPanelPartner extends JPanel {
 
     private void jTextFieldContentTypeKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldContentTypeKeyReleased
         if (this.partner != null) {
-            if (this.jTextFieldContentType.getText().trim().length() == 0) {
+            if (this.jTextFieldContentType.getText().trim().isEmpty()) {
                 this.partner.setContentType("application/EDI-Consent");
             } else {
                 this.partner.setContentType(this.jTextFieldContentType.getText());
@@ -3079,7 +3470,7 @@ public class JPanelPartner extends JPanel {
 
     private void jTextFieldSubjectKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldSubjectKeyReleased
         if (this.partner != null) {
-            if (this.jTextFieldSubject.getText().trim().length() == 0) {
+            if (this.jTextFieldSubject.getText().trim().isEmpty()) {
                 this.partner.setSubject("AS2 message");
             } else {
                 this.partner.setSubject(this.jTextFieldSubject.getText());
@@ -3091,7 +3482,7 @@ public class JPanelPartner extends JPanel {
 
     private void jTextFieldEMailKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldEMailKeyReleased
         if (this.partner != null) {
-            if (this.jTextFieldEMail.getText().trim().length() == 0) {
+            if (this.jTextFieldEMail.getText().trim().isEmpty()) {
                 this.partner.setEmail("sender@as2server.com");
             } else {
                 this.partner.setEmail(this.jTextFieldEMail.getText());
@@ -3103,7 +3494,7 @@ public class JPanelPartner extends JPanel {
 
     private void jTextFieldMDNURLKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldMDNURLKeyReleased
         if (this.partner != null) {
-            if (this.jTextFieldMDNURL.getText().trim().length() == 0) {
+            if (this.jTextFieldMDNURL.getText().trim().isEmpty()) {
                 this.partner.setMdnURL(this.partner.getDefaultURL());
             } else {
                 this.partner.setMdnURL(this.jTextFieldMDNURL.getText());
@@ -3147,13 +3538,13 @@ public class JPanelPartner extends JPanel {
         this.setButtonState();
     }//GEN-LAST:event_jComboBoxSignTypeActionPerformed
 
-    private void jTextFieldURLKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldURLKeyReleased
+    private void jTextFieldReceiptURLKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldReceiptURLKeyReleased
         if (this.partner != null) {
-            this.partner.setURL(this.jTextFieldURL.getText());
+            this.partner.setURL(this.jTextFieldReceiptURL.getText());
             this.buttonOk.computeErrorState();
             this.informTreeModelNodeChanged();
         }
-    }//GEN-LAST:event_jTextFieldURLKeyReleased
+    }//GEN-LAST:event_jTextFieldReceiptURLKeyReleased
 
     private void jTextFieldIdKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldIdKeyReleased
         if (this.partner != null) {
@@ -3400,21 +3791,21 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
         this.updateHttpAuthState();
     }//GEN-LAST:event_jRadioButtonHttpAuthCredentialsMessageItemStateChanged
 
-    private void jRadioButtonHttpAuthOAuth2MessageItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthOAuth2MessageItemStateChanged
+    private void jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageItemStateChanged
         if (this.partner != null) {
-            this.partner.setUseOAuth2Message(this.jRadioButtonHttpAuthOAuth2Message.isSelected());
+            this.partner.setUseOAuth2Message(this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage.isSelected());
             this.informTreeModelNodeChanged();
         }
         this.updateHttpAuthState();
-    }//GEN-LAST:event_jRadioButtonHttpAuthOAuth2MessageItemStateChanged
+    }//GEN-LAST:event_jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageItemStateChanged
 
-    private void jRadioButtonHttpAuthOAuth2MDNItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthOAuth2MDNItemStateChanged
+    private void jRadioButtonHttpAuthOAuth2AuthorizationCodeMDNItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthOAuth2AuthorizationCodeMDNItemStateChanged
         if (this.partner != null) {
-            this.partner.setUseOAuth2MDN(this.jRadioButtonHttpAuthOAuth2MDN.isSelected());
+            this.partner.setUseOAuth2MDN(this.jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN.isSelected());
             this.informTreeModelNodeChanged();
         }
         this.updateHttpAuthState();
-    }//GEN-LAST:event_jRadioButtonHttpAuthOAuth2MDNItemStateChanged
+    }//GEN-LAST:event_jRadioButtonHttpAuthOAuth2AuthorizationCodeMDNItemStateChanged
 
     private void jRadioButtonHttpAuthCredentialsMDNItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthCredentialsMDNItemStateChanged
         if (this.partner != null) {
@@ -3432,18 +3823,87 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
         this.updateHttpAuthState();
     }//GEN-LAST:event_jRadioButtonHttpAuthNoneMessageItemStateChanged
 
-    private void jButtonOAuth2MDNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2MDNActionPerformed
-        this.setupOAuth2MDN();
-    }//GEN-LAST:event_jButtonOAuth2MDNActionPerformed
+    private void jButtonOAuth2AuthorizationCodeMDNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2AuthorizationCodeMDNActionPerformed
+        this.setupOAuth2AuthorizationCodeMDN();
+    }//GEN-LAST:event_jButtonOAuth2AuthorizationCodeMDNActionPerformed
 
-    private void jButtonOAuth2MessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2MessageActionPerformed
-        this.setupOAuth2Message();
-    }//GEN-LAST:event_jButtonOAuth2MessageActionPerformed
+    private void jButtonOAuth2AuthorizationCodeMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2AuthorizationCodeMessageActionPerformed
+        this.setupOAuth2AuthorizationCodeMessage();
+    }//GEN-LAST:event_jButtonOAuth2AuthorizationCodeMessageActionPerformed
+
+    private void jButtonOAuth2ClientCredentialsMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2ClientCredentialsMessageActionPerformed
+        this.setupOAuth2ClientCredentialsMessage();
+    }//GEN-LAST:event_jButtonOAuth2ClientCredentialsMessageActionPerformed
+
+    private void jRadioButtonHttpAuthOAuth2ClientCredentialsMessageItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthOAuth2ClientCredentialsMessageItemStateChanged
+        if (this.partner != null) {
+            this.partner.setUseOAuth2Message(this.jRadioButtonHttpAuthOAuth2ClientCredentialsMessage.isSelected());
+            this.informTreeModelNodeChanged();
+        }
+        this.updateHttpAuthState();
+    }//GEN-LAST:event_jRadioButtonHttpAuthOAuth2ClientCredentialsMessageItemStateChanged
+
+    private void jButtonOAuth2ClientCredentialsMDNActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2ClientCredentialsMDNActionPerformed
+        this.setupOAuth2ClientCredentialsMDN();
+    }//GEN-LAST:event_jButtonOAuth2ClientCredentialsMDNActionPerformed
+
+    private void jRadioButtonHttpAuthOAuth2ClientCredentialsMDNItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthOAuth2ClientCredentialsMDNItemStateChanged
+        if (this.partner != null) {
+            this.partner.setUseOAuth2MDN(this.jRadioButtonHttpAuthOAuth2ClientCredentialsMDN.isSelected());
+            this.informTreeModelNodeChanged();
+        }
+        this.updateHttpAuthState();
+    }//GEN-LAST:event_jRadioButtonHttpAuthOAuth2ClientCredentialsMDNItemStateChanged
+
+    private void jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageActionPerformed
+
+    }//GEN-LAST:event_jRadioButtonHttpAuthOAuth2AuthorizationCodeMessageActionPerformed
+
+    private void jComboBoxOverwriteLocalStationCryptKeyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxOverwriteLocalStationCryptKeyActionPerformed
+        if (this.partner != null && this.jComboBoxOverwriteLocalStationCryptKey.getSelectedItem() != null) {
+            KeystoreCertificate certificate = (KeystoreCertificate) this.jComboBoxOverwriteLocalStationCryptKey.getSelectedItem();
+            PartnerCertificateInformation cryptInfo = new PartnerCertificateInformation(
+                    certificate.getFingerPrintSHA1(),
+                    PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION);
+            partner.setCertificateInformation(cryptInfo);
+            this.informTreeModelNodeChanged();
+        }
+        this.setButtonState();
+    }//GEN-LAST:event_jComboBoxOverwriteLocalStationCryptKeyActionPerformed
+
+    private void jComboBoxOverwriteLocalstationSignKeyActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxOverwriteLocalstationSignKeyActionPerformed
+        if (this.partner != null && this.jComboBoxOverwriteLocalstationSignKey.getSelectedItem() != null) {
+            KeystoreCertificate certificate = (KeystoreCertificate) this.jComboBoxOverwriteLocalstationSignKey.getSelectedItem();
+            PartnerCertificateInformation cryptInfo = new PartnerCertificateInformation(
+                    certificate.getFingerPrintSHA1(),
+                    PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION);
+            partner.setCertificateInformation(cryptInfo);
+            this.informTreeModelNodeChanged();
+        }
+        this.setButtonState();
+    }//GEN-LAST:event_jComboBoxOverwriteLocalstationSignKeyActionPerformed
+
+    private void jRadioButtonKeepLocalstationSecurityActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonKeepLocalstationSecurityActionPerformed
+        if (this.partner != null) {
+            this.partner.setOverwriteLocalStationSecurity(false);
+            this.informTreeModelNodeChanged();
+        }
+        this.setButtonState();
+    }//GEN-LAST:event_jRadioButtonKeepLocalstationSecurityActionPerformed
+
+    private void jRadioButtonOverwriteLocalstationSecurityActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jRadioButtonOverwriteLocalstationSecurityActionPerformed
+        if (this.partner != null) {
+            this.partner.setOverwriteLocalStationSecurity(true);
+            this.informTreeModelNodeChanged();
+        }
+        this.setButtonState();
+    }//GEN-LAST:event_jRadioButtonOverwriteLocalstationSecurityActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel HttpAuthNoneMDN;
     private javax.swing.ButtonGroup buttonGroupAuthenticationMDN;
     private javax.swing.ButtonGroup buttonGroupAuthenticationMessage;
+    private javax.swing.ButtonGroup buttonGroupOverwriteLocalStationSecurity;
     private javax.swing.ButtonGroup buttonGroupSyncAsyncMDN;
     private javax.swing.JButton jButtonAddEventOnReceipt;
     private javax.swing.JButton jButtonAddEventOnSendError;
@@ -3453,8 +3913,10 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private javax.swing.JButton jButtonEditEventOnSendSuccess;
     private javax.swing.JButton jButtonHttpHeaderAdd;
     private javax.swing.JButton jButtonHttpHeaderRemove;
-    private javax.swing.JButton jButtonOAuth2MDN;
-    private javax.swing.JButton jButtonOAuth2Message;
+    private javax.swing.JButton jButtonOAuth2AuthorizationCodeMDN;
+    private javax.swing.JButton jButtonOAuth2AuthorizationCodeMessage;
+    private javax.swing.JButton jButtonOAuth2ClientCredentialsMDN;
+    private javax.swing.JButton jButtonOAuth2ClientCredentialsMessage;
     private javax.swing.JButton jButtonTestConnection;
     private javax.swing.JCheckBox jCheckBoxCompress;
     private javax.swing.JCheckBox jCheckBoxEdiintFeaturesCEM;
@@ -3475,12 +3937,13 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private javax.swing.JComboBox jComboBoxCryptCert;
     private javax.swing.JComboBox<EncryptionDisplayImplAS2> jComboBoxEncryptionType;
     private javax.swing.JComboBox jComboBoxHTTPProtocolVersion;
+    private javax.swing.JComboBox jComboBoxOverwriteLocalStationCryptKey;
+    private javax.swing.JComboBox jComboBoxOverwriteLocalstationSignKey;
     private javax.swing.JComboBox jComboBoxSignCert;
     private javax.swing.JComboBox<SignatureDisplayImplAS2> jComboBoxSignType;
     private javax.swing.JLabel jLabelAS2Version;
     private javax.swing.JLabel jLabelContentTransferEncoding;
     private javax.swing.JLabel jLabelFeatures;
-    private javax.swing.JLabel jLabelHTTPProtocolVersion;
     private javax.swing.JLabel jLabelHttpAuth;
     private javax.swing.JLabel jLabelHttpAuthAsyncMDN;
     private javax.swing.JLabel jLabelHttpAuthMessage;
@@ -3514,8 +3977,9 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private javax.swing.JPanel jPanelMiscMain;
     private javax.swing.JPanel jPanelNotification;
     private javax.swing.JPanel jPanelNotificationMain;
-    private javax.swing.JPanel jPanelOAuth2MDN;
-    private javax.swing.JPanel jPanelOAuth2Message;
+    private javax.swing.JPanel jPanelOAuth2AuthorizationCodeMDN;
+    private javax.swing.JPanel jPanelOAuth2AuthorizationCodeMessage;
+    private javax.swing.JPanel jPanelOverwriteLocalStationSecurity;
     private javax.swing.JPanel jPanelPartnerSystem;
     private javax.swing.JPanel jPanelPartnerSystemMain;
     private javax.swing.JPanel jPanelPollOptions;
@@ -3535,16 +3999,24 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private javax.swing.JPanel jPanelSpace199;
     private javax.swing.JPanel jPanelSpace2;
     private javax.swing.JPanel jPanelSpace23;
+    private javax.swing.JPanel jPanelSpace34333;
     private javax.swing.JPanel jPanelSpace345;
     private javax.swing.JPanel jPanelSpace42;
+    private javax.swing.JPanel jPanelSpace43;
+    private javax.swing.JPanel jPanelSpace44;
+    private javax.swing.JPanel jPanelSpace455;
     private javax.swing.JPanel jPanelSpace456;
     private javax.swing.JPanel jPanelSpace485;
+    private javax.swing.JPanel jPanelSpace585;
+    private javax.swing.JPanel jPanelSpace89582;
     private javax.swing.JPanel jPanelSpace99;
     private javax.swing.JPanel jPanelSpaceSecurity;
     private javax.swing.JPanel jPanelSpaceSpace;
     private javax.swing.JPanel jPanelSpaceX;
     private javax.swing.JPanel jPanelSpaceX11;
     private javax.swing.JPanel jPanelSpaceX12;
+    private javax.swing.JPanel jPanelSpaceX13;
+    private javax.swing.JPanel jPanelSpaceX14;
     private javax.swing.JPanel jPanelSpaceX2;
     private javax.swing.JPanel jPanelSpacer;
     private javax.swing.JPanel jPanelSpacer12;
@@ -3567,7 +4039,10 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelEncryptionType;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelMDNURL;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelName;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelOverwriteCryptAliasLocalStation;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelOverwriteLocalstationSignAlias;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelPollIgnoreList;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelProtocolVersion;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelSignAlias;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelSignType;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelSubject;
@@ -3582,8 +4057,12 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private javax.swing.JRadioButton jRadioButtonHttpAuthCredentialsMessage;
     private javax.swing.JRadioButton jRadioButtonHttpAuthNoneMDN;
     private javax.swing.JRadioButton jRadioButtonHttpAuthNoneMessage;
-    private javax.swing.JRadioButton jRadioButtonHttpAuthOAuth2MDN;
-    private javax.swing.JRadioButton jRadioButtonHttpAuthOAuth2Message;
+    private javax.swing.JRadioButton jRadioButtonHttpAuthOAuth2AuthorizationCodeMDN;
+    private javax.swing.JRadioButton jRadioButtonHttpAuthOAuth2AuthorizationCodeMessage;
+    private javax.swing.JRadioButton jRadioButtonHttpAuthOAuth2ClientCredentialsMDN;
+    private javax.swing.JRadioButton jRadioButtonHttpAuthOAuth2ClientCredentialsMessage;
+    private javax.swing.JRadioButton jRadioButtonKeepLocalstationSecurity;
+    private javax.swing.JRadioButton jRadioButtonOverwriteLocalstationSecurity;
     private javax.swing.JRadioButton jRadioButtonSyncMDN;
     private javax.swing.JScrollPane jScrollPaneHttpHeader;
     private javax.swing.JScrollPane jScrollPanePartnerAddress;
@@ -3609,14 +4088,16 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private javax.swing.JTextField jTextFieldNotifyReceive;
     private javax.swing.JTextField jTextFieldNotifySend;
     private javax.swing.JTextField jTextFieldNotifySendReceive;
-    private javax.swing.JTextField jTextFieldOAuth2MDN;
-    private javax.swing.JTextField jTextFieldOAuth2Message;
+    private javax.swing.JTextField jTextFieldOAuth2AuthorizationCodeMDN;
+    private javax.swing.JTextField jTextFieldOAuth2AuthorizationCodeMessage;
+    private javax.swing.JTextField jTextFieldOAuth2ClientCredentialsMDN;
+    private javax.swing.JTextField jTextFieldOAuth2ClientCredentialsMessage;
     private javax.swing.JTextField jTextFieldPollDir;
     private javax.swing.JTextField jTextFieldPollInterval;
     private javax.swing.JTextField jTextFieldPollMaxFiles;
     private javax.swing.JTextField jTextFieldProductName;
+    private javax.swing.JTextField jTextFieldReceiptURL;
     private javax.swing.JTextField jTextFieldSubject;
-    private javax.swing.JTextField jTextFieldURL;
     private javax.swing.JTextPane jTextPanePartnerAddress;
     private javax.swing.JTextPane jTextPanePartnerComment;
     private javax.swing.JTextPane jTextPanePartnerContact;

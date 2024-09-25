@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver.java 9     9/02/22 17:21 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver.java 10    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleSendOrderReceiver extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

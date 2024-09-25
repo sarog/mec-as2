@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/security/cert/clientserver/RefreshKeystoreCertificates.java 3     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/clientserver/RefreshKeystoreCertificates.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,15 +15,19 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class RefreshKeystoreCertificates extends ClientServerMessage implements Serializable{
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public String toString(){
         return( "Refresh keystore certificates" );
     }
     
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 }

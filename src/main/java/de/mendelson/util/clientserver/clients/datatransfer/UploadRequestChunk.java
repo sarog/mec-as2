@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestChunk.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestChunk.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,11 +18,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class UploadRequestChunk extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private byte[] data = null;
     private String targetHash = null;
 
@@ -62,4 +64,9 @@ public class UploadRequestChunk extends ClientServerMessage implements Serializa
         this.targetHash = targetHash;
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
+    
 }

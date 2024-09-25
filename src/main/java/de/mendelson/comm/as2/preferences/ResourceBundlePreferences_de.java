@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_de.java 75    17/11/22 15:09 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_de.java 91    8/11/23 11:07 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 75 $
+ * @version $Revision: 91 $
  */
 public class ResourceBundlePreferences_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -74,19 +74,21 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.proxy.useauthentification", "Authentifizierung für Proxy benutzen"},
         {"filechooser.keystore", "Bitte wählen Sie die Keystore Datei (JKS Format)."},
         {"label.days", "Tage"},
-        {"label.deletemsgolderthan", "Automatisches Löschen von Nachrichten, die älter sind als"},
+        {"label.deletemsgolderthan", "Automatisches Löschen von Transaktionseinträgen, die älter sind als"},
         {"label.deletemsglog", "Automatisches Löschen von Dateien und Logeinträgen protokollieren"},
         {"label.deletestatsolderthan", "Automatisches Löschen von Statistikdaten, die älter sind als"},
         {"label.deletelogdirolderthan", "Automatisches Löschen von Protokolldaten, die älter sind als"},
         {"label.asyncmdn.timeout", "Maximale Wartezeit auf asynchrone MDNs"},
         {"label.asyncmdn.timeout.help", "<HTML><strong>Maximale Wartezeit auf asynchrone MDNs</strong>"
-            + "<br><br>Die Zeit, die das System auf eine asynchrone MDN (Message Delivery Notification) für eine gesendete AS2 Nachricht wartet, bevor es die Transaktion in den Status \"fehlgeschlagen\" versetzt."
+            + "<br><br>Die Zeit, die das System auf eine asynchrone MDN (Message Delivery Notification) für eine gesendete AS2 Nachricht wartet, bevor es die Transaktion in den Status \"fehlgeschlagen\" versetzt.<br>"
+            + "Dieser Wert ist systemweit für alle Partner gültig.<br><br>Der Voreinstellungswert ist 30 min."
             + "</HTML>"},
         {"label.httpsend.timeout", "HTTP/S Sende-Timeout"},
         {"label.httpsend.timeout.help", "<HTML><strong>HTTP/S Sende-Timeout</strong><br><br>"
             + "Dies ist Wert für die Zeitüberschreitung der Netzwerkverbindung für ausgehende Verbindungen.<br>"
             + "Wenn nach dieser Zeit keine Verbindung zu Ihrem Partnersystem zustande gekommen ist, wird der Verbindungsversuch abgebrochen und es werden gegebenenfalls entsprechend "
-            + "der Wiederholungseinstellungen später weitere Verbindungsversuche unternommen."
+            + "der Wiederholungseinstellungen später weitere Verbindungsversuche unternommen.<br><br>"
+            + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_SEND_TIMEOUT) + "ms."
             + "</HTML>"},
         {"label.min", "min"},
         {"receipt.subdir", "Unterverzeichnisse pro Partner für Nachrichtenempfang anlegen"},
@@ -102,6 +104,7 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"checkbox.notifyresend", "Nach abgewiesenen Resends"},
         {"checkbox.notifyconnectionproblem", "Bei Verbindungsproblemen"},
         {"checkbox.notifypostprocessing", "Probleme bei der Nachbearbeitung"},
+        {"checkbox.notifyclientserver", "Probleme der Client-Server Verbindung"},
         {"button.testmail", "Sende Test Mail"},
         {"label.mailhost", "Mailserver (SMTP)"},
         {"label.mailhost.hint", "IP oder Domain des Servers"},
@@ -109,9 +112,9 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.mailport.help", "<HTML><strong>SMTP Port</strong><br><br>"
             + "In der Regel ist es einer dieser Werte:<br>"
             + "<strong>25</strong> (Standard Port)<br>"
-            + "<strong>465</strong> (SSL Port, überholter Wert)<br>"
-            + "<strong>587</strong> (SSL Port, Standardwert)<br>"
-            + "<strong>2525</strong> (SSL Port, alternativer Wert, kein Standard)"
+            + "<strong>465</strong> (TLS Port, überholter Wert)<br>"
+            + "<strong>587</strong> (TLS Port, Standardwert)<br>"
+            + "<strong>2525</strong> (TLS Port, alternativer Wert, kein Standard)"
             + "</HTML>"},
         {"label.mailport.hint", "SMTP Port"},
         {"label.mailaccount", "Mailserver Konto"},
@@ -125,21 +128,17 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.smtpauthorization.header", "SMTP Autorisierung"},
         {"label.smtpauthorization.credentials", "Benutzer/Passwort"},
         {"label.smtpauthorization.none", "Keine"},
-        {"label.smtpauthorization.oauth2", "OAuth2"},
+        {"label.smtpauthorization.oauth2.authorizationcode", "OAuth2 (Authorization code)"},
+        {"label.smtpauthorization.oauth2.clientcredentials", "OAuth2 (Client credentials)"},
         {"label.smtpauthorization.user", "Benutzer"},
         {"label.smtpauthorization.user.hint", "SMTP Server Benutzername"},
         {"label.smtpauthorization.pass", "Passwort"},
         {"label.smtpauthorization.pass.hint", "SMTP Server Passwort"},
         {"label.security", "Verbindungssicherheit"},
-        {"testmail.message.success", "Eine Test-eMail wurde erfolgreich versandt."},
+        {"testmail.message.success", "Eine Test-eMail wurde erfolgreich an {0} versandt."},
         {"testmail.message.error", "Fehler beim Senden der Test-eMail:\n{0}"},
         {"testmail.title", "Senden einer Test-eMail"},
-        {"testmail", "Test Mail"},
-        //interface
-        {"label.showhttpheader", "Anzeige der HTTP Header Konfiguration bei den Partnereinstellungen"},
-        {"label.showquota", "Anzeige der Benachrichtigungskonfiguration bei den Partnereinstellungen"},
-        {"label.cem", "Zertifikataustausch erlauben (CEM)"},
-        {"label.outboundstatusfiles", "Statusdateien für ausgehende Transaktionen schreiben"},
+        {"testmail", "Test Mail"},                
         {"info.restart.client", "Sie müssen den Client neu starten, damit diese Änderungen gültig werden!"},
         {"remotedir.select", "Verzeichnis auf dem Server wählen"},
         //retry
@@ -147,7 +146,8 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.retry.max.help", "<HTML><strong>Max Anzahl der Versuche zum Verbindungsaufbau</strong>"
             + "<br><br>Dies ist die Anzahl der Wiederholungsversuche, die verwendet werden, um Verbindungen "
             + "zu einem Partner zu wiederholen, wenn eine Verbindung nicht hergestellt werden konnte. Die "
-            + "Wartezeit zwischen diesen Wiederholungsversuchen kann in der Eigenschaft <strong>Wartezeit zwischen Verbindungswiederholungen</strong> eingestellt werden."
+            + "Wartezeit zwischen diesen Wiederholungsversuchen kann in der Eigenschaft <strong>Wartezeit zwischen Verbindungswiederholungen</strong> eingestellt werden.<br><br>"
+            + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT) + "."
             + "</HTML>"},
         {"label.retry.waittime", "Wartezeit zwischen Verbindungswiederholungen"},
         {"label.retry.waittime.help", "<HTML><strong>Wartezeit zwischen Verbindungswiederholungen</strong>"
@@ -155,7 +155,8 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "zum Partner herstellt. Ein erneuter Verbindungsversuch wird nur dann durchgeführt, wenn "
             + "es nicht möglich war, eine Verbindung zu einem Partner herzustellen (z.B. Ausfall des "
             + "Partnersystems oder Infrastrukturproblem). Die Anzahl der Verbindungswiederholungen kann "
-            + "in der Eigenschaft <strong>Maximale Anzahl von Verbindungswiederholungen</strong> konfiguriert werden."
+            + "in der Eigenschaft <strong>Maximale Anzahl von Verbindungswiederholungen</strong> konfiguriert werden.<br><br>"
+            + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S) + "s."
             + "</HTML>"},
         {"label.sec", "s"},
         {"keystore.hint", "<HTML><strong>Achtung:</strong><br>Bitte ändern Sie diese Parameter nur, wenn Sie externe Keystores "
@@ -165,16 +166,23 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"maintenancemultiplier.minute", "Minute(n)"},
         {"label.logpollprocess", "Informationen zum Pollprozess im Protokoll anzeigen (viele Einträge - nicht im Produktivbetrieb verwenden)"},
         {"label.max.outboundconnections", "Max ausgehende parallele Verbindungen"},
-        {"label.max.outboundconnections.help", "<HTML><strong>Max ausgehende parallele Verbindungen</strong>"
-            + "<br><br>Dies ist die Anzahl der maximalen parallelen ausgehenden Verbindungen, die Ihr "
+        {"label.max.outboundconnections.help", "<HTML><strong>Max ausgehende parallele Verbindungen</strong><br><br>"
+            + "Dies ist die Anzahl der maximalen parallelen ausgehenden Verbindungen, die Ihr "
             + "System öffnen wird. Dieser Wert dient hauptsächlich dazu, Ihr Partnersystem vor einer Überlastung "
-            + "durch eingehende Verbindungen von Ihrer Seite zu schützen.</HTML>"},
+            + "durch eingehende Verbindungen von Ihrer Seite zu schützen.<br><br>"
+            + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS) + "."
+            + "</HTML>"},
         {"label.max.inboundconnections", "Max eingehende parallele Verbindungen"},
-        {"label.max.inboundconnections.help", "<HTML><strong>Max eingehende parallele Verbindungen</strong>"
-            + "<br><br>Dies ist die Anzahl der maximalen parallelen eingehenden Verbindungen, die zu Ihrem "
-            + "System geöffnet werden dürfen. "
-            + "Diese Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
-            + "Sie müssen nach einer Änderung den AS2 Server neu starten."
+        {"label.max.inboundconnections.help", "<HTML><strong>Max eingehende parallele Verbindungen</strong><br><br>"
+            + "Dies ist die Anzahl der maximalen parallelen eingehenden Verbindungen, die von aussen zu Ihrer "
+            + "mendelson AS2 Installation geöffnet werden dürfen. Dieser Wert gilt für die gesamte Software und ist nicht "
+            + "auf einzelne Partner beschränkt.<br>"
+            + "Die Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
+            + "Sie müssen nach einer Änderung den AS2 Server neu starten.<br><br>"
+            + "Obwohl es hier die Möglichkeit gibt, die Anzahl parallel eingehender Verbindungen zu beschränken, "
+            + "sollten Sie diese Einstellung doch besser an Ihrer Firewall oder in Ihrem vorgeschalteten Proxy vornehmen - "
+            + "das gilt dann für Ihr gesamtes System und nicht nur für eine einzelne Software.<br><br>"
+            + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS) + "."
             + "</HTML>"},
         {"event.preferences.modified.subject", "Der Wert {0} der Servereinstellungen wurde modifiziert"},
         {"event.preferences.modified.body", "Alter Wert: {0}\nNeuer Wert: {1}"},
@@ -186,8 +194,8 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "Anzahl von Benachrichtigungen pro Minute festlegen. Mit dieser Funktion erhalten Sie Mails, die "
             + "mehrere Benachrichtigungen enthalten."
             + "</HTML>"},
-        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Löschen alter Nachrichten</strong><br><br>Dies legt den Zeitrahmen fest, in dem die "
-            + "Transaktionen und die zugehörigen Daten (z.B. temporäre Dateien) im System verbleiben und in der Transaktionsübersicht "
+        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Löschen alter Transaktionseinträge</strong><br><br>Dies legt den Zeitrahmen fest, in dem die "
+            + "Transaktionen und die zugehörigen temporären Daten im System verbleiben und in der Transaktionsübersicht "
             + "angezeigt werden sollen.<br>Diese Einstellungen betreffen <strong>nicht</strong> Ihre empfangenen Daten/Dateien, diese "
             + "bleiben unberührt. Für gelöschte Transaktionen ist das Transaktionsprotokoll über die Funktionalität der Logsuche "
             + "weiterhin verfügbar."
@@ -200,6 +208,7 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.colorblindness", "Unterstützung für Farbblindheit"},
         {"warning.clientrestart.required", "Die Client Einstellungen wurden geändert - bitte starten Sie den Client neu, damit sie gültig werden"},
         {"warning.serverrestart.required", "Bitte starten Sie den Server neu, damit diese Änderungen gültig werden."},
+        {"warning.changes.canceled", "Der Benutzer hat den Einstellungsdialog abgebrochen - es wurden keine Änderungen an den Einstellungen vorgenommen."},
         {"label.darkmode", "Dunkler Modus"},
         {"label.litemode", "Heller Modus"},
         {"label.trustallservercerts", "TLS: Allen Endserverzertifikaten Ihrer AS2 Partner vertrauen"},
@@ -218,7 +227,8 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"label.httpport.help", "<HTML><strong>HTTP Eingangsport</strong><br><br>"
             + "Dies ist der Port für eingehende unverschlüsselte Verbindungen. Diese Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
             + "Sie müssen nach einer Änderung den AS2 Server neu starten.<br>"
-            + "Der Port ist Teil der URL, an die Ihr Partner AS2 Nachrichten senden muss. Dies ist http://Host:<strong>Port</strong>/as2/HttpReceiver."
+            + "Der Port ist Teil der URL, an die Ihr Partner AS2 Nachrichten senden muss. Dies ist http://Host:<strong>Port</strong>/as2/HttpReceiver.<br><br>"
+            + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT) + "."
             + "</HTML>"
         },
         {"label.httpsport", "HTTPS Eingangsport"},
@@ -226,9 +236,12 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "Dies ist der Port für eingehende verschlüsselte Verbindungen (TLS). "
             + "Diese Einstellung wird an den eingebetteten HTTP Server weiter gegeben, "
             + "Sie müssen nach einer Änderung den AS2 Server neu starten.<br>"
-            + "Der Port ist Teil der URL, an die Ihr Partner AS2 Nachrichten senden muss. Dies ist https://Host:<strong>Port</strong>/as2/HttpReceiver."
+            + "Der Port ist Teil der URL, an die Ihr Partner AS2 Nachrichten senden muss. Dies ist https://Host:<strong>Port</strong>/as2/HttpReceiver<br><br>"
+            + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT) + "."
             + "</HTML>"
         },
-        {"embedded.httpconfig.not.available", "HTTP Server nicht verfügbar oder Zugriffsprobleme auf Konfigurationsdatei"},};
+        {"embedded.httpconfig.not.available", "HTTP Server nicht verfügbar oder Zugriffsprobleme auf Konfigurationsdatei"},
+        {"button.mailserverdetection", "Mail Server herausfinden"},        
+    };
 
 }

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/XPathHelper.java 30    27/10/22 13:25 Heller $
+//$Header: /as2/de/mendelson/util/XPathHelper.java 31    2/11/23 15:53 Heller $
 package de.mendelson.util;
 
 import java.io.InputStream;
@@ -36,11 +36,11 @@ import org.xml.sax.SAXParseException;
  * parameters of XPATH pathes, get values of nodes ...
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 31 $
  */
 public class XPathHelper {
 
-    private Logger logger = Logger.getAnonymousLogger();
+    private final Logger logger = Logger.getAnonymousLogger();
     /**
      * Document to look into
      */

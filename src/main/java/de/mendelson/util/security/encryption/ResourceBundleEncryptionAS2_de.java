@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/ResourceBundleEncryptionAS2_de.java 2     16.09.21 15:30 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/ResourceBundleEncryptionAS2_de.java 5     3/11/23 14:44 Heller $
 package de.mendelson.util.security.encryption;
 
 import de.mendelson.comm.as2.message.*;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleEncryptionAS2_de extends MecResourceBundle {
 

@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/AS2LoggerOutputStream.java 3     7/25/17 12:43p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2LoggerOutputStream.java 4     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.OutputStream;
@@ -31,7 +31,7 @@ public class AS2LoggerOutputStream extends OutputStream{
     /**Buffer to store the text contents*/
     private StringBuilder text = new StringBuilder();
     
-    private AS2MessageInfo messageInfo;
+    private final AS2MessageInfo messageInfo;
         
     /**@param logger Logger to write the logging to, Level is set to INFO
      */

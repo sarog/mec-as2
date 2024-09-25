@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendRequest.java 4     6/22/18 1:48p Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendRequest.java 7     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
@@ -20,15 +22,15 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class CEMSendRequest extends ClientServerMessage implements Serializable {
    
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private Partner initiator = null;
     private KeystoreCertificate certificate = null;
     private Date activationDate = null;
-    private List<Partner> receiver = new ArrayList<Partner>();
+    private final List<Partner> receiver = new ArrayList<Partner>();
     private boolean purposeSSL = false;
     private boolean purposeEncryption = false;
     private boolean purposeSignature = false;
@@ -148,5 +150,8 @@ public class CEMSendRequest extends ClientServerMessage implements Serializable 
         this.purposeSignature = purposeSignature;
     }
     
-    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
 }

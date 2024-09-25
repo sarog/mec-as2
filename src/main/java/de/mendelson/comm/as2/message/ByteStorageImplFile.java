@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplFile.java 12    3.08.21 16:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplFile.java 13    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.AS2Tools;
@@ -13,14 +13,14 @@ import java.nio.file.StandardOpenOption;
  * Container that stores byte arrays in a temp file
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class ByteStorageImplFile implements IByteStorage {
 
     /**
      * IByteStorage extends Serializable
      */
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     //Use a String here to keep this serializable
     private String fullFilename = null;
 

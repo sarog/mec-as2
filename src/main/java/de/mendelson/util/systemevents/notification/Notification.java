@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/notification/Notification.java 29    14/10/22 9:13 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/notification/Notification.java 32    3/11/23 9:57 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -34,12 +34,15 @@ import javax.mail.internet.MimeMessage;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 32 $
  */
 public abstract class Notification {
 
     private final String MODULE_NAME;
     private final MecResourceBundle rb;
+    
+    private long smtpTimeout = TimeUnit.SECONDS.toMillis(15);
+    private long smtpConnectionTimeout = TimeUnit.SECONDS.toMillis(15);
 
     public Notification() {
         try {
@@ -52,6 +55,17 @@ public abstract class Notification {
         MODULE_NAME = rb.getResourceString("module.name");
     }
 
+    /**Sets the SMTP timeout values from outside
+     * 
+     * @param smtpConnectionTimeout
+     * @param smtpTimeout 
+     */
+    public void setTimeout( long smtpConnectionTimeout, long smtpTimeout){
+        this.smtpConnectionTimeout = smtpConnectionTimeout;
+        this.smtpTimeout = smtpTimeout;
+    }
+    
+    
     /**
      * Sends a test notification
      *
@@ -81,8 +95,8 @@ public abstract class Notification {
         properties.setProperty("mail.smtp.host", notificationData.getMailServer());
         properties.setProperty("mail.smtp.port", String.valueOf(notificationData.getMailServerPort()));
         properties.setProperty("mail.transport.protocol", "smtp");
-        properties.setProperty("mail.smtp.connectiontimeout", String.valueOf(TimeUnit.SECONDS.toMillis(10)));
-        properties.setProperty("mail.smtp.timeout", String.valueOf(TimeUnit.SECONDS.toMillis(10)));
+        properties.setProperty("mail.smtp.connectiontimeout", String.valueOf(this.smtpConnectionTimeout));
+        properties.setProperty("mail.smtp.timeout", String.valueOf(this.smtpTimeout));
         if (notificationData.getConnectionSecurity() == NotificationData.SECURITY_START_TLS) {
             properties.setProperty("mail.smtp.starttls.enable", "true");
             properties.setProperty("mail.smtp.ssl.protocols", "SSLv3 TLSv1 TLSv1.1 TLSv1.2 TLSv1.3");
@@ -176,7 +190,7 @@ public abstract class Notification {
         } catch (Throwable e) {
             if (e instanceof SendFailedException) {
                 SendFailedException sendFailedException = (SendFailedException) e;
-                Address failedAddresses[] = sendFailedException.getInvalidAddresses();
+                Address[] failedAddresses = sendFailedException.getInvalidAddresses();
                 StringBuilder errorMessage = new StringBuilder();
                 if (failedAddresses != null) {
                     errorMessage.append("The following mail addresses are invalid:").append("\n");
@@ -184,7 +198,7 @@ public abstract class Notification {
                         errorMessage.append(address.toString()).append("\n");
                     }
                 }
-                Address validUnsentAddresses[] = sendFailedException.getValidUnsentAddresses();
+                Address[] validUnsentAddresses = sendFailedException.getValidUnsentAddresses();
                 if (validUnsentAddresses != null) {
                     errorMessage.append("No mail has been sent to the following valid addresses:").append("\n");
                     for (Address address : validUnsentAddresses) {

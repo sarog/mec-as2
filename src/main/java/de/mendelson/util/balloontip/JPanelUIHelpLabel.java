@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/balloontip/JPanelUIHelpLabel.java 8     14/06/22 10:05 Heller $
+//$Header: /as2/de/mendelson/util/balloontip/JPanelUIHelpLabel.java 10    1/12/23 11:15 Heller $
 package de.mendelson.util.balloontip;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,10 +17,14 @@ import javax.swing.JPanel;
  * display a help text
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class JPanelUIHelpLabel extends JPanel {
         
+    public final static int TRIANGLE_ALIGNMENT_CENTER = BalloonToolTip.TRIANGLE_ALIGNMENT_CENTER;
+    public final static int TRIANGLE_ALIGNMENT_TOP = BalloonToolTip.TRIANGLE_ALIGNMENT_TOP;
+    public final static int TRIANGLE_ALIGNMENT_BOTTOM = BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM;
+    
     /**This variable might not be necessary but is required for the 
      * integrated property editor of Netbeans
      * 
@@ -117,6 +121,25 @@ public class JPanelUIHelpLabel extends JPanel {
         }
     }
     
+    /**
+     * @return The triangleAlignment of the tooltip.
+     * One of
+     * BalloonToolTipTRIANGLE_ALIGNMENT_CENTER, BalloonToolTipTRIANGLE_ALIGNMENT_TOP,
+     * BalloonToolTipTRIANGLE_ALIGNMENT_BOTTOM
+     */
+    public int getTriangleAlignment() {
+        return (this.jPanelUIHelp.getTriangleAlignment());
+    }
+
+    /**
+     * @param triangleAlignment The triangleAlignment of the tooltip to set. 
+     * One of
+     * BalloonToolTipTRIANGLE_ALIGNMENT_CENTER, BalloonToolTipTRIANGLE_ALIGNMENT_TOP,
+     * BalloonToolTipTRIANGLE_ALIGNMENT_BOTTOM
+     */
+    public void setTriangleAlignment(int triangleAlignment) {
+        this.jPanelUIHelp.setTriangleAlignment(triangleAlignment);
+    }
     
     /**
      * This method is called from within the constructor to initialize the form.

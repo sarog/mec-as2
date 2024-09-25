@@ -1,11 +1,10 @@
-//$Header: /as2/de/mendelson/util/security/keylength/ListCellRendererKeyLength.java 1     8/12/22 11:35 Heller $
+//$Header: /as2/de/mendelson/util/security/keylength/ListCellRendererKeyLength.java 2     2/11/23 14:03 Heller $
 package de.mendelson.util.security.keylength;
 
 import de.mendelson.util.ImageUtil;
 import java.awt.Component;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
-import javax.swing.JComboBox;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JList;
@@ -16,7 +15,7 @@ import javax.swing.SwingConstants;
  * Renderer to render the encryption entries in comboboxes
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ListCellRendererKeyLength extends JLabel implements ListCellRenderer{
 

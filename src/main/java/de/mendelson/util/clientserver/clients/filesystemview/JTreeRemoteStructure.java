@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 11    30.11.21 11:08 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 12    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -24,14 +24,14 @@ import javax.swing.tree.TreePath;
  * Tree to display remote file structure
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class JTreeRemoteStructure extends JTree {
 
     private final DefaultMutableTreeNode root;
     private final Map<FileObject, DefaultMutableTreeNode> map = new ConcurrentHashMap<FileObject, DefaultMutableTreeNode>();
     private boolean directoriesOnly = false;
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
 
     /**
      * Holds a new partner ID for every created partner that is always negativ

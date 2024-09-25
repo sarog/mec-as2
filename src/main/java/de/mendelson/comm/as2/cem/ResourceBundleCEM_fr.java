@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_fr.java 9     7.12.18 11:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_fr.java 12    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem;
 import de.mendelson.comm.as2.cem.messages.TrustResponse;
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleCEM_fr extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -34,12 +34,12 @@ public class ResourceBundleCEM_fr extends MecResourceBundle{
         {"cem.structure.info", "Nombre de demandes de confiance dans le CEM entrant: {0}" },
         {"transmitted.certificate.info", "Le certificat transmis a les caractéristiques IssuerDN=\"{0}\" et numéro de série \"{1}\"." },
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN +".cert.already.imported", "Le certificat CEM soumis existe déjà dans le keystore [enc/sign] (alias {0}), l''importation a été ignorée."},
-        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.already.imported", "Le certificat CEM soumis existe déjà dans le keystore [SSL/TLS] (alias {0}), l''importation a été ignorée."},
+        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.already.imported", "Le certificat CEM soumis existe déjà dans le keystore [TLS] (alias {0}), l''importation a été ignorée."},
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN +".cert.imported.success", "Le certificat CEM soumis a été correctement importé [enc/sign] (alias {0})."},
-        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.imported.success", "Le certificat CEM soumis a été correctement importé [SSL/TLS] (alias {0})."},
+        {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.imported.success", "Le certificat CEM soumis a été correctement importé [TLS] (alias {0})."},
         {"category." + CEMEntry.CATEGORY_CRYPT, "Cryptage" },
         {"category." + CEMEntry.CATEGORY_SIGN, "Signature" },
-        {"category." + CEMEntry.CATEGORY_SSL, "SSL" },
+        {"category." + CEMEntry.CATEGORY_TLS, "TLS" },
         {"state." + CEMEntry.STATUS_ACCEPTED_INT, "Acceptée par {0}" },
         {"state." + CEMEntry.STATUS_PENDING_INT, "Pas de réponse si loin de {0}" },
         {"state." + CEMEntry.STATUS_REJECTED_INT, "Rejetée par {0}" },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_fr.java 13    7/10/22 10:37 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_fr.java 16    12/12/23 14:44 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,11 +16,11 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public class ResourceBundleNotification_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -34,7 +34,7 @@ public class ResourceBundleNotification_fr extends MecResourceBundle {
         {"module.name", "[NOTIFICATION MAIL]" },
         {"test.message.send", "Un e-mail de test a été envoyé à {0}."},
         {"test.message.debug", "\nEnvoyer un processus envoi a échoué.\n"},
-        {"misc.message.send", "Un e-mail de notification a été envoyé à {0} ({1}-{2})."},
+        {"misc.message.send", "Un e-mail de notification a été envoyé à {0} ({1}-{2}-{3})."},
         {"misc.message.send.failed", "L''envoi d'un message de notification à {0} a échoué"},
         {"notification.about.event", "Cette notification se réfère à l'événement système de {0}.\nUrgence: {1}\nEnfin: {2}\nTyp: {3}\nId: {4}"},
         {"notification.summary", "Résumé des {0} événements système"},
@@ -49,6 +49,8 @@ public class ResourceBundleNotification_fr extends MecResourceBundle {
         {"do.not.reply", "Veuillez ne pas répondre à ce mail."},
         {"authorization.none", "AUCUN" },
         {"authorization.oauth2", "OAUTH2" },
+        {"authorization.oauth2.authorizationcode", "Authorization code" },
+        {"authorization.oauth2.clientcredentials", "Client credentials" },
         {"authorization.credentials", "Utilisateur/mot de passe" },
     };
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 45    9/11/22 15:14 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 49    22/11/23 10:54 Heller $
 package de.mendelson.comm.as2.log;
 
 import de.mendelson.util.database.IDBDriverManager;
@@ -28,7 +28,7 @@ import java.util.logging.Level;
  * Access to the AS2 log that stores log messages for every transaction
  *
  * @author S.Heller
- * @version $Revision: 45 $
+ * @version $Revision: 49 $
  */
 public class LogAccessDB {
 
@@ -45,7 +45,6 @@ public class LogAccessDB {
     private final Calendar calendarUTC = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
 
     /**
-     * @param host host to connect to
      */
     public LogAccessDB(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
@@ -91,15 +90,15 @@ public class LogAccessDB {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             this.logAsTransaction(runtimeConnectionNoAutoCommit, level, millis, logMessage, messageId);
         } catch (SQLException e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         } finally {
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.systemFailure(e);
+                    SystemEventManagerImplAS2.instance().systemFailure(e);
                 }
             }
         }
@@ -137,32 +136,32 @@ public class LogAccessDB {
                     SystemEvent.ORIGIN_TRANSACTION, SystemEvent.TYPE_TRANSACTION_ANY);
             event.setBody(errorMessage + "\n\nLog message: \"" + logMessage + "\"");
             event.setSubject("Unreferenced MDN or bad message structure");
-            SystemEventManagerImplAS2.newEvent(event);
+            SystemEventManagerImplAS2.instance().newEvent(event);
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex);
+                SystemEventManagerImplAS2.instance().systemFailure(ex);
             }
         } catch (Exception e) {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex);
+                SystemEventManagerImplAS2.instance().systemFailure(ex);
             }
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -193,18 +192,18 @@ public class LogAccessDB {
                     list.add(entry);
                 }
             } catch (Exception e) {
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (statement != null) {
                     try {
                         statement.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
@@ -219,13 +218,14 @@ public class LogAccessDB {
 
     /**
      * Deletes all information from the table messagelog regarding the passed
-     * message instance
+     * message instance. Needs a lock on the table messagelog
      */
     public void deleteMessageLog(List<String> messageIds, Connection runtimeConnectionNoAutoCommit) throws Exception {
         PreparedStatement statement = null;
         try {
             if (messageIds != null && !messageIds.isEmpty()) {
-                StringBuilder deleteQuery = new StringBuilder("DELETE FROM messagelog WHERE messageid IN (");
+                StringBuilder deleteQuery = new StringBuilder(
+                        "DELETE FROM messagelog WHERE messageid IN (");
                 for (int i = 0; i < messageIds.size(); i++) {
                     if (i > 0) {
                         deleteQuery.append(",");
@@ -238,16 +238,13 @@ public class LogAccessDB {
                     statement.setString(i + 1, messageIds.get(i));
                 }
             } else {
-                statement = runtimeConnectionNoAutoCommit.prepareStatement("DELETE FROM messagelog WHERE messageid IS NULL");
+                statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                        "DELETE FROM messagelog WHERE messageid IS NULL");
             }
-            statement.execute();
+            statement.executeUpdate();
         } finally {
             if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
+                statement.close();
             }
         }
     }
@@ -278,15 +275,15 @@ public class LogAccessDB {
                 //an error occured - rollback transaction and release all table locks
                 this.dbDriverManager.rollbackTransaction(statement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {

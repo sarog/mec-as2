@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/gui/JPanelGradientUI.java 1     25.10.11 15:17 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/gui/JPanelGradientUI.java 2     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.gui;
 
 import java.awt.Color;
@@ -22,14 +22,14 @@ import javax.swing.plaf.basic.BasicPanelUI;
 /** 
  * Panel UI that contains a gradient
  * @author  S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class JPanelGradientUI extends BasicPanelUI {
 
-    private Color color;
-    private float[] scales;
-    private float[] offsets = new float[4];
-    private RescaleOp operation;
+    private final Color color;
+    private final float[] scales;
+    private final float[] offsets = new float[4];
+    private final RescaleOp operation;
     
 
     public JPanelGradientUI(Color color, float opacity){

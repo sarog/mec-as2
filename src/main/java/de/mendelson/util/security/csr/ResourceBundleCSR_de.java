@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/csr/ResourceBundleCSR_de.java 6     7.07.20 13:44 Heller $
+//$Header: /as4/de/mendelson/util/security/csr/ResourceBundleCSR_de.java 10    6/11/23 11:38 Heller $
 package de.mendelson.util.security.csr;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleCSR_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

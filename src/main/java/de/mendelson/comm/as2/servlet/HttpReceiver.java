@@ -1,4 +1,4 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 56    1/09/22 14:11 Heller $
+///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 59    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.servlet;
 
 import de.mendelson.Copyright;
@@ -14,7 +14,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -39,7 +38,7 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet to receive AS2 messages via HTTP
  *
  * @author S.Heller
- * @version $Revision: 56 $
+ * @version $Revision: 59 $
  */
 public class HttpReceiver extends HttpServlet {
 
@@ -95,7 +94,7 @@ public class HttpReceiver extends HttpServlet {
             }
             //check if this is a AS2 message that requests async MDN. In this case return the ok code
             //before processing the message, there is no need to keep the connection alive.
-            boolean isAS2MessageRequestingAsyncMDN = headerMap.containsKey("receipt-delivery-option") && headerMap.get("receipt-delivery-option") != null && headerMap.get("receipt-delivery-option").trim().length() > 0;
+            boolean isAS2MessageRequestingAsyncMDN = headerMap.containsKey("receipt-delivery-option") && headerMap.get("receipt-delivery-option") != null && !headerMap.get("receipt-delivery-option").trim().isEmpty();
             if (isAS2MessageRequestingAsyncMDN) {
                 this.informAS2ServerIncomingMessage(dataFile, headerMap, request, null);
                 committed = true;
@@ -122,7 +121,7 @@ public class HttpReceiver extends HttpServlet {
                             SystemEvent.TYPE_FILE_DELETE);
                     event.setSubject(event.typeToTextLocalized());
                     event.setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
-                    SystemEventManagerImplAS2.newEvent(event);
+                    SystemEventManagerImplAS2.instance().newEvent(event);
                 }
             }
         }

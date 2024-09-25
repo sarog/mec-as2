@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2Field.java 1     4/06/17 2:13p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/OFTP2Field.java 2     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.math.BigInteger;
@@ -17,14 +17,14 @@ import java.util.Date;
 /**
  * A field in a command structure
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public abstract class OFTP2Field {
 
-    public static int TYPE_AN = 1;
-    public static int TYPE_N = 2;
+    public static final int TYPE_AN = 1;
+    public static final int TYPE_N = 2;
     public static int TYPE_TXT = 3;
-    public static int TYPE_BIN = 4;
+    public static final int TYPE_BIN = 4;
     private String name;
     private int maxLength = 0;
     private String description = "";

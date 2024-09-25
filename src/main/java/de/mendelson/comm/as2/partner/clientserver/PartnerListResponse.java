@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListResponse.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListResponse.java 3     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -17,11 +17,11 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class PartnerListResponse extends ClientServerResponse implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private List<Partner> list = null;
 
     public PartnerListResponse(PartnerListRequest request) {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker.java 19    6.12.18 16:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessagePacker.java 21    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class ResourceBundleAS2MessagePacker extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -33,7 +33,7 @@ public class ResourceBundleAS2MessagePacker extends MecResourceBundle{
         {"mdn.details", "Outbound MDN details: {0}" },
         {"message.compressed", "Outbound payload compressed from {0} to {1}." },
         {"message.compressed.unknownratio", "Outbound payload compressed." },
-        {"mdn.signed", "Outbound MDN has been signed with the algorithm \"{0}\"." },
+        {"mdn.signed", "Outbound MDN has been signed with the algorithm \"{0}\", the key alias is \"{1}\"." },
         {"mdn.notsigned", "Outbound MDN has not been signed." },
         {"mdn.creation.start", "Generating outbound MDN, setting message id to \"{0}\"."},
         {"message.creation.start", "Generating outbound AS2 message, setting message id to \"{0}\"."},

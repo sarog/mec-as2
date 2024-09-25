@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/DNUtil.java 10    20.02.14 10:04 Heller $
+//$Header: /as2/de/mendelson/util/security/DNUtil.java 11    2/11/23 14:03 Heller $
 package de.mendelson.util.security;
 
 import java.security.cert.X509Certificate;
@@ -9,7 +9,7 @@ import javax.security.auth.x500.X500Principal;
 /**
  * Utility class to display DN information. 
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class DNUtil {
 
@@ -53,7 +53,6 @@ public class DNUtil {
 
     /**
      * Get the string value of a X509 DN.
-     * @param name the X509Name to extract a value from
      * @param target the OID of the target value
      * @param type one of the types defined in this class
      * @return a string holding the value, or <code>null</code> if the

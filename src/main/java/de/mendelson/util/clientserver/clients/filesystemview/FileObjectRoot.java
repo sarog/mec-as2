@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectRoot.java 4     15.11.18 17:00 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectRoot.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.net.URI;
@@ -16,11 +16,11 @@ import javax.swing.Icon;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class FileObjectRoot extends FileObject {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     /**
      * A special name for this root - e.g. a drive name, might be null if no
      * name exists
@@ -39,7 +39,7 @@ public class FileObjectRoot extends FileObject {
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(this.getAbsolutePathDisplayOnServerSide());
-        if( this.name != null && this.name.trim().length() > 0 ){
+        if( this.name != null && !this.name.trim().isEmpty()){
             builder.append( " [");
             builder.append( this.name);
             builder.append( "]");

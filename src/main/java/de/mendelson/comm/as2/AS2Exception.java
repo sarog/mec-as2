@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/AS2Exception.java 2     17.02.06 17:09 Heller $
+//$Header: /as2/de/mendelson/comm/as2/AS2Exception.java 3     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2;
 import de.mendelson.comm.as2.message.AS2Message;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.comm.as2.message.AS2Message;
  * An exception that is thrown if anything works wrong during the processing
  * of a message, this is send to the partner as error MDN
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class AS2Exception extends Exception{
     
@@ -31,13 +31,12 @@ public class AS2Exception extends Exception{
     /**unknown-trading-partner*/
     public static final String UNKNOWN_TRADING_PARTNER_ERROR = "unknown-trading-partner";
     
-    private String errorType;
+    private final String errorType;
     
-    private AS2Message as2Message;
+    private final AS2Message as2Message;
 
     /**Creates a new exception
      *@param ERROR_TYPE One of the error types as defined in this class
-     *@param message detailled error message
      */
     public AS2Exception( final String ERROR_TYPE, String errorMessage, AS2Message as2Message ){
         super( errorMessage );

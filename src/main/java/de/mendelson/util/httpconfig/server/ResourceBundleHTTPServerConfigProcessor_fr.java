@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_fr.java 13    17/01/23 11:55 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_fr.java 17    2/11/23 15:53 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleHTTPServerConfigProcessor_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -30,7 +30,8 @@ public class ResourceBundleHTTPServerConfigProcessor_fr extends MecResourceBundl
      */
     static final Object[][] CONTENTS = {
         {"http.server.config.listener", "Port {0} ({1}), Relié à l''adaptateur réseau {2}"},
-        {"http.server.config.keystorepath", "TLS keystore: \"{0}\""},
+        {"http.server.config.tlskey.none", "Clé TLS: Aucune clé TLS n''est définie, les connexions TLS entrantes ne sont pas possibles!"},
+        {"http.server.config.tlskey.info", "Clé TLS:\n\tAlias [{0}]\n\tFingerprint SHA1 [{1}]\n\tNuméro de série [{2}]\n\tValable jusqu''au [{3}]\n"},
         {"http.server.config.clientauthentication", "Le serveur requiert une authentification client TLS: {0}"},
         {"external.ip", "IP externe: {0} / {1}"},
         {"external.ip.error", "IP externe: -Ne peut pas être détecté-"},

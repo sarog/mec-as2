@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/DBServerInformation.java 4     24/08/22 12:55 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/DBServerInformation.java 6     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.database;
 
 import java.io.Serializable;
@@ -14,10 +14,10 @@ import java.io.Serializable;
  * Stores some information of the used data base system - just for information purpose
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class DBServerInformation implements Serializable{
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     private String productName = "UNKNOWN";
     private String productVersion = "UNKNOWN";
@@ -63,7 +63,6 @@ public class DBServerInformation implements Serializable{
     }
 
     /**
-     * @param address the address to set
      */
     public void setHost(String host) {
         this.host = host;

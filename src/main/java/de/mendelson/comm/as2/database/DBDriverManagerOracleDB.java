@@ -1,9 +1,10 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerOracleDB.java 1     2/01/23 12:40 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerOracleDB.java 2     28/11/23 17:03 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.database.AbstractDBDriverManagerMySQL;
 import de.mendelson.util.database.IDBDriverManager;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /*
@@ -17,7 +18,7 @@ import java.sql.SQLException;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class DBDriverManagerOracleDB extends AbstractDBDriverManagerMySQL implements IDBDriverManager, ISQLQueryModifier {
 
@@ -114,6 +115,11 @@ public class DBDriverManagerOracleDB extends AbstractDBDriverManagerMySQL implem
 
     @Override
     public String addLimitToQuery(String a, int b) {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public void setBytesParameterAsJavaObject(PreparedStatement statement, int index, byte[] data) throws Exception {
         throw new IllegalAccessError();
     }
 }

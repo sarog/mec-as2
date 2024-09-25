@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 24    12/12/22 14:18 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 35    14/12/23 15:23 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 35 $
  */
 public class ResourceBundleCertificates extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -31,8 +31,8 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"button.delete.all.expired", "Delete all expired keys/certificates" },
         {"button.edit", "Rename alias" },
         {"button.newkey", "Import key" },
-        {"button.newcertificate", "Import certificate" },
-        {"button.export", "Export certificate" },       
+        {"button.import", "Import" },
+        {"button.export", "Export" },       
         {"button.reference", "Show usage" },       
         {"button.keycopy", "Copy entry to {0} manager" },       
         {"button.keycopy.tls", "TLS" },
@@ -50,13 +50,11 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"label.selectcsrfile", "Please select the file where to store the request" },
         {"label.cert.import", "Import certificate (from your trading partner)" },
         {"label.cert.export", "Export certificate (for your trading partner)" },
-        {"label.key.import.pem", "Import your own private key (from PEM)" },
-        {"label.key.import.pkcs12", "Import your own private key (from PKCS#12)" },     
-        {"label.key.import.jks", "Import your own private key (from JKS, JAVA keystore format)" },     
-        {"label.key.export.pkcs12", "Export your own private key (PKCS#12) (for backup purpose only!)" },        
-        {"label.keystore", "Keystore file:" },        
-        {"title.signencrypt", "Avaliable certificates and keys (encryption, signature)" },
-        {"title.ssl", "Avaliable certificates and keys (SSL/TLS)" },                
+        {"label.key.import", "Import your own private key (from keystore PKCS#12, JKS)" },          
+        {"label.key.export.pkcs12", "Export your own private key (PKCS#12) (for backup purpose only!)" },
+        {"label.keystore.export", "Export all entries as keystore file (for backup purpose only!)" },
+        {"title.signencrypt", "Certificates and keys (encryption, signature)" },
+        {"title.ssl", "Certificates and keys (TLS)" },                
         {"button.ok", "Ok" },
         {"button.cancel", "Cancel" },
         {"filechooser.certificate.import", "Please select the certificate file for the import" },
@@ -65,7 +63,7 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"certificate.import.success.title", "Success" },
         {"certificate.import.error.message", "There occured an error during the import process.\n{0}" },
         {"certificate.import.error.title", "Error" },
-        {"certificate.import.alias", "Certificate alias to use:" },
+        {"certificate.import.alias", "Certificate alias to use" },
         {"keystore.readonly.message", "The underlaying keystore is read-only.\nAny certificate write operation (modify/edit) is not possible in this state." },
         {"keystore.readonly.title", "Keystore r/o" },
         {"modifications.notalllowed.message", "Modifications are not possible"},
@@ -95,9 +93,7 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"warning.deleteallexpired.expired.but.used.text", "{0} keys/certificates are expired but still in use - the system will keep them" },
         {"module.locked.title", "Module locked" },
         {"module.locked.text", "The module {0} is locked by another client ({1})." },
-        {"keycopy.target.exists.title", "Entry exists in the target certifiicate manager"},
         {"keycopy.target.exists.text", "This entry does already exist (alias {0})."},
-        {"keycopy.target.ro.title", "Target r/o" },
         {"keycopy.target.ro.text", "The underlaying keystore file for the target certificate manager is read/only." },
         {"keycopy.success.text", "The entry [{0}] has been copied successfully" },
     };

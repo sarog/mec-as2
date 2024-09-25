@@ -1,8 +1,7 @@
-//$Header: /as2/de/mendelson/util/security/PEMKeys2Keystore.java 10    26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/util/security/PEMKeys2Keystore.java 11    2/11/23 14:03 Heller $
 package de.mendelson.util.security;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
@@ -44,7 +43,7 @@ import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
  * PRIVATE KEY-----
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class PEMKeys2Keystore{
 
@@ -62,7 +61,7 @@ public class PEMKeys2Keystore{
      */
     private char[] keystorePass = "test".toCharArray();
 
-    private String targetKeystoreType;
+    private final String targetKeystoreType;
 
     /**
      * Creates a new instance of PEMUtil
@@ -194,7 +193,6 @@ public class PEMKeys2Keystore{
      * Saves the passed keystore
      *
      * @param keystorePass Password for the keystore
-     * @param filename Filename where to save the keystore to
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass, Path file) throws Exception {
         OutputStream out = null;

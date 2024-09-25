@@ -1,10 +1,11 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/KeystoreStorage.java 6     1.10.18 16:15 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorage.java 11    24/10/23 12:16 Heller $
 package de.mendelson.util.security.cert;
 
 import java.security.Key;
 import java.security.cert.Certificate;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
+import java.util.List;
 import java.util.Map;
 
 /*
@@ -18,11 +19,13 @@ import java.util.Map;
  * Interface for a keystore storage implementation. It should be possible to pass the
  * keystore as file, as byte array, as inputstream etc, this depends on the implementation
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 11 $
  */
 public interface KeystoreStorage {
 
     public void save() throws Throwable;
+    
+    public void replaceAllEntriesAndSave(List<KeystoreCertificate> oldList, List<KeystoreCertificate> newList) throws Exception;
 
     public Key getKey(String alias) throws Exception;
 
@@ -39,12 +42,10 @@ public interface KeystoreStorage {
     public char[] getKeystorePass();
 
     public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception;
+    
+    public void loadKeystoreFromServer() throws Exception;
 
     public boolean isKeyEntry(String alias) throws Exception;
-
-    public String getOriginalKeystoreFilename();
-
-    public boolean canWrite();
     
     public String getKeystoreStorageType();
     

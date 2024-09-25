@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 15    13/10/22 11:16 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 19    2/11/23 14:03 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * a partner
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 19 $
  */
 public class SystemEventNotificationControllerImplAS2 extends SystemEventNotificationController {
 
@@ -32,9 +32,8 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
     /**
      * Controller that checks notifications and sends them out if required
      *
-     * @param host host to connect to
      */
-    public SystemEventNotificationControllerImplAS2(Logger logger, 
+    public SystemEventNotificationControllerImplAS2(Logger logger,
             IDBDriverManager dbDriverManager) {
         super(logger);
         this.dbDriverManager = dbDriverManager;
@@ -70,7 +69,8 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
                     if (notificationData.notifyPostprocessingProblem()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getOrigin() == SystemEvent.ORIGIN_SYSTEM && event.getType() == SystemEvent.TYPE_CERTIFICATE_EXPIRE) {
+                } else if (event.getOrigin() == SystemEvent.ORIGIN_SYSTEM
+                        && event.getType() == SystemEvent.TYPE_CERTIFICATE_EXPIRE) {
                     //certificate expire
                     if (notificationData.notifyCertExpire()) {
                         filteredEventsForNotification.add(event);
@@ -86,7 +86,14 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
                     if (notificationData.notifyResendDetected()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getSeverity() == SystemEvent.SEVERITY_ERROR && event.getOrigin() == SystemEvent.ORIGIN_SYSTEM) {
+                } else if (event.getOrigin() == SystemEvent.ORIGIN_SYSTEM
+                        && event.getType() == SystemEvent.TYPE_CLIENT_ANY) {
+                    //client-server problem
+                    if (notificationData.notifyClientServerProblem()) {
+                        filteredEventsForNotification.add(event);
+                    }
+                } else if (event.getSeverity() == SystemEvent.SEVERITY_ERROR
+                        && event.getOrigin() == SystemEvent.ORIGIN_SYSTEM) {
                     //system error
                     if (notificationData.notifySystemFailure()) {
                         filteredEventsForNotification.add(event);
@@ -105,12 +112,12 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
      * Finally inform the user..
      */
     @Override
-    public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) throws Exception{
+    public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) throws Throwable {
         NotificationImplAS2 notification = new NotificationImplAS2();
         NotificationData notificationData = this.notificationAccessDB.getNotificationData();
-        if( notificationData.usesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null ){
-            OAuth2Util.ensureValidAccessToken(this.dbDriverManager, 
-                    new SystemEventManagerImplAS2(),
+        if (notificationData.usesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
+            OAuth2Util.ensureValidAccessToken(this.dbDriverManager,
+                    SystemEventManagerImplAS2.instance(),
                     notificationData.getOAuth2Config());
         }
         notification.sendNotification(systemEventsToNotifyUserOf, notificationData);

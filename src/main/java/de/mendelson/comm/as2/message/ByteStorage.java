@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ByteStorage.java 12    3.08.21 17:48 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ByteStorage.java 16    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.InputStream;
@@ -7,14 +7,14 @@ import java.io.Serializable;
 /**
  * Container that stores byte arrays
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 16 $
  */
 public class ByteStorage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     /**Switch to file storage at 20 MB data size*/
-    private final int THRESHOLD = 20* 1024 * 1024;
+    private final static int THRESHOLD = 20* 1024 * 1024;
     private IByteStorage storage = null;
 
     public ByteStorage() {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObject.java 6     15.11.18 11:59 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObject.java 8     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.io.Serializable;
@@ -16,13 +16,13 @@ import java.nio.file.Paths;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public abstract class FileObject implements Serializable, Comparable {
 
-    public static final long serialVersionUID = 1L;
-    private URI fileURI;
-    private String absolutePathDisplayOnServerSide;
+    private static final long serialVersionUID = 1L;
+    private final URI fileURI;
+    private final String absolutePathDisplayOnServerSide;
 
     public FileObject(URI fileURI) {
         this.fileURI = fileURI;

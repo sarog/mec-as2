@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 38    24/11/22 10:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 43    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -13,9 +13,7 @@ import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,14 +33,14 @@ import java.util.concurrent.TimeUnit;
  * Checks several issues of the configuration
  *
  * @author S.Heller
- * @version $Revision: 38 $
+ * @version $Revision: 43 $
  */
 public class ConfigurationCheckController {
 
     private final CertificateManager managerEncSign;
     private final CertificateManager managerTLS;
-    private final ConfigurationCheckThread checkThread = new ConfigurationCheckThread();
-    private final PreferencesAS2 preferences = new PreferencesAS2();
+    private final ConfigurationCheckThread checkThread;
+    private final PreferencesAS2 preferences;
     private final HTTPServerConfigInfo httpServerConfigInfo;
     private final DirPollManager pollManager;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
@@ -57,6 +55,8 @@ public class ConfigurationCheckController {
         this.httpServerConfigInfo = httpServerConfigInfo;
         this.pollManager = pollManager;
         this.dbDriverManager = dbDriverManager;
+        this.preferences = new PreferencesAS2(this.dbDriverManager);
+        this.checkThread = new ConfigurationCheckThread();
     }
 
     /**
@@ -165,7 +165,6 @@ public class ConfigurationCheckController {
             this.checkAutoDelete(newIssueList);
             this.checkOutboundConnectionsAllowed(newIssueList);
             this.checkAllPartnersCertificatesAvailable(newIssueList);
-            this.checkTLSKeystoreSettings(newIssueList);
             this.checkDirPollAmount(newIssueList);
         }
 
@@ -264,25 +263,7 @@ public class ConfigurationCheckController {
         /**
          * Finds out some issues that could occur in the underlaying keystores
          */
-        private void checkKeystore(List<ConfigurationIssue> newIssueList) {
-            Path keystoreFileTLS = Paths.get(preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND));
-            if (!Files.isWritable(keystoreFileTLS)) {
-                ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.KEYSTORE_TLS_RO);
-                issue.setHintParameter(new Object[]{
-                    keystoreFileTLS.toAbsolutePath().toString(),
-                    System.getProperty("user.name")
-                });
-                newIssueList.add(issue);
-            }
-            Path keystoreFileEncryptSign = Paths.get(preferences.get(PreferencesAS2.KEYSTORE));
-            if (!Files.isWritable(keystoreFileEncryptSign)) {
-                ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO);
-                issue.setHintParameter(new Object[]{
-                    keystoreFileEncryptSign.toAbsolutePath().toString(),
-                    System.getProperty("user.name")
-                });
-                newIssueList.add(issue);
-            }
+        private void checkKeystore(List<ConfigurationIssue> newIssueList) {            
             List<KeystoreCertificate> tlsList = managerTLS.getKeyStoreCertificateList();
             StringBuilder aliasList = new StringBuilder();
             int keyCount = 0;
@@ -303,16 +284,15 @@ public class ConfigurationCheckController {
             } else if (keyCount > 1) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE);
                 issue.setDetails(aliasList.toString());
-                synchronized (this.allIssuesList) {
-                    this.allIssuesList.add(issue);
-                }
-            } else {
-                KeystoreCertificate usedSSLKey = keystoreKeysList.get(0);
-                String foundFingerprint = usedSSLKey.getFingerPrintSHA1();
+                newIssueList.add(issue);
+            }
+            if (keyCount > 0) {
+                KeystoreCertificate usedTLSKey = keystoreKeysList.get(0);
+                String foundFingerprint = usedTLSKey.getFingerPrintSHA1();
                 for (String testFingerprint : KeystoreCertificate.TEST_KEYS_FINGERPRINTS_SHA1) {
                     if (foundFingerprint.equalsIgnoreCase(testFingerprint)) {
                         ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS);
-                        issue.setDetails(usedSSLKey.getAlias());
+                        issue.setDetails(usedTLSKey.getAlias());
                         newIssueList.add(issue);
                     }
                 }
@@ -346,35 +326,6 @@ public class ConfigurationCheckController {
             if (maxMemory < 4 * oneGB) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.LOW_MAX_HEAP_MEMORY);
                 issue.setDetails(AS2Tools.getDataSizeDisplay(maxMemory));
-                newIssueList.add(issue);
-            }
-        }
-
-        /**
-         * Checks if the underlaying http server uses the same keystore as
-         * defined in the settings. This check makes just sense if a TLS receipt
-         * handler is defined in the system
-         *
-         */
-        private void checkTLSKeystoreSettings(List<ConfigurationIssue> newIssueList) {
-            //its possible to start the system without the http server. In this case there are some values missing            
-            if (httpServerConfigInfo == null
-                    || httpServerConfigInfo.getKeystorePath() == null) {
-                return;
-            }
-            if ((!httpServerConfigInfo.isEmbeddedHTTPServerStarted()) || (!httpServerConfigInfo.isSSLEnabled())) {
-                return;
-            }
-            String httpsKeystorePath = Paths.get(httpServerConfigInfo.getKeystorePath()).normalize().toAbsolutePath().toString();
-            String preferencesKeystorePath = Paths.get(preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).normalize().toAbsolutePath().toString();
-            if (!httpsKeystorePath.equals(preferencesKeystorePath)) {
-                ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.DIFFERENT_KEYSTORES_TLS);
-                issue.setHintParameter(
-                        new Object[]{
-                            httpsKeystorePath,
-                            httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString(),
-                            preferencesKeystorePath
-                        });
                 newIssueList.add(issue);
             }
         }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 51    23/08/22 10:28 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/BaseClient.java 56    17/01/24 17:21 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
@@ -39,14 +39,14 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * Abstract client for a user
  *
  * @author S.Heller
- * @version $Revision: 51 $
+ * @version $Revision: 56 $
  */
 public class BaseClient {
 
     private Logger logger = Logger.getAnonymousLogger();
     private final ClientSessionHandler clientSessionHandler;
     private IoSession session = null;
-    private NioSocketConnector connector;
+    private final NioSocketConnector connector;
     private ExecutorFilter executorFilter = null;
     private UnorderedThreadPoolExecutor unorderedThreadPoolExecutor = null;
 
@@ -147,21 +147,30 @@ public class BaseClient {
             sslFilter.setNeedClientAuth(false);
             this.connector.getFilterChain().addFirst("TLS", sslFilter);
             //add CPU bound tasks first
-            this.connector.getFilterChain().addLast("protocol", new ProtocolCodecFilter(new ClientServerCodecFactory(this.logger, this.clientSessionHandler.getCallback())));
+            this.connector.getFilterChain().addLast("protocol", new ProtocolCodecFilter(
+                    new ClientServerCodecFactory(this.clientSessionHandler.getCallback())));
             //log client-server communication
             //this.connector.getFilterChain().addLast("logger", new LoggingFilter());
             //multi threaded model: allow and receive simulanously
             this.unorderedThreadPoolExecutor = new UnorderedThreadPoolExecutor();
             this.executorFilter = new ExecutorFilter(unorderedThreadPoolExecutor);
             this.connector.getFilterChain().addLast("executor", executorFilter);
-            ConnectFuture connFuture = this.connector.connect(hostAddress).awaitUninterruptibly();
-            if (connFuture.isConnected()) {
-                this.session = connFuture.getSession();
-                return (true);
-            } else {
-                this.connector.dispose();
-                return (false);
+            ConnectFuture connFuture = null;
+            boolean connected = false;
+            try {
+                connFuture = this.connector.connect(hostAddress).awaitUninterruptibly();
+            } finally {
+                if (connFuture != null) {
+                    if (connFuture.isConnected()) {
+                        this.session = connFuture.getSession();
+                        connected = true;
+                    } else {
+                        this.connector.dispose();
+                        connected = false;
+                    }
+                }
             }
+            return (connected);
         } catch (Exception e) {
             this.log(Level.WARNING, "[Client-Server communication] "
                     + "BaseClient.connect: " + e.getMessage());
@@ -219,7 +228,6 @@ public class BaseClient {
      * Sends a sync message and throws a timeout exception if the client does
      * not answer in a proper time
      *
-     * @param message
      */
     public ClientServerResponse sendSync(ClientServerMessage request) {
         return (this.sendSync(request, TIMEOUT_SYNC_RECEIVE));
@@ -231,7 +239,6 @@ public class BaseClient {
      * Once the request has been sent this will wait for an answer without any
      * timeout.
      *
-     * @param message
      */
     public ClientServerResponse sendSyncWaitInfinite(ClientServerMessage request) {
         if (!this.isConnected()) {
@@ -269,7 +276,6 @@ public class BaseClient {
      * timeout (this is set to TIMEOUT_SYNC_SEND [in ms] by default - it is the
      * sync wait timeout)
      *
-     * @param message
      */
     public ClientServerResponse sendSync(ClientServerMessage request, long timeout) {
         if (!this.isConnected()) {

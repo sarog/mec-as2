@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TableModelSubjectAlternativeNames.java 4     25.02.20 14:20 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TableModelSubjectAlternativeNames.java 6     2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.table.AbstractTableModel;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -27,12 +26,12 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * Table model
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class TableModelSubjectAlternativeNames extends AbstractTableModel {
 
     private final List<GeneralName> parameter = Collections.synchronizedList(new ArrayList<GeneralName>());
-    private JFrame parentComponent = null;
+    private final JFrame parentComponent = null;
     private MecResourceBundle rb = null;
 
     /**

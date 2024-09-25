@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/upgrade/DB18ToScript.java 10    27.08.21 16:59 Heller $
+//$Header: /as2/de/mendelson/upgrade/DB18ToScript.java 11    2/11/23 14:02 Heller $
 package de.mendelson.upgrade;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -34,11 +34,11 @@ import de.mendelson.util.database.IDBDriverManager;
  * Update as2, must be applied for versions < 2012
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class DB18ToScript {
 
-    private DBDriverManagerHSQL dbDriverManager = DBDriverManagerHSQL.instance();
+    private final DBDriverManagerHSQL dbDriverManager = DBDriverManagerHSQL.instance();
     
     private void performUpdate()throws Throwable{
         boolean updateRequired = this.upgradeIsRequired();
@@ -399,7 +399,6 @@ public class DB18ToScript {
         /**
          * Decodes Base64 data into octects
          *
-         * @param binaryData Byte array containing Base64 data
          * @return Array containind decoded data.
          */
         public static byte[] decode(String encoded) {

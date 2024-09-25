@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 34    5/01/23 12:24 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 37    4/12/23 15:46 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import com.toedter.calendar.JDateChooser;
@@ -7,6 +7,7 @@ import de.mendelson.util.IStatusBar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.systemevents.ResourceBundleSystemEvent;
@@ -99,6 +100,8 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         column = this.jTableSystemEvents.getColumnModel().getColumn(1);
         column.setMaxWidth(TableModelSystemEvents.ROW_HEIGHT + this.jTableSystemEvents.getRowMargin() * 2);
         column.setResizable(false);
+        TableColumn columnCategory = this.jTableSystemEvents.getColumnModel().getColumn(3);
+        columnCategory.setCellRenderer(new TableCellRendererEventCategory());
         this.setupDateChooser();
         this.setMultiresolutionIcons();
         //setup localized event label
@@ -110,11 +113,12 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         this.jLabelOriginUser.setText(this.rbSystemEvent.getResourceString("origin." + SystemEvent.ORIGIN_USER));
         List<UIEventCategory> categoryList = UIEventCategory.getAllSorted();
         // +1 because there is an "all" entry
-        this.jComboBoxCategory.setMaximumRowCount(categoryList.size()+1);
+        this.jComboBoxCategory.setMaximumRowCount(categoryList.size() + 1);
         this.jComboBoxCategory.addItem(this.rb.getResourceString("category.all"));
         for (UIEventCategory category : categoryList) {
             this.jComboBoxCategory.addItem(category);
         }
+        this.jComboBoxCategory.setRenderer(new ListCellRendererEventCategory());
         //hide dialog on esc
         ActionListener actionListenerESC = new ActionListener() {
             @Override
@@ -131,12 +135,12 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
     private void setMultiresolutionIcons() {
         this.jButtonSearch.setIcon(new ImageIcon(IMAGE_MAGNIFYING_GLASS.toMinResolution(24)));
         this.jButtonResetFilter.setIcon(new ImageIcon(IMAGE_RESET_FILTER.toMinResolution(24)));
-        this.jLabelSeverityError.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_ERROR_MULTIRESOLUTION.toMinResolution(18)));
-        this.jLabelSeverityInfo.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_INFO_MULTIRESOLUTION.toMinResolution(18)));
-        this.jLabelSeverityWarning.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_WARNING_MULTIRESOLUTION.toMinResolution(18)));
-        this.jLabelOriginSystem.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_SYSTEM_MULTIRESOLUTION.toMinResolution(18)));
-        this.jLabelOriginTransaction.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION.toMinResolution(18)));
-        this.jLabelOriginUser.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_USER_MULTIRESOLUTION.toMinResolution(18)));
+        this.jLabelSeverityError.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_ERROR_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelSeverityInfo.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_INFO_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelSeverityWarning.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_WARNING_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelOriginSystem.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_SYSTEM_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelOriginTransaction.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelOriginUser.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_USER_MULTIRESOLUTION.toMinResolution(20)));
     }
 
     /**
@@ -293,7 +297,8 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newSingleThreadExecutor(
+                new NamedThreadFactory("ui-systemevents"));
         executor.submit(runnable);
         executor.shutdown();
     }
@@ -502,6 +507,9 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
         jPanelSearchTextCategory.add(jLabelFreeText, gridBagConstraints);
+
+        jTextFieldFreeTextSearch.setMinimumSize(new java.awt.Dimension(7, 24));
+        jTextFieldFreeTextSearch.setPreferredSize(new java.awt.Dimension(7, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
@@ -512,7 +520,8 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
         jPanelSearchTextCategory.add(jTextFieldFreeTextSearch, gridBagConstraints);
 
-        jComboBoxCategory.setPreferredSize(new java.awt.Dimension(140, 20));
+        jComboBoxCategory.setMinimumSize(new java.awt.Dimension(160, 24));
+        jComboBoxCategory.setPreferredSize(new java.awt.Dimension(160, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;

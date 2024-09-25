@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/clientserver/log/search/Logline.java 5     3.01.19 17:01 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/Logline.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import de.mendelson.util.log.LogFormatter;
@@ -24,11 +24,11 @@ import org.apache.lucene.util.BytesRef;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public abstract class Logline implements Serializable, Comparable<Logline> {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     /**
      * Human readable timestamp - mainly not used. This field is just available
      * to allow humans to open and read the server logs in an editor
@@ -52,7 +52,7 @@ public abstract class Logline implements Serializable, Comparable<Logline> {
      * Stores all standard values of the log line, also implementation specific
      * data
      */
-    private Map<String, String> map = new HashMap<String, String>();
+    private final Map<String, String> map = new HashMap<String, String>();
 
     /**
      * Pre parsed data - creates a log line from the data found in a lucene

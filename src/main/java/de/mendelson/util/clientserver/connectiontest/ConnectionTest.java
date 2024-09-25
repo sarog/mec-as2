@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 22    24/08/22 17:33 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTest.java 23    24/04/23 16:45 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -38,7 +38,7 @@ import javax.net.ssl.X509TrustManager;
  * Performs a connection test and returns information about the results
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 23 $
  */
 public class ConnectionTest {
 
@@ -299,7 +299,7 @@ public class ConnectionTest {
             certs = keystoreUtil.orderX509CertChain(certs);
             for (int i = 0; i < certs.length; i++) {
                 KeystoreCertificate keystoreCert = new KeystoreCertificate();
-                keystoreCert.setCertificate(certs[i]);
+                keystoreCert.setCertificate(certs[i], null);
                 StringBuilder certDescription = new StringBuilder();
                 certDescription.append(keystoreCert.getSubjectDN());
                 if (keystoreCert.isCACertificate()) {

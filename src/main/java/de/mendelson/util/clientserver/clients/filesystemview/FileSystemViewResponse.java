@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewResponse.java 5     6.11.18 16:59 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewResponse.java 6     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -16,11 +16,11 @@ import java.util.List;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class FileSystemViewResponse extends ClientServerResponse implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private FileObject parameterFile = null;
     private List<FileObject> parameterFileArray = null;
     private String parameterString = null;

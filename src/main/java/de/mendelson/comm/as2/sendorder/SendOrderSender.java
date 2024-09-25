@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 24    10/10/22 17:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 28    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -11,7 +11,7 @@ import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.io.File;
+
 import java.nio.file.Path;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -29,14 +29,14 @@ import java.util.logging.Logger;
  * Sender class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 28 $
  */
 public class SendOrderSender {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private MecResourceBundle rb;
-    private SendOrderAccessDB sendOrderAccess;
-    private IDBDriverManager dbDriverManager;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final MecResourceBundle rb;
+    private final SendOrderAccessDB sendOrderAccess;
+    private final IDBDriverManager dbDriverManager;
 
     public SendOrderSender(IDBDriverManager dbDriverManager) {
         //Load default resourcebundle
@@ -95,7 +95,7 @@ public class SendOrderSender {
                         e.getMessage()
                     }
             ));
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
             e.printStackTrace();
         }
         return (null);
@@ -127,8 +127,8 @@ public class SendOrderSender {
      * @return NULL in the case of an error
      */
     public AS2Message send(CertificateManager certificateManager, Partner sender,
-            Partner receiver, File file, String userdefinedId, String subject, String[] payloadContentTypes) {
-        return (this.send(certificateManager, sender, receiver, new Path[]{file.toPath()}, null, userdefinedId,
+            Partner receiver, Path file, String userdefinedId, String subject, String[] payloadContentTypes) {
+        return (this.send(certificateManager, sender, receiver, new Path[]{file}, null, userdefinedId,
                 subject, payloadContentTypes));
     }
 

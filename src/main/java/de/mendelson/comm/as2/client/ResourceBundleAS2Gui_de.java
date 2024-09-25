@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 54    17/01/23 14:16 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 57    29/11/23 14:00 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 54 $
+ * @version $Revision: 57 $
  */
 public class ResourceBundleAS2Gui_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -96,5 +96,8 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"resend.failed.nopayload", "Erneuter Versand als neue Transaktion ist fehlgeschlagen: Die selektierte Transaktion {0} hat keine Nutzdaten." },
         {"server.answer.timeout.title", "Zeitüberschreitung in der Client-Server Anbindung" },
         {"server.answer.timeout.details", "Der Server antwortet nicht im definierten Zeitrahmen - ist die Last zu hoch?" },
+        {"resend.failed.unknown.sender", "Erneutes Senden fehlgeschlagen: Unbekannter Sender {0} - bitte prüfen Sie, ob dieser Partner noch im System existiert." },
+        {"resend.failed.unknown.receiver", "Erneutes Senden fehlgeschlagen: Unbekannter Empfänger {0} - bitte prüfen Sie, ob dieser Partner noch im System existiert." },
+        {"buy.license", "Lizenz kaufen" },
     };
 }

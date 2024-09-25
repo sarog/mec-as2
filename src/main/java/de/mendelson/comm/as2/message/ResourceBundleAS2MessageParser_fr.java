@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_fr.java 32    26.08.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_fr.java 36    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 32 $
+ * @version $Revision: 36 $
  */
 public class ResourceBundleAS2MessageParser_fr extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -68,6 +68,12 @@ public class ResourceBundleAS2MessageParser_fr extends MecResourceBundle{
         {"original.filename.found", "Le nom de fichier original a été défini par l''expéditeur comme \"{0}\"." },
         {"original.filename.undefined", "Le nom de fichier original n''a pas été transmis par le canal de message." },
         {"data.not.compressed", "Les données AS2 reçues sont non compressées." },
+        {"invalid.original.filename.title", "Un nom de fichier original non valide a été détecté dans la transaction." },
+        {"invalid.original.filename.body", "Le système a extrait un nom de fichier original non valide dans la "
+            + "transaction {0} de {1} à {2}.\nLe nom de fichier trouvé \"{3}\" a été remplacé par \"{4}\" et le traitement "
+            + "s''est poursuivi avec ce nouveau nom de fichier. Cela peut avoir un impact sur votre flux de traitement, "
+            + "car les noms de fichiers contiennent parfois des métadonnées." },
+        {"invalid.original.filename.log", "Nom de fichier original non valide détecté dans la transaction. \"{0}\" est remplacé par \"{1}\" et le traitement se poursuit." },
     };
     
 }

@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 10    15.03.19 11:52 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 13    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /*
@@ -16,14 +18,14 @@ import java.io.Serializable;
  * be send to the server
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class LoginRequest extends ClientServerMessage implements Serializable {
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String username = null;
     private char[] password = null;
-    private String clientOSName;
+    private final String clientOSName;
     /**
      * The servers require a special client version/id because client and server
      * must be compatible. This is set here
@@ -76,4 +78,9 @@ public class LoginRequest extends ClientServerMessage implements Serializable {
         return clientOSName;
     }
     
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
 }

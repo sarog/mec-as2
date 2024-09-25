@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 25    12/12/22 14:18 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 38    14/12/23 15:23 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 38 $
  */
 public class ResourceBundleCertificates_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -30,8 +30,8 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"button.delete.all.expired", "Alle abgelaufenen Schlüssel/Zertifikate löschen" },
         {"button.edit", "Alias umbenennen"},
         {"button.newkey", "Schlüssel importieren"},
-        {"button.newcertificate", "Zertifikat importieren"},
-        {"button.export", "Zertifikat exportieren"},
+        {"button.import", "Importieren"},
+        {"button.export", "Exportieren"},
         {"button.reference", "Verwendung anzeigen" },     
         {"button.keycopy", "Zur {0} Verwaltung kopieren" },       
         {"button.keycopy.tls", "TLS" },
@@ -49,13 +49,12 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"label.selectcsrfile", "Bitte wählen Sie die Datei zum Speichern des CSR"},
         {"label.cert.import", "Zertifikat importieren (vom Partner)"},
         {"label.cert.export", "Zertifikat exportieren (für den Partner)"},
-        {"label.key.import.pem", "Eigenen privaten Schlüssel importieren (von PEM)"},
-        {"label.key.import.pkcs12", "Eigenen privaten Schlüssel importieren (von PKCS#12)"},
-        {"label.key.import.jks", "Eigenen privaten Schlüssel importieren (von JKS, JAVA Keystore Format)"},
+        {"label.key.import", "Eigenen privaten Schlüssel importieren (von Keystore PKCS#12, JKS)"},
         {"label.key.export.pkcs12", "Schlüssel exportieren (PKCS#12) (nur für Backup Zwecke!)"},
-        {"label.keystore", "Keystore Datei:"},
-        {"title.signencrypt", "Verfügbare Schlüssel und Zertifikate (Verschlüsselung, Signaturen)"},
-        {"title.ssl", "Verfügbare Schlüssel und Zertifikate (SSL/TLS)"},
+        {"label.keystore.export", "Alle Einträge als Keystore Datei exportieren (nur für Backup Zwecke!)" },
+        {"label.keystore", "Speicherort"},
+        {"title.signencrypt", "Schlüssel und Zertifikate (Verschlüsselung, Signaturen)"},
+        {"title.ssl", "Schlüssel und Zertifikate (TLS)"},
         {"button.ok", "Ok"},
         {"button.cancel", "Abbrechen"},
         {"filechooser.certificate.import", "Bitte wählen Sie die Zertifikatdatei für den Import"},
@@ -96,7 +95,7 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"module.locked.text", "Das Modul {0} wird von einem anderen Client exklusiv verwendet ({1})." },
         {"keycopy.target.exists.title", "Eintrag exisitiert bereits im Ziel"},
         {"keycopy.target.exists.text", "Dieser Eintrag exisiert bereits in der Zielzertifikatverwaltung (Alias {0})."},
-        {"keycopy.target.ro.title", "Ziel schreibgeschützt" },
+        {"keycopy.target.ro.title", "Ziel ist schreibgeschützt" },
         {"keycopy.target.ro.text", "Operation fehlgeschlagen - Schlüsseldatei des Ziels ist schreibgeschützt." },
         {"keycopy.success.text", "Der Eintrag [{0}] wurde erfolgreich kopiert" },
     };

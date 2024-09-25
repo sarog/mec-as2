@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/log/ANSI.java 7     13/05/22 16:28 Heller $
+//$Header: /as2/de/mendelson/util/log/ANSI.java 9     2/11/23 15:53 Heller $
 package de.mendelson.util.log;
 
 import java.awt.Color;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ANSI {
 
@@ -646,7 +646,6 @@ public class ANSI {
     /**
      * Checks if the passed ANSI sequence is a color sequence
      *
-     * @param ansiCode
      * @return
      */
     public static final boolean isColorSequence(String ansiSequence) {
@@ -696,8 +695,9 @@ public class ANSI {
             if (!inSequence) {
                 builder.append(foundChar);
             } else {
-                if (foundChar == 'm');
-                inSequence = false;
+                if (foundChar == 'm') {
+                    inSequence = false;
+                }
             }
         }
         return (builder.toString());

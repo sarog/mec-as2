@@ -1,18 +1,18 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 19    26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeyPKCS12.java 27    2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
-import de.mendelson.util.MecFileChooser;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.TextOverlay;
+import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.clients.filesystemview.RemoteFileBrowser;
 import de.mendelson.util.passwordfield.PasswordOverlay;
-import de.mendelson.util.security.BCCryptoHelper;
-import de.mendelson.util.security.JKSKeys2PKCS12;
-import de.mendelson.util.security.KeyStoreUtil;
-import de.mendelson.util.security.PKCS122PKCS12;
+import de.mendelson.util.security.cert.KeystoreCertificate;
+import de.mendelson.util.security.cert.ListCellRendererCertificates;
+import de.mendelson.util.security.cert.clientserver.ExportRequestPrivateKeyPKCS12;
+import de.mendelson.util.security.cert.clientserver.ExportResponsePrivateKeyPKCS12;
 import de.mendelson.util.uinotification.UINotification;
-import java.nio.file.Paths;
-import java.security.KeyStore;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -20,8 +20,6 @@ import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
-import javax.swing.SwingUtilities;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 
 /*
@@ -35,25 +33,29 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Export a private key into a pkcs#12 keystore
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 27 $
  */
 public class JDialogExportKeyPKCS12 extends JDialog {
 
     /**
      * ResourceBundle to localize the GUI
      */
-    private MecResourceBundle rb = null;
-    private CertificateManager manager = null;
-    private Logger logger = null;
+    private final MecResourceBundle rb;
+    private final CertificateManager manager;
+    private final Logger logger;
+    private final BaseClient baseClient;
+    private final JFrame parent;
 
     /**
      * Creates new form JDialogPartnerConfig
      *
      * @param manager Manager that handles the certificates
      */
-    public JDialogExportKeyPKCS12(JFrame parent, Logger logger, CertificateManager manager,
+    public JDialogExportKeyPKCS12(JFrame parent, BaseClient baseClient, Logger logger, CertificateManager manager,
             String selectedAlias) throws Exception {
         super(parent, true);
+        this.parent = parent;
+        this.baseClient = baseClient;
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -66,29 +68,37 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         this.setTitle(this.rb.getResourceString("title"));
         initComponents();
         PasswordOverlay.addTo(this.jPasswordFieldPassphrase, this.rb.getResourceString("label.keypass.hint"));
-        TextOverlay.addTo(this.jTextFieldExportPKCS12File, this.rb.getResourceString("label.exportkey.hint"));
+        TextOverlay.addTo(this.jTextFieldExportPKCS12File, this.rb.getResourceString("label.exportdir.hint"));
         this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
         this.manager = manager;
-        this.populateAliasList(selectedAlias);
+        this.jComboBoxKeys.setRenderer(new ListCellRendererCertificates());
+        this.populateKeyList(selectedAlias);
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setButtonState();
     }
 
-    private void populateAliasList(String preselection) throws Exception {
-        this.jComboBoxAlias.removeAllItems();
-        KeyStoreUtil util = new KeyStoreUtil();
-        KeyStore sourceKeystore = this.manager.getKeystore();
-        List<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
-        if (keyAliasesList.isEmpty()) {
+    private void populateKeyList(String preselection) throws Exception {
+        this.jComboBoxKeys.removeAllItems();
+        List<KeystoreCertificate> keyList = new ArrayList<KeystoreCertificate>();
+        KeystoreCertificate preselectedKey = null;
+        for (KeystoreCertificate key : this.manager.getKeyStoreCertificateList()) {
+            if (key.getIsKeyPair()) {
+                keyList.add(key);
+                if (preselection != null && preselection.equals(key.getAlias())) {
+                    preselectedKey = key;
+                }
+            }
+        }
+        if (keyList.isEmpty()) {
             throw new Exception(this.rb.getResourceString("keystore.contains.nokeys"));
         } else {
-            for (int i = 0; i < keyAliasesList.size(); i++) {
-                this.jComboBoxAlias.addItem(keyAliasesList.get(i));
+            for (KeystoreCertificate key : keyList) {
+                this.jComboBoxKeys.addItem(key);
             }
-            if (preselection != null) {
-                this.jComboBoxAlias.setSelectedItem(preselection);
+            if (preselectedKey != null) {
+                this.jComboBoxKeys.setSelectedItem(preselectedKey);
             } else {
-                this.jComboBoxAlias.setSelectedItem(0);
+                this.jComboBoxKeys.setSelectedItem(0);
             }
         }
     }
@@ -97,52 +107,66 @@ public class JDialogExportKeyPKCS12 extends JDialog {
      * Sets the ok and cancel buttons of this GUI
      */
     private void setButtonState() {
-        this.jButtonOk.setEnabled(this.jTextFieldExportPKCS12File.getText().length() > 0
+        this.jButtonOk.setEnabled(!this.jTextFieldExportPKCS12File.getText().isEmpty()
                 && this.jPasswordFieldPassphrase.getPassword().length > 0);
     }
 
     /**
-     * Finally import the key
+     * Finally export the key
      */
-    private void performExportFromPKCS12() {
+    private void performExportToPKCS12() {
         try {
-            KeyStoreUtil util = new KeyStoreUtil();
-            KeyStore sourceKeystore = this.manager.getKeystore();
-            String selectedAlias = (String) this.jComboBoxAlias.getSelectedItem();
-            KeyStore targetKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
-                    BouncyCastleProvider.PROVIDER_NAME);
-            util.loadKeyStore(targetKeystore, this.jTextFieldExportPKCS12File.getText(),
-                    this.jPasswordFieldPassphrase.getPassword());
-            String keystoreFormat = this.manager.getKeystoreType();
-            if (keystoreFormat.equals(BCCryptoHelper.KEYSTORE_PKCS12)) {
-                PKCS122PKCS12 exporter = new PKCS122PKCS12(this.logger);
-                exporter.setTargetKeyStore(targetKeystore, this.jPasswordFieldPassphrase.getPassword());
-                exporter.importKey(sourceKeystore, selectedAlias);
-                exporter.saveKeyStore(targetKeystore, this.jPasswordFieldPassphrase.getPassword(),
-                        Paths.get(this.jTextFieldExportPKCS12File.getText()));
-            } else if (keystoreFormat.equals(BCCryptoHelper.KEYSTORE_JKS)) {
-                JKSKeys2PKCS12 exporter = new JKSKeys2PKCS12(this.logger);
-                exporter.setTargetKeyStore(targetKeystore);
-                exporter.exportKey(sourceKeystore, this.manager.getKeystorePass(), selectedAlias);
-                exporter.saveKeyStore(targetKeystore, this.jPasswordFieldPassphrase.getPassword(),
-                        Paths.get(this.jTextFieldExportPKCS12File.getText()));
+            String serverSideTargetPath = this.jTextFieldExportPKCS12File.getText();
+            char[] serverSideTargetPass = this.jPasswordFieldPassphrase.getPassword();
+            int sourceKeystoreUsage = this.manager.getStorageUsage();
+            KeystoreCertificate selectedKey = (KeystoreCertificate) this.jComboBoxKeys.getSelectedItem();
+            String selectedAlias = selectedKey.getAlias();
+            String selectedFingerPintSHA1 = selectedKey.getFingerPrintSHA1();
+            ExportRequestPrivateKeyPKCS12 request
+                    = new ExportRequestPrivateKeyPKCS12(
+                            sourceKeystoreUsage,
+                            selectedFingerPintSHA1,
+                            serverSideTargetPath,
+                            serverSideTargetPass);
+            ExportResponsePrivateKeyPKCS12 response = (ExportResponsePrivateKeyPKCS12) this.baseClient.sendSync(request);
+            if (response.getException() != null) {
+                throw response.getException();
             }
             UINotification.instance().addNotification(null,
                     UINotification.TYPE_SUCCESS,
                     this.rb.getResourceString("key.export.success.title"),
-                    this.rb.getResourceString("key.export.success.message")
+                    this.rb.getResourceString("key.exported.to.file",
+                    new Object[]{
+                        selectedAlias,
+                        response.getSaveFileOnServer()
+                    })
             );
             this.logger.fine(this.rb.getResourceString("key.exported.to.file",
                     new Object[]{
                         selectedAlias,
-                        Paths.get(this.jTextFieldExportPKCS12File.getText()).toAbsolutePath().toString()
+                        response.getSaveFileOnServer()
                     }));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             UINotification.instance().addNotification(null,
                     UINotification.TYPE_ERROR,
                     this.rb.getResourceString("key.export.error.title"),
                     this.rb.getResourceString("key.export.error.message", e.getMessage()));
         }
+    }
+
+    
+    private void browseExportDirectory() {
+        String existingPath = this.jTextFieldExportPKCS12File.getText();
+        RemoteFileBrowser browser = new RemoteFileBrowser(this.parent, this.baseClient,
+                this.rb.getResourceString("filechooser.key.export"));
+        browser.setDirectoriesOnly(true);
+        browser.setSelectedFile(existingPath);
+        browser.setVisible(true);
+        String selectedPath = browser.getSelectedPath();
+        if (selectedPath != null) {
+            this.jTextFieldExportPKCS12File.setText(selectedPath);
+        }
+        this.setButtonState();
     }
 
     /**
@@ -156,14 +180,17 @@ public class JDialogExportKeyPKCS12 extends JDialog {
 
         jPanelEdit = new javax.swing.JPanel();
         jLabelIcon = new javax.swing.JLabel();
-        jLabelExportPKCS12File = new javax.swing.JLabel();
         jTextFieldExportPKCS12File = new javax.swing.JTextField();
         jPanel3 = new javax.swing.JPanel();
         jButtonBrowseExportFile = new javax.swing.JButton();
         jLabelPassphrase = new javax.swing.JLabel();
         jPasswordFieldPassphrase = new javax.swing.JPasswordField();
-        jComboBoxAlias = new javax.swing.JComboBox();
+        jComboBoxKeys = new javax.swing.JComboBox();
         jLabelAlias = new javax.swing.JLabel();
+        jPanelSpace2 = new javax.swing.JPanel();
+        jPanelSpace1 = new javax.swing.JPanel();
+        jPanelUIHelpLabelURL = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelSpace3 = new javax.swing.JPanel();
         jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
@@ -180,14 +207,6 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 20, 10);
         jPanelEdit.add(jLabelIcon, gridBagConstraints);
 
-        jLabelExportPKCS12File.setText(this.rb.getResourceString( "label.exportkey"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEdit.add(jLabelExportPKCS12File, gridBagConstraints);
-
         jTextFieldExportPKCS12File.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 jTextFieldExportPKCS12FileKeyReleased(evt);
@@ -195,7 +214,7 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
@@ -203,9 +222,10 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         jPanelEdit.add(jTextFieldExportPKCS12File, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridy = 11;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelEdit.add(jPanel3, gridBagConstraints);
 
         jButtonBrowseExportFile.setText("..");
@@ -218,16 +238,16 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelEdit.add(jButtonBrowseExportFile, gridBagConstraints);
 
         jLabelPassphrase.setText(this.rb.getResourceString( "label.keypass"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 10;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelPassphrase, gridBagConstraints);
 
         jPasswordFieldPassphrase.setMinimumSize(new java.awt.Dimension(150, 20));
@@ -239,24 +259,54 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridy = 10;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEdit.add(jPasswordFieldPassphrase, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 7;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEdit.add(jComboBoxAlias, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(1, 5, 1, 5);
+        jPanelEdit.add(jComboBoxKeys, gridBagConstraints);
 
         jLabelAlias.setText(this.rb.getResourceString( "label.alias" ));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 7;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelEdit.add(jLabelAlias, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelEdit.add(jPanelSpace2, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelEdit.add(jPanelSpace1, gridBagConstraints);
+
+        jPanelUIHelpLabelURL.setToolTipText(this.rb.getResourceString( "label.exportdir.help"));
+        jPanelUIHelpLabelURL.setText(this.rb.getResourceString( "label.exportdir"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
+        jPanelEdit.add(jPanelUIHelpLabelURL, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelEdit.add(jPanelSpace3, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -295,7 +345,7 @@ public class JDialogExportKeyPKCS12 extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(466, 296));
+        setSize(new java.awt.Dimension(487, 314));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -304,11 +354,7 @@ public class JDialogExportKeyPKCS12 extends JDialog {
     }//GEN-LAST:event_jPasswordFieldPassphraseKeyReleased
 
     private void jButtonBrowseExportFileActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseExportFileActionPerformed
-        JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        MecFileChooser chooser = new MecFileChooser(
-                parent,
-                this.rb.getResourceString("filechooser.key.export"));
-        chooser.browseFilename(this.jTextFieldExportPKCS12File);
+        this.browseExportDirectory();
     }//GEN-LAST:event_jButtonBrowseExportFileActionPerformed
 
     private void jTextFieldExportPKCS12FileKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldExportPKCS12FileKeyReleased
@@ -322,21 +368,24 @@ public class JDialogExportKeyPKCS12 extends JDialog {
 
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
         this.setVisible(false);
-        this.performExportFromPKCS12();
+        this.performExportToPKCS12();
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonBrowseExportFile;
     private javax.swing.JButton jButtonCancel;
     private javax.swing.JButton jButtonOk;
-    private javax.swing.JComboBox jComboBoxAlias;
+    private javax.swing.JComboBox jComboBoxKeys;
     private javax.swing.JLabel jLabelAlias;
-    private javax.swing.JLabel jLabelExportPKCS12File;
     private javax.swing.JLabel jLabelIcon;
     private javax.swing.JLabel jLabelPassphrase;
     private javax.swing.JPanel jPanel3;
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelEdit;
+    private javax.swing.JPanel jPanelSpace1;
+    private javax.swing.JPanel jPanelSpace2;
+    private javax.swing.JPanel jPanelSpace3;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelURL;
     private javax.swing.JPasswordField jPasswordFieldPassphrase;
     private javax.swing.JTextField jTextFieldExportPKCS12File;
     // End of variables declaration//GEN-END:variables

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/OkDialog.java 6     4.12.20 9:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/OkDialog.java 7     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.shared.ui.MarginInfo;
@@ -25,11 +25,11 @@ import com.vaadin.ui.Window;
  * side and is not attack-safe
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class OkDialog extends Window implements Button.ClickListener {
 
-    private Button okButton = new Button("Ok");
+    private final Button okButton = new Button("Ok");
     private int width = 100;
     private int height = 100;
 

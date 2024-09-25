@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ServerInfo.java 5     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ServerInfo.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,11 +15,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ServerInfo extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String productname = null;
 
     /**
@@ -37,5 +39,10 @@ public class ServerInfo extends ClientServerMessage implements Serializable {
     @Override
     public String toString() {
         return ("Server info " + this.productname != null ? this.productname : "");
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 }

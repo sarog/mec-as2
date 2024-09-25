@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue_de.java 25    24/11/22 10:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue_de.java 28    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 28 $
  */
 public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -46,7 +46,7 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
         {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS), "Zertifikat ist abgelaufen (TLS)"},
         {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS),
             "<HTML>Zertifikate haben nur eine begrenzte Laufzeit. In der Regel sind das ein, drei oder fünf Jahre.<br>"
-            + "Ein Zertifikat, was Sie in Ihrem System für die SSL/TLS Leitungssicherung verwenden, ist nicht mehr gültig.<br>"
+            + "Ein Zertifikat, was Sie in Ihrem System für die TLS Leitungssicherung verwenden, ist nicht mehr gültig.<br>"
             + "Es ist nicht möglich, mit einem abgelaufenen Zertifikat kryptographischer Operationen auszuführen - "
             + "daher sollten Sie sich bitte darum kümmern, das Zertifikat zu erneuern oder ein neues Zertifikat erstellen "
             + "bzw beglaubigen lassen.<br><br>"
@@ -59,15 +59,15 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "<br></HTML>"},
         {String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE), "Mehrere Schlüssel im TLS Keystore gefunden - darf nur einer sein"},
         {"hint." + String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE),
-            "<HTML>In dem SSL/TLS Keystore Ihres Systems befinden sich mehrere Schlüssel. Es darf sich allerdings nur einer darin befinden - dieser wird beim Start des Servers als SSL/TLS Schlüssel verwendet.<br>"
-            + "Bitte löschen Sie so lange Schüssel aus dem SSL/TLS Keystore, bis nur noch ein Schlüssel darin vorhanden ist.<br>"
+            "<HTML>In dem TLS Keystore Ihres Systems befinden sich mehrere Schlüssel. Es darf sich allerdings nur einer darin befinden - dieser wird beim Start des Servers als TLS Schlüssel verwendet.<br>"
+            + "Bitte löschen Sie so lange Schüssel aus dem TLS Keystore, bis nur noch ein Schlüssel darin vorhanden ist.<br>"
             + "Sie erkennen die Schlüssel in der Zertifikatverwaltung am Schlüsselsymbol in der ersten Spalte.<br>"
             + "Nach dieser Änderung ist es notwendig, den Server neu zu starten.</HTML>"},
         {String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE), "Kein Schlüssel im TLS Keystore gefunden"},
         {"hint." + String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE),
-            "<HTML>Es wurde kein Schlüssel im SSL/TLS Keystore Ihres Systems gefunden.<br>"
+            "<HTML>Es wurde kein Schlüssel im TLS Keystore Ihres Systems gefunden.<br>"
             + "Sie erkennen Schlüssel am vorangestellten Schlüsselsymbol, wenn Sie die Zertifikatverwaltung öffnen.<br>"
-            + "Es wird genau ein Schlüssel im SSL/TLS Keystore benötigt, um den Handshakeprozess der Leitungssicherung durchzuführen.<br>"
+            + "Es wird genau ein Schlüssel im TLS Keystore benötigt, um den Handshakeprozess der Leitungssicherung durchzuführen.<br>"
             + "Ohne diesen Schlüssel kommen Sie also weder ein- noch ausgehend zu gesicherten Verbindungen.</HTML>"},
         {String.valueOf(ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE), "Aktivieren Sie automatisches Löschen - Im System ist eine grosse Menge von Transaktionen"},
         {"hint." + String.valueOf(ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE),
@@ -116,12 +116,7 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "Wenn Sie einen beglaubigten Schlüssel benötigen, wenden Sie sich bitte an den mendelson Support.</HTML>"},
         {String.valueOf(ConfigurationIssue.JVM_32_BIT), "Die Verwendung einer 32 Bit Java VM wird nicht für den produktiven Einsatz empfohlen, da dann der maximale Heap-Speicher auf 1,3GB begrenzt ist."},
         {"hint." + String.valueOf(ConfigurationIssue.JVM_32_BIT),
-            "<HTML>Java 32bit Prozesse können nicht genug Speicher reservieren, um das System im Produktivbetrieb stabil zu halten. Bitte verwenden Sie eine 64bit JVM.</HTML>"},
-        {String.valueOf(ConfigurationIssue.DIFFERENT_KEYSTORES_TLS), "TLS Sende- und Empfangskeystore sind unterschiedlich"},
-        {"hint." + String.valueOf(ConfigurationIssue.DIFFERENT_KEYSTORES_TLS),
-            "<HTML>Im unterliegenden HTTP Server haben Sie den Keystore \"<strong>{0}</strong>\" für TLS definiert (in der Konfigurationsdatei \"<strong>{1}</strong>\").<br><br>"
-            + "Für HTTPS Sendezwecke haben Sie den Keystore \"<strong>{2}</strong>\" in den Systemeinstellungen definiert.<br><br>"
-            + "Das funktioniert gut. Sie können jedoch nicht beide Keystores über die Benutzeroberfläche verwalten, da die TLS Zertifikatverwaltung nur einen Keystore bearbeiten kann.</HTML>"},
+            "<HTML>Java 32bit Prozesse können nicht genug Speicher reservieren, um das System im Produktivbetrieb stabil zu halten. Bitte verwenden Sie eine 64bit JVM.</HTML>"},        
         {String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT), "Windows Service mit lokalem Systemkonto gestartet"},
         {"hint." + String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT),
             "<HTML>Sie haben den mendelson AS2 Server als Windows Service eingerichtet und starten ihn über ein lokales Systemkonto (\"{0}\").<br>"
@@ -136,23 +131,6 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "Bitte reduzieren Sie diesen Wert, indem Sie die Überwachungsintervalle der jeweiligen Partnerverzeichnisse vergrößern und"
             + " auch Überwachungen für Partner deaktivieren, wo dies nicht benötigt wird."
             + "Bei einer großen Anzahl von Partnern wird empfohlen, alle Verzeichnisüberwachungen deaktivieren und die Sendeaufträge von "
-            + "Ihrem Backend aus mit den Befehlen <i>AS2Send.exe</i> oder <i>as2send.sh</i> nach Bedarf zu erstellen.</HTML>"},
-        {String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO), "Interne Keystoredatei (Sign/Verschlüsselung) ist nur lesbar"},
-        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO),
-            "<HTML>Die unterliegende Datei zum Verwalten von kryptographischen Schlüsseln und Zertifikaten \"{0}\" kann vom aktuellen "
-            + "Benutzer des Serverprozesses ({1}) nicht beschrieben werden.<br>"
-            + "Das schränkt die Funktion des Systems nicht ein - es ist aber nicht möglich, Änderungen im Zertifikatmanager "
-            + "(Signatur/Verschlüsselung) vorzunehmen. Sie können also in diesem Zustand dem System keine Schlüssel/Zertifikate hinzufügen,"
-            + "löschen oder umbenennen."
-            + "</HTML>" },
-        {String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO), "Interne Keystoredatei (TLS) ist nur lesbar"},
-        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO),
-            "<HTML>Die unterliegende Datei zum Verwalten von kryptographischen Schlüsseln und Zertifikaten \"{0}\" kann vom aktuellen "
-            + "Benutzer des Serverprozesses ({1}) nicht beschrieben werden.<br>"
-            + "Das schränkt die Funktion des Systems nicht ein - es ist aber nicht möglich, Änderungen im Zertifikatmanager "
-            + "(TLS) vorzunehmen.<br>"
-            + "Sie können also in diesem Zustand dem System keine Schlüssel/Zertifikate hinzufügen,"
-            + "löschen oder umbenennen."
-            + "</HTML>" },
+            + "Ihrem Backend aus mit den Befehlen <i>AS2Send.exe</i> oder <i>as2send.sh</i> nach Bedarf zu erstellen.</HTML>"},        
     };
 }

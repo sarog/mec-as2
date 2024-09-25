@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/panel/ResourceBundleLogConsole_fr.java 2     4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/util/log/panel/ResourceBundleLogConsole_fr.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.log.panel;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,11 +16,11 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleLogConsole_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

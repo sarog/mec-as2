@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/modulelock/ModuleLock.java 15    5/08/22 17:09 Heller $
+//$Header: /as2/de/mendelson/util/modulelock/ModuleLock.java 18    2/11/23 14:03 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.database.IDBDriverManager;
@@ -26,16 +26,16 @@ import javax.swing.JOptionPane;
  * all other clients should have just a read-only view.
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 18 $
  */
 public class ModuleLock {
 
-    public static final String MODULE_SSL_KEYSTORE = "SSL keystore";
+    public static final String MODULE_SSL_KEYSTORE = "TLS keystore";
     public static final String MODULE_ENCSIGN_KEYSTORE = "ENC/SIGN keystore";
     public static final String MODULE_PARTNER = "Partner management";
     public static final String MODULE_SERVER_SETTINGS = "Server settings";
 
-    private static Logger logger = Logger.getAnonymousLogger();
+    private static final Logger logger = Logger.getAnonymousLogger();
 
     public ModuleLock() {
     }
@@ -337,7 +337,7 @@ public class ModuleLock {
             statement.setLong(1, System.currentTimeMillis());
             statement.setString(2, moduleName);
             statement.setString(3, clientInformation.getUniqueid());
-            statement.execute();
+            statement.executeUpdate();
         } catch (Exception e) {
             logger.severe("ModuleLock._refreshLock: " + e.getMessage());
             throw e;

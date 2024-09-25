@@ -1,9 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerModificationRequest.java 3     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerModificationRequest.java 6     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -17,12 +20,12 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class PartnerModificationRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
-    private List<Partner> data = null;
+    private static final long serialVersionUID = 1L;
+    private final List<Partner> data = new ArrayList<Partner>();
 
     public PartnerModificationRequest() {
     }
@@ -40,9 +43,14 @@ public class PartnerModificationRequest extends ClientServerMessage implements S
     }
 
     /**
-     * @param data the data to set
      */
-    public void setData(List<Partner> data) {
-        this.data = data;
+    public void setData(List<Partner> newData) {
+        this.data.clear();
+        this.data.addAll(newData);
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 24    8/12/22 11:34 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 27    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -48,17 +48,17 @@ import javax.swing.JFrame;
  * Winzard to create a PDF that contains a data sheet
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 27 $
  */
 public class JDialogCreateDataSheet extends JDialog {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private AS2StatusBar statusbar;
-    private MecResourceBundle rb;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final AS2StatusBar statusbar;
+    private final MecResourceBundle rb;
     private Partner localStation = null;
-    private CertificateManager certificateManagerEncSign;
-    private CertificateManager certificateManagerSSL;
-    private PreferencesClient preferenceClient;
+    private final CertificateManager certificateManagerEncSign;
+    private final CertificateManager certificateManagerSSL;
+    private final PreferencesClient preferenceClient;
 
     /**
      * Creates new form JDialogCreateDataSheet
@@ -105,7 +105,7 @@ public class JDialogCreateDataSheet extends JDialog {
     }
 
     private void setButtonState() {
-        this.jButtonOk.setEnabled(this.jTextFieldReceiptURL.getText().length() > 0);
+        this.jButtonOk.setEnabled(!this.jTextFieldReceiptURL.getText().isEmpty());
     }
 
     private void initializeComboboxes() {
@@ -187,7 +187,7 @@ public class JDialogCreateDataSheet extends JDialog {
                         byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerEncSign.getKeystore(), alias, "PKCS7");
                         information.setCertVerifySignature(pkcs7);
                     }
-                    PartnerCertificateInformation infoSSL = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SSL);
+                    PartnerCertificateInformation infoSSL = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_TLS);
                     if (infoSSL != null && !infoSSL.isEmpty()) {
                         String alias = certificateManagerSSL.getAliasByFingerprint(infoSSL.getFingerprintSHA1());
                         byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerSSL.getKeystore(), alias, "PKCS7");

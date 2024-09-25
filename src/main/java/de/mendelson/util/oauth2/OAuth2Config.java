@@ -1,4 +1,4 @@
-///$Header: /mec_as2/de/mendelson/util/oauth2/OAuth2Config.java 3     2/01/23 16:47 Heller $
+///$Header: /mec_as2/de/mendelson/util/oauth2/OAuth2Config.java 5     28/11/23 17:21 Heller $
 package de.mendelson.util.oauth2;
 
 import java.io.Serializable;
@@ -14,15 +14,24 @@ import java.io.Serializable;
  * Dummy class - not implemented in the community edition
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
-public class OAuth2Config implements Serializable {
+public class OAuth2Config implements Serializable, Cloneable {
 
     public static final long serialVersionUID = 1L;
 
     public static final int PKCE_NONE = 0;
     public static final int PKCE_PLAIN = 1;
     public static final int PKCE_S256 = 2;
+
+    /**
+     * Authorization Code Grant
+     */
+    public static final int METHOD_RFC6749_4_1 = 1;
+    /**
+     * Client Credentials Grant
+     */
+    public static final int METHOD_RFC6749_4_4 = 2;
 
     public OAuth2Config() {
     }
@@ -153,6 +162,29 @@ public class OAuth2Config implements Serializable {
 
     public void setPKCEVerifier(String a) {
         throw new IllegalArgumentException("Not implemented in the community edition");
+    }
+
+    /**
+     * @return the method - one of METHOD_RFC6749_4_1, METHOD_RFC6749_4_4
+     */
+    public int getRFCMethod() {
+        throw new IllegalArgumentException("Not implemented in the community edition");
+    }
+
+    /**
+     * @param method the method to set - one of METHOD_RFC6749_4_1,
+     * METHOD_RFC6749_4_4
+     */
+    public void setRFCMethod(int method) {
+        throw new IllegalArgumentException("Not implemented in the community edition");
+    }
+
+    /**
+     * Clone this object
+     */
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        return (super.clone());
     }
 
 }

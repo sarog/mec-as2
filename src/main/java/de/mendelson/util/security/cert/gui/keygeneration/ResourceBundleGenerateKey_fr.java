@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_fr.java 13    24/10/22 12:52 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_fr.java 16    2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public class ResourceBundleGenerateKey_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -87,9 +87,20 @@ public class ResourceBundleGenerateKey_fr extends MecResourceBundle {
             + "écrasera cette valeur."
             + "</HTML>"
         },
-        {"label.purpose", "Usage clé / utilisation de clé supplémentaire"},
+        {"label.purpose", "Utilisation de clé supplémentaire"},
         {"label.purpose.encsign", "Chiffrage et signature"},
-        {"label.purpose.ssl", "TLS/SSL"},
+        {"label.purpose.ssl", "TLS"},
+        {"label.extension.ski", "Subject key identifier (SKI)" },
+        {"label.extension.ski.help", "<HTML><strong>SKI</strong><br><br>"
+            + "Il existe plusieurs façons d'identifier un certificat : à l''aide du hachage "
+            + "du certificat, de l''émetteur, du numéro de série et de l''identifiant de clé "
+            + "du demandeur (Subject Key Identifier, SKI). Le SKI fournit une identification "
+            + "univoque pour le demandeur du certificat et est souvent utilisé lors du travail "
+            + "avec la signature numérique XML ou, plus généralement, dans le domaine de la "
+            + "sécurité des services web. Souvent, cette extension avec l''OID 2.5.29.14 "
+            + "est donc nécessaire pour AS4."
+            + "</HTML>"
+        },
         {"label.subjectalternativenames", "Subject alternative names" },        
         {"warning.mail.in.domain", "L''adresse e-mail ne fait pas partie du domaine \"{0}\" (e.g. myname@{0}).\nCela pourrait être un problème si vous souhaitez faire confiance à la clé plus tard."},
         {"warning.nonexisting.domain", "Le nom de domaine \"{0}\" ne semble pas exister." },

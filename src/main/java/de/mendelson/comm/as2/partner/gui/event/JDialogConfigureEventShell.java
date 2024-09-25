@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventShell.java 5     18.12.20 14:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventShell.java 7     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -24,14 +24,14 @@ import javax.swing.JFrame;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class JDialogConfigureEventShell extends JDialog {
 
     private final MecResourceBundle rb;
-    private JFrame parent;
-    private Partner partner;
-    private int eventType;
+    private final JFrame parent;
+    private final Partner partner;
+    private final int eventType;
 
     /**
      * Creates new form JDialogMigrateFromHSQLDB
@@ -79,7 +79,7 @@ public class JDialogConfigureEventShell extends JDialog {
         if (this.partner.getPartnerEvents().getProcess(this.eventType)
                 == PartnerEventInformation.PROCESS_EXECUTE_SHELL) {
             List<String> parameter = this.partner.getPartnerEvents().getParameter(this.eventType);
-            if (parameter.size() > 0) {
+            if (!parameter.isEmpty()) {
                 this.jTextFieldCommand.setText(parameter.get(0));
             }
         }

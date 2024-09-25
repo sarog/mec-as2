@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel.java 72    19/01/23 10:00 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel.java 82    20/12/23 14:12 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -10,16 +10,15 @@ import de.mendelson.util.MecResourceBundle;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 72 $
+ * @version $Revision: 82 $
  */
 public class ResourceBundlePartnerPanel extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -28,7 +27,7 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Partner configuration"},
         {"label.name", "Name"},
         {"label.name.hint", "Internal partner name"},
@@ -47,8 +46,11 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
             + "This is the URL of your partner through which his AS2 system can be reached.<br>"
             + "Please specify this URL in the format <strong>PROTOCOL://HOST:PORT/PATH</strong>, where the "
             + "<strong>PROTOCOL</strong> must be one of \"http\" or \"https\". <strong>HOST</strong> denotes the AS2 server host of your "
-            + "partner. <strong>PORT</strong> is the receive port of your partner. If it is not specified, the "
-            + "value \"80\" will be set. <strong>PATH</strong> denotes the receive path, for example \"/as2/HttpReceiver\".</HTML>"},
+            + "partner. <strong>PORT</strong> is the receive port of your partner. <strong>PATH</strong> denotes the "
+            + "receipt path for this partner, for example \"/as2/HttpReceiver\".<br><br>"
+            + "The whole entry will be marked as invalid if the protocol is not one of \"http\" or \"https\", if the URL is in bad format "
+            + "or if the port is not defined in the URL."
+            + "</HTML>"},
         {"label.mdnurl", "MDN URL"},
         {"label.mdnurl.help", "<HTML><strong>MDN</strong> (<strong>M</strong>essage <strong>D</strong>elivery <strong>N</strong>otification) <strong>URL</strong><br><br>"
             + "This is the URL that your partner will use for the incoming asynchronous MDN to this local station. In the synchronous case this value is not "
@@ -56,17 +58,25 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
             + "Please specify this URL in the format <strong>PROTOCOL://HOST:PORT/PATH</strong>.<br>"
             + "<strong>PROTOCOL</strong> must be one of \"http\" or \"https\".<br><strong>HOST</strong> "
             + "denotes your own AS2 server host.<br><strong>PORT</strong> is the receive port of your AS2 system. "
-            + "If it is not specified, the value \"80\" is set.<br><strong>PATH</strong> denotes the receive "
-            + "path, for example \"/as2/HttpReceiver\".</HTML>"},
+            + "<br><strong>PATH</strong> denotes the receive "
+            + "path, for example \"/as2/HttpReceiver\".<br><br>"
+            + "The whole entry will be marked as invalid if the protocol is not one of \"http\" or \"https\", if the URL is in bad format "
+            + "or if the port is not defined in the URL."
+            + "</HTML>"},
         {"label.signalias.key", "Private key (Outbound signature generation)"},
         {"label.signalias.key.help", "<HTML><strong>Private key (Outbound signature generation)</strong><br><br>"
             + "Please select here a private key which is available in the certificate manager (signature/encryption) of the system.<br>"
-            + "This key is used to create a digital signature for outgoing messages to all remote partners."
+            + "This key is used to create a digital signature for outgoing messages to all remote partners.<br><br>"
+            + "Since only you are in possession of the private key set here, only you can perform a signature on the data. Your partners "
+            + "can check this signature with the certificate - this ensures that the data is unchanged and that you are the "
+            + "sender."
             + "</HTML>"},
         {"label.cryptalias.key", "Private key (Inbound data decryption)"},
         {"label.cryptalias.key.help", "<HTML><strong>Private key (Inbound data decryption)</strong><br><br>"
             + "Please select here a private key which is available in the certificate manager (signature/encryption) of the system.<br>"
-            + "If incoming messages from any partner are encrypted for this local station, this key is used for decryption."
+            + "If incoming messages from any partner are encrypted for this local station, this key is used for decryption.<br><br>"
+            + "Since only you are in possession of the private key set here, only you can decrypt the data that your partners "
+            + "have encrypted with your certificate. So any partner can encrypt data for you - but only you can decrypt it."
             + "</HTML>"},
         {"label.signalias.cert", "Partner certificate (Inbound signature verification)"},
         {"label.signalias.cert.help", "<HTML><strong>Partner certificate (Inbound signature verification)</strong><br><br>"
@@ -95,18 +105,31 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
         {"label.email.hint", "Transmitted in the AS2 protocol but not used or validated."},
         {"label.localstation", "Local station"},
         {"label.localstation.help", "<HTML><strong>Local station</strong><br><br>"
-            + "There are two types of partners: Local stations and remote partners. A local station represents your own system."
-            + "</HTML>"},
+            + "There are two types of partners:<br><br>"
+            + "<table border=\"0\">"
+            + "<tr>"
+            + "<td style=\"padding-left: 10px\"><img src=\"/de/mendelson/comm/as2/partner/gui/localstation.svg\" height=\"20\" width=\"20\"></td>"
+            + "<td>Local stations</td>" 
+            + "</tr>"   
+            + "<tr>"
+            + "<td style=\"padding-left: 10px\"><img src=\"/de/mendelson/comm/as2/partner/gui/singlepartner.svg\" height=\"20\" width=\"20\"></td>"
+            + "<td>Remote partners</td>" 
+            + "</tr>"               
+            + "</table><br>"
+            + "A local station represents your own system."
+            + "</HTML>"}, 
         {"label.compression", "Compress outbound messages (requires AS2 1.1 partner solution)"},
-        {"label.usecommandonreceipt", "On msg receipt:"},
-        {"label.usecommandonsenderror", "On msg send (error):"},
-        {"label.usecommandonsendsuccess", "On msg send (success):"},
+        {"label.usecommandonreceipt", "On msg receipt"},
+        {"label.usecommandonsenderror", "On msg send (error)"},
+        {"label.usecommandonsendsuccess", "On msg send (success)"},
         {"label.keepfilenameonreceipt", "Keep original file name on receipt"},
         {"label.keepfilenameonreceipt.help", "<HTML><strong>Keep original file name on receipt</strong><br><br>"
             + "If this is enabled, the system tries to extract the original file name from incoming AS2 messages and "
             + "save the transferred file under this name so that it can be processed accordingly.<br>"
             + "This option will only work if the sender added the original filename information. "
-            + "If you enable this please ensure your partner sends unique file names.</HTML>"},
+            + "If you enable this please ensure your partner sends unique file names.<br><br>"
+            + "If the extracted filename is not a valid filename it will replaced by a valid filename, a POSTPROCESSING system event warning "
+            + "will be thrown and the processing will continue.</HTML>"},
         {"label.address", "Address"},
         {"label.contact", "Contact"},
         {"label.notes.help", "<HTML><strong>Notes</strong><br><br>"
@@ -186,12 +209,14 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
         {"label.httpauth.credentials.message", "Basic authentication"},
         {"label.httpauth.credentials.message.user", "Username"},
         {"label.httpauth.credentials.message.pass", "Password"},
-        {"label.httpauth.oauth2.message", "OAuth2"},
+        {"label.httpauth.oauth2.authorizationcode.message", "OAuth2 (Authorization code)"},
+        {"label.httpauth.oauth2.clientcredentials.message", "OAuth2 (Client credentials)"},
         {"label.httpauth.asyncmdn", "Authentication for outbound async MDN"},
         {"label.httpauth.credentials.asyncmdn", "Basic authentication"},
         {"label.httpauth.credentials.asyncmdn.user", "Username"},
         {"label.httpauth.credentials.asyncmdn.pass", "Password"},
-        {"label.httpauth.oauth2.asyncmdn", "OAuth2"},
+        {"label.httpauth.oauth2.authorizationcode.asyncmdn", "OAuth2 (Authorization code)"},
+        {"label.httpauth.oauth2.clientcredentials.asyncmdn", "OAuth2 (Client credentials)"},
         {"label.notify.send", "Notify if send message quota exceeds"},
         {"label.notify.receive", "Notify if receive message quota exceeds"},
         {"label.notify.sendreceive", "Notify if receive and send message quota exceeds"},
@@ -199,15 +224,26 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
         {"header.httpheadervalue", "Value"},
         {"httpheader.add", "Add"},
         {"httpheader.delete", "Remove"},
-        {"label.as2version", "AS2 version:"},
-        {"label.productname", "Product name:"},
-        {"label.features", "Features:"},
+        {"label.as2version", "AS2 version"},
+        {"label.productname", "Product name"},
+        {"label.features", "Features"},
         {"label.features.cem", "Certificate exchange via CEM"},
         {"label.features.ma", "Multiple attachments"},
         {"label.features.compression", "Compression"},
         {"partnerinfo", "Your trading partner transmits with every AS2 message some informations about his AS2 system capabilities. This is a list of features that has been transmitted by your partner."},
         {"partnersystem.noinfo", "No info available - has there been already a transaction?"},
         {"label.httpversion", "HTTP protocol version"},
+        {"label.httpversion.help", "<HTML><strong>HTTP protocol version</strong><br><br>"
+            + "The following HTTP protocol versions are defined:"
+            + "<ul>"
+            + "<li>HTTP/1.0 (RFC 1945)</li>"
+            + "<li>HTTP/1.1 (RFC 2616)</li>"
+            + "<li>HTTP/2.0 (RFC 9113)</li>"
+            + "<li>HTTP/3.0 (RFC 9114)</li>"
+            + "</ul>"
+            + "AS2 does mainly use HTTP 1.1.<br><br>"
+            + "Hint: This is <strong>not</strong> the TLS version!"
+            + "</HTML>"},
         {"label.test.connection", "Test connection"},
         {"label.mdn.description", "<HTML>The MDN (message delivery notification) is the acknowledgement message for the AS2 message. This section defines the behavior your partner has to follow for your outbound AS2 messages.</HTML>"},
         {"label.algorithmidentifierprotection", "<HTML>Use \"Algorithm Identifier Protection Attribute\" in signature (recommended), please refer to RFC 6211</HTML>"},
@@ -219,5 +255,17 @@ public class ResourceBundlePartnerPanel extends MecResourceBundle {
             + "system should return a <strong>HTTP 401 Unauthorized</strong> status.<br>If the connection to "
             + "your partner requires TLS client authentication (via certificates), there is no setting required here. "
             + "In this case just import the partners certificates via the TLS certificate manager and you are done."
-            + "</HTML>"},};
+            + "</HTML>"},
+        {"label.overwrite.security", "Overwrite security settings of the local station"},
+        {"label.keep.security", "Use security settings of the local station"},
+        {"label.overwrite.crypt", "Decrypt incoming messages"},
+        {"label.overwrite.crypt.help", "<HTML><strong>Decrypt incoming messages</strong><br><br>"
+            + "This key is used to decrypt incoming messages from this partner - "
+            + "instead of the set key of the respective local station."
+            + "</HTML>"},
+        {"label.overwrite.sign", "Sign outgoing messages"},
+        {"label.overwrite.sign.help", "<HTML><strong>Sign outgoing messages</strong><br><br>"
+            + "This key is used to sign outgoing messages to this partner - instead of the set key of the respective local station."
+            + "</HTML>"},
+    };
 }

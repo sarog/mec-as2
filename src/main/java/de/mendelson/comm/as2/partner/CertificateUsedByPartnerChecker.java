@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/CertificateUsedByPartnerChecker.java 7     29/08/22 15:20 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/CertificateUsedByPartnerChecker.java 8     1/11/23 11:29 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
@@ -26,22 +26,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * Checks if a certificate is in use by a partner
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class CertificateUsedByPartnerChecker implements CertificateInUseChecker {
 
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCertificateUsedByPartnerChecker.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
+
     private final BaseClient baseClient;
     private final Map<String, CertificateInUseInfo> infoMap = new ConcurrentHashMap<String, CertificateInUseInfo>();
 
     public CertificateUsedByPartnerChecker(BaseClient baseClient) {
         //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCertificateUsedByPartnerChecker.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+
         this.baseClient = baseClient;
         this.loadCertificateInUseInformation();
     }
@@ -51,18 +56,32 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
      */
     private void loadCertificateInUseInformation() {
         PartnerListResponse response = (PartnerListResponse) this.baseClient.sendSync(
-                new PartnerListRequest(PartnerListRequest.LIST_ALL), Partner.TIMEOUT_PARTNER_REQUEST);
+                new PartnerListRequest(PartnerListRequest.LIST_ALL),
+                Partner.TIMEOUT_PARTNER_REQUEST);
         List<Partner> partnerList = response.getList();
         //build up list of all fingerprints that are in use
         List<String> fingerprintList = new ArrayList<String>();
         for (Partner singlePartner : partnerList) {
             String cryptFingerprint = singlePartner.getCryptFingerprintSHA1();
-            if (!fingerprintList.contains(cryptFingerprint)) {
+            if (cryptFingerprint != null && !fingerprintList.contains(cryptFingerprint)) {
                 fingerprintList.add(cryptFingerprint);
             }
             String signFingerprint = singlePartner.getSignFingerprintSHA1();
-            if (!fingerprintList.contains(signFingerprint)) {
+            if (signFingerprint != null && !fingerprintList.contains(signFingerprint)) {
                 fingerprintList.add(signFingerprint);
+            }
+            if (!singlePartner.isLocalStation()
+                    && singlePartner.isOverwriteLocalStationSecurity()) {
+                String cryptOverwriteLocalFingerprint
+                        = singlePartner.getCryptOverwriteLocalstationFingerprintSHA1();
+                if (cryptOverwriteLocalFingerprint != null && !fingerprintList.contains(cryptOverwriteLocalFingerprint)) {
+                    fingerprintList.add(cryptOverwriteLocalFingerprint);
+                }
+                String signOverwriteLocalFingerprint
+                        = singlePartner.getSignOverwriteLocalstationFingerprintSHA1();
+                if (signOverwriteLocalFingerprint != null && !fingerprintList.contains(signOverwriteLocalFingerprint)) {
+                    fingerprintList.add(signOverwriteLocalFingerprint);
+                }
             }
         }
         for (String fingerPrintSHA1 : fingerprintList) {
@@ -77,12 +96,31 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
                 if (fingerPrintSHA1.equals(cryptFingerprint)) {
                     info.addUsage(partnerType,
                             singlePartner.getName(),
-                            this.rb.getResourceString("used.crypt"));
+                            rb.getResourceString("used.crypt"));
                 }
                 if (fingerPrintSHA1.equals(signFingerprint)) {
                     info.addUsage(partnerType,
                             singlePartner.getName(),
-                            this.rb.getResourceString("used.sign"));
+                            rb.getResourceString("used.sign"));
+                }
+                if (!singlePartner.isLocalStation()
+                        && singlePartner.isOverwriteLocalStationSecurity()) {
+                    String cryptOverwriteLocalFingerprint
+                            = singlePartner.getCryptOverwriteLocalstationFingerprintSHA1();
+                    if (cryptOverwriteLocalFingerprint != null
+                            && fingerPrintSHA1.equals(cryptOverwriteLocalFingerprint)) {
+                        info.addUsage(partnerType,
+                                singlePartner.getName(),
+                                rb.getResourceString("used.crypt.overwritelocalsecurity"));
+                    }
+                    String signOverwriteLocalFingerprint
+                            = singlePartner.getSignOverwriteLocalstationFingerprintSHA1();
+                    if (signOverwriteLocalFingerprint != null
+                            && fingerPrintSHA1.equals(signOverwriteLocalFingerprint)) {
+                        info.addUsage(partnerType,
+                                singlePartner.getName(),
+                                rb.getResourceString("used.sign.overwritelocalsecurity"));
+                    }
                 }
             }
             this.infoMap.put(fingerPrintSHA1, info);
@@ -97,10 +135,10 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
     @Override
     public CertificateInUseInfo checkUsed(KeystoreCertificate certificate) {
         String fingerPrintSHA1 = certificate.getFingerPrintSHA1();
-        if( this.infoMap.containsKey(fingerPrintSHA1)){
-            return( this.infoMap.get(fingerPrintSHA1));
-        }else{
-            return( new CertificateInUseInfo(fingerPrintSHA1));
+        if (this.infoMap.containsKey(fingerPrintSHA1)) {
+            return (this.infoMap.get(fingerPrintSHA1));
+        } else {
+            return (new CertificateInUseInfo(fingerPrintSHA1));
         }
     }
 

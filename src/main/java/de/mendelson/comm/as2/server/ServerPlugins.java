@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/server/ServerPlugins.java 6     23/01/23 13:13 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/server/ServerPlugins.java 8     28/11/23 17:23 Heller $
 package de.mendelson.comm.as2.server;
 
 import java.io.Serializable;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Not implemented in the community edition
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ServerPlugins implements Serializable {
 
@@ -30,6 +30,7 @@ public class ServerPlugins implements Serializable {
     public static final String PLUGIN_WEBINTERFACE = "Webinterface";
     public static final String PLUGIN_ORACLE_DB = "OracleDB";
     public static final String PLUGIN_OAUTH2 = "OAUTH2";
+    public static final String PLUGIN_XML_API = "XML_API";
 
     public ServerPlugins() {
     }

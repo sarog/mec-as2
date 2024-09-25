@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoRequest.java 11    14/06/22 16:02 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoRequest.java 14    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.about;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
@@ -17,11 +19,11 @@ import java.lang.management.RuntimeMXBean;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class ServerInfoRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final String SERVER_FULL_PRODUCT_NAME = "full_product_name";
     public static final String SERVER_PRODUCT_NAME = "serverprodname";
     public static final String SERVER_VERSION = "serverversion";
@@ -37,7 +39,12 @@ public class ServerInfoRequest extends ClientServerMessage implements Serializab
     public static final String SERVERSIDE_PID = "process_id_server";
     public static final String CLIENTSIDE_PID = "process_id_client";
     public static final String SERVER_START_METHOD_WINDOWS_SERVICE = "is_windows_service";
-    public static final String LICENSEE = "server_licensee";
+    public static final String LICENSEE = "server_licensee";    
+    public static final String LICENSE_TYPE = "license_type";
+    public static final String VALUE_LICENSE_TYPE_COMMUNITY = "Community edition";
+    public static final String VALUE_LICENSE_TYPE_ENTRY = "Entry edition";
+    public static final String VALUE_LICENSE_TYPE_PROFESSIONAL = "Professional edition";
+    public static final String VALUE_LICENSE_TYPE_ENTERPRISE_HA = "Enterprise HA edition";    
     public static final String SERVER_PATCH_LEVEL = "version_patch_level";    
     public static final String SERVER_LOCALE = "server_locale";    
     public static final String HTTP_SERVER_VERSION = "http_server_version";    
@@ -80,4 +87,9 @@ public class ServerInfoRequest extends ClientServerMessage implements Serializab
         this.clientPID = clientPID;
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
+    
 }

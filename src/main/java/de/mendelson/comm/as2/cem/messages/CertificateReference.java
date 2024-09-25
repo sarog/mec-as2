@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/messages/CertificateReference.java 4     5.05.10 17:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/messages/CertificateReference.java 5     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.messages;
 
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -15,7 +15,7 @@ import java.io.ByteArrayInputStream;
 /**
  * Represents a certificate reference structure
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class CertificateReference extends CEMStructure {
 
@@ -52,10 +52,10 @@ public class CertificateReference extends CEMStructure {
 
     /**Checks if the element contains its data*/
     private void performContentCheck() {
-        if (this.issuerName == null || this.issuerName.trim().length() == 0 ) {
+        if (this.issuerName == null || this.issuerName.trim().isEmpty()) {
             throw new RuntimeException("CertificateReference: issuerName not set.");
         }
-        if (this.serialNumber == null || this.serialNumber.trim().length() == 0) {
+        if (this.serialNumber == null || this.serialNumber.trim().isEmpty()) {
             throw new RuntimeException("CertificateReference: serialNumber not set.");
         }
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/ResourceBundleFileBrowser_de.java 3     4/06/18 1:35p Heller $
+//$Header: /as4/de/mendelson/util/clientserver/clients/filesystemview/ResourceBundleFileBrowser_de.java 6     6/11/23 11:38 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleFileBrowser_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

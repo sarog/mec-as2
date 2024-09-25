@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder_de.java 3     9.06.20 10:40 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder_de.java 6     6/11/23 11:38 Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleServerDecoder_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

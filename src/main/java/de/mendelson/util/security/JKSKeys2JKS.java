@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/JKSKeys2JKS.java 2     26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/util/security/JKSKeys2JKS.java 3     2/11/23 14:03 Heller $
 package de.mendelson.util.security;
 
 import java.io.OutputStream;
@@ -22,7 +22,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * the JKS format
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class JKSKeys2JKS {
 
@@ -75,7 +75,6 @@ public class JKSKeys2JKS {
      * Saves the passed keystore
      *
      * @param keystorePass Password for the keystore
-     * @param filename Filename where to save the keystore to
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass,
             Path file) throws Exception {

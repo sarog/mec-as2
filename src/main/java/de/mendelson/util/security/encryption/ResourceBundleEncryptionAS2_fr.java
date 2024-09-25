@@ -1,7 +1,6 @@
-//$Header: /as2/de/mendelson/util/security/encryption/ResourceBundleEncryptionAS2_fr.java 2     16.09.21 15:30 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/ResourceBundleEncryptionAS2_fr.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.security.encryption;
 
-import de.mendelson.comm.as2.message.*;
 import de.mendelson.util.MecResourceBundle;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleEncryptionAS2_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -27,7 +26,7 @@ public class ResourceBundleEncryptionAS2_fr extends MecResourceBundle {
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {        
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_UNKNOWN, "Inconnu"},
-        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_NONE, "Non crypté"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_NONE, "Non cryptï¿½"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_3DES, "3DES"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC2_40, "RC2-40"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC2_64, "RC2-64"},

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/AbstractDBDriverManagerHSQL.java 7     23/08/22 11:31 Heller $
+//$Header: /as2/de/mendelson/util/database/AbstractDBDriverManagerHSQL.java 9     27/11/23 11:46 Heller $
 package de.mendelson.util.database;
 
 import java.sql.SQLException;
@@ -18,7 +18,7 @@ import java.sql.ResultSet;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
 
@@ -30,8 +30,10 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
             if (i > 0) {
                 builder.append(",");
             }
-            String tablename = tablenames[i];
-            builder.append(tablename + " READ," + tablename + " WRITE");
+            builder.append(tablenames[i])
+                    .append(" READ,")
+                    .append(tablenames[i])
+                    .append(" WRITE");
         }
         statement.execute(builder.toString());
     }
@@ -44,8 +46,8 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
             if (i > 0) {
                 builder.append(",");
             }
-            String tablename = tablenames[i];
-            builder.append(tablename + " WRITE");
+            builder.append(tablenames[i])
+                    .append(" WRITE");
         }
         statement.execute(builder.toString());
     }
@@ -58,8 +60,8 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
             if (i > 0) {
                 builder.append(",");
             }
-            String tablename = tablenames[i];
-            builder.append(tablename + " WRITE");
+            builder.append(tablenames[i])
+                    .append(" WRITE");
         }
         statement.execute(builder.toString());
     }
@@ -67,7 +69,9 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
     @Override
     public void startTransaction(Statement statement, String transactionName) throws SQLException {
         if (statement.getConnection().getAutoCommit()) {
-            throw new SQLException("Transaction " + transactionName + " started on database connection that is in auto commit mode");
+            throw new SQLException("Transaction "
+                    + transactionName
+                    + " started on database connection that is in auto commit mode");
         }
         //since HSQLDB 2.7.0 it is required to add the isolation level to the START TRANSACTION command
         // - READ COMMITTED was the default isolation level before so this is just added
@@ -142,6 +146,16 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
     }
 
     /**
+     * Sets byte array data as parameter to a stored procedure. The handling
+     * depends if the database supports java objects
+     *
+     */
+    @Override
+    public void setBytesParameterAsJavaObject(PreparedStatement statement, int index, byte[] data) throws Exception {
+        this.setObjectParameterAsJavaObject(statement, index, data);
+    }
+
+    /**
      * Reads a binary object from the database and returns a byte array that
      * contains it. Will return null if the read data was null. Reading and
      * writing binary objects differs relating the used database system
@@ -154,7 +168,7 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
         }
         return (null);
     }
-    
+
     /**
      * Adds a limit clause to the SQL query. LIMIT is common but no used by all
      * databases - e.g. not by the oracle database

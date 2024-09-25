@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_de.java 9     5/01/23 12:24 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_de.java 12    6/11/23 11:38 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleDialogSystemEvent_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

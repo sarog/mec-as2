@@ -1,8 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerCodecFactory.java 4     11/02/22 13:14 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerCodecFactory.java 7     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.clientserver.ClientSessionHandlerCallback;
-import java.util.logging.Logger;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.ProtocolDecoder;
@@ -18,7 +17,7 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 /**
  * Factory that handles encoding/decoding of the requests
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class ClientServerCodecFactory implements ProtocolCodecFactory {
 
@@ -27,21 +26,20 @@ public class ClientServerCodecFactory implements ProtocolCodecFactory {
 
     /**
      * 
-     * @param logger
      * @param clientCallback This may be null if there is no callback or this is not a client instance
      */
-    public ClientServerCodecFactory( Logger logger, ClientSessionHandlerCallback clientCallback) {
+    public ClientServerCodecFactory( ClientSessionHandlerCallback clientCallback) {
         this.encoder = new ClientServerEncoder();
-        this.decoder = new ClientServerDecoder(logger, clientCallback);
+        this.decoder = new ClientServerDecoder(clientCallback);
     }
 
     @Override
     public ProtocolEncoder getEncoder(IoSession is) throws Exception {
-        return encoder;
+        return( this.encoder);
     }
 
     @Override
     public ProtocolDecoder getDecoder(IoSession is) throws Exception {
-        return decoder;
+        return( this.decoder );
     }
 }

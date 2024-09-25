@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/Splash.java 55    20/04/22 13:08 Heller $
+//$Header: /as2/de/mendelson/util/Splash.java 57    5/12/23 9:06 Heller $
 package de.mendelson.util;
 
 import java.awt.BorderLayout;
@@ -42,14 +42,14 @@ import javax.swing.SwingConstants;
  * Splash window to been shown while one of the mendelson products load
  *
  * @author S.Heller
- * @version $Revision: 55 $
+ * @version $Revision: 57 $
  */
 public class Splash extends JWindow implements SwingConstants {
 
     /**
      * Image to display
      */
-    private BufferedImage splashImage = null;
+    private final BufferedImage splashImage;
     /**
      * PrintStream to pass to out components to let them write stuff into
      */
@@ -99,9 +99,6 @@ public class Splash extends JWindow implements SwingConstants {
      * @param y y position of the output
      * @param text Text to display
      * @param color Color to use for the text display
-     * @param transform Allows to transform the font in any kind. Please
-     * remember that there is always a translation on the font, depending on the
-     * position! This parameter may be null.
      */
     public void addDisplayString(Font font, int x, int y, String text, Color color, AffineTransform fontTransform) {
         DisplayString displayString = new DisplayString(font, x, y, text, color, fontTransform);
@@ -355,7 +352,8 @@ public class Splash extends JWindow implements SwingConstants {
      */
     private BufferedImage loadImage(String resource, int imageHeight) {
         if (resource.endsWith(".svg")) {
-            MendelsonMultiResolutionImage image = MendelsonMultiResolutionImage.fromSVG(resource, imageHeight, imageHeight * 2,
+            MendelsonMultiResolutionImage image 
+                    = MendelsonMultiResolutionImage.fromSVG(resource, imageHeight,
                     MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
             return (this.toBufferedImage(new ImageIcon(image.toMinResolution(imageHeight)).getImage()));
         } else {
@@ -371,7 +369,6 @@ public class Splash extends JWindow implements SwingConstants {
             //get an input stream from the resource
             inStream = Splash.class.getResourceAsStream(resource);
             bufferedImage = ImageIO.read(inStream);
-
         } catch (Exception e) {
             System.err.println("Fatal: Unable to load splash image resource " + resource + ".");
             System.exit(-1);
@@ -421,7 +418,7 @@ public class Splash extends JWindow implements SwingConstants {
          */
         private int outputX = 0;
         private int outputY = 0;
-        private StringBuilder buffer;
+        private final StringBuilder buffer;
 
         /**
          * @param @param outStream stream to write entries to a string buffer
@@ -477,7 +474,7 @@ public class Splash extends JWindow implements SwingConstants {
          * passed buffer pointer. Whenever a \n accurs, the pass buffer will get
          * a valid value and store it until the next \n appears
          */
-        private StringBuilder tempBuilder = new StringBuilder();
+        private final StringBuilder tempBuilder = new StringBuilder();
 
         /**
          * @param component Component to update on an end of a line
@@ -519,10 +516,10 @@ public class Splash extends JWindow implements SwingConstants {
         /**
          * Position and size of the progress bar
          */
-        private int x = 0;
-        private int y = 0;
-        private int height = 0;
-        private int width = 0;
+        private final int x;
+        private final int y;
+        private final int height;
+        private final int width;
         /**
          * Progress bar border
          */
@@ -544,12 +541,12 @@ public class Splash extends JWindow implements SwingConstants {
         /**
          * Format to format the percent output
          */
-        private DecimalFormat format = new DecimalFormat("0.0");
+        private final DecimalFormat format = new DecimalFormat("0.0");
         /**
          * Indicates if the bar should be rendered with a 3D effect
          */
         private boolean useGradientPaint = true;
-        private JWindow parent;
+        private final JWindow parent;
 
         /**
          * Initialize the progress bar
@@ -700,9 +697,6 @@ public class Splash extends JWindow implements SwingConstants {
          * @param y y position of the output
          * @param text Text to display
          * @param color Color to use for the text display
-         * @param transform Allows to transform the font in any kind. Please
-         * remember that there is always a translation on the font, depending on
-         * the position! This parameter may be null.
          */
         public DisplayString(Font font, float x, float y, String text, Color color,
                 AffineTransform fontTransform) {

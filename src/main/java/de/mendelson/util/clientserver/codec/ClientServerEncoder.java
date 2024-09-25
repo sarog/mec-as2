@@ -1,15 +1,12 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/codec/ClientServerEncoder.java 4     14.09.12 10:03 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerEncoder.java 9     14/07/23 17:43 Heller $
 package de.mendelson.util.clientserver.codec;
 
-import de.mendelson.util.clientserver.ClientServerSessionHandler;
-import de.mendelson.util.clientserver.messages.LoginState;
-import de.mendelson.util.security.BCCryptoHelper;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectOutput;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
-import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.zip.Deflater;
 import org.apache.mina.core.buffer.IoBuffer;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolEncoder;
@@ -29,11 +26,9 @@ import org.apache.mina.filter.codec.ProtocolEncoderOutput;
  *
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 9 $
  */
 public class ClientServerEncoder implements ProtocolEncoder {
-
-    private BCCryptoHelper helper = new BCCryptoHelper();
 
     public ClientServerEncoder() {
     }
@@ -53,19 +48,48 @@ public class ClientServerEncoder implements ProtocolEncoder {
     @Override
     public void encode(IoSession ioSession, Object message, ProtocolEncoderOutput encoderOutput) throws Exception {
         ByteArrayOutputStream objectBuffer = new ByteArrayOutputStream();
-        ObjectOutput objectOut = new ObjectOutputStream(objectBuffer);
-        objectOut.writeObject(message);
-        objectOut.flush();
-        objectOut.close();
-        byte[] objectArray = objectBuffer.toByteArray();        
-        byte[] objectHeader = this.encodeLengthHeader32Bit(objectArray.length);
-        IoBuffer buffer = IoBuffer.allocate(objectHeader.length + objectArray.length, false);
+        ObjectOutput objectOut = null;
+        try {
+            objectOut = new ObjectOutputStream(objectBuffer);
+            objectOut.writeObject(message);
+            objectOut.flush();
+        } finally {
+            if (objectOut != null) {
+                objectOut.close();
+            }
+        }
+        byte[] compressedObjectArray = this.compress(objectBuffer.toByteArray());
+        byte[] objectHeader = this.encodeLengthHeader32Bit(compressedObjectArray.length);
+        IoBuffer buffer = IoBuffer.allocate(objectHeader.length + compressedObjectArray.length, false);
         buffer.put(objectHeader);
-        buffer.put(objectArray);
+        buffer.put(compressedObjectArray);
         buffer.flip();
         encoderOutput.write(buffer);
     }
 
+    private byte[] compress(byte[] data) throws Exception {
+        Deflater deflater = new Deflater();
+        deflater.setLevel(Deflater.BEST_SPEED);
+        deflater.setInput(data);
+        ByteArrayOutputStream outputStream = null;
+        try {
+            outputStream = new ByteArrayOutputStream(data.length);
+            deflater.finish();
+            byte[] buffer = new byte[1024];
+            while (!deflater.finished()) {
+                int count = deflater.deflate(buffer);
+                outputStream.write(buffer, 0, count);
+            }            
+            byte[] output = outputStream.toByteArray();
+            return output;
+        } finally {
+            deflater.end();
+            if (outputStream != null) {
+                outputStream.close();
+            }            
+        }
+    }
+    
     @Override
     public void dispose(IoSession session) throws Exception {
         // nothing to dispose

@@ -1,9 +1,10 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerPostgreSQL.java 4     2/01/23 13:16 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerPostgreSQL.java 5     28/11/23 17:03 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.database.AbstractDBDriverManagerPostgreSQL;
 import de.mendelson.util.database.IDBDriverManager;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /*
@@ -17,7 +18,7 @@ import java.sql.SQLException;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class DBDriverManagerPostgreSQL extends AbstractDBDriverManagerPostgreSQL implements IDBDriverManager, ISQLQueryModifier {
 
@@ -112,6 +113,11 @@ public class DBDriverManagerPostgreSQL extends AbstractDBDriverManagerPostgreSQL
 
     @Override
     public String addLimitToQuery(String a, int b) {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public void setBytesParameterAsJavaObject(PreparedStatement statement, int index, byte[] data) throws Exception {
         throw new IllegalAccessError();
     }
     

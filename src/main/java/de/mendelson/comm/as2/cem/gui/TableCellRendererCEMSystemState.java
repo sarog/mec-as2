@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMSystemState.java 3     25.02.10 13:31 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMSystemState.java 4     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -11,12 +11,12 @@ import java.awt.Rectangle;
 /** 
  * Renders the system activity column
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class TableCellRendererCEMSystemState extends DefaultTableCellRenderer implements TableCellRenderer {
 
-    private Color colorAccepted = new Color(166, 247, 164);
-    private Color colorPending = new Color(255, 255, 183);
+    private final Color colorAccepted = new Color(166, 247, 164);
+    private final Color colorPending = new Color(255, 255, 183);
 
     /**
      * Creates a default table cell renderer.

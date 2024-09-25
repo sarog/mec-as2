@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/modulelock/LockClientInformation.java 3     1.11.18 10:28 Heller $
+//$Header: /as2/de/mendelson/util/modulelock/LockClientInformation.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.modulelock;
 
 import java.io.Serializable;
@@ -17,14 +17,14 @@ import java.util.Objects;
  * lock
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class LockClientInformation implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String username;
-    private String clientIP;
-    private String uniqueid;
+    private final String clientIP;
+    private final String uniqueid;
     private String pid;
 
     public LockClientInformation(String username, String clientIP, String uniqueid, String pid) {

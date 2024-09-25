@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/DBClientInformation.java 2     24/08/22 12:55 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/DBClientInformation.java 3     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.database;
 
 import java.io.Serializable;
@@ -15,10 +15,10 @@ import java.io.Serializable;
  * purpose
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class DBClientInformation implements Serializable {
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     private String productName = "UNKNOWN";
     private String productVersion = "UNKNOWN";

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 44    26.08.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 50    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
@@ -6,6 +6,7 @@ import de.mendelson.comm.as2.AS2Exception;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.BCCryptoHelper;
 import java.io.ByteArrayOutputStream;
@@ -43,23 +44,25 @@ import javax.mail.util.ByteArrayDataSource;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 50 $
  */
 public class AS2MDNCreation {
 
     private Logger logger = null;
-    private MecResourceBundle rb = null;
-    private CertificateManager certificateManager = null;
-
-    public AS2MDNCreation(CertificateManager certificateManager) {
-        //Load resourcebundle
+    private final static MecResourceBundle rb;
+    static{
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleAS2MessagePacker.class.getName());
         } //load up resourcebundle
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    
+    private final CertificateManager certificateManager;
+
+    public AS2MDNCreation(CertificateManager certificateManager) {
         this.certificateManager = certificateManager;
     }
 
@@ -138,7 +141,7 @@ public class AS2MDNCreation {
                 as2MessageSender, as2MessageSenderId, "processed/error: " + exception.getErrorType(),
                 MDNText.get(MDNText.ERROR, messageInfoOfException.getMessageType()) + exception.getMessage());
         if (this.logger != null) {
-            this.logger.log(Level.SEVERE, this.rb.getResourceString("mdn.details",
+            this.logger.log(Level.SEVERE, rb.getResourceString("mdn.details",
                     new Object[]{
                         exception.getMessage()
                     }), messageInfoOfException);
@@ -165,7 +168,7 @@ public class AS2MDNCreation {
         mdnInfo.setMessageId(UniqueId.createMessageId(senderAS2Id, receiverAS2Id));
         mdnInfo.setDispositionState(dispositionState);
         if (this.logger != null) {
-            this.logger.log(Level.FINE, this.rb.getResourceString("mdn.creation.start",
+            this.logger.log(Level.FINE, rb.getResourceString("mdn.creation.start",
                     new Object[]{
                         mdnInfo.getMessageId()
                     }),
@@ -227,14 +230,14 @@ public class AS2MDNCreation {
         }
         if (dispositionState.indexOf("error") >= 0) {
             if (this.logger != null) {
-                this.logger.log(Level.SEVERE, this.rb.getResourceString("mdn.created",
+                this.logger.log(Level.SEVERE, rb.getResourceString("mdn.created",
                         new Object[]{
                             mdnInfo.getRelatedMessageId(), dispositionState
                         }), mdnInfo);
             }
         } else {
             if (this.logger != null) {
-                this.logger.log(Level.FINE, this.rb.getResourceString("mdn.created",
+                this.logger.log(Level.FINE, rb.getResourceString("mdn.created",
                         new Object[]{
                             mdnInfo.getRelatedMessageId(), dispositionState
                         }), mdnInfo);
@@ -280,9 +283,10 @@ public class AS2MDNCreation {
      * Signs the passed mdn and returns it if this is requested by the inbound
      * AS2 message
      *
-     * @param receiver might be null if the receiver is unidentified
+     * @param remotePartner might be null if the receiver is unidentified
      */
-    private MimeMessage signMDN(MimeMessage mimeMessage, Partner sender, Partner receiver, AS2Message as2Message, AS2MessageInfo relatedMessageInfo) throws Exception {
+    private MimeMessage signMDN(MimeMessage mimeMessage, Partner localPartner, Partner remotePartner, 
+            AS2Message as2Message, AS2MessageInfo relatedMessageInfo) throws Exception {
         if (relatedMessageInfo.getDispositionNotificationOptions().signMDN()) {
             int preferredDigestDispositionNotification = relatedMessageInfo.getDispositionNotificationOptions().getPreferredSignatureAlgorithm();
             int relatedMessageDigest = relatedMessageInfo.getSignType();            
@@ -352,38 +356,50 @@ public class AS2MDNCreation {
             if (digestStr == null) {
                 as2Message.getAS2Info().setSignType(AS2Message.SIGNATURE_NONE);
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("mdn.notsigned",
+                    this.logger.log(Level.INFO, rb.getResourceString("mdn.notsigned",
                             new Object[]{
                                 as2Message.getAS2Info().getMessageId(),}), as2Message.getAS2Info());
                 }
                 return (mimeMessage);
             }
-            PrivateKey senderKey = this.certificateManager.getPrivateKeyByFingerprintSHA1(sender.getSignFingerprintSHA1());
-            String senderSignAlias = this.certificateManager.getAliasByFingerprint(sender.getSignFingerprintSHA1());
+            String signFingerprintSHA1;
+            if( remotePartner != null && remotePartner.isOverwriteLocalStationSecurity() 
+                    && remotePartner.getSignOverwriteLocalstationFingerprintSHA1() != null ){
+                signFingerprintSHA1 = remotePartner.getSignOverwriteLocalstationFingerprintSHA1();
+            }else{
+                signFingerprintSHA1 = localPartner.getSignFingerprintSHA1();
+            }
+            if( signFingerprintSHA1 == null ){
+                throw new Exception( "AS2MDNCreation.signMDN: No private key defined to sign outbound MDN");
+            }            
+            PrivateKey senderKey = this.certificateManager.getPrivateKeyByFingerprintSHA1(signFingerprintSHA1);            
+            String senderSignAlias = this.certificateManager.getAliasByFingerprint(signFingerprintSHA1);
             Certificate[] chain = this.certificateManager.getCertificateChain(senderSignAlias);
             BCCryptoHelper helper = new BCCryptoHelper();
             boolean useAlgorithmIdentifierProtectionAttribute = true;
-            if (receiver != null) {
-                useAlgorithmIdentifierProtectionAttribute = receiver.getUseAlgorithmIdentifierProtectionAttribute();
+            if (remotePartner != null) {
+                useAlgorithmIdentifierProtectionAttribute = remotePartner.getUseAlgorithmIdentifierProtectionAttribute();
                 if (!useAlgorithmIdentifierProtectionAttribute && this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("signature.no.aipa",
+                    this.logger.log(Level.INFO, rb.getResourceString("signature.no.aipa",
                             new Object[]{
                                 as2Message.getAS2Info().getMessageId(),}), as2Message.getAS2Info());
                 }
             }
             MimeMessage signedMimeMessage = helper.signToMessage(mimeMessage, chain, senderKey, digestStr.toUpperCase(),
-                    useAlgorithmIdentifierProtectionAttribute);
+                    useAlgorithmIdentifierProtectionAttribute,
+                    AS2Server.CRYPTO_PROVIDER.getProviderEncSign().getProvider().getName());
             if (this.logger != null) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("mdn.signed",
+                this.logger.log(Level.INFO, rb.getResourceString("mdn.signed",
                         new Object[]{
-                            digestStr.toUpperCase()
+                            digestStr.toUpperCase(),
+                            senderSignAlias
                         }), as2Message.getAS2Info());
             }
             return (signedMimeMessage);
         } else {
             as2Message.getAS2Info().setSignType(AS2Message.SIGNATURE_NONE);
             if (this.logger != null) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("mdn.notsigned",
+                this.logger.log(Level.INFO, rb.getResourceString("mdn.notsigned",
                         new Object[]{
                             as2Message.getAS2Info().getMessageId(),}), as2Message.getAS2Info());
             }

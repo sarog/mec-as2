@@ -1,7 +1,10 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/QuitRequest.java 6     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/QuitRequest.java 8     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -11,12 +14,13 @@ import java.io.Serializable;
  */
 /**
  * Msg for the client server protocol
+ *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
-public class QuitRequest extends ClientServerMessage implements Serializable{
-    
-    public static final long serialVersionUID = 1L;
+public class QuitRequest extends ClientServerMessage implements Serializable {
+
+    private static final long serialVersionUID = 1L;
     private String user = null;
 
     public String getUser() {
@@ -26,10 +30,17 @@ public class QuitRequest extends ClientServerMessage implements Serializable{
     public void setUser(String user) {
         this.user = user;
     }
-    
+
     @Override
-     public String toString(){
-        return( "Quit request" );
+    public String toString() {
+        return ("Quit request");
     }
-    
+
+    /**
+     * Prevent an overwrite of the readObject method for de-serialization
+     */
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException {
+        inStream.defaultReadObject();
+    }
+
 }

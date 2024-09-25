@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/JTreeTrustChain.java 7     25/08/22 10:38 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JTreeTrustChain.java 9     2/11/23 14:03 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.DNUtil;
@@ -6,7 +6,10 @@ import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.tree.SortableTreeNode;
 import java.util.List;
 import javax.swing.JTree;
+import javax.swing.event.TreeExpansionEvent;
+import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.ExpandVetoException;
 import javax.swing.tree.TreePath;
 
 /*
@@ -20,14 +23,14 @@ import javax.swing.tree.TreePath;
  * Tree to display the trust chain of a certificate
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class JTreeTrustChain extends JTree {
 
     /**
      * This is the root node
      */
-    private SortableTreeNode root;
+    private final SortableTreeNode root;
 
     /**
      * Tree constructor
@@ -38,6 +41,18 @@ public class JTreeTrustChain extends JTree {
         this.root = (SortableTreeNode) this.getModel().getRoot();
         this.setCellRenderer(new TreeCellRendererTrustChain());
         this.setRowHeight(TreeCellRendererTrustChain.ROW_HEIGHT);
+        //prevent a collapse of this tree
+        this.addTreeWillExpandListener(new TreeWillExpandListener() {
+            @Override
+            public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException {
+
+            }
+
+            @Override
+            public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException {
+                throw new ExpandVetoException(event, "Collapsing trust chain tree is not allowed");
+            }
+        });
     }
 
     /**
@@ -52,9 +67,9 @@ public class JTreeTrustChain extends JTree {
         if (!firstCert.getIssuerDN().equals(firstCert.getSubjectDN())) {
             StringBuilder text = new StringBuilder();
             text.append(DNUtil.getCommonName(firstCert.getX509Certificate(), DNUtil.ISSUER));
-            text.append( " [");
+            text.append(" [");
             text.append(DNUtil.getOrganization(firstCert.getX509Certificate(), DNUtil.ISSUER));
-            text.append( "]");
+            text.append("]");
             this.root.setUserObject(text.toString());
             SortableTreeNode child = new SortableTreeNode(firstCert);
             this.root.add(child);

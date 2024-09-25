@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/store/ResourceBundleMessageStoreHandler.java 10    30.07.21 10:27 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/store/ResourceBundleMessageStoreHandler.java 11    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.store;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class ResourceBundleMessageStoreHandler extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

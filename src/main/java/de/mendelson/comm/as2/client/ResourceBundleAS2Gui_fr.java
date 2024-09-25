@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 45    17/01/23 14:16 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 48    29/11/23 14:00 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 45 $
+ * @version $Revision: 48 $
  */
 public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -97,5 +97,8 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"resend.failed.nopayload", "Renvoi en cas d''échec d''une nouvelle transaction: La transaction sélectionnée {0} n''a pas de données utilisateur." },
         {"server.answer.timeout.title", "Timeout dans la connexion client-serveur" },
         {"server.answer.timeout.details", "Le serveur ne répond pas dans le délai défini - la charge est-elle trop élevée?" },
+        {"resend.failed.unknown.sender", "Échec de la retransmission: émetteur inconnu {0} - veuillez vérifier si ce partenaire existe encore dans le système." },
+        {"resend.failed.unknown.receiver", "Échec du nouvel envoi: destinataire inconnu {0} - veuillez vérifier si ce partenaire existe encore dans le système." },
+        {"buy.license", "Acheter une licence" },
     };
 }

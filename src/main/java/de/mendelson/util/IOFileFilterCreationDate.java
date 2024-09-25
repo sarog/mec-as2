@@ -1,4 +1,4 @@
- //$Header: /as2/de/mendelson/util/IOFileFilterCreationDate.java 4     15.01.21 15:11 Heller $
+ //$Header: /as2/de/mendelson/util/IOFileFilterCreationDate.java 5     2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import java.nio.file.DirectoryStream;
@@ -20,7 +20,7 @@ import java.time.Instant;
  * File filter that filters the directory entries by their age
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class IOFileFilterCreationDate implements DirectoryStream.Filter {
 
@@ -30,7 +30,7 @@ public class IOFileFilterCreationDate implements DirectoryStream.Filter {
     private int mode = MODE_OLDER_THAN;
     private boolean includeDirecories = false;
     private boolean includeFiles = true;
-    private Instant instantToCompare;
+    private final Instant instantToCompare;
 
     /**
      * Creates a new instance of the creation date File filter

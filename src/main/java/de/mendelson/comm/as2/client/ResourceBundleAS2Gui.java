@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 53    17/01/23 14:16 Heller $ 
+//$Header: /mec_as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 56    29/11/23 14:00 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 53 $
+ * @version $Revision: 56 $
  */
 public class ResourceBundleAS2Gui extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -96,5 +96,8 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"resend.failed.nopayload", "Resend as new transaction failed: The selected transaction {0} has no payload."},
         {"server.answer.timeout.title", "Timeout in client-server connection" },
         {"server.answer.timeout.details", "The server does not answer in the defined timeframe on a request - high load?" },
+        {"resend.failed.unknown.sender", "Resend failed: Unknown sender {0} - please check if this partner still exists in the system." },
+        {"resend.failed.unknown.receiver", "Resend failed: Unknown receiver {0} - please check if this partner still exists in the system." },
+        {"buy.license", "Buy license" },
     };
 }

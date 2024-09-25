@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/MecFileChooserImplSwing.java 16    24.03.10 13:28 Heller $
+//$Header: /as2/de/mendelson/util/MecFileChooserImplSwing.java 17    2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import javax.swing.filechooser.*;
@@ -22,7 +22,7 @@ import java.util.*;
  * Special extention of the standard filechooser class, also implements
  * a FileFilter
  * @author  S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class MecFileChooserImplSwing extends JFileChooser{
     
@@ -68,7 +68,6 @@ public class MecFileChooserImplSwing extends JFileChooser{
     
     
     /**Browses for a filename and returns it
-     * @param parent Parent component
      * @return null if the user cancels the action!
      */
     public String browseFilename(){

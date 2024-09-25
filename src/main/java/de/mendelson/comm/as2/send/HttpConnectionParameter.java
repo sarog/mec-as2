@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/HttpConnectionParameter.java 6     29/07/22 10:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/HttpConnectionParameter.java 7     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,7 +14,7 @@ import java.net.InetAddress;
 /**
  * Sets several parameter for an outbound http connection. This includes routing, connection and protocol issues
  * @author  S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class HttpConnectionParameter {
 
@@ -84,7 +84,6 @@ public class HttpConnectionParameter {
     }
 
     /**
-     * @param soTimeout the soTimeout to set
      */
     public void setSoTimeoutMillis(int soTimeoutMillis) {
         this.soTimeoutMillis = soTimeoutMillis;

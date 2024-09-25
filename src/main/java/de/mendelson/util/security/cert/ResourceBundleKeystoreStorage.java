@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleKeystoreStorage.java 2     4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleKeystoreStorage.java 6     23/11/23 10:22 Heller $
 package de.mendelson.util.security.cert;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleKeystoreStorage extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -34,6 +34,10 @@ public class ResourceBundleKeystoreStorage extends MecResourceBundle{
         {"error.empty", "Unable to read keystore: Keystore data length must not be 0" },
         {"error.save", "Unable to save the keystore data." },
         {"keystore.read.failure", "The system is unable to read the underlaying certificates. Error message: \"{0}\". Please ensure that you are using the correct keystore password."},
+        {"moved.keystore.to.db", "Imported the keystore data from \"{0}\" into the system, the purpose is {1}. Existing keys/certificates have been deleted."},
+        {"moved.keystore.reason.commandline", "The import was initiated by a command line parameter at the server start."},
+        {"moved.keystore.reason.initial", "The import was performed because there exists currently no internal system keystore. This is an initial process."},
+        {"moved.keystore.to.db.title", "Keystore file import ({0})"}    
     };
     
 }

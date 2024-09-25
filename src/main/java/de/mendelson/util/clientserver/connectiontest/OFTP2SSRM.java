@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2SSRM.java 1     4/06/17 2:13p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/OFTP2SSRM.java 2     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 /*
@@ -12,7 +12,7 @@ package de.mendelson.util.clientserver.connectiontest;
 /**
  * Command SSRM
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class OFTP2SSRM extends OFTP2AbstractCommand implements OFTP2Command {
 
@@ -20,7 +20,7 @@ public class OFTP2SSRM extends OFTP2AbstractCommand implements OFTP2Command {
     public static final String SSRMMSG = "SSRMMSG";
     public static final String SSRMCR = "SSRMCR";
     
-    private OFTP2Field[] fields = new OFTP2Field[]{
+    private final OFTP2Field[] fields = new OFTP2Field[]{
         new OFTP2FieldAN(SSRMCMD, 1, "SSRM Command", this.getIndicator()),
         new OFTP2FieldAN(SSRMMSG, 17, "Ready Message", "ODETTE FTP READY"),
         new OFTP2FieldAN(SSRMCR, 1, "Carriage Return", new byte[]{0x0d}),};

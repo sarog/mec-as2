@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 31    8/08/22 10:13 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 33    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.event.selection.SelectionEvent;
@@ -13,7 +13,6 @@ import com.vaadin.ui.AbstractComponent;
 import com.vaadin.ui.Alignment;
 import com.vaadin.ui.Grid;
 import com.vaadin.ui.Grid.SelectionMode;
-import com.vaadin.ui.GridLayout;
 import com.vaadin.ui.HorizontalLayout;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Notification;
@@ -42,7 +41,6 @@ import de.mendelson.util.database.IDBDriverManager;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -69,7 +67,7 @@ import java.util.logging.Level;
  * The about dialog for the as2 server web ui
  *
  * @author S.Heller
- * @version $Revision: 31 $
+ * @version $Revision: 33 $
  */
 public class TransactionDetailsDialog extends OkDialog {
 
@@ -95,19 +93,17 @@ public class TransactionDetailsDialog extends OkDialog {
     private FilePanel[] payloadPanel = null;
     private List<AS2Payload> payload = new ArrayList<AS2Payload>();
     private TabSheet tabSheet = null;
-    private Grid<GridDetailRow> grid = new Grid<GridDetailRow>();
-    private AS2MessageInfo as2MessageInfo;
+    private final Grid<GridDetailRow> grid = new Grid<GridDetailRow>();
+    private final AS2MessageInfo as2MessageInfo;
     private AS2MDNInfo as2MDNInfo;
     private Partner sender = null;
     private Partner receiver = null;
-    private String timezoneStr;
-    private Locale browserLocale;
+    private final String timezoneStr;
+    private final Locale browserLocale;
     private String dispositionText = "--";
 
     /**
      *
-     * @param configConnection
-     * @param runtimeConnection
      * @param as2MessageInfo The AS2 message info to display
      * @param timezoneStr The timezone string as delivered by the browser/user
      * selection, e.g. "Europe/Berlin" or "America/New_York"
@@ -447,7 +443,7 @@ public class TransactionDetailsDialog extends OkDialog {
                         }
                         TransactionDetailsDialog.this.messageHeaderPanel.displayFile(headerFile, false);
 
-                        if (TransactionDetailsDialog.this.payload.size() > 0) {
+                        if (!TransactionDetailsDialog.this.payload.isEmpty()) {
                             for (int i = 0; i < TransactionDetailsDialog.this.payload.size(); i++) {
                                 Path payloadFile = Paths.get(TransactionDetailsDialog.this.payload.get(i).getPayloadFilename());
                                 TransactionDetailsDialog.this.payloadPanel[i].displayFile(payloadFile, true);

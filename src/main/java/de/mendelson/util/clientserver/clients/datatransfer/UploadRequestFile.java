@@ -1,7 +1,9 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestFile.java 5     17.02.21 11:49 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestFile.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,11 +16,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol: Upload a file to the server, to a specified file name
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class UploadRequestFile extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String targetFilename = null;
     /**The upload hash that referes the file that is already transferred for this request*/
     private String uploadHash = null;
@@ -57,4 +59,9 @@ public class UploadRequestFile extends ClientServerMessage implements Serializab
         this.uploadHash = uploadHash;
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
+    
 }

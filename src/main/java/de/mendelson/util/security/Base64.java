@@ -1,11 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/security/Base64.java 5     28.02.20 17:47 Heller $
+//$Header: /oftp2/de/mendelson/util/security/Base64.java 7     3/11/23 9:57 Heller $
 package de.mendelson.util.security;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -107,7 +104,7 @@ public final class Base64 {
         int numberTriplets = lengthDataBits / TWENTYFOURBITGROUP;
         int numberQuartet = fewerThan24bits != 0 ? numberTriplets + 1 : numberTriplets;
         int numberLines = (numberQuartet - 1) / 19 + 1;
-        char encodedData[] = null;
+        char[] encodedData = null;
 
         encodedData = new char[numberQuartet * 4 + numberLines];
 
@@ -219,7 +216,6 @@ public final class Base64 {
     /**
      * Decodes Base64 data into octects
      *
-     * @param binaryData Byte array containing Base64 data
      * @return Array containind decoded data.
      */
     public static byte[] decode(String encoded) {
@@ -240,7 +236,7 @@ public final class Base64 {
         if (numberQuadruple == 0) {
             return new byte[0];
         }
-        byte decodedData[] = null;
+        byte[] decodedData = null;
         byte b1 = 0, b2 = 0, b3 = 0, b4 = 0, marker0 = 0, marker1 = 0;
         char d1 = 0, d2 = 0, d3 = 0, d4 = 0;
 
@@ -368,7 +364,7 @@ public final class Base64 {
     /**
      * Method to start the server on from the command line
      */
-    public static void main(String args[]) {
+    public static void main(String[] args) {
         String operation = null;
         String filein = null;
         String fileout = null;

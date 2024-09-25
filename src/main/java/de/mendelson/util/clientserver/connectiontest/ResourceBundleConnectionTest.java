@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest.java 12    20/06/22 11:22 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest.java 15    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class ResourceBundleConnectionTest extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -31,7 +31,7 @@ public class ResourceBundleConnectionTest extends MecResourceBundle {
     static final Object[][] CONTENTS = {
         {"tag", "Connection test to {0}"},
         {"timeout.set", "Setting timeout to {0}ms" },
-        {"test.start.ssl", "Starting connection check to {0} using SSL/TLS connection. Please remember that during this test your client will trust all server certificates and will ignore your TLS keystore - means it is not ensured that your TLS keystore is set up in the right way even if this test is successful."},
+        {"test.start.ssl", "Starting connection check to {0} using TLS connection. Please remember that during this test your client will trust all server certificates and will ignore your TLS keystore - means it is not ensured that your TLS keystore is set up in the right way even if this test is successful."},
         {"test.start.plain", "Starting connection check to {0} using PLAIN connection..."},
         {"connection.problem", "Unable to reach {0} - infrastructure problem or wrong address entered" },
         {"connection.success", "Connection to {0} established successfully" },
@@ -51,8 +51,8 @@ public class ResourceBundleConnectionTest extends MecResourceBundle {
         {"certificate.ca", "CA Certificate" },        
         {"certificate.enduser", "End User Certificate" },        
         {"certificate.selfsigned", "Self Signed" },        
-        {"certificate.does.not.exist.local", "This certificate does not exist in your local TLS/SSL keystore - please import it" },
-        {"certificate.does.exist.local", "This certificate does exist in your local TLS/SSL keystore, the alias is \"{0}\"" },
+        {"certificate.does.not.exist.local", "This certificate does not exist in your local TLS keystore - please import it" },
+        {"certificate.does.exist.local", "This certificate does exist in your local TLS keystore, the alias is \"{0}\"" },
         {"test.connection.direct", "A direct IP connection is used" },
         {"test.connection.proxy.auth", "The connection uses the proxy at {0} with authentication (user \"{1}\")" },
         {"test.connection.proxy.noauth", "The connection uses the proxy at {0} without authentication" },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerResourceCheck_de.java 3     4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerResourceCheck_de.java 5     2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleAS2ServerResourceCheck_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -29,6 +29,6 @@ public class ResourceBundleAS2ServerResourceCheck_de extends MecResourceBundle {
      */
     static final Object[][] CONTENTS = {
         {"port.in.use", "Der Port {0} wird von einem anderen Prozess belegt."},
-        {"warning.few.cpucores", "Das System hat nur {0} Prozessorkern(e) erkannt, die dem mendelson AS2 Serverprozess zugeordnet sind. Mit dieser geringen Anzahl von Prozessorkernen kann die Ausführungsgeschwindigkeit sehr gering sein und einige Funktionen könnten nur eingeschränkt funktinoieren. Bitte weisen Sie dem mendelson AS2 Serverprozess mindestens 4 Prozessorkerne zu."},
+        {"warning.few.cpucores", "Das System hat nur {0} Prozessorkern(e) erkannt, die dem mendelson AS2 Serverprozess zugeordnet sind. Mit dieser geringen Anzahl von Prozessorkernen kann die Ausführungsgeschwindigkeit sehr gering sein und einige Funktionen könnten nur eingeschränkt funktionieren. Bitte weisen Sie dem mendelson AS2 Serverprozess mindestens 4 Prozessorkerne zu."},
         {"warning.low.maxheap", "Das System hat nur ungefähr {0} verfügbaren Heap Speicher gefunden, der dem mendelson AS2 Serverprozess zugeordnet wurde. (Keine Sorge, das sind ca 10% weniger als Sie im Startscript angegeben haben). Bitte weisen Sie dem mendelson AS2 Serverprozess mindestens 1GB Heap Speicher zu."},};
 }

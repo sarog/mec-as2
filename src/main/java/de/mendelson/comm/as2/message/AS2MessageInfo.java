@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 62    1/09/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 66    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,14 +22,14 @@ import java.util.Properties;
  * Stores all information about a as2 message
  *
  * @author S.Heller
- * @version $Revision: 62 $
+ * @version $Revision: 66 $
  */
 public class AS2MessageInfo implements AS2Info {
 
     /**
      * AS2Info extends Serializable
      */
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int DIRECTION_UNKNOWN = 0;
     public static final int DIRECTION_IN = 1;
     public static final int DIRECTION_OUT = 2;
@@ -524,7 +524,7 @@ public class AS2MessageInfo implements AS2Info {
         }
         if (anObject != null && anObject instanceof AS2MessageInfo) {
             AS2MessageInfo info = (AS2MessageInfo) anObject;
-            return (info != null && this.messageId != null && this.messageId.equals(info.messageId));
+            return (this.messageId != null && this.messageId.equals(info.messageId));
         }
         return (false);
     }
@@ -567,6 +567,7 @@ public class AS2MessageInfo implements AS2Info {
     /**
      * @return the usesTLS
      */
+    @Override
     public boolean usesTLS() {
         return usesTLS;
     }
@@ -574,6 +575,7 @@ public class AS2MessageInfo implements AS2Info {
     /**
      * @param usesTLS the usesTLS to set
      */
+    @Override
     public void setUsesTLS(boolean usesTLS) {
         this.usesTLS = usesTLS;
     }

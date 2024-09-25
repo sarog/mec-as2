@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleTableModelCertificates_fr.java 2     4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleTableModelCertificates_fr.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleTableModelCertificates_fr extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -29,6 +29,7 @@ public class ResourceBundleTableModelCertificates_fr extends MecResourceBundle{
         {"header.alias", "Alias" },
         {"header.expire", "Date d''expiration" },
         {"header.length", "Longueur" },
+        {"header.algorithm", "Algorithm" },
         {"header.organization", "Organisation" },
         {"header.ca", "CA" },
     };

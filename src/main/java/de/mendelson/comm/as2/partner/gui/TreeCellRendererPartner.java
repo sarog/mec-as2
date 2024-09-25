@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TreeCellRendererPartner.java 6     15.08.19 10:46 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TreeCellRendererPartner.java 8     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -20,7 +20,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * TreeCellRenderer that will display the icons of the config tree
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
 
@@ -31,9 +31,11 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
     private final static ImageIcon ICON_LOCAL
             = new ImageIcon(ListCellRendererPartner.IMAGE_LOCALSTATION.toMinResolution(ICON_HEIGHT));
     private final static ImageIcon ICON_LOCAL_ERROR
-            = new ImageIcon(ListCellRendererPartner.IMAGE_LOCALSTATION_CONFIGERROR.toMinResolution(ICON_HEIGHT));
+            = new ImageIcon(
+                    ListCellRendererPartner.IMAGE_LOCALSTATION_CONFIGERROR.toMinResolution(ICON_HEIGHT));
     private final static ImageIcon ICON_REMOTE_ERROR
-            = new ImageIcon(ListCellRendererPartner.IMAGE_REMOTESTATION_CONFIGERROR.toMinResolution(ICON_HEIGHT));
+            = new ImageIcon(
+                    ListCellRendererPartner.IMAGE_REMOTESTATION_CONFIGERROR.toMinResolution(ICON_HEIGHT));
 
     /**
      * Stores the selected node
@@ -71,15 +73,15 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
         Partner partner = (Partner) object;
         if (partner.isLocalStation()) {
             if (partner.hasConfigError()) {
-                icon = this.ICON_LOCAL_ERROR;
+                icon = ICON_LOCAL_ERROR;
             } else {
-                icon = this.ICON_LOCAL;
+                icon = ICON_LOCAL;
             }
         } else {
             if (partner.hasConfigError()) {
-                icon = this.ICON_REMOTE_ERROR;
+                icon = ICON_REMOTE_ERROR;
             } else {
-                icon = this.ICON_REMOTE;
+                icon = ICON_REMOTE;
             }
         }
 

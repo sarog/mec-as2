@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/RefreshClientMessageOverviewList.java 5     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/RefreshClientMessageOverviewList.java 7     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,11 +15,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class RefreshClientMessageOverviewList extends ClientServerMessage implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     /**Event if the clients prevent update - the delete updates should
      * be always displayed
@@ -46,5 +48,9 @@ public class RefreshClientMessageOverviewList extends ClientServerMessage implem
         this.operation = operation;
     }
     
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 }

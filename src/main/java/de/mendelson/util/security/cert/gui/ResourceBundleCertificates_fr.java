@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 22    12/12/22 14:18 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 31    2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 22 $
+ * @version $Revision: 31 $
  */
 public class ResourceBundleCertificates_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -34,8 +34,8 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"button.delete.all.expired", "Supprimer toutes les clés/certificats expirés" },
         {"button.edit", "Renommer l''alias"},
         {"button.newkey", "Importer clef"},
-        {"button.newcertificate", "Importer certificat"},
-        {"button.export", "Exporter certificat"},
+        {"button.import", "Importer"},
+        {"button.export", "Exporter"},
         {"button.reference", "Afficher l''utilisation" },  
         {"button.keycopy", "Copier vers l''administration {0}" },
         {"button.keycopy.tls", "TLS" },
@@ -53,13 +53,12 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"label.selectcsrfile", "Veuillez sélectionner le fichier pour enregistrer la CSR"},
         {"label.cert.import", "Importer certificat (de votre partenaire commercial)"},
         {"label.cert.export", "Exporter certificat (pour votre partenaire commercial)"},
-        {"label.key.import.pem", "Importer votre propre clef privée (depuis un PEM)"},
-        {"label.key.import.pkcs12", "Importer votre propre clef privée (depuis un PKCS#12)"},
-        {"label.key.import.jks", "Importer votre propre clef privée (depuis un JKS, format porte-clef JAVA)"},
-        {"label.key.export.pkcs12", "Exporter votre propre clef privée (PKCS#12) (pour sauvegarde seulement !)"},
-        {"label.keystore", "Dossier de keystore:"},
-        {"title.signencrypt", "Certificats et clefs disponibles (encryption, signature)"},
-        {"title.ssl", "Certificats et clefs disponibles (SSL/TLS)"},
+        {"label.key.import", "Importer votre propre clef privée (PKCS#12, JKS)"},
+        {"label.key.export.pkcs12", "Exporter votre propre clef privée (PKCS#12) (pour sauvegarde seulement!)"},
+        {"label.keystore.export", "Exporter tout en tant que keystore (pour sauvegarde seulement!)" },
+        {"label.keystore", "Emplacement"},
+        {"title.signencrypt", "Certificats et clefs (encryption, signature)"},
+        {"title.ssl", "Certificats et clefs (TLS)"},
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"filechooser.certificate.import", "Merci de sélectionner le fichier certificat pour l''import"},

@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMDeleteRequest.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMDeleteRequest.java 4     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.clientserver;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,11 +18,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class CEMDeleteRequest extends ClientServerMessage implements Serializable {
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private CEMEntry entry = null;
     
     public CEMDeleteRequest(CEMEntry entry) {
@@ -40,4 +42,8 @@ public class CEMDeleteRequest extends ClientServerMessage implements Serializabl
         return entry;
     }
 
+    /**Prevent an overwrite of the readObject method for deserialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
 }

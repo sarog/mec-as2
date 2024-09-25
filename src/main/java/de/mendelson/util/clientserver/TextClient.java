@@ -1,6 +1,7 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/TextClient.java 20    27/01/22 10:23 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/TextClient.java 27    23/01/24 11:09 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.clientserver.messages.LoginRequest;
@@ -25,7 +26,7 @@ import java.util.logging.Level;
  * Sends a command to the OFTP2 server
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 27 $
  */
 public class TextClient extends BaseTextClient implements ClientsideMessageProcessor {
 
@@ -42,12 +43,16 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
     /**
      * Connects to the server and performs a login
      */
-    public void connectAndLogin(String host, int clientServerCommPort, String clientId, String user, char[] password, long timeout) throws Throwable {
+    public void connectAndLogin(String host,
+            int clientServerCommPort, String clientId,
+            String user, char[] password, long timeout,
+            String connectionThreadNamePrefix) throws Throwable {
         this.user = user;
         this.password = password;
         this.clientId = clientId;
         this.connectionThread = new ConnectThread(host, clientServerCommPort, timeout);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newSingleThreadExecutor(
+                new NamedThreadFactory(connectionThreadNamePrefix + "clientserver-connect-login"));
         executor.submit(this.connectionThread);
         executor.shutdown();
         this.connectionThread.getDoneSignal().await(timeout, TimeUnit.MILLISECONDS);
@@ -66,8 +71,10 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
     @Override
     public boolean processMessageFromServer(ClientServerMessage message) {
         if (message instanceof ServerInfo) {
-            ServerInfo serverInfo = (ServerInfo) message;
-            this.getLogger().log(Level.CONFIG, "Remote server identified as " + serverInfo.getProductname());
+            if (this.getBaseClient().getDisplayServerLogMessages()) {
+                ServerInfo serverInfo = (ServerInfo) message;
+                this.getLogger().log(Level.CONFIG, "Remote server identified as " + serverInfo.getProductname());
+            }
         } else if (message instanceof LoginRequest) {
             this.loginRequestedFromServer();
         }
@@ -82,25 +89,25 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
             if (this.getLogger() == null) {
                 throw new RuntimeException("TextClient: No logger set.");
             }
-            Exception e = new Exception(state.getStateDetails());
+            LoginFailedException e = new LoginFailedException(state.getStateDetails(), state.getState());
             this.connectionThread.signalFailure(e);
         } else if (state.getState() == LoginState.STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED) {
             if (this.getLogger() == null) {
                 throw new RuntimeException("TextClient: No logger set.");
             }
-            Exception e = new Exception(state.getStateDetails());
+            LoginFailedException e = new LoginFailedException(state.getStateDetails(), state.getState());
             this.connectionThread.signalFailure(e);
         } else if (state.getState() == LoginState.STATE_AUTHENTICATION_FAILURE) {
             if (this.getLogger() == null) {
                 throw new RuntimeException("TextClient: No logger set.");
             }
-            Exception e = new Exception(state.getStateDetails());
+            LoginFailedException e = new LoginFailedException(state.getStateDetails(), state.getState());
             this.connectionThread.signalFailure(e);
         } else if (state.getState() == LoginState.STATE_REJECTED) {
             if (this.getLogger() == null) {
                 throw new RuntimeException("TextClient: No logger set.");
             }
-            Exception e = new Exception(state.getStateDetails());
+            LoginFailedException e = new LoginFailedException(state.getStateDetails(), state.getState());
             this.connectionThread.signalFailure(e);
         }
         return (state);
@@ -110,7 +117,9 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
     public void loginRequestedFromServer() {
         if (this.password == null) {
             this.connectionThread.signalFailure(new Exception("Server requested login but the client has no password defined!"));
-            this.log(Level.INFO, "Login failed");
+            if (this.getBaseClient().getDisplayServerLogMessages()) {
+                this.log(Level.INFO, "Login failed");
+            }
         } else {
             //client id has been set in method performLogin
             LoginState state = this.performLogin(this.user, this.password, this.clientId);
@@ -118,7 +127,9 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
                 User returnedUser = state.getUser();
                 //login successful: pass a user to the base client
                 this.getBaseClient().setUser(returnedUser);
-                this.log(Level.INFO, "Login successful");
+                if (this.getBaseClient().getDisplayServerLogMessages()) {
+                    this.log(Level.INFO, "Login successful");
+                }
                 this.connectionThread.signalSuccess();
             } else {
                 this.log(Level.INFO, "Login failed");
@@ -132,7 +143,9 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      */
     @Override
     public void logout() {
-        this.log(Level.INFO, "Logging out");
+        if (this.getBaseClient().getDisplayServerLogMessages()) {
+            this.log(Level.INFO, "Logging out");
+        }
         super.logout();
     }
 
@@ -140,7 +153,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 20 $";
+        String revision = "$Revision: 27 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -162,12 +175,12 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
         public static final int STATE_WORKING = 0;
         public static final int STATE_FAILURE = 1;
         public static final int STATE_SUCCESS = 2;
-        private int clientServerCommPort;
-        private String host;
+        private final int clientServerCommPort;
+        private final String host;
         private int state = STATE_WORKING;
         private Throwable exception = null;
-        private CountDownLatch doneSignal = new CountDownLatch(2);
-        private long timeout;
+        private final CountDownLatch doneSignal = new CountDownLatch(2);
+        private final long timeout;
 
         public ConnectThread(String host, int clientServerCommPort, long timeout) {
             this.host = host;
@@ -178,9 +191,15 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
         @Override
         public void run() {
             try {
+                long connectionStartTime = System.currentTimeMillis();
                 connect(new InetSocketAddress(this.host, this.clientServerCommPort), this.timeout);
                 while (this.state == STATE_WORKING) {
-                    Thread.sleep(10);
+                    Thread.sleep(50);
+                    //The whole login process takes some message to go back and forward - its not
+                    //the one time timeout the thread should wait for the login to be done
+                    if (connectionStartTime + (3 * this.timeout) < System.currentTimeMillis()) {
+                        throw new Exception("Connection timeout in client-server connection");
+                    }
                 }
             } catch (Throwable e) {
                 this.signalFailure(e);

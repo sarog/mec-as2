@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12.java 4     7/12/22 16:31 Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12.java 8     2/11/23 15:53 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleExportKeyPKCS12 extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -34,17 +34,21 @@ public class ResourceBundleExportKeyPKCS12 extends MecResourceBundle {
         {"button.cancel", "Cancel"},
         {"button.browse", "Browse"},
         {"keystore.contains.nokeys", "This keystore does not contain private keys."},        
-        {"label.exportkey", "Filename"},
-        {"label.exportkey.hint", "Exported keystore file (PKCS#12)"},
+        {"label.exportdir", "Export directory"},
+        {"label.exportdir.hint", "Directory the keystore will be created in (PKCS#12)"},
+        {"label.exportdir.help", "<HTML><strong>Export directory</strong><br><br>"
+            + "Please specify the export directory to which the private key should be exported here.<br>"
+            + "For security reasons, the key is not transferred to the client, so only saving on the server side is possible.<br><br>"
+            + "The system will create a save file in this directory that contains a date stamp."
+            + "</HTML>"},
         {"label.keypass", "Password"},
         {"label.keypass.hint", "Exported keystore password"},
         {"title", "Export key to keystore(PKCS#12 format)"},
-        {"filechooser.key.export", "Please select the PKCS#12 keystore file for the export"},
-        {"key.export.success.message", "The key has been exported successfully."},
+        {"filechooser.key.export", "Please select the export directory on the server"},
         {"key.export.success.title", "Success"},
         {"key.export.error.message", "There occured an error during the export process.\n{0}"},
         {"key.export.error.title", "Error"},
         {"label.alias", "Key"},
-        {"key.exported.to.file", "The key \"{0}\" has been written to the keystore \"{1}\"."},};
+        {"key.exported.to.file", "The key \"{0}\" has been written to the PKCS#12 file \"{1}\"."},};
 
 }

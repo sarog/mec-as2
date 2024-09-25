@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM.java 13    7.12.18 11:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM.java 16    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.TrustResponse;
@@ -16,11 +16,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public class ResourceBundleCEM extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -39,12 +39,12 @@ public class ResourceBundleCEM extends MecResourceBundle {
         {"cem.structure.info", "Number of trust requests in the inbound CEM: {0}" },
         {"transmitted.certificate.info", "The transmitted certificate has the IssuerDN=\"{0}\" and the serial number \"{1}\"." },
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN + ".cert.already.imported", "The submitted CEM certificate does already exist in the underlaying enc/sign keystore (alias {0}), the import has been skipped."},
-        {CEMReceiptController.KEYSTORE_TYPE_SSL + ".cert.already.imported", "The submitted CEM certificate does already exist in the underlaying SSL/TLS keystore (alias {0}), the import has been skipped."},
+        {CEMReceiptController.KEYSTORE_TYPE_SSL + ".cert.already.imported", "The submitted CEM certificate does already exist in the underlaying TLS keystore (alias {0}), the import has been skipped."},
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN + ".cert.imported.success", "The submitted CEM certificate has been imported sucessfully to the underlaying enc/sign keystore (alias {0})."},
-        {CEMReceiptController.KEYSTORE_TYPE_SSL + ".cert.imported.success", "The submitted CEM certificate has been imported sucessfully to the underlaying SSL/TLS keystore (alias {0})."},
+        {CEMReceiptController.KEYSTORE_TYPE_SSL + ".cert.imported.success", "The submitted CEM certificate has been imported sucessfully to the underlaying TLS keystore (alias {0})."},
         {"category." + CEMEntry.CATEGORY_CRYPT, "Encryption"},
         {"category." + CEMEntry.CATEGORY_SIGN, "Signature"},
-        {"category." + CEMEntry.CATEGORY_SSL, "SSL"},
+        {"category." + CEMEntry.CATEGORY_TLS, "SSL"},
         {"state." + CEMEntry.STATUS_ACCEPTED_INT, "Accepted by {0}"},
         {"state." + CEMEntry.STATUS_PENDING_INT, "No answer so far from {0}"},
         {"state." + CEMEntry.STATUS_REJECTED_INT, "Rejected by {0}"},

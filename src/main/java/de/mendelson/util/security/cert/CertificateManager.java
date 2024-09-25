@@ -1,14 +1,17 @@
-//$Header: /as2/de/mendelson/util/security/cert/CertificateManager.java 51    16/12/22 13:33 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/CertificateManager.java 68    9/01/24 11:23 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.Base64;
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.cert.CertPath;
 import java.security.cert.Certificate;
+import java.security.cert.PKIXCertPathBuilderResult;
 import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -34,7 +37,7 @@ import javax.security.auth.x500.X500Principal;
  * Helper class to store
  *
  * @author S.Heller
- * @version $Revision: 51 $
+ * @version $Revision: 68 $
  */
 public class CertificateManager {
 
@@ -124,15 +127,15 @@ public class CertificateManager {
      * not contain a private key an exception is thrown
      */
     public PrivateKey getPrivateKey(String alias) throws Exception {
-        KeystoreCertificate certificate = this.aliasCertificateMap.get(alias);
-        if (certificate == null) {
+        KeystoreCertificate entry = this.aliasCertificateMap.get(alias);
+        if (entry == null) {
             throw new Exception(this.rb.getResourceString("alias.notfound", alias));
         }
-        PrivateKey key = (PrivateKey) certificate.getKey();
-        if (key == null) {
+        PrivateKey privateKey = (PrivateKey) entry.getKey();
+        if (privateKey == null) {
             throw new Exception(this.rb.getResourceString("alias.hasno.privatekey", alias));
         }
-        return (key);
+        return (privateKey);
     }
 
     /**
@@ -237,11 +240,27 @@ public class CertificateManager {
     }
 
     /**
+     * Deletes all entries in the underlaying storage and replaces them by the
+     * list of passed certificates
+     *
+     * @param newList
+     * @throws Exception
+     */
+    public void replaceAllEntriesAndSave(List<KeystoreCertificate> newList) throws Exception {
+        List<KeystoreCertificate> oldList = new ArrayList<KeystoreCertificate>();
+        synchronized( this.keyStoreCertificateList){
+            oldList.addAll(this.keyStoreCertificateList);
+        }
+        this.storage.replaceAllEntriesAndSave(oldList, newList);
+        this.rereadKeystoreCertificates();
+    }
+
+    /**
      * Deletes an entry from the actual keystore
      */
     public void deleteKeystoreEntry(String alias) throws Throwable {
         this.storage.deleteEntry(alias);
-        this.saveKeystore();
+        this.rereadKeystoreCertificates();
     }
 
     /**
@@ -249,9 +268,22 @@ public class CertificateManager {
      * PKCS#12 contains no key pair password, pass null in this case
      *
      */
-    public void renameAlias(String oldAlias, String newAlias, char[] keypairPass) throws Throwable {
+    public void renameAlias(String oldAlias, String newAlias) throws Throwable {
+        char[] keypairPass = null;
+        if (this.storage.getKeystoreStorageType().equals(BCCryptoHelper.KEYSTORE_JKS)) {
+            keypairPass = this.getKeystorePass();
+        }
         this.storage.renameEntry(oldAlias, newAlias, keypairPass);
-        this.saveKeystore();
+        this.rereadKeystoreCertificates();
+    }
+
+    public void loadKeystoreFromServer() throws Exception {
+        try {
+            this.storage.loadKeystoreFromServer();
+        } catch (Throwable e) {
+            //just ignore this, not all implementations allow this function
+        }
+        this.rereadKeystoreCertificates();
     }
 
     /**
@@ -266,7 +298,7 @@ public class CertificateManager {
                 KeystoreCertificate certificate = new KeystoreCertificate();
                 certificate.setAlias(alias);
                 X509Certificate foundCertificate = (X509Certificate) newCertificateMap.get(alias);
-                certificate.setCertificate(foundCertificate);
+                certificate.setCertificate(foundCertificate, this.storage.getCertificateChain(alias));
                 try {
                     boolean isKeyPair = this.getKeystore().isKeyEntry(alias);
                     certificate.setIsKeyPair(isKeyPair);
@@ -312,6 +344,7 @@ public class CertificateManager {
     public void addCertificate(String alias, X509Certificate x509Certificate) throws Throwable {
         this.getKeystore().setCertificateEntry(alias, x509Certificate);
         this.saveKeystore();
+        this.rereadKeystoreCertificates();
     }
 
     /**
@@ -336,22 +369,12 @@ public class CertificateManager {
      * Wrapper function for the underlaying keystore storage implementation
      */
     public boolean canWrite() {
-        return (this.storage.canWrite());
-    }
-
-    /**
-     * Wrapper function for the underlaying keystore storage implementation.
-     * This is one of BCCryptoHelper.KEYSTORE_JKS or
-     * BCCryptoHelper.KEYSTORE_PKCS12
-     */
-    public String getKeystoreType() {
-        return (this.storage.getKeystoreStorageType());
+        return (true);
     }
 
     /**
      * Reads the certificates of the actual key store
      *
-     * @param type keystore typ as defined in the class BCCryptoHelper
      */
     public void loadKeystoreCertificates(KeystoreStorage storage) {
         this.storage = storage;
@@ -368,7 +391,6 @@ public class CertificateManager {
     /**
      * Reads the certificates of the actual key store
      *
-     * @param type keystore typ as defined in the class BCCryptoHelper
      */
     public void loadKeystoreCertificatesWithException(KeystoreStorage storage) throws Exception {
         this.storage = storage;
@@ -450,6 +472,9 @@ public class CertificateManager {
      * exist
      */
     public KeystoreCertificate getKeystoreCertificateByIssuerDNAndSerial(String issuerDN, String serialDEC) {
+        if( issuerDN == null || serialDEC == null ){
+            return( null );
+        }
         return (this.getKeystoreCertificateByIssuerAndSerial(new X500Principal(issuerDN), serialDEC));
     }
 
@@ -617,7 +642,7 @@ public class CertificateManager {
      */
     public KeystoreCertificate getKeystoreCertificateByFingerprintSHA1(String fingerprintSHA1) {
         //just return null if the fingerprint string is invalid in any case
-        if (fingerprintSHA1 == null || fingerprintSHA1.trim().length() == 0 || !fingerprintSHA1.contains(":")) {
+        if (fingerprintSHA1 == null || fingerprintSHA1.trim().isEmpty() || !fingerprintSHA1.contains(":")) {
             return (null);
         }
         KeystoreCertificate foundCert = this.fingerprintCertificateMap.get(fingerprintSHA1);
@@ -685,7 +710,81 @@ public class CertificateManager {
     public void setKeyEntry(String alias, Key key, Certificate[] chain) throws Throwable {
         this.getKeystore().setKeyEntry(alias, key, this.getKeystorePass(), chain);
         this.saveKeystore();
+        this.rereadKeystoreCertificates();
     }
+
+    /**
+     * Returns the storage type of the underlaying storage. This is one of
+     * BCCryptoHelper.KEYSTORE_JKS, BCCryptoHelper.KEYSTORE_PKCS11,
+     * BCCryptoHelper.KEYSTORE_PKCS12
+     *
+     * @return
+     */
+    public String getStorageType() {
+        return (this.storage.getKeystoreStorageType());
+    }
+
+    /**
+     * Returns the usage of the underlaying storage, e.g.
+     * KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN or
+     * KeystoreStorageImplClientServer.KEYSTORE_USAGE_TLS
+     *
+     * @return
+     */
+    public int getStorageUsage() {
+        return (this.storage.getKeystoreUsage());
+    }
+
+    /**
+     * Compute the whole trust chain of a given alias and returns it as list
+     */
+    public List<X509Certificate> computeTrustChain(String alias) {
+        KeystoreCertificate certificate = this.getKeystoreCertificate(alias);
+        PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(this.getKeystore(), this.getX509CertificateList());
+        List<X509Certificate> list = new ArrayList<X509Certificate>();
+        //self signed?
+        if (result == null) {
+            //it's a self signed certificate: return it without any CA/intermediate certs
+            list.add(certificate.getX509Certificate());
+        } else {
+            //trusted cert
+            CertPath path = result.getCertPath();
+            for (Object cert : path.getCertificates()) {
+                list.add(0, (X509Certificate) cert);
+            }
+            X509Certificate anchorCertX509 = list.get(0);
+            boolean trustChainComplete = false;
+            while (!trustChainComplete) {
+                KeystoreCertificate keyCertAnchor = null;
+                //find out the keystore cert of the anchor
+                for (KeystoreCertificate keyCert : this.getKeyStoreCertificateList()) {
+                    if (keyCert.getX509Certificate().equals(anchorCertX509)) {
+                        keyCertAnchor = keyCert;
+                        break;
+                    }
+                }
+                if (keyCertAnchor != null) {
+                    //check if the anchor has another anchor as intermediates certificate may have the attribute "CA:true", too
+                    result = keyCertAnchor.getPKIXCertPathBuilderResult(this.getKeystore(), this.getX509CertificateList());
+                    anchorCertX509 = result.getTrustAnchor().getTrustedCert();
+                    if (!keyCertAnchor.getX509Certificate().equals(anchorCertX509)) {
+                        list.add(0, anchorCertX509);
+                    } else {
+                        trustChainComplete = true;
+                    }
+                } else {
+                    trustChainComplete = true;
+                }
+            }
+        }
+        return (list);
+    }
+
+    public Map<String, Certificate> loadCertificatesFromStorage() throws Exception {
+        return (this.storage.loadCertificatesFromKeystore());
+    }
+    
+    
 
 //    public static final void main(String[] args) {
 //        String dn1 = "CN=mend, OU=mendelson-e-commerce GmbH, O=mendelson-e-commerce GmbH, L=Berlin, ST=Berlin, C=DE, EMAILADDRESS=rosettanet@mendelson.de";

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/ResourceBundleClientServer_de.java 2     19/05/22 12:24 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/ResourceBundleClientServer_de.java 5     6/11/23 11:38 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleClientServer_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

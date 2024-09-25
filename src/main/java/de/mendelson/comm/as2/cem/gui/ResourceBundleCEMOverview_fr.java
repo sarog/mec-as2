@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleCEMOverview_fr.java 6     6/21/18 12:48p Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleCEMOverview_fr.java 7     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.cem.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleCEMOverview_fr extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

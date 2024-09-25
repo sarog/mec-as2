@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/EncryptionConstantsAS2.java 1     16.09.21 15:30 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/EncryptionConstantsAS2.java 2     2/11/23 15:53 Heller $
 package de.mendelson.util.security.encryption;
 
 import java.io.Serializable;
@@ -7,11 +7,11 @@ import java.io.Serializable;
  * Keeps the constant values of the signatures
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class EncryptionConstantsAS2 implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
         
     public static final int ENCRYPTION_UNKNOWN = 0;
     public static final int ENCRYPTION_NONE = 1;

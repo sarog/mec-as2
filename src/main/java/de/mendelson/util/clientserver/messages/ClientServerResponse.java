@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerResponse.java 7     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ClientServerResponse.java 9     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 
 /*
@@ -15,11 +17,11 @@ import java.io.Serializable;
  * A sync response from the server - will follow a request
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ClientServerResponse extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private Throwable exception = null;
 
     public ClientServerResponse(ClientServerMessage request) {
@@ -44,5 +46,10 @@ public class ClientServerResponse extends ClientServerMessage implements Seriali
      */
     public void setException(Throwable exception) {
         this.exception = exception;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 }

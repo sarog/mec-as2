@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewProcessorServer.java 21    3.1 $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewProcessorServer.java 22    2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.io.File;
@@ -32,11 +32,11 @@ import javax.swing.filechooser.FileSystemView;
  * Processes file system view requests
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 22 $
  */
 public class FileSystemViewProcessorServer {
 
-    private Logger logger;
+    private final Logger logger;
     private boolean serverSideFileSystemSupportsDOS = false;
     private boolean serverSideFileSystemSupportsPOSIX = false;
 

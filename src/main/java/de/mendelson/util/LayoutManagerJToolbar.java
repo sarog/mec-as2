@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/LayoutManagerJToolbar.java 6     2/21/17 11:57a Heller $
+//$Header: /oftp2/de/mendelson/util/LayoutManagerJToolbar.java 7     3/11/23 9:57 Heller $
 package de.mendelson.util;
 
 import java.awt.Component;
@@ -26,7 +26,7 @@ import javax.swing.SwingConstants;
  * this.jToolBar.setLayout(new LayoutManagerJToolbar());
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class LayoutManagerJToolbar implements LayoutManager, SwingConstants {
 
@@ -35,7 +35,7 @@ public class LayoutManagerJToolbar implements LayoutManager, SwingConstants {
     public LayoutManagerJToolbar() {
     }
 
-    private Dimension[] computeDimensions(Component children[]) {
+    private Dimension[] computeDimensions(Component[] children) {
         int maxWidth = 0;
         int maxHeight = 0;
         int visibleCount = 0;
@@ -60,7 +60,7 @@ public class LayoutManagerJToolbar implements LayoutManager, SwingConstants {
     public void layoutContainer(Container container) {
         Insets insets = container.getInsets();
         Component[] children = container.getComponents();
-        Dimension dimension[] = computeDimensions(children);
+        Dimension[] dimension = computeDimensions(children);
         int maxWidth = dimension[0].width;
         int maxHeight = dimension[0].height;
         int currentX = insets.left;
@@ -106,7 +106,7 @@ public class LayoutManagerJToolbar implements LayoutManager, SwingConstants {
     public Dimension preferredLayoutSize(Container container) {
         Insets insets = container.getInsets();
         Component[] children = container.getComponents();
-        Dimension dimension[] = computeDimensions(children);
+        Dimension[] dimension = computeDimensions(children);
         int usedWidth = dimension[1].width;
         int usedHeight = dimension[1].height;
         return (new Dimension(

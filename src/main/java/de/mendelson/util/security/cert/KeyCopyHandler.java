@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeyCopyHandler.java 1     12/12/22 14:18 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeyCopyHandler.java 3     7/07/23 11:09 Heller $
 package de.mendelson.util.security.cert;
 
 /*
@@ -11,13 +11,11 @@ package de.mendelson.util.security.cert;
 /**
  * Allows to copy a key/certificate between multiple keystore managers of a system
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public interface KeyCopyHandler {
 
-    /**Copy the passed entry to another keystore manager*/
+    /**Copy the passed entry to another key store manager*/
     public void copyEntry(KeystoreCertificate cert) throws Throwable; 
-    
-    public void setSource(CertificateManager source);
     
 }

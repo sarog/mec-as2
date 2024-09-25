@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/TextOverlay.java 14    25.11.21 13:20 Heller $
+//$Header: /as2/de/mendelson/util/TextOverlay.java 15    2/11/23 15:53 Heller $
 package de.mendelson.util;
 
 import java.awt.Container;
@@ -43,7 +43,7 @@ import javax.swing.event.DocumentListener;
  * resize is just skipped)
  *
  * @author S.Heller
- * @version: $Revision: 14 $
+ * @version: $Revision: 15 $
  */
 public class TextOverlay {
 
@@ -98,21 +98,21 @@ public class TextOverlay {
         textField.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                boolean shouldBeVisible = textField.getText().length() == 0
+                boolean shouldBeVisible = textField.getText().isEmpty()
                         && textField.isEnabled() && textField.isEditable();
                 placeholderOverlay.setVisible(shouldBeVisible);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                boolean shouldBeVisible = textField.getText().length() == 0
+                boolean shouldBeVisible = textField.getText().isEmpty()
                         && textField.isEnabled() && textField.isEditable();
                 placeholderOverlay.setVisible(shouldBeVisible);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                boolean shouldBeVisible = textField.getText().length() == 0
+                boolean shouldBeVisible = textField.getText().isEmpty()
                         && textField.isEnabled() && textField.isEditable();
                 placeholderOverlay.setVisible(shouldBeVisible);
             }
@@ -128,13 +128,13 @@ public class TextOverlay {
                     boolean enabled = Boolean.valueOf(evt.getNewValue().toString()).booleanValue();
                     placeholderOverlay.setVisible(enabled
                             && textField.isVisible()
-                            && textField.getText().length() == 0
+                            && textField.getText().isEmpty()
                     );
                 } else if (evt.getPropertyName().equalsIgnoreCase("editable")) {
                     boolean editable = Boolean.valueOf(evt.getNewValue().toString()).booleanValue();
                     placeholderOverlay.setVisible(editable
                             && textField.isVisible()
-                            && textField.getText().length() == 0
+                            && textField.getText().isEmpty()
                     );
                 }
             }
@@ -149,7 +149,7 @@ public class TextOverlay {
             public void ancestorAdded(AncestorEvent event) {
                 //dont show the placeholder if there is either text in it or the text field is disabled
                 placeholderOverlay.setVisible(textField.isVisible()
-                        && textField.getText().length() == 0
+                        && textField.getText().isEmpty()
                         && textField.isEnabled()
                         && textField.isEditable());
                 layeredPane.setVisible(textField.isVisible());
@@ -159,7 +159,7 @@ public class TextOverlay {
             public void ancestorRemoved(AncestorEvent event) {
                 //dont show the placeholder if there is either text in it or the text field is disabled
                 placeholderOverlay.setVisible(textField.isVisible()
-                        && textField.getText().length() == 0
+                        && textField.getText().isEmpty()
                         && textField.isEnabled()
                         && textField.isEditable());
                 layeredPane.setVisible(textField.isVisible());
@@ -169,7 +169,7 @@ public class TextOverlay {
             public void ancestorMoved(AncestorEvent event) {
                 //dont show the placeholder if there is either text in it or the text field is disabled
                 placeholderOverlay.setVisible(textField.isVisible()
-                        && textField.getText().length() == 0
+                        && textField.getText().isEmpty()
                         && textField.isEnabled()
                         && textField.isEditable());
                 layeredPane.setVisible(textField.isVisible());

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 17    29.10.19 11:25 Heller $Revision: 1 $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 19    2/11/23 15:53 Heller $Revision: 1 $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,14 +26,14 @@ import javax.swing.tree.TreePath;
  * Browser widget for remote files/directories
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class RemoteFileBrowser extends JDialog {
 
     private String selectedPath = null;
     private String selectedFilename = null;
-    private FileSystemViewClientServer fileView;
-    private MecResourceBundle rb;
+    private final FileSystemViewClientServer fileView;
+    private final MecResourceBundle rb;
     private TreeSelectionListener treeChangeListener;
     private String preselectedPath = null;
 
@@ -110,7 +110,6 @@ public class RemoteFileBrowser extends JDialog {
      * Sets a preselection on the server. Nothing will happen if the preselected
      * path does not exist on the server side
      *
-     * @param path
      */
     public void setSelectedFile(String preselectedFilename) {
         this.preselectedPath = this.fileView.getAbsolutePathStr(preselectedFilename);

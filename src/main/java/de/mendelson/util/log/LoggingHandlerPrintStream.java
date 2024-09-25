@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/log/LoggingHandlerPrintStream.java 1     19.10.18 15:02 Heller $
+//$Header: /as2/de/mendelson/util/log/LoggingHandlerPrintStream.java 2     2/11/23 14:03 Heller $
 package de.mendelson.util.log;
 
 import java.io.PrintStream;
@@ -18,11 +18,11 @@ import java.util.logging.LogRecord;
 /**
  * Handler to log output to a PrintStream
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class LoggingHandlerPrintStream extends Handler {
 
-    private PrintStream out;
+    private final PrintStream out;
 
     public LoggingHandlerPrintStream(PrintStream out) {
         this.out = out;

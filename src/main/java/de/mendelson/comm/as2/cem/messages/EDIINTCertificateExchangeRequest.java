@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/cem/messages/EDIINTCertificateExchangeRequest.java 7     15.09.10 16:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/messages/EDIINTCertificateExchangeRequest.java 8     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.cem.messages;
 
 import de.mendelson.util.XPathHelper;
@@ -16,7 +16,7 @@ import java.util.List;
 /**
  * Creates a EDIINTCertificateExchangeRequest with several parameters
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class EDIINTCertificateExchangeRequest extends CEMStructure {
 
@@ -25,7 +25,6 @@ public class EDIINTCertificateExchangeRequest extends CEMStructure {
     private TradingPartnerInfo tradingPartnerInfo = null;
 
     /** Creates new message I/O log and connects to localhost
-     *@param host host to connect to
      */
     public EDIINTCertificateExchangeRequest() {
     }

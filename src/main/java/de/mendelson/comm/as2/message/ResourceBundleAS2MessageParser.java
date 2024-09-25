@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 47    26.08.21 11:30 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 51    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 47 $
+ * @version $Revision: 51 $
  */
 public class ResourceBundleAS2MessageParser extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -67,6 +67,11 @@ public class ResourceBundleAS2MessageParser extends MecResourceBundle{
         {"original.filename.found", "The original payload filename has been transmitted by the message sender as \"{0}\"." },
         {"original.filename.undefined", "The original payload filename has not transmitted by the message sender." },
         {"data.not.compressed", "The inbound AS2 message data is not compressed." },
+        {"invalid.original.filename.title", "Invalid original filename detected in transaction" },
+        {"invalid.original.filename.body", "The system extracted an invalid original filename in transaction {0} from {1} to {2}.\n"
+            + "The found filename \"{3}\" has been replaced by \"{4}\" and the processing continued with this new filename. "
+            + "This might have impact on your processing flow because sometimes filenames contain meta data." },
+        {"invalid.original.filename.log", "Invalid original file name detected in transaction. \"{0}\" is replaced by \"{1}\" and processing continues." },
     };
     
 }

@@ -1,10 +1,9 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToDir.java 3     18.12.20 14:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToDir.java 5     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
-import de.mendelson.comm.as2.preferences.TableModelPreferencesDir;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.filesystemview.RemoteFileBrowser;
@@ -28,15 +27,15 @@ import javax.swing.SwingUtilities;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class JDialogConfigureEventMoveToDir extends JDialog {
 
     private final MecResourceBundle rb;
-    private BaseClient baseClient;
-    private JFrame parent;
-    private Partner partner;
-    private int eventType;
+    private final BaseClient baseClient;
+    private final JFrame parent;
+    private final Partner partner;
+    private final int eventType;
 
     /**
      * Creates new form JDialogMigrateFromHSQLDB
@@ -83,7 +82,7 @@ public class JDialogConfigureEventMoveToDir extends JDialog {
         if (this.partner.getPartnerEvents().getProcess(this.eventType)
                 == PartnerEventInformation.PROCESS_MOVE_TO_DIR) {
             List<String> parameter = this.partner.getPartnerEvents().getParameter(this.eventType);
-            if (parameter.size() > 0) {
+            if (!parameter.isEmpty()) {
                 this.jTextFieldRemoteDir.setText(parameter.get(0));
             }
         }

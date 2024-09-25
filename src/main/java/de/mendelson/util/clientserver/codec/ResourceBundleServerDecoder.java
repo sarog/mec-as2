@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder.java 3     9.06.20 10:40 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/codec/ResourceBundleServerDecoder.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleServerDecoder extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

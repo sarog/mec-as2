@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 15    28/07/22 12:45 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 19    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -37,21 +37,21 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 19 $
  */
 public class PostProcessingEventController {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private EventExecutionThread executeThread;
     private ClientServer clientserver = null;
-    private CertificateManager certificateManagerEncSign;
-    private MessageAccessDB messageAccess;
+    private final CertificateManager certificateManagerEncSign;
+    private final MessageAccessDB messageAccess;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("postprocessing"));
-    private IDBDriverManager dbDriverManager;
+    private final IDBDriverManager dbDriverManager;
 
     public PostProcessingEventController(ClientServer clientserver, 
             CertificateManager certificateManagerEncSign,
@@ -72,8 +72,8 @@ public class PostProcessingEventController {
 
     public class EventExecutionThread implements Runnable {
 
-        private ProcessingEventAccessDB processingEventAccess;
-        private IDBDriverManager dbDriverManager;
+        private final ProcessingEventAccessDB processingEventAccess;
+        private final IDBDriverManager dbDriverManager;
 
         public EventExecutionThread(IDBDriverManager dbDriverManager) {
             this.dbDriverManager = dbDriverManager;
@@ -110,28 +110,27 @@ public class PostProcessingEventController {
                             String errorMessage = "[" + e.getClass().getSimpleName() + "] " + e.getMessage();
                             AS2MessageInfo messageInfo = messageAccess.getLastMessageEntry(event.getMessageId());
                             Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-                            logger.log(Level.WARNING, errorMessage, messageInfo);
-                            SystemEventManagerImplAS2 eventManager = new SystemEventManagerImplAS2();
+                            logger.log(Level.WARNING, errorMessage, messageInfo);                            
                             Partner sender = null;
                             Partner receiver = null;
                             if (e instanceof PostprocessingException) {
                                 sender = ((PostprocessingException) e).getSender();
                                 receiver = ((PostprocessingException) e).getReceiver();
                             }
-                            eventManager.newEventPostprocessingError(errorMessage,
+                            SystemEventManagerImplAS2.instance().newEventPostprocessingError(errorMessage,
                                     event.getMessageId(), sender, receiver,
                                     event.getProcessType(), event.getEventType());
                         }
                     }
                 }
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.systemFailure(e);
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             } finally {
                 if (runtimeConnectionNoAutoCommit != null) {
                     try {
                         runtimeConnectionNoAutoCommit.close();
                     } catch (Exception e) {
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }

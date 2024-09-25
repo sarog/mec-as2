@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/HTTPAuthentication.java 7     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/HTTPAuthentication.java 8     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner;
 
 import java.io.Serializable;
@@ -16,11 +16,11 @@ import org.w3c.dom.NodeList;
 /**
  * Object that stores the information for a HTTP authentication used by a partner
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class HTTPAuthentication implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String user = "";
     private String password = "";
     /**Use it or dont use it?*/
@@ -72,10 +72,10 @@ public class HTTPAuthentication implements Serializable {
         }
         builder.append(offset).append("<httpauthentication type=\"").append(type).append("\">\n");
         builder.append(offset).append("\t<enabled>").append(String.valueOf(this.enabled)).append("</enabled>\n");
-        if (this.user != null && this.user.length() > 0) {
+        if (this.user != null && !this.user.isEmpty()) {
             builder.append(offset).append("\t<user>").append(this.toCDATA(this.user)).append("</user>\n");
         }
-        if (this.password != null && this.password.length() > 0) {
+        if (this.password != null && !this.password.isEmpty()) {
             builder.append(offset).append("\t<password>").append(this.toCDATA(this.password)).append("</password>\n");
         }
         builder.append(offset).append("</httpauthentication>\n");

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/panel/LogConsolePanel.java 17    18/05/22 12:16 Heller $
+//$Header: /as2/de/mendelson/util/log/panel/LogConsolePanel.java 19    2/11/23 15:53 Heller $
 package de.mendelson.util.log.panel;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,6 @@ import java.io.OutputStream;
 import java.io.PrintStream;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
@@ -33,7 +32,7 @@ import javax.swing.JPanel;
  * The frame system output/debug info is written to
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class LogConsolePanel extends JPanel implements ClipboardOwner {
 
@@ -65,7 +64,7 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
     /**
      * ResourceBundle to localize this GUI
      */
-    private MecResourceBundle rb;
+    private final MecResourceBundle rb;
     private JTextPaneLoggingHandler handler;
 
     private static final MendelsonMultiResolutionImage IMAGE_DELESECT

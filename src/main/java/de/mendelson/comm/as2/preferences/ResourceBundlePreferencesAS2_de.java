@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_de.java 8     2/08/22 15:37 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_de.java 12    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -29,11 +29,13 @@ public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
      * List of messages in the specific language
      */
     static final Object[][] CONTENTS = {
+        {"module.name", "[EINSTELLUNGEN]" }, 
         {"TRUE", "eingeschaltet" },
         {"FALSE", "ausgeschaltet" },
         {"set.to", "wurde gesetzt auf" },
         {"setting.updated", "Einstellung wurde aktualisiert" },
         {"notification.setting.updated", "Die Benachrichtigungseinstellungen wurden verändert." },
+        {"setting.reset", "Die Servereinstellung [{0}] wurde auf den Standardwert zurückgesetzt." },
         //preferences localized
         {PreferencesAS2.ASYNC_MDN_TIMEOUT, "Timeout für async MDN in min"},
         {PreferencesAS2.AUTH_PROXY_PASS, "HTTP Proxy Zugangsdaten (Passwort)"},
@@ -54,11 +56,7 @@ public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
         {PreferencesAS2.COUNTRY, "Land"},
         {PreferencesAS2.DATASHEET_RECEIPT_URL, "Empfangs URL fürs Datenblatt"},
         {PreferencesAS2.DIR_MSG, "Basisverzeichnis für Nachrichten"},
-        {PreferencesAS2.HTTP_SEND_TIMEOUT, "Sende Timeout (HTTP/S)"},
-        {PreferencesAS2.KEYSTORE, "Interne Verschlüsselungs-/Signatur Schlüsseldatei"},
-        {PreferencesAS2.KEYSTORE_HTTPS_SEND, "Interne TLS Schlüsseldatei"},
-        {PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS, "Interne TLS Schlüsseldatei (Passwort)"},
-        {PreferencesAS2.KEYSTORE_PASS, "Interne Verschlüsselungs-/Signatur Schlüsseldatei (Passwort)"},
+        {PreferencesAS2.HTTP_SEND_TIMEOUT, "Sende Timeout (HTTP/S)"},        
         {PreferencesAS2.LANGUAGE, "Client Sprache"},
         {PreferencesAS2.LAST_UPDATE_CHECK, "Letze Prüfung auf neue Version (unix time)"},
         {PreferencesAS2.LOG_POLL_PROCESS, "Poll Prozess im Protokoll documentieren"},
@@ -76,5 +74,6 @@ public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
         {PreferencesAS2.TLS_STRICT_HOST_CHECK, "(TLS) Host prüfen"},
         {PreferencesAS2.HTTPS_LISTEN_PORT, "HTTPS Eingangsport"},
         {PreferencesAS2.HTTP_LISTEN_PORT, "HTTP Eingangsport"},   
+        {PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG, "Anzeige: Überschreiben der Sicherheit der lokalen Station"},        
     };
 }

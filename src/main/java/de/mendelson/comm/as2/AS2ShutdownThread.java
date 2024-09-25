@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 15    20.08.20 15:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 17    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.comm.as2.database.IDBServer;
@@ -22,11 +22,11 @@ import java.util.ResourceBundle;
  * shut down)
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class AS2ShutdownThread extends Thread {
 
-    private IDBServer dbServer;
+    private final IDBServer dbServer;
     private MecResourceBundle rb = null;
 
     public AS2ShutdownThread(IDBServer dbServer) {
@@ -53,7 +53,7 @@ public class AS2ShutdownThread extends Thread {
         } catch (Throwable e) {
             //nop
         }
-        SystemEventManagerImplAS2.newEvent(
+        SystemEventManagerImplAS2.instance().newEvent(
                 SystemEvent.SEVERITY_INFO,
                 SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_MAIN_SERVER_SHUTDOWN,

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 12    19/01/23 9:26 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 14    2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.DateChooserUI;
@@ -48,16 +48,16 @@ import javax.swing.SwingUtilities;
  * Dialog to search on the server side in the log files
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class JDialogSearchLogfile extends JDialog {
 
-    private MecResourceBundle rb;
-    private BaseClient baseClient;
-    private IStatusBar statusBar;
+    private final MecResourceBundle rb;
+    private final BaseClient baseClient;
+    private final IStatusBar statusBar;
     private Date currentStartDate = new Date();
     private Date currentEndDate = new Date();
-    private DateFormat datetimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    private final DateFormat datetimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
     private final MendelsonMultiResolutionImage IMAGE_MAGNIFYING_GLASS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/log/search/gui/magnifying_glass.svg", 24, 48);
 

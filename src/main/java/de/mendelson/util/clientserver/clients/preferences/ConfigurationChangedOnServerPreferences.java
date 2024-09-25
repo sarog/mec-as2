@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServerPreferences.java 1     10/02/22 14:21 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServerPreferences.java 2     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
 import java.io.Serializable;
@@ -12,11 +12,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ConfigurationChangedOnServerPreferences extends ConfigurationChangedOnServer implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     private String newValue = null;
     private String oldValue = null;

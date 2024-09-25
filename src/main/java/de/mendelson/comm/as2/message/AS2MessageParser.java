@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageParser.java 261   26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageParser.java 271   2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -12,6 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -19,7 +20,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -65,7 +65,7 @@ import org.bouncycastle.mail.smime.SMIMEEnveloped;
  * Analyzes and builds AS2 messages
  *
  * @author S.Heller
- * @version $Revision: 261 $
+ * @version $Revision: 271 $
  */
 public class AS2MessageParser {
 
@@ -73,27 +73,30 @@ public class AS2MessageParser {
     /**
      * Access to all certificates
      */
-    private CertificateManager certificateManagerSignature;
-    private CertificateManager certificateManagerEncryption;
-    private MecResourceBundle rb = null;
-    private MecResourceBundle rbMessage = null;
+    private CertificateManager certificateManagerSignature = null;
+    private CertificateManager certificateManagerEncryption = null;
+    private final static MecResourceBundle rb;
+    private final static MecResourceBundle rbMessage;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleAS2MessageParser.class.getName());
+            rbMessage = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleAS2Message.class.getName());
+        } //load up  resourcebundle
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
+    
+    
     private IDBDriverManager dbDriverManager = null;
 
     private final String OID_KEYENCRYPTION_RSAES_AOEP = "1.2.840.113549.1.1.7";
     private final String OID_KEYENCRYPTION_RSA = "1.2.840.113549.1.1.1";
     private final String OID_RSASSA_PSS = "1.2.840.113549.1.1.10";
 
-    public AS2MessageParser() {
-        //Load resourcebundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleAS2MessageParser.class.getName());
-            this.rbMessage = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleAS2Message.class.getName());
-        } //load up  resourcebundle
-        catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+    public AS2MessageParser() {        
     }
 
     /**
@@ -163,7 +166,7 @@ public class AS2MessageParser {
     }
 
     /**
-     * Uncompresses message data
+     * Decompresses message data
      */
     public byte[] decompressData(AS2MessageInfo info, byte[] data, String contentType) throws Exception {
         MimeBodyPart compressedPart = new MimeBodyPart();
@@ -173,13 +176,13 @@ public class AS2MessageParser {
     }
 
     /**
-     * Uncompresses message data
+     * Decompresses message data
      */
     public byte[] decompressData(AS2MessageInfo info, SMIMECompressed compressed, long compressedSize) throws Exception {
         byte[] decompressedData = compressed.getContent(new ZlibExpanderProvider());
         info.setCompressionType(AS2Message.COMPRESSION_ZLIB);
         if (this.logger != null) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("data.compressed.expanded",
+            this.logger.log(Level.INFO, rb.getResourceString("data.compressed.expanded",
                     new Object[]{
                         AS2Tools.getDataSizeDisplay(compressedSize),
                         AS2Tools.getDataSizeDisplay(decompressedData.length)
@@ -217,7 +220,7 @@ public class AS2MessageParser {
             } catch (Exception e) {
                 //decoding problem: unknown transfer encoding
                 this.logger.log(Level.SEVERE,
-                        this.rb.getResourceString("data.unable.to.process.content.transfer.encoding", transferEncoding));
+                        rb.getResourceString("data.unable.to.process.content.transfer.encoding", transferEncoding));
                 throw (e);
             }
         }
@@ -241,13 +244,13 @@ public class AS2MessageParser {
             //incoming event to the log without binding it to a as message
             if (this.logger != null) {
                 if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_HA)) {
-                    this.logger.log(Level.FINE, this.rb.getResourceString("mdn.incoming.ha",
+                    this.logger.log(Level.FINE, rb.getResourceString("mdn.incoming.ha",
                             ServerInstance.ID));
                 } else {
-                    this.logger.log(Level.FINE, this.rb.getResourceString("mdn.incoming"));
+                    this.logger.log(Level.FINE, rb.getResourceString("mdn.incoming"));
                 }
             }
-            throw new Exception(this.rb.getResourceString("mdn.unexpected.messageid",
+            throw new Exception(rb.getResourceString("mdn.unexpected.messageid",
                     new Object[]{
                         mdnInfo.getRelatedMessageId()
                     }));
@@ -255,7 +258,7 @@ public class AS2MessageParser {
         //do not add an MDN to a message that is already ok or stopped
         int messageState = messageAccess.getMessageState(mdnInfo.getRelatedMessageId());
         if (messageState != AS2Message.STATE_PENDING) {
-            throw new Exception(this.rb.getResourceString("mdn.unexpected.state",
+            throw new Exception(rb.getResourceString("mdn.unexpected.state",
                     new Object[]{
                         mdnInfo.getRelatedMessageId()
                     }));
@@ -286,20 +289,20 @@ public class AS2MessageParser {
                 relationship.append(receiverId);
             }
             if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_HA)) {
-                this.logger.log(Level.FINE, this.rb.getResourceString("mdn.incoming.relationship.ha",
+                this.logger.log(Level.FINE, rb.getResourceString("mdn.incoming.relationship.ha",
                         new Object[]{
                             relationship.toString(),
                             ServerInstance.ID
                         }), mdnInfo);
             } else {
-                this.logger.log(Level.FINE, this.rb.getResourceString("mdn.incoming.relationship",
+                this.logger.log(Level.FINE, rb.getResourceString("mdn.incoming.relationship",
                         new Object[]{
                             relationship.toString()
                         }), mdnInfo);
             }
         }
         if (this.logger != null) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("mdn.answerto",
+            this.logger.log(Level.INFO, rb.getResourceString("mdn.answerto",
                     new Object[]{
                         mdnInfo.getMessageId(),
                         mdnInfo.getRelatedMessageId()
@@ -307,10 +310,11 @@ public class AS2MessageParser {
         }
         if (mdnParser.getDispositionState() != null) {
             //failure in processing message on remote AS2 server: log the failure and set transaction state
-            if (mdnParser.getDispositionState().toLowerCase().indexOf("failed") >= 0 || mdnParser.getDispositionState().toLowerCase().indexOf("error") >= 0) {
+            if (mdnParser.getDispositionState().toLowerCase().indexOf("failed") >= 0 
+                    || mdnParser.getDispositionState().toLowerCase().indexOf("error") >= 0) {
                 if (this.logger != null) {
                     this.logger.log(Level.SEVERE,
-                            this.rb.getResourceString("mdn.state",
+                            rb.getResourceString("mdn.state",
                                     new Object[]{
                                         mdnParser.getDispositionState()
                                     }), relatedMessageInfo);
@@ -324,7 +328,7 @@ public class AS2MessageParser {
                         senderName = sender.getName();
                     }
                     this.logger.log(Level.SEVERE,
-                            this.rb.getResourceString("mdn.details",
+                            rb.getResourceString("mdn.details",
                                     new Object[]{
                                         senderName,
                                         mdnParser.getMdnDetails()
@@ -342,7 +346,7 @@ public class AS2MessageParser {
                 //message has been processed: log the found state
                 if (this.logger != null) {
                     this.logger.log(Level.FINE,
-                            this.rb.getResourceString("mdn.state",
+                            rb.getResourceString("mdn.state",
                                     new Object[]{
                                         mdnParser.getDispositionState()
                                     }), mdnInfo);
@@ -356,7 +360,7 @@ public class AS2MessageParser {
                         senderName = sender.getName();
                     }
                     this.logger.log(Level.FINE,
-                            this.rb.getResourceString("mdn.details",
+                            rb.getResourceString("mdn.details",
                                     new Object[]{
                                         senderName,
                                         mdnParser.getMdnDetails()
@@ -443,7 +447,7 @@ public class AS2MessageParser {
                         header.getProperty("disposition-notification-options"));
                 //indicates if a sync or async mdn is requested as answer
                 messageInfo.setAsyncMDNURL(header.getProperty("receipt-delivery-option"));
-                messageInfo.setRequestsSyncMDN(header.getProperty("receipt-delivery-option") == null || header.getProperty("receipt-delivery-option").trim().length() == 0);
+                messageInfo.setRequestsSyncMDN(header.getProperty("receipt-delivery-option") == null || header.getProperty("receipt-delivery-option").trim().isEmpty());
                 //check for existing partners
                 PartnerAccessDB partnerAccess = new PartnerAccessDB(this.dbDriverManager);
                 MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
@@ -451,19 +455,19 @@ public class AS2MessageParser {
                 Partner receiver = partnerAccess.getPartner(messageInfo.getReceiverId());
                 if (sender == null) {
                     messageAccess.initializeOrUpdateMessage(messageInfo);
-                    this.logger.log(Level.FINE, this.rb.getResourceString("msg.incoming.identproblem"), messageInfo);
+                    this.logger.log(Level.FINE, rb.getResourceString("msg.incoming.identproblem"), messageInfo);
                     throw new AS2Exception(AS2Exception.UNKNOWN_TRADING_PARTNER_ERROR,
                             "Sender AS2 id " + messageInfo.getSenderId() + " is unknown.", message);
                 }
                 if (receiver == null) {
                     messageAccess.initializeOrUpdateMessage(messageInfo);
-                    this.logger.log(Level.FINE, this.rb.getResourceString("msg.incoming.identproblem"), messageInfo);
+                    this.logger.log(Level.FINE, rb.getResourceString("msg.incoming.identproblem"), messageInfo);
                     throw new AS2Exception(AS2Exception.UNKNOWN_TRADING_PARTNER_ERROR,
                             "Receiver AS2 id " + messageInfo.getReceiverId() + " is unknown.", message);
                 }
                 if (!receiver.isLocalStation()) {
                     messageAccess.initializeOrUpdateMessage(messageInfo);
-                    this.logger.log(Level.FINE, this.rb.getResourceString("msg.incoming.identproblem"), messageInfo);
+                    this.logger.log(Level.FINE, rb.getResourceString("msg.incoming.identproblem"), messageInfo);
                     throw new AS2Exception(AS2Exception.PROCESSING_ERROR,
                             "The receiver of the message (" + receiver.getAS2Identification() + ") is not defined as a local station.",
                             message);
@@ -472,8 +476,7 @@ public class AS2MessageParser {
                 AS2MessageInfo alreadyExistingInfo = this.messageAlreadyExists(messageAccess, messageInfo.getMessageId());
                 if (alreadyExistingInfo != null) {
                     //perform notification: Resend detected, manual interaction might be required
-                    SystemEventManagerImplAS2 manager = new SystemEventManagerImplAS2();
-                    manager.newEventResendDetected(messageInfo, alreadyExistingInfo, sender, receiver);
+                    SystemEventManagerImplAS2.instance().newEventResendDetected(messageInfo, alreadyExistingInfo, sender, receiver);
                     if (this.logger != null) {
                         StringBuilder relationship = new StringBuilder();
                         relationship.append(sender.getName());
@@ -481,21 +484,21 @@ public class AS2MessageParser {
                         relationship.append(receiver.getName());
                         //do not log before because the logging process is related to an already created message in the transaction log
                         if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_HA)) {
-                            this.logger.log(Level.FINE, this.rb.getResourceString("msg.incoming.ha",
+                            this.logger.log(Level.FINE, rb.getResourceString("msg.incoming.ha",
                                     new Object[]{
                                         relationship.toString(),
                                         AS2Tools.getDataSizeDisplay(rawMessageData.length),
                                         ServerInstance.ID
                                     }), messageInfo);
                         } else {
-                            this.logger.log(Level.FINE, this.rb.getResourceString("msg.incoming",
+                            this.logger.log(Level.FINE, rb.getResourceString("msg.incoming",
                                     new Object[]{
                                         relationship.toString(),
                                         AS2Tools.getDataSizeDisplay(rawMessageData.length)
                                     }), messageInfo);
                         }
                         //indicate in the log that the messaeg has been already processed
-                        this.logger.log(Level.WARNING, this.rb.getResourceString("msg.already.processed",
+                        this.logger.log(Level.WARNING, rb.getResourceString("msg.already.processed",
                                 new Object[]{
                                     messageInfo.getMessageId()
                                 }), messageInfo);
@@ -516,14 +519,14 @@ public class AS2MessageParser {
                     relationship.append(receiver.getName());
                     //do not log before because the logging process is related to an already created message in the transaction log
                     if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_HA)) {
-                        this.logger.log(Level.FINE, this.rb.getResourceString("msg.incoming.ha",
+                        this.logger.log(Level.FINE, rb.getResourceString("msg.incoming.ha",
                                 new Object[]{
                                     relationship.toString(),
                                     AS2Tools.getDataSizeDisplay(rawMessageData.length),
                                     ServerInstance.ID
                                 }), messageInfo);
                     } else {
-                        this.logger.log(Level.FINE, this.rb.getResourceString("msg.incoming",
+                        this.logger.log(Level.FINE, rb.getResourceString("msg.incoming",
                                 new Object[]{
                                     relationship.toString(),
                                     AS2Tools.getDataSizeDisplay(rawMessageData.length)
@@ -586,7 +589,7 @@ public class AS2MessageParser {
                     this.computeReceivedContentMIC(rawMessageData, message, payloadPart, contentType);
                 }
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("found.attachments",
+                    this.logger.log(Level.INFO, rb.getResourceString("found.attachments",
                             new Object[]{String.valueOf(message.getPayloadCount())}),
                             messageInfo);
                 }
@@ -638,12 +641,12 @@ public class AS2MessageParser {
         if (helper.micIsEqual(mdnMessageInfo.getReceivedContentMIC(), relatedMessageInfo.getReceivedContentMIC())) {
             if (this.logger != null) {
                 this.logger.log(Level.INFO,
-                        this.rb.getResourceString("contentmic.match"), mdnMessageInfo);
+                        rb.getResourceString("contentmic.match"), mdnMessageInfo);
             }
         } else {
             if (this.logger != null) {
                 this.logger.log(Level.INFO,
-                        this.rb.getResourceString("contentmic.failure",
+                        rb.getResourceString("contentmic.failure",
                                 new Object[]{
                                     relatedMessageInfo.getReceivedContentMIC(),
                                     mdnMessageInfo.getReceivedContentMIC()
@@ -651,7 +654,7 @@ public class AS2MessageParser {
             }
             //uncomment for ERROR if mic does not match
 //            throw new AS2Exception(AS2Exception.INTEGRITY_ERROR,
-//                    this.rb.getResourceString("contentmic.failure",
+//                    rb.getResourceString("contentmic.failure",
 //                    new Object[]{
 //                        mdnMessageInfo.getMessageId(),
 //                        relatedMessageInfo.getReceivedContentMIC(),
@@ -699,18 +702,18 @@ public class AS2MessageParser {
         }
         try {
             //use the java mail API mechanism to get the payload filename, perhaps this does already work
-            String decodedFilename = this.decodeTransmittedFilename(testMessage.getFileName());
-            as2Payload.setOriginalFilename(decodedFilename);            
+            String decodedFilename = this.decodeAndValidateTransmittedOriginalFilename(info, testMessage.getFileName());
+            as2Payload.setOriginalFilename(decodedFilename);
             if (as2Payload.getOriginalFilename() != null) {
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("original.filename.found",
+                    this.logger.log(Level.INFO, rb.getResourceString("original.filename.found",
                             new Object[]{
                                 as2Payload.getOriginalFilename(),}), info);
                 }
             }
         } catch (MessagingException e) {
             if (this.logger != null) {
-                this.logger.log(Level.WARNING, this.rb.getResourceString("filename.extraction.error",
+                this.logger.log(Level.WARNING, rb.getResourceString("filename.extraction.error",
                         new Object[]{
                             e.getMessage(),}), info);
             }
@@ -723,23 +726,23 @@ public class AS2MessageParser {
                 MimeBodyPart filenamePart = new MimeBodyPart();
                 filenamePart.setHeader("content-disposition", filenameHeader);
                 try {
-                    String decodedFilename = this.decodeTransmittedFilename(filenamePart.getFileName());
+                    String decodedFilename = this.decodeAndValidateTransmittedOriginalFilename(info, filenamePart.getFileName());
                     as2Payload.setOriginalFilename(decodedFilename);
                     if (as2Payload.getOriginalFilename() != null) {
                         if (this.logger != null) {
-                            this.logger.log(Level.INFO, this.rb.getResourceString("original.filename.found",
+                            this.logger.log(Level.INFO, rb.getResourceString("original.filename.found",
                                     new Object[]{
                                         as2Payload.getOriginalFilename(),}), info);
                         }
                     } else {
                         //there is still no filename available to extract - this will be set later to a new one
                         if (this.logger != null) {
-                            this.logger.log(Level.INFO, this.rb.getResourceString("original.filename.undefined"), info);
+                            this.logger.log(Level.INFO, rb.getResourceString("original.filename.undefined"), info);
                         }
                     }
                 } catch (MessagingException e) {
                     if (this.logger != null) {
-                        this.logger.log(Level.WARNING, this.rb.getResourceString("filename.extraction.error"), info);
+                        this.logger.log(Level.WARNING, rb.getResourceString("filename.extraction.error"), info);
                     }
                 }
             }
@@ -760,7 +763,7 @@ public class AS2MessageParser {
                 if (payloadPart.getContentType().toLowerCase().contains("application/ediint-cert-exchange+xml")) {
                     messageInfo.setMessageType(AS2Message.MESSAGETYPE_CEM);
                     if (this.logger != null) {
-                        this.logger.log(Level.FINE, this.rb.getResourceString("found.cem",
+                        this.logger.log(Level.FINE, rb.getResourceString("found.cem",
                                 new Object[]{
                                     message.toString()
                                 }), info);
@@ -805,18 +808,18 @@ public class AS2MessageParser {
                 as2Payload.setContentType(contentTypeHeader[0]);
             }
             try {
-                String decodedFilename = this.decodeTransmittedFilename(attachmentPart.getFileName());
-                as2Payload.setOriginalFilename(decodedFilename); 
+                String decodedFilename = this.decodeAndValidateTransmittedOriginalFilename(info, attachmentPart.getFileName());
+                as2Payload.setOriginalFilename(decodedFilename);
                 if (as2Payload.getOriginalFilename() != null) {
                     if (this.logger != null) {
-                        this.logger.log(Level.INFO, this.rb.getResourceString("original.filename.found",
+                        this.logger.log(Level.INFO, rb.getResourceString("original.filename.found",
                                 new Object[]{
                                     as2Payload.getOriginalFilename(),}), info);
                     }
                 }
             } catch (MessagingException e) {
                 if (this.logger != null) {
-                    this.logger.log(Level.WARNING, this.rb.getResourceString("filename.extraction.error",
+                    this.logger.log(Level.WARNING, rb.getResourceString("filename.extraction.error",
                             new Object[]{
                                 e.getMessage(),}), info);
                 }
@@ -829,23 +832,24 @@ public class AS2MessageParser {
                     MimeBodyPart filenamePart = new MimeBodyPart();
                     filenamePart.setHeader("content-disposition", filenameheader);
                     try {
-                        String decodedFilename = this.decodeTransmittedFilename(attachmentPart.getFileName());
-                        as2Payload.setOriginalFilename(decodedFilename);                         
+                        String decodedFilename = this.decodeAndValidateTransmittedOriginalFilename(
+                                info, attachmentPart.getFileName());
+                        as2Payload.setOriginalFilename(decodedFilename);
                         if (as2Payload.getOriginalFilename() != null) {
                             if (this.logger != null) {
-                                this.logger.log(Level.INFO, this.rb.getResourceString("original.filename.found",
+                                this.logger.log(Level.INFO, rb.getResourceString("original.filename.found",
                                         new Object[]{
                                             as2Payload.getOriginalFilename(),}), info);
                             }
                         } else {
                             //there is still no filename available to extract - this will be set later to a new one
                             if (this.logger != null) {
-                                this.logger.log(Level.INFO, this.rb.getResourceString("original.filename.undefined"), info);
+                                this.logger.log(Level.INFO, rb.getResourceString("original.filename.undefined"), info);
                             }
                         }
                     } catch (MessagingException e) {
                         if (this.logger != null) {
-                            this.logger.log(Level.WARNING, this.rb.getResourceString("filename.extraction.error",
+                            this.logger.log(Level.WARNING, rb.getResourceString("filename.extraction.error",
                                     new Object[]{
                                         info.getMessageId(),
                                         e.getMessage(),}), info);
@@ -866,7 +870,10 @@ public class AS2MessageParser {
      * @param filename
      * @return
      */
-    private String decodeTransmittedFilename(String filename) {
+    private String decodeAndValidateTransmittedOriginalFilename(AS2Info info, String filename) {
+        if (filename == null) {
+            return (null);
+        }
         try {
             //RFC 822 encoded filename
             String decodedFilename = MimeUtility.decodeText(filename);
@@ -874,11 +881,44 @@ public class AS2MessageParser {
             if (decodedFilename != null && decodedFilename.startsWith("=?")) {
                 decodedFilename = MimeUtility.decodeWord(filename);
             }
-            return( decodedFilename );
+            return (this.validateFilename(info, decodedFilename));
         } catch (Exception e) {
             //NOP
         }
-        return (filename);
+        return (this.validateFilename(info, filename));
+    }
+
+    /**
+     * Ensures that the extracted filename is a valid filename and returns it.
+     * Invalid filenames contain "/", *, & etc - all this has to be replaced. If
+     * a bad filename has been found this will throw a system event of the type
+     * postprocessing WARNING - in this case the filename will just be replaced
+     * to be valid and the processing will continue
+     */
+    private String validateFilename(AS2Info info, String filename) {
+        String validFilename = AS2Tools.convertToValidFilenameAllowSinglePoint(filename);
+        if (!validFilename.equals(filename)) {
+            SystemEvent event = new SystemEvent(
+                    SystemEvent.SEVERITY_WARNING,
+                    SystemEvent.ORIGIN_TRANSACTION,
+                    SystemEvent.TYPE_POST_PROCESSING);
+            event.setSubject(rb.getResourceString("invalid.original.filename.title"));
+            event.setBody(rb.getResourceString("invalid.original.filename.body", new Object[]{
+                info.getMessageId(),
+                info.getSenderId(),
+                info.getReceiverId(),
+                filename,
+                validFilename
+            }));
+            SystemEventManagerImplAS2.instance().newEvent(event);
+            if (this.logger != null) {
+                this.logger.log(Level.WARNING, rb.getResourceString("invalid.original.filename.log",
+                        new Object[]{
+                            filename,
+                            validFilename}), info);
+            }
+        }
+        return (validFilename);
     }
 
     /**
@@ -1063,7 +1103,8 @@ public class AS2MessageParser {
      * @param ignoreSignatureVerificationError Performs the signature
      * verification but ignores if it fails
      */
-    public MimeBodyPart verifySignedPart(Part signedPart, InputStream dataInputStream, String contentType, X509Certificate certificate, boolean ignoreSignatureVerificationError) throws Exception {
+    public MimeBodyPart verifySignedPart(Part signedPart, InputStream dataInputStream, 
+            String contentType, X509Certificate certificate, boolean ignoreSignatureVerificationError) throws Exception {
         BCCryptoHelper helper = new BCCryptoHelper();
         String signatureTransferEncoding = null;
         MimeMultipart checkPart = (MimeMultipart) signedPart.getContent();
@@ -1089,12 +1130,12 @@ public class AS2MessageParser {
     }
 
     /**
-     * Verifies the signature of the passed message. If the transfer mode is
+     * Verifies the signature of the passed message or MDN. If the transfer mode is
      * unencrypted/unsigned, a new Bodypart will be constructed
      *
      * @return the payload part, this is important to compute the MIC later
      */
-    private Part verifySignature(AS2Message message, Partner sender, String contentType) throws Exception {
+    private Part verifySignature(AS2Message message, Partner remotePartner, String contentType) throws Exception {
         if (this.certificateManagerSignature == null) {
             throw new AS2Exception(AS2Exception.PROCESSING_ERROR,
                     "AS2MessageParser.verifySignature: Pass a certification manager for the signature before calling verifySignature()", message);
@@ -1103,10 +1144,16 @@ public class AS2MessageParser {
         if (!as2Info.isMDN()) {
             AS2MessageInfo messageInfo = (AS2MessageInfo) as2Info;
             if (messageInfo.getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
-                InputStream memIn = message.getDecryptedRawDataInputStream();
-                MimeBodyPart testPart = new MimeBodyPart(memIn);
-                memIn.close();
-                contentType = testPart.getContentType();
+                InputStream memIn = null;
+                try{
+                    memIn = message.getDecryptedRawDataInputStream();
+                    MimeBodyPart testPart = new MimeBodyPart(memIn);                
+                    contentType = testPart.getContentType();
+                }finally{
+                    if( memIn != null ){
+                        memIn.close();
+                    }
+                }
             }
         }
         Part signedPart = this.getSignedPart(message.getDecryptedRawData(), contentType);
@@ -1123,19 +1170,19 @@ public class AS2MessageParser {
         if (signedPart == null) {
             as2Info.setSignType(AS2Message.SIGNATURE_NONE);
             if (as2Info.isMDN()) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("mdn.notsigned"), as2Info);
+                this.logger.log(Level.INFO, rb.getResourceString("mdn.notsigned"), as2Info);
                 //MDN is not signed but should be signed
-                if (sender.isSignedMDN()) {
-                    this.logger.log(Level.SEVERE, this.rb.getResourceString("mdn.unsigned.error",
+                if (remotePartner.isSignedMDN()) {
+                    this.logger.log(Level.SEVERE, rb.getResourceString("mdn.unsigned.error",
                             new Object[]{
-                                sender.getName(),}), as2Info);
+                                remotePartner.getName(),}), as2Info);
                 }
             } else {
-                this.logger.log(Level.INFO, this.rb.getResourceString("msg.notsigned"), as2Info);
+                this.logger.log(Level.INFO, rb.getResourceString("msg.notsigned"), as2Info);
             }
-            if (!as2Info.isMDN() && sender.getSignType() != AS2Message.SIGNATURE_NONE) {
+            if (!as2Info.isMDN() && remotePartner.getSignType() != AS2Message.SIGNATURE_NONE) {
                 throw new AS2Exception(AS2Exception.INSUFFICIENT_SECURITY_ERROR,
-                        "Incoming messages from AS2 partner " + sender.getAS2Identification() + " are defined to be signed.",
+                        "Incoming messages from AS2 partner " + remotePartner.getAS2Identification() + " are defined to be signed.",
                         message);
             }
             //if the message has been unsigned it is required to set a new datasource
@@ -1151,25 +1198,25 @@ public class AS2MessageParser {
                     signType = this.getDigestFromSignature(signedPart);
                 } finally {
                     if (this.logger != null) {
-                        this.logger.log(Level.INFO, this.rb.getResourceString("mdn.signed",
+                        this.logger.log(Level.INFO, rb.getResourceString("mdn.signed",
                                 new Object[]{
-                                    this.rbMessage.getResourceString("signature." + signType)
+                                    rbMessage.getResourceString("signature." + signType)
                                 }), as2Info);
                     }
                 }
                 as2Info.setSignType(signType);
                 //MDN is signed but shouldn't be signed'
-                if (!sender.isSignedMDN()) {
+                if (!remotePartner.isSignedMDN()) {
                     if (this.logger != null) {
-                        this.logger.log(Level.WARNING, this.rb.getResourceString("mdn.signed.error",
+                        this.logger.log(Level.WARNING, rb.getResourceString("mdn.signed.error",
                                 new Object[]{
-                                    sender.getName(),}), as2Info);
+                                    remotePartner.getName(),}), as2Info);
                     }
                 }
             } else {
                 //its no MDN, its a AS2 message
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("msg.signed"), as2Info);
+                    this.logger.log(Level.INFO, rb.getResourceString("msg.signed"), as2Info);
                 }
                 try {
                     int signDigest = this.getDigestFromSignature(signedPart);
@@ -1215,13 +1262,13 @@ public class AS2MessageParser {
                     }
                     as2Info.setSignType(signDigest);
                     if (this.logger != null) {
-                        this.logger.log(Level.INFO, this.rb.getResourceString("signature.analyzed.digest",
+                        this.logger.log(Level.INFO, rb.getResourceString("signature.analyzed.digest",
                                 new Object[]{
                                     digest.toUpperCase(),}), as2Info);
                     }
                 } catch (Exception e) {
                     if (this.logger != null) {
-                        this.logger.log(Level.SEVERE, this.rb.getResourceString("signature.analyzed.digest.failed"), as2Info);
+                        this.logger.log(Level.SEVERE, rb.getResourceString("signature.analyzed.digest.failed"), as2Info);
                     }
                     as2Info.setSignType(AS2Message.SIGNATURE_UNKNOWN);
                     throw new Exception("The system is unable to find out the sign algorithm of the inbound AS2 message.");
@@ -1230,7 +1277,7 @@ public class AS2MessageParser {
         }
         MimeBodyPart payloadPart = null;
         try {
-            String signAlias = this.certificateManagerSignature.getAliasByFingerprint(sender.getSignFingerprintSHA1());
+            String signAlias = this.certificateManagerSignature.getAliasByFingerprint(remotePartner.getSignFingerprintSHA1());
             payloadPart = this.verifySignedPartUsingAlias(message, signAlias, signedPart, contentType);
         } catch (AS2Exception e) {
             throw e;
@@ -1238,16 +1285,18 @@ public class AS2MessageParser {
         return (payloadPart);
     }
 
-    private MimeBodyPart verifySignedPartUsingAlias(AS2Message message, String alias, Part signedPart, String contentType) throws Exception {
+    
+    private MimeBodyPart verifySignedPartUsingAlias(AS2Message message, 
+            String alias, Part signedPart, String contentType) throws Exception {
         AS2Info info = message.getAS2Info();
         if (this.logger != null) {
             if (message.isMDN()) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("mdn.signature.using.alias",
+                this.logger.log(Level.INFO, rb.getResourceString("mdn.signature.using.alias",
                         new Object[]{
                             alias
                         }), info);
             } else {
-                this.logger.log(Level.INFO, this.rb.getResourceString("message.signature.using.alias",
+                this.logger.log(Level.INFO, rb.getResourceString("message.signature.using.alias",
                         new Object[]{
                             alias
                         }), info);
@@ -1262,12 +1311,12 @@ public class AS2MessageParser {
         } catch (Exception e) {
             if (this.logger != null) {
                 if (message.isMDN()) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("mdn.signature.failure",
+                    this.logger.log(Level.INFO, rb.getResourceString("mdn.signature.failure",
                             new Object[]{
                                 e.getMessage()
                             }), info);
                 } else {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("message.signature.failure",
+                    this.logger.log(Level.INFO, rb.getResourceString("message.signature.failure",
                             new Object[]{
                                 e.getMessage()
                             }), info);
@@ -1287,9 +1336,9 @@ public class AS2MessageParser {
         }
         if (this.logger != null) {
             if (message.isMDN()) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("mdn.signature.ok"), info);
+                this.logger.log(Level.INFO, rb.getResourceString("mdn.signature.ok"), info);
             } else {
-                this.logger.log(Level.INFO, this.rb.getResourceString("message.signature.ok"), info);
+                this.logger.log(Level.INFO, rb.getResourceString("message.signature.ok"), info);
             }
         }
         return (payloadPart);
@@ -1399,15 +1448,11 @@ public class AS2MessageParser {
     /**
      * Decrypts the data of a message with all given certificates etc
      *
-     * @param info MessageInfo, the encryption algorith will be stored in the
-     * encryption type of this info
-     * @param rawMessageData encrypted data, will be decrypted
      * @param contentType contentType of the data
-     * @param privateKey receivers private key
-     * @param certificate receivers certificate
      */
     public byte[] decryptData(AS2Message message, byte[] data, String contentType,
-            PrivateKey privateKeyReceiver, X509Certificate certificateReceiver, String receiverCryptAlias) throws Exception {
+            PrivateKey privateKeyLocalstation, X509Certificate certificateLocalstation, 
+            String cryptAliasLocalstation) throws Exception {
         AS2MessageInfo info = (AS2MessageInfo) message.getAS2Info();
         MimeBodyPart encryptedBody = new MimeBodyPart();
         encryptedBody.setHeader("content-type", contentType);
@@ -1458,10 +1503,10 @@ public class AS2MessageParser {
         enveloped = null;
         encryptedBody = null;
         RecipientId recipientId = null;
-        if (certificateReceiver.getPublicKey().getAlgorithm().equals("EC")) {
-            recipientId = new JceKeyAgreeRecipientId(certificateReceiver);
+        if (certificateLocalstation.getPublicKey().getAlgorithm().equals("EC")) {
+            recipientId = new JceKeyAgreeRecipientId(certificateLocalstation);
         } else {
-            recipientId = new JceKeyTransRecipientId(certificateReceiver);
+            recipientId = new JceKeyTransRecipientId(certificateLocalstation);
         }
         RecipientInformation recipient = recipients.get(recipientId);
         if (recipient == null) {
@@ -1481,7 +1526,7 @@ public class AS2MessageParser {
                     } else if (id instanceof KeyAgreeRecipientId) {
                         serial = ((KeyAgreeRecipientId) id).getSerialNumber().toString();
                     }
-                    this.logger.log(Level.SEVERE, this.rb.getResourceString("decryption.inforequired",
+                    this.logger.log(Level.SEVERE, rb.getResourceString("decryption.inforequired",
                             new Object[]{
                                 issuer + ", " + serial
                             }),
@@ -1494,9 +1539,9 @@ public class AS2MessageParser {
                     JceKeyTransRecipientId jceKeyTransRecipientId = (JceKeyTransRecipientId) recipientId;
                     issuerDetails = jceKeyTransRecipientId.getIssuer() + ", " + jceKeyTransRecipientId.getSerialNumber();
                 }
-                this.logger.log(Level.SEVERE, this.rb.getResourceString("decryption.infoassigned",
+                this.logger.log(Level.SEVERE, rb.getResourceString("decryption.infoassigned",
                         new Object[]{
-                            receiverCryptAlias,
+                            cryptAliasLocalstation,
                             issuerDetails
                         }),
                         info);
@@ -1507,12 +1552,12 @@ public class AS2MessageParser {
         //Streamed decryption. Its also possible to use in memory decryption using getContent but that uses
         //far more memory.
         InputStream contentStream = null;
-        if (certificateReceiver.getPublicKey().getAlgorithm().equals("EC")) {
+        if (certificateLocalstation.getPublicKey().getAlgorithm().equals("EC")) {
             contentStream = recipient.getContentStream(
-                    new JceKeyAgreeEnvelopedRecipient(privateKeyReceiver).setProvider(BouncyCastleProvider.PROVIDER_NAME)).getContentStream();
+                    new JceKeyAgreeEnvelopedRecipient(privateKeyLocalstation).setProvider(BouncyCastleProvider.PROVIDER_NAME)).getContentStream();
         } else {
             contentStream = recipient.getContentStream(
-                    new JceKeyTransEnvelopedRecipient(privateKeyReceiver).setProvider(BouncyCastleProvider.PROVIDER_NAME)).getContentStream();
+                    new JceKeyTransEnvelopedRecipient(privateKeyLocalstation).setProvider(BouncyCastleProvider.PROVIDER_NAME)).getContentStream();
         }
         ByteArrayOutputStream memOut = new ByteArrayOutputStream();
         contentStream.transferTo(memOut);
@@ -1520,10 +1565,10 @@ public class AS2MessageParser {
         memOut.close();
         byte[] decryptedData = memOut.toByteArray();
         if (this.logger != null) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("decryption.done.alias",
+            this.logger.log(Level.INFO, rb.getResourceString("decryption.done.alias",
                     new Object[]{
-                        receiverCryptAlias,
-                        this.rbMessage.getResourceString("encryption." + info.getEncryptionType()),
+                        cryptAliasLocalstation,
+                        rbMessage.getResourceString("encryption." + info.getEncryptionType()),
                         this.keyEncryptionOIDToAlgorithmStr(keyEncryptionAlgOID)
                     }),
                     info);
@@ -1535,7 +1580,7 @@ public class AS2MessageParser {
      * Decrypts the passed data and returns it. Will return the original data if
      * it is not marked as encrypted
      */
-    private byte[] decryptMessage(AS2Message message, byte[] data, String contentType, Partner sender, Partner receiver) throws AS2Exception {
+    private byte[] decryptMessage(AS2Message message, byte[] data, String contentType, Partner remotePartner, Partner localPartner) throws AS2Exception {
         if (this.certificateManagerEncryption == null) {
             throw new AS2Exception(AS2Exception.PROCESSING_ERROR,
                     "AS2MessageParser.decryptMessage: Pass a certification manager for the encryption before calling decryptMessage()", message);
@@ -1546,22 +1591,42 @@ public class AS2MessageParser {
             if (!this.contentTypeIndicatesEncryption(contentType) || this.contentTypeIndicatesCompression(contentType)) {
 
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, this.rb.getResourceString("msg.notencrypted"), info);
+                    this.logger.log(Level.INFO, rb.getResourceString("msg.notencrypted"), info);
                 }
                 info.setEncryptionType(AS2Message.ENCRYPTION_NONE);
                 //encryption expected?
-                if (sender.getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
+                if (remotePartner.getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
                     throw new AS2Exception(AS2Exception.INSUFFICIENT_SECURITY_ERROR,
-                            "Incoming messages from AS2 partner " + sender.getAS2Identification() + " are defined to be encrypted.",
+                            "Incoming messages from AS2 partner " + remotePartner.getAS2Identification() + " are defined to be encrypted.",
                             message);
                 }
                 return (data);
             }
             if (this.logger != null) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("msg.encrypted"), info);
+                this.logger.log(Level.INFO, rb.getResourceString("msg.encrypted"), info);
             }
             try {
-                String cryptAlias = this.certificateManagerEncryption.getAliasByFingerprint(receiver.getCryptFingerprintSHA1());
+                String cryptFingerprintSHA1;
+                if( remotePartner.isOverwriteLocalStationSecurity() && remotePartner.getCryptOverwriteLocalstationFingerprintSHA1() != null){
+                    cryptFingerprintSHA1 = remotePartner.getCryptOverwriteLocalstationFingerprintSHA1();
+                }else{
+                    cryptFingerprintSHA1 = localPartner.getCryptFingerprintSHA1();
+                }
+                if( cryptFingerprintSHA1 == null ){
+                    throw new Exception( "AS2MessageParser.decryptMessage: "
+                            + "There is no key defined to decrypt inbound messages for the relationship " 
+                            + remotePartner.getName() + "-" + localPartner.getName());
+                }
+                String cryptAlias = this.certificateManagerEncryption.getAliasByFingerprint(cryptFingerprintSHA1);
+                if( cryptAlias == null ){
+                    throw new Exception( "AS2MessageParser.decryptMessage: "
+                            + "The required key with the SHA1 fingerprint "
+                            + cryptFingerprintSHA1 
+                            + " to decrypt inbound messages for the relationship " 
+                            + remotePartner.getName() + "-" + localPartner.getName()
+                            + " does not exist."
+                    );
+                }
                 X509Certificate certificate = this.certificateManagerEncryption.getX509Certificate(cryptAlias);
                 //receiver priv key
                 PrivateKey privateKey = this.certificateManagerEncryption.getPrivateKey(cryptAlias);
@@ -1584,7 +1649,7 @@ public class AS2MessageParser {
         Part compressedPart = this.getCompressedEmbeddedPart(part);
         if (compressedPart == null) {
             if (this.logger != null) {
-                this.logger.log(Level.INFO, this.rb.getResourceString("data.not.compressed"), message.getAS2Info());
+                this.logger.log(Level.INFO, rb.getResourceString("data.not.compressed"), message.getAS2Info());
             }
             return (part);
         }
@@ -1597,7 +1662,7 @@ public class AS2MessageParser {
         byte[] decompressedData = compressed.getContent(new ZlibExpanderProvider());
         ((AS2MessageInfo) message.getAS2Info()).setCompressionType(AS2Message.COMPRESSION_ZLIB);
         if (this.logger != null) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("data.compressed.expanded",
+            this.logger.log(Level.INFO, rb.getResourceString("data.compressed.expanded",
                     new Object[]{
                         AS2Tools.getDataSizeDisplay(part.getSize()),
                         AS2Tools.getDataSizeDisplay(decompressedData.length)

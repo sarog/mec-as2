@@ -1,12 +1,13 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 27    7/10/22 10:37 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 33    12/12/23 14:47 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
+import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.systemevents.SystemEvent;
-import de.mendelson.util.systemevents.SystemEventManager;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 33 $
  */
 public class NotificationImplAS2 extends Notification {
 
@@ -47,6 +48,10 @@ public class NotificationImplAS2 extends Notification {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         MODULE_NAME = rb.getResourceString( "module.name");
+        PreferencesAS2 preferences = new PreferencesAS2();
+        this.setTimeout(
+                Long.valueOf(preferences.get(PreferencesAS2.NOTIFICATION_SMTP_CONNECTION_TIMEOUT)).longValue(),
+                Long.valueOf(preferences.get(PreferencesAS2.NOTIFICATION_SMTP_TIMEOUT)).longValue());                
     }
 
     @Override
@@ -68,6 +73,7 @@ public class NotificationImplAS2 extends Notification {
                             new Object[]{
                                 notificationData.getNotificationMail(),
                                 event.originToTextLocalized(),
+                                event.categoryToTextLocalized(),
                                 event.typeToTextLocalized()
                             }));
                     SystemEvent notificationSuccessEvent = new SystemEvent(SystemEvent.SEVERITY_INFO,
@@ -76,6 +82,7 @@ public class NotificationImplAS2 extends Notification {
                             new Object[]{
                                 notificationData.getNotificationMail(),
                                 event.originToTextLocalized(),
+                                event.categoryToTextLocalized(),
                                 event.typeToTextLocalized()
                             }));
                     notificationSuccessEvent.setBody(this.rb.getResourceString("notification.about.event",
@@ -86,7 +93,7 @@ public class NotificationImplAS2 extends Notification {
                                 event.typeToTextLocalized(),
                                 event.getId()
                             }));
-                    SystemEventManagerImplAS2.newEvent(notificationSuccessEvent);
+                    SystemEventManagerImplAS2.instance().newEvent(notificationSuccessEvent);
                 } catch (Exception e) {
                     SystemEvent notificationProblemEvent = new SystemEvent(SystemEvent.SEVERITY_WARNING, SystemEvent.ORIGIN_SYSTEM,
                             SystemEvent.TYPE_NOTIFICATION_SEND_FAILED);
@@ -103,7 +110,7 @@ public class NotificationImplAS2 extends Notification {
                                         event.typeToTextLocalized(),
                                         event.getId()
                                     }));
-                    SystemEventManagerImplAS2.newEvent(notificationProblemEvent);
+                    SystemEventManagerImplAS2.instance().newEvent(notificationProblemEvent);
                 }
             }
         } else {
@@ -138,7 +145,7 @@ public class NotificationImplAS2 extends Notification {
                         new Object[]{
                             notificationData.getNotificationMail(),}));
                 notificationSuccessEvent.setBody(summary.toString());
-                SystemEventManagerImplAS2.newEvent(notificationSuccessEvent);
+                SystemEventManagerImplAS2.instance().newEvent(notificationSuccessEvent);
             } catch (Exception e) {
                 SystemEvent notificationSuccessEvent = new SystemEvent(SystemEvent.SEVERITY_WARNING,
                         SystemEvent.ORIGIN_SYSTEM, SystemEvent.TYPE_NOTIFICATION_SEND_FAILED);
@@ -148,7 +155,7 @@ public class NotificationImplAS2 extends Notification {
                 notificationSuccessEvent.setBody(
                         "[" + e.getClass().getSimpleName() + "]: " + e.getMessage() + "\n\n"
                         + summary.toString());
-                SystemEventManagerImplAS2.newEvent(notificationSuccessEvent);
+                SystemEventManagerImplAS2.instance().newEvent(notificationSuccessEvent);
             }
         }
     }
@@ -163,7 +170,7 @@ public class NotificationImplAS2 extends Notification {
         String templateName = "template_notification_test";
         Properties replacement = new Properties();
         replacement.setProperty("${PRODUCTNAME}", AS2ServerVersion.getProductName());
-        replacement.setProperty("${HOST}", SystemEventManager.getHostname());
+        replacement.setProperty("${HOST}", SystemEventManagerImplAS2.instance().getHostname());
         replacement.setProperty("${USER}", System.getProperty("user.name"));
         replacement.setProperty("${MAILHOST}", notificationData.getMailServer());
         replacement.setProperty("${MAILPORT}", String.valueOf(notificationData.getMailServerPort()));
@@ -179,6 +186,11 @@ public class NotificationImplAS2 extends Notification {
             authorization = this.rb.getResourceString( "authorization.credentials");
         }else if( notificationData.usesSMTPAuthOAuth2()){
             authorization = this.rb.getResourceString( "authorization.oauth2");
+            if( notificationData.getOAuth2Config().getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1){
+                authorization = authorization + " (" + this.rb.getResourceString( "authorization.oauth2.authorizationcode") + ")";
+            }else if( notificationData.getOAuth2Config().getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_4){
+                authorization = authorization + " (" + this.rb.getResourceString( "authorization.oauth2.clientcredentials") + ")";
+            }
         }
         replacement.setProperty("${AUTHORIZATION}", authorization);
         SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_USER,
@@ -188,16 +200,17 @@ public class NotificationImplAS2 extends Notification {
         event.setUser(userName);
         String traceStr = this.sendMail(AS2ServerVersion.getProductName(), event, notificationData, true);
         logger.fine(MODULE_NAME + " " + this.rb.getResourceString("test.message.send", notificationData.getNotificationMail()));
-        if( traceStr != null && traceStr.trim().length() > 0 ){
+        if( traceStr != null && !traceStr.trim().isEmpty()){
             traceStr = MODULE_NAME + " " + AS2Tools.replace(traceStr, "\n", "\n" + MODULE_NAME + " ");
         }
         logger.fine(traceStr);
-        SystemEventManagerImplAS2.newEvent(event);
+        SystemEventManagerImplAS2.instance().newEvent(event);
     }
 
     @Override
     public String getNotificationSubjectServerIdentification() {
-        return ("[" + AS2ServerVersion.getProductName() + "@" + SystemEventManager.getHostname() + "]");
+        return ("[" + AS2ServerVersion.getProductName() + "@" 
+                + SystemEventManagerImplAS2.instance().getHostname() + "]");
     }
 
     @Override

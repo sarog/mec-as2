@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/MecResourceBundle.java 16    1/06/22 11:07 Heller $
+//$Header: /as2/de/mendelson/util/MecResourceBundle.java 17    2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import java.io.Serializable;
@@ -17,7 +17,7 @@ import java.util.MissingResourceException;
  * Class that implements some additional methods to the ListResourceBundle and wrapps error messages
  * if some resources are not found
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public abstract class MecResourceBundle extends ListResourceBundle implements Serializable {
     private static final long serialVersionUID = 1L;	
@@ -62,7 +62,6 @@ public abstract class MecResourceBundle extends ListResourceBundle implements Se
 
     /**Returns a formatted localized message with passed arguments
      * @param resourceStr Resource indeitification String
-     * @param arg Arguments passed to the message
      */
     public String getResourceString(String resourceStr, Object[] args) {
         String localizedMessage = null;

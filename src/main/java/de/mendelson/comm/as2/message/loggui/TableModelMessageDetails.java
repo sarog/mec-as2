@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 16    4.06.19 12:46 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 17    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.message.AS2Info;
@@ -27,7 +27,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class TableModelMessageDetails extends AbstractTableModel {
 
@@ -60,7 +60,7 @@ public class TableModelMessageDetails extends AbstractTableModel {
     /**
      * Format the date output
      */
-    private DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
     private final List<AS2Info> data = Collections.synchronizedList(new ArrayList<AS2Info>());
 
     /**

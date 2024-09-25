@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/JDialogPreferences.java 48    5/10/22 10:10 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/JDialogPreferences.java 52    9/11/23 10:54 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.ColorUtil;
@@ -34,15 +34,14 @@ import javax.swing.JFrame;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 48 $
+ * @version $Revision: 52 $
  */
 public class JDialogPreferences extends JDialog {
 
     public static final int IMAGE_HEIGHT = 28;
 
     private final static MendelsonMultiResolutionImage IMAGE_LANGUAGE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/language.svg", IMAGE_HEIGHT,
-                    IMAGE_HEIGHT * 2);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/language.svg", IMAGE_HEIGHT);
     private final static MendelsonMultiResolutionImage IMAGE_COLORBLIND
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/color_blindness.svg", 20,
                     36, MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
@@ -59,23 +58,24 @@ public class JDialogPreferences extends JDialog {
      * The language should be stored in the client preferences, no client-server
      * comm required here
      */
-    private PreferencesAS2 clientPreferences = new PreferencesAS2();
+    private final PreferencesAS2 clientPreferences = new PreferencesAS2();
+    private String preferencesStrAtLoadTime = "";
     /**
      * stores all available panels
      */
     private final List<PreferencesPanel> panelList = new ArrayList<PreferencesPanel>();
-    private ImageButtonBar buttonBar;
+    private final ImageButtonBar buttonBar;
+    private boolean okPressed = false;
 
     /**
      * Creates new form JDialogPartnerConfig
      *
-     * @param parameter Parameter to edit, null for a new one
-     * @param parameterList List of available parameter
-     * @param activatedPlugins A String containing all activated plugins of the system
+     * @param activatedPlugins A String containing all activated plugins of the
+     * system
      */
     public JDialogPreferences(JFrame parent, List<PreferencesPanel> panelList, String selectedTab, String activatedPlugins) {
         super(parent, true);
-        this.panelList.addAll( panelList );
+        this.panelList.addAll(panelList);
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -107,7 +107,7 @@ public class JDialogPreferences extends JDialog {
         for (PreferencesPanel preferencePanel : this.panelList) {
             //initialize the panels
             preferencePanel.setActivatedPlugins(activatedPlugins);
-            preferencePanel.loadPreferences();            
+            preferencePanel.loadPreferences();
             //add the panels to the layout
             this.jPanelEdit.add(preferencePanel, gridBagConstraints);
         }
@@ -134,6 +134,7 @@ public class JDialogPreferences extends JDialog {
         //add button bar
         this.jPanelButtonBar.setLayout(new BorderLayout());
         this.jPanelButtonBar.add(buttonBar, BorderLayout.CENTER);
+        this.preferencesStrAtLoadTime = this.captureSettingsToStr();
         this.getRootPane().setDefaultButton(this.jButtonOk);
 
     }
@@ -143,7 +144,7 @@ public class JDialogPreferences extends JDialog {
         this.jLabelDarkMode.setIcon(new ImageIcon(IMAGE_DARKMODE.toMinResolution(20)));
         this.jLabelLightMode.setIcon(new ImageIcon(IMAGE_LIGHTMODE.toMinResolution(20)));
     }
-    
+
     private void captureGUIValues() {
         boolean clientRestartRequired = false;
         if (this.jRadioButtonLangDE.isSelected()) {
@@ -188,8 +189,40 @@ public class JDialogPreferences extends JDialog {
                     this.rb.getResourceString("title"),
                     this.rb.getResourceString("warning.clientrestart.required"));
         }
-
     }
+    
+    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
+    private String captureSettingsToStr(){
+        StringBuilder builder = new StringBuilder();
+        builder.append( PreferencesAS2.LANGUAGE ).append("=");
+        if( this.jRadioButtonLangDE.isSelected()){
+            builder.append( "de");
+        }else if( this.jRadioButtonLangEN.isSelected()){
+            builder.append( "en");
+        }else if( this.jRadioButtonLangFR.isSelected()){
+            builder.append( "fr");
+        }
+        builder.append( ";" );
+        builder.append( PreferencesAS2.DISPLAY_MODE_CLIENT ).append("=");
+        if( this.jRadioButtonDarkMode.isSelected()){
+            builder.append( "DARK");
+        }else if( this.jRadioButtonLiteMode.isSelected()){
+            builder.append( "LIGHT");
+        }
+        builder.append( ";" );
+        builder.append( PreferencesAS2.COLOR_BLINDNESS ).append("=")
+                .append( this.jCheckBoxColorBlindness.isSelected()).append(";"); 
+        String countryCode = this.jListCountry.getSelectedValue().getCountryCode();
+            builder.append( PreferencesAS2.COUNTRY ).append("=")
+                .append( countryCode).append(";"); 
+        return( builder.toString() );
+    }
+
+    private boolean preferencesAreModified() {
+        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+    }
+
+    
 
     /**
      * Fills in the available countries of the system into the list
@@ -215,6 +248,33 @@ public class JDialogPreferences extends JDialog {
             this.jRadioButtonDarkMode.setSelected(true);
         } else {
             this.jRadioButtonLiteMode.setSelected(true);
+        }
+    }
+
+    /**Displays a warning if changes have been made to the settings and afterwards the user
+     * pressed the cancel windows "X" or anything similar
+     */
+    private void showWarningOnPreferencesCanceled() {
+        if( this.okPressed ){
+            //no warning required, user pressed ok
+            return;
+        }
+        boolean changesHaveBeenMade = false;
+        for (PreferencesPanel preferencePanel : this.panelList) {            
+            if( preferencePanel.preferencesAreModified()){
+                changesHaveBeenMade = true;
+                break;
+            }
+        }
+        if( !changesHaveBeenMade){
+            changesHaveBeenMade = !this.captureSettingsToStr().equals( this.preferencesStrAtLoadTime);
+        }
+        if( changesHaveBeenMade ){
+            UINotification.instance().addNotification(
+                    PreferencesPanelMDN.IMAGE_PREFS,
+                    UINotification.TYPE_WARNING,
+                    this.rb.getResourceString("title"),
+                    this.rb.getResourceString("warning.changes.canceled"));
         }
     }
 
@@ -255,6 +315,11 @@ public class JDialogPreferences extends JDialog {
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DISPOSE_ON_CLOSE);
         setTitle(this.rb.getResourceString( "title"));
+        addWindowListener(new java.awt.event.WindowAdapter() {
+            public void windowClosed(java.awt.event.WindowEvent evt) {
+                formWindowClosed(evt);
+            }
+        });
         getContentPane().setLayout(new java.awt.GridBagLayout());
 
         jPanelEdit.setBorder(javax.swing.BorderFactory.createTitledBorder(""));
@@ -283,7 +348,7 @@ public class JDialogPreferences extends JDialog {
         jPanelLanguage.add(jRadioButtonLangEN, gridBagConstraints);
 
         buttonGroupLanguage.add(jRadioButtonLangFR);
-        jRadioButtonLangFR.setText("Français");
+        jRadioButtonLangFR.setText("<HTML>Fran&#231;ais</HTML>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
@@ -485,8 +550,11 @@ public class JDialogPreferences extends JDialog {
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
+        this.okPressed = true;
         for (PreferencesPanel panel : this.panelList) {
-            panel.savePreferences();
+            if (panel.preferencesAreModified()) {
+                panel.savePreferences();
+            }
         }
         this.setVisible(false);
         this.captureGUIValues();
@@ -500,6 +568,10 @@ public class JDialogPreferences extends JDialog {
     private void jLabelLightModeMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelLightModeMouseClicked
         this.jRadioButtonLiteMode.setSelected(true);
     }//GEN-LAST:event_jLabelLightModeMouseClicked
+
+    private void formWindowClosed(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosed
+        this.showWarningOnPreferencesCanceled();
+    }//GEN-LAST:event_formWindowClosed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroupDarkMode;
@@ -531,8 +603,8 @@ public class JDialogPreferences extends JDialog {
 
     private static class DisplayCountry implements Comparable<DisplayCountry> {
 
-        private String countryCode;
-        private String displayString;
+        private final String countryCode;
+        private final String displayString;
 
         public DisplayCountry(String countryCode) {
             this.countryCode = countryCode.toUpperCase();

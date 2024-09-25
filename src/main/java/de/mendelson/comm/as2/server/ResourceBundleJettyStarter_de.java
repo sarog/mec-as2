@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleJettyStarter_de.java 2     2/05/22 10:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleJettyStarter_de.java 6     2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleJettyStarter_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {
@@ -36,5 +36,6 @@ public class ResourceBundleJettyStarter_de extends MecResourceBundle {
         {"userconfiguration.readerror", "Problem beim Lesen der Benutzerkonfiguration von {0}: {1} ... Ignoriere die Benutzerkonfiguration und starten den Webserver unter Verwendung der definierten Standardwerte" },
         {"userconfiguration.reading", "Lese benutzerdefinierte Konfiguration von {0}" },
         {"userconfiguration.setvar", "Setze benutzerdefinierten Wert [{0}] auf [{1}]" },
+        {"tls.keystore.reloaded", "Es wurden Änderungen im TLS Keystore registriert und die keystore Daten des HTTP servers wurden aktualisiert"},
     };
 }

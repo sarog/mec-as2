@@ -1,7 +1,6 @@
-//$Header: /as2/de/mendelson/util/MendelsonMultiResolutionImage.java 38    24/08/22 14:57 Heller $
+//$Header: /as2/de/mendelson/util/MendelsonMultiResolutionImage.java 40    2/11/23 15:53 Heller $
 package de.mendelson.util;
 
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.RenderingHints;
@@ -44,13 +43,13 @@ import org.w3c.dom.Element;
  * Mendelson implementation of the MultiResolution image
  *
  * @author S.Heller
- * @version $Revision: 38 $
+ * @version $Revision: 40 $
  */
 public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-    private int baseImageIndex;
+    private final int baseImageIndex;
     private final List<BufferedImage> resolutionVariants;
     private final static RenderingHints RENDERING_HINTS_BEST_QUALITY
             = new RenderingHints(RenderingHints.KEY_RENDERING,
@@ -96,8 +95,6 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
      *
      * @param baseImageIndex the index of the base image in the resolution
      * variants array
-     * @param resolutionVariantResource array of the resolution variants -
-     * should be sorted by image size
      *
      */
     public MendelsonMultiResolutionImage(int baseImageIndex, String[] resolutionVariantResources) {
@@ -560,8 +557,6 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
          *
          * @param image the image to write
          * @param output the output where to store the image
-         * @param TranscoderException if an error occured while storing the
-         * image
          */
         @Override
         public void writeImage(BufferedImage image, TranscoderOutput output)

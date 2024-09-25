@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/LogFormatterAS2.java 7     27/06/22 12:05 Heller $
+//$Header: /as2/de/mendelson/util/log/LogFormatterAS2.java 8     2/11/23 14:03 Heller $
 package de.mendelson.util.log;
 
 import de.mendelson.comm.as2.message.AS2MDNInfo;
@@ -6,7 +6,6 @@ import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.util.clientserver.log.search.LoglineImplAS2;
 import de.mendelson.util.database.IDBDriverManager;
-import java.sql.Connection;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany

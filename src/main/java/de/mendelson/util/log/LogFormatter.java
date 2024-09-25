@@ -1,7 +1,6 @@
-//$Header: /as2/de/mendelson/util/log/LogFormatter.java 22    19/10/22 15:32 Heller $
+//$Header: /as2/de/mendelson/util/log/LogFormatter.java 23    2/11/23 14:03 Heller $
 package de.mendelson.util.log;
 
-import java.awt.Color;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.text.DateFormat;

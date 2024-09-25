@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/PreferencesRequest.java 3     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/PreferencesRequest.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,11 +15,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class PreferencesRequest extends ClientServerMessage implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int TYPE_SET = 1;
     public static final int TYPE_GET = 2;
     public static final int TYPE_GET_DEFAULT = 3;
@@ -71,6 +73,11 @@ public class PreferencesRequest extends ClientServerMessage implements Serializa
      */
     public void setType(int type) {
         this.type = type;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
         
 }

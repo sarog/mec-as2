@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_de.java 18    23/06/22 16:50 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_de.java 19    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,11 +17,11 @@ import de.mendelson.util.database.IDBDriverManager;
  * to localize eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class ResourceBundleDBServer_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

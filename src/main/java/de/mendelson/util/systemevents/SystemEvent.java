@@ -1,17 +1,18 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/SystemEvent.java 50    13/10/22 16:36 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/SystemEvent.java 61    12/12/23 12:04 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.systemevents.gui.UIEventCategory;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
+import java.net.InetAddress;
 import java.nio.charset.CharsetDecoder;
 import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,30 +39,31 @@ import javax.swing.ImageIcon;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 61 $
  */
 public class SystemEvent implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static final MendelsonMultiResolutionImage ICON_SEVERITY_ERROR_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/util/systemevents/gui/state_stopped.svg", 11, 32);
+                    "/de/mendelson/util/systemevents/gui/state_stopped.svg", 10, 64);
     public static final MendelsonMultiResolutionImage ICON_SEVERITY_WARNING_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/util/systemevents/gui/state_pending.svg", 11, 32);
+                    "/de/mendelson/util/systemevents/gui/state_pending.svg", 10, 64);
     public static final MendelsonMultiResolutionImage ICON_SEVERITY_INFO_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/util/systemevents/gui/severity_info.svg", 11, 32);
+                    "/de/mendelson/util/systemevents/gui/severity_info.svg", 10, 64);
     public static final MendelsonMultiResolutionImage ICON_ORIGIN_SYSTEM_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/util/systemevents/gui/origin_system.svg", 11, 32);
+                    "/de/mendelson/util/systemevents/gui/origin_system.svg", 10, 64);
     public static final MendelsonMultiResolutionImage ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/util/systemevents/gui/messagedetails.svg", 11, 32);
+                    "/de/mendelson/util/systemevents/gui/messagedetails.svg", 10, 64);
     public static final MendelsonMultiResolutionImage ICON_ORIGIN_USER_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/util/systemevents/gui/origin_user.svg", 11, 32);
+                    "/de/mendelson/util/systemevents/gui/origin_user.svg", 10, 64);
+
     /**
      * Its a system shutdown, restart etc
      */
@@ -142,6 +144,7 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_CERTIFICATE_EXCHANGE_ANY = 404;
     public static final int TYPE_CERTIFICATE_EXPIRE = 405;
     public static final int TYPE_CERTIFICATE_EXCHANGE_REQUEST_RECEIVED = 406;
+    public static final int TYPE_CERTIFICATE_IMPORT_KEYSTORE = 407;
     /**
      * Database
      */
@@ -208,12 +211,32 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_CLIENT_LOGIN_FAILURE = 1302;
     public static final int TYPE_CLIENT_LOGOFF = 1303;
     /**
+     * XML interface
+     */
+    public static final int CATEGORY_XML_INTERFACE = 1400;
+    public static final int TYPE_XML_INTERFACE_ANY = 1400;
+    public static final int TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION = 1401;
+    public static final int TYPE_XML_INTERFACE_PARTNER_MODIFICATION = 1402;
+    /**
      * Other
      */
     public static final int CATEGORY_OTHER = 100000;
     public static final int TYPE_OTHER = 100000;
 
-    private final DateFormat humanReadableEventDateFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
+    private final static String SERVER_SIDE_HOSTNAME;
+
+    static {
+        String detectedHostname = null;
+        try {
+            detectedHostname = InetAddress.getLocalHost().getHostName();
+        } catch (Throwable e) {
+            detectedHostname = "Unknown";
+        }
+        SERVER_SIDE_HOSTNAME = detectedHostname;
+    }
+
+    private final DateFormat HUMAN_READABLE_EVENT_DATE_FORMAT
+            = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
 
     private final static String SECTION_DESCRIPTION = "[Event description]";
     private final static String SECTION_BODY = "[Details]";
@@ -228,26 +251,28 @@ public class SystemEvent implements Serializable {
     private int category;
     private String subject = "";
     private String body = "";
-    private String processOriginHost = SystemEventManager.getHostname();
+    private String processOriginHost = SERVER_SIDE_HOSTNAME;
     private String user = USER_SERVER_PROCESS;
 
-    private final String notificationTemplateDir = "notificationtemplates" + FileSystems.getDefault().getSeparator();
+    private final String NOTIFICATION_TEMPLATE_DIR = "notificationtemplates";
 
     private String id;
-    private MecResourceBundle rb;
-    private MecResourceBundle rbFilenames;
+    private final static MecResourceBundle rb;
+    private final static MecResourceBundle rbFilenames;
 
-    public SystemEvent(int severity, int origin, int type) {
-        //Load resourcebundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleSystemEvent.class.getName());
-            this.rbFilenames = (MecResourceBundle) ResourceBundle.getBundle(
+            rbFilenames = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleSystemEventFilenames.class.getName());
         } //load up  resourcebundle        
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+
+    public SystemEvent(int severity, int origin, int type) {
         this.severity = severity;
         this.origin = origin;
         this.type = type;
@@ -269,14 +294,13 @@ public class SystemEvent implements Serializable {
         StringBuilder bodyBuffer = new StringBuilder();
         boolean inSubject = false;
         boolean inBody = false;
-
         BufferedReader templateReader = null;
         InputStream inStream = null;
         try {
             //prevent Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);
             //because this will throw a MalformedInputException if the encoding does not match!
             //The REPLACE action will replace the unreadable character with a "?"
-            inStream = Files.newInputStream(Paths.get(templateFilename));
+            inStream = Files.newInputStream(Paths.get(NOTIFICATION_TEMPLATE_DIR, templateFilename));
             CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
@@ -309,7 +333,7 @@ public class SystemEvent implements Serializable {
             if (templateReader != null) {
                 templateReader.close();
             }
-            if( inStream != null ){
+            if (inStream != null) {
                 inStream.close();
             }
         }
@@ -365,10 +389,12 @@ public class SystemEvent implements Serializable {
     private String getLocalizedTemplateFilename(String templateName) {
         String language = Locale.getDefault().getLanguage();
         //select language specific template
-        if (Files.exists(Paths.get(this.notificationTemplateDir + templateName + "_" + language))) {
-            templateName = this.notificationTemplateDir + templateName + "_" + language;
+        if (Files.exists(Paths.get(this.NOTIFICATION_TEMPLATE_DIR, templateName + "_" + language))) {
+            templateName = Paths.get(this.NOTIFICATION_TEMPLATE_DIR, templateName + "_" + language)
+                    .getFileName().toString();
         } else {
-            templateName = this.notificationTemplateDir + templateName;
+            templateName = Paths.get(this.NOTIFICATION_TEMPLATE_DIR, templateName)
+                    .getFileName().toString();
         }
         return (templateName);
     }
@@ -434,7 +460,7 @@ public class SystemEvent implements Serializable {
     }
 
     public String getHumanReadableTimestamp() {
-        return (this.humanReadableEventDateFormat.format(new Date(this.getTimestamp())));
+        return (this.HUMAN_READABLE_EVENT_DATE_FORMAT.format(new Date(this.getTimestamp())));
     }
 
     /**
@@ -564,7 +590,7 @@ public class SystemEvent implements Serializable {
             if (reader != null) {
                 reader.close();
             }
-            if( inStream != null ){
+            if (inStream != null) {
                 inStream.close();
             }
         }
@@ -596,14 +622,14 @@ public class SystemEvent implements Serializable {
      * for the storage filename
      */
     public String severityToTextLocalized() {
-        return (this.rb.getResourceString("severity." + this.severity));
+        return (rb.getResourceString("severity." + this.severity));
     }
 
     /**
      * Returns the category of this event in a human readable form
      */
     public String categoryToTextLocalized() {
-        return (this.rb.getResourceString("category." + this.getCategory()));
+        return (rb.getResourceString("category." + this.getCategory()));
     }
 
     /**
@@ -634,6 +660,15 @@ public class SystemEvent implements Serializable {
         }
         return (new ImageIcon(
                 ICON_ORIGIN_USER_MULTIRESOLUTION.toMinResolution(minResolution)));
+    }
+
+    /**
+     * Contains a multi resolution image that displays the severity of the event
+     */
+    public ImageIcon getCategoryIconMultiResolution(int minResolution) {
+        return (new ImageIcon(
+                UIEventCategory.getImageByCategory(
+                this.getCategory()).toMinResolution(minResolution)));
     }
 
     /**

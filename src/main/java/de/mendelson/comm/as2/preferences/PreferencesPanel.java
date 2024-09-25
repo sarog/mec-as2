@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 7     5/10/22 10:10 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 8     17/02/23 15:48 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import javax.swing.ImageIcon;
@@ -15,7 +15,7 @@ import javax.swing.JPanel;
  * Abstract class for all preferences panels
  *
  * @author S.Heller
- * @version: $Revision: 7 $
+ * @version: $Revision: 8 $
  */
 public abstract class PreferencesPanel extends JPanel {
 
@@ -31,6 +31,12 @@ public abstract class PreferencesPanel extends JPanel {
      */
     public abstract void savePreferences();
 
+    /**
+     * Checks if the user made changes in the panel
+     */
+    public abstract boolean preferencesAreModified();
+    
+    
     /**
      * Returns the icon resource string for the button bar
      */

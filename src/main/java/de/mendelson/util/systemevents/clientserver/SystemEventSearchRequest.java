@@ -1,8 +1,10 @@
-//$Header: /as4/de/mendelson/util/systemevents/clientserver/SystemEventSearchRequest.java 1     11.10.18 11:49 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/clientserver/SystemEventSearchRequest.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.systemevents.search.ServerSideEventFilter;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,12 +18,12 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 4 $
  */
 public class SystemEventSearchRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
-    private ServerSideEventFilter filter;
+    private static final long serialVersionUID = 1L;
+    private final ServerSideEventFilter filter;
     
     public SystemEventSearchRequest(ServerSideEventFilter filter) {
         this.filter = filter;
@@ -39,5 +41,9 @@ public class SystemEventSearchRequest extends ClientServerMessage implements Ser
         return( this.filter );
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
     
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/ResourceBundleGlobalChange_de.java 1     26/08/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/ResourceBundleGlobalChange_de.java 2     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.gui.global;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,11 +12,11 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleGlobalChange_de extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

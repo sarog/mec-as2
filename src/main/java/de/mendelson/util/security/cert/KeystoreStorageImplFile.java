@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 18    16/12/22 13:41 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 28    9/11/23 9:52 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,6 +11,8 @@ import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -26,15 +28,15 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a keystore file
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 28 $
  */
 public class KeystoreStorageImplFile implements KeystoreStorage {
 
-    public static final int KEYSTORE_USAGE_SSL = 1;
+    public static final int KEYSTORE_USAGE_TLS = 1;
     public static final int KEYSTORE_USAGE_ENC_SIGN = 2;
     public static final String KEYSTORE_STORAGE_TYPE_JKS = BCCryptoHelper.KEYSTORE_JKS;
     public static final String KEYSTORE_STORAGE_TYPE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
-    
+
     private KeyStore keystore = null;
     private final char[] keystorePass;
     private final String keystoreFilename;
@@ -46,7 +48,6 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     /**
      * @param keystoreFilename
      * @param keystorePass
-     * @param keystoreType keystore type as defined in the class BCCryptoHelper
      */
     public KeystoreStorageImplFile(String keystoreFilename, char[] keystorePass, final int KEYSTORE_USAGE,
             final String KEYSTORE_STORAGE_TYPE) throws Exception {
@@ -86,6 +87,40 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     }
 
     @Override
+    public void loadKeystoreFromServer() throws Exception{
+        throw new IllegalAccessException("KeystoreStorageImplFile: loadKeystoreFromServer() is not available for this implementation of storage.");
+    }
+    
+    
+    @Override
+    public void replaceAllEntriesAndSave(List<KeystoreCertificate> oldList, List<KeystoreCertificate> newList) throws Exception {
+        if (this.keystore == null) {
+            //internal error, should not happen
+            throw new Exception(this.rb.getResourceString("error.save.notloaded"));
+        }
+        synchronized (this.keystore) {
+            Enumeration<String> enumeration = this.keystore.aliases();
+            while (enumeration.hasMoreElements()) {
+                String alias = enumeration.nextElement();
+                this.keystore.deleteEntry(alias);
+            }
+            for (KeystoreCertificate certificate : newList) {
+                if (certificate.getIsKeyPair()) {
+                    char[] keyPass = null;
+                    if (this.getKeystoreStorageType().equals(KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS)) {
+                        keyPass = this.keystorePass;
+                    }
+                    this.keystore.setKeyEntry(certificate.getAlias(), certificate.getKey(), keyPass,
+                            certificate.getCertificateChain());
+                } else {
+                    this.keystore.setCertificateEntry(certificate.getAlias(), certificate.getX509Certificate());
+                }
+            }
+            this.save();
+        }
+    }
+
+    @Override
     public Key getKey(String alias) throws Exception {
         Key key = this.keystore.getKey(alias, this.keystorePass);
         return (key);
@@ -119,18 +154,26 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
         return (this.keystorePass);
     }
 
-    @Override
-    public void deleteEntry(String alias) throws Exception {
+    private void deleteEntryAndSave( String alias) throws Exception {
         if (this.keystore == null) {
             //internal error, should not happen
             throw new Exception(this.rb.getResourceString("error.delete.notloaded"));
         }
         this.keystore.deleteEntry(alias);
+        this.save();
+    }
+    
+    
+    @Override
+    public void deleteEntry(String alias) throws Exception {
+        //because this is the direct file implementation a save is required as a reload from the keystore 
+        //file might follow.
+        //This is a special behavior for the file based certificate manager.
+        this.deleteEntryAndSave(alias);
     }
 
     @Override
-    public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {   
-        //recreate keystore object
+    public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {
         this.keystoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
         Map<String, Certificate> certificateMap = this.keystoreUtil.getCertificatesFromKeystore(this.keystore);
         return (certificateMap);
@@ -142,22 +185,12 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     }
 
     @Override
-    public String getOriginalKeystoreFilename() {
-        return (this.keystoreFilename);
-    }
-
-    @Override
-    public boolean canWrite() {
-        return (Files.isWritable(Paths.get(this.keystoreFilename)));
-    }
-
-    @Override
     public String getKeystoreStorageType() {
-        return( this.keystoreStorageType);
+        return (this.keystoreStorageType);
     }
-    
+
     @Override
     public int getKeystoreUsage() {
-        return( this.keystoreUsage);
+        return (this.keystoreUsage);
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 65    22/11/22 16:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 66    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.security.encryption.EncryptionConstantsAS2;
@@ -19,11 +19,11 @@ import java.util.Properties;
  * Stores a AS2 message
  *
  * @author S.Heller
- * @version $Revision: 65 $
+ * @version $Revision: 66 $
  */
 public class AS2Message implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     public static final int ENCRYPTION_UNKNOWN = EncryptionConstantsAS2.ENCRYPTION_UNKNOWN;
     public static final int ENCRYPTION_NONE = EncryptionConstantsAS2.ENCRYPTION_NONE;

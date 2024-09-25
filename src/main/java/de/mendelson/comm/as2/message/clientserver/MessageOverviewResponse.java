@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewResponse.java 3     4.06.19 12:46 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageOverviewResponse.java 4     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -17,11 +17,11 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class MessageOverviewResponse extends ClientServerResponse implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private List<AS2MessageInfo> list = null;
     private int messageSumOnServer = 0;
 

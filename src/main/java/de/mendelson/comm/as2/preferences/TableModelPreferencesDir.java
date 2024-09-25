@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/TableModelPreferencesDir.java 5     4.06.19 13:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/TableModelPreferencesDir.java 6     2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,7 +20,7 @@ import javax.swing.table.AbstractTableModel;
  * Table model to display the properties to set
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class TableModelPreferencesDir extends AbstractTableModel {
 
@@ -37,7 +37,6 @@ public class TableModelPreferencesDir extends AbstractTableModel {
     /**
      * Creates new preferences table model
      *
-     * @param rb Resourcebundle to localize the header rows
      */
     public TableModelPreferencesDir() {
         //load resource bundle

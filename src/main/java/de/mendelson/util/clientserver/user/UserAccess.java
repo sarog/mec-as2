@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/user/UserAccess.java 8     10.11.21 13:45 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/user/UserAccess.java 10    23/01/24 10:18 Heller $
 package de.mendelson.util.clientserver.user;
 
 import java.io.BufferedReader;
@@ -7,6 +7,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 /*
@@ -20,12 +23,14 @@ import java.util.logging.Logger;
  * Contains several utilities for the user access
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class UserAccess {
 
     private Path passwdFile = Paths.get("passwd");
-    private Logger logger;
+    private final Logger logger;
+    private long lastUserReadTime = 0;
+    private final Map<String, User> userMap = Collections.synchronizedMap(new HashMap<String, User>());
 
     public UserAccess(Logger logger) {
         this.logger = logger;
@@ -66,47 +71,56 @@ public class UserAccess {
      * Reads a user from of the actual passwd file
      */
     public User readUser(String userName) {
-        User user = null;
-        String userLine = this.readUserLine(userName);
-        if (userLine != null) {
-            user = User.parse(userLine);
+        try {
+            long lastUserFileModificationTime = Files.getLastModifiedTime(this.passwdFile).toMillis();
+            if (lastUserFileModificationTime > this.lastUserReadTime) {
+                this.readAllUserToCache();
+            }
+            synchronized (this.userMap) {
+                User user = this.userMap.get(userName);
+                return (user);
+            }
+        } catch (Throwable e) {
+            this.logger.warning(
+                    "Password storage read error: ["
+                    + e.getClass().getSimpleName()
+                    + "] " + e.getMessage());
+            return (null);
         }
-        return (user);
     }
 
     /**
-     * Loads the passwd file and looks for the user a single line should be
-     * like: username:passwd:passwdcrypted:permission1 (1/0):permission2
-     * (1/0):permission3 (1/0):permissionn (1/0)
+     * Reads all user and stores them in the user map
+     *
      */
-    public String readUserLine(String userName) {
-        BufferedReader bufferedReader = null;
-        try {
-            bufferedReader = Files.newBufferedReader(this.passwdFile, StandardCharsets.UTF_8);
-            String line = "";
-            while (line != null) {
-                line = bufferedReader.readLine();
-                if (line != null) {
-                    if (line.startsWith("#")) {
-                        continue;
-                    }
-                    String[] token = line.split(":");
-                    if (token[0].equalsIgnoreCase(userName)) {
-                        return (line);
+    private void readAllUserToCache() throws Exception {
+        synchronized (this.userMap) {
+            this.userMap.clear();
+            BufferedReader bufferedReader = null;
+            try {
+                bufferedReader = Files.newBufferedReader(this.passwdFile, StandardCharsets.UTF_8);
+                String line = "";
+                while (line != null) {
+                    line = bufferedReader.readLine();
+                    if (line != null) {
+                        if (line.startsWith("#")) {
+                            continue;
+                        }
+                        User user = User.parse(line);
+                        this.userMap.put(user.getName(), user);
                     }
                 }
-            }
-        } catch (Exception e) {
-            this.logger.warning("Password storage read error: " + e.getMessage());
-        } finally {
-            if (bufferedReader != null) {
-                try {
-                    bufferedReader.close();
-                } catch (Exception ee) {
-                    //nop
-                }
+                this.lastUserReadTime = System.currentTimeMillis();
+            } finally {
+                if (bufferedReader != null) {
+                    try {
+                        bufferedReader.close();
+                    } catch (Exception e) {
+                        //nop
+                    }
+                }                
             }
         }
-        return (null);
     }
+
 }

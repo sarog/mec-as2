@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeystoreCertificate.java 37    14/12/22 17:13 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/KeystoreCertificate.java 50    3/11/23 9:57 Heller $
 package de.mendelson.util.security.cert;
 
+import de.mendelson.util.security.keygeneration.KeyGenerator;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
@@ -11,7 +12,6 @@ import java.security.KeyStoreException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
-import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
@@ -21,6 +21,7 @@ import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorResult;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
+import java.security.cert.Certificate;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
@@ -30,7 +31,6 @@ import java.security.cert.TrustAnchor;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAPublicKey;
-import java.security.interfaces.ECKey;
 import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
@@ -59,8 +59,11 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.ec.CustomNamedCurves;
+import org.bouncycastle.jcajce.provider.asymmetric.edec.BCEdDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.math.ec.rfc8032.Ed25519;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -73,20 +76,28 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Object that stores a single configuration certificate/key
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 50 $
  */
-public class KeystoreCertificate implements Comparable, Serializable {
+public class KeystoreCertificate implements Comparable, Serializable, Cloneable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
+
+    public static final String CERTIFICATE_FORMAT_PEM = "PEM";
+    public static final String CERTIFICATE_FORMAT_DER = "DER";
+    public static final String CERTIFICATE_FORMAT_PKCS7 = "PKCS#7";
+    public static final String CERTIFICATE_FORMAT_SSH2 = "SSH2";
     private String alias = "";
     private X509Certificate certificate = null;
-    /**Private of public key*/
+    /**
+     * Private of public key
+     */
     private Key key = null;
     private boolean isKeyPair = false;
     private String infoText = "";
     //cache some data
     private byte[] fingerprintSHA1Bytes = null;
     private String fingerprintSHA1 = null;
+    private Certificate[] certificateChain = null;
 
     private static final Map<String, String> OID_MAP = new HashMap<String, String>();
 
@@ -135,6 +146,20 @@ public class KeystoreCertificate implements Comparable, Serializable {
     };
 
     public KeystoreCertificate() {
+    }
+
+    /**
+     * Clone this object
+     */
+    @Override
+    public Object clone() throws CloneNotSupportedException {
+        try {
+            KeystoreCertificate clonedEntry = (KeystoreCertificate) super.clone();
+            return (clonedEntry);
+        } catch (CloneNotSupportedException e) {
+            e.printStackTrace();
+            return (null);
+        }
     }
 
     /**
@@ -187,11 +212,11 @@ public class KeystoreCertificate implements Comparable, Serializable {
                 if (asn1Sequence.getObjectAt(i) instanceof DERTaggedObject) {
                     DERTaggedObject derTagObj = (DERTaggedObject) asn1Sequence.getObjectAt(i);
                     if (derTagObj.getTagNo() == 0) {
-                        DEROctetString octetStr = (DEROctetString) derTagObj.getObject();
+                        DEROctetString octetStr = (DEROctetString) derTagObj.getLoadedObject();
                         byte[] identifier = octetStr.getOctets();
                         authorityKeyIdentifierList.add("[Key identifier] " + byteArrayToHexStr(identifier));
                     } else if (derTagObj.getTagNo() == 2) {
-                        DEROctetString octetStr = (DEROctetString) derTagObj.getObject();
+                        DEROctetString octetStr = (DEROctetString) derTagObj.getLoadedObject();
                         byte[] identifier = octetStr.getOctets();
                         authorityKeyIdentifierList.add("[Serial] " + byteArrayToHexStr(identifier));
                     }
@@ -292,9 +317,9 @@ public class KeystoreCertificate implements Comparable, Serializable {
      * @return
      */
     public BigInteger getModulus() {
-        PublicKey key = this.certificate.getPublicKey();
-        if (key instanceof RSAPublicKey) {
-            RSAPublicKey rsaKey = (RSAPublicKey) key;
+        PublicKey publicKey = this.certificate.getPublicKey();
+        if (publicKey instanceof RSAPublicKey) {
+            RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
             return (rsaKey.getModulus());
         }
         return (BigInteger.ZERO);
@@ -308,9 +333,9 @@ public class KeystoreCertificate implements Comparable, Serializable {
      * @return
      */
     public BigInteger getPublicExponent() {
-        PublicKey key = this.certificate.getPublicKey();
-        if (key instanceof RSAPublicKey) {
-            RSAPublicKey rsaKey = (RSAPublicKey) key;
+        PublicKey publicKey = this.certificate.getPublicKey();
+        if (publicKey instanceof RSAPublicKey) {
+            RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
             return (rsaKey.getPublicExponent());
         }
         return (BigInteger.ZERO);
@@ -446,8 +471,8 @@ public class KeystoreCertificate implements Comparable, Serializable {
     }
 
     public String getPublicKeyAlgorithm() {
-        PublicKey key = this.certificate.getPublicKey();
-        return (key.getAlgorithm());
+        PublicKey publicKey = this.certificate.getPublicKey();
+        return (publicKey.getAlgorithm());
     }
 
     /**
@@ -493,11 +518,12 @@ public class KeystoreCertificate implements Comparable, Serializable {
         this.alias = alias;
     }
 
-    public void setCertificate(X509Certificate certificate) {
+    public void setCertificate(X509Certificate certificate, Certificate[] certificateChain) {
         this.certificate = certificate;
+        this.certificateChain = certificateChain;
         this.computeInfoText();
     }
-    
+
     public void setKey(Key key) {
         this.key = key;
     }
@@ -514,12 +540,13 @@ public class KeystoreCertificate implements Comparable, Serializable {
         return (this.isKeyPair);
     }
 
-    /**Returns the private key of the entry - or null if it is not set*/
-    public Key getKey(){
-        return( this.key );
+    /**
+     * Returns the private key of the entry - or null if it is not set
+     */
+    public Key getKey() {
+        return (this.key);
     }
-    
-    
+
     /**
      * KeyUsage extension, (OID = 2.5.29.15). The key usage extension defines
      * the purpose (e.g., encipherment, signature, certificate signing) of the
@@ -574,25 +601,32 @@ public class KeystoreCertificate implements Comparable, Serializable {
      * @return
      */
     public int getPublicKeyLength() {
-        PublicKey key = this.certificate.getPublicKey();
-        if (key instanceof RSAPublicKey) {
-            RSAPublicKey rsaKey = (RSAPublicKey) key;
+        PublicKey publicKey = this.certificate.getPublicKey();
+        if (publicKey instanceof RSAPublicKey) {
+            RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
             return (rsaKey.getModulus().bitLength());
-        } else if (key instanceof DSAPublicKey) {
-            DSAPublicKey dsaKey = (DSAPublicKey) key;
+        } else if (publicKey instanceof DSAPublicKey) {
+            DSAPublicKey dsaKey = (DSAPublicKey) publicKey;
             return (dsaKey.getParams().getP().bitLength());
-        } else if (key instanceof ECPublicKey) {
-            ECPublicKey ecKey = (ECPublicKey) key;
+        } else if (publicKey instanceof ECPublicKey) {
+            ECPublicKey ecKey = (ECPublicKey) publicKey;
             return (ecKey.getParams().getOrder().bitLength());
+        }else if( publicKey instanceof BCEdDSAPublicKey){
+            BCEdDSAPublicKey edDSAPublicKey = (BCEdDSAPublicKey)publicKey;
+            if( edDSAPublicKey.getAlgorithm().equals( KeyGenerator.CURVE_NAME_ED25519)){
+                return( Ed25519.PUBLIC_KEY_SIZE*8);
+            }else{
+                return( 0 );
+            }
         }
         return (0);
     }
 
     public byte[] getFingerPrintBytesSHA1() {
-        if( this.fingerprintSHA1Bytes == null ){
+        if (this.fingerprintSHA1Bytes == null) {
             this.fingerprintSHA1Bytes = this.getFingerPrintBytes("SHA1");
         }
-        return( this.fingerprintSHA1Bytes);
+        return (this.fingerprintSHA1Bytes);
     }
 
     public byte[] getFingerPrintBytesMD5() {
@@ -604,10 +638,10 @@ public class KeystoreCertificate implements Comparable, Serializable {
     }
 
     public String getFingerPrintSHA1() {
-        if( this.fingerprintSHA1 == null ){
+        if (this.fingerprintSHA1 == null) {
             this.fingerprintSHA1 = this.getFingerPrint("SHA1");
         }
-        return( this.fingerprintSHA1);
+        return (this.fingerprintSHA1);
     }
 
     public String getFingerPrintMD5() {
@@ -641,8 +675,8 @@ public class KeystoreCertificate implements Comparable, Serializable {
         if ((encoded.length() % 2) != 0) {
             throw new IllegalArgumentException("KeystoreCertificate.fromHexString: Input string must contain an even number of characters");
         }
-        final byte result[] = new byte[encoded.length() / 2];
-        final char enc[] = encoded.toCharArray();
+        final byte[] result = new byte[encoded.length() / 2];
+        final char[] enc = encoded.toCharArray();
         try {
             for (int i = 0; i < enc.length; i += 2) {
                 StringBuilder curr = new StringBuilder(2);
@@ -662,7 +696,7 @@ public class KeystoreCertificate implements Comparable, Serializable {
                 hextStringBuffer.append(":");
             }
             String singleByte = Integer.toHexString(byteArray[i] & 0xFF).toUpperCase();
-            if (singleByte.length() == 0) {
+            if (singleByte.isEmpty()) {
                 hextStringBuffer.append("00");
             } else if (singleByte.length() == 1) {
                 hextStringBuffer.append("0");
@@ -710,8 +744,8 @@ public class KeystoreCertificate implements Comparable, Serializable {
      * @return null if no cert path could be found All used methods are not
      * thread safe
      */
-    public synchronized PKIXCertPathBuilderResult 
-        getPKIXCertPathBuilderResult(KeyStore keystore, List<X509Certificate> certificateList) {
+    public synchronized PKIXCertPathBuilderResult
+            getPKIXCertPathBuilderResult(KeyStore keystore, List<X509Certificate> certificateList) {
         X509Certificate embeddedCertificate = this.getX509Certificate();
         try {
             X509CertSelector selector = new X509CertSelector();
@@ -783,10 +817,14 @@ public class KeystoreCertificate implements Comparable, Serializable {
     }
 
     @Override
+    /**
+     * Sort a list of KeystoreCertificate You MUST not use the equals method in
+     * this method - this will result in a "Comparison method violates its
+     * general contract" IllegalArgument Exception The reason ist that the
+     * implementor must also ensure that the relation is transitive:
+     * (x.compareTo(y)>0 && y.compareTo(z)>0) implies x.compareTo(z)>0.
+     */
     public int compareTo(Object object) {
-        if (this.equals(object)) {
-            return (0);
-        }
         KeystoreCertificate otherCert = (KeystoreCertificate) object;
         return (this.alias.toUpperCase().compareTo(otherCert.alias.toUpperCase()));
     }
@@ -813,13 +851,14 @@ public class KeystoreCertificate implements Comparable, Serializable {
                 .append(this.getSigAlgOID()).append(")\n");
         if (this.getPublicKeyAlgorithm().startsWith("EC")) {
             try {
-                String oid = this.getCurveOID(this.getX509Certificate().getPublicKey());
-                String name = this.getCurveName(this.getX509Certificate().getPublicKey());
+                ECPublicKey publicKey = (ECPublicKey) this.getX509Certificate().getPublicKey();
+                String oid = this.getCurveOID(publicKey);
+                String curveName = this.getCurveName(publicKey);
                 infoTextBuilder
                         .append("Named Curve: ")
-                        .append(name).append( " [OID ")
+                        .append(curveName).append(" [OID ")
                         .append(oid).append("]\n");
-            } catch (Exception ignore) {
+            } catch (Throwable ignore) {
                 infoTextBuilder
                         .append("Named Curve:  Unknown\n");
             }
@@ -837,37 +876,46 @@ public class KeystoreCertificate implements Comparable, Serializable {
     /**
      * Returns the curve OID if this is a EC key/certificate
      */
-    public String getCurveOID(Key key) throws Exception {
-        if (key instanceof ECPublicKey) {
-            AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
-            params.init(((ECKey) key).getParams());
-            return params.getParameterSpec(ECGenParameterSpec.class).getName();
-        }
-        return ("");
+    private String getCurveOID(ECPublicKey publicKey) throws Throwable {
+        AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
+        params.init(publicKey.getParams());
+        return(params.getParameterSpec(ECGenParameterSpec.class).getName());
     }
 
     /**
      * Returns the curve OID if this is a EC key/certificate
      */
-    public String getCurveName(Key key) throws Exception {
-        if (key instanceof ECPublicKey) {
-            ECParameterSpec params = ((ECPublicKey) key).getParams();
-            org.bouncycastle.jce.spec.ECParameterSpec spec = EC5Util.convertSpec(params);          
-            Enumeration names = ECNamedCurveTable.getNames();
-            while (names.hasMoreElements()) {
-                String name = names.nextElement().toString();
-                X9ECParameters possibleMatch = ECNamedCurveTable.getByName(name);
-                if (possibleMatch != null) {
-                    if (spec.getN().equals(possibleMatch.getN())
-                            && spec.getH().equals(possibleMatch.getH())
-                            && spec.getCurve().equals(possibleMatch.getCurve())
-                            && spec.getG().equals(possibleMatch.getG())) {
-                        return name;
-                    }
+    public String getCurveName(ECPublicKey publicKey) throws Throwable {
+        ECParameterSpec params = publicKey.getParams();
+        //convert to BC spec
+        org.bouncycastle.jce.spec.ECParameterSpec spec = EC5Util.convertSpec(params);
+        Enumeration ecNamedCurveTable = ECNamedCurveTable.getNames();
+        while (ecNamedCurveTable.hasMoreElements()) {
+            String name = ecNamedCurveTable.nextElement().toString();
+            X9ECParameters possibleMatch = ECNamedCurveTable.getByName(name);
+            if (possibleMatch != null) {
+                if (spec.getN().equals(possibleMatch.getN())
+                        && spec.getH().equals(possibleMatch.getH())
+                        && spec.getCurve().equals(possibleMatch.getCurve())
+                        && spec.getG().equals(possibleMatch.getG())) {
+                    return name;
                 }
             }
         }
-        return( "");
+        Enumeration ecCustomNamedCurveTable = CustomNamedCurves.getNames();
+        while (ecCustomNamedCurveTable.hasMoreElements()) {
+            String name = ecCustomNamedCurveTable.nextElement().toString();
+            X9ECParameters possibleMatch = CustomNamedCurves.getByName(name);
+            if (possibleMatch != null) {
+                if (spec.getN().equals(possibleMatch.getN())
+                        && spec.getH().equals(possibleMatch.getH())
+                        && spec.getCurve().equals(possibleMatch.getCurve())
+                        && spec.getG().equals(possibleMatch.getG())) {
+                    return name;
+                }
+            }
+        }
+        return ("");
     }
 
     /**
@@ -959,6 +1007,26 @@ public class KeystoreCertificate implements Comparable, Serializable {
         hash = 97 * hash + (this.isKeyPair ? 1 : 0);
         return hash;
     }
+
+    /**
+     * @return the CertificateChain
+     */
+    public Certificate[] getCertificateChain() {
+        return (this.certificateChain);
+    }
+
+    /**
+     * Sets the entry to display mode. This allows to send it to a client
+     * wihtout sending private key information
+     */
+    public void setToDisplayMode() {
+        //makes only sense for key entries - this will generate a dummy key for the display side.
+        //The key itself will not be transported to the client
+        if (this.isKeyPair) {
+            this.key = null;
+        }
+    }
+
     /**
      * '3D:A0:27:42:4D:92:6D:04:BB:74:66:1D:48:3E:61:6A:46:2A:05:B7'
      */

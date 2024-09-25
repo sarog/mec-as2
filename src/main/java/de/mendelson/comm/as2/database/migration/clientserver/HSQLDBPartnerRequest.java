@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBPartnerRequest.java 1     28.07.21 9:08 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBPartnerRequest.java 3     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.database.migration.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,11 +17,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class HSQLDBPartnerRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public HSQLDBPartnerRequest() {
     }
 
@@ -28,4 +30,9 @@ public class HSQLDBPartnerRequest extends ClientServerMessage implements Seriali
         return ("HSQLDB partner migration request");
     }
 
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
+    }
+    
 }

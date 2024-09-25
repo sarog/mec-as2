@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 14    2/05/22 10:55 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 19    2/11/23 15:53 Heller $
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationRequest;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationResponse;
@@ -28,7 +29,7 @@ import javax.swing.JFrame;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 19 $
  */
 public class JDialogDisplayHTTPConfiguration extends JDialog {
 
@@ -36,8 +37,8 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
      * ResourceBundle to localize the GUI
      */
     private MecResourceBundle rb = null;
-    private BaseClient baseClient;
-    private IStatusBar statusbar;
+    private final BaseClient baseClient;
+    private final IStatusBar statusbar;
     private final MendelsonMultiResolutionImage ICON_PORTS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/httpconfig/gui/ports.svg", 32, 64);
 
@@ -115,7 +116,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                                         embeddedJettyServerVersion,
                                         "<strong>" + httpServerConfigFile + "</strong>",
                                         "<strong>" + httpServerUserConfigFile + "</strong>"
-                                        })
+                                    })
                             + "</HTML>");
                     if (!response.isEmbeddedHTTPServerStarted()) {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(
@@ -145,7 +146,8 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
+        ExecutorService executor = Executors.newSingleThreadExecutor(
+                new NamedThreadFactory("ui-display-httpconfig"));
         executor.submit(runnable);
         executor.shutdown();
     }
@@ -264,7 +266,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(857, 610));
+        setSize(new java.awt.Dimension(900, 711));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

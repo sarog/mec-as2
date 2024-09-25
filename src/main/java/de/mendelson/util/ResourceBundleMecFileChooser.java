@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/ResourceBundleMecFileChooser.java 5     7/04/18 4:10p Heller $
+//$Header: /as2/de/mendelson/util/ResourceBundleMecFileChooser.java 6     2/11/23 15:53 Heller $
 package de.mendelson.util;
 
 /*
@@ -14,10 +14,10 @@ package de.mendelson.util;
  * eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleMecFileChooser extends MecResourceBundle {
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {

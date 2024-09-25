@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/DebuggablePreparedStatement.java 11    23/06/22 16:50 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggablePreparedStatement.java 12    2/11/23 14:03 Heller $
 package de.mendelson.util.database;
 
 import java.io.InputStream;
@@ -38,12 +38,12 @@ import java.util.logging.Logger;
  * Database statement that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class DebuggablePreparedStatement extends DebuggableStatement implements PreparedStatement {
 
-    private PreparedStatement statement;
-    private String query;
+    private final PreparedStatement statement;
+    private final String query;
     private Logger connectionLogger = null;
     private String connectionName = null;
     /**
@@ -54,7 +54,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
     /**
      * Map that contains parameter for the prepared statement
      */
-    private Map<Integer, String> map = new HashMap<Integer, String>();
+    private final Map<Integer, String> map = new HashMap<Integer, String>();
 
     public DebuggablePreparedStatement(DebuggableConnection connection, String query, PreparedStatement statement) {
         this(connection, query, statement, null, null);

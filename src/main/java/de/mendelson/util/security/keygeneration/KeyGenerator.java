@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerator.java 15    24/10/22 11:58 Heller $
+//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerator.java 23    2/11/23 14:03 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 import java.security.spec.ECParameterSpec;
@@ -13,10 +14,12 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.SubjectKeyIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
+import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
@@ -35,13 +38,31 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
  * This class allows to generate a private key
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 23 $
  */
 public class KeyGenerator {
 
     public static final String KEYALGORITHM_DSA = "DSA";
     public static final String KEYALGORITHM_RSA = "RSA";
     public static final String KEYALGORITHM_ECDSA = "ECDSA";
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = "SHA256withRSA";
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA = "SHA512withRSA";
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS = "SHA256withRSAAndMGF1";
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA_RSASSA_PSS = "SHA512withRSAAndMGF1";
+    public static final String SIGNATUREALGORITHM_SHA1_WITH_RSA = "SHA1WithRSA";
+    public static final String SIGNATUREALGORITHM_MD5_WITH_RSA = "MD5WithRSA";
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_ECDSA = "SHA256WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA384_WITH_ECDSA = "SHA384WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_ECDSA = "SHA512WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA = "SHA3-256WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA = "SHA3-384WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA = "SHA3-512WithECDSA";
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA = "SHA3-256withRSA";
+    public static final String SIGNATUREALGORITHM_SHA3_512_WITH_RSA = "SHA3-512withRSA";
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS = "SHA3-256withRSAAndMGF1";
+    public static final String SIGNATUREALGORITHM_SHA3_512_WITH_RSA_RSASSA_PSS = "SHA3-512withRSAAndMGF1";
+
+    public static final String CURVE_NAME_ED25519 = "Ed25519";
 
     /**
      * Creates a new instance of KeyGenerator
@@ -52,36 +73,57 @@ public class KeyGenerator {
     /**
      * Generate a key pair.
      *
-     * @param keyType The type of the key alg as defined in this class
-     * @param keySize The length of the key
      */
     public KeyGenerationResult generateKeyPair(KeyGenerationValues generationValues) throws Exception {
         //generation keypair
-        KeyPairGenerator keyPairGen = null;
         SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
-        //intialize with DSA/RSA/etc
-        keyPairGen = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm(), BouncyCastleProvider.PROVIDER_NAME);
+        KeyPair keyPair;
+        KeyPairGenerator keyPairGen;
         if (generationValues.getKeyAlgorithm().startsWith("EC")) {
-            ECNamedCurveParameterSpec curveParams = ECNamedCurveTable.getParameterSpec(generationValues.getECNamedCurve());
-            ECParameterSpec ecParameterSpec = new ECNamedCurveSpec(curveParams.getName(),
-                    curveParams.getCurve(),
-                    curveParams.getG(),
-                    curveParams.getN());
-            keyPairGen.initialize(ecParameterSpec, rand);
+            if (generationValues.getECNamedCurve().equalsIgnoreCase(CURVE_NAME_ED25519)) {
+                keyPairGen = KeyPairGenerator.getInstance(CURVE_NAME_ED25519);
+                keyPair = keyPairGen.generateKeyPair();
+            } else {
+                ECNamedCurveParameterSpec curveParams = ECNamedCurveTable.getParameterSpec(generationValues.getECNamedCurve());
+                ECParameterSpec ecParameterSpec = new ECNamedCurveSpec(curveParams.getName(),
+                        curveParams.getCurve(),
+                        curveParams.getG(),
+                        curveParams.getN());
+                keyPairGen
+                        = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm());
+                keyPairGen.initialize(ecParameterSpec, rand);
+                keyPair = keyPairGen.generateKeyPair();
+            }
         } else {
+            keyPairGen
+                    = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm());
             keyPairGen.initialize(generationValues.getKeySize(), rand);
+            keyPair = keyPairGen.generateKeyPair();
         }
-        KeyPair keyPair = keyPairGen.generateKeyPair();
         X509Certificate certificate = this.generateCertificate(generationValues, keyPair);
         KeyGenerationResult result = new KeyGenerationResult(keyPair, certificate);
         return (result);
     }
 
+    /**
+     *
+     * @param generationValues
+     * @param keyPair
+     * @return
+     * @throws Exception
+     */
     private X509Certificate generateCertificate(KeyGenerationValues generationValues, KeyPair keyPair) throws Exception {
         SubjectPublicKeyInfo publicKeyInformation = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
-        ContentSigner signer = new JcaContentSignerBuilder(generationValues.getSignatureAlgorithm())
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
-                .build(keyPair.getPrivate());
+        PrivateKey privateKey = keyPair.getPrivate();
+        JcaContentSignerBuilder builder;
+        if (generationValues.getECNamedCurve() != null && generationValues.getECNamedCurve().equals(CURVE_NAME_ED25519)) {
+            builder = new JcaContentSignerBuilder(CURVE_NAME_ED25519)
+                    .setProvider(BouncyCastleProvider.PROVIDER_NAME);
+        } else {
+            builder = new JcaContentSignerBuilder(generationValues.getSignatureAlgorithm())
+                    .setProvider(BouncyCastleProvider.PROVIDER_NAME);
+        }
+        ContentSigner signer = builder.build(privateKey);
         StringBuilder nameBuilder = new StringBuilder();
         nameBuilder.append("CN=").append(replace(generationValues.getCommonName(), ",", "\\,"));
         nameBuilder.append(",OU=").append(replace(generationValues.getOrganisationUnit(), ",", "\\,"));
@@ -106,6 +148,12 @@ public class KeyGenerator {
         if (generationValues.getExtendedKeyExtension() != null) {
             certificateBuilder.addExtension(Extension.extendedKeyUsage, false, generationValues.getExtendedKeyExtension());
         }
+        //add SKI
+        if (generationValues.generateSKI()) {
+            SubjectKeyIdentifier subjectKeyIdentifier = new JcaX509ExtensionUtils().createSubjectKeyIdentifier(keyPair.getPublic());
+            certificateBuilder.addExtension(Extension.subjectKeyIdentifier, false, subjectKeyIdentifier);
+        }
+        //add subject alternative names
         if (!generationValues.getSubjectAlternativeNames().isEmpty()) {
             GeneralName[] generalNamesArray = new GeneralName[generationValues.getSubjectAlternativeNames().size()];
             generationValues.getSubjectAlternativeNames().toArray(generalNamesArray);
@@ -141,6 +189,43 @@ public class KeyGenerator {
             buffer.append(replacement);
             source = source.substring(index + tag.length());
         }
+    }
+
+    public static String signatureAlgorithmToDisplay(final String signatureAlgorithm) {
+        if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_MD5_WITH_RSA)) {
+            return ("MD5");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA1_WITH_RSA)) {
+            return ("SHA-1");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA)) {
+            return ("SHA-2 256");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA384_WITH_ECDSA)) {
+            return ("SHA-2 384");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_ECDSA)) {
+            return ("SHA-2 512");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA)) {
+            return ("SHA-3 256");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA)) {
+            return ("SHA-3 384");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA)) {
+            return ("SHA-3 512");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA)) {
+            return ("SHA-2 256");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS)) {
+            return ("SHA-2 256 (RSASSA-PSS)");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA)) {
+            return ("SHA-2 512");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA_RSASSA_PSS)) {
+            return ("SHA-2 512 (RSASSA-PSS)");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA)) {
+            return ("SHA-3 256");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS)) {
+            return ("SHA-3 256 (RSASSA-PSS)");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA)) {
+            return ("SHA-3 512");
+        } else if (signatureAlgorithm.equalsIgnoreCase(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA_RSASSA_PSS)) {
+            return ("SHA-3 512 (RSASSA-PSS)");
+        }
+        return (signatureAlgorithm);
     }
 
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2StatusBar_de.java 6     4.06.19 12:46 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2StatusBar_de.java 8     2/11/23 15:52 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,11 +15,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleAS2StatusBar_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -36,8 +36,7 @@ public class ResourceBundleAS2StatusBar_de extends MecResourceBundle {
         {"count.pending", "Wartende Transaktionen"},
         {"count.failure", "Fehlerhafte Transaktionen"},
         {"count.selected", "Selektierte Transaktionen"},
-        {"configuration.issue.single", "{0} Konfigurationsproblem"},
-        {"configuration.issue.multiple", "{0} Konfigurationsprobleme"},
+        {"configuration.issue", "Bitte prüfen Sie Ihre Konfiguration"},
         {"no.configuration.issues", "Keine Konfigurationsprobleme"},};
 
 }

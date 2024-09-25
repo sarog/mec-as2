@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/ColorUtil.java 13    13/05/22 14:01 Heller $
+//$Header: /as2/de/mendelson/util/ColorUtil.java 14    2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import static de.mendelson.util.ColorUtil.getBestContrastColorAroundForeground;
@@ -21,7 +21,7 @@ import java.util.List;
  * background color could result in a bad color contrast
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ColorUtil {
 
@@ -124,7 +124,6 @@ public class ColorUtil {
      * even the same if the contrast is ok or a color that is brighter or darker
      *
      * @param background
-     * @param foregroundColors
      * @return
      */
     public static Color getBestContrastColorAroundForeground(Color background, Color foregroundColor) {
@@ -199,7 +198,6 @@ public class ColorUtil {
     }
 
     /**Mix two colors
-     * @param ration [0..1]
      */
     public static Color blend(Color color1, Color color2, float ratio) {
         //huh???

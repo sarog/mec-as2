@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMAccessDB.java 27    28/07/22 9:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMAccessDB.java 30    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -31,20 +31,19 @@ import java.util.logging.Logger;
  * Access the certificate lists in the database
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 30 $
  */
 public class CEMAccessDB {
 
     /**
      * Logger to log information to
      */
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private IDBDriverManager dbDriverManager;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final IDBDriverManager dbDriverManager;
 
     /**
      * Creates new message I/O log and connects to localhost
      *
-     * @param host host to connect to
      */
     public CEMAccessDB(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
@@ -56,7 +55,7 @@ public class CEMAccessDB {
     public static String convertCategory(int category) {
         if (category == CEMEntry.CATEGORY_CRYPT) {
             return ("encryption");
-        } else if (category == CEMEntry.CATEGORY_SSL) {
+        } else if (category == CEMEntry.CATEGORY_TLS) {
             return ("SSL");
         } else if (category == CEMEntry.CATEGORY_SIGN) {
             return ("signature");
@@ -85,14 +84,14 @@ public class CEMAccessDB {
                 }
             } catch (Exception e) {
                 this.logger.severe("CEMAccessDB.requestExists: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.requestExists: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
@@ -100,18 +99,18 @@ public class CEMAccessDB {
                         statement.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.requestExists: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
                     runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -145,16 +144,16 @@ public class CEMAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("CEMAccessDB.markAsProcessed: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -162,14 +161,14 @@ public class CEMAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.markAsProcessed: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -218,14 +217,14 @@ public class CEMAccessDB {
                 }
             } catch (Exception e) {
                 this.logger.severe("CEMAccessDB.getCEMEntriesPending: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCEMEntriesPending: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
@@ -233,18 +232,18 @@ public class CEMAccessDB {
                         statement.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCEMEntriesPending: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
                     runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -293,14 +292,14 @@ public class CEMAccessDB {
                 }
             } catch (Exception e) {
                 this.logger.severe("CEMAccessDB.getCEMEntries: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
             } finally {
                 if (result != null) {
                     try {
                         result.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCEMEntries: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statement != null) {
@@ -308,18 +307,18 @@ public class CEMAccessDB {
                         statement.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCEMEntries: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
                     runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -349,7 +348,7 @@ public class CEMAccessDB {
                         + "AND respondbydate IS NOT NULL "
                         + "AND respondbydate < ? AND processed=?");
                 statementSelect1.setInt(1, CEMEntry.CATEGORY_SIGN);
-                statementSelect1.setInt(2, CEMEntry.CATEGORY_SSL);
+                statementSelect1.setInt(2, CEMEntry.CATEGORY_TLS);
                 statementSelect1.setInt(3, CEMEntry.STATUS_ACCEPTED_INT);
                 statementSelect1.setInt(4, CEMEntry.STATUS_PENDING_INT);
                 statementSelect1.setLong(5, System.currentTimeMillis());
@@ -376,7 +375,7 @@ public class CEMAccessDB {
                         + "AND cemstate=? AND processed=?");
                 statementSelect2.setInt(1, CEMEntry.CATEGORY_CRYPT);
                 statementSelect2.setInt(2, CEMEntry.CATEGORY_SIGN);
-                statementSelect2.setInt(3, CEMEntry.CATEGORY_SSL);
+                statementSelect2.setInt(3, CEMEntry.CATEGORY_TLS);
                 statementSelect2.setInt(4, CEMEntry.STATUS_ACCEPTED_INT);
                 statementSelect2.setInt(5, 0);
                 resultCrypt = statementSelect2.executeQuery();
@@ -396,14 +395,14 @@ public class CEMAccessDB {
                 }
             } catch (Exception e) {
                 this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             } finally {
                 if (resultSign != null) {
                     try {
                         resultSign.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (resultCrypt != null) {
@@ -411,7 +410,7 @@ public class CEMAccessDB {
                         resultCrypt.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statementSelect1 != null) {
@@ -419,7 +418,7 @@ public class CEMAccessDB {
                         statementSelect1.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
                 if (statementSelect2 != null) {
@@ -427,18 +426,18 @@ public class CEMAccessDB {
                         statementSelect2.close();
                     } catch (Exception e) {
                         this.logger.severe("CEMAccessDB.getCertificatesToChange: " + e.getMessage());
-                        SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
         } finally {
             if (runtimeConnectionAutoCommit != null) {
                 try {
                     runtimeConnectionAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -487,16 +486,16 @@ public class CEMAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("CEMAccessDB.insertResponse: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -504,14 +503,14 @@ public class CEMAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.insertResponse: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -527,7 +526,7 @@ public class CEMAccessDB {
                 this.insertTrustRequest(info, initiator, receiver, request, trustRequest, CEMEntry.CATEGORY_CRYPT);
             }
             if (trustRequest.isCertUsageSSL()) {
-                this.insertTrustRequest(info, initiator, receiver, request, trustRequest, CEMEntry.CATEGORY_SSL);
+                this.insertTrustRequest(info, initiator, receiver, request, trustRequest, CEMEntry.CATEGORY_TLS);
             }
             if (trustRequest.isCertUsageSignature()) {
                 this.insertTrustRequest(info, initiator, receiver, request, trustRequest, CEMEntry.CATEGORY_SIGN);
@@ -575,31 +574,31 @@ public class CEMAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("CEMAccessDB.insertTrustRequest: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.insertTrustRequest: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -647,16 +646,16 @@ public class CEMAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe(e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (statement != null) {
@@ -664,14 +663,14 @@ public class CEMAccessDB {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe(e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }
@@ -702,31 +701,31 @@ public class CEMAccessDB {
             try {
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             } catch (Exception ex) {
-                SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
             }
             this.logger.severe("CEMAccessDB.removeEntry: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
         } finally {
             if (statement != null) {
                 try {
                     statement.close();
                 } catch (Exception e) {
                     this.logger.severe("CEMAccessDB.removeEntry: " + e.getMessage());
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (transactionStatement != null) {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (runtimeConnectionNoAutoCommit != null) {
                 try {
                     runtimeConnectionNoAutoCommit.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
         }

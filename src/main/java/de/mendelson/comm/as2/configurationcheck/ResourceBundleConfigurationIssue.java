@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 23    24/11/22 10:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 26    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 26 $
  */
 public class ResourceBundleConfigurationIssue extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -45,7 +45,7 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
         {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS), "Certificate expired (TLS)"},
         {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_TLS),
             "<HTML>Certificates have only a limited term. This is usually one, three or five years.<br>"
-            + "A certificate that you use in your system for the SSL/TLS handshake is no longer valid.<br>"
+            + "A certificate that you use in your system for the TLS handshake is no longer valid.<br>"
             + "It is not possible to perform cryptographic operations with an expired certificate - "
             + "so please make sure you renew the certificate or create or authenticate a new certificate.<br><br>"
             + "<strong>Additional information on the certificate:</strong><br><br>"
@@ -57,14 +57,14 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "<br></HTML>"},
         {String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE), "Multiple keys found in TLS keystore - must be single key"},
         {"hint." + String.valueOf(ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE),
-            "<HTML>There are several keys in the SSL/TLS keystore of your system.<br>"
-            + "However, only one key may be in it - this is used as the SSL/TLS key when the server is started.<br>"
-            + "Please delete the key from the SSL/TLS keystore until there is only one key left. You can recognize the keys in the certificate manager by the key symbol in the first column. After this change it is necessary to restart the server.</HTML>"},
+            "<HTML>There are several keys in the TLS keystore of your system.<br>"
+            + "However, only one key may be in it - this is used as the TLS key when the server is started.<br>"
+            + "Please delete the key from the TLS keystore until there is only one key left. You can recognize the keys in the certificate manager by the key symbol in the first column. After this change it is necessary to restart the server.</HTML>"},
         {String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE), "No key found in TLS keystore"},
         {"hint." + String.valueOf(ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE),
-            "<HTML>No key was found in the SSL/TLS keystore of your system.<br>"
+            "<HTML>No key was found in the TLS keystore of your system.<br>"
             + "You can recognize a key by the key symbol in front of it when you open the certificate manager.<br>"
-            + "Exactly one key is required in the SSL/TLS keystore to execute the handshake process of the SSL/TLS line security.<br>"
+            + "Exactly one key is required in the TLS keystore to execute the handshake process of the TLS line security.<br>"
             + "Without this key, you will not be able to establish secure connections either inbound or outbound.</HTML>"},
         {String.valueOf(ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE), "Setup auto delete process - Huge amount of transactions in the system"},
         {"hint." + String.valueOf(ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE),
@@ -112,12 +112,7 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "If you need a trusted key, please contact mendelson support.</HTML>"},
         {String.valueOf(ConfigurationIssue.JVM_32_BIT), "Using a 32bit Java VM is not recommended for production use as the max heap memory is limited there to 1.3GB"},
         {"hint." + String.valueOf(ConfigurationIssue.JVM_32_BIT),
-            "<HTML>Java 32bit processes cannot reserve enough memory to keep the system stable in productive operation. Please use a 64bit JVM.</HTML>"},
-        {String.valueOf(ConfigurationIssue.DIFFERENT_KEYSTORES_TLS), "TLS send and receive keystore are different"},
-        {"hint." + String.valueOf(ConfigurationIssue.DIFFERENT_KEYSTORES_TLS),
-            "<HTML>In the underlaying HTTP server you defined the keystore \"<strong>{0}</strong>\" for TLS (in the configuration file \"<strong>{1}</strong>\").<br><br>"
-            + "For HTTPS sending purpose you defined the keystore \"<strong>{2}</strong>\" in the server setting.<br><br>"
-            + "This works fine but you will not be able to manage both keystores with the one integrated TLS keystore manager.</HTML>"},
+            "<HTML>Java 32bit processes cannot reserve enough memory to keep the system stable in productive operation. Please use a 64bit JVM.</HTML>"},        
         {String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT), "Windows service started using a local system account"},
         {"hint." + String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT),
             "<HTML>You have set up the mendelson AS2 server as Windows service and start it from a local system account (\"{0}\").<br>"
@@ -132,23 +127,6 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "Please decrease this value by increasing the monitoring intervals of the respective partner directories and "
             + "also disable outbound directory monitoring for partners where this is not required.<br><br>"
             + "For a huge amount of partners it is recommended to disable all directory monitoring processes and create the send orders "
-            + "from your backend using the commands <i>AS2Send.exe</i> or <i>as2send.sh</i> on demand.</HTML>"},
-        {String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO), "Internal keystore file (sign/encryption) is read only"},
-        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_SIGN_ENCRYPT_RO),
-            "<HTML>The underlying file for managing cryptographic keys and certificates \"{0}\" cannot be written by the "
-            + "current user of the server process ({1}).<br>"
-            + "This does not limit the function of the system - but it is not possible to make changes "
-            + "in the certificate manager (signature/encryption).<br>"
-            + "So in this state you cannot add, delete or rename keys/certificates "
-            + "in the system."
-            + "</HTML>" },
-        {String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO), "Internal keystore file (TLS) is read only"},
-        {"hint." + String.valueOf(ConfigurationIssue.KEYSTORE_TLS_RO),
-            "<HTML>The underlying file for managing cryptographic keys and certificates \"{0}\" cannot be written by the "
-            + "current user of the server process ({1}).<br>"
-            + "This does not limit the function of the system - but it is not possible to make changes "
-            + "in the certificate manager (TLS).<br>"
-            + "So in this state you cannot add, delete or rename keys/certificates in the system."
-            + "</HTML>" },
+            + "from your backend using the commands <i>AS2Send.exe</i> or <i>as2send.sh</i> on demand.</HTML>"},        
     };
 }

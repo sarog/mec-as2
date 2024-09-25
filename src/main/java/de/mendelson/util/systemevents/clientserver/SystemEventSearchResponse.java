@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/clientserver/SystemEventSearchResponse.java 3     12.10.18 12:19 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/clientserver/SystemEventSearchResponse.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -18,12 +18,12 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class SystemEventSearchResponse extends ClientServerResponse implements Serializable {
 
-    public static final long serialVersionUID = 1L;
-    private List<SystemEvent> eventResultList = new ArrayList<SystemEvent>();
+    private static final long serialVersionUID = 1L;
+    private final List<SystemEvent> eventResultList = new ArrayList<SystemEvent>();
       
     public SystemEventSearchResponse(SystemEventSearchRequest request) {
         super(request);

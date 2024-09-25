@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListRequest.java 6     11.12.20 14:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListRequest.java 9     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,11 +18,11 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class PartnerListRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     public static final int LIST_ALL = 1;
     public static final int LIST_LOCALSTATION = 2;
     public static final int LIST_NON_LOCALSTATIONS = 3;
@@ -79,7 +81,6 @@ public class PartnerListRequest extends ClientServerMessage implements Serializa
     }
 
     /**
-     * @param additionalListOption the additionalListOption to set
      */
     public void setAdditionalListOptionStr(String additionalListOptionStr) {
         this.additionalListOptionStr = additionalListOptionStr;
@@ -101,5 +102,10 @@ public class PartnerListRequest extends ClientServerMessage implements Serializa
     
     public int getRequestedDataCompleteness(){
         return( this.requestedDataCompleteness );
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 }

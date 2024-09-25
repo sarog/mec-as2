@@ -1,13 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 14    6/05/18 3:14p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 18    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
+import java.util.concurrent.ConcurrentHashMap;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -20,11 +20,11 @@ import java.util.StringTokenizer;
  * Stores the options about the MDN, have been set by an inbound AS2 message
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 18 $
  */
 public class DispositionNotificationOptions implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     //"signed-receipt-protocol=optional, pkcs7-signature; signed-receipt-micalg=optional"
     private String headerValue = "";
@@ -32,7 +32,7 @@ public class DispositionNotificationOptions implements Serializable {
     /**
      * Stores the parsed options
      */
-    private final Map<String, String> propertyMap = new HashMap<String, String>();
+    private final Map<String, String> propertyMap = new ConcurrentHashMap<String, String>();
 
     /**
      * Creates a new instance of DispositionNotificationOptions

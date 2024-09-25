@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 75    26/09/22 10:36 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 81    9/11/23 10:09 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -27,7 +27,7 @@ import de.mendelson.util.XPathHelper;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.KeyStoreUtil;
-import de.mendelson.util.security.cert.KeystoreStorageImplFile;
+import de.mendelson.util.security.cert.KeystoreStorageImplDB;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -36,11 +36,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.Provider;
-import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
-import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -68,18 +65,18 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * like
  *
  * @author S.Heller
- * @version $Revision: 75 $
+ * @version $Revision: 81 $
  */
 public class CEMReceiptController {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private IDBDriverManager dbDriverManager;
-    private CertificateManager certificateManagerEncSign;
-    private MecResourceBundle rb;
-    private PreferencesAS2 preferences = new PreferencesAS2();
-    private ClientServer clientServer;
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final IDBDriverManager dbDriverManager;
+    private final CertificateManager certificateManagerEncSign;
+    private final MecResourceBundle rb;
+    private final PreferencesAS2 preferences;
+    private final ClientServer clientServer;
 
-    public static final String KEYSTORE_TYPE_SSL = "SSL";
+    public static final String KEYSTORE_TYPE_SSL = "TLS";
     public static final String KEYSTORE_TYPE_ENC_SIGN = "ENC_SIGN";
 
     public CEMReceiptController(ClientServer clientServer,
@@ -95,6 +92,7 @@ public class CEMReceiptController {
         this.dbDriverManager = dbDriverManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.clientServer = clientServer;
+        this.preferences = new PreferencesAS2(dbDriverManager);
     }
 
     /**
@@ -241,13 +239,12 @@ public class CEMReceiptController {
         }
         //now send the response and insert the response data into the database
         this.sendResponse(info, info.getReceiverId(), info.getSenderId(), response);
-        //send a CEM notification if this is requested in the config
-        SystemEventManagerImplAS2 manager = new SystemEventManagerImplAS2();
+        //send a CEM notification if this is requested in the config        
         try {
-            manager.newEventCEMRequestReceived(initiator, request.getRequestId());
+            SystemEventManagerImplAS2.instance().newEventCEMRequestReceived(initiator, request.getRequestId());
         } catch (Exception e) {
             logger.severe("CEMReceiptController: " + e.getMessage());
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         }
     }
 
@@ -377,7 +374,7 @@ public class CEMReceiptController {
                     }), info);
         } else {
             //import the new alias
-            importAlias = util.importX509Certificate(certificateManager.getKeystore(), certificate, BouncyCastleProvider.PROVIDER_NAME);
+            importAlias = util.importX509Certificate(certificateManager.getKeystore(), certificate);
             certificateManager.saveKeystore();
             this.logger.log(Level.FINE, this.rb.getResourceString(keystoreType + ".cert.imported.success",
                     new Object[]{
@@ -393,7 +390,7 @@ public class CEMReceiptController {
      * Auto imports the CEM request certificates into the encryption/sign
      * keystore if they dont exist so far
      */
-    private List<TrustResponse> importCertificates(Partner initiator, AS2MessageInfo info, 
+    private List<TrustResponse> importCertificates(Partner initiator, AS2MessageInfo info,
             EDIINTCertificateExchangeRequest request, List<AS2Payload> payloads) throws Throwable {
         KeyStoreUtil util = new KeyStoreUtil();
         List<TrustResponse> trustResponseList = new ArrayList<TrustResponse>();
@@ -442,27 +439,24 @@ public class CEMReceiptController {
                             //notify the user that a sign/encrypt certificate has been imported from the desired partner
                             if (imported) {
                                 String importAlias = util.getCertificateAlias(certificateManagerEncSign.getKeystore(), util.convertToX509Certificate(cert));
-                                SystemEventManagerImplAS2 manager = new SystemEventManagerImplAS2();
-                                manager.newEventEncSignCertificateAddedByCEM(initiator, certificateManagerEncSign.getKeystoreCertificate(importAlias));
+                                SystemEventManagerImplAS2.instance().newEventEncSignCertificateAddedByCEM(initiator, certificateManagerEncSign.getKeystoreCertificate(importAlias));
                             }
                         }
                         if (trustRequest.isCertUsageSSL()) {
                             //import the certificate into the SSL keystore
                             CertificateManager certificateManagerSSL = new CertificateManager(this.logger);
-                            String keystoreFile
-                                    = Paths.get(this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND)).toAbsolutePath().toString();
-                            KeystoreStorageImplFile storage = new KeystoreStorageImplFile(keystoreFile,
-                                    this.preferences.get(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS).toCharArray(),
-                                    KeystoreStorageImplFile.KEYSTORE_USAGE_SSL,
-                                    KeystoreStorageImplFile.KEYSTORE_STORAGE_TYPE_JKS
+                            KeystoreStorageImplDB storage = new KeystoreStorageImplDB(
+                                    SystemEventManagerImplAS2.instance(),
+                                    this.dbDriverManager,
+                                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS,
+                                    KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_JKS
                             );
                             certificateManagerSSL.loadKeystoreCertificates(storage);
                             boolean imported = this.importSingleCertificate(info, certificateManagerSSL, cert, KEYSTORE_TYPE_SSL);
                             //notify the user that a SSL/TLS certificate has been imported from the desired partner
                             if (imported) {
                                 String importAlias = util.getCertificateAlias(certificateManagerSSL.getKeystore(), util.convertToX509Certificate(cert));
-                                SystemEventManagerImplAS2 manager = new SystemEventManagerImplAS2();
-                                manager.newEventSSLCertificateAddedByCEM(initiator, certificateManagerSSL.getKeystoreCertificate(importAlias));
+                                SystemEventManagerImplAS2.instance().newEventSSLCertificateAddedByCEM(initiator, certificateManagerSSL.getKeystoreCertificate(importAlias));
                             }
                         }
                     }

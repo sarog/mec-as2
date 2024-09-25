@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AS2ServerProcessing.java 224   15/11/22 9:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AS2ServerProcessing.java 253   7/11/23 15:34 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -37,6 +37,8 @@ import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
 import de.mendelson.comm.as2.database.DBClientInformation;
 import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
 import de.mendelson.comm.as2.database.DBServerInformation;
+import de.mendelson.comm.as2.database.migration.clientserver.HSQLDBMigrationRequest;
+import de.mendelson.comm.as2.database.migration.clientserver.HSQLDBMigrationResponse;
 import de.mendelson.comm.as2.database.migration.clientserver.HSQLDBMigrationVersionMismatchException;
 import de.mendelson.comm.as2.database.migration.clientserver.HSQLDBPartnerRequest;
 import de.mendelson.comm.as2.database.migration.clientserver.HSQLDBPartnerResponse;
@@ -147,13 +149,39 @@ import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationRequest;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfoProcessor;
 import de.mendelson.util.log.LoggingHandlerLogEntryArray;
+import de.mendelson.util.mailautoconfig.MailAutoConfigurationDetection;
+import de.mendelson.util.mailautoconfig.MailServiceConfiguration;
+import de.mendelson.util.mailautoconfig.clientserver.MailAutoConfigDetectRequest;
+import de.mendelson.util.mailautoconfig.clientserver.MailAutoConfigDetectResponse;
 import de.mendelson.util.oauth2.OAuth2Util;
+import de.mendelson.util.security.BCCryptoHelper;
+import de.mendelson.util.security.JKSKeys2PKCS12;
+import de.mendelson.util.security.KeyStoreUtil;
+import de.mendelson.util.security.PKCS112PKCS12;
+import de.mendelson.util.security.PKCS122PKCS12;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.ResourceBundleCertificateManager;
+import de.mendelson.util.security.cert.clientserver.CSRAnswerImportRequest;
+import de.mendelson.util.security.cert.clientserver.CSRAnswerImportResponse;
+import de.mendelson.util.security.cert.clientserver.CSRGenerationRequest;
+import de.mendelson.util.security.cert.clientserver.CSRGenerationResponse;
+import de.mendelson.util.security.cert.clientserver.CertificateExportRequest;
+import de.mendelson.util.security.cert.clientserver.CertificateExportResponse;
+import de.mendelson.util.security.cert.clientserver.DownloadRequestKeystore;
+import de.mendelson.util.security.cert.clientserver.DownloadResponseKeystore;
+import de.mendelson.util.security.cert.clientserver.ExportRequestKeystore;
+import de.mendelson.util.security.cert.clientserver.ExportRequestPrivateKeyPKCS12;
+import de.mendelson.util.security.cert.clientserver.ExportResponseKeystore;
+import de.mendelson.util.security.cert.clientserver.ExportResponsePrivateKeyPKCS12;
+import de.mendelson.util.security.cert.clientserver.KeyCopyRequest;
+import de.mendelson.util.security.cert.clientserver.KeyCopyResponse;
 import de.mendelson.util.security.cert.clientserver.RefreshKeystoreCertificates;
 import de.mendelson.util.security.cert.clientserver.UploadRequestKeystore;
 import de.mendelson.util.security.cert.clientserver.UploadResponseKeystore;
+import de.mendelson.util.security.cert.gui.ResourceBundleCertificates;
+import de.mendelson.util.security.csr.CSRUtil;
+import de.mendelson.util.security.keydata.KeydataAccessDB;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import de.mendelson.util.systemevents.clientserver.SystemEventSearchRequest;
@@ -165,6 +193,7 @@ import de.mendelson.util.systemevents.notification.NotificationDataImplAS2;
 import de.mendelson.util.systemevents.notification.NotificationImplAS2;
 import de.mendelson.util.systemevents.notification.clientserver.NotificationGetResponse;
 import de.mendelson.util.systemevents.search.ServerSideEventSearch;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -173,13 +202,19 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
-import java.nio.file.AccessDeniedException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
+import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.PublicKey;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.text.DateFormat;
@@ -188,6 +223,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -202,6 +238,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.mina.core.session.IoSession;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.pkcs.PKCS10CertificationRequest;
 import org.jfree.data.time.SimpleTimePeriod;
 
 /*
@@ -215,24 +253,24 @@ import org.jfree.data.time.SimpleTimePeriod;
  * User defined processing to extend the client-server framework
  *
  * @author S.Heller
- * @version $Revision: 224 $
+ * @version $Revision: 253 $
  * @since build 68
  */
 public class AS2ServerProcessing implements ClientServerProcessing {
 
-    private DirPollManager pollManager;
+    private final DirPollManager pollManager;
     private final CertificateManager certificateManagerEncSign;
-    private final CertificateManager certificateManagerSSL;
+    private final CertificateManager certificateManagerTLS;
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * ResourceBundle to localize messages of the server
      */
-    private MecResourceBundle rb = null;
-    private MecResourceBundle rbPartnerConfig = null;
-    private MecResourceBundle rbPreferences = null;
-    private MecResourceBundle rbCertificateManager = null;
-    private MecResourceBundle rbConnectionTest = null;
-    private MecResourceBundle rbMessageDelete = null;
+    private final MecResourceBundle rb;
+    private final MecResourceBundle rbPartnerConfig;
+    private final MecResourceBundle rbPreferences;
+    private final MecResourceBundle rbCertificateManager;
+    private final MecResourceBundle rbConnectionTest;
+    private final MecResourceBundle rbMessageDelete;
 
     private final ClientServer clientserver;
     private final Map<String, String> uploadMap = new ConcurrentHashMap<String, String>();
@@ -249,7 +287,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     private final PartnerSystemAccessDB partnerSystemAccess;
     private final PartnerAccessDB partnerAccess;
     private final ConfigurationCheckController configurationCheckController;
-    private final PreferencesAS2 preferences = new PreferencesAS2();
+    private final PreferencesAS2 preferences;
     private final HTTPServerConfigInfo httpServerConfigInfo;
     private final ServerSideEventSearch eventSearch = new ServerSideEventSearch();
     private final ServerSideLogfileSearch logfileSearch = new ServerSideLogfileSearchImplAS2();
@@ -296,7 +334,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         this.dbDriverManager = dbDriverManager;
         this.pollManager = pollManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.certificateManagerSSL = certificateManagerSSL;
+        this.certificateManagerTLS = certificateManagerSSL;
         this.configurationCheckController = configurationCheckController;
         this.messageStoreHandler = new MessageStoreHandler(this.dbDriverManager);
         this.messageAccess = new MessageAccessDB(this.dbDriverManager);
@@ -305,6 +343,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         this.partnerAccess = new PartnerAccessDB(this.dbDriverManager);
         this.partnerSystemAccess = new PartnerSystemAccessDB(this.dbDriverManager);
         this.haAccess = new HAAccessDB();
+        this.preferences = new PreferencesAS2(this.dbDriverManager);
     }
 
     /**
@@ -334,7 +373,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
             } else if (message instanceof RefreshKeystoreCertificates) {
                 //a certificate manager signals that there are some changes made, reload all internal keystores
                 this.certificateManagerEncSign.rereadKeystoreCertificates();
-                this.certificateManagerSSL.rereadKeystoreCertificates();
+                this.certificateManagerTLS.rereadKeystoreCertificates();
                 return (true);
             }
         } catch (Exception e) {
@@ -358,6 +397,9 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 return (true);
             } else if (message instanceof UploadRequestKeystore) {
                 this.processUploadRequestKeystore(session, (UploadRequestKeystore) message);
+                return (true);
+            } else if (message instanceof DownloadRequestKeystore) {
+                this.processDownloadRequestKeystore(session, (DownloadRequestKeystore) message);
                 return (true);
             } else if (message instanceof FileRenameRequest) {
                 this.processFileRenameRequest(session, (FileRenameRequest) message);
@@ -479,6 +521,30 @@ public class AS2ServerProcessing implements ClientServerProcessing {
             } else if (message instanceof ClientToServerLogRequest) {
                 this.processClientToServerLogRequest(session, (ClientToServerLogRequest) message);
                 return (true);
+            } else if (message instanceof MailAutoConfigDetectRequest) {
+                this.processMailAutoConfigDetectRequest(session, (MailAutoConfigDetectRequest) message);
+                return (true);
+            } else if (message instanceof ExportRequestPrivateKeyPKCS12) {
+                this.processExportRequestPrivateKeyPKCS12(session, (ExportRequestPrivateKeyPKCS12) message);
+                return (true);
+            } else if (message instanceof ExportRequestKeystore) {
+                this.processExportRequestKeystore(session, (ExportRequestKeystore) message);
+                return (true);
+            } else if (message instanceof CSRGenerationRequest) {
+                this.processCSRGenerationRequest(session, (CSRGenerationRequest) message);
+                return (true);
+            } else if (message instanceof CSRAnswerImportRequest) {
+                this.processCSRAnswerImportRequest(session, (CSRAnswerImportRequest) message);
+                return (true);
+            } else if (message instanceof CertificateExportRequest) {
+                this.processCertificateExportRequest(session, (CertificateExportRequest) message);
+                return (true);
+            } else if (message instanceof KeyCopyRequest) {
+                this.processKeyCopyRequest(session, (KeyCopyRequest) message);
+                return (true);
+            } else if (message instanceof HSQLDBMigrationRequest) {
+                this.processHSQLDBMigrationRequest(session, (HSQLDBMigrationRequest) message);
+                return (true);
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -487,11 +553,440 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         return (false);
     }
 
+    private void processHSQLDBMigrationRequest(IoSession session, HSQLDBMigrationRequest request) {
+        HSQLDBMigrationResponse response = new HSQLDBMigrationResponse(request);
+        try {
+            DBDriverManagerHSQL driverManagerHSQL = DBDriverManagerHSQL.instance();
+            Connection configConnectionHSQLDB = null;
+            Connection runtimeConnectionHSQLDB = null;
+            try {
+                configConnectionHSQLDB = driverManagerHSQL.getConnectionFileBased(IDBDriverManager.DB_CONFIG);
+                configConnectionHSQLDB.setReadOnly(true);
+                runtimeConnectionHSQLDB = driverManagerHSQL.getConnectionFileBased(IDBDriverManager.DB_RUNTIME);
+                runtimeConnectionHSQLDB.setReadOnly(true);
+                int configDBVersion = this.getActualDBVersionHSQLDBMigration(configConnectionHSQLDB);
+                int runtimeDBVersion = this.getActualDBVersionHSQLDBMigration(runtimeConnectionHSQLDB);
+                if (configDBVersion != AS2ServerVersion.getRequiredDBVersionConfig()
+                        || runtimeDBVersion != AS2ServerVersion.getRequiredDBVersionRuntime()) {
+                    HSQLDBMigrationVersionMismatchException exception = new HSQLDBMigrationVersionMismatchException();
+                    exception.setRequiredVersionConfigDB(AS2ServerVersion.getRequiredDBVersionConfig());
+                    exception.setRequiredVersionRuntimeDB(AS2ServerVersion.getRequiredDBVersionRuntime());
+                    exception.setFoundVersionRuntimeDB(runtimeDBVersion);
+                    exception.setFoundVersionConfigDB(configDBVersion);
+                    throw exception;
+                }
+                
+                if (request.isMigrateKeystores()) {
+                    int importCount = 0;
+                    KeydataAccessDB keydataAccessHSQL = new KeydataAccessDB(driverManagerHSQL, SystemEventManagerImplAS2.instance());
+                    byte[] keystoreTLS = keydataAccessHSQL.getKeydata(KeydataAccessDB.KEYSTORE_USAGE_TLS);
+                    byte[] keystoreEncSign = keydataAccessHSQL.getKeydata(KeydataAccessDB.KEYSTORE_USAGE_ENC_SIGN);
+                    KeydataAccessDB keydataAccessSystem = new KeydataAccessDB(this.dbDriverManager, SystemEventManagerImplAS2.instance());
+                    keydataAccessSystem.updateKeydata(keystoreTLS, KeydataAccessDB.KEYSTORE_PKCS12, KeydataAccessDB.KEYSTORE_USAGE_TLS);
+                    importCount++;
+                    keydataAccessSystem.updateKeydata(keystoreEncSign, KeydataAccessDB.KEYSTORE_JKS, KeydataAccessDB.KEYSTORE_USAGE_ENC_SIGN);
+                    importCount++;
+                    response.setKeystoresSuccessfullyImported(importCount);
+                }
+                if (request.isMigratePreferences()) {
+                    this.preferences.resetAllServerValuesToDefaultValue(this.logger);
+                    int importCount = 0;
+                    PreparedStatement statement = null;
+                    ResultSet result = null;
+                    try {
+                        statement = configConnectionHSQLDB.prepareStatement("SELECT vkey,vvalue FROM serversettings");
+                        result = statement.executeQuery();
+                        while (result.next()) {
+                            String key = result.getString("vkey");
+                            String value = result.getString("vvalue");
+                            this.preferences.put(key, value);
+                            importCount++;
+                        }
+                        response.setPreferencesSuccessfullyImported(importCount);
+                    } finally {
+                        if (result != null) {
+                            result.close();
+                        }
+                        if (statement != null) {
+                            statement.close();
+                        }
+                    }
+                }
+            } finally {
+                if (configConnectionHSQLDB != null) {
+                    Statement shutdownStatement = null;
+                    try {
+                        shutdownStatement = configConnectionHSQLDB.createStatement();
+                        shutdownStatement.execute("SHUTDOWN");
+                    } finally {
+                        if (shutdownStatement != null) {
+                            shutdownStatement.close();
+                        }
+                    }
+                    configConnectionHSQLDB.close();
+                }
+                if (runtimeConnectionHSQLDB != null) {
+                    Statement shutdownStatement = null;
+                    try {
+                        shutdownStatement = runtimeConnectionHSQLDB.createStatement();
+                        shutdownStatement.execute("SHUTDOWN");
+                    } finally {
+                        if (shutdownStatement != null) {
+                            shutdownStatement.close();
+                        }
+                    }
+                    runtimeConnectionHSQLDB.close();
+                }
+            }
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
+    private void processKeyCopyRequest(IoSession session, KeyCopyRequest request) {
+        KeyCopyResponse response = new KeyCopyResponse(request);
+        try {
+            MecResourceBundle rbCertificates;
+            //load resource bundle
+            try {
+                rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
+                        ResourceBundleCertificates.class.getName());
+            } catch (MissingResourceException e) {
+                throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+            }
+            CertificateManager managerSource;
+            if (request.getKeystoreUsageSource() == KeyCopyRequest.KEYSTORE_USAGE_ENC_SIGN) {
+                managerSource = this.certificateManagerEncSign;
+            } else if (request.getKeystoreUsageSource() == KeyCopyRequest.KEYSTORE_USAGE_TLS) {
+                managerSource = this.certificateManagerTLS;
+            } else {
+                throw new IllegalArgumentException("processCertificateExportRequest: Unknown keystore usage source "
+                        + request.getKeystoreUsageSource());
+            }
+            CertificateManager managerTarget;
+            if (request.getKeystoreUsageTarget() == KeyCopyRequest.KEYSTORE_USAGE_ENC_SIGN) {
+                managerTarget = this.certificateManagerEncSign;
+            } else if (request.getKeystoreUsageTarget() == KeyCopyRequest.KEYSTORE_USAGE_TLS) {
+                managerTarget = this.certificateManagerTLS;
+            } else {
+                throw new IllegalArgumentException("processCertificateExportRequest: Unknown keystore usage target "
+                        + request.getKeystoreUsageTarget());
+            }
+            String sourceFingerprintSHA1 = request.getFingerprintSHA1();
+            if (managerTarget.getKeystoreCertificateByFingerprintSHA1(sourceFingerprintSHA1) != null) {
+                KeystoreCertificate targetCert = managerTarget
+                        .getKeystoreCertificateByFingerprintSHA1(sourceFingerprintSHA1);
+                String existingTargetAlias = targetCert.getAlias();
+                throw new Exception(rbCertificates.getResourceString("keycopy.target.exists.text",
+                        new Object[]{
+                            existingTargetAlias
+                        }));
+            }
+            if (!managerTarget.canWrite()) {
+                throw new Exception(rbCertificates.getResourceString("keycopy.target.ro.text"));
+            }
+            //find a working key alias for the target
+            KeystoreCertificate sourceCertificate
+                    = managerSource.getKeystoreCertificateByFingerprintSHA1NonNull(sourceFingerprintSHA1);
+            String sourceAlias = sourceCertificate.getAlias();
+            String targetAlias = sourceAlias;
+            int counter = 0;
+            Map<String, Certificate> certMap = managerTarget.loadCertificatesFromStorage();
+            while (certMap.containsKey(targetAlias)) {
+                counter++;
+                targetAlias = sourceAlias + "_" + counter;
+            }
+            if (sourceCertificate.getIsKeyPair()) {
+                PrivateKey sourceKey = (PrivateKey) managerSource.getKey(sourceAlias);
+                managerTarget.setKeyEntry(targetAlias,
+                        sourceKey,
+                        managerSource.getCertificateChain(sourceAlias));
+            } else {
+                managerTarget.addCertificate(targetAlias, sourceCertificate.getX509Certificate());
+            }
+            response.setUsedTargetAlias(targetAlias);
+            managerTarget.saveKeystore();
+            managerTarget.rereadKeystoreCertificates();
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
+    private void processCertificateExportRequest(IoSession session, CertificateExportRequest request) {
+        CertificateExportResponse response = new CertificateExportResponse(request);
+        try {
+            CertificateManager manager;
+            if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN) {
+                manager = this.certificateManagerEncSign;
+            } else if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS) {
+                manager = this.certificateManagerTLS;
+            } else {
+                throw new IllegalArgumentException("processCertificateExportRequest: Unknown keystore usage "
+                        + request.getKeystoreUsage());
+            }
+            KeystoreCertificate certificateEntry = manager.getKeystoreCertificateByFingerprintSHA1NonNull(request.getFingerprintSHA1());
+            String alias = certificateEntry.getAlias();
+            KeyStoreUtil util = new KeyStoreUtil();
+            String exportFormat = request.getExportFormat();
+            byte[] exportData = null;
+            if (exportFormat.equals(KeystoreCertificate.CERTIFICATE_FORMAT_PEM)) {
+                exportData = util.exportX509CertificatePEM(manager.getKeystore(), alias);
+            } else if (exportFormat.equals(KeystoreCertificate.CERTIFICATE_FORMAT_DER)) {
+                exportData = util.exportX509CertificateDER(manager.getKeystore(), alias);
+            } else if (exportFormat.equals(KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7)) {
+                List<X509Certificate> list = manager.computeTrustChain(alias);
+                X509Certificate[] certArray = new X509Certificate[list.size()];
+                list.toArray(certArray);
+                exportData = util.exportX509CertificatePKCS7(certArray);
+            } else if (exportFormat.equals(KeystoreCertificate.CERTIFICATE_FORMAT_SSH2)) {
+                exportData = util.exportPublicKeySSH2(manager.getPublicKey(alias));
+            }
+            response.setExportData(exportData);
+
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
+    private void processCSRAnswerImportRequest(IoSession session, CSRAnswerImportRequest request) {
+        CSRAnswerImportResponse response = new CSRAnswerImportResponse(request);
+        try {
+            CSRUtil csrUtil = new CSRUtil();
+            MecResourceBundle rbCertificates;
+            //load resource bundle
+            try {
+                rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
+                        ResourceBundleCertificates.class.getName());
+            } catch (MissingResourceException e) {
+                throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+            }
+            CertificateManager manager;
+            if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN) {
+                manager = this.certificateManagerEncSign;
+            } else if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS) {
+                manager = this.certificateManagerTLS;
+            } else {
+                throw new IllegalArgumentException("processCSRAnswerImportRequest: Unknown keystore usage "
+                        + request.getKeystoreUsage());
+            }
+            KeystoreCertificate keyEntry = manager.getKeystoreCertificateByFingerprintSHA1NonNull(request.getFingerprintSHA1());
+            String alias = keyEntry.getAlias();
+            PrivateKey privateKey = manager.getPrivateKey(alias);
+            if (request.isReNew()) {
+                //clones the key entry and sets the processing on the new one
+                KeyStoreUtil util = new KeyStoreUtil();
+                String newAlias = util.getProposalCertificateAliasForImport(keyEntry.getX509Certificate());
+                newAlias = util.ensureUniqueAliasName(manager.getKeystore(), newAlias);
+                if (newAlias == null) {
+                    throw new Exception("processCSRAnswerImportRequest [Processing failure]: Unable to set new key alias");
+                }
+                alias = newAlias;
+                manager.getKeystore().setKeyEntry(newAlias, privateKey,
+                        manager.getKeystorePass(), new X509Certificate[]{keyEntry.getX509Certificate()});
+            }
+            PublicKey publicKey = manager.getPublicKey(alias);
+            // Load certificates found in the PEM(!) encoded answer which is transfered as byte array
+            List<X509Certificate> responseCertList = new ArrayList<X509Certificate>();
+            ByteArrayInputStream inStream = null;
+            try {
+                inStream = new ByteArrayInputStream(request.getCSRAnswer());
+                for (Certificate responseCert : CertificateFactory.getInstance("X509").generateCertificates(inStream)) {
+                    responseCertList.add((X509Certificate) responseCert);
+                }
+            } finally {
+                if (inStream != null) {
+                    inStream.close();
+                }
+            }
+            if (responseCertList.isEmpty()) {
+                throw new Exception(rbCertificates.getResourceString("no.certificates.in.reply"));
+            }
+            PublicKey responsePublicKey = responseCertList.get(responseCertList.size() - 1).getPublicKey();
+            if (!publicKey.equals(responsePublicKey)) {
+                throw new Exception(rbCertificates.getResourceString("response.public.key.does.not.match"));
+            }
+            List<X509Certificate> newCerts;
+            if (responseCertList.size() == 1) {
+                // Reply has only one certificate
+                newCerts = csrUtil.buildNewTrustChain(manager, responseCertList.get(0));
+            } else {
+                // Reply has a chain of certificates
+                newCerts = csrUtil.validateReply(responseCertList);
+            }
+            if (newCerts != null) {
+                manager.setKeyEntry(alias, privateKey, newCerts.toArray(new X509Certificate[newCerts.size()]));
+                manager.saveKeystore();
+                manager.rereadKeystoreCertificates();
+            }
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
+    private void processCSRGenerationRequest(IoSession session, CSRGenerationRequest request) {
+        CSRGenerationResponse response = new CSRGenerationResponse(request);
+        try {
+            CertificateManager manager;
+            if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN) {
+                manager = this.certificateManagerEncSign;
+            } else if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS) {
+                manager = this.certificateManagerTLS;
+            } else {
+                throw new IllegalArgumentException("processCSRGenerationRequest: Unknown keystore usage "
+                        + request.getKeystoreUsage());
+            }
+            KeystoreCertificate key = manager.getKeystoreCertificateByFingerprintSHA1NonNull(request.getFingerprintSHA1());
+            String keyAlias = key.getAlias();
+            CSRUtil util = new CSRUtil();
+            PKCS10CertificationRequest csr = util.generateCSR(manager, keyAlias);
+            String csrPEM = util.storeCSRPEM(csr);
+            response.setCSRPEM(csrPEM);
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
+    private void processExportRequestPrivateKeyPKCS12(IoSession session, ExportRequestPrivateKeyPKCS12 request) {
+        ExportResponsePrivateKeyPKCS12 response = new ExportResponsePrivateKeyPKCS12(request);
+        try {
+            CertificateManager manager;
+            if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN) {
+                manager = this.certificateManagerEncSign;
+            } else if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS) {
+                manager = this.certificateManagerTLS;
+            } else {
+                throw new IllegalArgumentException("processExportRequestPrivateKeyPKCS12: Unknown keystore usage "
+                        + request.getKeystoreUsage());
+            }
+            KeyStoreUtil util = new KeyStoreUtil();
+            KeyStore sourceKeystore = manager.getKeystore();
+            KeystoreCertificate sourceKey = manager.getKeystoreCertificateByFingerprintSHA1NonNull(request.getFingerprintSHA1());
+            KeyStore targetKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12,
+                    BouncyCastleProvider.PROVIDER_NAME);
+            DateFormat format = new SimpleDateFormat("yyyyMMdd");
+            int counter = 1;
+            Path exportFile = Paths.get(request.getServerSideFilename(), "key_export" + format.format(new Date()) + ".p12");
+            while (Files.exists(exportFile)) {
+                exportFile = Paths.get(request.getServerSideFilename(), "key_export" + format.format(new Date())
+                        + "_" + counter
+                        + ".p12");
+                counter++;
+                if (!Files.exists(exportFile)) {
+                    break;
+                }
+            }
+            util.loadKeyStore(targetKeystore, exportFile.toAbsolutePath().toString(),
+                    request.getServerSidePass());
+            String keystoreFormatSource = manager.getStorageType();
+            if (keystoreFormatSource.equals(BCCryptoHelper.KEYSTORE_PKCS12)) {
+                PKCS122PKCS12 exporter = new PKCS122PKCS12(this.logger);
+                exporter.setTargetKeyStore(targetKeystore, request.getServerSidePass());
+                exporter.exportKeyFrom(sourceKeystore, sourceKey.getAlias());
+                exporter.saveTargetKeyStoreTo(exportFile);
+            } else if (keystoreFormatSource.equals(BCCryptoHelper.KEYSTORE_JKS)) {
+                JKSKeys2PKCS12 exporter = new JKSKeys2PKCS12(this.logger);
+                exporter.setTargetKeyStore(targetKeystore);
+                exporter.exportKeyFrom(sourceKeystore, manager.getKeystorePass(), sourceKey.getAlias());
+                exporter.saveKeyStore(targetKeystore, request.getServerSidePass(),
+                        exportFile);
+            } else if (keystoreFormatSource.equals(BCCryptoHelper.KEYSTORE_PKCS11)) {
+                PKCS112PKCS12 exporter = new PKCS112PKCS12(this.logger);
+                exporter.setTargetKeyStore(targetKeystore, request.getServerSidePass());
+                exporter.exportKeyFrom(sourceKeystore, sourceKey.getAlias());
+                exporter.saveTargetKeyStoreTo(exportFile);
+            } else {
+                throw new Exception("processExportRequestPrivateKeyPKCS12: Unknown source keystore storage type " + keystoreFormatSource);
+            }
+            response.setSaveFileOnServer(exportFile.toAbsolutePath().toString());
+        } catch (Throwable e) {
+            e.printStackTrace();
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
+    private void processExportRequestKeystore(IoSession session, ExportRequestKeystore request) {
+        ExportResponseKeystore response = new ExportResponseKeystore(request);
+        try {
+            String extension = null;
+            CertificateManager manager;
+            if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN) {
+                manager = this.certificateManagerEncSign;
+                extension = ".p12";
+            } else if (request.getKeystoreUsage() == ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS) {
+                manager = this.certificateManagerTLS;
+                extension = ".jks";
+            } else {
+                throw new IllegalArgumentException("processExportRequestKeystore: Unknown keystore usage "
+                        + request.getKeystoreUsage());
+            }
+            KeyStore sourceKeystore = manager.getKeystore();
+            DateFormat format = new SimpleDateFormat("yyyyMMdd");
+            int counter = 1;
+            Path exportFile = Paths.get(request.getServerSideFilename(), "keystore_export" + format.format(new Date()) + extension);
+            while (Files.exists(exportFile)) {
+                exportFile = Paths.get(request.getServerSideFilename(), "keystore_export" + format.format(new Date())
+                        + "_" + counter
+                        + extension);
+                counter++;
+                if (!Files.exists(exportFile)) {
+                    break;
+                }
+            }
+            OutputStream outStream = null;
+            try {
+                outStream = Files.newOutputStream(exportFile);
+                sourceKeystore.store(outStream, request.getServerSidePass());
+            } finally {
+                if (outStream != null) {
+                    outStream.close();
+                }
+            }
+            response.setSaveFileOnServer(exportFile.toAbsolutePath().toString());
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
+    /**
+     * Detects a mail server configuration for a give mail address
+     */
+    private void processMailAutoConfigDetectRequest(IoSession session, MailAutoConfigDetectRequest request) {
+        MailAutoConfigDetectResponse response = new MailAutoConfigDetectResponse(request);
+        try {
+            MailAutoConfigurationDetection detection = new MailAutoConfigurationDetection();
+            List<String> allowedServiceList = new ArrayList<String>();
+            allowedServiceList.add(MailServiceConfiguration.SERVICE_SMTP);
+            List<MailServiceConfiguration> list = detection.detectConfiguration(
+                    request.getMailAddress(), allowedServiceList);
+            if (list != null) {
+                response.setMailServiceConfiguration(list);
+            }
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        //sync response
+        session.write(response);
+    }
+
     private void processCommandRequest(IoSession session, CommandRequest request) {
         Path requestFile = Paths.get(this.uploadMap.get(request.getUploadHash()));
         ServersideAPICommandProcessing processing = new ServersideAPICommandProcessing(this.logger,
                 this.certificateManagerEncSign,
-                this.certificateManagerSSL, this.pollManager, this.clientserver, this.dbDriverManager);
+                this.certificateManagerTLS, this.pollManager, this.clientserver, this.dbDriverManager);
         String remoteAddress = session.getRemoteAddress().toString();
         String uniqueId = String.valueOf(session.getId());
         String userName = (String) session.getAttribute(ClientServerSessionHandler.SESSION_ATTRIB_USER);
@@ -663,7 +1158,8 @@ public class AS2ServerProcessing implements ClientServerProcessing {
      * Async request from a client to display information about the server
      */
     private void processDisplayServerConfigurationRequest(IoSession session, DisplayHTTPServerConfigurationRequest request) {
-        HTTPServerConfigInfoProcessor processor = new HTTPServerConfigInfoProcessor(this.httpServerConfigInfo);
+        HTTPServerConfigInfoProcessor processor = new HTTPServerConfigInfoProcessor(this.httpServerConfigInfo,
+                this.certificateManagerTLS);
         processor.processDisplayServerConfigurationRequest(session, request);
     }
 
@@ -727,7 +1223,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 proxy.setAddress(this.preferences.get(PreferencesAS2.PROXY_HOST));
                 proxy.setPort(this.preferences.getInt(PreferencesAS2.PROXY_PORT));
                 String proxyUserName = this.preferences.get(PreferencesAS2.AUTH_PROXY_USER);
-                if (proxyUserName != null && proxyUserName.trim().length() > 0) {
+                if (proxyUserName != null && !proxyUserName.trim().isEmpty()) {
                     proxy.setUserName(proxyUserName);
                     proxy.setPassword(this.preferences.get(PreferencesAS2.AUTH_PROXY_PASS));
                 }
@@ -738,7 +1234,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                         connectionTestRequest.getHost(),
                         connectionTestRequest.getPort(),
                         connectionTestRequest.getTimeout(),
-                        this.certificateManagerSSL,
+                        this.certificateManagerTLS,
                         this.rb.getResourceString("local.station"),
                         connectionTestRequest.getPartnerName(),
                         connectionTestRequest.getPartnerRole());
@@ -787,7 +1283,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
             logStr.append(response.getException().getMessage());
         }
         event.setBody(logStr.toString());
-        SystemEventManagerImplAS2.newEvent(event);
+        SystemEventManagerImplAS2.instance().newEvent(event);
         response.addLogEntries(list);
         session.write(response);
     }
@@ -818,7 +1314,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         Executors.newSingleThreadExecutor().submit(shutdownThread);
     }
 
-    private void performNotificationTest(IoSession session, PerformNotificationTestRequest message) throws Exception {
+    private void performNotificationTest(IoSession session, PerformNotificationTestRequest message) throws Throwable {
         String processOriginHost = session.getRemoteAddress().toString();
         String userName = (String) session.getAttribute(ClientServerSessionHandler.SESSION_ATTRIB_USER);
         ClientServerResponse response = new ClientServerResponse(message);
@@ -947,7 +1443,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         builder.append("---").append(System.lineSeparator());
         builder.append(transactionDeleteLog);
         event.setBody(builder.toString());
-        SystemEventManagerImplAS2.newEvent(event);
+        SystemEventManagerImplAS2.instance().newEvent(event);
         this.clientserver.broadcastToClients(refreshRequest);
     }
 
@@ -970,54 +1466,97 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         session.write(response);
     }
 
-    private void processUploadRequestKeystore(IoSession session, UploadRequestKeystore request) {
-        String keystoreTypeForLog = this.rbCertificateManager.getResourceString("keystore." + request.getKeystoreStorageType());
-        String processOriginHost = session.getRemoteAddress().toString();
-        String userName = (String) session.getAttribute(ClientServerSessionHandler.SESSION_ATTRIB_USER);
-        List<KeystoreCertificate> oldCertificateList = new ArrayList<KeystoreCertificate>();
-        if (request.getKeystoreUsage() == UploadRequestKeystore.KEYSTORE_TYPE_SSL) {
-            oldCertificateList.addAll(this.certificateManagerSSL.getKeyStoreCertificateList());
-        } else {
-            oldCertificateList.addAll(this.certificateManagerEncSign.getKeyStoreCertificateList());
-        }
-        UploadResponseKeystore response = new UploadResponseKeystore(request);
-        CertificateManager newManager = null;
+    private void processDownloadRequestKeystore(IoSession session, DownloadRequestKeystore request) {
+        DownloadResponseKeystore response = new DownloadResponseKeystore(request);
+        List<KeystoreCertificate> certificateList;
+        CertificateManager relatedCertificateManager = null;
         try {
-            String uploadHash = request.getUploadHash();
-            Path tempFile = null;
-            tempFile = Paths.get(this.uploadMap.get(uploadHash));
-            Path targetFile = Paths.get(request.getTargetFilename());
-            try {
-                Files.delete(targetFile);
-            } catch (Exception e) {
-                //nop
+            if (request.getKeystoreUsage() == DownloadRequestKeystore.KEYSTORE_TYPE_ENC_SIGN) {
+                relatedCertificateManager = this.certificateManagerEncSign;
+            } else if (request.getKeystoreUsage() == DownloadRequestKeystore.KEYSTORE_TYPE_TLS) {
+                relatedCertificateManager = this.certificateManagerTLS;
+            } else {
+                throw new IllegalArgumentException("Unknown storage usage " + request.getKeystoreUsage());
             }
-            Files.move(tempFile, targetFile, StandardCopyOption.ATOMIC_MOVE, StandardCopyOption.REPLACE_EXISTING);
-            this.uploadMap.remove(uploadHash);
-            try {
-                Files.delete(tempFile);
-            } catch (Exception e) {
-                //nop
+            certificateList = relatedCertificateManager.getKeyStoreCertificateList();
+            //do not send private keys to the client - just generate dummy keys
+            List<KeystoreCertificate> displayList = new ArrayList<KeystoreCertificate>();
+            for (KeystoreCertificate entry : certificateList) {
+                if (entry.getIsKeyPair()) {
+                    KeystoreCertificate clonedEntry = (KeystoreCertificate) entry.clone();
+                    clonedEntry.setToDisplayMode();
+                    displayList.add(clonedEntry);
+                } else {
+                    displayList.add(entry);
+                }
             }
-            if (request.getKeystoreUsage() == UploadRequestKeystore.KEYSTORE_TYPE_SSL) {
-                this.certificateManagerSSL.rereadKeystoreCertificates();
-                newManager = this.certificateManagerSSL;
-            } else if (request.getKeystoreUsage() == UploadRequestKeystore.KEYSTORE_TYPE_ENC_SIGN) {
-                this.certificateManagerEncSign.rereadKeystoreCertificates();
-                newManager = this.certificateManagerEncSign;
-            }
-        } catch (AccessDeniedException e) {
-            IOException exception = new IOException("[" + e.getClass().getSimpleName() + "] "
-                    + this.rbCertificateManager.getResourceString("keystore." + request.getKeystoreStorageType()));
-            response.setException(exception);
-        } catch (Exception e) {
+            response.addCertificateList(displayList);
+        } catch (Throwable e) {
             response.setException(e);
         }
         session.write(response);
-        if (response.getException() == null) {
+    }
+
+    private void processUploadRequestKeystore(IoSession session, UploadRequestKeystore request) {
+        UploadResponseKeystore response = new UploadResponseKeystore(request);
+        String processOriginHost = session.getRemoteAddress().toString();
+        String userName = (String) session.getAttribute(ClientServerSessionHandler.SESSION_ATTRIB_USER);
+        String storageType = null;
+        List<KeystoreCertificate> existingCertificateList = new ArrayList<KeystoreCertificate>();
+        CertificateManager relatedCertificateManager = null;
+        if (request.getKeystoreUsage() == UploadRequestKeystore.KEYSTORE_TYPE_TLS) {
+            relatedCertificateManager = this.certificateManagerTLS;
+        } else if (request.getKeystoreUsage() == UploadRequestKeystore.KEYSTORE_TYPE_ENC_SIGN) {
+            relatedCertificateManager = this.certificateManagerEncSign;
+        } else {
+            throw new IllegalArgumentException("Unknown storage usage " + request.getKeystoreUsage());
+        }
+        storageType = relatedCertificateManager.getStorageType();
+        existingCertificateList.addAll(relatedCertificateManager.getKeyStoreCertificateList());
+        String keystoreTypeForLog = this.rbCertificateManager.getResourceString("keystore." + storageType);
+        CertificateManager newManager = null;
+        try {
+            List<KeystoreCertificate> uploadedCertificateList = request.getCertificateList();
+            List<KeystoreCertificate> certificateListWithKeys = new ArrayList<KeystoreCertificate>();
+            //replace display mode entries - these are the key entries that do already exist
+            for (KeystoreCertificate uploadedEntry : uploadedCertificateList) {
+                if (uploadedEntry.getIsKeyPair()) {
+                    String fingerprintSHA1 = uploadedEntry.getFingerPrintSHA1();
+                    KeystoreCertificate existingEntry = relatedCertificateManager
+                            .getKeystoreCertificateByFingerprintSHA1(fingerprintSHA1);
+                    if (existingEntry != null) {
+                        //the entry did already exist - take the key part
+                        if (existingEntry.getIsKeyPair()) {
+                            KeystoreCertificate existingEntryCloned = (KeystoreCertificate) existingEntry.clone();
+                            //its possible that the alias has been changed
+                            existingEntryCloned.setAlias(uploadedEntry.getAlias());
+                            certificateListWithKeys.add(existingEntryCloned);
+                        }
+                    } else {
+                        //new key entry, imported
+                        certificateListWithKeys.add(uploadedEntry);
+                    }
+                } else {
+                    certificateListWithKeys.add(uploadedEntry);
+                }
+            }
+            if (request.getKeystoreUsage() == UploadRequestKeystore.KEYSTORE_TYPE_TLS) {
+                this.certificateManagerTLS.replaceAllEntriesAndSave(certificateListWithKeys);
+                newManager = this.certificateManagerTLS;
+            } else if (request.getKeystoreUsage() == UploadRequestKeystore.KEYSTORE_TYPE_ENC_SIGN) {
+                this.certificateManagerEncSign.replaceAllEntriesAndSave(certificateListWithKeys);
+                newManager = this.certificateManagerEncSign;
+            } else {
+                throw new IllegalArgumentException("Unknown storage usage " + request.getKeystoreUsage());
+            }
+        } catch (Throwable e) {
+            response.setException(e);
+        }
+        session.write(response);
+        if (response.getException() == null && newManager != null) {
             //everything worked fine? Now check the changes and fire system events
             this.analyzeCertificateChanges(userName, processOriginHost,
-                    keystoreTypeForLog, oldCertificateList, newManager.getKeyStoreCertificateList());
+                    keystoreTypeForLog, existingCertificateList, newManager.getKeyStoreCertificateList());
         }
     }
 
@@ -1049,7 +1588,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 event.setSubject(subject);
                 event.setProcessOriginHost(processOriginHost);
                 event.setUser(userName);
-                SystemEventManagerImplAS2.newEvent(event);
+                SystemEventManagerImplAS2.instance().newEvent(event);
             } else {
                 //the certificate existed already - check if the alias has been changed
                 KeystoreCertificate oldCertificate = oldList.get(index);
@@ -1071,7 +1610,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                     event.setSubject(subject);
                     event.setProcessOriginHost(processOriginHost);
                     event.setUser(userName);
-                    SystemEventManagerImplAS2.newEvent(event);
+                    SystemEventManagerImplAS2.instance().newEvent(event);
                 }
             }
         }
@@ -1094,7 +1633,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 event.setSubject(subject);
                 event.setProcessOriginHost(processOriginHost);
                 event.setUser(userName);
-                SystemEventManagerImplAS2.newEvent(event);
+                SystemEventManagerImplAS2.instance().newEvent(event);
             }
         }
     }
@@ -1236,7 +1775,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                                 message.getAS2Info().getMessageId()
                             }));
                     event.setSubject(this.rb.getResourceString("message.resend.title"));
-                    SystemEventManagerImplAS2.newEvent(event);
+                    SystemEventManagerImplAS2.instance().newEvent(event);
                 }
                 this.clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
             }
@@ -1256,19 +1795,22 @@ public class AS2ServerProcessing implements ClientServerProcessing {
     private void processPreferencesRequest(IoSession session, PreferencesRequest request) {
         if (request.getType() == PreferencesRequest.TYPE_GET) {
             PreferencesResponse response = new PreferencesResponse(request);
+            this.preferences.clearCache();
             response.setValue(this.preferences.get(request.getKey()));
             session.write(response);
         } else if (request.getType() == PreferencesRequest.TYPE_GET_DEFAULT) {
             PreferencesResponse response = new PreferencesResponse(request);
-            response.setValue(this.preferences.getDefaultValue(request.getKey()));
+            response.setValue(PreferencesAS2.getDefaultValue(request.getKey()));
             session.write(response);
         } else if (request.getType() == PreferencesRequest.TYPE_SET) {
+            this.preferences.clearCache();
             String oldValue = this.preferences.get(request.getKey());
             if (!oldValue.equals(request.getValue())) {
                 this.preferences.put(request.getKey(), request.getValue());
                 String processOriginHost = session.getRemoteAddress().toString();
                 String userName = (String) session.getAttribute(ClientServerSessionHandler.SESSION_ATTRIB_USER);
-                this.fireEventPreferencesModified(userName, processOriginHost, request.getKey(), oldValue, request.getValue());
+                this.fireEventPreferencesModified(userName, processOriginHost, request.getKey(),
+                        oldValue, request.getValue());
             }
         }
     }
@@ -1290,11 +1832,9 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         event.setSubject(subject);
         event.setProcessOriginHost(processOriginHost);
         event.setUser(userName);
-        SystemEventManagerImplAS2.newEvent(event);
+        SystemEventManagerImplAS2.instance().newEvent(event);
         //do no broadcast passwords
-        if (key.equals(PreferencesAS2.AUTH_PROXY_PASS)
-                || key.equals(PreferencesAS2.KEYSTORE_HTTPS_SEND_PASS)
-                || key.equals(PreferencesAS2.KEYSTORE_PASS)) {
+        if (key.equals(PreferencesAS2.AUTH_PROXY_PASS)) {
             oldValue = "***";
             newValue = "***";
         }
@@ -1400,7 +1940,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                         "httpheader",
                         "partnersystem",
                         "oauth2"
-                    });            
+                    });
             try {
                 //first delete all partners that are in the DB but not in the new list
                 List<Partner> existingPartner = this.partnerAccess.getAllPartner(
@@ -1425,7 +1965,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                                 oldPartner = testPartner;
                             }
                         }
-                        if (oldPartner != null 
+                        if (oldPartner != null
                                 && !Partner.hasSameContent(
                                         oldPartner, newPartner.get(i), this.certificateManagerEncSign)) {
                             this.fireEventPartnerModified(userName, processOriginHost, oldPartner, newPartner.get(i));
@@ -1438,9 +1978,9 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                     //an error occured - rollback transaction and release all locks
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 } catch (Exception ex) {
-                    SystemEventManagerImplAS2.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
                 }
-                SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
             }
         } catch (Throwable e) {
             response.setException(e);
@@ -1449,7 +1989,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 try {
                     transactionStatement.close();
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
                 }
             }
             if (configConnectionNoAutoCommit != null) {
@@ -1478,7 +2018,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         event.setSubject(subject);
         event.setProcessOriginHost(processOriginHost);
         event.setUser(userName);
-        SystemEventManagerImplAS2.newEvent(event);
+        SystemEventManagerImplAS2.instance().newEvent(event);
     }
 
     /**
@@ -1495,7 +2035,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         event.setSubject(subject);
         event.setProcessOriginHost(processOriginHost);
         event.setUser(userName);
-        SystemEventManagerImplAS2.newEvent(event);
+        SystemEventManagerImplAS2.instance().newEvent(event);
     }
 
     /**
@@ -1516,7 +2056,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
         event.setSubject(subject);
         event.setProcessOriginHost(processOriginHost);
         event.setUser(userName);
-        SystemEventManagerImplAS2.newEvent(event);
+        SystemEventManagerImplAS2.instance().newEvent(event);
     }
 
     /**
@@ -1644,7 +2184,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                     }));
             event.setUser(userName);
             event.setProcessOriginHost(processOriginHost);
-            SystemEventManagerImplAS2.newEvent(event);
+            SystemEventManagerImplAS2.instance().newEvent(event);
             //inform all attached clients about the changes via server push message
             this.clientserver.broadcastToClients(new ConfigurationChangedOnServerNotification());
         }
@@ -1826,6 +2366,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                     + this.dbClientInformation.getProductVersion();
             response.setProperty(ServerInfoRequest.DB_CLIENT_VERSION, dbClient);
         }
+        response.setProperty(ServerInfoRequest.LICENSE_TYPE, AS2Server.getLicenseType());
         if (this.httpServerConfigInfo != null) {
             response.setProperty(ServerInfoRequest.HTTP_SERVER_VERSION, "Jetty " + this.httpServerConfigInfo.getJettyHTTPServerVersion());
         } else {
@@ -1863,7 +2404,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                         String.valueOf(foundNodes));
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e);
+            SystemEventManagerImplAS2.instance().systemFailure(e);
         }
         session.write(response);
     }
@@ -1892,12 +2433,11 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 AS2MessageInfo messageInfo = (AS2MessageInfo) as2Exception.getAS2Message().getAS2Info();
                 messageInfo.setUsesTLS(incomingMessageRequest.usesTLS());
                 //fire a system event for a failed inbound message processing
-                SystemEventManagerImplAS2 eventManager = new SystemEventManagerImplAS2();
                 try {
-                    eventManager.newEventTransactionError(messageInfo.getMessageId(),
+                    SystemEventManagerImplAS2.instance().newEventTransactionError(messageInfo.getMessageId(),
                             this.dbDriverManager);
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                 }
                 String foundSenderId = messageInfo.getSenderId();
                 String foundReceiverId = messageInfo.getReceiverId();
@@ -1955,7 +2495,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                 message.append(" - caused by [" + e.getCause().getClass().getName() + "] " + e.getCause().getMessage());
             }
             this.logger.severe(message.toString());
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
         }
         session.write(incomingMessageResponse);
     }
@@ -2135,7 +2675,6 @@ public class AS2ServerProcessing implements ClientServerProcessing {
                     errorMessage.append(this.rb.getResourceString("info.mdn.inboundfiles",
                             new Object[]{rawIncomingFile, rawIncomingFileHeader}));
                     this.logger.log(Level.SEVERE, errorMessage.toString());
-                } else {
                 }
                 //an exception occured in processing an inbound MDN, signal back an error to the sender by HTTP code.
                 // This will only work for ASYNC MDN because there is a logical problem in sync MDN processing:
@@ -2259,7 +2798,7 @@ public class AS2ServerProcessing implements ClientServerProcessing {
             }
         } //this feature is really NOT that important to stop an inbound message
         catch (Exception e) {
-            SystemEventManagerImplAS2.systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
         }
     }
 

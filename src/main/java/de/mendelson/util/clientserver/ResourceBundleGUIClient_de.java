@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleGUIClient_de.java 11    4/06/18 1:35p Heller $
+//$Header: /as4/de/mendelson/util/clientserver/ResourceBundleGUIClient_de.java 14    6/11/23 11:38 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,11 +14,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleGUIClient_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     @Override
     public Object[][] getContents() {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 21    26/09/22 10:19 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 23    2/11/23 14:03 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.ColorUtil;
@@ -15,7 +15,6 @@ import java.io.File;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.security.Provider;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,7 +39,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * or a passed object
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 23 $
  */
 public class JDialogInfoOnExternalCertificate extends JDialog {
 
@@ -54,14 +53,12 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     private boolean importPressed = false;
     private List<String> infoTextList = new ArrayList<String>();
     private int certificateIndex = 0;
-    private CertificateManager certificateManager;
-    private List<X509Certificate> certList = new ArrayList<X509Certificate>();
+    private final CertificateManager certificateManager;
+    private final List<X509Certificate> certList = new ArrayList<X509Certificate>();
 
     /**
      * Creates new form JDialogPartnerConfig
      *
-     * @param parameter Parameter to edit, null for a new one
-     * @param parameterList List of available parameter
      */
     @Deprecated (since="2019")
     public JDialogInfoOnExternalCertificate(JFrame parent, File certFile, CertificateManager certificateManager) {
@@ -71,8 +68,6 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     /**
      * Creates new form JDialogPartnerConfig
      *
-     * @param parameter Parameter to edit, null for a new one
-     * @param parameterList List of available parameter
      */
     public JDialogInfoOnExternalCertificate(JFrame parent, Path certFile, CertificateManager certificateManager) {
         super(parent, true);
@@ -110,8 +105,6 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     /**
      * Creates new form JDialogPartnerConfig
      *
-     * @param parameter Parameter to edit, null for a new one
-     * @param parameterList List of available parameter
      */
     public JDialogInfoOnExternalCertificate(JFrame parent, List<X509Certificate> certs, CertificateManager certificateManager) {
         super(parent, true);
@@ -153,7 +146,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         boolean certificateAlreadyImported = false;
         if (this.certificateIsOk) {
             KeystoreCertificate certificate = new KeystoreCertificate();
-            certificate.setCertificate(certList.get(this.getCertificateIndex()));
+            certificate.setCertificate(certList.get(this.getCertificateIndex()), null);
             String fingerprintSHA1 = certificate.getFingerPrintSHA1();
             String foundAlias = this.certificateManager.getAliasByFingerprint(fingerprintSHA1);
             if (foundAlias != null) {
@@ -179,9 +172,9 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         List<String> infoList = new ArrayList<String>();
         for (int i = 0; i < certList.size(); i++) {
             StringBuilder infoText = new StringBuilder();
-            X509Certificate cert = (X509Certificate) certList.get(i);
+            X509Certificate certificate = (X509Certificate) certList.get(i);
             KeystoreCertificate keystoreCert = new KeystoreCertificate();
-            keystoreCert.setCertificate(cert);
+            keystoreCert.setCertificate(certificate, null);
             infoText.append(keystoreCert.getInfo());
             infoList.add(infoText.toString());
         }

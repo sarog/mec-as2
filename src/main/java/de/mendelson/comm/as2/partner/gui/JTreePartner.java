@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JTreePartner.java 36    27.07.21 15:33 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JTreePartner.java 37    1/11/23 10:25 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -28,7 +28,7 @@ import javax.swing.tree.TreePath;
  * Tree to display the AS2 partner
  *
  * @author S.Heller
- * @version $Revision: 36 $
+ * @version $Revision: 37 $
  */
 public class JTreePartner extends JTree {
 
@@ -42,8 +42,8 @@ public class JTreePartner extends JTree {
     /**
      * This is the root node
      */
-    private SortableTreeNode root = null;
-    private BaseClient baseClient;
+    private final SortableTreeNode root;
+    private final BaseClient baseClient;
 
     /**
      * Tree constructor
@@ -182,7 +182,7 @@ public class JTreePartner extends JTree {
         partner.setMdnURL(partner.getDefaultURL());
         partner.setLocalStation(false);
         List<KeystoreCertificate> list = certificateManagerEncSign.getKeyStoreCertificateList();
-        if (list.size() > 0) {
+        if (!list.isEmpty()) {
             KeystoreCertificate certificate = list.get(0);
             //just take the first entry
             PartnerCertificateInformation signInfo = new PartnerCertificateInformation(

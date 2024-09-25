@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelMDN.java 23    2/08/22 14:04 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelMDN.java 25    1/11/23 14:57 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.JTextFieldLimitDocument;
@@ -21,14 +21,14 @@ import javax.swing.ImageIcon;
  * Panel to define the MDN preferences
  *
  * @author S.Heller
- * @version: $Revision: 23 $
+ * @version: $Revision: 25 $
  */
 public class PreferencesPanelMDN extends PreferencesPanel {
 
     /**
      * Localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private final MecResourceBundle rb;
 
     protected final static MendelsonMultiResolutionImage IMAGE_PREFS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/preferences.svg",
@@ -37,7 +37,8 @@ public class PreferencesPanelMDN extends PreferencesPanel {
     /**
      * GUI prefs
      */
-    private PreferencesClient preferences;
+    private final PreferencesClient preferences;
+    private String preferencesStrAtLoadTime = "";
 
     /**
      * Creates new form PreferencesPanelDirectories
@@ -63,9 +64,24 @@ public class PreferencesPanelMDN extends PreferencesPanel {
      */
     @Override
     public void loadPreferences() {
-        this.jTextFieldAsyncMDNTimeout.setText(this.preferences.get(PreferencesAS2.ASYNC_MDN_TIMEOUT));        
+        this.jTextFieldAsyncMDNTimeout.setText(this.preferences.get(PreferencesAS2.ASYNC_MDN_TIMEOUT));
+        this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
+    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
+    private String captureSettingsToStr(){
+        StringBuilder builder = new StringBuilder();
+        builder.append( PreferencesAS2.ASYNC_MDN_TIMEOUT ).append("=")
+                .append( this.jTextFieldAsyncMDNTimeout.getText()).append(";");        
+        return( builder.toString() );
+    }
+    
+    
+    @Override
+    public boolean preferencesAreModified() {
+        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+    }
+        
     /**
      * Stores the preferences once the ok button has been pressed
      */

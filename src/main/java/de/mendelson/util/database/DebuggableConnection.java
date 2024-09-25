@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/database/DebuggableConnection.java 10    10/11/22 11:57 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggableConnection.java 12    24/11/23 11:55 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Array;
@@ -31,15 +31,15 @@ import java.util.logging.Logger;
  */
 
 /**
- * Database connection that could be debugged
+ * Wrapper for a database connection that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class DebuggableConnection implements Connection {
 
-    private Connection connection = null;
-    private Logger connectionLogger = null;
+    private final Connection connection;
+    private final Logger connectionLogger;
     private String connectionName = "Unknown connection";
     /**
      * Counter for the unique query ids
@@ -62,7 +62,7 @@ public class DebuggableConnection implements Connection {
         if( connectionName == null ){
             connectionName = "";
         }        
-        String uniqueId = this.createId();
+        String uniqueId = createId();
         this.connectionName = connectionName + " " + uniqueId;
         if( this.connectionLogger != null ){
             this.connectionLogger.info( "New connection [" + this.connectionName + "]");
@@ -373,26 +373,26 @@ public class DebuggableConnection implements Connection {
 
     @Override
     public void setSchema(String schema) throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        this.connection.setSchema(schema);
     }
 
     @Override
     public String getSchema() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return( this.connection.getSchema());
     }
 
     @Override
     public void abort(Executor executor) throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        this.connection.abort(executor);
     }
 
     @Override
     public void setNetworkTimeout(Executor executor, int milliseconds) throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        this.connection.setNetworkTimeout(executor, milliseconds);
     }
 
     @Override
     public int getNetworkTimeout() throws SQLException {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return( this.connection.getNetworkTimeout());
     }
 }

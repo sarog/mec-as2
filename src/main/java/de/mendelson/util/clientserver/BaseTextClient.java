@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/BaseTextClient.java 17    11/02/22 13:14 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseTextClient.java 18    2/11/23 14:02 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.console.LoggingHandlerPrintStream;
@@ -26,14 +26,14 @@ import java.util.logging.Logger;
  * Text Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 18 $
  */
 public abstract class BaseTextClient implements ClientSessionHandlerCallback {
 
-    private Logger logger = Logger.getAnonymousLogger();
+    private final Logger logger = Logger.getAnonymousLogger();
     private BaseClient baseClient = null;
     private final List<ClientsideMessageProcessor> messageProcessorList = Collections.synchronizedList(new ArrayList<ClientsideMessageProcessor>());
-    private PrintStream out;
+    private final PrintStream out;
     private String host = null;
 
     public BaseTextClient() {
@@ -164,7 +164,6 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
      * Once the request has been sent this will wait for an answer without any
      * timeout.
      *
-     * @param message
      */
     public ClientServerResponse sendSyncWaitInfinite(ClientServerMessage request) {
         return (this.getBaseClient().sendSyncWaitInfinite(request));

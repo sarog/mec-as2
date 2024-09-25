@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 5     17.09.19 12:07 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import java.io.BufferedReader;
@@ -40,7 +40,7 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public abstract class ServerSideLogfileSearch {
 
@@ -145,7 +145,7 @@ public abstract class ServerSideLogfileSearch {
                         //ignore this - it is possible that a corrupted index prevent the
                         //regeneration of the object
                     }
-                }                
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -175,8 +175,6 @@ public abstract class ServerSideLogfileSearch {
      */
     private void recreateIndex(Date date, String indexDirStr) throws IOException {
         int logFileCount = 0;
-        int indexedLines = 0;
-        long startTime = System.currentTimeMillis();
         IndexWriter indexWriter = null;
         Path indexDirPath = Paths.get(indexDirStr);
         //generate index
@@ -201,7 +199,7 @@ public abstract class ServerSideLogfileSearch {
                         while (line != null) {
                             line = reader.readLine();
                             try {
-                                if (line != null && line.length() > 0 && line.startsWith("[")) {
+                                if (line != null && !line.isEmpty() && line.startsWith("[")) {
                                     int headerEndIndex = line.indexOf("]");
                                     if (headerEndIndex > 0) {
                                         String header = line.substring(1, headerEndIndex);
@@ -239,7 +237,6 @@ public abstract class ServerSideLogfileSearch {
             }
             //finally rewrite the index
             indexWriter.commit();
-            indexedLines = indexWriter.getDocStats().numDocs;
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
@@ -251,8 +248,6 @@ public abstract class ServerSideLogfileSearch {
                 e.printStackTrace();
             }
         }
-//        System.out.println("DEBUG Recreated index " + indexDirPath.toString() + " in " + (System.currentTimeMillis() - startTime) + "ms");
-//        System.out.println("DEBUG Log files found: " + logFileCount + " with " + indexedLines + " indexed lines");        
     }
 
 }

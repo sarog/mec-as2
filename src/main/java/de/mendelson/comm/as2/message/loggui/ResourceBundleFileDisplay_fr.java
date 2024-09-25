@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleFileDisplay_fr.java 4     4/06/18 1:35p Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleFileDisplay_fr.java 5     2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,11 +13,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleFileDisplay_fr extends MecResourceBundle{
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     public Object[][] getContents() {
         return CONTENTS;

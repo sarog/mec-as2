@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/AS2Tools.java 12    1/06/22 14:37 Heller $
+//$Header: /as2/de/mendelson/util/AS2Tools.java 18    2/11/23 14:02 Heller $
 package de.mendelson.util;
 
 import java.io.IOException;
@@ -24,12 +24,12 @@ import java.util.Locale;
  * Some programming tools for mendelson business integration
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 18 $
  */
 public class AS2Tools {
 
-    private final static DateFormat DATE_FORMAT_TEMP_FILE = new SimpleDateFormat("yyyyMMdd");        
-    
+    private final static DateFormat DATE_FORMAT_TEMP_FILE = new SimpleDateFormat("yyyyMMdd");
+
     /**
      * Replaces the string tag by the string replacement in the sourceString
      *
@@ -64,35 +64,44 @@ public class AS2Tools {
      * @param lineLength Max line length of the result
      */
     public static final String fold(String source, String delimiter, int lineLength) {
-        if( source == null ){
-            return( "null" );
+        if (source == null) {
+            return ("null");
         }
         StringBuilder result = new StringBuilder();
         int linePos = 0;
-        for( int i = 0; i < source.length(); i++ ){
+        for (int i = 0; i < source.length(); i++) {
             char singleChar = source.charAt(i);
-            if( singleChar == ' ' && linePos >= lineLength){
-                result.append( delimiter );
+            if (singleChar == ' ' && linePos >= lineLength) {
+                result.append(delimiter);
                 linePos = 0;
-            }else{
-                result.append( singleChar );
+            } else {
+                result.append(singleChar);
                 linePos++;
             }
-        }        
-        return(result.toString());
+        }
+        return (result.toString());
     }
 
+    /**Returns the daily temp directory as absolute path. If the directory does not exist it is created
+     * 
+     * @return 
+     */
+    public static String getDailyTempDir()throws IOException{
+        Path tempDateDir = Paths.get("temp", DATE_FORMAT_TEMP_FILE.format(new Date()));
+        if (!Files.exists(tempDateDir)) {
+            Files.createDirectories(tempDateDir);
+        }
+        return( tempDateDir.toAbsolutePath().toString());        
+    }
+    
+    
     /**
      * Creates a temp file in a data stamped folder below the directory temp
      */
     public static synchronized Path createTempFile(String prefix, String suffix) throws IOException {
-        String tempDirStr = Paths.get("temp").toAbsolutePath().toString();
-        Path targetDir = Paths.get(tempDirStr, DATE_FORMAT_TEMP_FILE.format(new Date()));
-        if (!Files.exists(targetDir)) {
-            Files.createDirectories(targetDir);
-        }
+        String tempDateDirStr = getDailyTempDir();
         //create a unique file in the temp subdirectory
-        Path tempFile = Files.createTempFile(targetDir, prefix, suffix);
+        Path tempFile = Files.createTempFile(Paths.get(tempDateDirStr), prefix, suffix);
         return (tempFile);
     }
 
@@ -124,6 +133,84 @@ public class AS2Tools {
         }
         float timeInSecs = (float) ((float) duration / 1000f);
         return (formatter.format(timeInSecs) + "s");
+    }
+
+    /**
+     * Converts a suggested filename to a valid filename. This may be necessary
+     * if as2 ids contain chars that are not allowed in the current file system
+     * This method will also replace the "." by "_"
+     */
+    public static String convertToValidFilename(String filename) {
+        //replace everything that may be a problem, e.g. pathes etc
+        String invalidChars = "\\/:*?\"<>|";
+        for (int i = 0; i < invalidChars.length(); i++) {
+            filename = filename.replace(invalidChars.charAt(i), '_');
+        }
+        //replace some additional chars
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0, length = filename.length(); i < length; i++) {
+            char c = filename.charAt(i);
+            int type = Character.getType(c);
+            if (c == '@'
+                    || c == '-'
+                    || type == Character.DECIMAL_DIGIT_NUMBER
+                    || type == Character.LETTER_NUMBER
+                    || type == Character.LOWERCASE_LETTER
+                    || type == Character.OTHER_LETTER
+                    || type == Character.OTHER_NUMBER
+                    || type == Character.TITLECASE_LETTER
+                    || type == Character.UPPERCASE_LETTER) {
+                buffer.append(c);
+            } else {
+                buffer.append('_');
+            }
+        }
+        return (buffer.toString());
+    }
+
+    /**
+     * Converts a suggested filename to a valid filename. Prevents any path characters and special characters and 
+     * replaces them by "_".
+     * This method will also replace multiple ".." character by a single one and will delete any
+     * "." at the end of the filename because some Windows System could not deal with this
+     */
+    public static String convertToValidFilenameAllowSinglePoint(String filename) {
+        while (filename.contains("..")) {
+            filename = filename.replace("..", ".");
+        }
+        if( filename.endsWith(".")){
+            if( filename.length() == 1){
+                filename = "_";
+            }else{
+                filename = filename.substring(0, filename.length()-1);
+            }
+        }
+        //replace everything that may be a problem, e.g. pathes etc
+        String invalidChars = "\\/:*?\"<>|";
+        for (int i = 0; i < invalidChars.length(); i++) {
+            filename = filename.replace(invalidChars.charAt(i), '_');
+        }
+        //replace some additional chars
+        StringBuilder buffer = new StringBuilder();
+        for (int i = 0, length = filename.length(); i < length; i++) {
+            char c = filename.charAt(i);
+            int type = Character.getType(c);
+            if (c == '@'
+                    || c == '.'
+                    || c == '-'
+                    || type == Character.DECIMAL_DIGIT_NUMBER
+                    || type == Character.LETTER_NUMBER
+                    || type == Character.LOWERCASE_LETTER
+                    || type == Character.OTHER_LETTER
+                    || type == Character.OTHER_NUMBER
+                    || type == Character.TITLECASE_LETTER
+                    || type == Character.UPPERCASE_LETTER) {
+                buffer.append(c);
+            } else {
+                buffer.append('_');
+            }
+        }
+        return (buffer.toString());
     }
 
 }

@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesPanelSystemMaintenance.java 26    2/01/23 16:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSystemMaintenance.java 28    2/11/23 15:53 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.JTextFieldLimitDocument;
@@ -22,7 +22,7 @@ import javax.swing.ImageIcon;
  * Panel to define the inbox settings
  *
  * @author S.Heller
- * @version: $Revision: 26 $
+ * @version: $Revision: 28 $
  */
 public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
 
@@ -37,7 +37,8 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
     /**
      * GUI prefs
      */
-    private PreferencesClient preferences;
+    private final PreferencesClient preferences;
+    private String preferencesStrAtLoadTime = "";
 
     /**
      * Creates new form PreferencesPanelDirectories
@@ -45,7 +46,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
     public PreferencesPanelSystemMaintenance(BaseClient baseClient) {
         //load resource bundle
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundlePreferences.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle "
@@ -70,9 +71,9 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
     }
 
     private void initializeHelp(){
-        this.jPanelUIHelpDelLogDirs.setToolTip( this.rb, "systemmaintenance.deleteoldlogdirs.help");
-        this.jPanelUIHelpDelOldTransactions.setToolTip( this.rb, "systemmaintenance.deleteoldtransactions.help");
-        this.jPanelUIHelpDelStatistic.setToolTip( this.rb, "systemmaintenance.deleteoldstatistic.help");
+        this.jPanelUIHelpDelLogDirs.setToolTip( rb, "systemmaintenance.deleteoldlogdirs.help");
+        this.jPanelUIHelpDelOldTransactions.setToolTip( rb, "systemmaintenance.deleteoldtransactions.help");
+        this.jPanelUIHelpDelStatistic.setToolTip( rb, "systemmaintenance.deleteoldstatistic.help");
     }
     
     /**
@@ -89,8 +90,37 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         }
         this.jCheckBoxDeleteLogDirOlderThan.setSelected(this.preferences.getBoolean(PreferencesAS2.AUTO_LOGDIR_DELETE));
         this.jTextFieldDeleteLogDirOlderThan.setText(String.valueOf(this.preferences.getInt(PreferencesAS2.AUTO_LOGDIR_DELETE_OLDERTHAN)));        
+        this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
+    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
+    private String captureSettingsToStr(){
+        StringBuilder builder = new StringBuilder();
+        builder.append( PreferencesAS2.AUTO_MSG_DELETE ).append("=")
+                .append( this.jCheckBoxDeleteMsgOlderThan.isSelected()).append(";");
+        builder.append( PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN ).append("=")
+                .append( this.jTextFieldDeleteMsgOlderThan.getText()).append(";");
+        TimeUnitMaintenance timeUnitMaintenance = (TimeUnitMaintenance)jComboBoxTimeUnit.getSelectedItem();
+        builder.append( PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S ).append("=")
+                .append( String.valueOf(timeUnitMaintenance.getMultiplier())).append(";");        
+        builder.append( PreferencesAS2.AUTO_STATS_DELETE ).append("=")
+                .append( this.jCheckBoxDeleteStatsOlderThan.getText()).append(";");
+        builder.append( PreferencesAS2.AUTO_STATS_DELETE_OLDERTHAN ).append("=")
+                .append( this.jTextFieldDeleteStatsOlderThan.getText()).append(";");
+        builder.append( PreferencesAS2.AUTO_LOGDIR_DELETE ).append("=")
+                .append( this.jCheckBoxDeleteLogDirOlderThan.isSelected()).append(";");  
+        builder.append( PreferencesAS2.AUTO_LOGDIR_DELETE_OLDERTHAN ).append("=")
+                .append( this.jCheckBoxDeleteLogDirOlderThan.getText()).append(";");  
+        return( builder.toString() );
+    }
+    
+    
+    @Override
+    public boolean preferencesAreModified() {
+        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+    }
+    
+    
     /**
      * Stores the GUI settings in the preferences
      */
@@ -143,7 +173,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         jCheckBoxDeleteStatsOlderThan = new javax.swing.JCheckBox();
         jTextFieldDeleteStatsOlderThan = new javax.swing.JTextField();
         jLabelDays2 = new javax.swing.JLabel();
-        jComboBoxTimeUnit = new javax.swing.JComboBox();
+        jComboBoxTimeUnit = new javax.swing.JComboBox<>();
         jCheckBoxDeleteLogDirOlderThan = new javax.swing.JCheckBox();
         jTextFieldDeleteLogDirOlderThan = new javax.swing.JTextField();
         jLabelDays1 = new javax.swing.JLabel();
@@ -165,7 +195,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
         jPanelMargin.add(jPanelSpace, gridBagConstraints);
 
-        jCheckBoxDeleteMsgOlderThan.setText(this.rb.getResourceString( "label.deletemsgolderthan"));
+        jCheckBoxDeleteMsgOlderThan.setText(rb.getResourceString( "label.deletemsgolderthan"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
@@ -182,7 +212,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         jPanelMargin.add(jTextFieldDeleteMsgOlderThan, gridBagConstraints);
 
-        jCheckBoxDeleteStatsOlderThan.setText(this.rb.getResourceString( "label.deletestatsolderthan"));
+        jCheckBoxDeleteStatsOlderThan.setText(rb.getResourceString( "label.deletestatsolderthan"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
@@ -199,7 +229,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         jPanelMargin.add(jTextFieldDeleteStatsOlderThan, gridBagConstraints);
 
-        jLabelDays2.setText(this.rb.getResourceString( "label.days" ));
+        jLabelDays2.setText(rb.getResourceString( "label.days" ));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 3;
@@ -217,7 +247,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMargin.add(jComboBoxTimeUnit, gridBagConstraints);
 
-        jCheckBoxDeleteLogDirOlderThan.setText(this.rb.getResourceString( "label.deletelogdirolderthan"));
+        jCheckBoxDeleteLogDirOlderThan.setText(rb.getResourceString( "label.deletelogdirolderthan"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 6;
@@ -234,7 +264,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         jPanelMargin.add(jTextFieldDeleteLogDirOlderThan, gridBagConstraints);
 
-        jLabelDays1.setText(this.rb.getResourceString( "label.days" ));
+        jLabelDays1.setText(rb.getResourceString( "label.days" ));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 6;
@@ -280,7 +310,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
     private javax.swing.JCheckBox jCheckBoxDeleteLogDirOlderThan;
     private javax.swing.JCheckBox jCheckBoxDeleteMsgOlderThan;
     private javax.swing.JCheckBox jCheckBoxDeleteStatsOlderThan;
-    private javax.swing.JComboBox jComboBoxTimeUnit;
+    private javax.swing.JComboBox<TimeUnitMaintenance> jComboBoxTimeUnit;
     private javax.swing.JLabel jLabelDays1;
     private javax.swing.JLabel jLabelDays2;
     private javax.swing.JPanel jPanelMargin;

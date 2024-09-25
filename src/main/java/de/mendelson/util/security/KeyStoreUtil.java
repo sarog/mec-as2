@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 67    14/12/22 14:56 Heller $
+//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 72    2/11/23 14:03 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.MecResourceBundle;
@@ -57,7 +57,7 @@ import org.bouncycastle.util.io.pem.PemObject;
  * Utility class to handle java keyStore issues
  *
  * @author S.Heller
- * @version $Revision: 67 $
+ * @version $Revision: 72 $
  */
 public class KeyStoreUtil {
 
@@ -102,11 +102,19 @@ public class KeyStoreUtil {
      * Saves the passed keystore
      *
      * @param keystorePass Password for the keystore
-     * @param filename Filename where to save the keystore to
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass, OutputStream outStream) throws Exception {
         keystore.store(outStream, keystorePass);
     }
+    
+    /**
+     * Saves the passed keystore
+     *
+     */
+    public void saveKeyStorePKCS11(KeyStore keystore, char[] userPin) throws Exception {
+        keystore.store(null, userPin);
+    }
+    
 
     /**
      * Loads a keystore and returns it. The passed keystore has to be created
@@ -133,6 +141,42 @@ public class KeyStoreUtil {
                 inStream.close();
             }
         }
+    }
+
+    /**
+     * Loads a keystore from a byte array. The passed keystore has to be created
+     * first by the security provider, e.g. using the code
+     * KeyStore.getInstance(<keystoretype>, <provider>); If the passed filename
+     * does not exist a new, empty keystore will be created
+     */
+    public void loadKeyStore(KeyStore keystoreInstance, byte[] keystoreData, char[] keystorePass) throws Exception {
+        InputStream inStream = null;
+        try {
+            inStream = new ByteArrayInputStream(keystoreData);
+            keystoreInstance.load(inStream, keystorePass);
+        } catch (Exception e) {
+            String message = "KeyStoreUtil.loadKeyStore [" + e.getClass().getSimpleName() + "]: " + e.getMessage();
+            throw new Exception(message);
+        } finally {
+            if (inStream != null) {
+                inStream.close();
+            }
+        }
+    }    
+    
+    /**
+     * Loads keystore data via PKCS11 and returns it. The passed keystore has to
+     * be created first by the security provider, e.g. using the code
+     * KeyStore.getInstance(<keystoretype>, <provider>); 
+     */
+    public void loadKeyStorePKCS11(KeyStore keystoreInstance, char[] userPin) throws Exception {
+        try {
+            keystoreInstance.load(null, userPin);
+        } catch (Exception e) {
+            String message = "[" + e.getClass().getSimpleName() + "]: " + e.getMessage();
+            throw new Exception("The system is unable to load the keystore via PKCS#11 using the user PIN \"" 
+                    + new String(userPin) + "\".\nThe following problem ocurred: " + message);
+        } 
     }
 
     /**
@@ -212,17 +256,15 @@ public class KeyStoreUtil {
      * provBC = Security.getProvider("BC");
      *
      * @param keystore Keystore to import the certificate to
-     * @param certStream Stream to access the cert data from
-     * @param alias Alias to use in the keystore
      */
-    public String importX509Certificate(KeyStore keystore, X509Certificate cert, String securityProvider) throws Exception {
+    public String importX509Certificate(KeyStore keystore, X509Certificate certificate) throws Exception {
         //dont import the certificate if it already exists!
-        if (this.getCertificateAlias(keystore, cert) != null) {
-            return (this.getCertificateAlias(keystore, cert));
+        if (this.getCertificateAlias(keystore, certificate) != null) {
+            return (this.getCertificateAlias(keystore, certificate));
         }
-        String alias = this.getProposalCertificateAliasForImport(cert);
+        String alias = this.getProposalCertificateAliasForImport(certificate);
         alias = this.ensureUniqueAliasName(keystore, alias);
-        keystore.setCertificateEntry(alias, cert);
+        keystore.setCertificateEntry(alias, certificate);
         return (alias);
     }
 
@@ -501,9 +543,9 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public Path[] exportX509CertificatePKCS7(KeyStore keystore, String alias, String baseFilename) throws Exception {
+    public byte[] exportX509CertificatePKCS7(KeyStore keystore, String alias) throws Exception {
         X509Certificate certificate = (X509Certificate) keystore.getCertificate(alias);
-        return (this.exportX509CertificatePKCS7(new X509Certificate[]{certificate}, baseFilename));
+        return (this.exportX509CertificatePKCS7(new X509Certificate[]{certificate}));
     }
 
     /**
@@ -511,33 +553,9 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public Path[] exportX509CertificatePKCS7(X509Certificate[] certificates, String baseFilename) throws Exception {
+    public byte[] exportX509CertificatePKCS7(X509Certificate[] certificates) throws Exception {
         byte[] certificate = this.convertX509CertificateToPKCS7(certificates);
-        Path file = Paths.get(baseFilename);
-        if (certificate != null) {
-            OutputStream outStream = null;
-            ByteArrayInputStream inStream = null;
-            try {
-                outStream = Files.newOutputStream(file);
-                inStream = new ByteArrayInputStream(certificate);
-                inStream.transferTo(outStream);
-            } finally {
-                if (inStream != null) {
-                    try {
-                        inStream.close();
-                    } finally {
-
-                    }
-                }
-                if (outStream != null) {
-                    try {
-                        outStream.close();
-                    } finally {
-                    }
-                }
-            }
-        }
-        return (new Path[]{file});
+        return( certificate );
     }
 
     /**
@@ -637,48 +655,23 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public Path[] exportX509CertificateDER(KeyStore keystore, String alias,
-            String baseFilename) throws Exception {
+    public byte[] exportX509CertificateDER(KeyStore keystore, String alias) throws Exception {
         byte[] certificate = this.exportX509Certificate(keystore, alias, "DER");
-        Path file = Paths.get(baseFilename);
-        ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
-        if (certificate != null) {
-            OutputStream outStream = null;
-            try {
-                outStream = Files.newOutputStream(file);
-                inStream.transferTo(outStream);
-            } finally {
-                if (inStream != null) {
-                    inStream.close();
-                }
-            }
-            outStream.flush();
-            outStream.close();
-        }
-        return (new Path[]{file});
+        return( certificate );
     }
 
+    
+    
+    
     /**
      * Exports a public key as PEM in SSH2 format
      *
      * @returns the certificate
      */
-    public Path exportPublicKeySSH2(PublicKey key, String baseFilename) throws Exception {
+    public byte[] exportPublicKeySSH2(PublicKey key) throws Exception {
         String certificateEncoded = this.convertPublicKeyToSSH2(key);
-        Path file = Paths.get(baseFilename);
-        ByteArrayInputStream inStream = new ByteArrayInputStream(certificateEncoded.getBytes());
-        OutputStream outStream = null;
-        try {
-            outStream = Files.newOutputStream(file);
-            inStream.transferTo(outStream);
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
-        }
-        outStream.flush();
-        outStream.close();
-        return (file);
+        //no risk of encoding problem, its PEM
+        return( certificateEncoded.getBytes());
     }
 
     /**
@@ -686,25 +679,9 @@ public class KeyStoreUtil {
      *
      * @returns the certificate
      */
-    public Path[] exportX509CertificatePEM(KeyStore keystore, String alias,
-            String baseFilename) throws Exception {
+    public byte[] exportX509CertificatePEM(KeyStore keystore, String alias) throws Exception {
         byte[] certificate = this.exportX509Certificate(keystore, alias, "PEM");
-        Path file = Paths.get(baseFilename);
-        if (certificate != null) {
-            OutputStream outStream = null;
-            ByteArrayInputStream inStream = new ByteArrayInputStream(certificate);
-            try {
-                outStream = Files.newOutputStream(file);
-                inStream.transferTo(outStream);
-            } finally {
-                if (inStream != null) {
-                    inStream.close();
-                }
-            }
-            outStream.flush();
-            outStream.close();
-        }
-        return (new Path[]{file});
+        return( certificate );
     }
 
     /**

@@ -1,7 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_de.java 8     7/12/22 16:31 Heller $ 
+//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_de.java 13    6/11/23 11:38 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.security.cert.KeystoreCertificate;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,11 +16,11 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleExportCertificate_de extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -38,15 +39,16 @@ public class ResourceBundleExportCertificate_de extends MecResourceBundle {
         {"label.exportfile.hint", "Zertifikatsdatei, die generiert wird"},
         {"label.alias", "Alias"},
         {"label.exportformat", "Format"},
+        {"error.empty.certificate", "Keine Zertifikatdaten verfügbar" },
         {"filechooser.certificate.export", "Bitte wählen Sie den Dateinamen für den Export."},
         {"certificate.export.error.title", "Fehler beim Export"},
         {"certificate.export.error.message", "Der Export des Zertifikates schlug fehl:\n{0}"},
         {"certificate.export.success.title", "Erfolg"},
         {"certificate.export.success.message", "Das Zertifikat konnte erfolgreich exportiert werden nach\n\"{0}\""},
-        {JDialogExportCertificate.PEM, "Textformat (PEM, *.cer)"},
-        {JDialogExportCertificate.DER, "Binärformat (DER, *.cer)"},
-        {JDialogExportCertificate.PKCS7, "Mit Zertifizierungskette (PKCS#7, *.p7b)"},
-        {JDialogExportCertificate.SSH2, "SSH2 Format (öffentlicher Schlüssel, *.pub)"},
+        {KeystoreCertificate.CERTIFICATE_FORMAT_PEM, "Textformat (PEM, *.cer)"},
+        {KeystoreCertificate.CERTIFICATE_FORMAT_DER, "Binärformat (DER, *.cer)"},
+        {KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7, "Mit Zertifizierungskette (PKCS#7, *.p7b)"},
+        {KeystoreCertificate.CERTIFICATE_FORMAT_SSH2, "SSH2 Format (öffentlicher Schlüssel, *.pub)"},
     };
 
 }

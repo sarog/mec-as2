@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/SQLScriptExecutor.java 15    21/06/22 17:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/SQLScriptExecutor.java 17    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -28,11 +28,11 @@ import java.util.logging.Logger;
  * assigned to scripts
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class SQLScriptExecutor {
 
-    private Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * Directory where the SQL scripts are found
      */
@@ -127,8 +127,6 @@ public class SQLScriptExecutor {
     /**
      * Executes a SQL script to make changes to the database
      *
-     * @param resource FULL Resource of the sql script, e.g.
-     * "/sqlscript/config/script.sql"
      * @param connection connection to the database
      * @return true if everything worked fine
      */
@@ -139,7 +137,7 @@ public class SQLScriptExecutor {
         BufferedReader reader = new BufferedReader(new InputStreamReader(is));
         while (line != null) {
             line = reader.readLine();
-            if (line != null && line.trim().length() > 0 && (!line.startsWith("#"))) {
+            if (line != null && !line.trim().isEmpty() && (!line.startsWith("#"))) {
                 queryList.add(line);
             }
         }

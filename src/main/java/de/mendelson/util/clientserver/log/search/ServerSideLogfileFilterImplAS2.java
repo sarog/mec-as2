@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileFilterImplAS2.java 1     7.12.18 12:25 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileFilterImplAS2.java 2     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import java.io.Serializable;
@@ -14,11 +14,11 @@ import java.io.Serializable;
  * Filter the client could define to perform a server side system log file search
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ServerSideLogfileFilterImplAS2 extends ServerSideLogfileFilter implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     private String messageId = null;
     private String mdnId = null;

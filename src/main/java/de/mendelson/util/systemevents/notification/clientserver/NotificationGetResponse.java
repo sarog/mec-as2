@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationGetResponse.java 1     25.09.18 12:30 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationGetResponse.java 2     2/11/23 15:53 Heller $
 package de.mendelson.util.systemevents.notification.clientserver;
 
 import de.mendelson.util.systemevents.notification.NotificationData;
@@ -16,12 +16,12 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class NotificationGetResponse extends ClientServerResponse implements Serializable {
 
     
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private NotificationData data = null;
 
     public NotificationGetResponse(NotificationGetRequest request) {

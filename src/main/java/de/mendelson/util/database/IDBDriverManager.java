@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/IDBDriverManager.java 10    22/11/22 8:22 Heller $
+//$Header: /as2/de/mendelson/util/database/IDBDriverManager.java 12    2/11/23 14:03 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Connection;
@@ -18,7 +18,7 @@ import java.sql.Statement;
  * Interface for all supported database drivers
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public interface IDBDriverManager {
 
@@ -61,8 +61,6 @@ public interface IDBDriverManager {
      * Returns the SQL statement that is used to lock a table on database level
      * exclusive for a transaction
      *
-     * @param tablename The name of the tables to lock exclusive for all access
-     * (read/write) operations
      * @return
      */
     public void setTableLockExclusive(Statement statement, String[] tablenames) throws SQLException;
@@ -74,8 +72,6 @@ public interface IDBDriverManager {
      * meanwhile
      * 
      *
-     * @param tablename The name of the tables to lock exclusive for all access
-     * (read/write) operations
      * @return
      */
     public void setTableLockINSERTAndUPDATE(Statement statement, String[] tablenames) throws SQLException;
@@ -84,8 +80,6 @@ public interface IDBDriverManager {
      * Returns the SQL statement that is used to lock a table on database level
      * for a DELETE operation
      *
-     * @param tablename The name of the tables to lock exclusive for all access
-     * (read/write) operations
      * @return
      */
     public void setTableLockDELETE(Statement statement, String[] tablenames) throws SQLException;
@@ -137,12 +131,18 @@ public interface IDBDriverManager {
     public Object readObjectStoredAsJavaObject(ResultSet result, String columnName) throws Exception;
     
     /**
-     * Sets text data as parameter to a stored procedure. The handling depends
+     * Sets an Object data as parameter to a stored procedure. The handling depends
      * if the database supports java objects
      *
      */
     public void setObjectParameterAsJavaObject(PreparedStatement statement, int index, Object obj) throws Exception;
     
+    /**
+     * Sets an Object data as parameter to a stored procedure. The handling depends
+     * if the database supports java objects
+     *
+     */
+    public void setBytesParameterAsJavaObject(PreparedStatement statement, int index, byte[] data) throws Exception;
     
     /**
      * Reads a binary object from the database and returns a byte array that

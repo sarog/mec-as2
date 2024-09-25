@@ -1,6 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/messages/ClientToServerLogRequest.java 1     13/10/22 10:56 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ClientToServerLogRequest.java 3     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.logging.Level;
 
@@ -17,11 +19,11 @@ import java.util.logging.Level;
  * that is relevant for the server and should be displayed there as client related activity
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class ClientToServerLogRequest extends ClientServerMessage implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String message = null;
     private Level level = Level.INFO;
 
@@ -50,6 +52,11 @@ public class ClientToServerLogRequest extends ClientServerMessage implements Ser
      */
     public Level getLevel() {
         return level;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
 
 }

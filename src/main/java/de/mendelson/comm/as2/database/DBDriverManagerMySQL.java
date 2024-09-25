@@ -1,9 +1,10 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerMySQL.java 5     2/01/23 13:16 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerMySQL.java 6     28/11/23 17:03 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.database.AbstractDBDriverManagerMySQL;
 import de.mendelson.util.database.IDBDriverManager;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /*
@@ -17,7 +18,7 @@ import java.sql.SQLException;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class DBDriverManagerMySQL extends AbstractDBDriverManagerMySQL implements IDBDriverManager, ISQLQueryModifier {
 
@@ -114,6 +115,11 @@ public class DBDriverManagerMySQL extends AbstractDBDriverManagerMySQL implement
 
     @Override
     public String addLimitToQuery(String a, int b) {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public void setBytesParameterAsJavaObject(PreparedStatement statement, int index, byte[] data) throws Exception {
         throw new IllegalAccessError();
     }
 }

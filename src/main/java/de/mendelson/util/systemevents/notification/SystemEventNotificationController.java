@@ -1,21 +1,16 @@
-//$Header: /mec_oftp2/de/mendelson/util/systemevents/notification/SystemEventNotificationController.java 17    5/01/23 9:28 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/notification/SystemEventNotificationController.java 22    3/11/23 9:57 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.NamedThreadFactory;
-import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.systemevents.SystemEvent;
-import java.io.IOException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
@@ -36,7 +31,7 @@ import java.util.logging.Logger;
  * a partner
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 22 $
  */
 public abstract class SystemEventNotificationController {
 
@@ -44,8 +39,8 @@ public abstract class SystemEventNotificationController {
      * Wait time, this is how long this thread waits
      */
     private final long WAIT_TIME_IN_MS = TimeUnit.MINUTES.toMillis(1);
-    private final DateFormat eventFileDateFormat = new SimpleDateFormat("HH-mm");
-    private final DateFormat dailySubDirFormat = new SimpleDateFormat("yyyyMMdd");
+    private final DateFormat EVENT_FILEDATE_FORMAT = new SimpleDateFormat("HH-mm");
+    private final DateFormat DAILY_SUBDIR_FORMAT = new SimpleDateFormat("yyyyMMdd");
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("notification-control"));    
     /**
@@ -57,7 +52,6 @@ public abstract class SystemEventNotificationController {
     /**
      * Controller that checks notifications and sends them out if required
      *
-     * @param host host to connect to
      */
     public SystemEventNotificationController(Logger logger) {
         this.logger = logger;
@@ -70,17 +64,17 @@ public abstract class SystemEventNotificationController {
      * Gets all notifications found in a time frame and sends out notifications
      * if required
      */
-    private void checkForNotificationToSend() throws Exception {
+    private void checkForNotificationToSend() throws Throwable {
         Calendar calendar = Calendar.getInstance();
         calendar.add(Calendar.MILLISECOND, -2 * ((int) this.WAIT_TIME_IN_MS));
         Path storageDir = Paths.get(this.getStorageDir(),
-                this.dailySubDirFormat.format(new Date()),
+                this.DAILY_SUBDIR_FORMAT.format(new Date()),
                 "events");
         //there is no event for the current day - the event subdirectory does not exist
         if (!Files.exists(storageDir)) {
             return;
         }
-        String startString = this.eventFileDateFormat.format(calendar.getTime());
+        String startString = this.EVENT_FILEDATE_FORMAT.format(calendar.getTime());
         List<SystemEvent> foundSystemEvents = new ArrayList<SystemEvent>();
         DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
             @Override
@@ -120,7 +114,7 @@ public abstract class SystemEventNotificationController {
 
                 }
             };
-            Collections.sort(foundSystemEvents, comparator);
+            foundSystemEvents.sort(comparator);
             List<SystemEvent> systemEventsToNotifyUserOf = this.filterEventsForNotification(foundSystemEvents);
             if (!systemEventsToNotifyUserOf.isEmpty()) {
                 this.sendNotification(systemEventsToNotifyUserOf);
@@ -134,7 +128,7 @@ public abstract class SystemEventNotificationController {
      */
     public abstract List<SystemEvent> filterEventsForNotification(List<SystemEvent> foundSystemEvents);
 
-    public abstract void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) throws Exception;
+    public abstract void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) throws Throwable;
 
     /**
      * Returns the product specific notification dir

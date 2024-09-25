@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/log/LogEntry.java 11    8.09.21 10:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/LogEntry.java 12    2/11/23 15:52 Heller $
 package de.mendelson.comm.as2.log;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -20,11 +20,11 @@ import java.util.logging.Level;
  * Enwrapps a single db log entry in an object
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class LogEntry implements Serializable {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     
     private Level level;
     private String message;

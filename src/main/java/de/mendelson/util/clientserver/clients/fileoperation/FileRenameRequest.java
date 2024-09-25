@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/fileoperation/FileRenameRequest.java 2     4/06/18 12:21p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/fileoperation/FileRenameRequest.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.fileoperation;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,11 +15,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class FileRenameRequest extends ClientServerMessage implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String oldName = null;
     private String newName = null;
 
@@ -52,6 +54,11 @@ public class FileRenameRequest extends ClientServerMessage implements Serializab
      */
     public void setNewName(String newName) {
         this.newName = newName;
+    }
+    
+    /**Prevent an overwrite of the readObject method for de-serialization*/
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+        inStream.defaultReadObject();
     }
         
 }

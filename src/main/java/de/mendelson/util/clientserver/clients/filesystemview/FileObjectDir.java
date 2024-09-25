@@ -1,8 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectDir.java 5     16.11.18 14:35 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectDir.java 7     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.net.URI;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,11 +15,11 @@ import java.nio.file.Paths;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class FileObjectDir extends FileObject {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private boolean hidden = false;
     private String symbolicLinkTarget = null;
     private boolean isSymbolikLink = false;

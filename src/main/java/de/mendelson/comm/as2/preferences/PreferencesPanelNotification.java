@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelNotification.java 51    14/10/22 9:36 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelNotification.java 63    1/12/23 11:38 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -13,11 +13,14 @@ import de.mendelson.util.systemevents.notification.clientserver.NotificationSetM
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.TextOverlay;
+import de.mendelson.util.balloontip.BalloonToolTip;
 import de.mendelson.util.clientserver.BaseClient;
-import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
+import de.mendelson.util.mailautoconfig.MailServiceConfiguration;
+import de.mendelson.util.mailautoconfig.gui.JDialogMailAutoConfigurationDetection;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.oauth2.gui.JDialogOAuth2Config;
+import de.mendelson.util.oauth2.gui.JDialogOAuth2ConfigClientCredentials;
 import de.mendelson.util.passwordfield.PasswordOverlay;
 import de.mendelson.util.systemevents.notification.NotificationDataImplAS2;
 import de.mendelson.util.uinotification.UINotification;
@@ -41,20 +44,19 @@ import javax.swing.SwingUtilities;
  * Panel to define the directory preferences
  *
  * @author S.Heller
- * @version: $Revision: 51 $
+ * @version: $Revision: 63 $
  */
 public class PreferencesPanelNotification extends PreferencesPanel {
 
     /**
      * Localize the GUI
      */
-    private MecResourceBundle rb = null;
-    private PreferencesClient preferences;
-    private BaseClient baseClient;
-    private boolean inInit = false;
-    private AS2StatusBar statusbar;
-    private Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final MecResourceBundle rb;
+    private final BaseClient baseClient;
+    private final AS2StatusBar statusbar;
+    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private OAuth2Config oauth2Config = null;
+    private NotificationDataImplAS2 serverSideNotificationData = null;
 
     private final static MendelsonMultiResolutionImage IMAGE_NOTIFICATION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/notification.svg",
@@ -63,6 +65,8 @@ public class PreferencesPanelNotification extends PreferencesPanel {
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/testconnection.svg", 24);
     private final static MendelsonMultiResolutionImage IMAGE_OAUTH2
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/oauth2/gui/oauth2.svg", 24);
+    private final static MendelsonMultiResolutionImage IMAGE_MAILSERVERDETECTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/mailautoconfig/gui/detect.svg", 24);
 
     /**
      * Creates new form PreferencesPanelDirectories
@@ -77,7 +81,6 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         }
         this.baseClient = baseClient;
         this.statusbar = statusbar;
-        this.preferences = new PreferencesClient(baseClient);
         this.initComponents();
         PasswordOverlay.addTo(this.jPasswordFieldSMTPPass,
                 this.rb.getResourceString("label.smtpauthorization.pass.hint"));
@@ -88,19 +91,19 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         TextOverlay.addTo(this.jTextFieldPort,
                 this.rb.getResourceString("label.mailport.hint"));
         this.setMultiresolutionIcons();
-        this.inInit = true;
         this.jComboBoxSecurity.removeAllItems();
         this.jComboBoxSecurity.addItem(new SecurityEntry(NotificationData.SECURITY_PLAIN));
         this.jComboBoxSecurity.addItem(new SecurityEntry(NotificationData.SECURITY_START_TLS));
         this.jComboBoxSecurity.addItem(new SecurityEntry(NotificationData.SECURITY_TLS));
         this.jTextFieldPort.setDocument(new JTextFieldLimitDocument(5));
         this.initializeHelp();
-        this.inInit = false;
     }
 
     private void setMultiresolutionIcons() {
         this.jButtonSendTestMail.setIcon(new ImageIcon(IMAGE_TESTCONNECTION.toMinResolution(24)));
-        this.jButtonOAuth2.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
+        this.jButtonOAuth2AuthorizationCode.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
+        this.jButtonOAuth2ClientCredentials.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
+        this.jButtonMailAutoConfig.setIcon(new ImageIcon(IMAGE_MAILSERVERDETECTION.toMinResolution(24)));
     }
 
     private void initializeHelp() {
@@ -113,66 +116,90 @@ public class PreferencesPanelNotification extends PreferencesPanel {
      */
     @Override
     public void loadPreferences() {
-        this.inInit = true;
         if (!this.isPluginActivated(ServerPlugins.PLUGIN_OAUTH2)) {
-            this.jRadioButtonAuthorizationOAuth2.setEnabled(false);
-            this.jButtonOAuth2.setEnabled(false);
-            this.jTextFieldOAuth2.setEnabled(false);
-            this.jTextFieldOAuth2.setEditable(false);
+            this.jRadioButtonOAuth2AuthorizationCode.setEnabled(false);
+            this.jButtonOAuth2AuthorizationCode.setEnabled(false);
+            this.jTextFieldOAuth2AuthorizationCode.setEnabled(false);
+            this.jTextFieldOAuth2AuthorizationCode.setEditable(false);
+            this.jRadioButtonOAuth2ClientCredentials.setEnabled(false);
+            this.jButtonOAuth2ClientCredentials.setEnabled(false);
+            this.jTextFieldOAuth2ClientCredentials.setEnabled(false);
+            this.jTextFieldOAuth2ClientCredentials.setEditable(false);
         }
-        NotificationDataImplAS2 data
+        this.serverSideNotificationData
                 = (NotificationDataImplAS2) ((NotificationGetResponse) this.baseClient.sendSync(new NotificationGetRequest())).getData();
-        this.jTextFieldHost.setText(data.getMailServer());
-        this.jTextFieldNotificationMail.setText(data.getNotificationMail());
-        this.jTextFieldPort.setText(String.valueOf(data.getMailServerPort()));
-        this.jTextFieldReplyTo.setText(data.getReplyTo());
-        this.jCheckBoxNotifyCert.setSelected(data.notifyCertExpire());
-        this.jCheckBoxNotifyTransactionError.setSelected(data.notifyTransactionError());
-        this.jCheckBoxNotifyCEM.setSelected(data.notifyCEM());
-        this.jCheckBoxNotifySystemFailure.setSelected(data.notifySystemFailure());
-        this.jCheckBoxNotifyResend.setSelected(data.notifyResendDetected());
-        if (data.usesSMTPAuthCredentials()) {
+        this.jTextFieldHost.setText(this.serverSideNotificationData.getMailServer());
+        this.jTextFieldNotificationMail.setText(this.serverSideNotificationData.getNotificationMail());
+        this.jTextFieldPort.setText(String.valueOf(this.serverSideNotificationData.getMailServerPort()));
+        this.jTextFieldReplyTo.setText(this.serverSideNotificationData.getReplyTo());
+        this.jCheckBoxNotifyCert.setSelected(this.serverSideNotificationData.notifyCertExpire());
+        this.jCheckBoxNotifyTransactionError.setSelected(this.serverSideNotificationData.notifyTransactionError());
+        this.jCheckBoxNotifyCEM.setSelected(this.serverSideNotificationData.notifyCEM());
+        this.jCheckBoxNotifySystemFailure.setSelected(this.serverSideNotificationData.notifySystemFailure());
+        this.jCheckBoxNotifyResend.setSelected(this.serverSideNotificationData.notifyResendDetected());
+        this.jCheckBoxNotifyClientServerProblem.setSelected(this.serverSideNotificationData.notifyClientServerProblem());
+        if (this.serverSideNotificationData.usesSMTPAuthCredentials()) {
             this.jRadioButtonAuthorizationCredentials.setSelected(true);
-        } else if (data.usesSMTPAuthOAuth2()) {
-            this.jRadioButtonAuthorizationOAuth2.setSelected(true);
+        } else if (this.serverSideNotificationData.usesSMTPAuthOAuth2()) {
+            if (this.serverSideNotificationData.getOAuth2Config().getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1) {
+                this.jRadioButtonOAuth2AuthorizationCode.setSelected(true);
+            } else {
+                this.jRadioButtonOAuth2ClientCredentials.setSelected(true);
+            }
         } else {
             this.jRadioButtonAuthorizationNone.setSelected(true);
         }
-        this.jCheckBoxNotifyConnectionProblem.setSelected(data.notifyConnectionProblem());
-        this.jCheckBoxNotifyPostprocessing.setSelected(data.notifyPostprocessingProblem());
-        if (data.getSMTPUser() != null) {
-            this.jTextFieldSMTPUser.setText(data.getSMTPUser());
+        this.jCheckBoxNotifyConnectionProblem.setSelected(this.serverSideNotificationData.notifyConnectionProblem());
+        this.jCheckBoxNotifyPostprocessing.setSelected(this.serverSideNotificationData.notifyPostprocessingProblem());
+        if (this.serverSideNotificationData.getSMTPUser() != null) {
+            this.jTextFieldSMTPUser.setText(this.serverSideNotificationData.getSMTPUser());
         } else {
             this.jTextFieldSMTPUser.setText("");
         }
-        if (data.getSMTPPass() != null) {
-            this.jPasswordFieldSMTPPass.setText(String.valueOf(data.getSMTPPass()));
+        if (this.serverSideNotificationData.getSMTPPass() != null) {
+            this.jPasswordFieldSMTPPass.setText(String.valueOf(this.serverSideNotificationData.getSMTPPass()));
         } else {
             this.jPasswordFieldSMTPPass.setText("");
         }
-        this.jComboBoxSecurity.setSelectedItem(new SecurityEntry(data.getConnectionSecurity()));
-        this.jTextFieldMaxMailsPerMin.setText(String.valueOf(data.getMaxNotificationsPerMin()));
-        this.oauth2Config = data.getOAuth2Config();
+        this.jComboBoxSecurity.setSelectedItem(new SecurityEntry(this.serverSideNotificationData.getConnectionSecurity()));
+        this.jTextFieldMaxMailsPerMin.setText(String.valueOf(this.serverSideNotificationData.getMaxNotificationsPerMin()));
+        try {
+            if (this.serverSideNotificationData.getOAuth2Config() != null) {
+                this.oauth2Config = (OAuth2Config) (this.serverSideNotificationData.getOAuth2Config().clone());
+            }
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
         this.displayCurrentOAuth2();
-        this.inInit = false;
         this.setButtonState();
     }
 
     private void displayCurrentOAuth2() {
         if (this.oauth2Config == null) {
-            this.jTextFieldOAuth2.setText("--");
+            this.jTextFieldOAuth2AuthorizationCode.setText("--");
+            this.jTextFieldOAuth2ClientCredentials.setText("--");
         } else {
-            this.jTextFieldOAuth2.setText(this.oauth2Config.toString());
+            if (this.oauth2Config.getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1) {
+                this.jTextFieldOAuth2AuthorizationCode.setText(this.oauth2Config.toString());
+                this.jTextFieldOAuth2ClientCredentials.setText("--");
+            } else {
+                this.jTextFieldOAuth2AuthorizationCode.setText("--");
+                this.jTextFieldOAuth2ClientCredentials.setText(this.oauth2Config.toString());
+            }
         }
     }
 
     private void setButtonState() {
         this.jTextFieldSMTPUser.setEnabled(this.jRadioButtonAuthorizationCredentials.isSelected());
         this.jPasswordFieldSMTPPass.setEnabled(this.jRadioButtonAuthorizationCredentials.isSelected());
-        this.jTextFieldOAuth2.setEnabled(this.jRadioButtonAuthorizationOAuth2.isSelected());
+        this.jTextFieldOAuth2AuthorizationCode.setEnabled(this.jRadioButtonOAuth2AuthorizationCode.isSelected());
+        this.jTextFieldOAuth2ClientCredentials.setEnabled(this.jRadioButtonOAuth2ClientCredentials.isSelected());
         this.jButtonSendTestMail.setEnabled(
-                !this.jRadioButtonAuthorizationOAuth2.isSelected()
-                || (this.jRadioButtonAuthorizationOAuth2.isSelected() && this.oauth2Config != null));
+                (!this.jRadioButtonOAuth2AuthorizationCode.isSelected() 
+                        && !this.jRadioButtonOAuth2ClientCredentials.isSelected())
+                || (this.jRadioButtonOAuth2AuthorizationCode.isSelected() && this.oauth2Config != null)
+                || (this.jRadioButtonOAuth2ClientCredentials.isSelected() && this.oauth2Config != null)
+        );
     }
 
     /**
@@ -193,7 +220,8 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         data.setNotifySystemFailure(this.jCheckBoxNotifySystemFailure.isSelected());
         data.setNotificationMail(this.jTextFieldNotificationMail.getText());
         data.setUsesSMTPAuthCredentials(this.jRadioButtonAuthorizationCredentials.isSelected());
-        data.setUsesSMTPAuthOAuth2(this.jRadioButtonAuthorizationOAuth2.isSelected());
+        data.setUsesSMTPAuthOAuth2(this.jRadioButtonOAuth2AuthorizationCode.isSelected()
+                || this.jRadioButtonOAuth2ClientCredentials.isSelected());
         data.setOAuth2Config(this.oauth2Config);
         data.setSMTPUser(this.jTextFieldSMTPUser.getText());
         data.setSMTPPass(this.jPasswordFieldSMTPPass.getPassword());
@@ -202,6 +230,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         data.setNotifyConnectionProblem(this.jCheckBoxNotifyConnectionProblem.isSelected());
         data.setConnectionSecurity(((SecurityEntry) this.jComboBoxSecurity.getSelectedItem()).getValue());
         data.setNotifyPostprocessingProblem(this.jCheckBoxNotifyPostprocessing.isSelected());
+        data.setNotifyClientServerProblem(this.jCheckBoxNotifyClientServerProblem.isSelected());
         try {
             data.setMaxNotificationsPerMin(Integer.valueOf(this.jTextFieldMaxMailsPerMin.getText()).intValue());
         } catch (Exception e) {
@@ -259,7 +288,8 @@ public class PreferencesPanelNotification extends PreferencesPanel {
                                 null,
                                 UINotification.TYPE_SUCCESS,
                                 PreferencesPanelNotification.this.rb.getResourceString("testmail.title"),
-                                PreferencesPanelNotification.this.rb.getResourceString("testmail.message.success")
+                                PreferencesPanelNotification.this.rb.getResourceString("testmail.message.success",
+                                        data.getNotificationMail())
                         );
                     }
                 } catch (Exception e) {
@@ -275,7 +305,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         executor.shutdown();
     }
 
-    private void setupOAuth2() {
+    private void setupOAuth2AuthorizationCode() {
         JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         OAuth2Config config = null;
         if (this.oauth2Config == null) {
@@ -296,6 +326,67 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         dialog.dispose();
         this.displayCurrentOAuth2();
         this.setButtonState();
+    }
+
+    private void setupOAuth2ClientCredentials() {
+        JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        OAuth2Config config = null;
+        if (this.oauth2Config == null) {
+            config = new OAuth2Config();
+        } else {
+            config = this.oauth2Config;
+        }
+        JDialogOAuth2ConfigClientCredentials dialog
+                = new JDialogOAuth2ConfigClientCredentials(parentFrame,
+                        this.baseClient,
+                        config,
+                        AS2ServerVersion.getProductName()
+                );
+        dialog.setVisible(true);
+        if (dialog.okPressed()) {
+            this.oauth2Config = config;
+        }
+        dialog.dispose();
+        this.displayCurrentOAuth2();
+        this.setButtonState();
+    }
+
+    /**
+     * Tries to find out the mail server settings for a mail address and will
+     * take this data into account
+     *
+     */
+    private void performMailAutoConfigurationDetection() {
+        JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
+        Runnable detectionThread = new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    JDialogMailAutoConfigurationDetection dialog = new JDialogMailAutoConfigurationDetection(parentFrame,
+                            PreferencesPanelNotification.this.jTextFieldReplyTo.getText(),
+                            PreferencesPanelNotification.this.baseClient,
+                            PreferencesPanelNotification.this.statusbar
+                    );
+                    dialog.setVisible(true);
+                    if (dialog.useConfiguration()) {
+                        String mailAddress = dialog.getMailAddress();
+                        MailServiceConfiguration configuration = dialog.getSelectedConfiguration();
+                        dialog.dispose();
+                        PreferencesPanelNotification.this.jTextFieldHost.setText(configuration.getServerHost());
+                        PreferencesPanelNotification.this.jTextFieldReplyTo.setText(mailAddress);
+                        PreferencesPanelNotification.this.jTextFieldPort.setText(String.valueOf(configuration.getPort()));
+                        PreferencesPanelNotification.this.jComboBoxSecurity.setSelectedItem(
+                                new SecurityEntry(configuration.getSecurity()));
+                    }
+                } catch (Exception e) {
+                    UINotification.instance().addNotification(e);
+                }
+            }
+        };
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        executor.submit(detectionThread);
+        executor.shutdown();
     }
 
     /**
@@ -336,6 +427,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         jCheckBoxNotifyCEM = new javax.swing.JCheckBox();
         jCheckBoxNotifyTransactionError = new javax.swing.JCheckBox();
         jCheckBoxNotifyCert = new javax.swing.JCheckBox();
+        jCheckBoxNotifyClientServerProblem = new javax.swing.JCheckBox();
         jPanelMaxMailsPerMin = new javax.swing.JPanel();
         jLabelMaxMailsPerMain = new javax.swing.JLabel();
         jPanelUIHelpMaxMailsPerMin = new de.mendelson.util.balloontip.JPanelUIHelp();
@@ -344,12 +436,17 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         jPanelUIHelpLabelNotificationMailReceiver = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jRadioButtonAuthorizationNone = new javax.swing.JRadioButton();
         jRadioButtonAuthorizationCredentials = new javax.swing.JRadioButton();
-        jRadioButtonAuthorizationOAuth2 = new javax.swing.JRadioButton();
+        jRadioButtonOAuth2AuthorizationCode = new javax.swing.JRadioButton();
         jLabelSMTPAuthorization = new javax.swing.JLabel();
         jPanelSpace3434 = new javax.swing.JPanel();
-        jPanelOAuth2 = new javax.swing.JPanel();
-        jTextFieldOAuth2 = new javax.swing.JTextField();
-        jButtonOAuth2 = new javax.swing.JButton();
+        jPanelOAuth2AuthorizationCode = new javax.swing.JPanel();
+        jTextFieldOAuth2AuthorizationCode = new javax.swing.JTextField();
+        jButtonOAuth2AuthorizationCode = new javax.swing.JButton();
+        jButtonMailAutoConfig = new javax.swing.JButton();
+        jPanelOAuth2AuthorizationCode1 = new javax.swing.JPanel();
+        jTextFieldOAuth2ClientCredentials = new javax.swing.JTextField();
+        jButtonOAuth2ClientCredentials = new javax.swing.JButton();
+        jRadioButtonOAuth2ClientCredentials = new javax.swing.JRadioButton();
 
         setLayout(new java.awt.GridBagLayout());
 
@@ -394,7 +491,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 14;
         gridBagConstraints.gridy = 6;
-        gridBagConstraints.gridwidth = 12;
+        gridBagConstraints.gridwidth = 7;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 0.3;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -439,10 +536,11 @@ public class PreferencesPanelNotification extends PreferencesPanel {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 13;
+        gridBagConstraints.gridx = 21;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 14;
+        gridBagConstraints.gridwidth = 6;
         gridBagConstraints.gridheight = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHEAST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
         jPanelMargin.add(jButtonSendTestMail, gridBagConstraints);
@@ -598,6 +696,15 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelNotificationSelection.add(jCheckBoxNotifyCert, gridBagConstraints);
 
+        jCheckBoxNotifyClientServerProblem.setText(this.rb.getResourceString( "checkbox.notifyclientserver"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 12;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.SOUTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelNotificationSelection.add(jCheckBoxNotifyClientServerProblem, gridBagConstraints);
+
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
@@ -647,6 +754,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
 
         jPanelUIHelpLabelNotificationMailReceiver.setToolTipText(this.rb.getResourceString( "label.notificationmail.help"));
         jPanelUIHelpLabelNotificationMailReceiver.setText(this.rb.getResourceString( "label.notificationmail"));
+        jPanelUIHelpLabelNotificationMailReceiver.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 22;
@@ -682,11 +790,11 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMargin.add(jRadioButtonAuthorizationCredentials, gridBagConstraints);
 
-        buttonGroupAuthorization.add(jRadioButtonAuthorizationOAuth2);
-        jRadioButtonAuthorizationOAuth2.setText(this.rb.getResourceString("label.smtpauthorization.oauth2"));
-        jRadioButtonAuthorizationOAuth2.addItemListener(new java.awt.event.ItemListener() {
+        buttonGroupAuthorization.add(jRadioButtonOAuth2AuthorizationCode);
+        jRadioButtonOAuth2AuthorizationCode.setText(this.rb.getResourceString("label.smtpauthorization.oauth2.authorizationcode"));
+        jRadioButtonOAuth2AuthorizationCode.addItemListener(new java.awt.event.ItemListener() {
             public void itemStateChanged(java.awt.event.ItemEvent evt) {
-                jRadioButtonAuthorizationOAuth2ItemStateChanged(evt);
+                jRadioButtonOAuth2AuthorizationCodeItemStateChanged(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -694,7 +802,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints.gridy = 17;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelMargin.add(jRadioButtonAuthorizationOAuth2, gridBagConstraints);
+        jPanelMargin.add(jRadioButtonOAuth2AuthorizationCode, gridBagConstraints);
 
         jLabelSMTPAuthorization.setFont(new java.awt.Font("Dialog", 1, 12)); // NOI18N
         jLabelSMTPAuthorization.setText(this.rb.getResourceString("label.smtpauthorization.header"));
@@ -713,12 +821,12 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMargin.add(jPanelSpace3434, gridBagConstraints);
 
-        jPanelOAuth2.setLayout(new java.awt.GridBagLayout());
+        jPanelOAuth2AuthorizationCode.setLayout(new java.awt.GridBagLayout());
 
-        jTextFieldOAuth2.setEditable(false);
-        jTextFieldOAuth2.setText("--");
-        jTextFieldOAuth2.setMinimumSize(new java.awt.Dimension(400, 22));
-        jTextFieldOAuth2.setPreferredSize(new java.awt.Dimension(400, 22));
+        jTextFieldOAuth2AuthorizationCode.setEditable(false);
+        jTextFieldOAuth2AuthorizationCode.setText("--");
+        jTextFieldOAuth2AuthorizationCode.setMinimumSize(new java.awt.Dimension(400, 22));
+        jTextFieldOAuth2AuthorizationCode.setPreferredSize(new java.awt.Dimension(400, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 17;
@@ -726,27 +834,96 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelOAuth2.add(jTextFieldOAuth2, gridBagConstraints);
+        jPanelOAuth2AuthorizationCode.add(jTextFieldOAuth2AuthorizationCode, gridBagConstraints);
 
-        jButtonOAuth2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
-        jButtonOAuth2.setMargin(new java.awt.Insets(2, 2, 2, 2));
-        jButtonOAuth2.addActionListener(new java.awt.event.ActionListener() {
+        jButtonOAuth2AuthorizationCode.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jButtonOAuth2AuthorizationCode.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        jButtonOAuth2AuthorizationCode.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jButtonOAuth2ActionPerformed(evt);
+                jButtonOAuth2AuthorizationCodeActionPerformed(evt);
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 10;
         gridBagConstraints.gridy = 17;
         gridBagConstraints.gridwidth = 4;
-        jPanelOAuth2.add(jButtonOAuth2, gridBagConstraints);
+        jPanelOAuth2AuthorizationCode.add(jButtonOAuth2AuthorizationCode, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 17;
         gridBagConstraints.gridwidth = 25;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelMargin.add(jPanelOAuth2, gridBagConstraints);
+        jPanelMargin.add(jPanelOAuth2AuthorizationCode, gridBagConstraints);
+
+        jButtonMailAutoConfig.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jButtonMailAutoConfig.setText(this.rb.getResourceString("button.mailserverdetection"));
+        jButtonMailAutoConfig.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonMailAutoConfig.setMargin(new java.awt.Insets(2, 5, 2, 5));
+        jButtonMailAutoConfig.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonMailAutoConfig.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonMailAutoConfigActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 21;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridheight = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHEAST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 10, 5);
+        jPanelMargin.add(jButtonMailAutoConfig, gridBagConstraints);
+
+        jPanelOAuth2AuthorizationCode1.setLayout(new java.awt.GridBagLayout());
+
+        jTextFieldOAuth2ClientCredentials.setEditable(false);
+        jTextFieldOAuth2ClientCredentials.setText("--");
+        jTextFieldOAuth2ClientCredentials.setMinimumSize(new java.awt.Dimension(400, 22));
+        jTextFieldOAuth2ClientCredentials.setPreferredSize(new java.awt.Dimension(400, 22));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 17;
+        gridBagConstraints.gridwidth = 8;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelOAuth2AuthorizationCode1.add(jTextFieldOAuth2ClientCredentials, gridBagConstraints);
+
+        jButtonOAuth2ClientCredentials.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        jButtonOAuth2ClientCredentials.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        jButtonOAuth2ClientCredentials.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonOAuth2ClientCredentialsActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 10;
+        gridBagConstraints.gridy = 17;
+        gridBagConstraints.gridwidth = 4;
+        jPanelOAuth2AuthorizationCode1.add(jButtonOAuth2ClientCredentials, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 18;
+        gridBagConstraints.gridwidth = 25;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        jPanelMargin.add(jPanelOAuth2AuthorizationCode1, gridBagConstraints);
+
+        buttonGroupAuthorization.add(jRadioButtonOAuth2ClientCredentials);
+        jRadioButtonOAuth2ClientCredentials.setText(this.rb.getResourceString("label.smtpauthorization.oauth2.clientcredentials"));
+        jRadioButtonOAuth2ClientCredentials.addItemListener(new java.awt.event.ItemListener() {
+            public void itemStateChanged(java.awt.event.ItemEvent evt) {
+                jRadioButtonOAuth2ClientCredentialsItemStateChanged(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 18;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(jRadioButtonOAuth2ClientCredentials, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -760,9 +937,9 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         this.sendTestMail();
     }//GEN-LAST:event_jButtonSendTestMailActionPerformed
 
-    private void jButtonOAuth2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2ActionPerformed
-        this.setupOAuth2();
-    }//GEN-LAST:event_jButtonOAuth2ActionPerformed
+    private void jButtonOAuth2AuthorizationCodeActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2AuthorizationCodeActionPerformed
+        this.setupOAuth2AuthorizationCode();
+    }//GEN-LAST:event_jButtonOAuth2AuthorizationCodeActionPerformed
 
     private void jRadioButtonAuthorizationNoneItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonAuthorizationNoneItemStateChanged
         this.setButtonState();
@@ -772,16 +949,31 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         this.setButtonState();
     }//GEN-LAST:event_jRadioButtonAuthorizationCredentialsItemStateChanged
 
-    private void jRadioButtonAuthorizationOAuth2ItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonAuthorizationOAuth2ItemStateChanged
+    private void jRadioButtonOAuth2AuthorizationCodeItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonOAuth2AuthorizationCodeItemStateChanged
         this.setButtonState();
-    }//GEN-LAST:event_jRadioButtonAuthorizationOAuth2ItemStateChanged
+    }//GEN-LAST:event_jRadioButtonOAuth2AuthorizationCodeItemStateChanged
+
+    private void jButtonMailAutoConfigActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonMailAutoConfigActionPerformed
+        this.performMailAutoConfigurationDetection();
+    }//GEN-LAST:event_jButtonMailAutoConfigActionPerformed
+
+    private void jButtonOAuth2ClientCredentialsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOAuth2ClientCredentialsActionPerformed
+        this.setupOAuth2ClientCredentials();
+    }//GEN-LAST:event_jButtonOAuth2ClientCredentialsActionPerformed
+
+    private void jRadioButtonOAuth2ClientCredentialsItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonOAuth2ClientCredentialsItemStateChanged
+        this.setButtonState();
+    }//GEN-LAST:event_jRadioButtonOAuth2ClientCredentialsItemStateChanged
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroupAuthorization;
-    private javax.swing.JButton jButtonOAuth2;
+    private javax.swing.JButton jButtonMailAutoConfig;
+    private javax.swing.JButton jButtonOAuth2AuthorizationCode;
+    private javax.swing.JButton jButtonOAuth2ClientCredentials;
     private javax.swing.JButton jButtonSendTestMail;
     private javax.swing.JCheckBox jCheckBoxNotifyCEM;
     private javax.swing.JCheckBox jCheckBoxNotifyCert;
+    private javax.swing.JCheckBox jCheckBoxNotifyClientServerProblem;
     private javax.swing.JCheckBox jCheckBoxNotifyConnectionProblem;
     private javax.swing.JCheckBox jCheckBoxNotifyPostprocessing;
     private javax.swing.JCheckBox jCheckBoxNotifyResend;
@@ -799,7 +991,8 @@ public class PreferencesPanelNotification extends PreferencesPanel {
     private javax.swing.JPanel jPanelMargin;
     private javax.swing.JPanel jPanelMaxMailsPerMin;
     private javax.swing.JPanel jPanelNotificationSelection;
-    private javax.swing.JPanel jPanelOAuth2;
+    private javax.swing.JPanel jPanelOAuth2AuthorizationCode;
+    private javax.swing.JPanel jPanelOAuth2AuthorizationCode1;
     private javax.swing.JPanel jPanelSep;
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JPanel jPanelSpace3434;
@@ -810,13 +1003,15 @@ public class PreferencesPanelNotification extends PreferencesPanel {
     private javax.swing.JPasswordField jPasswordFieldSMTPPass;
     private javax.swing.JRadioButton jRadioButtonAuthorizationCredentials;
     private javax.swing.JRadioButton jRadioButtonAuthorizationNone;
-    private javax.swing.JRadioButton jRadioButtonAuthorizationOAuth2;
+    private javax.swing.JRadioButton jRadioButtonOAuth2AuthorizationCode;
+    private javax.swing.JRadioButton jRadioButtonOAuth2ClientCredentials;
     private javax.swing.JSeparator jSeparator1;
     private javax.swing.JSeparator jSeparator2;
     private javax.swing.JTextField jTextFieldHost;
     private javax.swing.JTextField jTextFieldMaxMailsPerMin;
     private javax.swing.JTextField jTextFieldNotificationMail;
-    private javax.swing.JTextField jTextFieldOAuth2;
+    private javax.swing.JTextField jTextFieldOAuth2AuthorizationCode;
+    private javax.swing.JTextField jTextFieldOAuth2ClientCredentials;
     private javax.swing.JTextField jTextFieldPort;
     private javax.swing.JTextField jTextFieldReplyTo;
     private javax.swing.JTextField jTextFieldSMTPUser;
@@ -830,6 +1025,16 @@ public class PreferencesPanelNotification extends PreferencesPanel {
     @Override
     public String getTabResource() {
         return ("tab.notification");
+    }
+
+    @Override
+    public boolean preferencesAreModified() {
+        if (this.serverSideNotificationData == null) {
+            return (false);
+        }
+        String serverSidePreferencesStr = this.serverSideNotificationData.toXML(0);
+        String newPreferencesStr = this.captureGUIData().toXML(0);
+        return (!serverSidePreferencesStr.equals(newPreferencesStr));
     }
 
     private static class SecurityEntry {

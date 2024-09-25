@@ -1,10 +1,9 @@
-//$Header: /as2/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 15    1/06/22 14:49 Heller $
+//$Header: /as2/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 18    2/11/23 14:03 Heller $
 package de.mendelson.util.log;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,13 +31,13 @@ import java.util.logging.LogRecord;
  * DailySubdirFileLoggingHandler(Paths.get("mylogdir"), "mylogfile.log") );
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 18 $
  */
 public class DailySubdirFileLoggingHandler extends Handler {
 
     private boolean doneHeader;
     private BufferedWriter writer = null;
-    private final DateFormat logDateFormat = new SimpleDateFormat("yyyyMMdd");
+    private final DateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
     private final Path logDir;
     private final String logfileName;
     //stores the actual log file name that is used to write log to
@@ -142,22 +141,21 @@ public class DailySubdirFileLoggingHandler extends Handler {
     }
 
     private Path getFullLogDir() {
-        StringBuilder path = new StringBuilder();
-        path.append(this.logDir.toAbsolutePath().toString());
-        path.append(FileSystems.getDefault().getSeparator());
-        path.append(this.logDateFormat.format(new Date()));
-        return (Paths.get(path.toString()));
+        return( Paths.get(this.logDir.toAbsolutePath().toString(),
+                this.LOG_DATE_FORMAT.format(new Date())));
     }
 
     private String generateNewLogFileName(Path fullLogDir) {
-        Path newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString(),
+        Path newLogFile = Paths.get(
+                fullLogDir.toAbsolutePath().toString(),
                 this.logfileName);
         if (this.maxLogFileSize == -1) {
             return (newLogFile.toAbsolutePath().toString());
         }
         int counter = 1;
         try {
-            while (Files.exists(newLogFile) && Files.size(newLogFile) > this.maxLogFileSize) {
+            while (Files.exists(newLogFile) 
+                    && Files.size(newLogFile) > this.maxLogFileSize) {
                 newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString(),                        
                         this.logfileName + "." + counter);
                 counter++;
@@ -176,7 +174,9 @@ public class DailySubdirFileLoggingHandler extends Handler {
         Path fullLogDir = this.getFullLogDir();
         String newLogFilename = this.generateNewLogFileName(fullLogDir);
         //check if the loggers output stream is still valid        
-        if (this.writer == null || this.actualLogFilename == null || !newLogFilename.equals(this.actualLogFilename)
+        if (this.writer == null 
+                || this.actualLogFilename == null 
+                || !newLogFilename.equals(this.actualLogFilename)
                 || !Files.exists(Paths.get(newLogFilename))) {
             if (this.writer != null) {
                 try {

@@ -1,9 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearchImplAS2.java 1     7.12.18 12:25 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearchImplAS2.java 2     2/11/23 14:03 Heller $
 package de.mendelson.util.clientserver.log.search;
 
-import java.util.Calendar;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.Term;
@@ -23,7 +21,7 @@ import org.apache.lucene.search.TermQuery;
  * Contains all required methods for a server side log search for OFTP2
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class ServerSideLogfileSearchImplAS2 extends ServerSideLogfileSearch {
 

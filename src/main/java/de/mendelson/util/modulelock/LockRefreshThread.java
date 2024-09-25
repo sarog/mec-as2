@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/moduleLock/LockRefreshThread.java 2     4/03/18 12:48p Heller $
+//$Header: /as2/de/mendelson/util/modulelock/LockRefreshThread.java 6     2/11/23 15:53 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.modulelock.message.ModuleLockRequest;
@@ -18,13 +18,13 @@ import java.util.concurrent.TimeUnit;
  * Refreshes the lock if a client has the exclusive lock on a module
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 6 $
  */
 public class LockRefreshThread implements Runnable {
 
-    private String moduleName;
+    private final String moduleName;
     private boolean stop = false;
-    private BaseClient baseClient;
+    private final BaseClient baseClient;
 
     public LockRefreshThread(BaseClient baseClient, String moduleName) {
         this.moduleName = moduleName;
@@ -41,7 +41,7 @@ public class LockRefreshThread implements Runnable {
             ModuleLockRequest request = new ModuleLockRequest(this.moduleName, ModuleLockRequest.TYPE_REFRESH);
             ModuleLockResponse response = (ModuleLockResponse) this.baseClient.sendSync(request);
             try {
-                Thread.currentThread().sleep(TimeUnit.SECONDS.toMillis(15));
+                Thread.sleep(TimeUnit.SECONDS.toMillis(15));
             } catch (Exception e) {
                 //NOP
             }

@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/ExecArgumentParser.java 3     7-10-16 2:57p Heller $
+//$Header: /as2/de/mendelson/util/ExecArgumentParser.java 4     2/11/23 15:53 Heller $
 package de.mendelson.util;
 
 import java.util.*;
@@ -13,7 +13,7 @@ import java.util.*;
 /**
  * Parses the arguments of an exec call, allows to quote arguments by double quote
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ExecArgumentParser {
 
@@ -61,7 +61,7 @@ public class ExecArgumentParser {
 
 
     private boolean textHasContent(String aText) {
-        return (aText != null) && (!aText.trim().equals(""));
+        return (aText != null) && (!aText.trim().isEmpty());
     }
 
     private void addTokenToResult(String aToken, List<String> aResult) {

@@ -1,4 +1,4 @@
-///$Header: /mec_as2/de/mendelson/comm/as2/servlet/ServerState.java 14    2/01/23 15:57 Heller $
+///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 15    2/11/23 14:02 Heller $
 package de.mendelson.comm.as2.servlet;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,7 +12,7 @@ package de.mendelson.comm.as2.servlet;
  * Servlet to display the server state
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
@@ -33,7 +33,7 @@ public class ServerState extends HttpServlet {
     /**
      * Format the date display
      */
-    private DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
     public ServerState() {
     }

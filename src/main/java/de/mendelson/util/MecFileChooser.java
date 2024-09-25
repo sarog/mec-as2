@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/MecFileChooser.java 21    8.11.19 14:48 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/MecFileChooser.java 25    21/11/23 14:06 Heller $
 package de.mendelson.util;
 
 import java.awt.Frame;
@@ -30,33 +30,47 @@ import javax.swing.text.JTextComponent;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * This shows a file chooser, it is possible to select a native or the
- * swing file chooser.
- * @author  S.Heller
- * @version $Revision: 21 $
+ * This shows a file chooser, it is possible to select a native or the swing
+ * file chooser.
+ *
+ * @author S.Heller
+ * @version $Revision: 25 $
  */
 public class MecFileChooser extends JFileChooser {
     //supports only one type of choosers at the moment
 
-    public static int TYPE_SWING = 1;
-    /**ResourceBundle to store localized informations*/
+    public static final int TYPE_SWING = 1;
+    /**
+     * ResourceBundle to store localized informations
+     */
     private MecResourceBundle rb = null;
-    /**ParentFrame of this component*/
+    /**
+     * ParentFrame of this component
+     */
     private Frame parent = null;
-    /**indicates if the user canceled the dialog*/
+    /**
+     * indicates if the user canceled the dialog
+     */
     private boolean canceled = false;
-    /**Remind the selected directories and restore them if the widget is called in the same context again*/
+    /**
+     * Remind the selected directories and restore them if the widget is called
+     * in the same context again
+     */
     public final static Map<Long, File> lastGoodSelectionMap = new HashMap<Long, File>();
-    /**Stores a unique id for this call*/
+    /**
+     * Stores a unique id for this call
+     */
     private Long uniqueId = null;
 
-    /** Creates new MecFileChooser
-     * Creates a new FileChooser with the given default directory
+    /**
+     * Creates new MecFileChooser Creates a new FileChooser with the given
+     * default directory
+     *
      * @param defaultDirectory Directory to start by default, may be a file
      * @param dialogTitle Title to show at the chooser
      * @param parent parent component
      * @param TYPE type of the dialog to choose as defined in the class
-     *@deprecated use the same method without the type settings
+     * @deprecated use the same method without the type settings
      */
     @Deprecated
     public MecFileChooser(Frame parent, String defaultDirectory,
@@ -65,9 +79,10 @@ public class MecFileChooser extends JFileChooser {
         this.setPreselectedFile(new File(defaultDirectory));
     }
 
-    /** Creates new MecFileChooser
-     * Creates a new FileChooser with the given default directory
-     * @param defaultDirectory Directory to start by default, may be a file
+    /**
+     * Creates new MecFileChooser Creates a new FileChooser with the given
+     * default directory
+     *
      * @param dialogTitle Title to show at the chooser
      * @param parent parent component
      */
@@ -113,23 +128,31 @@ public class MecFileChooser extends JFileChooser {
         }
     }
 
-    /**Set a new file view to the chooser, e.g. to display new icons etc*/
+    /**
+     * Set a new file view to the chooser, e.g. to display new icons etc
+     */
     @Override
     public void setFileView(FileView fileview) {
         super.setFileView(fileview);
     }
 
-    /**Sets the type of the chooser: load*/
+    /**
+     * Sets the type of the chooser: load
+     */
     public void setTypeLoad() {
         this.setDialogType(JFileChooser.OPEN_DIALOG);
     }
 
-    /**Sets the type of the chooser: save*/
+    /**
+     * Sets the type of the chooser: save
+     */
     public void setTypeSave() {
         this.setDialogType(JFileChooser.SAVE_DIALOG);
     }
 
-    /**Creates a chooser dialog and displays it*/
+    /**
+     * Creates a chooser dialog and displays it
+     */
     private void showChooserDialog() {
         this.setApproveButtonText(this.rb.getResourceString("button.select"));
         final JDialog dialog = this.createDialog(this.parent);
@@ -157,8 +180,9 @@ public class MecFileChooser extends JFileChooser {
         dialog.setVisible(true);
     }
 
-    /**Browses for a filename and returns it
-     * @param parent Parent component
+    /**
+     * Browses for a filename and returns it
+     *
      * @return null if the user cancels the action!
      */
     public String browseFilename() {
@@ -171,7 +195,9 @@ public class MecFileChooser extends JFileChooser {
         return (file.getAbsolutePath());
     }
 
-    /**Browses the directory for a filename
+    /**
+     * Browses the directory for a filename
+     *
      * @param component JComponent where the chosen filename will displayed
      * @param filter FileFilters that are accepted
      */
@@ -184,7 +210,7 @@ public class MecFileChooser extends JFileChooser {
             JTextField textField = (JTextField) component;
             //if there is something typed in in the text field the already predefined file
             //or directory should be ignored
-            if (textField.getText().length() > 0) {
+            if (!textField.getText().isEmpty()) {
                 this.setPreselectedFile(new File(textField.getText()));
             }
         }
@@ -204,20 +230,26 @@ public class MecFileChooser extends JFileChooser {
         return (file.getAbsolutePath());
     }
 
-    /**Sets the preselected file in the directory chooser and returns if this was successful*/
+    /**
+     * Sets the preselected file in the directory chooser and returns if this
+     * was successful
+     */
     public void setPreselectedFile(Path preselectedFile) {
         this.setPreselectedFile(preselectedFile.toFile());
     }
-    
-    /**Sets the preselected file in the directory chooser and returns if this was successful*/
+
+    /**
+     * Sets the preselected file in the directory chooser and returns if this
+     * was successful
+     */
     public void setPreselectedFile(File preselectedFile) {
         if (!preselectedFile.exists()) {
             //preselection file does not exist: first try to set the parent directory as default.
             //if this does not work use the users home directory
             File parentDir = preselectedFile.getParentFile();
-            if( parentDir != null && parentDir.exists()){
+            if (parentDir != null && parentDir.exists()) {
                 this.setCurrentDirectory(parentDir);
-            }else{
+            } else {
                 this.setCurrentDirectory(new File(System.getProperty("user.dir")));
             }
         } else if (!preselectedFile.isDirectory()) {
@@ -231,7 +263,9 @@ public class MecFileChooser extends JFileChooser {
         }
     }
 
-    /**Sets the preselected directory in the directory chooser*/
+    /**
+     * Sets the preselected directory in the directory chooser
+     */
     @Override
     public void setCurrentDirectory(File preselectedDir) {
         if (preselectedDir != null && !preselectedDir.exists()) {
@@ -241,8 +275,10 @@ public class MecFileChooser extends JFileChooser {
         }
     }
 
-    /**Adds an item to a comboBox. If the item already exists,
-     * it is set as selected
+    /**
+     * Adds an item to a comboBox. If the item already exists, it is set as
+     * selected
+     *
      * @param comboBox Component to set the item
      * @param item Object to write into the ComboBox
      */
@@ -258,17 +294,21 @@ public class MecFileChooser extends JFileChooser {
         comboBox.setSelectedItem(item);
     }
 
-    /**Browses the directory for a filename, all files are accepted. If there is
+    /**
+     * Browses the directory for a filename, all files are accepted. If there is
      * already a file name displayed in the component, its path will set as
      * default path.
+     *
      * @param component JComponent where the chosen filename will displayed
-     *@return null if the user cancels the action!
+     * @return null if the user cancels the action!
      */
     public String browseFilename(JComponent component) {
         return (this.browseFilename(component, null));
     }
 
-    /**Browses directories ONLY, no file selection allowed
+    /**
+     * Browses directories ONLY, no file selection allowed
+     *
      * @param component TextComponent where the chosen filename will displayed
      */
     public String browseDirectory(JComponent component) {
@@ -276,18 +316,23 @@ public class MecFileChooser extends JFileChooser {
         return (this.browseFilename(component));
     }
 
-    /**Browses directories ONLY, no file selection allowed
+    /**
+     * Browses directories ONLY, no file selection allowed
      */
     public String browseDirectory() {
         this.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
         return (this.browseFilename());
     }
 
-    /**Filefilter for the chooser*/
+    /**
+     * Filefilter for the chooser
+     */
     public static class MecFileFilter extends javax.swing.filechooser.FileFilter {
 
         private String filePath = "";
-        /**Stores the possible file filter extentions*/
+        /**
+         * Stores the possible file filter extentions
+         */
         protected String[] filter = null;
 
         public MecFileFilter(String[] filter) {
@@ -300,22 +345,28 @@ public class MecFileChooser extends JFileChooser {
             if (file.isDirectory()) {
                 return (true);
             }
-            this.filePath = file.getPath().toLowerCase();
-            //check accept
-            if (this.filter != null) {
-                boolean accept = false;
-                for (int i = 0; i < this.filter.length; i++) {
-                    if (this.filePath.endsWith(this.filter[i])) {
-                        accept = true;
-                        break;
+            try {
+                this.filePath = file.getPath().toLowerCase();
+                //check accept
+                if (this.filter != null) {
+                    boolean accept = false;
+                    for (int i = 0; i < this.filter.length; i++) {
+                        if (this.filePath.endsWith(this.filter[i])) {
+                            accept = true;
+                            break;
+                        }
                     }
+                    return (accept);
                 }
-                return (accept);
+            } catch (Throwable e) {
+                //just ignore any error here
             }
             return (true);
         }
 
-        /**return descriptions of choosable file extentions*/
+        /**
+         * return descriptions of choosable file extentions
+         */
         @Override
         public String getDescription() {
             if (this.filePath.endsWith(".xsl")) {

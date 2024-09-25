@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/security/cert/gui/keygeneration/JDialogEditSubjectAlternativeNames.java 4     27 $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/JDialogEditSubjectAlternativeNames.java 5     2/11/23 14:03 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,7 +26,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * Dialog that is shown if multiple files should be closed
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class JDialogEditSubjectAlternativeNames extends JDialog implements ListSelectionListener {
 
@@ -35,8 +35,8 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
      * ResourceBundle to localize the output
      */
     private MecResourceBundle rb = null;
-    private JFrame parent;
-    private List<GeneralName> namesList;
+    private final JFrame parent;
+    private final List<GeneralName> namesList;
 
     private final static MendelsonMultiResolutionImage ICON_ADD
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/add.svg", 24, 48);

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/PreferencesResponse.java 4     4/06/18 12:22p Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/PreferencesResponse.java 5     2/11/23 15:53 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -13,11 +13,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class PreferencesResponse extends ClientServerResponse implements Serializable{
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
     private String value = null;
 
     public PreferencesResponse( PreferencesRequest request ){

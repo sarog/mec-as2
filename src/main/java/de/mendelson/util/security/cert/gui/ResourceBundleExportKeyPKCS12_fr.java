@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_fr.java 4     7/12/22 16:31 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_fr.java 8     2/11/23 15:53 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,11 +16,11 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 4 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleExportKeyPKCS12_fr extends MecResourceBundle {
 
-    public static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
     @Override
     public Object[][] getContents() {
@@ -35,17 +35,22 @@ public class ResourceBundleExportKeyPKCS12_fr extends MecResourceBundle {
         {"button.cancel", "Annuler"},
         {"button.browse", "Parcourir..."},
         {"keystore.contains.nokeys", "Ce porte-clef ne contient aucune clef privée."},
-        {"label.exportkey", "Nom du fichier"},
-        {"label.exportkey.hint", "Nom du fichier d''exportation (PKCS#12)"},
+        {"label.exportdir", "Répertoire d''exportation"},
+        {"label.exportdir.hint", "Répertoire dans lequel la liste de clés doit être créée (PKCS#12)"},
+        {"label.exportdir.help", "<HTML><strong>Répertoire d''exportation</strong><br><br>"
+            + "Veuillez indiquer ici le répertoire d''exportation dans lequel la clé privée doit être exportée.<br>"
+            + "Pour des raisons de sécurité, la clé n''est pas transférée sur le client, "
+            + "c''est pourquoi seule une sauvegarde côté serveur est possible.<br><br>"
+            + "Le système créera dans ce répertoire un fichier mémoire contenant un horodateur."
+            + "</HTML>"},
         {"label.keypass", "Mot de passe"},
         {"label.keypass.hint", "Mot de passe pour keystore exporté"},
         {"title", "Export de la clef vers le porte-clef (PKCS#12 format)"},
-        {"filechooser.key.export", "Merci de sélectionner le fichier porte-clef PKCS#12 pour l''export"},
-        {"key.export.success.message", "La clef a été exportée avec succès."},
+        {"filechooser.key.export", "Veuillez sélectionner le répertoire d''exportation sur le serveur"},
         {"key.export.success.title", "Succès"},
         {"key.export.error.message", "Une erreur a eu lieu lors du processus d''export.\n{0}"},
         {"key.export.error.title", "Erreur"},
         {"label.alias", "Clef"},
-        {"key.exported.to.file", "La clef \"{0}\" a été insérée dans le porte-clef \"{1}\"."},};
+        {"key.exported.to.file", "La clef \"{0}\" a été insérée dans le porte-clef \"{1}\" (PKCS#12)"},};
 
 }

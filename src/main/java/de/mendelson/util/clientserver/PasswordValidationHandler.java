@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/PasswordValidationHandler.java 6     9/01/15 11:48a Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/PasswordValidationHandler.java 8     23/01/24 10:17 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.LoginState;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Handler that cares for the user permissions and password validation
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class PasswordValidationHandler {
 
@@ -26,13 +26,8 @@ public class PasswordValidationHandler {
     public static final int STATE_SUCCESS = LoginState.STATE_AUTHENTICATION_SUCCESS;
     public static final int STATE_INCOMPATIBLE_CLIENT = LoginState.STATE_INCOMPATIBLE_CLIENT;
     private Logger logger = Logger.getAnonymousLogger();
-    private String[] validClientIds = null;
+    private final String[] validClientIds;
 
-    /**
-     * Allows all client ids to login, use carefully
-     */
-    public PasswordValidationHandler() {
-    }
 
     public PasswordValidationHandler(String[] validClientIds) {
         this.validClientIds = validClientIds;
@@ -71,12 +66,12 @@ public class PasswordValidationHandler {
             return (STATE_FAILURE);
         }
         //no password defined for the found user, let the user in without checking the password
-        if (definedUser.getPasswdCrypted() == null || definedUser.getPasswdCrypted().length() == 0) {
+        if (definedUser.getPasswdCrypted() == null || definedUser.getPasswdCrypted().isEmpty()) {
             return (STATE_SUCCESS);
         }
         //transmitted password is not set and defined password is not empty
-        if ((transmittedPassword == null || transmittedPassword.length() == 0)
-                && (definedUser.getPasswdCrypted() != null || definedUser.getPasswdCrypted().length() > 0)) {
+        if ((transmittedPassword == null || transmittedPassword.isEmpty())
+                && (definedUser.getPasswdCrypted() != null || !definedUser.getPasswdCrypted().isEmpty())) {
             return (STATE_PASSWORD_REQUIRED);
         }
         //a password has been sent, validate it
