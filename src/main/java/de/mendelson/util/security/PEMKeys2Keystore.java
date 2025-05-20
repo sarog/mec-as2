@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/PEMKeys2Keystore.java 11    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/security/PEMKeys2Keystore.java 16    11/02/25 13:40 Heller $
 package de.mendelson.util.security;
 
 import java.io.ByteArrayInputStream;
@@ -22,6 +22,7 @@ import org.bouncycastle.openssl.PEMKeyPair;
 import org.bouncycastle.openssl.PEMParser;
 import org.bouncycastle.openssl.jcajce.JcaPEMKeyConverter;
 import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -29,7 +30,6 @@ import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * This class allows to import keys that exist in PEM encoding (human readable
  * format), e.g. created by openssl, into a PKCS#12 keystore. Please remember
@@ -43,11 +43,9 @@ import org.bouncycastle.openssl.jcajce.JcePEMDecryptorProviderBuilder;
  * PRIVATE KEY-----
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 16 $
  */
-public class PEMKeys2Keystore{
-
-    private Logger logger = Logger.getAnonymousLogger();
+public class PEMKeys2Keystore {
 
     private char[] keypass = null;
 
@@ -69,7 +67,6 @@ public class PEMKeys2Keystore{
      * @param logger Logger to log the information to
      */
     public PEMKeys2Keystore(Logger logger, String targetKeystoreType) {
-        this.logger = logger;
         this.targetKeystoreType = targetKeystoreType;
         //forget it to work without BC at this point, the SUN JCE provider
         //could not handle pcks12        
@@ -129,19 +126,8 @@ public class PEMKeys2Keystore{
     public void importKey(Path pemKeyFile, char[] keypassIn,
             char[] keypassOut,
             Path certificateFile, String alias) throws Exception {
-        Reader fileReader = null;
-        InputStream certStream = null;
-        try {
-            fileReader = Files.newBufferedReader(pemKeyFile);
-            certStream = Files.newInputStream(certificateFile);
+        try (Reader fileReader = Files.newBufferedReader(pemKeyFile); InputStream certStream = Files.newInputStream(certificateFile)) {
             this.importKey(fileReader, keypassIn, keypassOut, certStream, alias);
-        } finally {
-            if (fileReader != null) {
-                fileReader.close();
-            }
-            if (certStream != null) {
-                certStream.close();
-            }
         }
     }
 
@@ -153,13 +139,15 @@ public class PEMKeys2Keystore{
      * @param alias Alias to use in the new keystore
      *
      */
-    public void importKey(byte[] keyDataPEM, char[] keypassIn,  char[] keypassOut,
+    public void importKey(byte[] keyDataPEM, char[] keypassIn, char[] keypassOut,
             byte[] certificateDataPEM, String alias) throws Exception {
-        Reader reader = new InputStreamReader(new ByteArrayInputStream(keyDataPEM));
-        ByteArrayInputStream certStream = new ByteArrayInputStream(certificateDataPEM);
-        this.importKey(reader, keypassIn, keypassOut, certStream, alias);
-        reader.close();
-        certStream.close();
+        try (InputStream keyDataPEMIn = new ByteArrayInputStream(keyDataPEM)) {
+            try (Reader reader = new InputStreamReader(keyDataPEMIn)) {
+                try (ByteArrayInputStream certStream = new ByteArrayInputStream(certificateDataPEM)) {
+                    this.importKey(reader, keypassIn, keypassOut, certStream, alias);
+                }
+            }
+        }
     }
 
     /**
@@ -169,7 +157,7 @@ public class PEMKeys2Keystore{
         //do not remove the BC paramter, SUN cannot handle the format proper
         KeyStore newKeystore = null;
         if (this.targetKeystoreType.equals(BCCryptoHelper.KEYSTORE_PKCS12)) {
-            newKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+            newKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12,
                     BouncyCastleProvider.PROVIDER_NAME);
         } else if (this.targetKeystoreType.equals(BCCryptoHelper.KEYSTORE_JKS)) {
             newKeystore = KeyStore.getInstance("JKS");
@@ -195,13 +183,8 @@ public class PEMKeys2Keystore{
      * @param keystorePass Password for the keystore
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass, Path file) throws Exception {
-        OutputStream out = null;
-        try{
-            out = Files.newOutputStream(file);
+        try (OutputStream out = Files.newOutputStream(file)) {
             keystore.store(out, keystorePass);
-        }finally{
-            if( out != null )
-                out.close();
         }
     }
 
@@ -210,9 +193,8 @@ public class PEMKeys2Keystore{
      * certificate itself
      */
     private X509Certificate readCertificate(InputStream certificateStream) throws Exception {
-        X509Certificate cert = null;
         CertificateFactory factory = CertificateFactory.getInstance("X.509");
-        cert = (X509Certificate) factory.generateCertificate(certificateStream);
+        X509Certificate cert = (X509Certificate) factory.generateCertificate(certificateStream);
         return (cert);
     }
 

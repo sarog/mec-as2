@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleClientServer_fr.java 3     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/ResourceBundleClientServer_fr.java 4     9/12/24 15:50 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleClientServer_fr extends MecResourceBundle {
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderSender_de.java 6     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderSender_de.java 8     9/12/24 16:03 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleSendOrderSender_de extends MecResourceBundle{
     
@@ -24,7 +24,7 @@ public class ResourceBundleSendOrderSender_de extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"message.packed", "Ausgehende AS2 Nachricht aus \"{0}\" für den Empfänger \"{1}\" erstellt in {3}, Rohdatengrösse: {2}, benutzerdefinierte id: \"{4}\"" },
         {"sendoder.sendfailed", "Es trat ein Problem beim Verarbeiten eines Sendeauftrags auf: [{0}] \"{1}\" - die Daten wurden nicht an den Partner übermittelt." },
     };

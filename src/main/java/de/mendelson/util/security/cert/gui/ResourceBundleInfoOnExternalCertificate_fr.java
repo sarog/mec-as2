@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleInfoOnExternalCertificate_fr.java 5     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleInfoOnExternalCertificate_fr.java 7     9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleInfoOnExternalCertificate_fr extends MecResourceBundle {
 
@@ -30,14 +30,14 @@ public class ResourceBundleInfoOnExternalCertificate_fr extends MecResourceBundl
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"button.ok", "Importer >>"},
         {"button.cancel", "Annuler"},
         {"title.single", "Info sur le certificat externe"},
         {"title.multiple", "Info sur les certificats externe"},
         {"certinfo.certfile", "Dossier de certificat: {0}"},
-        {"certificate.exists", "Le certificat existe déjà dans le keystore, l''alias \"{0}\""},
-        {"certificate.doesnot.exist", "Le certificat n''existe pas dans le keystore"},
+        {"certificate.exists", "Le certificat existe déjà dans le gestion des certificats, l''alias \"{0}\""},
+        {"certificate.doesnot.exist", "Le certificat n''existe pas dans le gestion des certificats"},
         {"no.certificate", "Impossible d'identifier le certificat" },
     };
 

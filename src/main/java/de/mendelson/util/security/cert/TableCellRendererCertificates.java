@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 9     14/12/23 15:42 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 11    20/02/25 15:51 Heller $
 package de.mendelson.util.security.cert;
 
+import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import java.awt.Component;
 import java.awt.Color;
 import java.awt.Rectangle;
@@ -14,13 +15,13 @@ import javax.swing.table.TableCellRenderer;
  * Renders a certificate in a JTable column
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class TableCellRendererCertificates extends DefaultTableCellRenderer implements TableCellRenderer {
 
-    public static final int ROW_HEIGHT = TableModelCertificates.ROW_HEIGHT;
-    protected static final int IMAGE_HEIGHT = TableModelCertificates.IMAGE_HEIGHT;
-    
+    public static final int ROW_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE + 3;
+    protected static final int IMAGE_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE;
+
     /**
      * Stores the certificates
      */
@@ -97,8 +98,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
             alias = ((KeystoreCertificate) value).getAlias();
         }
         try {
-            PrivateKey key = this.manager.getPrivateKey(alias);
-            this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+            this.setIcon(new ImageIcon(
+                    TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
         } catch (Exception e) {
             KeystoreCertificate cert = this.manager.getKeystoreCertificate(alias);
             if (cert != null) {

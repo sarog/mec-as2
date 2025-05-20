@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/database/DBDriverManagerHSQL.java 32    2/01/24 8:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/DBDriverManagerHSQL.java 36    8/11/24 9:00 Heller $
 package de.mendelson.comm.as2.database;
 
+import de.mendelson.util.database.SQLScriptExecutor;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -10,6 +11,7 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.AbstractDBDriverManagerHSQL;
 import de.mendelson.util.database.DebuggableConnection;
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.database.ISQLQueryModifier;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
@@ -31,7 +33,7 @@ import java.util.logging.Logger;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 36 $
  */
 public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements IDBDriverManager, ISQLQueryModifier {
 
@@ -39,7 +41,8 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
     private final static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final static MecResourceBundle rb;
     private final static String MODULE_NAME;
-    static{
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleDBDriverManager.class.getName());
@@ -47,8 +50,8 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
-        MODULE_NAME = rb.getResourceString( "module.name");
-    }  
+        MODULE_NAME = rb.getResourceString("module.name");
+    }
     private final static String DB_USER_NAME = "sa";
     public final static String DB_PASSWORD = "as2dbadmin";
     public static final boolean USE_CONNECTION_POOLING = true;
@@ -56,7 +59,7 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
     private final HikariConfig configConnectionPoolConfig = new HikariConfig();
     private final HikariConfig configConnectionPoolRuntime = new HikariConfig();
     private static HikariDataSource configDatasource = null;
-    private static HikariDataSource runtimeDatasource = null;    
+    private static HikariDataSource runtimeDatasource = null;
 
     static {
         //register db driver
@@ -65,13 +68,14 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
         } catch (Throwable e) {
             throw new RuntimeException("Unable to register database driver for HSQL database - ["
                     + e.getClass().getSimpleName() + "] " + e.getMessage());
-        }        
+        }
     }
 
     /**
      * keeps this as singleton for the whole server instance
      */
     private static DBDriverManagerHSQL instance;
+
     /**
      * Singleton for the whole application. Looks uncommon but uses the double
      * checked method for higher performance - in this case the method is not
@@ -90,7 +94,7 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
 
     private DBDriverManagerHSQL() {
     }
-    
+
     /**
      * Setup the driver manager, initialize the connection pool
      *
@@ -185,28 +189,18 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
                 throw new RuntimeException("Unknown DB type requested in DBDriverManager.");
             }
             logger.info(MODULE_NAME + " " + rb.getResourceString("creating.database." + DB_TYPE));
-            Connection connection = null;
-            try {
-                connection = DriverManager.getConnection("jdbc:hsqldb:" + this.getDBName(DB_TYPE),
-                        "sa", "");
-                Statement statement = null;
-                try {
-                    statement = connection.createStatement();
-                    statement.execute("ALTER USER " + DB_USER_NAME.toUpperCase() + " SET PASSWORD '" + DB_PASSWORD + "'");
-                } finally {
-                    if (statement != null) {
-                        statement.close();
-                    }
+            try (Connection connection
+                    = DriverManager.getConnection("jdbc:hsqldb:" + this.getDBName(DB_TYPE),
+                            "sa", "")) {
+                try (Statement statement = connection.createStatement()) {
+                    statement.execute("ALTER USER " + DB_USER_NAME.toUpperCase() 
+                            + " SET PASSWORD '" + DB_PASSWORD + "'");
                 }
                 SQLScriptExecutor executor = new SQLScriptExecutor();
-                executor.create(connection, createResource, dbVersion);
+                executor.create(connection, createResource, dbVersion, new AS2ServerVersion());
             } catch (Exception e) {
                 throw new Exception(rb.getResourceString("database.creation.failed." + DB_TYPE)
                         + " [" + e.getMessage() + "]");
-            } finally {
-                if (connection != null) {
-                    connection.close();
-                }
             }
             logger.info(MODULE_NAME + " " + rb.getResourceString("database.creation.success." + DB_TYPE));
             SystemEvent event = new SystemEvent(
@@ -263,7 +257,7 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
     @Override
     public synchronized Connection getConnectionWithoutErrorHandling(final int DB_TYPE)
             throws SQLException {
-        Connection connection = null;        
+        Connection connection = null;
         if (DB_TYPE == DB_RUNTIME) {
             if (runtimeDatasource != null && runtimeDatasource.getHikariPoolMXBean().getIdleConnections() > 0) {
                 connection = runtimeDatasource.getConnection();
@@ -307,7 +301,8 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
     @Override
     public String modifyQuery(String query) {
         String newQuery = query;
-        newQuery = AS2Tools.replace(newQuery, "INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY", "INTEGER GENERATED BY DEFAULT AS IDENTITY(CYCLE) PRIMARY KEY");
+        newQuery = AS2Tools.replace(newQuery, 
+                "INTEGER GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY", "INTEGER GENERATED BY DEFAULT AS IDENTITY(CYCLE) PRIMARY KEY");
         return (newQuery);
     }
 
@@ -317,7 +312,7 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
     @Override
     public String getPoolInformation(int DB_TYPE) {
         StringBuilder output = new StringBuilder();
-        HikariDataSource datasource = null;
+        HikariDataSource datasource;
         if (DB_TYPE == DB_CONFIG) {
             datasource = configDatasource;
             output.append("[CONFIG DB]");
@@ -337,5 +332,5 @@ public class DBDriverManagerHSQL extends AbstractDBDriverManagerHSQL implements 
         }
         return (output.toString());
     }
-    
+
 }

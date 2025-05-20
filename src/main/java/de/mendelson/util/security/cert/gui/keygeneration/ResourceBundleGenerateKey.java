@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey.java 16    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey.java 17    5/09/24 11:25 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleGenerateKey extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleGenerateKey extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Generate key"},
         {"button.ok", "Ok"},
         {"button.cancel", "Cancel"},
@@ -44,7 +44,7 @@ public class ResourceBundleGenerateKey extends MecResourceBundle {
             + "This is the signature algorithm with which the key is signed. It is needed for integrity tests "
             + "of the key itself. This parameter has nothing to do with the signature capabilities of the key - "
             + "for example, you can create SHA-2 signatures with a SHA-1 signed key or vice versa.<br>"
-            + "We would recommend a SHA-2 signed key as of 2022."
+            + "We would recommend a SHA-2 signed key as of 2024."
             + "</HTML>"
         },
         {"label.size", "Size"},
@@ -53,7 +53,14 @@ public class ResourceBundleGenerateKey extends MecResourceBundle {
             + "than cryptographic operations with keys of smaller key lengths. However, the disadvantage of large key lengths "
             + "is that cryptographic operations take significantly longer, which can significantly slow down data processing "
             + "depending on the computing power.<br>"
-            + "As of 2022, we would recommend a key with a length of 2048 or 4096 bits."
+            + "As of 2022, we would recommend a key with a length of 2048 or 4096 bits.<br><br>"
+            + "<strong>Overview: SHA-1, SHA-2, SHA-3 and RSASSA-PSS</strong><br><br>"
+            + "<strong>SHA-1</strong>: An older hash algorithm that is now considered insecure.<br>"
+            + "<strong>SHA-2</strong>: A more modern and secure version of SHA, which exists in different variants such as SHA-256 and SHA-512.<br>"
+            + "<strong>SHA-3</strong>: The latest hash algorithm, which is based on a different structure than SHA-1 and SHA-2 and "
+            + "is even more secure against attacks.<br>"
+            + "<strong>RSASSA-PSS (Probabilistic Signature Scheme)</strong>: This is an extension of RSA. It combines the SHA hash function "
+            + "with the PSS signature procedure, which provides additional security."
             + "</HTML>"
         },
         {"label.commonname", "Common name"},

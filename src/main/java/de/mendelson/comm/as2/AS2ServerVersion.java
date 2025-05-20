@@ -1,7 +1,9 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 91    17/01/24 16:13 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 94    20/03/25 14:45 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.Copyright;
+import de.mendelson.IProductVersion;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -14,9 +16,9 @@ import de.mendelson.Copyright;
  * Class to check the version and the build of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 91 $
+ * @version $Revision: 94 $
  */
-public class AS2ServerVersion {
+public class AS2ServerVersion implements IProductVersion {
 
     /**
      * Returns the used user agent
@@ -47,7 +49,7 @@ public class AS2ServerVersion {
      * Returns the internal build number
      */
     public static int getBuildNo() {
-        return (65);
+        return (67);
     }
 
     /**
@@ -63,7 +65,7 @@ public class AS2ServerVersion {
      * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionConfig() {
-        return (54);
+        return (56);
     }
 
     /**
@@ -72,7 +74,7 @@ public class AS2ServerVersion {
      * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionRuntime() {
-        return (50);
+        return (51);
     }
 
     /**
@@ -87,7 +89,7 @@ public class AS2ServerVersion {
      * Returns the date the package was last modified
      */
     public static String getLastModificationDate() {
-        String fullDate = "$Date: 17/01/24 16:13 $";
+        String fullDate = "$Date: 20/03/25 14:45 $";
         return (fullDate.substring(fullDate.indexOf(":") + 1, fullDate.lastIndexOf("$")));
     }
 
@@ -137,5 +139,13 @@ public class AS2ServerVersion {
                 .append(" ")
                 .append(AS2ServerVersion.getBuild());
         return (builder.toString());
+    }
+
+    /**
+     * Makes this a IProductVersion
+     */
+    @Override
+    public String getFullName() {
+        return (AS2ServerVersion.getFullProductName());
     }
 }

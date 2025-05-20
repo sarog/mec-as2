@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/mailautoconfig/gui/JDialogMailAutoConfigurationDetection.java 7     2/11/23 14:03 Heller $
+//$Header: /mec_oftp2/de/mendelson/util/mailautoconfig/gui/JDialogMailAutoConfigurationDetection.java 8     14/03/25 11:33 Heller $
 package de.mendelson.util.mailautoconfig.gui;
 
 import de.mendelson.util.IStatusBar;
@@ -8,13 +8,13 @@ import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.mailautoconfig.MailServiceConfiguration;
 import de.mendelson.util.mailautoconfig.clientserver.MailAutoConfigDetectRequest;
 import de.mendelson.util.mailautoconfig.clientserver.MailAutoConfigDetectResponse;
 import de.mendelson.util.uinotification.UINotification;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
@@ -38,7 +38,7 @@ import javax.swing.event.ListSelectionListener;
  * Detect mail server settings by a give mail address
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class JDialogMailAutoConfigurationDetection extends JDialog implements ListSelectionListener {
 
@@ -192,10 +192,7 @@ public class JDialogMailAutoConfigurationDetection extends JDialog implements Li
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor(
-                new NamedThreadFactory("ui-mailconfig-detection"));
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit( runnable );
     }
 
     /**

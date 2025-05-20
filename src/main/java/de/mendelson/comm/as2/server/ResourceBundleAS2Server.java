@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server.java 22    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server.java 23    18/02/25 14:39 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 23 $
  */
 public class ResourceBundleAS2Server extends MecResourceBundle {
 
@@ -42,6 +42,7 @@ public class ResourceBundleAS2Server extends MecResourceBundle {
         {"server.shutdown", "{0} is shutting down." },
         {"bind.exception", "{0}\nYou defined a port that is currently used in your system by another process.\nThis might be the client-server port or the HTTP/S port you defined in the HTTP configuration.\nPlease modify your configuration or stop the other process before using the {1}."},
          {"server.started.issues", "Warning: There has been found {0} configuration issues during server startup." },
+         {"server.started.usedlibs", "Used libraries" },
         {"server.started.issue", "Warning: There has been found 1 configuration issue during server startup." },   
         {"server.hello", "This is {0}" },
         {"server.hello.licenseexpire", "The license will expire in {0} days ({1}). You must renew the licence via mendelson support (service@mendelson.de) if you wish to continue using it afterwards." },

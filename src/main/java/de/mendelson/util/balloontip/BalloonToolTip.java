@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/balloontip/BalloonToolTip.java 12    28/11/23 12:26 Heller $
+//$Header: /as4/de/mendelson/util/balloontip/BalloonToolTip.java 16    12/02/25 11:57 Heller $
 package de.mendelson.util.balloontip;
 
 import java.awt.AlphaComposite;
@@ -24,6 +24,7 @@ import javax.swing.JToolTip;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -37,7 +38,7 @@ import javax.swing.border.EmptyBorder;
  * direct in the UI
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 16 $
  */
 public class BalloonToolTip extends JToolTip {
 
@@ -45,30 +46,42 @@ public class BalloonToolTip extends JToolTip {
     private static final int TRIANGLE_SIZE = 10;
     private static final int ARC = 10;
     protected static final int BORDER_STROKE_SIZE = 1;
-    private Font font;
+    private Font tooltipFont;
     private Color borderColor = Color.DARK_GRAY;
     private Color backgoundColor = Color.LIGHT_GRAY;
     private Color foregoundColor = Color.BLACK;
 
-    public final static int TRIANGLE_ALIGNMENT_CENTER = 1;
-    public final static int TRIANGLE_ALIGNMENT_TOP = 2;
-    public final static int TRIANGLE_ALIGNMENT_BOTTOM = 3;
+    public final static int TRIANGLE_ALIGNMENT_CENTER = SwingUtilities.CENTER;
+    public final static int TRIANGLE_ALIGNMENT_TOP = SwingUtilities.TOP;
+    public final static int TRIANGLE_ALIGNMENT_BOTTOM = SwingUtilities.BOTTOM;
 
     private int triangleAlignment = TRIANGLE_ALIGNMENT_TOP;
 
     public BalloonToolTip() {
         super();
-        this.font = UIManager.getFont("ToolTip.font");
-        if (this.font == null) {
-            this.font = new Font(Font.DIALOG, Font.PLAIN, 12);
+        this.tooltipFont = UIManager.getFont("ToolTip.font");
+        if (this.tooltipFont == null) {
+            this.tooltipFont = new Font(Font.DIALOG, Font.PLAIN, 12);
         }
-        if (UIManager.getColor("controlText") != null) {
+        if (UIManager.getColor("ToolTip.foreground") != null) {
+            foregoundColor = UIManager.getColor("ToolTip.foreground");
+        } else if (UIManager.getColor("controlText") != null) {
             foregoundColor = UIManager.getColor("controlText");
         }
-        if (UIManager.getColor("controlHighlight") != null) {
+        if (UIManager.getColor("ToolTip.background") != null) {
+            backgoundColor = UIManager.getColor("ToolTip.background");
+        } else if (UIManager.getColor("controlHighlight") != null) {
             backgoundColor = UIManager.getColor("controlHighlight");
         }
-        if (UIManager.getColor("controlDkShadow") != null) {
+        if (UIManager.getColor("ToolTip.background") != null) {
+            backgoundColor = UIManager.getColor("ToolTip.background");
+        }
+        if (UIManager.getBorder("ToolTip.border") != null && UIManager.getBorder("ToolTip.border") instanceof LineBorder) {
+            LineBorder border = (LineBorder) UIManager.getBorder("ToolTip.border");
+            borderColor = border.getLineColor();
+        } else if (UIManager.getColor("ToolTip.foreground") != null) {
+            borderColor = UIManager.getColor("ToolTip.foreground");
+        } else if (UIManager.getColor("controlDkShadow") != null) {
             borderColor = UIManager.getColor("controlDkShadow");
         }
         this.setBorder(new EmptyBorder(
@@ -154,11 +167,11 @@ public class BalloonToolTip extends JToolTip {
                 RenderingHints.VALUE_ANTIALIAS_ON);
         //set the background color of the tooltip. Its also possible to make it
         //transparent in the future, with something like
-        //Color transparentColor = new Color( 
+        //"Color transparentColor = new Color( 
         //        this.backgoundColor.getRed(),
         //        this.backgoundColor.getGreen(),
         //        this.backgoundColor.getBlue(),
-        //        200);
+        //        200);"
         // - where the alpha channel is a value from 0 (full transparency) to 255 (solid)
         g2.setColor(this.backgoundColor);
         g2.fill(balloonArea);
@@ -170,7 +183,7 @@ public class BalloonToolTip extends JToolTip {
         //generate the text label and render it
         String toolTipText = this.getComponent().getToolTipText();
         JLabel textLabel = new JLabel(toolTipText);
-        textLabel.setFont(this.font);
+        textLabel.setFont(this.tooltipFont);
         textLabel.setSize(textLabel.getPreferredSize());
         Graphics2D g2Text = (Graphics2D) g.create(BORDER_GAP + TRIANGLE_SIZE, BORDER_GAP,
                 this.getWidth() - BORDER_GAP - TRIANGLE_SIZE,

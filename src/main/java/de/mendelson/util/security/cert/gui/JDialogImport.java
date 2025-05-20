@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImport.java 6     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogImport.java 7     3/07/24 14:07 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,7 +20,7 @@ import javax.swing.JFrame;
  * Dialog to preselect what to import - a key or a certificate and how
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class JDialogImport extends JDialog {
 
@@ -32,8 +32,19 @@ public class JDialogImport extends JDialog {
     /**
      * ResourceBundle to localize the GUI
      */
-    private final MecResourceBundle rb;
-    private final MecResourceBundle rbCertificates;
+    private final static MecResourceBundle rb;
+    private final static MecResourceBundle rbCertificates;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleImport.class.getName());
+            rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCertificates.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Creates new form JDialogPartnerConfig
@@ -41,17 +52,7 @@ public class JDialogImport extends JDialog {
      */
     public JDialogImport(JFrame parent) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleImport.class.getName());
-            this.rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCertificates.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         this.setMultiresolutionIcons();
         this.getRootPane().setDefaultButton(this.jButtonOk);
@@ -62,11 +63,14 @@ public class JDialogImport extends JDialog {
      */
     private void setMultiresolutionIcons() {
         this.jLabelIcon.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(32)));
+                new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_DIALOG)));
         this.jLabelImageCert.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_CERTIFICATE.toMinResolution(24)));
+                new ImageIcon(JDialogCertificates.IMAGE_CERTIFICATE.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
         this.jLabelImageKey.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_KEY.toMinResolution(24)));
+                new ImageIcon(JDialogCertificates.IMAGE_KEY.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
     }
 
     /**

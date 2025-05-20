@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_de.java 11    6/11/23 11:38 Heller $ 
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_de.java 13    9/12/24 15:51 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleRenameEntry_de extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleRenameEntry_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"button.ok", "Ok"},
         {"button.cancel", "Abbrechen"},
         {"label.newalias", "Neuer Alias"},

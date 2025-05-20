@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 44    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 46    18/06/24 11:51 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -50,18 +50,18 @@ import javax.swing.event.ListSelectionListener;
  * Gives an overview on all CEM messages
  *
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 46 $
  */
 public class DialogCEMOverview extends JDialog implements ListSelectionListener, ClientsideMessageProcessor {
 
     private final static MendelsonMultiResolutionImage ICON_EXIT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/exit.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/exit.svg", 24);
     private final static MendelsonMultiResolutionImage ICON_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/delete.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/delete.svg", 24);
     private final static MendelsonMultiResolutionImage ICON_MESSAGEDETAILS
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/messagedetails.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/messagedetails.svg", 24);
     private final static MendelsonMultiResolutionImage ICON_CEM
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg", 24, 48);
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg", 24);
     
     /**
      * Manages all internal certificates

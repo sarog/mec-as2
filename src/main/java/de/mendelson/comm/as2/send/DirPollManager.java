@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 61    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 63    19/02/25 17:31 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
  * and sends them
  *
  * @author S.Heller
- * @version $Revision: 61 $
+ * @version $Revision: 63 $
  */
 public class DirPollManager {
 
@@ -46,7 +46,7 @@ public class DirPollManager {
     /**
      * Stores all poll threads key: partner DB id, value: pollThread
      */
-    private final Map<String, DirPollThread> mapPollThread 
+    private final Map<String, DirPollThread> mapPollThread
             = Collections.synchronizedMap(new HashMap<String, DirPollThread>());
     /**
      * Executor service for all poll threads, with n poll threads at the same
@@ -61,7 +61,7 @@ public class DirPollManager {
     private final ClientServer clientserver;
     private final IDBDriverManager dbDriverManager;
 
-    public DirPollManager(CertificateManager certificateManager, 
+    public DirPollManager(CertificateManager certificateManager,
             ClientServer clientserver, IDBDriverManager dbDriverManager) throws Exception {
         this.clientserver = clientserver;
         this.dbDriverManager = dbDriverManager;
@@ -147,7 +147,8 @@ public class DirPollManager {
         List<Partner> localStationList = new ArrayList<Partner>();
         for (Partner partner : allPartnerList) {
             if (partner.isLocalStation()) {
-                localStationList.add(partner);
+                Partner clonedLocalStation = (Partner)partner.clone();
+                localStationList.add(clonedLocalStation);                
             }
         }
         synchronized (this.mapPollThread) {
@@ -184,7 +185,7 @@ public class DirPollManager {
             }
             //still running task that is not in the configuration any more: stop and remove
             List<String> idList = new ArrayList<String>();
-            Iterator iterator = this.mapPollThread.keySet().iterator();
+            Iterator<String> iterator = this.mapPollThread.keySet().iterator();
             while (iterator.hasNext()) {
                 idList.add((String) iterator.next());
             }
@@ -219,8 +220,10 @@ public class DirPollManager {
 
             StringBuilder bodyBuilder = new StringBuilder();
             //display stopped polls
-            bodyBuilder.append(rb.getResourceString("title.list.polls.stopped")).append("\n");
-            bodyBuilder.append("------").append("\n");
+            bodyBuilder.append(rb.getResourceString("title.list.polls.stopped"))
+                    .append("\n")
+                    .append("------")
+                    .append("\n");
             Collections.sort(pollStopLines);
             for (String line : pollStopLines) {
                 bodyBuilder.append(line).append("\n");
@@ -230,8 +233,10 @@ public class DirPollManager {
             }
             bodyBuilder.append("\n\n");
             //display started polls
-            bodyBuilder.append(rb.getResourceString("title.list.polls.started")).append("\n");
-            bodyBuilder.append("------").append("\n");
+            bodyBuilder.append(rb.getResourceString("title.list.polls.started"))
+                    .append("\n")
+                    .append("------")
+                    .append("\n");
             Collections.sort(pollStartLines);
             for (String line : pollStartLines) {
                 bodyBuilder.append(line).append("\n");
@@ -241,8 +246,10 @@ public class DirPollManager {
             }
             bodyBuilder.append("\n\n");
             //display all current polls
-            bodyBuilder.append(rb.getResourceString("title.list.polls.running")).append("\n");
-            bodyBuilder.append("------").append("\n");
+            bodyBuilder.append(rb.getResourceString("title.list.polls.running"))
+                    .append("\n")
+                    .append("------")
+                    .append("\n");
             List<String> pollRunningLines = new ArrayList<String>();
             for (DirPollThread thread : threadList) {
                 pollRunningLines.add(thread.getLogLine() + "\n");
@@ -264,13 +271,13 @@ public class DirPollManager {
      *
      */
     private DirPollThread addPartnerPollThread(Partner localStation, Partner partner) {
-        DirPollThread thread = new DirPollThread(this.dbDriverManager, 
+        DirPollThread thread = new DirPollThread(this.dbDriverManager,
                 this.clientserver, this.certificateManager,
                 localStation, partner);
         synchronized (this.mapPollThread) {
             this.mapPollThread.put(localStation.getDBId() + "_" + partner.getDBId(), thread);
             thread.initializeThread();
-            ScheduledFuture future = this.scheduledExecutor.scheduleWithFixedDelay(thread, 5000, 
+            ScheduledFuture future = this.scheduledExecutor.scheduleWithFixedDelay(thread, 5000,
                     thread.getPollIntervalInMS(), TimeUnit.MILLISECONDS);
             //set the future to the thread to have the possibility to cancel it later and 
             //remove it from the schedulers internal queue

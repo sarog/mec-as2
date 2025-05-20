@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplayImplAS2.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/SignatureDisplayImplAS2.java 7     1/11/24 9:34 Heller $
 package de.mendelson.util.security.signature;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
  * Container superclass for the signature rendering
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class SignatureDisplayImplAS2 extends SignatureDisplay{
     
@@ -28,17 +28,20 @@ public class SignatureDisplayImplAS2 extends SignatureDisplay{
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_broken.svg",
                     ListCellRendererSignature.IMAGE_HEIGHT);
     
-    private final MecResourceBundle rb;
-    
-    
-    public SignatureDisplayImplAS2( Integer wrappedValue ){
-        super(wrappedValue );
+    private final static MecResourceBundle rb;
+    static{
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleSignatureAS2.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    
+    
+    public SignatureDisplayImplAS2( Integer wrappedValue ){
+        super(wrappedValue );
+        
     }
 
     @Override
@@ -49,7 +52,7 @@ public class SignatureDisplayImplAS2 extends SignatureDisplay{
 
     @Override
     public String getText() {
-        return( this.rb.getResourceString("signature." + this.getWrappedValue().toString()));
+        return( rb.getResourceString("signature." + this.getWrappedValue().toString()));
     }
     
     /**

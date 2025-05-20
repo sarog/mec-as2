@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/PartnerEventResource.java 1     13.11.20 8:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/PartnerEventResource.java 2     11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -15,7 +15,7 @@ import de.mendelson.util.MendelsonMultiResolutionImage;
  * is instanciated on a headless server (Problems with Debian)
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class PartnerEventResource{
     public final static MendelsonMultiResolutionImage IMAGE_PROCESS_EXECUTE_SHELL
@@ -25,4 +25,7 @@ public class PartnerEventResource{
     public final static MendelsonMultiResolutionImage IMAGE_PROCESS_MOVE_TO_DIR
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/event/send_to_folder.svg", 24, 96);
 
+    private PartnerEventResource(){        
+    }
+    
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 38    14/12/23 15:23 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 45    11/03/25 16:42 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 38 $
+ * @version $Revision: 45 $
  */
 public class ResourceBundleCertificates_de extends MecResourceBundle {
 
@@ -24,8 +24,8 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
-        {"display.ca.certs", "CA Zertifikate anzeigen"},
+    private static final Object[][] CONTENTS = {
+        {"display.ca.certs", "CA Zertifikate anzeigen ({0})"},
         {"button.delete", "Schlüssel/Zertifikat löschen"},
         {"button.delete.all.expired", "Alle abgelaufenen Schlüssel/Zertifikate löschen" },
         {"button.edit", "Alias umbenennen"},
@@ -42,15 +42,16 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"menu.export", "Export"},
         {"menu.tools", "Erweitert"},
         {"menu.tools.generatekey", "Neuen Schlüssel generieren (Self signed)"},
-        {"menu.tools.generatecsr", "Zertifikat beglaubigen: CSR generieren (an CA)"},
-        {"menu.tools.generatecsr.renew", "Zertifikat erneuern: CSR generieren (an CA)"},
-        {"menu.tools.importcsr", "Zertifikat beglaubigen: Antwort der CA auf CSR importieren"},
-        {"menu.tools.importcsr.renew", "Zertifikat erneuern: Antwort der CA auf CSR importieren"},
-        {"label.selectcsrfile", "Bitte wählen Sie die Datei zum Speichern des CSR"},
+        {"menu.tools.generatecsr", "Zertifikat beglaubigen: Beglaubigungsanfrage generieren (an CA)"},
+        {"menu.tools.generatecsr.renew", "Zertifikat erneuern: Beglaubigungsanfrage generieren (an CA)"},
+        {"menu.tools.importcsr", "Zertifikat beglaubigen: Antwort der CA auf Beglaubigungsanfrage importieren"},
+        {"menu.tools.importcsr.renew", "Zertifikat erneuern: Antwort der CA auf Beglaubigungsanfrage importieren"},
+        {"menu.tools.verifyall", "Sperrlisten aller Zertifikate prüfen (CRL)" },
+        {"label.selectcsrfile", "Bitte wählen Sie die Datei zum Speichern des Beglaubigungsanfrage"},
         {"label.cert.import", "Zertifikat importieren (vom Partner)"},
         {"label.cert.export", "Zertifikat exportieren (für den Partner)"},
         {"label.key.import", "Eigenen privaten Schlüssel importieren (von Keystore PKCS#12, JKS)"},
-        {"label.key.export.pkcs12", "Schlüssel exportieren (PKCS#12) (nur für Backup Zwecke!)"},
+        {"label.key.export.pkcs12", "Schlüssel exportieren (PKCS#12, PEM) (nur für Backup Zwecke!)"},
         {"label.keystore.export", "Alle Einträge als Keystore Datei exportieren (nur für Backup Zwecke!)" },
         {"label.keystore", "Speicherort"},
         {"title.signencrypt", "Schlüssel und Zertifikate (Verschlüsselung, Signaturen)"},
@@ -64,7 +65,7 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"certificate.import.error.message", "Es gab einen Fehler während des Imports:\n{0}"},
         {"certificate.import.error.title", "Fehler"},
         {"certificate.import.alias", "Alias für dieses Zertifikat:"},
-        {"keystore.readonly.message", "Die zugrundeliegende Keystore Datei ist schreibgeschützt.\nEine Schreiboperation (Speichern/Verändern) kann nicht durchgeführt werden."},
+        {"keystore.readonly.message", "Schreibgeschützt. Modifikation nicht möglich."},
         {"keystore.readonly.title", "Keystore schreibgeschützt - Bearbeiten nicht möglich"},
         {"modifications.notalllowed.message", "Modifikationen sind nicht möglich"},
         {"generatekey.error.message", "{0}"},
@@ -77,7 +78,7 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"title.cert.in.use", "Zertifikat wird verwendet" },
         {"cert.delete.impossible", "Der Eintrag kann nicht gelöscht werden, er wird verwendet.\nBitte verwenden Sie \"Verwendung anzeigen\" für weitere Informationen." },
         {"module.locked", "Diese Zertifikatverwaltung wird aktuell exklusiv von einem anderen Client geöffnet, Sie können keine Änderungen vornehmen!" },
-        {"label.trustanchor", "Trust anchor:" },
+        {"label.trustanchor", "Trust anchor" },
         {"warning.testkey", "Öffentlich verfügbarer mendelson Testschlüssel - nicht im produktiven Betrieb verwenden!" },
         {"label.key.valid", "Dieser Schlüssel ist gültig" },
         {"label.key.invalid", "Dieser Schlüssel ist ungültig" },

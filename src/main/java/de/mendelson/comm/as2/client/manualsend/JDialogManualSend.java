@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 43    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 44    19/12/24 8:54 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -12,6 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClientWithProgress;
 import de.mendelson.util.uinotification.UINotification;
 import java.io.FileNotFoundException;
@@ -23,8 +24,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
@@ -42,7 +41,7 @@ import javax.swing.SwingUtilities;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 43 $
+ * @version $Revision: 44 $
  */
 public class JDialogManualSend extends JDialog {
 
@@ -305,9 +304,7 @@ public class JDialogManualSend extends JDialog {
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
     /**

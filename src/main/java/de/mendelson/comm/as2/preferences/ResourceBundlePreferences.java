@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences.java 88    8/11/23 11:07 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences.java 94    31/05/24 13:40 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -10,12 +10,11 @@ import de.mendelson.util.MecResourceBundle;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 88 $
+ * @version $Revision: 94 $
  */
 public class ResourceBundlePreferences extends MecResourceBundle {
 
@@ -28,7 +27,7 @@ public class ResourceBundlePreferences extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         //preferences localized
         {PreferencesAS2.DIR_MSG, "Message storage"},
         {"button.ok", "Ok"},
@@ -59,25 +58,37 @@ public class ResourceBundlePreferences extends MecResourceBundle {
         {"label.country.help", "<HTML><strong>Country/Region</strong><br><br>"
             + "This setting mainly just controls the date format that is used to display transaction dates etc in the client."
             + "</HTML>"},
+        {"label.displaymode", "Display"},
+        {"label.displaymode.help", "<HTML><strong>Display</strong><br><br>"
+            + "Here you set one of the supported display modes of the client.<br>"
+            + "This can also be set via command line parameters when calling the related executable or start script."
+            + "</HTML>"},
         {"label.keystore.https.pass", "Keystore password (https send):"},
         {"label.keystore.pass", "Keystore password (encryption/signature):"},
         {"label.keystore.https", "Keystore (https send):"},
         {"label.keystore.encryptionsign", "Keystore (enc, sign):"},
-        {"label.proxy.url", "Proxy URL:"},
+        {"label.proxy.url", "Proxy URL"},
         {"label.proxy.url.hint", "Proxy ip or domain"},
         {"label.proxy.port.hint", "Port"},
-        {"label.proxy.user", "User:"},
+        {"label.proxy.user", "User"},
         {"label.proxy.user.hint", "Proxy login user"},
-        {"label.proxy.pass", "Password:"},
+        {"label.proxy.pass", "Password"},
         {"label.proxy.pass.hint", "Proxy login password"},
         {"label.proxy.use", "Use a HTTP proxy for outgoing HTTP/HTTPs connections"},
         {"label.proxy.useauthentification", "Use proxy authentification"},
         {"filechooser.keystore", "Please select the keystore file (jks format)."},
         {"label.days", "days"},
-        {"label.deletemsgolderthan", "Auto delete transaction entries older than"},
+        {"label.autodelete", "Auto delete"},
+        {"label.deletemsgolderthan", "Transaction entries older than"},
         {"label.deletemsglog", "Inform in log and fire system event about auto deleted messages"},
-        {"label.deletestatsolderthan", "Auto delete statistic data older than"},
-        {"label.deletelogdirolderthan", "Auto delete log data older than"},
+        {"label.deletemsglog.help", "<HTML><strong>Inform in log and fire system event about auto deleted messages</strong><br><br>"
+            + "You have the option of deleting old files in the settings (System maintenance).<br>"
+            + "If you have set this up and switch this "
+            + "option on, every deletion of an old file is logged.<br>A system event is also generated, which can "
+            + "inform you of this process via the notification function."
+            + "</HTML>"},
+        {"label.deletestatsolderthan", "Statistic data older than"},
+        {"label.deletelogdirolderthan", "Log data older than"},
         {"label.asyncmdn.timeout", "Max waiting time for async MDN"},
         {"label.asyncmdn.timeout.help", "<HTML><strong>Max waiting time for async MDN</strong>"
             + "<br><br>The time the system will wait for an asynchronous MDN (message delivery notification) for a sent AS2 message before setting the transaction to failed state.<br>"
@@ -138,7 +149,7 @@ public class ResourceBundlePreferences extends MecResourceBundle {
         {"testmail.message.success", "Test mail sent successfully to {0}"},
         {"testmail.message.error", "Error sending test mail:\n{0}"},
         {"testmail.title", "Test mail send result"},
-        {"testmail", "Test mail"},        
+        {"testmail", "Test mail"},
         {"info.restart.client", "A client restart is required to make these changes valid!"},
         {"remotedir.select", "Select a directory on the server"},
         //retry
@@ -162,7 +173,12 @@ public class ResourceBundlePreferences extends MecResourceBundle {
         {"maintenancemultiplier.day", "day(s)"},
         {"maintenancemultiplier.hour", "hour(s)"},
         {"maintenancemultiplier.minute", "minute(s)"},
-        {"label.logpollprocess", "Log poll process (Huge amount of entries - do not use in production)"},
+        {"label.logpollprocess", "Directory poll process"},
+        {"label.logpollprocess.help", "<HTML><strong>Directory poll process</strong><br><br>"
+            + "If you switch this option on, every poll operation of an output directory is "
+            + "noted in the log. As this can be a very large number of entries, please do not use "
+            + "this option under any circumstances in productive operation, but only for test purposes."
+            + "</HTML>"},
         {"label.max.outboundconnections", "Max parallel outbound connections"},
         {"label.max.outboundconnections.help", "<HTML><strong>Max parallel outbound connections</strong><br><br>"
             + "This is the amount of maximal parallel outbound connections your system will open. "
@@ -174,10 +190,10 @@ public class ResourceBundlePreferences extends MecResourceBundle {
             + "This is the maximum number of parallel incoming connections that may be opened from the "
             + "outside to your mendelson AS2 installation.<br>"
             + "This value applies to the entire software and is not limited to individual partners.<br>"
-            + "The setting is passed on to the embedded HTTP server, " 
-            + "you have to restart the AS2 server after a change.<br><br>" 
+            + "The setting is passed on to the embedded HTTP server, "
+            + "you have to restart the AS2 server after a change.<br><br>"
             + "Although it is possible to limit the number of parallel incoming connections here, it "
-            + "is recommended to make this setting on your firewall or in your upstream proxy " 
+            + "is recommended to make this setting on your firewall or in your upstream proxy "
             + "- this then applies to your entire system and not just to a single piece of software.<br><br>"
             + "The default value is " + PreferencesAS2.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS) + "."
             + "</HTML>"},
@@ -191,15 +207,16 @@ public class ResourceBundlePreferences extends MecResourceBundle {
             + "Using this functionality you will receive mails that contain multiple notifications."
             + "</HTML>"},
         {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Delete old transaction entries</strong><br><br>This sets up the time range the transaction entries and related temp data will remain in the system and should be displayed in the transaction overview.<br>These settings will <strong>not</strong> touch your received data/files.<br>Even for deleted transactions the transaction log is still available via the \"log search\" functionality.</HTML>"},
-        {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Delete old statistic data</strong><br><br>The system collects compatibility data from the partner systems and can display this as statistics. This determines the time frame in which this data is kept.</HTML>" },
-        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Delete old log dirs</strong><br><br>Even if old transactions have been deleted, the transaction logs can still be traced via existing log files. This setting deletes these log files and also all files for system events that fall within the same time period.</HTML>" },
+        {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Delete old statistic data</strong><br><br>The system collects compatibility data from the partner systems and can display this as statistics. This determines the time frame in which this data is kept.</HTML>"},
+        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Delete old log dirs</strong><br><br>Even if old transactions have been deleted, the transaction logs can still be traced via existing log files. This setting deletes these log files and also all files for system events that fall within the same time period.</HTML>"},
         {"label.colorblindness", "Enable support for color blindness"},
         {"warning.clientrestart.required", "Client settings have been changed - please restart the client to make them valid"},
         {"warning.serverrestart.required", "Please restart the server to make these changes valid"},
         {"warning.changes.canceled", "The user canceled the settings dialog - no changes have been made to the settings."},
         {"label.darkmode", "Dark mode"},
         {"label.litemode", "Light mode"},
-        {"label.trustallservercerts", "TLS: Trust all remote server end certificates" },
+        {"label.hicontrastmode", "High contrast mode"},
+        {"label.trustallservercerts", "TLS: Trust all remote server end certificates"},
         {"label.trustallservercerts.help", "<HTML><strong>TLS: Trust all remote server end certificates</strong><br><br>"
             + "Normally it''s required to have all certificates of the trust chain of your partners AS2 systems in your TLS certificate manager. If you enable this option it is just required to "
             + "setup the root and intermediate certificates of your partners AS2 system into your TLS certificate manager. Once these certificates are available the system will trust any trusted end certificate based on them. "
@@ -207,28 +224,36 @@ public class ResourceBundlePreferences extends MecResourceBundle {
             + "<br><br><strong>Warning:</strong> Enabling this "
             + "lowers the security level as man in the middle attacks are possible!"
             + "</HTML>"},
-        {"label.stricthostcheck", "TLS: Strict host check" },
+        {"label.stricthostcheck", "TLS: Strict host check"},
         {"label.stricthostcheck.help", "<HTML><strong>TLS: Strict host check</strong><br><br>"
             + "Sets whether to check if the common name (CN) of the remote certificate matches the remote host in the "
             + "case of an outgoing TLS connection. This check applies only to trusted certificates."
             + "</HTML>"},
-        {"label.httpport", "HTTP listen port" },
+        {"label.httpport", "HTTP listen port"},
         {"label.httpport.help", "<HTML><strong>HTTP listen port</strong><br><br>"
             + "This is the port for incoming unencrypted connections. This setting is passed on to the embedded HTTP server, "
             + "you must restart the AS2 server after a change.<br>"
             + "The port is part of the URL to which your partner must send AS2 messages. This is http://host:<strong>port</strong>/as2/HttpReceiver<br><br>"
             + "The default value is " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT) + "."
-                + "</HTML>" 
+            + "</HTML>"
         },
-        {"label.httpsport", "HTTPS listen port" },
+        {"label.httpsport", "HTTPS listen port"},
         {"label.httpsport.help", "<HTML><strong>HTTPS listen port</strong><br><br>"
             + "This is the port for incoming encrypted connections (TLS). This setting is passed on to the embedded HTTP server, "
             + "you must restart the AS2 server after a change.<br>"
             + "The port is part of the URL to which your partner must send AS2 messages. This is https://host:<strong>port</strong>/as2/HttpReceiver<br><br>"
             + "The default value is " + PreferencesAS2.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT) + "."
-                + "</HTML>" 
+            + "</HTML>"
         },
-        {"embedded.httpconfig.not.available", "HTTP server not available or config file access problems" },
-        {"button.mailserverdetection", "Detect mail server"},  
+        {"embedded.httpconfig.not.available", "HTTP server not available or config file access problems"},
+        {"button.mailserverdetection", "Detect mail server"},
+        {"label.loghttprequests", "Log HTTP requests of embedded HTTP server"},
+        {"label.loghttprequests.help", "<HTML><strong>HTTP request log</strong><br><br>"
+            + "If enabled the embedded HTTP server (jetty) will write a request log to the files "
+            + "<strong>log/yyyy_MM_dd.jetty.request.log</strong>. These log files are not deleted by "
+            + "the system maintenance - please delete them manually.<br><br>"
+            + "Please restart the software for changes to this setting to take effect."
+            + "</HTML>"
+        },
     };
 }

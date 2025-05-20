@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSR_fr.java 6     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/csr/ResourceBundleCSR_fr.java 7     9/12/24 15:51 Heller $
 package de.mendelson.util.security.csr;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleCSR_fr extends MecResourceBundle {
 

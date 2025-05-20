@@ -1,11 +1,9 @@
-//$Header: /oftp2/de/mendelson/util/security/Base64.java 7     3/11/23 9:57 Heller $
+//$Header: /as2/de/mendelson/util/security/Base64.java 10    11/02/25 13:40 Heller $
 package de.mendelson.util.security;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -31,7 +29,7 @@ public final class Base64 {
     static private final int FOURBYTE = 4;
     static private final int SIGN = -128;
     static private final char PAD = '=';
-    static private final boolean fDebug = false;
+    static private final boolean F_DEBUG = false;
     static final private byte[] base64Alphabet = new byte[BASELENGTH];
     static final private char[] lookUpBase64Alphabet = new char[LOOKUPLENGTH];
 
@@ -66,6 +64,9 @@ public final class Base64 {
         lookUpBase64Alphabet[62] = (char) '+';
         lookUpBase64Alphabet[63] = (char) '/';
 
+    }
+
+    private Base64() {
     }
 
     protected static boolean isWhiteSpace(char octect) {
@@ -113,7 +114,7 @@ public final class Base64 {
         int encodedIndex = 0;
         int dataIndex = 0;
         int i = 0;
-        if (fDebug) {
+        if (F_DEBUG) {
             System.out.println("number of triplets = " + numberTriplets);
         }
 
@@ -123,7 +124,7 @@ public final class Base64 {
                 b2 = binaryData[dataIndex++];
                 b3 = binaryData[dataIndex++];
 
-                if (fDebug) {
+                if (F_DEBUG) {
                     System.out.println("b1= " + b1 + ", b2= " + b2 + ", b3= " + b3);
                 }
 
@@ -135,7 +136,7 @@ public final class Base64 {
                 byte val2 = ((b2 & SIGN) == 0) ? (byte) (b2 >> 4) : (byte) ((b2) >> 4 ^ 0xf0);
                 byte val3 = ((b3 & SIGN) == 0) ? (byte) (b3 >> 6) : (byte) ((b3) >> 6 ^ 0xfc);
 
-                if (fDebug) {
+                if (F_DEBUG) {
                     System.out.println("val2 = " + val2);
                     System.out.println("k4   = " + (k << 4));
                     System.out.println("vak  = " + (val2 | (k << 4)));
@@ -156,7 +157,7 @@ public final class Base64 {
             b2 = binaryData[dataIndex++];
             b3 = binaryData[dataIndex++];
 
-            if (fDebug) {
+            if (F_DEBUG) {
                 System.out.println("b1= " + b1 + ", b2= " + b2 + ", b3= " + b3);
             }
 
@@ -168,7 +169,7 @@ public final class Base64 {
             byte val2 = ((b2 & SIGN) == 0) ? (byte) (b2 >> 4) : (byte) ((b2) >> 4 ^ 0xf0);
             byte val3 = ((b3 & SIGN) == 0) ? (byte) (b3 >> 6) : (byte) ((b3) >> 6 ^ 0xfc);
 
-            if (fDebug) {
+            if (F_DEBUG) {
                 System.out.println("val2 = " + val2);
                 System.out.println("k4   = " + (k << 4));
                 System.out.println("vak  = " + (val2 | (k << 4)));
@@ -184,7 +185,7 @@ public final class Base64 {
         if (fewerThan24bits == EIGHTBIT) {
             b1 = binaryData[dataIndex];
             k = (byte) (b1 & 0x03);
-            if (fDebug) {
+            if (F_DEBUG) {
                 System.out.println("b1=" + b1);
                 System.out.println("b1<<2 = " + (b1 >> 2));
             }
@@ -343,78 +344,60 @@ public final class Base64 {
     }
 
     /**
-     * Reads data into a byte array
-     */
-    public byte[] readFile(String inFile) throws IOException {
-        ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-        InputStream inStream = null;
-        try {
-            inStream = Files.newInputStream(Paths.get(inFile));
-            inStream.transferTo(outStream);
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
-        }
-        outStream.flush();
-        outStream.close();
-        return (outStream.toByteArray());
-    }
-
-    /**
      * Method to start the server on from the command line
      */
-    public static void main(String[] args) {
-        String operation = null;
-        String filein = null;
-        String fileout = null;
-        int optind;
-        for (optind = 0; optind < args.length; optind++) {
-            if (args[optind].toLowerCase().equals("-filein")) {
-                filein = args[++optind];
-            } else if (args[optind].toLowerCase().equals("-fileout")) {
-                fileout = args[++optind];
-            } else if (args[optind].toLowerCase().equals("-operation")) {
-                operation = args[++optind].toLowerCase();
-            } else if (args[optind].toLowerCase().equals("-?")) {
-                Base64.printUsage();
-                System.exit(1);
-            } else if (args[optind].toLowerCase().equals("-h")) {
-                Base64.printUsage();
-                System.exit(1);
-            } else if (args[optind].toLowerCase().equals("-help")) {
-                Base64.printUsage();
-                System.exit(1);
-            }
-        }
-        if (filein == null || fileout == null) {
-            System.out.println("Missing in- or output file");
-            Base64.printUsage();
-            System.exit(1);
-        }
-        if (operation == null) {
-            System.out.println("Operation missing");
-            Base64.printUsage();
-            System.exit(1);
-        }
-        try {
-            Base64 base64 = new Base64();
-            byte[] data = base64.readFile(filein);
-            if (operation.equals("encode")) {
-                data = Base64.encode(data).getBytes();
-            }
-            if (operation.equals("decode")) {
-                data = Base64.decode(new String(data));
-            }
-            ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-            OutputStream outStream = Files.newOutputStream(Paths.get(fileout));
-            inStream.transferTo(outStream);
-            inStream.close();
-            outStream.flush();
-            outStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-
-    }
+//    public static void main(String[] args) {
+//        String operation = null;
+//        String filein = null;
+//        String fileout = null;
+//        int optind;
+//        for (optind = 0; optind < args.length; optind++) {
+//            if (args[optind].toLowerCase().equals("-filein")) {
+//                filein = args[++optind];
+//            } else if (args[optind].toLowerCase().equals("-fileout")) {
+//                fileout = args[++optind];
+//            } else if (args[optind].toLowerCase().equals("-operation")) {
+//                operation = args[++optind].toLowerCase();
+//            } else if (args[optind].toLowerCase().equals("-?")) {
+//                Base64.printUsage();
+//                System.exit(1);
+//            } else if (args[optind].toLowerCase().equals("-h")) {
+//                Base64.printUsage();
+//                System.exit(1);
+//            } else if (args[optind].toLowerCase().equals("-help")) {
+//                Base64.printUsage();
+//                System.exit(1);
+//            }
+//        }
+//        if (filein == null || fileout == null) {
+//            System.out.println("Missing in- or output file");
+//            Base64.printUsage();
+//            System.exit(1);
+//        }
+//        if (operation == null) {
+//            System.out.println("Operation missing");
+//            Base64.printUsage();
+//            System.exit(1);
+//        }
+//        try {
+//            Base64 base64 = new Base64();
+//            byte[] data = base64.readFile(filein);
+//            if (operation.equals("encode")) {
+//                data = Base64.encode(data).getBytes();
+//            }
+//            if (operation.equals("decode")) {
+//                data = Base64.decode(new String(data));
+//            }
+//            OutputStream outStream;
+//            try (ByteArrayInputStream inStream = new ByteArrayInputStream(data)) {
+//                outStream = Files.newOutputStream(Paths.get(fileout));
+//                inStream.transferTo(outStream);
+//            }
+//            outStream.flush();
+//            outStream.close();
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
+//
+//    }
 }

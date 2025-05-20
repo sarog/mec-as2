@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 66    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 67    17/01/25 9:57 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -22,7 +22,7 @@ import java.util.Properties;
  * Stores all information about a as2 message
  *
  * @author S.Heller
- * @version $Revision: 66 $
+ * @version $Revision: 67 $
  */
 public class AS2MessageInfo implements AS2Info {
 
@@ -39,6 +39,7 @@ public class AS2MessageInfo implements AS2Info {
      * Date of this message
      */
     private Date initDate = new Date();
+    private Date sendDate = null;
     private String messageId;
     private String senderEMail;
     /**
@@ -176,6 +177,9 @@ public class AS2MessageInfo implements AS2Info {
         node.put( "messageid", this.messageId);
         node.put( "userdefinedid", this.userdefinedId == null?"--":this.userdefinedId);
         node.put( "initdate", dateFormat.format(this.initDate));
+        if( this.sendDate != null ){
+            node.put( "senddate", dateFormat.format(this.sendDate));
+        }
         node.put( "senderid", this.senderId);
         node.put( "sendername", as2Id2NameMap.getOrDefault(this.senderId, "_UNKNOWN"));
         node.put( "receiverid", this.receiverId);
@@ -578,6 +582,20 @@ public class AS2MessageInfo implements AS2Info {
     @Override
     public void setUsesTLS(boolean usesTLS) {
         this.usesTLS = usesTLS;
+    }
+
+    /**
+     * @return the sendDate
+     */
+    public Date getSendDate() {
+        return sendDate;
+    }
+
+    /**
+     * @param sendDate the sendDate to set
+     */
+    public void setSendDate(Date sendDate) {
+        this.sendDate = sendDate;
     }
 
 }

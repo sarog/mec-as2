@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/util/oauth2/gui/JDialogOAuth2Config.java 2     2/01/23 12:56 Heller $
+//$Header: /mec_oftp2/de/mendelson/util/oauth2/gui/JDialogOAuth2Config.java 3     13/03/25 13:53 Heller $
 package de.mendelson.util.oauth2.gui;
 
 import javax.swing.JDialog;
@@ -13,7 +13,7 @@ import javax.swing.JDialog;
 /**
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class JDialogOAuth2Config extends JDialog {
 
@@ -25,7 +25,7 @@ public class JDialogOAuth2Config extends JDialog {
     public JDialogOAuth2Config(Object a,
             Object b,
             Object c, Object d,
-            int e) {
+            int e, Object f) {
         initComponents();
     }
 

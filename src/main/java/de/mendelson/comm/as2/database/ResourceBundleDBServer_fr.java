@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_fr.java 19    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/ResourceBundleDBServer_fr.java 20    9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.database.IDBDriverManager;
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 19 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleDBServer_fr extends MecResourceBundle {
 

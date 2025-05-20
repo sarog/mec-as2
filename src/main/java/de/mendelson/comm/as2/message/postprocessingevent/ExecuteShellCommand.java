@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 17    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 19    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.log.LogAccessDB;
@@ -36,11 +36,11 @@ import java.util.logging.Logger;
  * message receipt
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class ExecuteShellCommand implements IProcessingExecution {
 
-    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final MessageAccessDB messageAccess;
     private final MDNAccessDB mdnAccess;
     private final PartnerAccessDB partnerAccess;
@@ -48,21 +48,22 @@ public class ExecuteShellCommand implements IProcessingExecution {
     /**
      * Localize your GUI!
      */
-    private MecResourceBundle rb = null;    
+    private final static MecResourceBundle rb;    
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleExecuteShellCommand.class.getName());
+        } //load up  resourcebundle
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
 
     public ExecuteShellCommand(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
         this.messageAccess = new MessageAccessDB(dbDriverManager);
         this.mdnAccess = new MDNAccessDB(dbDriverManager);
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
-        //Load resourcebundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleExecuteShellCommand.class.getName());
-        } //load up  resourcebundle
-        catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
     }
 
     /**
@@ -73,7 +74,7 @@ public class ExecuteShellCommand implements IProcessingExecution {
         //get all required values for this event
         AS2MessageInfo messageInfo = this.messageAccess.getLastMessageEntry(event.getMessageId());
         if (messageInfo == null) {
-            throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", event.getMessageId()));
+            throw new Exception(rb.getResourceString("messageid.nolonger.exist", event.getMessageId()));
         }
         AS2MDNInfo mdnInfo = null;
         if (event.getMDNId() != null) {
@@ -105,7 +106,7 @@ public class ExecuteShellCommand implements IProcessingExecution {
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String rawCommand = event.getParameter().get(0);
         if (payload != null && !payload.isEmpty()) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.send",
+            logger.log(Level.INFO, rb.getResourceString("executing.send",
                     new Object[]{
                         messageSender.getName(),
                         messageReceiver.getName()
@@ -153,20 +154,21 @@ public class ExecuteShellCommand implements IProcessingExecution {
                         throw new PostprocessingException(e.getMessage(), messageSender, messageReceiver);
                     }
                 }
-                this.logger.log(Level.INFO, this.rb.getResourceString("executing.command",
+                logger.log(Level.INFO, rb.getResourceString("executing.command",
                         new Object[]{command}), messageInfo);
                 int returnCode = 0;
                 try {
                     Exec exec = new Exec();
-                    returnCode = exec.start(command, new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)),
-                            new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)));
-                    this.logger.log(Level.INFO, this.rb.getResourceString("executed.command",
+                    exec.setWaitFor(true);
+                    returnCode = exec.start(command, new PrintStream(new AS2LoggerOutputStream(logger, messageInfo)),
+                            new PrintStream(new AS2LoggerOutputStream(logger, messageInfo)));
+                    logger.log(Level.INFO, rb.getResourceString("executed.command",
                             new Object[]{String.valueOf(returnCode)}), messageInfo);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     throw new PostprocessingException(e.getMessage(), messageSender, messageReceiver);
                 }
                 if (returnCode != 0) {
-                    throw new PostprocessingException(this.rb.getResourceString("executed.command",
+                    throw new PostprocessingException(rb.getResourceString("executed.command",
                             new Object[]{String.valueOf(returnCode)}),
                             messageSender, messageReceiver);
                 }
@@ -192,7 +194,7 @@ public class ExecuteShellCommand implements IProcessingExecution {
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String rawCommand = event.getParameter().get(0);
         if (payload != null) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.receipt",
+            logger.log(Level.INFO, rb.getResourceString("executing.receipt",
                     new Object[]{
                         messageSender.getName(),
                         messageReceiver.getName()
@@ -217,20 +219,21 @@ public class ExecuteShellCommand implements IProcessingExecution {
                     rawCommand = this.replace(rawCommand, "${subject}", "");
                 }
                 rawCommand = this.replace(rawCommand, "${originalfilename}", originalFilename);
-                this.logger.log(Level.INFO, this.rb.getResourceString("executing.command",
+                logger.log(Level.INFO, rb.getResourceString("executing.command",
                         new Object[]{rawCommand}), messageInfo);
                 Exec exec = new Exec();
+                exec.setWaitFor(true);
                 int returnCode = 0;
                 try {
-                    returnCode = exec.start(rawCommand, new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)),
-                            new PrintStream(new AS2LoggerOutputStream(this.logger, messageInfo)));
-                    this.logger.log(Level.INFO, this.rb.getResourceString("executed.command",
+                    returnCode = exec.start(rawCommand, new PrintStream(new AS2LoggerOutputStream(logger, messageInfo)),
+                            new PrintStream(new AS2LoggerOutputStream(logger, messageInfo)));
+                    logger.log(Level.INFO, rb.getResourceString("executed.command",
                             new Object[]{String.valueOf(returnCode)}), messageInfo);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     throw new PostprocessingException(e.getMessage(), messageSender, messageReceiver);
                 }
                 if (returnCode != 0) {
-                    throw new PostprocessingException(this.rb.getResourceString("executed.command",
+                    throw new PostprocessingException(rb.getResourceString("executed.command",
                             new Object[]{String.valueOf(returnCode)}),
                             messageSender, messageReceiver);
                 }

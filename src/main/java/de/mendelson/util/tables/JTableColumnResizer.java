@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/tables/JTableColumnResizer.java 8     15/06/22 9:31 Heller $
+//$Header: /as2/de/mendelson/util/tables/JTableColumnResizer.java 9     11/02/25 13:40 Heller $
 package de.mendelson.util.tables;
 
 import java.awt.Component;
@@ -23,6 +23,9 @@ import javax.swing.table.TableColumn;
  */
 public class JTableColumnResizer {
 
+    private JTableColumnResizer(){        
+    }
+    
     /**
      * Resizes the columns of a table by their content
      */

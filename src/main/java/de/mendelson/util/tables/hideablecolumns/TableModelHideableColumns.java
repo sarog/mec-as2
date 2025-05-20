@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/tables/hideablecolumns/TableModelHideableColumns.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/TableModelHideableColumns.java 6     11/02/25 13:40 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,7 +20,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the columns in the columns config dialog
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class TableModelHideableColumns extends AbstractTableModel {
 
@@ -32,8 +32,10 @@ public class TableModelHideableColumns extends AbstractTableModel {
     /**
      * Actual data to display, contains HideableColumns
      */
-    private final List<HideableColumn> columnArray = Collections.synchronizedList(new ArrayList<HideableColumn>());
-    private final List<TableColumnHiddenStateListener> listenerList = Collections.synchronizedList(new ArrayList<TableColumnHiddenStateListener>());
+    private final List<HideableColumn> columnArray 
+            = Collections.synchronizedList(new ArrayList<HideableColumn>());
+    private final List<TableColumnHiddenStateListener> columnStateListenerList 
+            = Collections.synchronizedList(new ArrayList<TableColumnHiddenStateListener>());
 
     /**
      * Creates new TableModelHideableColumns
@@ -151,8 +153,8 @@ public class TableModelHideableColumns extends AbstractTableModel {
      * Removes a listener that is informed if a column state has been changed
      */
     public void removeColumnHiddenStateListener(TableColumnHiddenStateListener hiddenStateListener) {
-        synchronized (this.listenerList) {
-            this.listenerList.remove(hiddenStateListener);
+        synchronized (this.columnStateListenerList) {
+            this.columnStateListenerList.remove(hiddenStateListener);
         }
     }
 
@@ -160,8 +162,8 @@ public class TableModelHideableColumns extends AbstractTableModel {
      * Adds a listener that is informed if the license has been expired
      */
     public void addColumnHiddenStateListener(TableColumnHiddenStateListener hiddenStateListener) {
-        synchronized (this.listenerList) {
-            this.listenerList.add(hiddenStateListener);
+        synchronized (this.columnStateListenerList) {
+            this.columnStateListenerList.add(hiddenStateListener);
         }
     }
 
@@ -169,8 +171,8 @@ public class TableModelHideableColumns extends AbstractTableModel {
      * Informs all listeners that a column state has been changed
      */
     private void informColumnHiddenStateListener(HideableColumn column) {
-        synchronized( this.listenerList){
-            for( TableColumnHiddenStateListener listener:this.listenerList){
+        synchronized( this.columnStateListenerList){
+            for( TableColumnHiddenStateListener listener:this.columnStateListenerList){
                 listener.tableColumnHiddenStateChanged(new TableColumnHiddenStateListener.ColumnHiddenStateEvent(this, column));
             }
         }

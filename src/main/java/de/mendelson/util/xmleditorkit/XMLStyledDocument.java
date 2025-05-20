@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/xmleditorkit/XMLStyledDocument.java 4     2/11/23 14:03 Heller $
+//$Header: /as4/de/mendelson/util/xmleditorkit/XMLStyledDocument.java 5     12/06/24 13:43 Heller $
 package de.mendelson.util.xmleditorkit;
 
 import de.mendelson.util.ColorUtil;
@@ -23,7 +23,7 @@ import javax.swing.text.StyleConstants;
  * contrast for the UIs editor pane background color
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 
 public class XMLStyledDocument extends DefaultStyledDocument {
@@ -84,7 +84,21 @@ public class XMLStyledDocument extends DefaultStyledDocument {
     private boolean isUserChanges = true;
 
     public XMLStyledDocument() {
-
+    }
+    
+    /**Defines new colors for the styled attribute set - please use one of the constants of this class,
+     * e.g. TAGNAME_ATTRIBUTES
+     * @param attributeSet
+     * @param newForegroundColor 
+     */
+    public void setForegroundColor( SimpleAttributeSet attributeSet, Color newForegroundColor ){
+        Color editorPaneBackgroundColor = UIManager.getColor("EditorPane.background");
+        if( editorPaneBackgroundColor == null ){
+            editorPaneBackgroundColor = Color.WHITE;
+        }  
+        StyleConstants.setForeground(attributeSet, 
+                ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, newForegroundColor));
     }
 
     @Override

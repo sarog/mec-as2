@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 25    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 28    11/02/25 13:40 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecFileChooser;
@@ -34,16 +34,22 @@ import javax.swing.SwingUtilities;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 28 $
  */
 public class JDialogExportCertificate extends JDialog {
 
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleExportCertificate.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private final CertificateManager manager;
-    private final Logger logger = Logger.getAnonymousLogger();
     private final BaseClient baseClient;
 
     /**
@@ -53,24 +59,19 @@ public class JDialogExportCertificate extends JDialog {
             String selectedAlias, Logger logger) {
         super(parent, true);
         //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleExportCertificate.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
+
         this.baseClient = baseClient;
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         TextOverlay.addTo(jTextFieldExportFile,
-                this.rb.getResourceString("label.exportfile.hint"));
+                rb.getResourceString("label.exportfile.hint"));
         this.setMultiresolutionIcons();
         this.manager = manager;
         this.getRootPane().setDefaultButton(this.jButtonOk);
         //fill data into comboboxes
         this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_DER));
         this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PEM));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PEM_CHAIN));
         this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7));
         this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_SSH2));
         KeystoreCertificate selectedCert = this.manager.getKeystoreCertificate(selectedAlias);
@@ -87,7 +88,8 @@ public class JDialogExportCertificate extends JDialog {
      * Overwrite the designers icons by multi resolution icons
      */
     private void setMultiresolutionIcons() {
-        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
+        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(
+                JDialogCertificates.IMAGE_SIZE_DIALOG)));
     }
 
     /**
@@ -98,55 +100,9 @@ public class JDialogExportCertificate extends JDialog {
     }
 
     /**
-     * Compute the whole trust chain for pkcs#7 export
-     */
-    private List<X509Certificate> computeTrustChain(String alias) {
-        KeystoreCertificate certificate = this.manager.getKeystoreCertificate(alias);
-        PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(this.manager.getKeystore(), this.manager.getX509CertificateList());
-        List<X509Certificate> list = new ArrayList<X509Certificate>();
-        //self signed?
-        if (result == null) {
-            //it's a self signed certificate: return it without any CA/intermediate certs
-            list.add(certificate.getX509Certificate());
-        } else {
-            //trusted cert
-            CertPath path = result.getCertPath();
-            for (Object cert : path.getCertificates()) {
-                list.add(0, (X509Certificate) cert);
-            }
-            X509Certificate anchorCertX509 = list.get(0);
-            boolean trustChainComplete = false;
-            while (!trustChainComplete) {
-                KeystoreCertificate keyCertAnchor = null;
-                //find out the keystore cert of the anchor
-                for (KeystoreCertificate keyCert : this.manager.getKeyStoreCertificateList()) {
-                    if (keyCert.getX509Certificate().equals(anchorCertX509)) {
-                        keyCertAnchor = keyCert;
-                        break;
-                    }
-                }
-                if (keyCertAnchor != null) {
-                    //check if the anchor has another anchor as intermediates certificate may have the attribute "CA:true", too
-                    result = keyCertAnchor.getPKIXCertPathBuilderResult(this.manager.getKeystore(), this.manager.getX509CertificateList());
-                    anchorCertX509 = result.getTrustAnchor().getTrustedCert();
-                    if (!keyCertAnchor.getX509Certificate().equals(anchorCertX509)) {
-                        list.add(0, anchorCertX509);
-                    } else {
-                        trustChainComplete = true;
-                    }
-                } else {
-                    trustChainComplete = true;
-                }
-            }
-        }
-        return (list);
-    }
-
-    /**
      * Finally exports the certificate
      */
     private void performCertificateExport() {
-        KeyStoreUtil util = new KeyStoreUtil();
         try {
             KeystoreCertificate selectedCertificate
                     = (KeystoreCertificate) this.jComboBoxCertificates.getSelectedItem();
@@ -164,6 +120,10 @@ public class JDialogExportCertificate extends JDialog {
                 if (!exportFilename.toLowerCase().endsWith(".cer")) {
                     exportFilename += ".cer";
                 }
+            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_PEM_CHAIN)) {
+                if (!exportFilename.toLowerCase().endsWith(".pem")) {
+                    exportFilename += ".pem";
+                }
             } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_DER)) {
                 if (!exportFilename.toLowerCase().endsWith(".cer")) {
                     exportFilename += ".cer";
@@ -179,29 +139,25 @@ public class JDialogExportCertificate extends JDialog {
             }
             Path file = Paths.get(exportFilename);
             if (exportData != null) {
-                OutputStream outStream = null;
-                ByteArrayInputStream inStream = new ByteArrayInputStream(exportData);
-                try {
-                    outStream = Files.newOutputStream(file);
-                    inStream.transferTo(outStream);
-                } finally {
-                    inStream.close();
+                try (OutputStream outStream = Files.newOutputStream(file)) {
+                    try (ByteArrayInputStream inStream = new ByteArrayInputStream(exportData)) {
+                        inStream.transferTo(outStream);
+                    }
                 }
-                outStream.close();
                 String exportFilenameDisplay = Paths.get(exportFilename).toAbsolutePath().toString();
                 UINotification.instance().addNotification(null,
                         UINotification.TYPE_SUCCESS,
-                        this.rb.getResourceString("certificate.export.success.title"),
-                        this.rb.getResourceString("certificate.export.success.message",
+                        rb.getResourceString("certificate.export.success.title"),
+                        rb.getResourceString("certificate.export.success.message",
                                 exportFilenameDisplay));
             } else {
-                throw new Exception(this.rb.getResourceString("error.empty.certificate"));
+                throw new Exception(rb.getResourceString("error.empty.certificate"));
             }
         } catch (Throwable e) {
             UINotification.instance().addNotification(null,
                     UINotification.TYPE_ERROR,
-                    this.rb.getResourceString("certificate.export.error.title"),
-                    this.rb.getResourceString("certificate.export.error.message",
+                    rb.getResourceString("certificate.export.error.title"),
+                    rb.getResourceString("certificate.export.error.message",
                             "[" + e.getClass().getSimpleName() + "] "
                             + e.getMessage()));
         }
@@ -379,7 +335,7 @@ public class JDialogExportCertificate extends JDialog {
 
     private void jButtonBrowseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowseActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        MecFileChooser chooser = new MecFileChooser(parent, this.rb.getResourceString("filechooser.certificate.export"));
+        MecFileChooser chooser = new MecFileChooser(parent, rb.getResourceString("filechooser.certificate.export"));
         chooser.browseFilename(this.jTextFieldExportFile);
         this.setButtonState();
     }//GEN-LAST:event_jButtonBrowseActionPerformed
@@ -418,14 +374,11 @@ public class JDialogExportCertificate extends JDialog {
 
     public static class ExportFormat {
 
-        private final String type;
-        private final MecResourceBundle rb;
+        private final static MecResourceBundle rb;
 
-        public ExportFormat(String type) {
-            this.type = type;
-            //load resource bundle
+        static {
             try {
-                this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+                rb = (MecResourceBundle) ResourceBundle.getBundle(
                         ResourceBundleExportCertificate.class.getName());
             } catch (MissingResourceException e) {
                 throw new RuntimeException("Oops..resource bundle "
@@ -433,9 +386,17 @@ public class JDialogExportCertificate extends JDialog {
             }
         }
 
+        private final String type;
+
+        public ExportFormat(String type) {
+            this.type = type;
+            //load resource bundle
+
+        }
+
         @Override
         public String toString() {
-            return (this.rb.getResourceString(type));
+            return (rb.getResourceString(type));
         }
 
         /**

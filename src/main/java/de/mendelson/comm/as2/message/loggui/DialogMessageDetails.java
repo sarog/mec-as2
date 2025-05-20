@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 65    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 71    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.AS2Exception;
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.log.LogEntry;
 import de.mendelson.comm.as2.message.AS2Info;
 import de.mendelson.comm.as2.message.AS2MDNInfo;
@@ -15,6 +16,7 @@ import de.mendelson.comm.as2.message.clientserver.MessageLogResponse;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
+import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -34,6 +36,7 @@ import java.util.logging.LogRecord;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.UIManager;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.table.TableColumn;
@@ -49,16 +52,16 @@ import javax.swing.table.TableColumn;
  * Dialog to show the details of a transaction
  *
  * @author S.Heller
- * @version $Revision: 65 $
+ * @version $Revision: 71 $
  */
 public class DialogMessageDetails extends JDialog implements ListSelectionListener {
 
     public static final ImageIcon ICON_LOCALSTATION
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/localstation.svg", 24, 48));
+                    "/de/mendelson/comm/as2/message/loggui/localstation.svg", AS2Gui.IMAGE_SIZE_TOOLBAR));
     public static final ImageIcon ICON_REMOTEPARTNER
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", 24, 48));
+                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", AS2Gui.IMAGE_SIZE_TOOLBAR));
     public static final ImageIcon ICON_PENDING
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_pending.svg", 15, 48));
@@ -71,6 +74,9 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     public static final ImageIcon OVERVIEWSTATE_OUTBOUND_OK
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/comm_ok_outbound.svg", 170, 230));
+    public static final ImageIcon OVERVIEWSTATE_GENERATION_FAILED
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/message_generation_failed.svg", 80));
     public static final ImageIcon OVERVIEWSTATE_OUTBOUND_FAILED
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/comm_failed_outbound.svg", 170, 230));
@@ -93,11 +99,18 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
     private final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
     private final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
 
-    private final static Logger logger = Logger.getLogger("de.mendelson.as2.client");
-    /**
-     * Localize the GUI
-     */
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleMessageDetails.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
+
     /**
      * Stores information about the message
      */
@@ -121,30 +134,34 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             List<AS2Payload> payloadList, JTextPaneLoggingHandler handler) {
         super(parent, true);
         this.baseClient = baseClient;
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleMessageDetails.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.jPanelFileDisplayRaw = new JPanelFileDisplay(baseClient);
         this.jPanelFileDisplayHeader = new JPanelFileDisplay(baseClient);
         this.payloadList = payloadList;
         this.overviewInfo = overviewInfo;
         if (overviewInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
-            this.setTitle(this.rb.getResourceString("title.cem"));
+            this.setTitle(rb.getResourceString("title.cem"));
         } else {
-            this.setTitle(this.rb.getResourceString("title"));
+            this.setTitle(rb.getResourceString("title"));
         }
         this.initComponents();
-        this.colorRed = ColorUtil.getBestContrastColorAroundForeground(
-                this.jLabelTransactionStateDetails.getBackground(), colorRed);
-        this.colorGreen = ColorUtil.getBestContrastColorAroundForeground(
-                this.jLabelTransactionStateDetails.getBackground(), colorGreen);
-        this.colorYellow = ColorUtil.getBestContrastColorAroundForeground(
-                this.jLabelTransactionStateDetails.getBackground(), colorYellow);
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            this.colorRed = UIManager.getColor("Objects.RedStatus");
+        } else {
+            this.colorRed = ColorUtil.getBestContrastColorAroundForeground(
+                    this.jLabelTransactionStateDetails.getBackground(), this.colorRed);
+        }
+        if (UIManager.getColor("Objects.Green") != null) {
+            this.colorGreen = UIManager.getColor("Objects.Green");
+        } else {
+            this.colorGreen = ColorUtil.getBestContrastColorAroundForeground(
+                    this.jLabelTransactionStateDetails.getBackground(), this.colorGreen);
+        }
+        if (UIManager.getColor("Objects.Yellow") != null) {
+            this.colorYellow = UIManager.getColor("Objects.Yellow");
+        } else {
+            this.colorYellow = ColorUtil.getBestContrastColorAroundForeground(
+                    this.jLabelTransactionStateDetails.getBackground(), this.colorYellow);
+        }
         this.populateTransactionOverviewPanel(overviewInfo);
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.jTableMessageDetails.setRowHeight(TableModelMessageDetails.ROW_HEIGHT);
@@ -157,15 +174,15 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         column.setMaxWidth(TableModelMessageDetails.ROW_HEIGHT + this.jTableMessageDetails.getRowMargin() * 2);
         column.setResizable(false);
         this.displayData(overviewInfo);
-        this.jTabbedPane.addTab(this.rb.getResourceString("message.raw.decrypted"), jPanelFileDisplayRaw);
-        this.jTabbedPane.addTab(this.rb.getResourceString("message.header"), jPanelFileDisplayHeader);
+        this.jTabbedPane.addTab(rb.getResourceString("message.raw.decrypted"), jPanelFileDisplayRaw);
+        this.jTabbedPane.addTab(rb.getResourceString("message.header"), jPanelFileDisplayHeader);
         this.jPanelFileDisplayPayload = new JPanelFileDisplay[payloadList.size()];
         for (int i = 0; i < this.payloadList.size(); i++) {
             this.jPanelFileDisplayPayload[i] = new JPanelFileDisplay(baseClient);
             if (payloadList.size() == 1) {
-                this.jTabbedPane.addTab(this.rb.getResourceString("message.payload"), this.jPanelFileDisplayPayload[0]);
+                this.jTabbedPane.addTab(rb.getResourceString("message.payload"), this.jPanelFileDisplayPayload[0]);
             } else {
-                this.jTabbedPane.addTab(this.rb.getResourceString("message.payload.multiple",
+                this.jTabbedPane.addTab(rb.getResourceString("message.payload.multiple",
                         String.valueOf(i + 1)), this.jPanelFileDisplayPayload[i]);
             }
         }
@@ -226,29 +243,29 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         StringBuilder transactionDetailsText = new StringBuilder();
         if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
             if (overviewInfo.usesTLS()) {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.secure",
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.secure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             } else {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.insecure",
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.insecure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             }
             if (overviewInfo.requestsSyncMDN()) {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.sync"));
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.sync"));
             } else {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.outbound.async"));
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.async"));
             }
         } else {
             if (overviewInfo.usesTLS()) {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.secure",
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.secure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             } else {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.insecure",
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.insecure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             }
             if (overviewInfo.requestsSyncMDN()) {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.sync"));
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.sync"));
             } else {
-                transactionDetailsText.append(this.rb.getResourceString("transactiondetails.inbound.async"));
+                transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.async"));
             }
         }
         this.jLabelTransmissionDescription.setText("<HTML>" + transactionDetailsText.toString() + "</HTML>");
@@ -266,10 +283,19 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                 this.jLabelTransactionStateDetails.setVisible(false);
             } else {
                 if (transactionDetails.size() < 2) {
-                    this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_OUTBOUND_CONN_FAILED);
-                    this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.error.connectionrefused"));
-                    this.jLabelTransactionStateDetails.setVisible(true);
-                    this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.connectionrefused.details"));
+                    //generation problem
+                    if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT && overviewInfo.getSendDate() == null) {
+                        this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_GENERATION_FAILED);
+                        this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.messagecreation"));
+                        this.jLabelTransactionStateDetails.setVisible(true);
+                        this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.messagecreation.details"));
+                    } else {
+                        //connection problem
+                        this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_OUTBOUND_CONN_FAILED);
+                        this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.connectionrefused"));
+                        this.jLabelTransactionStateDetails.setVisible(true);
+                        this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.connectionrefused.details"));
+                    }
                 } else {
                     //get last MDN info
                     AS2MDNInfo mdnInfo = null;
@@ -287,14 +313,14 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                         }
                         if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
                             this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_OUTBOUND_FAILED);
-                            this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.error.out",
+                            this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.out",
                                     new Object[]{
                                         messageTypeStr,
                                         this.jLabelAS2TransmissionReceiver.getText(),
                                         dispositionState}));
                         } else {
                             this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_INBOUND_FAILED);
-                            this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.error.in",
+                            this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.in",
                                     new Object[]{
                                         messageTypeStr,
                                         this.jLabelAS2TransmissionReceiver.getText(),
@@ -305,37 +331,37 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                             //rejected with a HTTP 400 by the partner
                             if (mdnInfo.getState() == AS2Message.STATE_FINISHED && !overviewInfo.requestsSyncMDN()) {
                                 this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_INBOUND_ANSWER_FAILED);
-                                this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.error.asyncmdnsend"));
+                                this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.asyncmdnsend"));
                                 this.jLabelTransactionStateDetails.setVisible(true);
-                                this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.asyncmdnsend.details"));
+                                this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.asyncmdnsend.details"));
                             }
                         }
                         //get some more details
                         if (dispositionState.contains(AS2Exception.UNKNOWN_TRADING_PARTNER_ERROR)) {
                             this.jLabelTransactionStateDetails.setVisible(true);
-                            this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.unknown-trading-partner",
+                            this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.unknown-trading-partner",
                                     new Object[]{
                                         overviewInfo.getSenderId(),
                                         overviewInfo.getReceiverId(),}));
                         } else if (dispositionState.contains(AS2Exception.AUTHENTIFICATION_ERROR)) {
                             this.jLabelTransactionStateDetails.setVisible(true);
-                            this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.authentication-failed"));
+                            this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.authentication-failed"));
                         } else if (dispositionState.contains(AS2Exception.DECOMPRESSSION_ERROR)) {
                             this.jLabelTransactionStateDetails.setVisible(true);
-                            this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.decompression-failed"));
+                            this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.decompression-failed"));
                         } else if (dispositionState.contains(AS2Exception.INSUFFICIENT_SECURITY_ERROR)) {
                             this.jLabelTransactionStateDetails.setVisible(true);
-                            this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.insufficient-message-security"));
+                            this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.insufficient-message-security"));
                         } else if (dispositionState.contains(AS2Exception.PROCESSING_ERROR)) {
                             this.jLabelTransactionStateDetails.setVisible(true);
-                            this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.unexpected-processing-error"));
+                            this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.unexpected-processing-error"));
                         } else if (dispositionState.contains(AS2Exception.DECRYPTION_ERROR)) {
                             this.jLabelTransactionStateDetails.setVisible(true);
-                            this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.error.decryption-failed"));
+                            this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.error.decryption-failed"));
                         }
                     } else {
                         this.jLabelStateOverviewImage.setIcon(null);
-                        this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.error.unknown"));
+                        this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.unknown"));
                         this.jLabelTransactionStateDetails.setVisible(false);
                     }
 
@@ -346,27 +372,27 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             this.jLabelTransactionStateDetails.setForeground(this.colorGreen);
             if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
                 this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_OUTBOUND_OK);
-                this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.ok.send",
+                this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.ok.send",
                         new Object[]{
                             messageTypeStr,
                             this.jLabelAS2TransmissionReceiver.getText()
                         }
                 ));
                 this.jLabelTransactionStateDetails.setVisible(true);
-                this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.ok.details"));
+                this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.ok.details"));
             } else {
                 this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_INBOUND_OK);
-                this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.ok.receive",
+                this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.ok.receive",
                         new Object[]{
                             messageTypeStr,
                             this.jLabelAS2TransmissionReceiver.getText(),}));
                 this.jLabelTransactionStateDetails.setVisible(true);
-                this.jLabelTransactionStateDetails.setText(this.rb.getResourceString("transactionstate.ok.details"));
+                this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.ok.details"));
             }
         } else if (overviewInfo.getState() == AS2Message.STATE_PENDING) {
             this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_PENDING);
             this.jLabelTransactionStateGeneral.setForeground(this.colorYellow);
-            this.jLabelTransactionStateGeneral.setText(this.rb.getResourceString("transactionstate.pending"));
+            this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.pending"));
             this.jLabelTransactionStateDetails.setVisible(false);
         }
     }
@@ -391,8 +417,10 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         Logger detailsLogger = Logger.getAnonymousLogger();
         detailsLogger.setUseParentHandlers(false);
         detailsLogger.setLevel(Level.ALL);
+        PreferencesAS2 preferences = new PreferencesAS2();
+        String displayMode = preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
         JTextPaneLoggingHandler detailsHandler = new JTextPaneLoggingHandler(this.jTextPaneLog,
-                new LogFormatter(LogFormatter.FORMAT_CONSOLE_COLORED));
+                new LogFormatter(LogFormatter.FORMAT_CONSOLE_COLORED), displayMode);
         detailsHandler.setLevel(Level.ALL);
         detailsLogger.addHandler(detailsHandler);
         detailsHandler.setColorsFrom(overviewHandler);

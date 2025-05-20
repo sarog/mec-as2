@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/util/security/cert/ListCellRendererCertificates.java 10    2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/ListCellRendererCertificates.java 13    19/09/24 12:12 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.security.DNUtil;
+import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -25,25 +26,28 @@ import javax.swing.SwingConstants;
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class ListCellRendererCertificates extends JLabel implements ListCellRenderer {
 
-    protected static final int IMAGE_HEIGHT = 18;
-    private final MecResourceBundle rb;
+    protected static final int IMAGE_HEIGHT = JDialogCertificates.IMAGE_SIZE_LIST;
+    public static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
+
+    private final static MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleListCellRendererCertificates.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Constructs a default renderer object for an item in a list.
      */
     public ListCellRendererCertificates() {
         super();
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleListCellRendererCertificates.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         setOpaque(true);
     }
 
@@ -188,6 +192,13 @@ public class ListCellRendererCertificates extends JLabel implements ListCellRend
     }
 
     @Override
+    public Dimension getPreferredSize() {
+        Dimension dimension = super.getPreferredSize();
+        dimension.height = ROW_HEIGHT;
+        return (dimension);
+    }
+
+    @Override
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         setComponentOrientation(list.getComponentOrientation());
@@ -205,30 +216,44 @@ public class ListCellRendererCertificates extends JLabel implements ListCellRend
             if (value instanceof KeystoreCertificate) {
                 KeystoreCertificate certificate = (KeystoreCertificate) value;
                 if (certificate.getIsKeyPair()) {
-                    this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                    this.setIcon(
+                            new ImageIcon(
+                                    TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
                 } else if (certificate.isRootCertificate()) {
-                    this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                    this.setIcon(
+                            new ImageIcon(
+                                    TableModelCertificates.IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
                 } else {
-                    this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                    this.setIcon(
+                            new ImageIcon(
+                                    TableModelCertificates.IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
                 }
                 this.setEnabled(list.isEnabled());
-                StringBuilder text = new StringBuilder(certificate.getAlias());
-                try {
-                    String organization = DNUtil.getOrganization(certificate.getX509Certificate(), DNUtil.SUBJECT);
-                    if (organization != null) {
-                        text.append(" [").append(organization).append("]");
-                    }
-                } catch (Exception e) {
-                    //nop
+                StringBuilder builder = new StringBuilder();
+                builder.append(certificate.getAlias());
+                String additionalInfo = certificate.getSubjectCN();
+                if (additionalInfo == null) {
+                    additionalInfo = certificate.getSubjectOrganization();
                 }
-                this.setText(text.toString());
+                if (additionalInfo == null) {
+                    additionalInfo = certificate.getSubjectOU();
+                }
+                if (additionalInfo != null) {
+                    builder.append(" [")
+                            .append(additionalInfo)
+                            .append("]");
+                }
+                this.setText(builder.toString());
             } else {
-                this.setText(this.rb.getResourceString("certificate.not.assigned"));
-                this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+                this.setText(rb.getResourceString("certificate.not.assigned"));
+                this.setIcon(new ImageIcon(
+                        TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
             }
         } else {
-            this.setText(this.rb.getResourceString("certificate.not.assigned"));
-            this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+            this.setText(rb.getResourceString("certificate.not.assigned"));
+            this.setIcon(
+                    new ImageIcon(
+                            TableModelCertificates.IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
         }
         this.setHorizontalAlignment(SwingConstants.LEADING);
         this.setHorizontalTextPosition(SwingConstants.RIGHT);

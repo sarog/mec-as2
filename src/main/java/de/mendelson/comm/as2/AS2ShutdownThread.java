@@ -1,7 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 17    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 18    8/11/24 9:00 Heller $
 package de.mendelson.comm.as2;
 
-import de.mendelson.comm.as2.database.IDBServer;
+import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.comm.as2.server.ResourceBundleAS2Server;
+import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.database.IDBServer;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,20 +17,12 @@ import de.mendelson.comm.as2.database.IDBServer;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.comm.as2.server.ResourceBundleAS2Server;
-import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.systemevents.SystemEvent;
-import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-
 /**
  * Thread that is executed if the VM will shut down (that means the server is
  * shut down)
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 18 $
  */
 public class AS2ShutdownThread extends Thread {
 
@@ -61,6 +61,6 @@ public class AS2ShutdownThread extends Thread {
                 "");
         System.out.println(this.rb.getResourceString("server.shutdown", AS2ServerVersion.getProductName()));
         //delete lock file
-        AS2Server.deleteLockFile();        
+        AS2Server.deleteLockFile();
     }
 }

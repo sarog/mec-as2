@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 86    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 89    20/02/25 13:41 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -13,6 +13,7 @@ import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.clientserver.PartnerModificationRequest;
 import de.mendelson.comm.as2.partner.gui.global.JDialogGlobalChange;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.LayoutManagerJToolbar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
@@ -27,12 +28,11 @@ import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.uinotification.UINotification;
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
@@ -41,6 +41,8 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+import javax.swing.border.LineBorder;
 import javax.swing.event.TreeSelectionEvent;
 import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
@@ -56,14 +58,23 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * Dialog to configure the partner of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 86 $
+ * @version $Revision: 89 $
  */
 public class JDialogPartnerConfig extends JDialog {
 
     /**
      * Resource to localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundlePartnerConfig.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     /**
      * List of all available partner
      */
@@ -73,23 +84,24 @@ public class JDialogPartnerConfig extends JDialog {
     private final CertificateManager certificateManagerEncSign;
     private final CertificateManager certificateManagerSSL;
     private final GUIClient guiClient;
-    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private final static Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private final AS2StatusBar status;
-    private final List<AllowModificationCallback> allowModificationCallbackList 
+    private final List<AllowModificationCallback> allowModificationCallbackList
             = new ArrayList<AllowModificationCallback>();
     private final LockClientInformation lockKeeper;
     private final static MendelsonMultiResolutionImage IMAGE_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_COPY
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_ADD
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_PARTNER_GROUP
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/global/partner_group.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
+    private Color colorRed = Color.RED.darker();
 
     /**
      * Creates new form JDialogMessageMapping
@@ -106,13 +118,6 @@ public class JDialogPartnerConfig extends JDialog {
         this.status = status;
         this.guiClient = guiClient;
         this.lockKeeper = lockKeeper;
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundlePartnerConfig.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.certificateManagerSSL = certificateManagerSSL;
         this.jTreePartner = new JTreePartner(guiClient.getBaseClient());
@@ -126,7 +131,8 @@ public class JDialogPartnerConfig extends JDialog {
                 this.certificateManagerEncSign,
                 this.certificateManagerSSL,
                 this.jButtonPartnerConfigOk, this.status, changesAllowed,
-                partnerSystemList, activatedPlugins);
+                partnerSystemList, activatedPlugins,
+                this.jPanelConfigurationWarning);
         this.jPanelPartner.add(this.panelEditPartner, BorderLayout.CENTER);
         this.getRootPane().setDefaultButton(this.jButtonPartnerConfigOk);
         try {
@@ -142,7 +148,18 @@ public class JDialogPartnerConfig extends JDialog {
             }
         });
         this.jToolBar.setLayout(new LayoutManagerJToolbar());
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            this.colorRed = UIManager.getColor("Objects.RedStatus");
+        } else {
+            this.colorRed = ColorUtil.getBestContrastColorAroundForeground(
+                    this.jPanelModuleLockWarning.getBackground(), this.colorRed);
+        }
+        this.jPanelModuleLockWarning.setBorder(new LineBorder(this.colorRed, 1));
+        this.jLabelModuleLockedWarning.setForeground(this.colorRed);
+        this.jPanelConfigurationWarning.setBorder(new LineBorder(this.colorRed, 1));
+        this.jLabelConfigurationWarning.setForeground(this.colorRed);        
         this.jPanelModuleLockWarning.setVisible(!changesAllowed);
+        this.jPanelConfigurationWarning.setVisible(false);
     }
 
     @Override
@@ -213,7 +230,7 @@ public class JDialogPartnerConfig extends JDialog {
     public void setDisplayOverwriteLocalstationSecurity(boolean display) {
         this.panelEditPartner.setDisplayOverwriteLocalstationSecurity(display);
     }
-    
+
     public void setDisplayNotificationPanel(boolean display) {
         this.panelEditPartner.setDisplayNotificationPanel(display);
     }
@@ -236,8 +253,8 @@ public class JDialogPartnerConfig extends JDialog {
         if (partner != null) {
             //ask the user if the partner should be really deleted, all data is lost
             int requestValue = JOptionPane.showConfirmDialog(
-                    this, this.rb.getResourceString("dialog.partner.delete.message", partner.getName()),
-                    this.rb.getResourceString("dialog.partner.delete.title"),
+                    this, rb.getResourceString("dialog.partner.delete.message", partner.getName()),
+                    rb.getResourceString("dialog.partner.delete.title"),
                     JOptionPane.YES_NO_OPTION);
             if (requestValue != JOptionPane.YES_OPTION) {
                 return;
@@ -280,10 +297,10 @@ public class JDialogPartnerConfig extends JDialog {
         String[] serversideInfo = this.getAbsolutePathOnServerSide(messageDir);
         String serverSideMessagePath = serversideInfo[0];
         String serverSideFileSeparator = serversideInfo[1];
-        int requestValue = JOptionPane.showConfirmDialog(this, this.rb.getResourceString("dialog.partner.renamedir.message",
+        int requestValue = JOptionPane.showConfirmDialog(this, rb.getResourceString("dialog.partner.renamedir.message",
                 new Object[]{existingPartner.getName(), newPartner.getName(),
                     existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
-                this.rb.getResourceString("dialog.partner.renamedir.title"),
+                rb.getResourceString("dialog.partner.renamedir.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
             return;
@@ -292,11 +309,11 @@ public class JDialogPartnerConfig extends JDialog {
         boolean success = fileClient.rename(existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
                 newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator));
         if (success) {
-            this.logger.log(Level.FINE, this.rb.getResourceString("directory.rename.success",
+            this.logger.log(Level.FINE, rb.getResourceString("directory.rename.success",
                     new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
                         newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         } else {
-            this.logger.log(Level.SEVERE, this.rb.getResourceString("directory.rename.failure",
+            this.logger.log(Level.SEVERE, rb.getResourceString("directory.rename.failure",
                     new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
                         newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         }
@@ -310,10 +327,10 @@ public class JDialogPartnerConfig extends JDialog {
         String serverSideMessagePath = serversideInfo[0];
         String serverSideFileSeparator = serversideInfo[1];
         int requestValue = JOptionPane.showConfirmDialog(
-                this, this.rb.getResourceString("dialog.partner.deletedir.message",
+                this, rb.getResourceString("dialog.partner.deletedir.message",
                         new Object[]{existingPartner.getName(),
                             existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
-                this.rb.getResourceString("dialog.partner.deletedir.title"),
+                rb.getResourceString("dialog.partner.deletedir.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
             return;
@@ -321,10 +338,10 @@ public class JDialogPartnerConfig extends JDialog {
         FileOperationClient fileClient = new FileOperationClient(this.guiClient.getBaseClient());
         boolean success = fileClient.delete(existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator));
         if (success) {
-            this.logger.log(Level.FINE, this.rb.getResourceString("directory.delete.success",
+            this.logger.log(Level.FINE, rb.getResourceString("directory.delete.success",
                     new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         } else {
-            this.logger.log(Level.WARNING, this.rb.getResourceString("directory.delete.failure",
+            this.logger.log(Level.WARNING, rb.getResourceString("directory.delete.failure",
                     new Object[]{
                         existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
                         fileClient.getLastException().getMessage()
@@ -358,8 +375,8 @@ public class JDialogPartnerConfig extends JDialog {
             UINotification.instance().addNotification(
                     null,
                     UINotification.TYPE_ERROR,
-                    JDialogPartnerConfig.this.rb.getResourceString("nolocalstation.title"),
-                    JDialogPartnerConfig.this.rb.getResourceString("nolocalstation.message")
+                    JDialogPartnerConfig.rb.getResourceString("nolocalstation.title"),
+                    JDialogPartnerConfig.rb.getResourceString("nolocalstation.message")
             );
             return;
         }
@@ -368,8 +385,8 @@ public class JDialogPartnerConfig extends JDialog {
             UINotification.instance().addNotification(
                     null,
                     UINotification.TYPE_ERROR,
-                    JDialogPartnerConfig.this.rb.getResourceString("localstation.noprivatekey.title"),
-                    JDialogPartnerConfig.this.rb.getResourceString("localstation.noprivatekey.message")
+                    JDialogPartnerConfig.rb.getResourceString("localstation.noprivatekey.title"),
+                    JDialogPartnerConfig.rb.getResourceString("localstation.noprivatekey.message")
             );
             return;
         }
@@ -409,7 +426,7 @@ public class JDialogPartnerConfig extends JDialog {
                     JDialogPartnerConfig.this.lock();
                     //display wait indicator
                     JDialogPartnerConfig.this.status.startProgressIndeterminate(
-                            JDialogPartnerConfig.this.rb.getResourceString("saving"), uniqueId);
+                            JDialogPartnerConfig.rb.getResourceString("saving"), uniqueId);
                     PartnerModificationRequest modificationRequest = new PartnerModificationRequest();
                     modificationRequest.setData(JDialogPartnerConfig.this.partnerList);
                     ClientServerResponse response
@@ -434,9 +451,7 @@ public class JDialogPartnerConfig extends JDialog {
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
     /**
@@ -516,6 +531,8 @@ public class JDialogPartnerConfig extends JDialog {
         jPanelButton = new javax.swing.JPanel();
         jButtonCancel = new javax.swing.JButton();
         jButtonPartnerConfigOk = new de.mendelson.comm.as2.partner.gui.JButtonPartnerConfigOk();
+        jPanelConfigurationWarning = new javax.swing.JPanel();
+        jLabelConfigurationWarning = new javax.swing.JLabel();
 
         setTitle(this.rb.getResourceString( "title" ));
         addWindowListener(new java.awt.event.WindowAdapter() {
@@ -580,7 +597,7 @@ public class JDialogPartnerConfig extends JDialog {
         jPanelModuleLockWarning.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(204, 51, 0)));
         jPanelModuleLockWarning.setLayout(new java.awt.GridBagLayout());
 
-        jLabelModuleLockedWarning.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
+        jLabelModuleLockedWarning.setFont(new java.awt.Font("Dialog", 1, 11)); // NOI18N
         jLabelModuleLockedWarning.setForeground(new java.awt.Color(204, 51, 0));
         jLabelModuleLockedWarning.setText(this.rb.getResourceString( "module.locked"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -630,7 +647,8 @@ public class JDialogPartnerConfig extends JDialog {
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridheight = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -668,10 +686,34 @@ public class JDialogPartnerConfig extends JDialog {
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMain.add(jPanelButton, gridBagConstraints);
+
+        jPanelConfigurationWarning.setBorder(javax.swing.BorderFactory.createLineBorder(new java.awt.Color(204, 51, 0)));
+        jPanelConfigurationWarning.setLayout(new java.awt.GridBagLayout());
+
+        jLabelConfigurationWarning.setFont(new java.awt.Font("Dialog", 1, 11)); // NOI18N
+        jLabelConfigurationWarning.setForeground(new java.awt.Color(204, 51, 0));
+        jLabelConfigurationWarning.setText(this.rb.getResourceString( "text.configurationproblem"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
+        jPanelConfigurationWarning.add(jLabelConfigurationWarning, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 9.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMain.add(jPanelConfigurationWarning, gridBagConstraints);
 
         getContentPane().add(jPanelMain, java.awt.BorderLayout.CENTER);
 
@@ -741,8 +783,10 @@ public class JDialogPartnerConfig extends JDialog {
     private javax.swing.JButton jButtonModuleLockInfo;
     private javax.swing.JButton jButtonNewPartner;
     private de.mendelson.comm.as2.partner.gui.JButtonPartnerConfigOk jButtonPartnerConfigOk;
+    private javax.swing.JLabel jLabelConfigurationWarning;
     private javax.swing.JLabel jLabelModuleLockedWarning;
     private javax.swing.JPanel jPanelButton;
+    private javax.swing.JPanel jPanelConfigurationWarning;
     private javax.swing.JPanel jPanelMain;
     private javax.swing.JPanel jPanelModuleLockWarning;
     private javax.swing.JPanel jPanelPartner;

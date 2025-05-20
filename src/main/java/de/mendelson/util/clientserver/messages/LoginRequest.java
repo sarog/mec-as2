@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 13    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 14    24/01/24 15:53 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import de.mendelson.util.clientserver.BaseClient;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -12,16 +13,15 @@ import java.io.Serializable;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Msg for the client server protocol. This is the initial message that should
  * be send to the server
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class LoginRequest extends ClientServerMessage implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
     private String username = null;
     private char[] password = null;
@@ -31,11 +31,13 @@ public class LoginRequest extends ClientServerMessage implements Serializable {
      * must be compatible. This is set here
      */
     private String clientId = null;
+    private final int clientType;
 
-    public LoginRequest(){
+    public LoginRequest(final int CLIENT_TYPE) {
+        this.clientType = CLIENT_TYPE;
         this.clientOSName = System.getProperty("os.name");
     }
-    
+
     public String getUserName() {
         return username;
     }
@@ -77,10 +79,20 @@ public class LoginRequest extends ClientServerMessage implements Serializable {
     public String getClientOSName() {
         return clientOSName;
     }
-    
-    
-    /**Prevent an overwrite of the readObject method for de-serialization*/
-    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+
+    /**
+     * Prevent an overwrite of the readObject method for de-serialization
+     */
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException {
         inStream.defaultReadObject();
     }
+
+    /**
+     * @return the clientType
+     */
+    public int getClientType() {
+        return clientType;
+    }
+
+    
 }

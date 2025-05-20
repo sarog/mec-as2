@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/JKSKeys2JKS.java 3     2/11/23 14:03 Heller $
+//$Header: /oftp2/de/mendelson/util/security/JKSKeys2JKS.java 5     20/02/25 15:51 Heller $
 package de.mendelson.util.security;
 
 import java.io.OutputStream;
@@ -22,7 +22,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * the JKS format
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class JKSKeys2JKS {
 
@@ -43,7 +43,6 @@ public class JKSKeys2JKS {
     public void exportKey(KeyStore jksKeyStore, char[] jksKeyPassword, String alias) throws Exception {
         //extract key
         RSAPrivateCrtKey jksPrivateCrtKey = (RSAPrivateCrtKey) jksKeyStore.getKey(alias, jksKeyPassword);
-        Certificate jksCert = jksKeyStore.getCertificate(alias);
         //Get Certificate Chain
         Certificate[] jksCerts = jksKeyStore.getCertificateChain(alias);
         if (jksPrivateCrtKey == null || jksCerts == null) {
@@ -78,14 +77,8 @@ public class JKSKeys2JKS {
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass,
             Path file) throws Exception {
-        OutputStream out = null;
-        try {
-            out = Files.newOutputStream(file);
+        try (OutputStream out = Files.newOutputStream(file)) {
             keystore.store(out, keystorePass);
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 94    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/Partner.java 97    19/02/25 10:08 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -33,7 +33,7 @@ import org.w3c.dom.NodeList;
  * Stores all information about a business partner
  *
  * @author S.Heller
- * @version $Revision: 94 $
+ * @version $Revision: 97 $
  */
 public class Partner implements Serializable, Comparable, Cloneable {
 
@@ -56,8 +56,8 @@ public class Partner implements Serializable, Comparable, Cloneable {
     private String name;
     private PartnerCertificateInformationList partnerCertificateList
             = new PartnerCertificateInformationList();
-    private int encryptionType = AS2Message.ENCRYPTION_3DES;
-    private int signType = AS2Message.SIGNATURE_SHA1;
+    private int encryptionType = AS2Message.ENCRYPTION_AES_128_CBC;
+    private int signType = AS2Message.SIGNATURE_SHA256;
     private String email = "sender@as2server.com";
     private String url = this.getDefaultURL();
     private String subject = "AS2 message";
@@ -907,7 +907,7 @@ public class Partner implements Serializable, Comparable, Cloneable {
                                     manager.getKeystoreCertificate(value).getFingerPrintSHA1());
                         }
                     }
-                }else if (key.equals("cryptaliasoverwritelocal")) {
+                } else if (key.equals("cryptaliasoverwritelocal")) {
                     if (manager != null) {
                         KeystoreCertificate certificate = manager.getKeystoreCertificate(value);
                         if (certificate != null) {
@@ -920,33 +920,33 @@ public class Partner implements Serializable, Comparable, Cloneable {
                 } else if (key.equals("url")) {
                     partner.setURL(value);
                 } else if (key.equals("compression")) {
-                    partner.setCompressionType(Integer.valueOf(value).intValue());
+                    partner.setCompressionType(Integer.parseInt(value));
                 } else if (key.equals("transferencoding")) {
-                    partner.setContentTransferEncoding(Integer.valueOf(value).intValue());
+                    partner.setContentTransferEncoding(Integer.parseInt(value));
                 } else if (key.equals("encryptiontype")) {
-                    partner.setEncryptionType(Integer.valueOf(value).intValue());
+                    partner.setEncryptionType(Integer.parseInt(value));
                 } else if (key.equals("keepfilename")) {
                     partner.setKeepOriginalFilenameOnReceipt(value.equalsIgnoreCase("true"));
                 } else if (key.equals("localstation")) {
                     partner.setLocalStation(value.equalsIgnoreCase("true"));
                 } else if (key.equals("notifyreceive")) {
-                    partner.setNotifyReceive(Integer.valueOf(value).intValue());
+                    partner.setNotifyReceive(Integer.parseInt(value));
                 } else if (key.equals("notifyreceiveenabled")) {
                     partner.setNotifyReceiveEnabled(value.equalsIgnoreCase("true"));
                 } else if (key.equals("notifysend")) {
-                    partner.setNotifySend(Integer.valueOf(value).intValue());
+                    partner.setNotifySend(Integer.parseInt(value));
                 } else if (key.equals("notifysendenabled")) {
                     partner.setNotifySendEnabled(value.equalsIgnoreCase("true"));
                 } else if (key.equals("notifysendreceiveenabled")) {
                     partner.setNotifySendReceiveEnabled(value.equalsIgnoreCase("true"));
                 } else if (key.equals("pollinterval")) {
-                    partner.setPollInterval(Integer.valueOf(value).intValue());
+                    partner.setPollInterval(Integer.parseInt(value));
                 } else if (key.equals("maxpollfiles")) {
-                    partner.setMaxPollFiles(Integer.valueOf(value).intValue());
+                    partner.setMaxPollFiles(Integer.parseInt(value));
                 } else if (key.equals("pollignorelist")) {
                     partner.setPollIgnoreListString(value);
                 } else if (key.equals("signtype")) {
-                    partner.setSignType(Integer.valueOf(value).intValue());
+                    partner.setSignType(Integer.parseInt(value));
                 } else if (key.equals("signedmdn")) {
                     partner.setSignedMDN(value.equalsIgnoreCase("true"));
                 } else if (key.equals("syncmdn")) {
@@ -1107,11 +1107,40 @@ public class Partner implements Serializable, Comparable, Cloneable {
         try {
             Partner clonedPartner = (Partner) super.clone();
             clonedPartner.partnerCertificateList = new PartnerCertificateInformationList();
-            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN));
-            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT));
-            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_TLS));
-            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION));
-            clonedPartner.setCertificateInformation(this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION));
+            clonedPartner.setCertificateInformation(
+                    this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN));
+            clonedPartner.setCertificateInformation(
+                    this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT));
+            clonedPartner.setCertificateInformation(
+                    this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_TLS));
+            clonedPartner.setCertificateInformation(
+                    this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION));
+            clonedPartner.setCertificateInformation(
+                    this.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION));
+            synchronized (this.httpHeader) {
+                synchronized (clonedPartner.httpHeader) {
+                    clonedPartner.httpHeader.clear();
+                    clonedPartner.httpHeader.addAll(this.httpHeader);
+                }
+            }
+            if( this.authenticationCredentialsAsyncMDN != null ){
+                clonedPartner.authenticationCredentialsAsyncMDN = new HTTPAuthentication(this.authenticationCredentialsAsyncMDN);
+            }
+            if( this.authenticationCredentialsMessage != null ){
+                clonedPartner.authenticationCredentialsMessage = new HTTPAuthentication(this.authenticationCredentialsMessage);
+            }
+            clonedPartner.partnerEvents.setParameter(PartnerEventInformation.TYPE_ON_RECEIPT, 
+                    this.partnerEvents.getParameter(PartnerEventInformation.TYPE_ON_RECEIPT));
+            clonedPartner.partnerEvents.setParameter(PartnerEventInformation.TYPE_ON_SENDERROR, 
+                    this.partnerEvents.getParameter(PartnerEventInformation.TYPE_ON_SENDERROR));
+            clonedPartner.partnerEvents.setParameter(PartnerEventInformation.TYPE_ON_SENDSUCCESS, 
+                    this.partnerEvents.getParameter(PartnerEventInformation.TYPE_ON_SENDSUCCESS));
+            if( this.oauth2MDN != null ){
+                clonedPartner.setOAuth2MDN((OAuth2Config)this.oauth2MDN.clone());
+            }
+            if( this.oauth2Message != null ){
+                clonedPartner.setOAuth2Message((OAuth2Config)this.oauth2Message.clone());
+            }
             return (clonedPartner);
         } catch (CloneNotSupportedException e) {
             e.printStackTrace();

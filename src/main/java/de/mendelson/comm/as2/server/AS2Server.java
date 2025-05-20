@@ -1,20 +1,21 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AS2Server.java 191   23/11/23 10:22 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AS2Server.java 201   18/02/25 14:39 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.Copyright;
+import de.mendelson.activation.AWSRESTAccess;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.AS2ShutdownThread;
 import de.mendelson.comm.as2.cem.CertificateCEMController;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationCheckController;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
-import de.mendelson.comm.as2.database.DBClientInformation;
+import de.mendelson.util.database.DBClientInformation;
 import de.mendelson.comm.as2.database.DBDriverManagerHSQL;
 import de.mendelson.comm.as2.database.DBDriverManagerMySQL;
 import de.mendelson.comm.as2.database.DBDriverManagerPostgreSQL;
 import de.mendelson.comm.as2.database.DBDriverManagerOracleDB;
 import de.mendelson.comm.as2.database.DBServerHSQL;
-import de.mendelson.comm.as2.database.DBServerInformation;
+import de.mendelson.util.database.DBServerInformation;
 import de.mendelson.comm.as2.database.DBServerMySQL;
 import de.mendelson.comm.as2.database.DBServerOracle;
 import de.mendelson.comm.as2.database.DBServerPostgreSQL;
@@ -47,7 +48,6 @@ import de.mendelson.util.systemevents.notification.SystemEventNotificationContro
 import java.io.IOException;
 import java.io.Writer;
 import java.net.BindException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,36 +61,38 @@ import java.util.logging.Logger;
 import java.util.logging.Handler;
 import java.util.logging.ConsoleHandler;
 import org.eclipse.jetty.server.Server;
-import de.mendelson.comm.as2.database.IDBServer;
 import de.mendelson.comm.as2.ha.ClientLogRefreshController;
 import de.mendelson.comm.as2.ha.HAInstanceController;
 import de.mendelson.comm.as2.ha.ServerCertificateRefreshControllerHA;
-import de.mendelson.comm.as2.ha.ServerInstanceHA;
+import de.mendelson.util.LibVersion;
+import de.mendelson.util.ha.ServerInstanceHA;
+import de.mendelson.util.clientserver.ClientServerTLSImplDefault;
 import de.mendelson.util.clientserver.ServerHelloMessage;
 import de.mendelson.util.clientserver.ServerHelloMessageGenerator;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.database.IDBServer;
 import de.mendelson.util.log.ConsoleHandlerStdout;
 import de.mendelson.util.modulelock.ModuleLockReleaseController;
+import de.mendelson.util.security.BouncyCastleProviderSingleton;
 import de.mendelson.util.security.CryptoProvider;
 import de.mendelson.util.security.cert.KeystoreStorageImplDB;
 import de.mendelson.util.security.keydata.KeydataAccessDB;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.lang.management.ManagementFactory;
 import java.lang.management.RuntimeMXBean;
 import java.net.InetAddress;
-import java.net.URLConnection;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.time.format.FormatStyle;
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Class to start the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 191 $
+ * @version $Revision: 201 $
  * @since build 68
  */
 public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, ServerHelloMessageGenerator {
@@ -102,9 +104,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     static {
         LOG_DIR = Paths.get(System.getProperty("user.dir"), "log");
     }
-    private static int transactionCounter = 0;
-    private static long rawDataSent = 0;
-    private static long rawDataReceived = 0;
+    private final static AtomicInteger transactionCounter = new AtomicInteger(0);
+    private final static AtomicLong rawDataSent = new AtomicLong(0);
+    private final static AtomicLong rawDataReceived = new AtomicLong(0);
     /**
      * Server start time in ms
      */
@@ -192,7 +194,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         this.performStartupChecks();
         this.serverStartupSequence.performWork();
         dbDriverManager = getActivatedDBDriverManager();
-        this.clientserver = new ClientServer(this.logger, CLIENTSERVER_COMM_PORT);
+        this.clientserver = new ClientServer(this.logger, CLIENTSERVER_COMM_PORT,
+                new ClientServerTLSImplDefault(AS2ServerVersion.getFullProductName()));
         this.clientserver.setProductName(AS2ServerVersion.getFullProductName());
         this.initializeServerInstanceHA();
         this.setupClientServerSessionHandler();
@@ -217,9 +220,10 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
             byte[] keystoreData = Files.readAllBytes(keystoreFileEncSign);
             keydataAccessDB.updateKeydata(keystoreData,
                     KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_PKCS12,
-                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN);
-            keydataAccessDB.logKeystoreImport(this.logger, 
-                    keystoreFileEncSign, 
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN,
+                    BouncyCastleProviderSingleton.instance().getName());
+            keydataAccessDB.logKeystoreImport(this.logger,
+                    keystoreFileEncSign,
                     KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN,
                     KeydataAccessDB.REASON_IMPORT_COMMAND_LINE_SETTINGS);
         } else {
@@ -227,16 +231,18 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     this.logger,
                     keystoreFileEncSign,
                     KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_PKCS12,
-                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN);
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN,
+                    BouncyCastleProviderSingleton.instance().getName());
         }
         Path keystoreFileTLS = Paths.get("jetty10/etc/keystore");
         if (importTLS) {
             byte[] keystoreData = Files.readAllBytes(keystoreFileTLS);
             keydataAccessDB.updateKeydata(keystoreData,
                     KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_JKS,
-                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS);
-            keydataAccessDB.logKeystoreImport(this.logger, 
-                    keystoreFileTLS, 
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS,
+                    BouncyCastleProviderSingleton.instance().getName());
+            keydataAccessDB.logKeystoreImport(this.logger,
+                    keystoreFileTLS,
                     KeystoreStorageImplDB.KEYSTORE_USAGE_TLS,
                     KeydataAccessDB.REASON_IMPORT_COMMAND_LINE_SETTINGS);
         } else {
@@ -244,7 +250,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     this.logger,
                     keystoreFileTLS,
                     KeystoreStorageImplDB.KEYSTORE_STORAGE_TYPE_JKS,
-                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS);
+                    KeystoreStorageImplDB.KEYSTORE_USAGE_TLS,
+                    BouncyCastleProviderSingleton.instance().getName());
         }
     }
 
@@ -322,6 +329,15 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                         + issueListStr
                         + "\n\n"
                         + body;
+            }
+        }
+        //display the used libs
+        List<String> usedLibsList = LibVersion.getLibVersions();
+        if( !usedLibsList.isEmpty()){
+            body = body + "\n\n";
+            body = body + this.rb.getResourceString( "server.started.usedlibs") + ":\n";
+            for( String usedLibsListStr:usedLibsList){
+                body = body + usedLibsListStr + "\n";
             }
         }
         SystemEventManagerImplAS2.instance().newEvent(severity,
@@ -521,7 +537,6 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         this.loggingHandlerSystemOut.setLevel(Level.ALL);
         this.logger.addHandler(this.loggingHandlerSystemOut);
         this.logger.setUseParentHandlers(false);
-
     }
 
     /**
@@ -536,8 +551,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         logger.addHandler(new DailySubdirFileLoggingHandler(
                 AS2Server.LOG_DIR,
                 "as2.log", new LogFormatterAS2(LogFormatter.FORMAT_LOGFILE,
-                        this.dbDriverManager))
-        );
+                        this.dbDriverManager),
+                SystemEventManagerImplAS2.instance()));
     }
 
     private void setupClientServerSessionHandler() {
@@ -597,24 +612,12 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     }));
         } else {
             //write the lock file
-            Writer writer = null;
-            try {
-                writer = Files.newBufferedWriter(lockFile);
-                writer.write("");
+            try(Writer writer = Files.newBufferedWriter(lockFile)){
+                writer.write("");                
             } catch (Exception e) {
                 this.logger.severe("Problem writing the lock file: [" + e.getClass().getName() + "]: " + e.getMessage());
                 System.exit(1);
-            } finally {
-                if (writer != null) {
-                    try {
-                        writer.flush();
-                        writer.close();
-                    } catch (Exception e) {
-                        //nop
-                    }
-                }
             }
-
         }
     }
 
@@ -708,29 +711,29 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
 
     @Override
     public long getRawDataSentInBytesInUptime() {
-        return (rawDataSent);
+        return (rawDataSent.get());
     }
 
     @Override
     public long getRawDataReceivedInBytesInUptime() {
-        return (rawDataReceived);
+        return (rawDataReceived.get());
     }
 
     @Override
     public long getTransactionCountInUptime() {
-        return (transactionCounter);
+        return (transactionCounter.get());
     }
 
-    public static synchronized void incTransactionCounter() {
-        transactionCounter++;
+    public static void incTransactionCounter() {
+        transactionCounter.incrementAndGet();
     }
 
-    public static synchronized void incRawSentData(long size) {
-        rawDataSent += size;
+    public static void incRawSentData(long size) {
+        rawDataSent.addAndGet(size);
     }
 
-    public static synchronized void incRawReceivedData(long size) {
-        rawDataReceived += size;
+    public static void incRawReceivedData(long size) {
+        rawDataReceived.addAndGet(size);
     }
 
     /**
@@ -766,9 +769,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         this.serverInstanceHA.setHost(runtimeBean.getName());
         //try to figure out if this instance runs on aws - then add some additional values that are conditional
-        String publicIP = this.retrieveAWSValue("public-ipv4");
+        String publicIP = AWSRESTAccess.retrieveIP4Address();
         this.serverInstanceHA.setPublicIP(publicIP);
-        String cloudInstanceId = this.retrieveAWSValue("instance-id");
+        String cloudInstanceId = AWSRESTAccess.retrieveInstanceId();
         this.serverInstanceHA.setCloudInstanceId(cloudInstanceId);
     }
 
@@ -779,39 +782,6 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     public ServerInstanceHA getServerInstanceHA() {
         this.serverInstanceHA.setNumberOfClients(this.clientserver.getSessions().size());
         return (this.serverInstanceHA);
-    }
-
-    /**
-     * Will return null if this instance does not run on aws or the value could
-     * not be obtained Used keys are: instance-id (AWS instance id) public-ipv4
-     * (AWS public IP of this instance)
-     *
-     * @return
-     */
-    private String retrieveAWSValue(String key) {
-        String ec2Id = null;
-        URLConnection ec2Connection = null;
-        try {
-            String inputLine;
-            URL ec2MetaData = new URL("http://169.254.169.254/latest/meta-data/" + key);
-            ec2Connection = ec2MetaData.openConnection();
-            ec2Connection.setConnectTimeout(2000);
-            ec2Connection.setReadTimeout(2000);
-            ec2Connection.setAllowUserInteraction(false);
-            BufferedReader in = null;
-            try {
-                in = new BufferedReader(new InputStreamReader(ec2Connection.getInputStream()));
-                while ((inputLine = in.readLine()) != null) {
-                    ec2Id = inputLine;
-                }
-            } finally {
-                if (in != null) {
-                    in.close();
-                }
-            }
-        } catch (Throwable e) {
-        }
-        return ec2Id;
     }
 
     public static String getLicenseType() {

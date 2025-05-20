@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/datatransfer/TransferClient.java 17    10/11/23 11:16 Helle $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/TransferClient.java 18    1/11/24 13:24 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.SyncRequestTransportLevelException;
@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
  * Requests downloads from and sends new uploads to the server
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 18 $
  */
 public class TransferClient {
 
@@ -104,23 +104,22 @@ public class TransferClient {
      */
     protected byte[] copyBytesFromStream(InputStream in, int minChunkSize) throws IOException {
         //WARNING do not use buffered streams here, this is just a chunk that is cut of the stream!
-        ByteArrayOutputStream memOut = new ByteArrayOutputStream(minChunkSize);
-        //copy the contents to an output stream
-        int read = 8192;
-        byte[] buffer = new byte[read];
-        int actualCount = 0;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1 && actualCount <= minChunkSize) {
-            read = in.read(buffer);
-            if (read > 0) {
-                memOut.write(buffer, 0, read);
-                actualCount += read;
+        try (ByteArrayOutputStream memOut = new ByteArrayOutputStream(minChunkSize)) {
+            //copy the contents to an output stream
+            int read = 8192;
+            byte[] buffer = new byte[read];
+            int actualCount = 0;
+            //a read of 0 must be allowed, sometimes it takes time to
+            //extract data from the input
+            while (read != -1 && actualCount <= minChunkSize) {
+                read = in.read(buffer);
+                if (read > 0) {
+                    memOut.write(buffer, 0, read);
+                    actualCount += read;
+                }
             }
+            return (memOut.toByteArray());
         }
-        memOut.flush();
-        memOut.close();
-        return (memOut.toByteArray());
     }
 
     public DownloadResponse download(DownloadRequest request) throws Throwable {

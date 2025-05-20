@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MessageDeleteController.java 52    27/10/23 17:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/MessageDeleteController.java 57    12/03/25 16:07 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -9,8 +9,8 @@ import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.preferences.ResourceBundlePreferences;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
@@ -18,6 +18,7 @@ import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.Statement;
@@ -28,8 +29,6 @@ import java.util.Date;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -44,18 +43,16 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 52 $
+ * @version $Revision: 57 $
  */
 public class MessageDeleteController {
 
     /**
      * Logger to log information to
      */
-    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final PreferencesAS2 preferences;
     private final MessageDeleteThread deleteThread;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-            new NamedThreadFactory("old-transactions-housekeeping"));
     private final ClientServer clientserver;
     private final MecResourceBundle rb;
     private final MecResourceBundle rbTime;
@@ -91,7 +88,7 @@ public class MessageDeleteController {
      * Starts the embedded task that guards the log
      */
     public void startAutoDeleteControl() {
-        this.scheduledExecutor.scheduleWithFixedDelay(this.deleteThread, 1, 1, TimeUnit.MINUTES);
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.deleteThread, 1, 1, TimeUnit.MINUTES);
     }
 
     /**
@@ -112,8 +109,15 @@ public class MessageDeleteController {
         List<String> rawfilenames = this.messageAccess.getRawFilenamesToDelete(messageIdList, runtimeConnectionNoAutoCommit);
         if (rawfilenames != null && !rawfilenames.isEmpty()) {
             for (String rawfilename : rawfilenames) {
+                Path singleFilePath = Paths.get(rawfilename);
+                String fileSizeStr = "";
                 try {
-                    Files.delete(Paths.get(rawfilename));
+                    long fileSize = Files.size(singleFilePath);
+                    fileSizeStr = AS2Tools.getDataSizeDisplay(fileSize);
+                } catch (Throwable e) {
+                }
+                try {
+                    Files.delete(singleFilePath);
                     deleteLog.append("[" + rb.getResourceString("delete.ok") + "]: ");
                 } catch (NoSuchFileException e) {
                     deleteLog.append("[" + rb.getResourceString("delete.skipped")
@@ -124,8 +128,14 @@ public class MessageDeleteController {
                     SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_FILE_OPERATION_ANY);
                     new File(rawfilename).deleteOnExit();
                 }
-                deleteLog.append("  ");
-                deleteLog.append(Paths.get(rawfilename).toAbsolutePath().toString());
+                deleteLog.append("  ")
+                        .append(Paths.get(rawfilename).toAbsolutePath().toString());
+                if (fileSizeStr.length() > 0) {
+                    deleteLog.append("      ")
+                            .append("[")
+                            .append(fileSizeStr)
+                            .append("]");
+                }
                 deleteLog.append(System.lineSeparator());
             }
         }
@@ -141,61 +151,41 @@ public class MessageDeleteController {
      */
     public void deleteMessagesFromLog(List<AS2MessageInfo> infoList, boolean broadcastRefresh, StringBuilder deleteLog) {
         int bulkSize = 10;
-        //a new connection to the database is required because the message storage contains several tables and all this has to be transactional
-        Connection runtimeConnectionNoAutoCommit = null;
         String transactionname = "Message_deleteFromLog";
-        Statement transactionStatement = null;
-        try {
-            runtimeConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+        try (Connection runtimeConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = runtimeConnectionNoAutoCommit.createStatement();
-            //start transaction
-            this.dbDriverManager.startTransaction(transactionStatement, transactionname);
-            //lock tables for delete
-            this.dbDriverManager.setTableLockDELETE(transactionStatement,
-                    new String[]{
-                        "messages",
-                        "messagelog",
-                        "mdn",
-                        "payload"
-                    });
-            List<AS2MessageInfo> subList = new ArrayList<AS2MessageInfo>();
-            for (int i = 0; i < infoList.size(); i++) {
-                subList.add(infoList.get(i));
-                if (i != 0 && i % bulkSize == 0) {
-                    this.deleteMessageFromLogPart(subList, broadcastRefresh, deleteLog, runtimeConnectionNoAutoCommit);
-                    subList.clear();
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                //start transaction
+                this.dbDriverManager.startTransaction(transactionStatement, transactionname);
+                //lock tables for delete
+                this.dbDriverManager.setTableLockDELETE(transactionStatement,
+                        new String[]{
+                            "messages",
+                            "messagelog",
+                            "mdn",
+                            "payload"
+                        });
+                try {
+                    List<AS2MessageInfo> subList = new ArrayList<AS2MessageInfo>();
+                    for (int i = 0; i < infoList.size(); i++) {
+                        subList.add(infoList.get(i));
+                        if (i != 0 && i % bulkSize == 0) {
+                            this.deleteMessageFromLogPart(subList, broadcastRefresh, deleteLog, runtimeConnectionNoAutoCommit);
+                            subList.clear();
+                        }
+                    }
+                    if (!subList.isEmpty()) {
+                        this.deleteMessageFromLogPart(subList, broadcastRefresh, deleteLog, runtimeConnectionNoAutoCommit);
+                    }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-            if (!subList.isEmpty()) {
-                this.deleteMessageFromLogPart(subList, broadcastRefresh, deleteLog, runtimeConnectionNoAutoCommit);
-            }
-            //all ok - commit
-            this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
         } catch (Exception e) {
-            try {
-                //an error occured - rollback transaction and release all table locks
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Exception ex) {
-                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-            }
-            this.logger.severe("MessageAccessDB.deleteMessagesFromLog: " + e.getMessage());
             SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
-            if (runtimeConnectionNoAutoCommit != null) {
-                try {
-                    runtimeConnectionNoAutoCommit.close();
-                } catch (Exception ex) {
-                    //nop
-                }
-            }
         }
 
     }
@@ -209,7 +199,6 @@ public class MessageDeleteController {
         public void run() {
             try {
                 if (preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE)) {
-                    MessageAccessDB messageAccess = new MessageAccessDB(dbDriverManager);
                     try {
                         long olderThan = System.currentTimeMillis()
                                 - TimeUnit.SECONDS.toMillis(
@@ -248,13 +237,10 @@ public class MessageDeleteController {
                             }
                         }
                     } catch (Throwable e) {
-                        logger.severe("MessageDeleteThread: [" + e.getClass().getSimpleName() + "]:" + e.getMessage());
                         SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
                     }
                 }
             } catch (Throwable e) {
-                //final try/catch - this thead must not stop!
-                logger.severe("MessageDeleteThread: [" + e.getClass().getSimpleName() + "]:" + e.getMessage());
                 SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
             }
         }
@@ -280,19 +266,19 @@ public class MessageDeleteController {
             builder.append(System.lineSeparator()).append(System.lineSeparator());
             for (int i = 0; i < deletedTransactionList.size(); i++) {
                 AS2MessageInfo singleInfo = deletedTransactionList.get(i);
-                builder.append("[");
-                builder.append(rb.getResourceString("transaction.deleted.transactiondate",
-                        dateFormat.format(singleInfo.getInitDate())));
-                builder.append("] (");
-                builder.append(singleInfo.getSenderId());
-                builder.append(" --> ");
-                builder.append(singleInfo.getReceiverId());
-                builder.append(") ");
-                builder.append(singleInfo.getMessageId());
+                builder.append("[")
+                        .append(rb.getResourceString("transaction.deleted.transactiondate",
+                                dateFormat.format(singleInfo.getInitDate())))
+                        .append("] (")
+                        .append(singleInfo.getSenderId())
+                        .append(" --> ")
+                        .append(singleInfo.getReceiverId())
+                        .append(") ")
+                        .append(singleInfo.getMessageId());
                 builder.append(System.lineSeparator());
             }
-            builder.append("---").append(System.lineSeparator());
-            builder.append(transactionDeleteLog);
+            builder.append("---").append(System.lineSeparator())
+                    .append(transactionDeleteLog);
             event.setBody(builder.toString());
             SystemEventManagerImplAS2.instance().newEvent(event);
         }

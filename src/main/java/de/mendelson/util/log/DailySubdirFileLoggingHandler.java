@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 18    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/log/DailySubdirFileLoggingHandler.java 22    20/02/25 13:42 Heller $
 package de.mendelson.util.log;
 
+import de.mendelson.util.systemevents.SystemEventManager;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -31,24 +32,24 @@ import java.util.logging.LogRecord;
  * DailySubdirFileLoggingHandler(Paths.get("mylogdir"), "mylogfile.log") );
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 22 $
  */
 public class DailySubdirFileLoggingHandler extends Handler {
 
-    private boolean doneHeader;
-    private BufferedWriter writer = null;
-    private final DateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
+    private boolean doneHeader;    
     private final Path logDir;
     private final String logfileName;
-    //stores the actual log file name that is used to write log to
-    private String actualLogFilename = null;
     private long maxLogFileSize = -1;
+    private final SystemEventManager eventManager;
 
-    public DailySubdirFileLoggingHandler(Path logDir, String logfileName, LogFormatter logFormatter) {
+    public DailySubdirFileLoggingHandler(Path logDir, String logfileName, LogFormatter logFormatter,
+            SystemEventManager eventManager) {
         this.logDir = logDir;
         this.logfileName = logfileName;
+        this.eventManager = eventManager;
         this.setFormatter(logFormatter);
     }
+
     /**
      * Sets the size of a single log file in bytes
      */
@@ -78,18 +79,18 @@ public class DailySubdirFileLoggingHandler extends Handler {
     /**
      * Format and publish a LogRecord.
      *
-     * @param record description of the log event
+     * @param logRecord description of the log event
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-        if (!isLoggable(record)) {
+    public synchronized void publish(LogRecord logRecord) {
+        if (!isLoggable(logRecord)) {
             return;
         }
         String msg;
         int rawMessageLength = 0;
         try {
-            msg = this.getFormatter().format(record);
-            String rawMessage = this.getFormatter().formatMessage(record);
+            msg = this.getFormatter().format(logRecord);
+            String rawMessage = this.getFormatter().formatMessage(logRecord);
             if (rawMessage != null) {
                 rawMessageLength = rawMessage.length();
             }
@@ -101,10 +102,10 @@ public class DailySubdirFileLoggingHandler extends Handler {
         }
         try {
             if (!doneHeader) {
-                this.logMessage(record.getLevel(), this.getFormatter().getHead(this), rawMessageLength);
+                this.logMessage(logRecord.getLevel(), this.getFormatter().getHead(this), rawMessageLength);
                 doneHeader = true;
             }
-            this.logMessage(record.getLevel(), msg, rawMessageLength);
+            this.logMessage(logRecord.getLevel(), msg, rawMessageLength);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -116,13 +117,13 @@ public class DailySubdirFileLoggingHandler extends Handler {
      * Check if this Handler would actually log a given LogRecord, depending of
      * the log level
      *
-     * @param record a LogRecord
+     * @param logRecord a LogRecord
      * @return true if the LogRecord would be logged.
      *
      */
     @Override
-    public boolean isLoggable(LogRecord record) {
-        return super.isLoggable(record);
+    public boolean isLoggable(LogRecord logRecord) {
+        return super.isLoggable(logRecord);
     }
 
     /**
@@ -140,30 +141,41 @@ public class DailySubdirFileLoggingHandler extends Handler {
         this.flush();
     }
 
-    private Path getFullLogDir() {
-        return( Paths.get(this.logDir.toAbsolutePath().toString(),
-                this.LOG_DATE_FORMAT.format(new Date())));
+    private Path generateFullLogDir() {
+        //dont use DateTimeFormatter here - this class does not seem to like any Calendar references
+        final DateFormat LOG_DATE_FORMAT = new SimpleDateFormat("yyyyMMdd");
+        Path newLogDir = Path.of(this.logDir.toAbsolutePath().toString(),
+                LOG_DATE_FORMAT.format(new Date()));
+        try {
+            if (!Files.exists(newLogDir)) {
+                Files.createDirectories(newLogDir);
+            }
+        } catch (Throwable e) {
+            this.eventManager.newEventExceptionInDirectoryCreation(
+                    e, newLogDir.toAbsolutePath().toString());
+        }
+        return( newLogDir );
     }
 
-    private String generateNewLogFileName(Path fullLogDir) {
+    private Path generateNewLogFile(Path fullLogDir) {
         Path newLogFile = Paths.get(
                 fullLogDir.toAbsolutePath().toString(),
                 this.logfileName);
         if (this.maxLogFileSize == -1) {
-            return (newLogFile.toAbsolutePath().toString());
+            return (newLogFile);
         }
         int counter = 1;
         try {
-            while (Files.exists(newLogFile) 
+            while (Files.exists(newLogFile)
                     && Files.size(newLogFile) > this.maxLogFileSize) {
-                newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString(),                        
+                newLogFile = Paths.get(fullLogDir.toAbsolutePath().toString(),
                         this.logfileName + "." + counter);
                 counter++;
             }
         } catch (IOException e) {
             //nop
         }
-        return (newLogFile.toAbsolutePath().toString());
+        return (newLogFile);
     }
 
     /**
@@ -171,55 +183,14 @@ public class DailySubdirFileLoggingHandler extends Handler {
      * pos
      */
     private synchronized void logMessage(Level level, String message, int rawMessageLength) {
-        Path fullLogDir = this.getFullLogDir();
-        String newLogFilename = this.generateNewLogFileName(fullLogDir);
-        //check if the loggers output stream is still valid        
-        if (this.writer == null 
-                || this.actualLogFilename == null 
-                || !newLogFilename.equals(this.actualLogFilename)
-                || !Files.exists(Paths.get(newLogFilename))) {
-            if (this.writer != null) {
-                try {
-                    //close existing writer
-                    this.writer.flush();
-                    this.writer.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
-            if (!Files.exists(fullLogDir)) {
-                try {
-                    Files.createDirectories(fullLogDir);
-                } catch (IOException e) {
-                    //nop
-                }
-            }
-            try {
-                //open a new log file - append to existing and create if it does not exist so far
-                this.writer = Files.newBufferedWriter(Paths.get(newLogFilename), 
-                        StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-                this.actualLogFilename = newLogFilename;
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        try {
-            this.writer.write(message);
-            this.writer.flush();
+        Path fullLogDir = this.generateFullLogDir();
+        Path newLogFile = this.generateNewLogFile(fullLogDir);
+        try (BufferedWriter writer = Files.newBufferedWriter(newLogFile,
+                StandardOpenOption.APPEND, StandardOpenOption.CREATE)) {
+            writer.write(message);
         } catch (Exception e) {
-            e.printStackTrace();
+            System.out.println("DailySubdirFileLogging: [" + e.getClass().getSimpleName() + "] " + e.getMessage());
         }
     }
 
-//    public static final void main(String[] args) {
-//        Logger fileLogger = Logger.getLogger("test");
-//        fileLogger.setUseParentHandlers(false);
-//        DailySubdirFileLoggingHandler logHandler = new DailySubdirFileLoggingHandler(new File("c:/temp"), "serverlog.log");
-//        logHandler.setMaxLogFileSize(100);
-//        fileLogger.addHandler(logHandler);
-//        fileLogger.setLevel(Level.ALL);
-//        for (int i = 0; i < 100; i++) {
-//            fileLogger.log(Level.INFO, "This is a test " + i);
-//        }
-//    }
 }

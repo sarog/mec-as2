@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/MendelsonMultiResolutionImage.java 40    2/11/23 15:53 Heller $
+//$Header: /mec_oftp2/de/mendelson/util/MendelsonMultiResolutionImage.java 43    14/03/25 11:13 Heller $
 package de.mendelson.util;
 
 import java.awt.Graphics2D;
@@ -43,7 +43,7 @@ import org.w3c.dom.Element;
  * Mendelson implementation of the MultiResolution image
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 43 $
  */
 public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage implements Serializable {
 
@@ -51,7 +51,7 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
 
     private final int baseImageIndex;
     private final List<BufferedImage> resolutionVariants;
-    private final static RenderingHints RENDERING_HINTS_BEST_QUALITY
+    private static final RenderingHints RENDERING_HINTS_BEST_QUALITY
             = new RenderingHints(RenderingHints.KEY_RENDERING,
                     RenderingHints.VALUE_RENDER_QUALITY);
 
@@ -74,16 +74,16 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
      * Stores the global list of image operations that could be performed while
      * creating a rasted image from a SVG, e.g. darken the icon etc
      */
-    private static final List<BufferedImageOp> svgImageOperations
+    private static final List<BufferedImageOp> SVG_IMAGE_OPERATIONS
             = Collections.synchronizedList(new ArrayList<BufferedImageOp>());
     /**
      * Stores a list of overlays for special SVG resources. The overlay is
      * displayed always in front if a resource is loaded Useful to address color
-     * blindness UI design
+     * blindness UI design. The parameter are (image resource filename, overlay resource URL)
      */
-    private static final Map<String, String> svgImageOverlaysMap = new ConcurrentHashMap<String, String>();
+    private static final Map<String, String> SVG_IMAGE_OVERLAY_MAP = new ConcurrentHashMap<String, String>();
 
-    public static enum SVGScalingOption {
+    public enum SVGScalingOption {
         KEEP_HEIGHT, KEEP_WIDTH
     }
 
@@ -125,7 +125,7 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
             }
         }
         this.resolutionVariants = imageList;
-        for (Image resolutionVariant : this.resolutionVariants) {
+        for (BufferedImage resolutionVariant : this.resolutionVariants) {
             Objects.requireNonNull(resolutionVariant,
                     "Resolution variants must not be null");
         }
@@ -196,7 +196,7 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
                 this.resolutionVariants.add(toBufferedImage(image));
             }
         }
-        for (Image resolutionVariant : this.resolutionVariants) {
+        for (BufferedImage resolutionVariant : this.resolutionVariants) {
             Objects.requireNonNull(resolutionVariant,
                     "Resolution variants must not be null");
         }
@@ -253,9 +253,11 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
         //check if an overlay is defined for this SVG resource
         String svgResourceFilename = extractSVGFilenameFromSVGURLStr(svgURLStr);
         MendelsonMultiResolutionImage overlayImage = null;
-        if (svgImageOverlaysMap.containsKey(svgResourceFilename)) {
+        MendelsonMultiResolutionImage overlayImageAll = null;
+        if (SVG_IMAGE_OVERLAY_MAP.containsKey(svgResourceFilename)) {
             //load overlay image in all required resolutions
-            overlayImage = fromSVG(svgImageOverlaysMap.get(svgResourceFilename), initialSize, maxSize, scalingOption);
+            overlayImage = fromSVG(SVG_IMAGE_OVERLAY_MAP.get(
+                    svgResourceFilename), initialSize, maxSize, scalingOption);
         }
         if (initialSize > maxSize) {
             System.out.println("MendelsonMultiResolutionImage:fromSVG(..): minWidth must be smaller than maxWidth");
@@ -285,8 +287,8 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
                 String canvasSizeWidthStr = document.getDocumentElement().getAttribute("width");
                 String canvasSizeHeightStr = document.getDocumentElement().getAttribute("height");
                 try {
-                    Double canvasSizeWidth = Double.parseDouble(canvasSizeWidthStr);
-                    Double canvasSizeHeight = Double.parseDouble(canvasSizeHeightStr);
+                    double canvasSizeWidth = Double.parseDouble(canvasSizeWidthStr);
+                    double canvasSizeHeight = Double.parseDouble(canvasSizeHeightStr);
                     if (canvasSizeWidth > 0 && canvasSizeHeight > 0) {
                         //both values seem to be valid -> take these values
                         width = canvasSizeWidth;
@@ -313,8 +315,8 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
                 step = 8;
             }
             for (int i = initialSize; i <= maxSize; i += step) {
-                float variantWidth = 0;
-                float variantHeight = 0;
+                float variantWidth;
+                float variantHeight;
                 if (scalingOption == SVGScalingOption.KEEP_WIDTH) {
                     variantWidth = i;
                     variantHeight = i * scalingfactor;
@@ -333,9 +335,16 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
                     g.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
                     g.drawImage(bufferedOverlayImage, 0, 0, null);
                 }
+                //add the overlay image for all SVGs if this is defined
+                if (overlayImageAll != null) {
+                    BufferedImage bufferedOverlayImage = overlayImageAll.getResolutionVariant(variantWidth, variantHeight);
+                    Graphics2D g = (Graphics2D) resolutionVariant.getGraphics();
+                    g.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
+                    g.drawImage(bufferedOverlayImage, 0, 0, null);
+                }
                 //filter the created image if this is requested
-                synchronized (svgImageOperations) {
-                    for (BufferedImageOp imageOperation : svgImageOperations) {
+                synchronized (SVG_IMAGE_OPERATIONS) {
+                    for (BufferedImageOp imageOperation : SVG_IMAGE_OPERATIONS) {
                         resolutionVariant = imageOperation.filter(resolutionVariant, null);
                     }
                 }
@@ -361,13 +370,13 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
      * @param imageOperation
      */
     public static void addSVGImageOperation(BufferedImageOp imageOperation) {
-        synchronized (svgImageOperations) {
-            svgImageOperations.add(imageOperation);
+        synchronized (SVG_IMAGE_OPERATIONS) {
+            SVG_IMAGE_OPERATIONS.add(imageOperation);
         }
     }
 
     public static void addSVGOverlay(String svgOriginalResource, String svgOverlayResource) {
-        svgImageOverlaysMap.put(svgOriginalResource, svgOverlayResource);
+        SVG_IMAGE_OVERLAY_MAP.put(svgOriginalResource, svgOverlayResource);
     }
 
     /**
@@ -407,7 +416,7 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
         int newBaseImageIndex = 0;
         //find start index of images that matches the min resolution        
         for (int i = 0; i < this.resolutionVariants.size(); i++) {
-            Image resolutionVariantImage = this.resolutionVariants.get(i);
+            BufferedImage resolutionVariantImage = this.resolutionVariants.get(i);
             if (requestedResolution <= resolutionVariantImage.getWidth(null)
                     && requestedResolution <= resolutionVariantImage.getHeight(null)) {
                 newBaseImageIndex = i;
@@ -440,14 +449,14 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
     @Override
     public BufferedImage getResolutionVariant(double destImageWidth, double destImageHeight) {
         checkSize(destImageWidth, destImageHeight);
-        for (Image resolutionVariantImage : this.resolutionVariants) {
+        for (BufferedImage resolutionVariantImage : this.resolutionVariants) {
             if (destImageWidth <= resolutionVariantImage.getWidth(null)
                     && destImageHeight <= resolutionVariantImage.getHeight(null)) {
-                return (BufferedImage) resolutionVariantImage;
+                return (resolutionVariantImage);
             }
         }
         //nothings fits: return the image with the hightest resolution
-        return (BufferedImage) (this.resolutionVariants.get(this.resolutionVariants.size() - 1));
+        return (this.resolutionVariants.get(this.resolutionVariants.size() - 1));
     }
 
     private static void checkSize(double width, double height) {
@@ -504,10 +513,6 @@ public class MendelsonMultiResolutionImage extends AbstractMultiResolutionImage 
 
     private void setUsedScalingOption(SVGScalingOption usedScalingOption) {
         this.usedScalingOption = usedScalingOption;
-    }
-
-    private SVGScalingOption getUsedScalingOption() {
-        return (this.usedScalingOption);
     }
 
     /**

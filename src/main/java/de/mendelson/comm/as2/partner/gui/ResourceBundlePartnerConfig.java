@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig.java 14    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig.java 15    27/06/24 15:49 Heller $
 package de.mendelson.comm.as2.partner.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class ResourceBundlePartnerConfig extends MecResourceBundle{
     
@@ -24,7 +24,7 @@ public class ResourceBundlePartnerConfig extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Partner configuration" },
         {"button.ok", "Ok" },
         {"button.cancel", "Cancel" },
@@ -54,6 +54,8 @@ public class ResourceBundlePartnerConfig extends MecResourceBundle{
         {"event.partner.added.body", "Key data of the new partner:\n\n{0}" },
         {"event.partner.modified.subject", "The partner {0} has been modified by the user" },
         {"event.partner.modified.body", "Key data of the formerly configuration:\n\n{0}\n\nKey data of the new configuration:\n\n{1}" },
+        {"text.configurationproblem", "<HTML>There is a problem in the partner configuration, "
+            + "please fix this first before saving the configuration.</HTML>" },
     };
     
 }

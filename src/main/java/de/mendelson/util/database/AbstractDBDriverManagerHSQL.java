@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/database/AbstractDBDriverManagerHSQL.java 9     27/11/23 11:46 Heller $
+//$Header: /as2/de/mendelson/util/database/AbstractDBDriverManagerHSQL.java 12    11/02/25 13:40 Heller $
 package de.mendelson.util.database;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
@@ -18,7 +19,7 @@ import java.sql.ResultSet;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
 
@@ -107,7 +108,7 @@ public abstract class AbstractDBDriverManagerHSQL implements IDBDriverManager {
         Object object = result.getObject(columnName);
         if (!result.wasNull()) {
             if (object instanceof String) {
-                return (((String) object));
+                return ((String) object);
             } else if (object instanceof byte[]) {
                 return (new String((byte[]) object));
             }

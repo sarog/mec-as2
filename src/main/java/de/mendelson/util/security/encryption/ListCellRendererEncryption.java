@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/util/security/encryption/ListCellRendererEncryption.java 4     8/12/22 11:35 Heller $
+//$Header: /oftp2/de/mendelson/util/security/encryption/ListCellRendererEncryption.java 5     31/05/24 11:55 Heller $
 package de.mendelson.util.security.encryption;
 
 import de.mendelson.util.ImageUtil;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComponent;
@@ -15,11 +16,12 @@ import javax.swing.SwingConstants;
  * Renderer to render the encryption entries in comboboxes
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ListCellRendererEncryption extends JLabel implements ListCellRenderer{
 
     protected static final int IMAGE_HEIGHT = 18;
+    protected static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
     private final JComponent container;
 
     /**
@@ -171,6 +173,14 @@ public class ListCellRendererEncryption extends JLabel implements ListCellRender
             implements javax.swing.plaf.UIResource {
     }
 
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension dimension = super.getPreferredSize();
+        dimension.height = ROW_HEIGHT;
+        return (dimension);
+    }
+    
+    
     @Override
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {

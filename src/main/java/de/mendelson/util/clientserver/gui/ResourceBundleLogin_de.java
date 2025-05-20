@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/gui/ResourceBundleLogin_de.java 6     6/11/23 11:38 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/gui/ResourceBundleLogin_de.java 7     12/06/24 16:25 Heller $
 package de.mendelson.util.clientserver.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  * eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleLogin_de extends MecResourceBundle {
 
@@ -30,12 +30,12 @@ public class ResourceBundleLogin_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         //dialog
         {"button.ok", "Ok"},
         {"button.cancel", "Abbrechen"},
-        {"label.user", "Benutzer:"},
-        {"label.passwd", "Passwort:"},
+        {"label.user", "Benutzer"},
+        {"label.passwd", "Passwort"},
         {"title.login", "Anmeldung"},};
 
 }

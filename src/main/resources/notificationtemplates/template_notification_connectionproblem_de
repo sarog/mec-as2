@@ -1,0 +1,21 @@
+$Header:$
+Die folgende Datei beinhaltet ein Template, was fuer das Systemereignis eines Verbindungsproblems verwendet wird.
+${MESSAGE}: Die Fehlermeldung
+${HINT}: Einige Idee, was die Ursache sein koennte
+${PARTNER}: Der Partner, zu dem die Verbindung aufgebaut werden sollte
+${URL}: Die URL, die verwendet wurde
+${MESSAGE_ID}: Nachrichtennummer der Nachricht, die uebermittelt werden sollte
+
+
+[SUBJECT]
+Verbindungsproblem zum Partner ${PARTNER} [${MESSAGE_ID}]
+
+
+[BODY]
+Sie haben versucht, eine ausgehende Verbindung zum Partner "${PARTNER}" aufzubauen, dies schlug fehl.
+
+URL: ${URL}
+Beschreibung: ${MESSAGE}
+
+${HINT}
+

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/SystemEvent.java 61    12/12/23 12:04 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/SystemEvent.java 71    19/02/25 9:39 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -39,7 +39,7 @@ import javax.swing.ImageIcon;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 61 $
+ * @version $Revision: 71 $
  */
 public class SystemEvent implements Serializable {
 
@@ -153,6 +153,7 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_DATABASE_CREATION = 501;
     public static final int TYPE_DATABASE_UPDATE = 502;
     public static final int TYPE_DATABASE_INITIALIZATION = 503;
+    public static final int TYPE_DATABASE_ROLLBACK = 504;
     /**
      * Configuration
      */
@@ -199,7 +200,7 @@ public class SystemEvent implements Serializable {
     public static final int CATEGORY_FILE_OPERATION = 1200;
     public static final int TYPE_FILE_OPERATION_ANY = 1200;
     public static final int TYPE_FILE_DELETE = 1201;
-    public static final int TYPE_MKDIR = 1202;
+    public static final int TYPE_FILE_MKDIR = 1202;
     public static final int TYPE_FILE_MOVE = 1203;
     public static final int TYPE_FILE_COPY = 1204;
     /**
@@ -217,6 +218,18 @@ public class SystemEvent implements Serializable {
     public static final int TYPE_XML_INTERFACE_ANY = 1400;
     public static final int TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION = 1401;
     public static final int TYPE_XML_INTERFACE_PARTNER_MODIFICATION = 1402;
+    /**
+     * REST interface
+     */
+    public static final int CATEGORY_REST_INTERFACE = 1500;
+    public static final int TYPE_REST_INTERFACE_ANY = 1500;
+    public static final int TYPE_REST_INTERFACE_CERTIFICATE_ADD = 1501;
+    public static final int TYPE_REST_INTERFACE_CERTIFICATE_MODIFICATION = 1502;
+    public static final int TYPE_REST_INTERFACE_CERTIFICATE_DEL = 1503;
+    public static final int TYPE_REST_INTERFACE_PARTNER_ADD = 1504;
+    public static final int TYPE_REST_INTERFACE_PARTNER_MODIFICATION = 1505;
+    public static final int TYPE_REST_INTERFACE_PARTNER_DEL = 1506;
+    public static final int TYPE_REST_INTERFACE_SENDORDER = 1507;
     /**
      * Other
      */
@@ -294,47 +307,38 @@ public class SystemEvent implements Serializable {
         StringBuilder bodyBuffer = new StringBuilder();
         boolean inSubject = false;
         boolean inBody = false;
-        BufferedReader templateReader = null;
-        InputStream inStream = null;
-        try {
-            //prevent Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);
-            //because this will throw a MalformedInputException if the encoding does not match!
-            //The REPLACE action will replace the unreadable character with a "?"
-            inStream = Files.newInputStream(Paths.get(NOTIFICATION_TEMPLATE_DIR, templateFilename));
+        //prevent "Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);"
+        //because this will throw a MalformedInputException if the encoding does not match!
+        //The REPLACE action will replace the unreadable character with a "?"
+        try (InputStream inStream = Files.newInputStream(Paths.get(NOTIFICATION_TEMPLATE_DIR, templateFilename))) {
             CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
                     .onMalformedInput(CodingErrorAction.REPLACE)
                     .onUnmappableCharacter(CodingErrorAction.REPLACE);
-            templateReader = new BufferedReader(new InputStreamReader(inStream, decoder));
-            String line = "";
-            while (line != null) {
-                line = templateReader.readLine();
-                if (line != null) {
-                    if (line.trim().equals("[SUBJECT]")) {
-                        inSubject = true;
-                        inBody = false;
-                        continue;
-                    } else if (line.trim().equals("[BODY]")) {
-                        inSubject = false;
-                        inBody = true;
-                        continue;
-                    }
-                    if (inSubject) {
-                        this.setSubject(this.replaceAllVars(line, replacement));
-                        inSubject = false;
-                    } else if (inBody) {
-                        if (bodyBuffer.length() > 0) {
-                            bodyBuffer.append("\n");
+            try (BufferedReader templateReader = new BufferedReader(new InputStreamReader(inStream, decoder))) {
+                String line = "";
+                while (line != null) {
+                    line = templateReader.readLine();
+                    if (line != null) {
+                        if (line.trim().equals("[SUBJECT]")) {
+                            inSubject = true;
+                            inBody = false;
+                            continue;
+                        } else if (line.trim().equals("[BODY]")) {
+                            inSubject = false;
+                            inBody = true;
+                            continue;
                         }
-                        bodyBuffer.append(line);
+                        if (inSubject) {
+                            this.setSubject(this.replaceAllVars(line, replacement));
+                            inSubject = false;
+                        } else if (inBody) {
+                            if (bodyBuffer.length() > 0) {
+                                bodyBuffer.append("\n");
+                            }
+                            bodyBuffer.append(line);
+                        }
                     }
                 }
-            }
-        } finally {
-            if (templateReader != null) {
-                templateReader.close();
-            }
-            if (inStream != null) {
-                inStream.close();
             }
         }
         this.setBody(this.replaceAllVars(bodyBuffer.toString(), replacement));
@@ -377,8 +381,9 @@ public class SystemEvent implements Serializable {
                 buffer.append(source);
                 return (buffer.toString());
             }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
+            buffer
+                    .append(source.substring(0, index))
+                    .append(replacement);
             source = source.substring(index + tag.length());
         }
     }
@@ -471,9 +476,7 @@ public class SystemEvent implements Serializable {
             Files.createDirectories(storageDir);
         }
         Path uniqueStorageFile = Files.createTempFile(storageDir, storageFilePrefix, storageFileSuffix);
-        BufferedWriter writer = null;
-        try {
-            writer = Files.newBufferedWriter(uniqueStorageFile, StandardCharsets.UTF_8);
+        try (BufferedWriter writer = Files.newBufferedWriter(uniqueStorageFile, StandardCharsets.UTF_8)) {
             writer.write(SECTION_DESCRIPTION);
             writer.newLine();
             writer.write("TimestampDescription=" + getHumanReadableTimestamp());
@@ -516,10 +519,6 @@ public class SystemEvent implements Serializable {
             }
             writer.newLine();
             writer.newLine();
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
     }
 
@@ -529,73 +528,66 @@ public class SystemEvent implements Serializable {
      */
     public static SystemEvent parse(Path eventFile) throws Exception {
         SystemEvent event = new SystemEvent(SEVERITY_INFO, ORIGIN_SYSTEM, TYPE_OTHER);
-        BufferedReader reader = null;
-        InputStream inStream = null;
         String section = "";
         StringBuilder body = new StringBuilder();
         StringBuilder subject = new StringBuilder();
         int sectionCount = 0;
-        try {
-            //prevent Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);
-            //because this will throw a MalformedInputException if the encoding does not match!
-            //The REPLACE action will replace the unreadable character with a "?"            
-            inStream = Files.newInputStream(eventFile);
-            CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
-            reader = new BufferedReader(new InputStreamReader(inStream, decoder));
-            String line = reader.readLine();
-            while (line != null) {
-                if (line.trim().equals(SECTION_DESCRIPTION)) {
-                    section = SECTION_DESCRIPTION;
-                    sectionCount++;
-                } else if (line.trim().equals(SECTION_BODY)) {
-                    section = SECTION_BODY;
-                    sectionCount++;
-                } else if (line.trim().equals(SECTION_SUBJECT)) {
-                    section = SECTION_SUBJECT;
-                    sectionCount++;
-                } else {
-                    try {
-                        if (section.equals(SECTION_DESCRIPTION) && line.contains("=")) {
-                            String[] keyValue = line.split("=");
-                            if (keyValue[0].equalsIgnoreCase("user")) {
-                                event.setUser(keyValue[1]);
-                            } else if (keyValue[0].equalsIgnoreCase("timestamp")) {
-                                event.setTimestamp(Long.valueOf(keyValue[1]).longValue());
-                            } else if (keyValue[0].equalsIgnoreCase("severity")) {
-                                event.setSeverity(Integer.valueOf(keyValue[1]).intValue());
-                            } else if (keyValue[0].equalsIgnoreCase("origin")) {
-                                event.setOrigin(Integer.valueOf(keyValue[1]).intValue());
-                            } else if (keyValue[0].equalsIgnoreCase("type")) {
-                                event.setType(Integer.valueOf(keyValue[1]).intValue());
-                            } else if (keyValue[0].equalsIgnoreCase("processoriginhost")) {
-                                event.setProcessOriginHost(keyValue[1]);
-                            } else if (keyValue[0].equalsIgnoreCase("eventid")) {
-                                event.setId(keyValue[1]);
+        //prevent to use "Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);"
+        //because this will throw a MalformedInputException if the encoding does not match!
+        //The REPLACE action will replace the unreadable character with a "?"
+        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        try (InputStream inStream = Files.newInputStream(eventFile)) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, decoder))) {
+                String line = reader.readLine();
+                while (line != null) {
+                    if (line.trim().equals(SECTION_DESCRIPTION)) {
+                        section = SECTION_DESCRIPTION;
+                        sectionCount++;
+                    } else if (line.trim().equals(SECTION_BODY)) {
+                        section = SECTION_BODY;
+                        sectionCount++;
+                    } else if (line.trim().equals(SECTION_SUBJECT)) {
+                        section = SECTION_SUBJECT;
+                        sectionCount++;
+                    } else {
+                        try {
+                            if (section.equals(SECTION_DESCRIPTION) && line.contains("=")) {
+                                String[] keyValue = line.split("=");
+                                if (keyValue[0].equalsIgnoreCase("user")) {
+                                    event.setUser(keyValue[1]);
+                                } else if (keyValue[0].equalsIgnoreCase("timestamp")) {
+                                    event.setTimestamp(Long.parseLong(keyValue[1]));
+                                } else if (keyValue[0].equalsIgnoreCase("severity")) {
+                                    event.setSeverity(Integer.parseInt(keyValue[1]));
+                                } else if (keyValue[0].equalsIgnoreCase("origin")) {
+                                    event.setOrigin(Integer.parseInt(keyValue[1]));
+                                } else if (keyValue[0].equalsIgnoreCase("type")) {
+                                    event.setType(Integer.parseInt(keyValue[1]));
+                                } else if (keyValue[0].equalsIgnoreCase("processoriginhost")) {
+                                    event.setProcessOriginHost(keyValue[1]);
+                                } else if (keyValue[0].equalsIgnoreCase("eventid")) {
+                                    event.setId(keyValue[1]);
+                                }
+                            } else if (section.equals(SECTION_BODY)) {
+                                body.append(line).append("\n");
+                            } else if (section.equals(SECTION_SUBJECT)) {
+                                subject.append(line).append("\n");
                             }
-                        } else if (section.equals(SECTION_BODY)) {
-                            body.append(line).append("\n");
-                        } else if (section.equals(SECTION_SUBJECT)) {
-                            subject.append(line).append("\n");
+                        } catch (Exception e) {
+                            //mainly numberformat?
+                            e.printStackTrace();
                         }
-                    } catch (Exception e) {
-                        //mainly numberformat?
-                        e.printStackTrace();
                     }
+                    line = reader.readLine();
                 }
-                line = reader.readLine();
-            }
-        } finally {
-            if (reader != null) {
-                reader.close();
-            }
-            if (inStream != null) {
-                inStream.close();
             }
         }
         if (sectionCount != 3) {
-            throw new Exception("System event parser: " + eventFile.toString() + " is no event file - bad number of sections (found " + sectionCount + ")");
+            throw new Exception("System event parser: "
+                    + eventFile.toString()
+                    + " is no event file - bad number of sections (found " + sectionCount + ")");
         }
         event.setBody(body.toString());
         event.setSubject(subject.toString());
@@ -668,7 +660,7 @@ public class SystemEvent implements Serializable {
     public ImageIcon getCategoryIconMultiResolution(int minResolution) {
         return (new ImageIcon(
                 UIEventCategory.getImageByCategory(
-                this.getCategory()).toMinResolution(minResolution)));
+                        this.getCategory()).toMinResolution(minResolution)));
     }
 
     /**
@@ -676,7 +668,7 @@ public class SystemEvent implements Serializable {
      * the storage filename
      */
     public String originToTextLocalized() {
-        return (this.rb.getResourceString("origin." + this.origin));
+        return (rb.getResourceString("origin." + this.origin));
     }
 
     /**
@@ -695,17 +687,19 @@ public class SystemEvent implements Serializable {
     }
 
     public String typeToFilename() {
-        String englishText = this.rbFilenames.getResourceString("type." + this.type);
-        englishText = this.replace(englishText, "(", "");
-        englishText = this.replace(englishText, ")", "");
-        englishText = this.replace(englishText, "'", "");
-        englishText = englishText.toLowerCase();
-        englishText = this.replace(englishText, " ", "-");
+        String englishText = rbFilenames.getResourceString("type." + this.type);
+        if (englishText != null) {
+            englishText = this.replace(englishText, "(", "");
+            englishText = this.replace(englishText, ")", "");
+            englishText = this.replace(englishText, "'", "");
+            englishText = englishText.toLowerCase();
+            englishText = this.replace(englishText, " ", "-");
+        }
         return (englishText);
     }
 
     public String typeToTextLocalized() {
-        return (this.rb.getResourceString("type." + this.type));
+        return (rb.getResourceString("type." + this.type));
     }
 
     /**
@@ -790,7 +784,7 @@ public class SystemEvent implements Serializable {
         }
         if (anObject != null && anObject instanceof SystemEvent) {
             SystemEvent event = (SystemEvent) anObject;
-            return (event != null && event.getId().equals(this.id));
+            return (event.getId().equals(this.id));
         }
         return (false);
     }

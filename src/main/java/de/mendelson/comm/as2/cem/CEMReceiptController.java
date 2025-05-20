@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 81    9/11/23 10:09 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 82    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -45,6 +45,7 @@ import java.util.logging.Logger;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.transform.dom.DOMSource;
@@ -65,7 +66,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * like
  *
  * @author S.Heller
- * @version $Revision: 81 $
+ * @version $Revision: 82 $
  */
 public class CEMReceiptController {
 
@@ -102,6 +103,9 @@ public class CEMReceiptController {
     private void checkAgainstSchema(AS2Message message, Path schemaFile, byte[] xmlData) throws Exception {
         //create a new W3C Schema instance
         SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
         Schema schema = factory.newSchema(schemaFile.toFile());
         Validator validator = schema.newValidator();
         DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
@@ -319,15 +323,8 @@ public class CEMReceiptController {
         AS2MessageCreation creation = new AS2MessageCreation(this.certificateManagerEncSign, this.certificateManagerEncSign);
         //store the payload
         Path payloadFile = AS2Tools.createTempFile("AS2Response", ".xml");
-        Writer writer = null;
-        try {
-            writer = Files.newBufferedWriter(payloadFile, StandardCharsets.UTF_8);
+        try (Writer writer = Files.newBufferedWriter(payloadFile, StandardCharsets.UTF_8)) {
             writer.write(response.toXML());
-        } finally {
-            if (writer != null) {
-                writer.flush();
-                writer.close();
-            }
         }
         AS2Payload descriptionXML = new AS2Payload();
         descriptionXML.setContentType("application/ediint-cert-exchange+xml");
@@ -358,15 +355,14 @@ public class CEMReceiptController {
      */
     private boolean importSingleCertificate(AS2MessageInfo info, CertificateManager certificateManager, Certificate certificateToImport,
             final String keystoreType) throws Throwable {
-        KeyStoreUtil util = new KeyStoreUtil();
-        X509Certificate certificate = util.convertToX509Certificate(certificateToImport);
+        X509Certificate certificate = KeyStoreUtil.convertToX509Certificate(certificateToImport);
         boolean imported = false;
         this.logger.log(Level.INFO, this.rb.getResourceString("transmitted.certificate.info",
                 new Object[]{
                     certificate.getIssuerDN().toString(),
                     certificate.getSerialNumber().toString(),}), info);
         //check if the cert already exists
-        String importAlias = util.getCertificateAlias(certificateManager.getKeystore(), certificate);
+        String importAlias = KeyStoreUtil.getCertificateAlias(certificateManager.getKeystore(), certificate);
         if (importAlias != null) {
             this.logger.log(Level.WARNING, this.rb.getResourceString(keystoreType + ".cert.already.imported",
                     new Object[]{
@@ -374,7 +370,7 @@ public class CEMReceiptController {
                     }), info);
         } else {
             //import the new alias
-            importAlias = util.importX509Certificate(certificateManager.getKeystore(), certificate);
+            importAlias = KeyStoreUtil.importX509Certificate(certificateManager.getKeystore(), certificate);
             certificateManager.saveKeystore();
             this.logger.log(Level.FINE, this.rb.getResourceString(keystoreType + ".cert.imported.success",
                     new Object[]{
@@ -392,7 +388,6 @@ public class CEMReceiptController {
      */
     private List<TrustResponse> importCertificates(Partner initiator, AS2MessageInfo info,
             EDIINTCertificateExchangeRequest request, List<AS2Payload> payloads) throws Throwable {
-        KeyStoreUtil util = new KeyStoreUtil();
         List<TrustResponse> trustResponseList = new ArrayList<TrustResponse>();
         List<TrustRequest> trustRequestList = request.getTrustRequestList();
         //log some information about the inbound trust request
@@ -417,7 +412,7 @@ public class CEMReceiptController {
             Collection<? extends Certificate> certList = null;
             try {
                 inStream = Files.newInputStream(Paths.get(certPayload.getPayloadFilename()));
-                certList = util.readCertificates(inStream, BouncyCastleProvider.PROVIDER_NAME);
+                certList = KeyStoreUtil.readCertificates(inStream, BouncyCastleProvider.PROVIDER_NAME);
             } finally {
                 if (inStream != null) {
                     inStream.close();
@@ -438,7 +433,8 @@ public class CEMReceiptController {
                             boolean imported = this.importSingleCertificate(info, this.certificateManagerEncSign, cert, KEYSTORE_TYPE_ENC_SIGN);
                             //notify the user that a sign/encrypt certificate has been imported from the desired partner
                             if (imported) {
-                                String importAlias = util.getCertificateAlias(certificateManagerEncSign.getKeystore(), util.convertToX509Certificate(cert));
+                                String importAlias = KeyStoreUtil.getCertificateAlias(certificateManagerEncSign.getKeystore(), 
+                                        KeyStoreUtil.convertToX509Certificate(cert));
                                 SystemEventManagerImplAS2.instance().newEventEncSignCertificateAddedByCEM(initiator, certificateManagerEncSign.getKeystoreCertificate(importAlias));
                             }
                         }
@@ -455,7 +451,9 @@ public class CEMReceiptController {
                             boolean imported = this.importSingleCertificate(info, certificateManagerSSL, cert, KEYSTORE_TYPE_SSL);
                             //notify the user that a SSL/TLS certificate has been imported from the desired partner
                             if (imported) {
-                                String importAlias = util.getCertificateAlias(certificateManagerSSL.getKeystore(), util.convertToX509Certificate(cert));
+                                String importAlias = KeyStoreUtil.getCertificateAlias(
+                                        certificateManagerSSL.getKeystore(), 
+                                        KeyStoreUtil.convertToX509Certificate(cert));
                                 SystemEventManagerImplAS2.instance().newEventSSLCertificateAddedByCEM(initiator, certificateManagerSSL.getKeystoreCertificate(importAlias));
                             }
                         }

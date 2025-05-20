@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleFileDisplay_de.java 6     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleFileDisplay_de.java 7     9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleFileDisplay_de extends MecResourceBundle{
     

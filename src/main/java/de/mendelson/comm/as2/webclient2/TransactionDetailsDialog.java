@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 33    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/TransactionDetailsDialog.java 35    20/02/25 13:41 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.event.selection.SelectionEvent;
@@ -67,7 +67,7 @@ import java.util.logging.Level;
  * The about dialog for the as2 server web ui
  *
  * @author S.Heller
- * @version $Revision: 33 $
+ * @version $Revision: 35 $
  */
 public class TransactionDetailsDialog extends OkDialog {
 
@@ -95,7 +95,6 @@ public class TransactionDetailsDialog extends OkDialog {
     private TabSheet tabSheet = null;
     private final Grid<GridDetailRow> grid = new Grid<GridDetailRow>();
     private final AS2MessageInfo as2MessageInfo;
-    private AS2MDNInfo as2MDNInfo;
     private Partner sender = null;
     private Partner receiver = null;
     private final String timezoneStr;
@@ -563,12 +562,12 @@ public class TransactionDetailsDialog extends OkDialog {
         }
 
         public String getSender() {
-            String sender = "";
+            String foundSender = "";
             if (this.as2Info.getSenderHost() != null) {
-                sender = this.as2Info.getSenderHost();
+                foundSender = this.as2Info.getSenderHost();
             }
-            sender = AS2WebUI.replaceJavaScriptOutput(sender);
-            return (sender);
+            foundSender = AS2WebUI.replaceJavaScriptOutput(foundSender);
+            return (foundSender);
         }
 
         public String getServer() {
