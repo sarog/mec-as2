@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/UIEventCategory.java 9     12/12/23 12:04 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/gui/UIEventCategory.java 11    1/03/24 15:01 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -22,7 +22,7 @@ import java.util.ResourceBundle;
  * Selectable event category in the UI
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class UIEventCategory implements Comparable<UIEventCategory> {
 
@@ -71,6 +71,9 @@ public class UIEventCategory implements Comparable<UIEventCategory> {
     public static final MendelsonMultiResolutionImage IMAGE_CATEGORY_XML_INTERFACE
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/util/systemevents/gui/xml_root.svg", 16, 64);
+    public static final MendelsonMultiResolutionImage IMAGE_CATEGORY_REST_INTERFACE
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/rest.svg", 16, 64);
     
     private final int category;
     private final static MecResourceBundle rbSystemEvent;
@@ -106,6 +109,7 @@ public class UIEventCategory implements Comparable<UIEventCategory> {
         categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_LICENSE));
         categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_CLIENT_OPERATION));
         categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_XML_INTERFACE));
+        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_REST_INTERFACE));
         Collections.sort(categoryList);
         return (categoryList);
     }
@@ -176,6 +180,8 @@ public class UIEventCategory implements Comparable<UIEventCategory> {
             return (IMAGE_CATEGORY_OTHER);
         }else if (category == SystemEvent.CATEGORY_XML_INTERFACE) {
             return (IMAGE_CATEGORY_XML_INTERFACE);
+        }else if (category == SystemEvent.CATEGORY_REST_INTERFACE) {
+            return (IMAGE_CATEGORY_REST_INTERFACE);
         }
         return (IMAGE_CATEGORY_FALLBACK);
     }

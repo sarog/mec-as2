@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/DebuggablePreparedStatement.java 12    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/database/DebuggablePreparedStatement.java 14    15/01/25 12:56 Heller $
 package de.mendelson.util.database;
 
 import java.io.InputStream;
@@ -38,7 +38,7 @@ import java.util.logging.Logger;
  * Database statement that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class DebuggablePreparedStatement extends DebuggableStatement implements PreparedStatement {
 
@@ -164,8 +164,7 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
                     + this.getQueryWithParameterSingleLine());
         }
         try {
-            ResultSet result = this.statement.executeQuery();
-            return (result);
+            return (this.statement.executeQuery());
         } catch (SQLException e) {
             if (this.connectionLogger != null) {
                 String errorMessage = "[" + this.connectionName + "] [Problem in " + uniqueQueryName + "] "
@@ -203,6 +202,12 @@ public class DebuggablePreparedStatement extends DebuggableStatement implements 
         }
     }
 
+    @Override
+    public int[] executeBatch() throws SQLException{
+        return( this.statement.executeBatch());
+    }
+    
+    
     @Override
     public ResultSetMetaData getMetaData() throws SQLException {
         return (this.statement.getMetaData());

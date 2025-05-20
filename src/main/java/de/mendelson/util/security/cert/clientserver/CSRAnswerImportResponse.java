@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/clientserver/CSRAnswerImportResponse.java 2     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/clientserver/CSRAnswerImportResponse.java 3     11/02/25 13:40 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -16,12 +16,11 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class CSRAnswerImportResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final String csrPEM = null;
     
     public CSRAnswerImportResponse(CSRAnswerImportRequest request) {
         super(request);

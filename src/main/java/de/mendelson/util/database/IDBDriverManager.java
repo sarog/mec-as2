@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/IDBDriverManager.java 12    2/11/23 14:03 Heller $
+//$Header: /as4/de/mendelson/util/database/IDBDriverManager.java 15    16/12/24 14:00 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Connection;
@@ -18,7 +18,7 @@ import java.sql.Statement;
  * Interface for all supported database drivers
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public interface IDBDriverManager {
 
@@ -55,7 +55,7 @@ public interface IDBDriverManager {
      * class
      */
     public Connection getConnectionWithoutErrorHandling(final int DB_TYPE)
-            throws SQLException;
+            throws Exception;
     
     /**
      * Returns the SQL statement that is used to lock a table on database level

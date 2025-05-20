@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleExecuteMoveToPartner_fr.java 2     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleExecuteMoveToPartner_fr.java 3     9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ResourceBundleExecuteMoveToPartner_fr extends MecResourceBundle{
     

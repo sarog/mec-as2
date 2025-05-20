@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExport.java 5     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogExport.java 6     3/07/24 14:07 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -21,7 +21,7 @@ import javax.swing.JFrame;
  * Dialog to preselect what to import - a key or a certificate and how
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class JDialogExport extends JDialog {
 
@@ -39,26 +39,27 @@ public class JDialogExport extends JDialog {
     /**
      * ResourceBundle to localize the GUI
      */
-    private final MecResourceBundle rb;
-    private final MecResourceBundle rbCertificates;
-
-    /**
-     * Creates new form JDialogPartnerConfig
-     *
-     */
-    public JDialogExport(JFrame parent) {
-        super(parent, true);
-        //load resource bundle
+    private final static MecResourceBundle rb;
+    private final static MecResourceBundle rbCertificates;
+    static{
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleExport.class.getName());
-            this.rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
+            rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleCertificates.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle "
                     + e.getClassName() + " not found.");
         }
-        this.setTitle(this.rb.getResourceString("title"));
+    }
+    
+    /**
+     * Creates new form JDialogPartnerConfig
+     *
+     */
+    public JDialogExport(JFrame parent) {
+        super(parent, true);        
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         this.setMultiresolutionIcons();
         this.getRootPane().setDefaultButton(this.jButtonOk);
@@ -68,10 +69,18 @@ public class JDialogExport extends JDialog {
      * Overwrite the designers icons by multi resolution icons
      */
     private void setMultiresolutionIcons() {
-        this.jLabelImage.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
-        this.jLabelImageCert.setIcon(new ImageIcon(JDialogCertificates.IMAGE_CERTIFICATE.toMinResolution(24)));
-        this.jLabelImageKey.setIcon(new ImageIcon(JDialogCertificates.IMAGE_KEY.toMinResolution(24)));
-        this.jLabelImageKeystore.setIcon(new ImageIcon(IMAGE_KEYSTORE_FILE.toMinResolution(24)));
+        this.jLabelImage.setIcon(new ImageIcon(
+                JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(
+            JDialogCertificates.IMAGE_SIZE_DIALOG)));
+        this.jLabelImageCert.setIcon(new ImageIcon(
+                JDialogCertificates.IMAGE_CERTIFICATE.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
+        this.jLabelImageKey.setIcon(new ImageIcon(
+                JDialogCertificates.IMAGE_KEY.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
+        this.jLabelImageKeystore.setIcon(new ImageIcon(
+                IMAGE_KEYSTORE_FILE.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
     }
 
     /**

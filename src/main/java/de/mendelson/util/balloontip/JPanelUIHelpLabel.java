@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/balloontip/JPanelUIHelpLabel.java 10    1/12/23 11:15 Heller $
+//$Header: /converteride/de/mendelson/util/balloontip/JPanelUIHelpLabel.java 11    16/05/24 14:44 Heller $
 package de.mendelson.util.balloontip;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,7 +17,7 @@ import javax.swing.JPanel;
  * display a help text
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class JPanelUIHelpLabel extends JPanel {
         
@@ -159,6 +159,7 @@ public class JPanelUIHelpLabel extends JPanel {
 
         jPanelUIHelp.setMinimumSize(new java.awt.Dimension(20, 20));
         jPanelUIHelp.setPreferredSize(new java.awt.Dimension(20, 20));
+        jPanelUIHelp.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_TOP);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;

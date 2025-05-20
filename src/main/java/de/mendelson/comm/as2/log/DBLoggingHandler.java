@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 24    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/DBLoggingHandler.java 26    20/02/25 13:41 Heller $
 package de.mendelson.comm.as2.log;
 
 import de.mendelson.comm.as2.message.AS2MDNInfo;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.NamedThreadFactory;
 
 import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
@@ -12,6 +13,8 @@ import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import de.mendelson.util.database.IDBDriverManager;
 import java.io.UnsupportedEncodingException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -23,12 +26,15 @@ import java.io.UnsupportedEncodingException;
 /**
  * Handler to log logger data to a data base
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 26 $
  */
 public class DBLoggingHandler extends Handler {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private LogAccessDB logAccess;
+    private final ThreadPoolExecutor logExecutor 
+            = (ThreadPoolExecutor) Executors.newFixedThreadPool(1,
+            new NamedThreadFactory("log"));
 
     public DBLoggingHandler(IDBDriverManager dbDriverManager) {
         //store all log levels by default, could be overwritten
@@ -61,16 +67,16 @@ public class DBLoggingHandler extends Handler {
 
     /**
      * Format and publish a LogRecord.
-     * @param  record  description of the log event
+     * @param  logRecord  description of the log event
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-        if (!isLoggable(record)) {
+    public synchronized void publish(LogRecord logRecord) {
+        if (!isLoggable(logRecord)) {
             return;
         }
         try {
-            this.logMessage(record.getLevel(), record.getMillis(), record.getMessage(),
-                    record.getParameters());
+            this.logMessage(logRecord.getLevel(), logRecord.getMillis(), logRecord.getMessage(),
+                    logRecord.getParameters());
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -81,13 +87,13 @@ public class DBLoggingHandler extends Handler {
     /**
      * Check if this Handler would actually log a given LogRecord, depending of the
      * log level
-     * @param record a LogRecord
+     * @param logRecord a LogRecord
      * @return true if the LogRecord would be logged.
      *
      */
     @Override
-    public boolean isLoggable(LogRecord record) {
-        return super.isLoggable(record);
+    public boolean isLoggable(LogRecord logRecord) {
+        return super.isLoggable(logRecord);
     }
 
     /**
@@ -112,13 +118,13 @@ public class DBLoggingHandler extends Handler {
             if (parameter[0] instanceof AS2MessageInfo) {
                 AS2MessageInfo info = (AS2MessageInfo) parameter[0];
                 message = "[" + info.getMessageId() + "] " + message;
-                this.logAccess.logAsTransaction(
-                        level, millis, message, info.getMessageId());
+                Runnable runnable = this.logAccess.generateThreadToInsert(level, millis, message, info.getMessageId());
+                this.logExecutor.submit(runnable);
             } else if (parameter[0] instanceof AS2MDNInfo) {
                 AS2MDNInfo info = (AS2MDNInfo) parameter[0];
                 message = "[" + info.getMessageId() + "] " + message;
-                this.logAccess.logAsTransaction(
-                        level, millis, message, info.getRelatedMessageId());
+                Runnable runnable = this.logAccess.generateThreadToInsert(level, millis, message, info.getRelatedMessageId());
+                this.logExecutor.submit(runnable);
             }
         }
     }

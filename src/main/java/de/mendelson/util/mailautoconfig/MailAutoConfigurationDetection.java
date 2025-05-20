@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/mailautoconfig/MailAutoConfigurationDetection.java 3     3/11/23 13:50 Heller $
+//$Header: /as4/de/mendelson/util/mailautoconfig/MailAutoConfigurationDetection.java 5     19/02/25 9:39 Heller $
 package de.mendelson.util.mailautoconfig;
 
 import de.mendelson.util.XPathHelper;
@@ -30,7 +30,7 @@ import org.xml.sax.InputSource;
  * Configuration detection for a mail server from a give mail address
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class MailAutoConfigurationDetection {
 
@@ -64,7 +64,7 @@ public class MailAutoConfigurationDetection {
                     String portStr = xpathHelper.getValue("/clientConfig/emailProvider/incomingServer[" + i + "]/port");
                     int port = 0;
                     try {
-                        port = Integer.valueOf(portStr).intValue();
+                        port = Integer.parseInt(portStr);
                     } catch (Exception e) {
                     }
                     String securityStr = xpathHelper.getValue("/clientConfig/emailProvider/incomingServer[" + i + "]/socketType");
@@ -88,7 +88,7 @@ public class MailAutoConfigurationDetection {
                 String portStr = xpathHelper.getValue("/clientConfig/emailProvider/outgoingServer[" + i + "]/port");
                 int port = 0;
                 try {
-                    port = Integer.valueOf(portStr).intValue();
+                    port = Integer.parseInt(portStr);
                 } catch (Exception e) {
                 }
                 String securityStr = xpathHelper.getValue("/clientConfig/emailProvider/outgoingServer[" + i + "]/socketType");
@@ -253,20 +253,4 @@ public class MailAutoConfigurationDetection {
         return (null);
     }
 
-//    public static final void main(String[] args) {
-//        MailAutoConfigurationDetection detection = new MailAutoConfigurationDetection();
-//        String mailAddress = "service@mendelson.de";        
-//        
-//        System.out.println("Detecting mail server configuration for " + mailAddress);
-//        ArrayList<String> allowedServiceList = new ArrayList<String>();
-//        allowedServiceList.add(MailServiceConfiguration.SERVICE_SMTP);
-//        allowedServiceList.add(MailServiceConfiguration.SERVICE_POP3);
-//        allowedServiceList.add(MailServiceConfiguration.SERVICE_IMAP);
-//        List<MailServiceConfiguration> list = detection.detectConfiguration(mailAddress, allowedServiceList);
-//        if (list != null) {
-//            for (MailServiceConfiguration configuration : list) {
-//                System.out.println(configuration.toDebugDisplay());
-//            }
-//        }
-//    }
 }

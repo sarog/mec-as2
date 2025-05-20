@@ -1,4 +1,4 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 59    2/11/23 15:53 Heller $
+ ///$Header: /as2/de/mendelson/comm/as2/servlet/HttpReceiver.java 64    14/02/25 9:58 Heller $
 package de.mendelson.comm.as2.servlet;
 
 import de.mendelson.Copyright;
@@ -8,6 +8,7 @@ import de.mendelson.comm.as2.clientserver.message.IncomingMessageResponse;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.clientserver.AnonymousTextClient;
+import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
@@ -21,6 +22,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Properties;
+import javax.net.ssl.SSLSession;
 import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
@@ -38,7 +40,7 @@ import javax.servlet.http.HttpServletResponse;
  * Servlet to receive AS2 messages via HTTP
  *
  * @author S.Heller
- * @version $Revision: 59 $
+ * @version $Revision: 64 $
  */
 public class HttpReceiver extends HttpServlet {
 
@@ -75,11 +77,36 @@ public class HttpReceiver extends HttpServlet {
      * POST by the HTTP client: receive the message and work on it
      */
     @Override
-    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {        
+    public void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         //stores if the commit already occured. Do not send an additional error in this case        
         boolean committed = false;
         Path dataFile = null;
         try {
+            String tlsProtocol = "-";
+            String cipherSuite = "-";
+            int localPort = request.getLocalPort();
+            String remoteAddress = request.getRemoteAddr();
+            //might be one of
+            //javax.servlet.request.ssl_session
+            //org.eclipse.jetty.servlet.request.ssl_session
+            //[]...
+            String sslSessionAttributeKey = null;
+            Enumeration<String> attributeEnumeration = request.getAttributeNames();
+            while (attributeEnumeration.hasMoreElements()) {
+                String attributeKey = attributeEnumeration.nextElement();
+                if (attributeKey.toLowerCase().contains(".ssl_session")) {
+                    sslSessionAttributeKey = attributeKey;
+                    break;
+                }
+            }
+            //get SSL information
+            if (sslSessionAttributeKey != null) {
+                SSLSession sslSession = (SSLSession) request.getAttribute(sslSessionAttributeKey);
+                if (sslSession != null) {
+                    tlsProtocol = sslSession.getProtocol();
+                    cipherSuite = sslSession.getCipherSuite();
+                }
+            }
             InputStream inStream = request.getInputStream();
             //store the data in a file to process it later. This may be useful
             //for a huge data request that may lead to a out of memory fairly easy.
@@ -94,16 +121,20 @@ public class HttpReceiver extends HttpServlet {
             }
             //check if this is a AS2 message that requests async MDN. In this case return the ok code
             //before processing the message, there is no need to keep the connection alive.
-            boolean isAS2MessageRequestingAsyncMDN = headerMap.containsKey("receipt-delivery-option") && headerMap.get("receipt-delivery-option") != null && !headerMap.get("receipt-delivery-option").trim().isEmpty();
+            boolean isAS2MessageRequestingAsyncMDN = headerMap.containsKey("receipt-delivery-option") 
+                    && headerMap.get("receipt-delivery-option") != null 
+                    && !headerMap.get("receipt-delivery-option").trim().isEmpty();
             if (isAS2MessageRequestingAsyncMDN) {
-                this.informAS2ServerIncomingMessage(dataFile, headerMap, request, null);
+                this.informAS2ServerIncomingMessage(dataFile, headerMap, request, null, tlsProtocol, cipherSuite, localPort,
+                        remoteAddress);
                 committed = true;
                 response.setStatus(HttpServletResponse.SC_OK);
                 //close the connection
                 response.getWriter().flush();
                 response.getWriter().close();
             } else {
-                this.informAS2ServerIncomingMessage(dataFile, headerMap, request, response);
+                this.informAS2ServerIncomingMessage(dataFile, headerMap, request, response, tlsProtocol, cipherSuite, localPort,
+                        remoteAddress);
             }
         } catch (Throwable e) {
             e.printStackTrace();
@@ -133,31 +164,34 @@ public class HttpReceiver extends HttpServlet {
      */
     private void informAS2ServerIncomingMessage(Path dataFile,
             LinkedHashMap<String, String> headerMap, HttpServletRequest request,
-            HttpServletResponse response) throws Throwable {
-        AnonymousTextClient client = null;
-        try {
-            client = new AnonymousTextClient();
-            client.setDisplayServerLogMessages(false);
-            client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
-            IncomingMessageRequest messageRequest = new IncomingMessageRequest();
-            messageRequest.setMessageDataFilename(dataFile.toAbsolutePath().toString());
-            messageRequest.setContentType(request.getContentType());
-            messageRequest.setUsesTLS(request.isSecure());
-            String remoteHost = request.getRemoteHost();
-            if (remoteHost == null) {
-                remoteHost = request.getRemoteAddr();
-            }
-            messageRequest.setRemoteHost(remoteHost);
-            Iterator<String> headerIterator = headerMap.keySet().iterator();
-            while (headerIterator.hasNext()) {
-                String key = headerIterator.next();
-                if (key != null) {
-                    String value = headerMap.get(key);
-                    if (value != null) {
-                        messageRequest.addHeader(key, value);
-                    }
+            HttpServletResponse response, String tlsProtocol,
+            String cipherSuite, int localPort, String remoteAddress) throws Throwable {
+        IncomingMessageRequest messageRequest = new IncomingMessageRequest();
+        messageRequest.setMessageDataFilename(dataFile.toAbsolutePath().toString());
+        messageRequest.setContentType(request.getContentType());
+        messageRequest.setUsesTLS(request.isSecure());
+        messageRequest.setLocalPort(localPort);
+        messageRequest.setTLSProtocol(tlsProtocol);
+        messageRequest.setCipherSuite(cipherSuite);
+        messageRequest.setRemoteAddress(remoteAddress);
+        String remoteHost = request.getRemoteHost();
+        if (remoteHost == null) {
+            remoteHost = request.getRemoteAddr();
+        }
+        messageRequest.setRemoteHost(remoteHost);
+        Iterator<String> headerIterator = headerMap.keySet().iterator();
+        while (headerIterator.hasNext()) {
+            String key = headerIterator.next();
+            if (key != null) {
+                String value = headerMap.get(key);
+                if (value != null) {
+                    messageRequest.addHeader(key, value);
                 }
             }
+        }
+        try(AnonymousTextClient client = new AnonymousTextClient(BaseClient.CLIENT_WEB)){
+            client.setDisplayServerLogMessages(false);
+            client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             IncomingMessageResponse messageResponse = (IncomingMessageResponse) client.sendSyncWaitInfinite(messageRequest);
             if (messageResponse.getException() != null) {
                 throw (messageResponse.getException());
@@ -175,16 +209,13 @@ public class HttpReceiver extends HttpServlet {
                         String key = (String) iterator.next();
                         response.setHeader(key, header.getProperty(key));
                     }
-                    ByteArrayInputStream inStream = new ByteArrayInputStream(messageResponse.getMDNData());
-                    ServletOutputStream outStream = response.getOutputStream();
-                    inStream.transferTo(outStream);
-                    inStream.close();
+                    ServletOutputStream outStream;
+                    try (ByteArrayInputStream inStream = new ByteArrayInputStream(messageResponse.getMDNData())) {
+                        outStream = response.getOutputStream();
+                        inStream.transferTo(outStream);
+                    }
                     outStream.flush();
                 }
-            }
-        } finally {
-            if (client != null && client.isConnected()) {
-                client.disconnect();
             }
         }
     }

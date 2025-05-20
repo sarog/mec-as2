@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogCertificateReference.java 5     2/11/23 14:03 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogCertificateReference.java 6     3/07/24 14:07 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -18,14 +18,20 @@ import javax.swing.table.TableColumn;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class JDialogCertificateReference extends JDialog {
-
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private MecResourceBundle rb = null;
+    
+    private final static MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCertificateReference.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     public final static MendelsonMultiResolutionImage IMAGE_REFERENCE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/reference.svg", 16, 64);
     
@@ -35,15 +41,7 @@ public class JDialogCertificateReference extends JDialog {
             List<CertificateInUseInfo.SingleCertificateInUseInfo> infoList,
             KeystoreCertificate certificate) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCertificateReference.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         this.setMultiresolutionIcons();        
         this.jTable.setModel(new TableModelCertificateReference());        
@@ -56,18 +54,18 @@ public class JDialogCertificateReference extends JDialog {
         this.jTable.setTableHeader(null);
         JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
         if( certificate.getIsKeyPair()){
-            this.jLabelInfo.setText( this.rb.getResourceString("label.info.key", certificate.getAlias()));
+            this.jLabelInfo.setText( rb.getResourceString("label.info.key", certificate.getAlias()));
         }else{
-            this.jLabelInfo.setText( this.rb.getResourceString("label.info.certificate", certificate.getAlias()));
+            this.jLabelInfo.setText( rb.getResourceString("label.info.certificate", certificate.getAlias()));
         }
         this.jLabelNotInUse.setVisible(infoList.isEmpty());
         this.jPanelSpaceNotInUse.setVisible(infoList.isEmpty());
         this.jScrollPaneTable.setVisible( !infoList.isEmpty());
         this.jLabelInfo.setVisible( !infoList.isEmpty());
         if( certificate.getIsKeyPair()){
-            this.jLabelNotInUse.setText(this.rb.getResourceString("label.notinuse.key", certificate.getAlias()));            
+            this.jLabelNotInUse.setText(rb.getResourceString("label.notinuse.key", certificate.getAlias()));            
         }else{
-            this.jLabelNotInUse.setText(this.rb.getResourceString("label.notinuse.certificate", certificate.getAlias()));
+            this.jLabelNotInUse.setText(rb.getResourceString("label.notinuse.certificate", certificate.getAlias()));
         }
         this.getRootPane().setDefaultButton(this.jButtonOk);
     }

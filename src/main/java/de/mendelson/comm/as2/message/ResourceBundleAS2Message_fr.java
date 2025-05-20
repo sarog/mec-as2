@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2Message_fr.java 11    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2Message_fr.java 19    3/09/24 16:40 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 11 $
+ * @version $Revision: 19 $
  */
 public class ResourceBundleAS2Message_fr extends MecResourceBundle{
     
@@ -25,7 +25,7 @@ public class ResourceBundleAS2Message_fr extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"signature." + AS2Message.SIGNATURE_UNKNOWN, "Inconnu" },
         {"signature." + AS2Message.SIGNATURE_NONE, "Aucune signature" },
         {"signature." + AS2Message.SIGNATURE_MD5, "MD5" },
@@ -47,6 +47,8 @@ public class ResourceBundleAS2Message_fr extends MecResourceBundle{
         {"signature." + AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS, "SHA3-256 (RSASSA-PSS)" },
         {"signature." + AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS, "SHA3-384 (RSASSA-PSS)" },
         {"signature." + AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS, "SHA3-512 (RSASSA-PSS)" },
+        {"signature." + AS2Message.SIGNATURE_DILITHIUM, "DILITHIUM" },
+        {"signature." + AS2Message.SIGNATURE_SPHINCS_PLUS, "SPHINCS+" },
         {"encryption." + AS2Message.ENCRYPTION_UNKNOWN, "Inconnu" },
         {"encryption." + AS2Message.ENCRYPTION_NONE, "Aucun cryptage" },
         {"encryption." + AS2Message.ENCRYPTION_3DES, "3DES" },        
@@ -55,16 +57,35 @@ public class ResourceBundleAS2Message_fr extends MecResourceBundle{
         {"encryption." + AS2Message.ENCRYPTION_RC2_128, "RC2-128" },
         {"encryption." + AS2Message.ENCRYPTION_RC2_196, "RC2-196" },
         {"encryption." + AS2Message.ENCRYPTION_RC2_UNKNOWN, "RC2" },
-        {"encryption." + AS2Message.ENCRYPTION_AES_128, "AES-128" },        
-        {"encryption." + AS2Message.ENCRYPTION_AES_192, "AES-192" },
-        {"encryption." + AS2Message.ENCRYPTION_AES_256, "AES-256" },
-        {"encryption." + AS2Message.ENCRYPTION_AES_128_RSAES_AOEP, "AES-128 (RSAES-OAEP)"},
-        {"encryption." + AS2Message.ENCRYPTION_AES_192_RSAES_AOEP, "AES-192 (RSAES-OAEP)"},
-        {"encryption." + AS2Message.ENCRYPTION_AES_256_RSAES_AOEP, "AES-256 (RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_128, "AES-128 (CBC)" },        
+        {"encryption." + AS2Message.ENCRYPTION_AES_192, "AES-192 (CBC)" },
+        {"encryption." + AS2Message.ENCRYPTION_AES_256, "AES-256 (CBC)" },
+        {"encryption." + AS2Message.ENCRYPTION_AES_128_CBC, "AES-128 (CBC)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_192_CBC, "AES-192 (CBC)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_256_CBC, "AES-256 (CBC)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_128_RSAES_AOEP, "AES-128 (CBC, RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_192_RSAES_AOEP, "AES-192 (CBC RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_256_RSAES_AOEP, "AES-256 (CBC, RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_128_CBC_RSAES_AOEP, "AES-128 (CBC, RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_192_CBC_RSAES_AOEP, "AES-192 (CBC RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_256_CBC_RSAES_AOEP, "AES-256 (CBC, RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_128_GCM_RSAES_AOEP, "AES-128 (GCM, RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_192_GCM_RSAES_AOEP, "AES-192 (GCM RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_256_GCM_RSAES_AOEP, "AES-256 (GCM, RSAES-OAEP)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_128_GCM, "AES-128 (GCM)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_192_GCM, "AES-192 (GCM)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_256_GCM, "AES-256 (GCM)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_128_CCM, "AES-128 (CCM)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_192_CCM, "AES-192 (CCM)"},
+        {"encryption." + AS2Message.ENCRYPTION_AES_256_CCM, "AES-256 (CCM)"},
+        {"encryption." + AS2Message.ENCRYPTION_CHACHA20_POLY1305, "CHACHA20-POLY1305"},
         {"encryption." + AS2Message.ENCRYPTION_RC4_40, "RC4-40" },
         {"encryption." + AS2Message.ENCRYPTION_RC4_56, "RC4-56" },
         {"encryption." + AS2Message.ENCRYPTION_RC4_128, "RC4-128" },
         {"encryption." + AS2Message.ENCRYPTION_RC4_UNKNOWN, "RC4" },
+        {"encryption." + AS2Message.ENCRYPTION_CAMELLIA_128_CBC, "CAMELLIA-128 (CBC)"},
+        {"encryption." + AS2Message.ENCRYPTION_CAMELLIA_192_CBC, "CAMELLIA-192 (CBC)"},
+        {"encryption." + AS2Message.ENCRYPTION_CAMELLIA_256_CBC, "CAMELLIA-256 (CBC)"},
         {"encryption." + AS2Message.ENCRYPTION_UNKNOWN_ALGORITHM, "Inconnu" },
         {"compression." + AS2Message.COMPRESSION_NONE, "Aucun"},
         {"compression." + AS2Message.COMPRESSION_UNKNOWN, "Inconnu"},

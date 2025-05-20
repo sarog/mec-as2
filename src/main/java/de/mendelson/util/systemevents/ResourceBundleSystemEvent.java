@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent.java 30    12/12/23 14:44 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/ResourceBundleSystemEvent.java 33    15/01/25 10:18 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 33 $
  */
 public class ResourceBundleSystemEvent extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"type." + SystemEvent.TYPE_CERTIFICATE_ADD, "Certificate (add)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_ANY, "Certificate"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_DEL, "Certificate (delete)"},
@@ -44,6 +44,7 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_DATABASE_CREATION, "Database (creation)"},
         {"type." + SystemEvent.TYPE_DATABASE_UPDATE, "Database (update)"},
         {"type." + SystemEvent.TYPE_DATABASE_INITIALIZATION, "Database (initialization)"},
+        {"type." + SystemEvent.TYPE_DATABASE_ROLLBACK, "Transation rollback"},
         {"type." + SystemEvent.TYPE_NOTIFICATION_ANY, "Notification"},
         {"type." + SystemEvent.TYPE_NOTIFICATION_SEND_FAILED, "Notification send (failed)"},
         {"type." + SystemEvent.TYPE_NOTIFICATION_SEND_SUCCESS, "Notification send (success)"},
@@ -63,7 +64,7 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN, "Server startup"},
         {"type." + SystemEvent.TYPE_DATABASE_SERVER_STARTUP_BEGIN, "DB server startup"},
         {"type." + SystemEvent.TYPE_DATABASE_SERVER_RUNNING, "DB server is running"},
-        {"type." + SystemEvent.TYPE_DATABASE_SERVER_SHUTDOWN, "DB server shutdown"},
+        {"type." + SystemEvent.TYPE_DATABASE_SERVER_SHUTDOWN, "DB server shutdown"},        
         {"type." + SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN, "HTTP server startup"},
         {"type." + SystemEvent.TYPE_HTTP_SERVER_RUNNING, "HTTP server is running"},
         {"type." + SystemEvent.TYPE_HTTP_SERVER_SHUTDOWN, "HTTP server shutdown"},
@@ -91,7 +92,7 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_FILE_DELETE, "File (delete)"},
         {"type." + SystemEvent.TYPE_FILE_MOVE, "File (move)"},
         {"type." + SystemEvent.TYPE_FILE_COPY, "File (copy)"},
-        {"type." + SystemEvent.TYPE_MKDIR, "Create dir"},
+        {"type." + SystemEvent.TYPE_FILE_MKDIR, "Create dir"},
         {"type." + SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED, "Directory monitoring state changed"},
         {"type." + SystemEvent.TYPE_CLIENT_ANY, "Client (any)"},
         {"type." + SystemEvent.TYPE_CLIENT_LOGIN_FAILURE, "Client login (failure)"},
@@ -99,8 +100,17 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Client logoff"},
         {"type." + SystemEvent.TYPE_OTHER, "Other"},
         {"type." + SystemEvent.TYPE_PORT_LISTENER, "Port listener"},
+        {"type." + SystemEvent.TYPE_XML_INTERFACE_ANY, "XML"},
         {"type." + SystemEvent.TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION, "Certificate modification"},
         {"type." + SystemEvent.TYPE_XML_INTERFACE_PARTNER_MODIFICATION, "Partner modification"},
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_ANY, "REST"},
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_ADD, "Certificate add" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_DEL, "Certificate del" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_MODIFICATION, "Certificate modification" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_ADD, "Partner add" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_DEL, "Partner del" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_MODIFICATION, "Partner modification" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_SENDORDER, "Send order" },
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "System" },
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaction" },
         {"origin." + SystemEvent.ORIGIN_USER, "User" },
@@ -121,5 +131,6 @@ public class ResourceBundleSystemEvent extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "File operation" },
         {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Client operation" },
         {"category." + SystemEvent.CATEGORY_XML_INTERFACE, "XML interface" },
+        {"category." + SystemEvent.CATEGORY_REST_INTERFACE, "REST interface" },
     };
 }

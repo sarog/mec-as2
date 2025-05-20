@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/ResourceBundleGlobalChange_fr.java 3     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/ResourceBundleGlobalChange_fr.java 4     9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.partner.gui.global;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleGlobalChange_fr extends MecResourceBundle{
     

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/StateDialog.java 16    21.12.21 16:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/StateDialog.java 19    19/02/25 10:08 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.shared.ui.ContentMode;
@@ -10,6 +10,7 @@ import de.mendelson.util.clientserver.about.ServerInfoRequest;
 import de.mendelson.util.clientserver.about.ServerInfoResponse;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.clientserver.AnonymousTextClient;
+import de.mendelson.util.clientserver.BaseClient;
 import java.text.DateFormat;
 
 
@@ -24,7 +25,7 @@ import java.text.DateFormat;
  * Displays the state of the receipt unit
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 19 $
  */
 public class StateDialog extends OkDialog {
 
@@ -45,13 +46,11 @@ public class StateDialog extends OkDialog {
         statePanelLayout.setSizeFull();
         StringBuilder sourceBuffer = new StringBuilder();
         boolean processingUnitUp = false;
-        AnonymousTextClient client = null;
-        try {
-            client = new AnonymousTextClient();
+        try(AnonymousTextClient client = new AnonymousTextClient(BaseClient.CLIENT_WEBINTERFACE)){
             client.setDisplayServerLogMessages(false);
             client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             ServerInfoResponse response = (ServerInfoResponse) client.sendSync(new ServerInfoRequest(), 30000);
-            long startTime = Long.valueOf(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME)).longValue();
+            long startTime = Long.parseLong(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME));
             sourceBuffer.append("<p>The AS2 processing unit <strong>"
                     + response.getProperties().getProperty(ServerInfoResponse.SERVER_PRODUCT_NAME) + " "
                     + response.getProperties().getProperty(ServerInfoResponse.SERVER_VERSION) + " "
@@ -61,10 +60,6 @@ public class StateDialog extends OkDialog {
         } catch (Exception e) {
             sourceBuffer.append("Error connecting to AS2 processing unit: ");
             sourceBuffer.append(e.getMessage());
-        } finally {
-            if (client != null && client.isConnected()) {
-                client.disconnect();
-            }
         }
         sourceBuffer.append("<br><br>");
         if (processingUnitUp) {

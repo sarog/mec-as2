@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/util/security/signature/ListCellRendererSignature.java 4     8/12/22 11:35 Heller $
+//$Header: /oftp2/de/mendelson/util/security/signature/ListCellRendererSignature.java 5     31/05/24 11:56 Heller $
 package de.mendelson.util.security.signature;
 
 import de.mendelson.util.ImageUtil;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JComponent;
@@ -15,20 +16,21 @@ import javax.swing.SwingConstants;
  * Renderer to render the signature entries in comboboxes
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ListCellRendererSignature extends JLabel implements ListCellRenderer {
 
     public static final int IMAGE_HEIGHT = 18;
-    private final JComponent container;
+    protected static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
 
+    private final JComponent container;
 
     /**
      * Constructs a default renderer object for an item in a list.
      */
     public ListCellRendererSignature(JComponent container) {
         super();
-        setOpaque(true);        
+        setOpaque(true);
         this.container = container;
     }
 
@@ -188,20 +190,26 @@ public class ListCellRendererSignature extends JLabel implements ListCellRendere
         //Linux sets the value to null if nothing has been selected in the combobox
         if (value != null) {
             if (value instanceof SignatureDisplay) {
-                SignatureDisplay display = (SignatureDisplay)value;                
+                SignatureDisplay display = (SignatureDisplay) value;
                 this.setEnabled(this.container.isEnabled());
                 this.setText(display.getText());
-                if( this.container.isEnabled()){
+                if (this.container.isEnabled()) {
                     this.setIcon(display.getIcon());
-                }else{
+                } else {
                     this.setIcon(ImageUtil.grayImage(display.getIcon()));
                 }
             }
         }
         this.setHorizontalAlignment(SwingConstants.LEADING);
         this.setHorizontalTextPosition(SwingConstants.RIGHT);
-
         return (this);
     }
-   
+
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension dimension = super.getPreferredSize();
+        dimension.height = ROW_HEIGHT;
+        return (dimension);
+    }
+
 }

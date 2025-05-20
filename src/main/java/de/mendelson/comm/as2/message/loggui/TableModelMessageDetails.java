@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 17    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 20    20/02/25 13:41 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.message.AS2Info;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -27,52 +28,43 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 20 $
  */
 public class TableModelMessageDetails extends AbstractTableModel {
 
-    public static final int ROW_HEIGHT = 20;
-    protected static final int IMAGE_HEIGHT = ROW_HEIGHT-3;
-    
-    public static final ImageIcon ICON_IN 
+    protected static final int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_TABLE;
+    public static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
+
+    public static final ImageIcon ICON_IN
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-            "/de/mendelson/comm/as2/message/loggui/in.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
-    public static final ImageIcon ICON_OUT 
+                    "/de/mendelson/comm/as2/message/loggui/in.svg", IMAGE_HEIGHT));
+    public static final ImageIcon ICON_OUT
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-            "/de/mendelson/comm/as2/message/loggui/out.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+                    "/de/mendelson/comm/as2/message/loggui/out.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_MESSAGE
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-            "/de/mendelson/comm/as2/message/loggui/message.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+                    "/de/mendelson/comm/as2/message/loggui/message.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_SIGNAL_OK
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-            "/de/mendelson/comm/as2/message/loggui/signal_ok.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+                    "/de/mendelson/comm/as2/message/loggui/signal_ok.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_SIGNAL_FAILURE
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-            "/de/mendelson/comm/as2/message/loggui/signal_failure.svg", IMAGE_HEIGHT, IMAGE_HEIGHT*3 ));
+                    "/de/mendelson/comm/as2/message/loggui/signal_failure.svg", IMAGE_HEIGHT));
     /**
      * ResourceBundle to localize the headers
      */
-    private MecResourceBundle rb = null;
+    private final static MecResourceBundle rb;
     /**
      * ResourceBundle to localize the headers
      */
-    private MecResourceBundle rbMessage = null;
-    /**
-     * Format the date output
-     */
-    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
-    private final List<AS2Info> data = Collections.synchronizedList(new ArrayList<AS2Info>());
+    private final static MecResourceBundle rbMessage;
 
-    /**
-     * Creates new LogTableModel
-     */
-    public TableModelMessageDetails() {
-        super();
+    static {
         //load resource bundle
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleMessageDetails.class.getName());
-            this.rbMessage = (MecResourceBundle) ResourceBundle.getBundle(
+            rbMessage = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleAS2Message.class.getName());
         } //load up  resourcebundle
         catch (MissingResourceException e) {
@@ -80,16 +72,31 @@ public class TableModelMessageDetails extends AbstractTableModel {
                     + e.getClassName() + " not found.");
         }
     }
+    /**
+     * Format the date output
+     */
+    private final DateFormat FORMAT = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    private final List<AS2Info> DATA = Collections.synchronizedList(new ArrayList<AS2Info>());
+
+    /**
+     * Creates new LogTableModel
+     */
+    public TableModelMessageDetails() {
+        super();
+    }
 
     /**
      * Passes data to the model and fires a table data update
      */
     public void passNewData(List<AS2Info> newData) {
-        synchronized (this.data) {
-            this.data.clear();
-            this.data.addAll(newData);
+        if (newData != null) {
+            synchronized (this.DATA) {
+                this.DATA.clear();
+                this.DATA.addAll(newData);
+            }
+            this.fireTableDataChanged();
         }
-        this.fireTableDataChanged();
+
     }
 
     /**
@@ -98,11 +105,11 @@ public class TableModelMessageDetails extends AbstractTableModel {
      * @param row Row to look into
      */
     public AS2Info getRow(int row) {
-        synchronized (this.data) {
-            if (row > this.data.size() - 1) {
+        synchronized (this.DATA) {
+            if (row > this.DATA.size() - 1) {
                 return (null);
             }
-            return (this.data.get(row));
+            return (this.DATA.get(row));
         }
     }
 
@@ -111,11 +118,8 @@ public class TableModelMessageDetails extends AbstractTableModel {
      */
     @Override
     public int getRowCount() {
-        synchronized (this.data) {
-            if (this.data == null) {
-                return (0);
-            }
-            return (this.data.size());
+        synchronized (this.DATA) {
+            return (this.DATA.size());
         }
     }
 
@@ -133,8 +137,8 @@ public class TableModelMessageDetails extends AbstractTableModel {
     @Override
     public Object getValueAt(int row, int col) {
         AS2Info detailRow = null;
-        synchronized (this.data) {
-            detailRow = this.data.get(row);
+        synchronized (this.DATA) {
+            detailRow = this.DATA.get(row);
         }
         switch (col) {
             case 0:
@@ -144,7 +148,7 @@ public class TableModelMessageDetails extends AbstractTableModel {
                     return (ICON_OUT);
                 }
             case 1:
-                return (this.format.format(detailRow.getInitDate()));
+                return (this.FORMAT.format(detailRow.getInitDate()));
             case 2:
                 if (detailRow.isMDN()) {
                     if (detailRow.getState() == AS2Message.STATE_FINISHED) {
@@ -193,19 +197,19 @@ public class TableModelMessageDetails extends AbstractTableModel {
             case 0:
                 return (" ");
             case 1:
-                return (this.rb.getResourceString("header.timestamp"));
+                return (rb.getResourceString("header.timestamp"));
             case 2:
                 return ("  ");
             case 3:
-                return (this.rb.getResourceString("header.messageid"));
+                return (rb.getResourceString("header.messageid"));
             case 4:
-                return (this.rb.getResourceString("header.signature"));
+                return (rb.getResourceString("header.signature"));
             case 5:
-                return (this.rb.getResourceString("header.encryption"));
+                return (rb.getResourceString("header.encryption"));
             case 6:
-                return (this.rb.getResourceString("header.senderhost"));
+                return (rb.getResourceString("header.senderhost"));
             case 7:
-                return (this.rb.getResourceString("header.useragent"));
+                return (rb.getResourceString("header.useragent"));
         }
         return (null);
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 25    14/12/23 15:42 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 28    4/03/25 14:36 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.ImageUtil;
@@ -8,8 +8,12 @@ import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import de.mendelson.util.security.DNUtil;
+import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import de.mendelson.util.security.keygeneration.KeyGenerator;
+import java.security.cert.CertPath;
+import java.security.cert.Certificate;
+import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.X509Certificate;
 import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -27,52 +31,82 @@ import java.util.List;
  * table model to display a configuration grid
  *
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 28 $
  */
 public class TableModelCertificates extends AbstractTableModel {
 
-    public static final int ROW_HEIGHT = 20;
-    protected static final int IMAGE_HEIGHT = ROW_HEIGHT - 3;
+    public static final int ROW_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE + 3;
+    protected static final int IMAGE_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE;
 
     /**
      * Icons, multi resolution
      */
-    public final static MendelsonMultiResolutionImage IMAGE_CERTIFICATE_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg", IMAGE_HEIGHT);
-    public final static MendelsonMultiResolutionImage IMAGE_KEY_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", IMAGE_HEIGHT);
-    public final static MendelsonMultiResolutionImage IMAGE_INVALID_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_invalid.svg", IMAGE_HEIGHT);
-    public final static MendelsonMultiResolutionImage IMAGE_VALID_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_valid.svg", IMAGE_HEIGHT);
-    public final static MendelsonMultiResolutionImage IMAGE_ROOT_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_root.svg", IMAGE_HEIGHT);
-    public final static MendelsonMultiResolutionImage IMAGE_UNTRUSTED_MULTIRESOLUTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_untrusted.svg", IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_CERTIFICATE_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_KEY_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_INVALID_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_invalid.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_VALID_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_valid.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_ROOT_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_root.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_UNTRUSTED_MULTIRESOLUTION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/cert_untrusted.svg",
+                    IMAGE_HEIGHT);
 
-    public static final ImageIcon ICON_CERTIFICATE = new ImageIcon(IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_KEY = new ImageIcon(IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_VALID = new ImageIcon(IMAGE_VALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_INVALID = new ImageIcon(IMAGE_INVALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_CERTIFICATE_ROOT = new ImageIcon(IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
-    public static final ImageIcon ICON_CERTIFICATE_MISSING = new ImageIcon(IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE
+            = new ImageIcon(IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_KEY
+            = new ImageIcon(IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_VALID
+            = new ImageIcon(IMAGE_VALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_INVALID
+            = new ImageIcon(IMAGE_INVALID_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE_ROOT
+            = new ImageIcon(IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
+    public static final ImageIcon ICON_CERTIFICATE_MISSING
+            = new ImageIcon(IMAGE_UNTRUSTED_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     /*ResourceBundle to localize the headers*/
-    private final MecResourceBundle rb;
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleTableModelCertificates.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private final List<KeystoreCertificate> listData = Collections.synchronizedList(new ArrayList<KeystoreCertificate>());
     private final List<CertificateInUseChecker> inUseCheckerList
             = Collections.synchronizedList(new ArrayList<CertificateInUseChecker>());
+
+    private static final Class[] COLUMN_CLASSES = new Class[]{
+        ImageIcon.class,
+        ImageIcon.class,
+        String.class,
+        Date.class,
+        String.class,
+        String.class,
+        String.class,
+        String.class};
+
+    private CertificateManager certificateManager = null;
 
     /**
      * Creates new table model
      */
     public TableModelCertificates() {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleTableModelCertificates.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+    }
+
+    public void setCertificateManager(CertificateManager certificateManager) {
+        this.certificateManager = certificateManager;
     }
 
     /**
@@ -124,7 +158,7 @@ public class TableModelCertificates extends AbstractTableModel {
      */
     @Override
     public int getColumnCount() {
-        return (7);
+        return (8);
     }
 
     /**
@@ -141,22 +175,22 @@ public class TableModelCertificates extends AbstractTableModel {
             return ("  ");
         }
         if (col == 2) {
-            return (this.rb.getResourceString("header.alias"));
+            return (rb.getResourceString("header.alias"));
         }
         if (col == 3) {
-            return (this.rb.getResourceString("header.expire"));
+            return (rb.getResourceString("header.expire"));
         }
         if (col == 4) {
-            return (this.rb.getResourceString("header.algorithm"));
+            return (rb.getResourceString("header.algorithm"));
         }
         if (col == 5) {
-            return (this.rb.getResourceString("header.length"));
+            return (rb.getResourceString("header.length"));
         }
         if (col == 6) {
-            return (this.rb.getResourceString("header.organization"));
+            return (rb.getResourceString("header.organization"));
         }
         if (col == 7) {
-            return (this.rb.getResourceString("header.ca"));
+            return (rb.getResourceString("header.trust"));
         }
         //should not happen
         return ("");
@@ -241,10 +275,25 @@ public class TableModelCertificates extends AbstractTableModel {
             return (String.valueOf(certificate.getPublicKeyLength()));
         }
         if (col == 6) {
-            return (DNUtil.getOrganization(certificate.getX509Certificate(), DNUtil.SUBJECT));
+            String organization = certificate.getSubjectOrganization();
+            if (organization == null || organization.trim().length() == 0) {
+                organization = certificate.getSubjectCN();
+            }
+            return (organization);
         }
         if (col == 7) {
-            return (DNUtil.getCommonName(certificate.getX509Certificate(), DNUtil.ISSUER));
+            if (certificate.isRootCertificate()) {
+                return (rb.getResourceString("trust.root"));
+            } else if (certificate.isSelfSigned()) {
+                return (rb.getResourceString("trust.selfsigned"));
+            } else {
+                KeystoreCertificate trustAnchor = this.getTrustAnchor(certificate);
+                if (trustAnchor == null) {
+                    return (rb.getResourceString("trust.untrusted"));
+                } else {
+                    return (rb.getResourceString("trust.trusted"));
+                }
+            }
         }
         return ("");
     }
@@ -264,16 +313,8 @@ public class TableModelCertificates extends AbstractTableModel {
      * @param col requested column
      */
     @Override
-    public Class getColumnClass(int col
-    ) {
-        return (new Class[]{
-            ImageIcon.class,
-            ImageIcon.class,
-            String.class,
-            Date.class,
-            String.class,
-            String.class,
-            String.class,}[col]);
+    public Class getColumnClass(int col) {
+        return (COLUMN_CLASSES[col]);
     }
 
     /**
@@ -291,5 +332,29 @@ public class TableModelCertificates extends AbstractTableModel {
             certArray = this.listData.toArray(certArray);
             return (certArray);
         }
+    }
+
+    /**
+     * Returns the trust anchor if a keystore manager exists - else null. If the
+     * trust chain is not complete: returns null
+     *
+     * @return
+     */
+    private KeystoreCertificate getTrustAnchor(KeystoreCertificate certificate) {
+        if (this.certificateManager == null) {
+            return (null);
+        }
+        PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(
+                this.certificateManager.getKeystore(),
+                this.certificateManager.getX509CertificateList());
+        if (result != null) {
+            Certificate trustAnchor = result.getTrustAnchor().getTrustedCert();
+            for (KeystoreCertificate availableKeystoreCert : this.certificateManager.getKeyStoreCertificateList()) {
+                if (trustAnchor.equals(availableKeystoreCert.getX509Certificate())) {
+                    return( availableKeystoreCert);                    
+                }
+            }
+        }
+        return (null);
     }
 }

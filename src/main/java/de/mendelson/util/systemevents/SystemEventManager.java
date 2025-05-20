@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/systemevents/SystemEventManager.java 24    2/11/23 15:53 Heller $
+//$Header: /mec_as4/de/mendelson/util/systemevents/SystemEventManager.java 32    18/03/25 8:58 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.messages.LoginRequest;
 import de.mendelson.util.clientserver.messages.LoginState;
 import java.net.InetAddress;
@@ -10,9 +11,8 @@ import java.net.UnknownHostException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.PreparedStatement;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
@@ -28,39 +28,42 @@ import java.util.ResourceBundle;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 32 $
  */
 public abstract class SystemEventManager {
 
-    private final static DateFormat EVENT_FILE_DATE_FORMAT = new SimpleDateFormat("HH-mm-ss-SSS");
-    private final static DateFormat DAILY_SUBDIR_FORMAT = new SimpleDateFormat("yyyyMMdd");
-    /**
-     * Always localize your output
-     */
-    private final MecResourceBundle rb;
+    private static final DateTimeFormatter EVENT_FILE_DATE_FORMAT = DateTimeFormatter.ofPattern("HH-mm-ss-SSS");
+    private static final DateTimeFormatter DAILY_SUBDIR_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final MecResourceBundle rb;
+    protected static final String MODULE_NAME;
 
-    private String hostname = null;
-
-    protected SystemEventManager() {
-        //Load resourcebundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleSystemEventManager.class.getName());
-        } //load up  resourcebundle        
-        catch (MissingResourceException e) {
+            MODULE_NAME = rb.getResourceString("module.name");
+        } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
 
-    public synchronized String getHostname() {
-        if (this.hostname == null) {
-            try {
-                this.hostname = InetAddress.getLocalHost().getHostName();
-            } catch (UnknownHostException e) {
-                this.hostname = "Unknown";
-            }
+    private static final String HOST_NAME;
+
+    static {
+        String tempHostName;
+        try {
+            tempHostName = InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            tempHostName = "Unknown";
         }
-        return (this.hostname);
+        HOST_NAME = tempHostName;
+    }
+
+    protected SystemEventManager() {
+    }
+
+    public String getHostname() {
+        return (HOST_NAME);
     }
 
     public abstract Path getStorageMainDir();
@@ -70,9 +73,10 @@ public abstract class SystemEventManager {
      */
     protected void storeEventToFile(SystemEvent event) throws Exception {
         Path storageDir = Paths.get(this.getStorageMainDir().toString(),
-                DAILY_SUBDIR_FORMAT.format(new Date()),
+                LocalDateTime.now().format(DAILY_SUBDIR_FORMAT),
                 "events");
-        String storageFilePrefix = EVENT_FILE_DATE_FORMAT.format(new Date())
+        String storageFilePrefix
+                = LocalDateTime.now().format(EVENT_FILE_DATE_FORMAT)
                 + "_" + event.severityToFilename()
                 + "_" + event.originToFilename()
                 + "_" + event.typeToFilename()
@@ -95,21 +99,27 @@ public abstract class SystemEventManager {
         SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_USER,
                 SystemEvent.TYPE_CLIENT_LOGIN_SUCCESS);
         StringBuilder builder = new StringBuilder();
-        builder.append(this.rb.getResourceString("label.body.tlsprotocol",
-                (tlsProtocol == null ? "--" : tlsProtocol))).append("\n");
-        builder.append(this.rb.getResourceString("label.body.tlsciphersuite",
-                (tlsCipherSuite == null ? "--" : tlsCipherSuite))).append("\n");
-        builder.append(this.rb.getResourceString("label.body.clientip",
-                remoteAddress.toString())).append("\n");
-        builder.append(this.rb.getResourceString("label.body.processid",
-                loginRequest.getPID())).append("\n");
-        builder.append(this.rb.getResourceString("label.body.clientos",
-                loginRequest.getClientOSName())).append("\n");
-        builder.append(this.rb.getResourceString("label.body.details",
-                loginState.getStateDetails())).append("\n");
+        builder.append(rb.getResourceString("label.body.tlsprotocol",
+                (tlsProtocol == null ? "--" : tlsProtocol))).append("\n")
+                .append(rb.getResourceString("label.body.tlsciphersuite",
+                        (tlsCipherSuite == null ? "--" : tlsCipherSuite))).append("\n")
+                .append(rb.getResourceString("label.body.clientip",
+                        remoteAddress.toString())).append("\n")
+                .append(rb.getResourceString("label.body.processid",
+                        loginRequest.getPID())).append("\n")
+                .append(rb.getResourceString("label.body.clientos",
+                        loginRequest.getClientOSName())).append("\n")
+                .append(rb.getResourceString("label.body.details",
+                        loginState.getStateDetails())).append("\n");
         event.setBody(builder.toString());
-        event.setSubject(this.rb.getResourceString("label.subject.login.success", 
-                loginState.getUser().getName()));
+        String subject = rb.getResourceString("label.subject.login.success",
+                loginState.getUser().getName());
+        if (loginRequest.getClientType() != BaseClient.CLIENT_UNSPECIFIED) {
+            subject = subject + " ("
+                    + BaseClient.clientTypeToStr(loginRequest.getClientType())
+                    + ")";
+        }
+        event.setSubject(subject);
         try {
             this.storeEventToFile(event);
         } catch (Exception e) {
@@ -125,19 +135,25 @@ public abstract class SystemEventManager {
         SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_WARNING, SystemEvent.ORIGIN_USER,
                 SystemEvent.TYPE_CLIENT_LOGIN_FAILURE);
         StringBuilder builder = new StringBuilder();
-        builder.append(this.rb.getResourceString("label.body.clientip", 
-                remoteAddress.toString())).append("\n");
-        builder.append(this.rb.getResourceString("label.body.processid", 
-                loginRequest.getPID())).append("\n");
-        builder.append(this.rb.getResourceString("label.body.clientos", 
-                loginRequest.getClientOSName())).append("\n");
-        builder.append(this.rb.getResourceString("label.body.clientversion", 
-                loginRequest.getClientId())).append("\n");
-        builder.append(this.rb.getResourceString("label.body.details", 
-                loginState.getStateDetails())).append("\n");
+        builder.append(rb.getResourceString("label.body.clientip",
+                remoteAddress.toString())).append("\n")
+                .append(rb.getResourceString("label.body.processid",
+                        loginRequest.getPID())).append("\n")
+                .append(rb.getResourceString("label.body.clientos",
+                        loginRequest.getClientOSName())).append("\n")
+                .append(rb.getResourceString("label.body.clientversion",
+                        loginRequest.getClientId())).append("\n")
+                .append(rb.getResourceString("label.body.details",
+                        loginState.getStateDetails())).append("\n");
         event.setBody(builder.toString());
-        event.setSubject(this.rb.getResourceString("label.subject.login.failed", 
-                loginState.getUser().getName()));
+        String subject = rb.getResourceString("label.subject.login.failed",
+                loginState.getUser().getName());
+        if (loginRequest.getClientType() != BaseClient.CLIENT_UNSPECIFIED) {
+            subject = subject + " ("
+                    + BaseClient.clientTypeToStr(loginRequest.getClientType())
+                    + ")";
+        }
+        event.setSubject(subject);
         try {
             this.storeEventToFile(event);
         } catch (Exception e) {
@@ -149,17 +165,23 @@ public abstract class SystemEventManager {
      * Throws a new system event that a client has disconnected
      */
     public void newEventClientLogoff(String remoteIP, String userName, String processId, String sessionId,
-            String message) {
+            String message, int clientType) {
         SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_USER,
                 SystemEvent.TYPE_CLIENT_LOGOFF);
         StringBuilder builder = new StringBuilder();
-        builder.append(this.rb.getResourceString("label.body.clientip", remoteIP)).append("\n");
-        builder.append(this.rb.getResourceString("label.body.processid", processId)).append("\n");
+        builder.append(rb.getResourceString("label.body.clientip", remoteIP)).append("\n");
+        builder.append(rb.getResourceString("label.body.processid", processId)).append("\n");
         if (message != null && !message.trim().isEmpty()) {
-            builder.append(this.rb.getResourceString("label.body.details", message)).append("\n");
+            builder.append(rb.getResourceString("label.body.details", message)).append("\n");
         }
         event.setBody(builder.toString());
-        event.setSubject(this.rb.getResourceString("label.subject.logoff", userName));
+        String subject = rb.getResourceString("label.subject.logoff", userName);
+        if (clientType != BaseClient.CLIENT_UNSPECIFIED) {
+            subject = subject + " ("
+                    + BaseClient.clientTypeToStr(clientType)
+                    + ")";
+        }
+        event.setSubject(subject);
         try {
             this.storeEventToFile(event);
         } catch (Exception e) {
@@ -176,18 +198,33 @@ public abstract class SystemEventManager {
         SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR, SystemEvent.ORIGIN_SYSTEM,
                 SystemEvent.TYPE_CLIENT_ANY);
         StringBuilder builder = new StringBuilder();
-        builder.append(this.rb.getResourceString("label.body.clientip", remoteIP)).append("\n");
-        builder.append(this.rb.getResourceString("label.body.processid", processId)).append("\n\n");
+        builder.append(rb.getResourceString("label.body.clientip", remoteIP)).append("\n");
+        builder.append(rb.getResourceString("label.body.processid", processId)).append("\n\n");
         if (message != null && !message.trim().isEmpty()) {
-            builder.append(this.rb.getResourceString("label.body.details", message)).append("\n");
+            builder.append(rb.getResourceString("label.body.details", message)).append("\n");
         }
         event.setBody(builder.toString());
-        event.setSubject(this.rb.getResourceString("label.error.clientserver"));
+        event.setSubject(rb.getResourceString("label.error.clientserver"));
         try {
             this.storeEventToFile(event);
         } catch (Exception e) {
             return;
         }
+    }
+
+    /**
+     * A problem occurred during a directory creation process
+     */
+    public void newEventExceptionInDirectoryCreation(Throwable exception, String directory) {
+        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR, SystemEvent.ORIGIN_SYSTEM,
+                SystemEvent.TYPE_FILE_MKDIR);
+        event.setSubject(rb.getResourceString("error.createdir.subject"));
+        event.setBody(rb.getResourceString("error.createdir.body",
+                new Object[]{
+                    directory,
+                    "[" + exception.getClass().getSimpleName() + "] " + exception.getMessage()}
+        ));
+        this.newEvent(event);
     }
 
     public abstract void systemFailure(Throwable exception, int eventType, PreparedStatement statement);

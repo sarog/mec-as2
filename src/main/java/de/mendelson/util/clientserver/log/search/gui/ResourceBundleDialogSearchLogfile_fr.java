@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/ResourceBundleDialogSearchLogfile_fr.java 4     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/ResourceBundleDialogSearchLogfile_fr.java 5     9/12/24 16:03 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleDialogSearchLogfile_fr extends MecResourceBundle {
 

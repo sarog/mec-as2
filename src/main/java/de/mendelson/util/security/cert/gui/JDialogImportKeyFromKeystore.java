@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImportKeyFromKeystore.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImportKeyFromKeystore.java 11    11/02/25 13:40 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -12,8 +12,10 @@ import de.mendelson.util.security.JKSKeys2PKCS12;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.PKCS122JKS;
 import de.mendelson.util.security.PKCS122PKCS12;
+import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.uinotification.UINotification;
 import java.security.KeyStore;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -38,14 +40,24 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Dialog to import a key from a keystore (pkcs#12, jks)
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 11 $
  */
 public class JDialogImportKeyFromKeystore extends JDialog {
 
     /**
      * ResourceBundle to localize the GUI
      */
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleImportKey.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private final CertificateManager manager;
     private String newAlias = null;
     private final Logger logger;
@@ -57,20 +69,13 @@ public class JDialogImportKeyFromKeystore extends JDialog {
      */
     public JDialogImportKeyFromKeystore(JFrame parent, Logger logger, CertificateManager manager) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleImportKey.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         PasswordOverlay.addTo(this.jPasswordFieldPassphrase,
-                this.rb.getResourceString("label.keypass.hint"));
-        TextOverlay.addTo(this.jTextFieldImportKeystoreFile, this.rb.getResourceString("label.importkey.hint"));
-        this.jLabelImage.setIcon(new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(32)));
+                rb.getResourceString("label.keypass.hint"));
+        TextOverlay.addTo(this.jTextFieldImportKeystoreFile, rb.getResourceString("label.importkey.hint"));
+        this.jLabelImage.setIcon(new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(
+                JDialogCertificates.IMAGE_SIZE_DIALOG)));
         this.manager = manager;
         this.logger = logger;
         this.getRootPane().setDefaultButton(this.jButtonOk);
@@ -85,8 +90,7 @@ public class JDialogImportKeyFromKeystore extends JDialog {
      * Sets the ok and cancel buttons of this GUI
      */
     private void setButtonState() {
-        this.jButtonOk.setEnabled(!this.jTextFieldImportKeystoreFile.getText().isEmpty()
-                && this.jPasswordFieldPassphrase.getPassword().length > 0);
+        this.jButtonOk.setEnabled(!this.jTextFieldImportKeystoreFile.getText().isEmpty());
     }
 
     /**
@@ -102,8 +106,8 @@ public class JDialogImportKeyFromKeystore extends JDialog {
             } catch (Throwable ex) {
                 UINotification.instance().addNotification(null,
                         UINotification.TYPE_ERROR,
-                        this.rb.getResourceString("key.import.error.title"),
-                        this.rb.getResourceString("key.import.error.message",
+                        rb.getResourceString("key.import.error.title"),
+                        rb.getResourceString("key.import.error.message",
                                 "[" + ex.getClass().getSimpleName() + "]:" + e.getMessage()));
             }
         }
@@ -114,14 +118,13 @@ public class JDialogImportKeyFromKeystore extends JDialog {
      */
     private void performImportJKS() throws Exception {
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        KeyStoreUtil util = new KeyStoreUtil();
         KeyStore sourceKeystore = KeyStore.getInstance("JKS", "SUN");
-        util.loadKeyStore(sourceKeystore, this.jTextFieldImportKeystoreFile.getText(),
+        KeyStoreUtil.loadKeyStore(sourceKeystore, this.jTextFieldImportKeystoreFile.getText(),
                 this.jPasswordFieldPassphrase.getPassword());
-        List<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
+        List<String> keyAliasesList = KeyStoreUtil.getKeyAliases(sourceKeystore);
         String selectedAlias = null;
         if (keyAliasesList.isEmpty()) {
-            throw new Exception(this.rb.getResourceString("keystore.contains.nokeys"));
+            throw new Exception(rb.getResourceString("keystore.contains.nokeys"));
         } else if (keyAliasesList.size() == 1) {
             selectedAlias = keyAliasesList.get(0);
         } else {
@@ -131,14 +134,26 @@ public class JDialogImportKeyFromKeystore extends JDialog {
                 aliasArray[i] = keyAliasesList.get(i);
             }
             Object selectedAliasObject = JOptionPane.showInputDialog(parent,
-                    this.rb.getResourceString("multiple.keys.message"),
-                    this.rb.getResourceString("multiple.keys.title"), JOptionPane.QUESTION_MESSAGE,
+                    rb.getResourceString("multiple.keys.message"),
+                    rb.getResourceString("multiple.keys.title"), JOptionPane.QUESTION_MESSAGE,
                     null, aliasArray, aliasArray[0]);
             //user break
             if (selectedAliasObject == null) {
                 return;
             }
             selectedAlias = selectedAliasObject.toString();
+        }
+        //check if entry with this fingerprint does already exist in the underlaying manager
+        X509Certificate foundKeyCertificate = KeyStoreUtil.getCertificate(sourceKeystore, selectedAlias);
+        if (foundKeyCertificate != null) {
+            KeystoreCertificate foundKeyKeystoreCertificate = new KeystoreCertificate();
+            foundKeyKeystoreCertificate.setCertificate(foundKeyCertificate, null);
+            String fingerprintToImport = foundKeyKeystoreCertificate.getFingerPrintSHA1();
+            KeystoreCertificate existingEntry = this.manager.getKeystoreCertificateByFingerprintSHA1(fingerprintToImport);
+            if (existingEntry != null) {
+                throw new Exception(rb.getResourceString("key.import.error.entry.exists",
+                        existingEntry.getAlias()));
+            }
         }
         if (this.manager.getStorageType().equals(BCCryptoHelper.KEYSTORE_PKCS12)) {
             //import JKS key to PKCS#12 keystore
@@ -164,8 +179,8 @@ public class JDialogImportKeyFromKeystore extends JDialog {
         this.newAlias = selectedAlias;
         UINotification.instance().addNotification(null,
                 UINotification.TYPE_SUCCESS,
-                this.rb.getResourceString("key.import.success.title"),
-                this.rb.getResourceString("key.import.success.message"));
+                rb.getResourceString("key.import.success.title"),
+                rb.getResourceString("key.import.success.message"));
     }
 
     private char[] requestKeyPass(JFrame parent, String alias) {
@@ -177,7 +192,7 @@ public class JDialogImportKeyFromKeystore extends JDialog {
                 passwordField.requestFocusInWindow();
             }
         };
-        dialog.createDialog(parent, this.rb.getResourceString("enter.keypassword", alias)).setVisible(true);
+        dialog.createDialog(parent, rb.getResourceString("enter.keypassword", alias)).setVisible(true);
         Object answer = dialog.getValue();
         if (answer == null || answer == JOptionPane.UNINITIALIZED_VALUE) {
             return (null);
@@ -194,15 +209,14 @@ public class JDialogImportKeyFromKeystore extends JDialog {
      * Import the key, pkcs#12
      */
     private void performImportPKCS12() throws Exception {
-        KeyStoreUtil util = new KeyStoreUtil();
         KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12,
                 BouncyCastleProvider.PROVIDER_NAME);
-        util.loadKeyStore(sourceKeystore, this.jTextFieldImportKeystoreFile.getText(),
+        KeyStoreUtil.loadKeyStore(sourceKeystore, this.jTextFieldImportKeystoreFile.getText(),
                 this.jPasswordFieldPassphrase.getPassword());
-        List<String> keyAliasesList = util.getKeyAliases(sourceKeystore);
+        List<String> keyAliasesList = KeyStoreUtil.getKeyAliases(sourceKeystore);
         String selectedAlias = null;
         if (keyAliasesList.isEmpty()) {
-            throw new Exception(this.rb.getResourceString("keystore.contains.nokeys"));
+            throw new Exception(rb.getResourceString("keystore.contains.nokeys"));
         } else if (keyAliasesList.size() == 1) {
             selectedAlias = keyAliasesList.get(0);
         } else {
@@ -213,14 +227,26 @@ public class JDialogImportKeyFromKeystore extends JDialog {
             }
             JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
             Object selectedAliasObject = JOptionPane.showInputDialog(parent,
-                    this.rb.getResourceString("multiple.keys.message"),
-                    this.rb.getResourceString("multiple.keys.title"), JOptionPane.QUESTION_MESSAGE,
+                    rb.getResourceString("multiple.keys.message"),
+                    rb.getResourceString("multiple.keys.title"), JOptionPane.QUESTION_MESSAGE,
                     null, aliasArray, aliasArray[0]);
             //user break
             if (selectedAliasObject == null) {
                 return;
             }
             selectedAlias = selectedAliasObject.toString();
+        }
+        //check if entry with this fingerprint does already exist in the underlaying manager
+        X509Certificate foundKeyCertificate = KeyStoreUtil.getCertificate(sourceKeystore, selectedAlias);
+        if (foundKeyCertificate != null) {
+            KeystoreCertificate foundKeyKeystoreCertificate = new KeystoreCertificate();
+            foundKeyKeystoreCertificate.setCertificate(foundKeyCertificate, null);
+            String fingerprintToImport = foundKeyKeystoreCertificate.getFingerPrintSHA1();
+            KeystoreCertificate existingEntry = this.manager.getKeystoreCertificateByFingerprintSHA1(fingerprintToImport);
+            if (existingEntry != null) {
+                throw new Exception(rb.getResourceString("key.import.error.entry.exists",
+                        existingEntry.getAlias()));
+            }
         }
         if (this.manager.getStorageType().equals(BCCryptoHelper.KEYSTORE_PKCS12)) {
             PKCS122PKCS12 importer = new PKCS122PKCS12(this.logger);
@@ -234,8 +260,8 @@ public class JDialogImportKeyFromKeystore extends JDialog {
         this.newAlias = selectedAlias;
         UINotification.instance().addNotification(null,
                 UINotification.TYPE_SUCCESS,
-                this.rb.getResourceString("key.import.success.title"),
-                this.rb.getResourceString("key.import.success.message"));
+                rb.getResourceString("key.import.success.title"),
+                rb.getResourceString("key.import.success.message"));
     }
 
     /**
@@ -392,8 +418,9 @@ public class JDialogImportKeyFromKeystore extends JDialog {
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         MecFileChooser chooser = new MecFileChooser(
                 parent,
-                this.rb.getResourceString("filechooser.key.import"));
+                rb.getResourceString("filechooser.key.import"));
         chooser.browseFilename(this.jTextFieldImportKeystoreFile);
+        this.setButtonState();
     }//GEN-LAST:event_jButtonBrowseImportFileActionPerformed
 
     private void jTextFieldImportKeystoreFileKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldImportKeystoreFileKeyReleased

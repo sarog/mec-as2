@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/CSRGenerationRequest.java 3     9/11/23 9:52 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/CSRGenerationRequest.java 5     12/09/24 8:52 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -18,7 +18,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class CSRGenerationRequest extends ClientServerMessage implements Serializable {
 
@@ -28,11 +28,15 @@ public class CSRGenerationRequest extends ClientServerMessage implements Seriali
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
     private final int keystoreUsageSource;
     private final String fingerprintSHA1;
+    private final int requestType;
+    public final static int SELECTION_PKCS10 = 1;
+    public final static int SELECTION_CRMF = 2;
 
     public CSRGenerationRequest(final int KEYSTORE_USAGE_SOURCE,
-            String fingerprintSHA1) {
+            String fingerprintSHA1, int requestType) {
         this.keystoreUsageSource = KEYSTORE_USAGE_SOURCE;
         this.fingerprintSHA1 = fingerprintSHA1;
+        this.requestType = requestType;
     }
 
     @Override
@@ -60,5 +64,12 @@ public class CSRGenerationRequest extends ClientServerMessage implements Seriali
      */
     public String getFingerprintSHA1() {
         return fingerprintSHA1;
+    }
+
+    /**
+     * @return the requestType
+     */
+    public int getRequestType() {
+        return requestType;
     }
 }

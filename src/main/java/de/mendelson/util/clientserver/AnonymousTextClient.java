@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/AnonymousTextClient.java 3     28.10.21 11:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/AnonymousTextClient.java 6     14/02/25 9:58 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -15,12 +15,12 @@ import de.mendelson.util.clientserver.messages.ClientServerResponse;
  * Text Client implementation that sends anonymous messages (no login required).
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
-public class AnonymousTextClient extends BaseTextClient {
+public class AnonymousTextClient extends BaseTextClient implements AutoCloseable{
 
-    public AnonymousTextClient() throws Exception {
-        super();
+    public AnonymousTextClient( final int CLIENT_TYPE) throws Exception {
+        super(CLIENT_TYPE);
         super.addMessageProcessor(new ClientsideMessageProcessor() {
 
             @Override
@@ -45,5 +45,11 @@ public class AnonymousTextClient extends BaseTextClient {
     @Override
     public void disconnected() {
         super.disconnect();
+    }
+
+    /**Makes this an auto closeable client*/
+    @Override
+    public void close() throws Exception {
+        this.disconnect();
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/PKCS122JKS.java 5     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/security/PKCS122JKS.java 8     11/02/25 13:40 Heller $
 package de.mendelson.util.security;
 
 import java.io.InputStream;
@@ -8,6 +8,10 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.PasswordFinder;
@@ -24,11 +28,10 @@ import org.bouncycastle.openssl.PasswordFinder;
  * other JKS keystore
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class PKCS122JKS implements PasswordFinder {
 
-    private Logger logger = Logger.getAnonymousLogger();
     /**
      * Keystore to use, if this is not set a new one will be created
      */
@@ -45,7 +48,6 @@ public class PKCS122JKS implements PasswordFinder {
      * @param logger Logger to log the information to
      */
     public PKCS122JKS(Logger logger) {
-        this.logger = logger;
         //forget it to work without BC at this point, the SUN JCE provider
         //could not handle pcks12
         // performs "Security.addProvider(new BouncyCastleProvider());" and adds some BC related system properties
@@ -53,19 +55,41 @@ public class PKCS122JKS implements PasswordFinder {
     }
 
     /**
+     * Import a key and all trust chain certificates
      */
     public void importKey(KeyStore sourceKeyStore, String alias) throws Exception {
         if (sourceKeyStore.isKeyEntry(alias)) {
             Key importKey = sourceKeyStore.getKey(alias, new char[]{});
-            Certificate[] certs = sourceKeyStore.getCertificateChain(alias);
-            if (certs == null || certs.length == 0) {
+            Certificate[] certchain = sourceKeyStore.getCertificateChain(alias);
+            if (certchain == null || certchain.length == 0) {
                 throw new Exception("JKS import: private key with alias " + alias + " does not contain a certificate.");
             }
-            KeyStore store = this.keystore;
-            if (store == null) {
-                store = this.generateKeyStore();
+            KeyStore targetStore = this.keystore;
+            if (targetStore == null) {
+                targetStore = this.generateKeyStore();
             }
-            store.setKeyEntry(alias, importKey, this.keystorePass, certs);
+            targetStore.setKeyEntry(alias, importKey, this.keystorePass, certchain);
+            //add certificates of the trust chain if they do not exist so far in the target keystore
+            List<String> targetFingerprintList = new ArrayList<String>();
+            Enumeration<String> targetAliasEnumeration = targetStore.aliases();
+            while (targetAliasEnumeration.hasMoreElements()) {
+                String targetAlias = targetAliasEnumeration.nextElement();
+                Certificate certificate = targetStore.getCertificate(targetAlias);
+                targetFingerprintList.add(KeyStoreUtil.generateFingerprintSHA1(certificate));
+            }
+            for (Certificate newCertificate : certchain) {
+                if (newCertificate instanceof X509Certificate) {
+                    X509Certificate newCertificateX509 = (X509Certificate) newCertificate;
+                    String newCertFingerprint = KeyStoreUtil.generateFingerprintSHA1(newCertificateX509);
+                    if (!targetFingerprintList.contains(newCertFingerprint)) {
+                        String proposedAlias = KeyStoreUtil.getProposalCertificateAliasForImport(newCertificateX509);
+                        while (targetStore.containsAlias(proposedAlias)) {
+                            proposedAlias = proposedAlias + "0";
+                        }
+                        targetStore.setCertificateEntry(proposedAlias, newCertificateX509);
+                    }
+                }
+            }
         } else {
             throw new Exception("JKS import: keystore doesn't contain a private key with alias " + alias);
         }
@@ -76,7 +100,7 @@ public class PKCS122JKS implements PasswordFinder {
     public void importKey(InputStream sourceKeystoreStream, char[] sourceKeypass,
             String alias) throws Exception {
         //open keystore
-        KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+        KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12,
                 BouncyCastleProvider.PROVIDER_NAME);
         sourceKeystore.load(sourceKeystoreStream, sourceKeypass);
         this.importKey(sourceKeystore, alias);
@@ -87,7 +111,7 @@ public class PKCS122JKS implements PasswordFinder {
      */
     private KeyStore generateKeyStore() throws Exception {
         //do not remove the BC paramter, SUN cannot handle the format proper
-        KeyStore localKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_JKS, 
+        KeyStore localKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_JKS,
                 BouncyCastleProvider.PROVIDER_NAME);
         localKeystore.load(null, null);
         return (localKeystore);
@@ -108,14 +132,8 @@ public class PKCS122JKS implements PasswordFinder {
      * @param keystorePass Password for the keystore
      */
     public void saveKeyStore(KeyStore keystore, char[] keystorePass, Path file) throws Exception {
-        OutputStream out = null;
-        try {
-            out = Files.newOutputStream(file);
+        try (OutputStream out = Files.newOutputStream(file)) {
             keystore.store(out, keystorePass);
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 

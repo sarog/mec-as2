@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleInfoOnExternalCertificate_de.java 8     6/11/23 11:38 Heller $ 
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleInfoOnExternalCertificate_de.java 10    9/12/24 15:51 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleInfoOnExternalCertificate_de extends MecResourceBundle {
 
@@ -29,15 +29,15 @@ public class ResourceBundleInfoOnExternalCertificate_de extends MecResourceBundl
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"button.ok", "Importieren >>"},
         {"button.cancel", "Schliessen"},
         {"title.single", "Information über ein externes Zertifikat"},
         {"title.multiple", "Information über externe Zertifikate"},
         {"certinfo.certfile", "Zertifikatdatei: {0}"},
         {"certinfo.index", "Zertifikat {0} von {1}"},
-        {"certificate.exists", "Dieses Zertifikat existiert bereits im Keystore, der Alias ist \"{0}\""},
-        {"certificate.doesnot.exist", "Dieses Zertifikat existiert noch nicht im Keystore"},
+        {"certificate.exists", "Dieses Zertifikat existiert bereits in der Zertifikatverwaltung, der Alias ist \"{0}\""},
+        {"certificate.doesnot.exist", "Dieses Zertifikat existiert noch nicht in der Zertifikatverwaltung"},
         {"no.certificate", "Das Zertifikat wurde nicht erkannt" },
     };
 

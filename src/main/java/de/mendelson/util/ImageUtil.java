@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ImageUtil.java 14    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/util/ImageUtil.java 18    11/02/25 13:39 Heller $
 package de.mendelson.util;
 
 import java.awt.AlphaComposite;
@@ -14,6 +14,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
+import java.awt.image.RescaleOp;
 import java.util.List;
 import javax.swing.GrayFilter;
 import javax.swing.Icon;
@@ -31,9 +32,28 @@ import javax.swing.ImageIcon;
  * Class that contains routines for the image processing
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 18 $
  */
 public class ImageUtil {
+
+    private final static RenderingHints RENDERING_HINTS_BEST_QUALITY
+            = new RenderingHints(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+
+    static {
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_NORMALIZE));
+    }
 
     /**
      * Its just a utility class..
@@ -42,14 +62,15 @@ public class ImageUtil {
     }
 
     /**
-     * Replaces a single color in the passed image and returns the new one
+     * Replaces a single color in the passed image and returns the new one.
+     * Color is RGBA - but this method will ignore transparency during replace.
      *
      * @param background original image to set new rgb values in
      * @param colorOld The old color to replace
      * @param colorNew Replacing color
      */
     public static ImageIcon replaceColor(ImageIcon background, Color colorOld, Color colorNew) {
-        int oldColorRGB = colorOld.getRGB();
+        int oldColorRGB = colorOld.getRGB() & 0x00FFFFFF;
         int newColorRGB = colorNew.getRGB();
         BufferedImage image = new BufferedImage(
                 background.getIconWidth(),
@@ -59,14 +80,15 @@ public class ImageUtil {
         g.drawImage(background.getImage(), 0, 0, null);
         for (int x = 0; x < background.getIconWidth(); x++) {
             for (int y = 0; y < background.getIconHeight(); y++) {
-                if (image.getRGB(x, y) == oldColorRGB) {
+                if ((image.getRGB(x, y) & 0x00FFFFFF) == oldColorRGB) {
                     image.setRGB(x, y, newColorRGB);
                 }
             }
         }
+        g.dispose();
         return (new ImageIcon(image));
     }
-   
+
     /**
      * Replaces a single color in the passed image and returns the new one
      *
@@ -130,7 +152,7 @@ public class ImageUtil {
                 backgroundIconWidth,
                 backgroundIconHeight,
                 BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = (Graphics2D)image.getGraphics();
+        Graphics2D g2d = (Graphics2D) image.getGraphics();
         g2d.drawImage(background.getImage(), 0, 0, null);
         int foregroundOffsetX = backgroundIconWidth - foreground.getIconWidth();
         if (foregroundOffsetX < 0) {
@@ -295,6 +317,35 @@ public class ImageUtil {
             g.dispose();
             return (new ImageIcon(image));
         }
+    }
+
+    /**
+     *
+     * @param image The image to adjust
+     * @param brightness A brightness value of 0.9 will darken the image by 10%,
+     * a value of 1.1 will lighten the image by 10%. A value of 1 will keep the
+     * brightness.
+     */
+    public static void adjustBrightness(BufferedImage image, float brightness) {
+        RescaleOp rescaleOp = new RescaleOp(brightness, 0, null);
+        rescaleOp.filter(image, image);
+    }
+
+    /**
+     *
+     * @param image The image to adjust
+     * @param brightness A brightness value of 0.9 will darken the image by 10%,
+     * a value of 1.1 will lighten the image by 10%. A value of 1 will keep the
+     * brightness.
+     */
+    public static ImageIcon adjustBrightness(ImageIcon icon, float brightness) {
+        BufferedImage image = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
+        g2d.drawImage(icon.getImage(), 0, 0, null);
+        g2d.dispose();
+        adjustBrightness(image, brightness);
+        return (new ImageIcon(image));
     }
 
 }

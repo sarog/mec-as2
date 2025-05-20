@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration_de.java 11    2/11/23 15:53 Heller $ 
+//$Header: /as2/de/mendelson/util/httpconfig/gui/ResourceBundleDisplayHTTPConfiguration_de.java 12    9/12/24 16:03 Heller $ 
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleDisplayHTTPConfiguration_de extends MecResourceBundle {
 

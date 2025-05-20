@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/ANSI.java 9     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/log/ANSI.java 10    11/02/25 13:40 Heller $
 package de.mendelson.util.log;
 
 import java.awt.Color;
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class ANSI {
 
@@ -630,6 +630,8 @@ public class ANSI {
         COLOR_MAP.put(COLOR_LIGHTGREY, Color.decode("#EEEEEE"));
     }
     
+    private ANSI(){        
+    }
 
     /**
      * Displays a bundle of byte arrays as hex string, for debug purpose only

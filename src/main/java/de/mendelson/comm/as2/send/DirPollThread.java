@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 40    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 45    19/02/25 17:31 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -19,7 +19,6 @@ import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,7 +49,7 @@ import java.util.logging.Logger;
  * Thread that polls a directory
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 45 $
  */
 public class DirPollThread implements Runnable {
 
@@ -68,12 +67,12 @@ public class DirPollThread implements Runnable {
     /**
      * Polls all 10s by default
      */
-    private long pollInterval = TimeUnit.SECONDS.toMillis(10);
+    private final long pollInterval;
     private boolean stopRequested = false;
     private final Partner receiver;
     private final Partner sender;
     private final IDBDriverManager dbDriverManager;
-    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private final static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final ClientServer clientserver;
     private final CertificateManager certificateManagerEncSign;
     private ScheduledFuture future = null;
@@ -83,8 +82,7 @@ public class DirPollThread implements Runnable {
     /**
      * GUI preferences
      */
-    private final PreferencesAS2 preferences;
-    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    private final PreferencesAS2 preferences;    
 
     public DirPollThread(IDBDriverManager dbDriverManager, ClientServer clientserver,
             CertificateManager certificateManagerEncSign, Partner sender, Partner receiver) {
@@ -94,8 +92,9 @@ public class DirPollThread implements Runnable {
         this.clientserver = clientserver;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.preferences = new PreferencesAS2(dbDriverManager);
-        this.receiver = receiver;
-        this.sender = sender;
+        //if something happens outside of this thread to the partners this should not result in weird problems
+        this.receiver = (Partner) receiver.clone();
+        this.sender = (Partner) sender.clone();
         //set the poll interval to a min value of 1s - even if the user requested 0. But in this case the CPU activity will go up to 100%
         this.pollInterval = Math.max(TimeUnit.SECONDS.toMillis(receiver.getPollInterval()), TimeUnit.SECONDS.toMillis(1));
     }
@@ -108,13 +107,13 @@ public class DirPollThread implements Runnable {
      * Returns a line that describes this thread for the log
      */
     public String getLogLine() {
-        StringBuilder builder = new StringBuilder()
-                .append("[")
+        StringBuilder builder = new StringBuilder();
+        builder.append("[")
                 .append(this.sender.getName())
                 .append(" -> ")
                 .append(this.receiver.getName())
                 .append("] ")
-                .append(Paths.get(this.getMonitoredDirectory()).toAbsolutePath().toString())
+                .append(this.getMonitoredDirectory().toAbsolutePath().toString())
                 .append(" (")
                 .append(String.valueOf(TimeUnit.MILLISECONDS.toSeconds(this.pollInterval)))
                 .append("s)");
@@ -127,14 +126,14 @@ public class DirPollThread implements Runnable {
     public boolean hasBeenModified(Partner newSender, Partner newReceiver) {
         //check for name changes
         //partner renamed, this results in a new poll directory
-        if ((this.receiver != null && this.sender != null)) {
+        if (this.receiver != null && this.sender != null && newSender != null && newReceiver != null) {
             if (!Partner.hasSameContent(this.sender, newSender, this.certificateManagerEncSign)) {
-                this.logger.info(rb.getResourceString("poll.modified",
+                logger.info(rb.getResourceString("poll.modified",
                         new Object[]{this.sender.getName(), this.receiver.getName()}));
                 return (true);
             }
             if (!Partner.hasSameContent(this.receiver, newReceiver, this.certificateManagerEncSign)) {
-                this.logger.info(rb.getResourceString("poll.modified",
+                logger.info(rb.getResourceString("poll.modified",
                         new Object[]{this.sender.getName(), this.receiver.getName()}));
                 return (true);
             }
@@ -147,14 +146,14 @@ public class DirPollThread implements Runnable {
      */
     public void requestStop() {
         this.stopRequested = true;
-        this.logger.info(rb.getResourceString("poll.stopped",
+        logger.info(rb.getResourceString("poll.stopped",
                 new Object[]{
                     this.sender.getName(),
                     this.receiver.getName()
                 }));
         //remove this thread from it's executor service
         if (this.future == null) {
-            this.logger.warning(rb.getResourceString("poll.stopped.notscheduled",
+            logger.warning(rb.getResourceString("poll.stopped.notscheduled",
                     new Object[]{
                         this.sender.getName(),
                         this.receiver.getName()
@@ -176,17 +175,11 @@ public class DirPollThread implements Runnable {
     /**
      * Builds up the directory that is monitored by this process
      */
-    private String getMonitoredDirectory() {
-        StringBuilder outboxDirName = new StringBuilder()
-                .append(Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString())
-                .append(FileSystems.getDefault().getSeparator())
-                .append(AS2Tools.convertToValidFilename(this.receiver.getName()))
-                .append(FileSystems.getDefault().getSeparator())
-                .append("outbox")
-                .append(FileSystems.getDefault().getSeparator())
-                .append(AS2Tools.convertToValidFilename(this.sender.getName()))
-                .append(FileSystems.getDefault().getSeparator());
-        return (outboxDirName.toString());
+    private Path getMonitoredDirectory() {
+        return (Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG),
+                AS2Tools.convertToValidFilename(this.receiver.getName()),
+                "outbox",
+                AS2Tools.convertToValidFilename(this.sender.getName())));
     }
 
     /**
@@ -198,7 +191,7 @@ public class DirPollThread implements Runnable {
         if (pollIgnoreList == null) {
             pollIgnoreList = "--";
         }
-        this.logger.info(rb.getResourceString("poll.started",
+        logger.info(rb.getResourceString("poll.started",
                 new Object[]{
                     this.sender.getName(),
                     this.receiver.getName(),
@@ -215,13 +208,14 @@ public class DirPollThread implements Runnable {
     public void run() {
         try {
             if (!stopRequested) {
-                Path outboxDir = Paths.get(this.getMonitoredDirectory());
+                Path outboxDir = this.getMonitoredDirectory();
                 boolean logPollProcess = this.preferences.getBoolean(PreferencesAS2.LOG_POLL_PROCESS);
                 if (Files.notExists(outboxDir)) {
                     try {
                         Files.createDirectories(outboxDir);
                     } catch (Exception e) {
-                        //nop
+                        SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                                outboxDir.toAbsolutePath().toString());
                     }
                 }
                 IOFileFilterRegexpMatch fileFilter = new IOFileFilterRegexpMatch();
@@ -232,7 +226,7 @@ public class DirPollThread implements Runnable {
                 }
                 //if logging is requested log that the poll process will start
                 if (logPollProcess) {
-                    this.logger.log(Level.FINER, rb.getResourceString("poll.log.polling",
+                    logger.log(Level.FINER, rb.getResourceString("poll.log.polling",
                             new Object[]{
                                 this.sender.getName(), this.receiver.getName(),
                                 outboxDir.toAbsolutePath().toString()
@@ -289,11 +283,12 @@ public class DirPollThread implements Runnable {
                 if (logPollProcess) {
                     Calendar calendar = Calendar.getInstance();
                     calendar.add(Calendar.SECOND, (int) TimeUnit.MILLISECONDS.toSeconds(this.pollInterval));
-                    this.logger.log(Level.FINER, rb.getResourceString("poll.log.wait",
+                    DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+                    logger.log(Level.FINER, rb.getResourceString("poll.log.wait",
                             new Object[]{
                                 this.sender.getName(), this.receiver.getName(),
                                 String.valueOf(TimeUnit.MILLISECONDS.toSeconds(this.pollInterval)),
-                                this.format.format(calendar.getTime())
+                                format.format(calendar.getTime())
                             })
                     );
                 }
@@ -309,15 +304,9 @@ public class DirPollThread implements Runnable {
      */
     private List<Path> listFilesNIO(Path dir, DirectoryStream.Filter fileFilter) throws Exception {
         List<Path> result = new ArrayList<Path>();
-        DirectoryStream<Path> stream = null;
-        try {
-            stream = Files.newDirectoryStream(dir, fileFilter);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, fileFilter)) {
             for (Path entry : stream) {
                 result.add(entry);
-            }
-        } finally {
-            if (stream != null) {
-                stream.close();
             }
         }
         return result;
@@ -353,14 +342,15 @@ public class DirPollThread implements Runnable {
             AS2Message message = orderSender.send(this.certificateManagerEncSign, this.sender, this.receiver, file, null,
                     this.receiver.getSubject(), null);
             this.clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
-
             try {
                 Files.delete(file);
-                logger.log(Level.INFO,
-                        rb.getResourceString("messagefile.deleted",
-                                new Object[]{
-                                    file.getFileName().toString()}),
-                        message.getAS2Info());
+                if (message != null) {
+                    logger.log(Level.INFO,
+                            rb.getResourceString("messagefile.deleted",
+                                    new Object[]{
+                                        file.getFileName().toString()}),
+                            message.getAS2Info());
+                }
             } catch (IOException e) {
                 SystemEvent event = new SystemEvent(
                         SystemEvent.SEVERITY_WARNING,

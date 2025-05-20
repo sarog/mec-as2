@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ListCellRendererPartner.java 10    15.08.19 10:46 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ListCellRendererPartner.java 13    3/07/24 9:54 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
@@ -11,32 +13,36 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class ListCellRendererPartner extends JLabel implements ListCellRenderer {
 
+    private final static int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_LIST;
+    private final static int ROW_HEIGHT = IMAGE_HEIGHT+2;
+    
     public static final MendelsonMultiResolutionImage IMAGE_LOCALSTATION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/partner/gui/localstation.svg", 16, 32);
+                    "/de/mendelson/comm/as2/partner/gui/localstation.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_REMOTESTATION
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/partner/gui/singlepartner.svg", 16, 32);
+                    "/de/mendelson/comm/as2/partner/gui/singlepartner.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_REMOTESTATION_CONFIGERROR
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/partner/gui/singlepartner_error.svg", 16, 32);
+                    "/de/mendelson/comm/as2/partner/gui/singlepartner_error.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_LOCALSTATION_CONFIGERROR
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/partner/gui/localstation_error.svg", 16, 32);
+                    "/de/mendelson/comm/as2/partner/gui/localstation_error.svg", IMAGE_HEIGHT);
 
     public static final ImageIcon ICON_LOCALSTATION
-            = new ImageIcon(IMAGE_LOCALSTATION.toMinResolution(16));
+            = new ImageIcon(IMAGE_LOCALSTATION.toMinResolution(IMAGE_HEIGHT));
     public static final ImageIcon ICON_REMOTESTATION
-            = new ImageIcon(IMAGE_REMOTESTATION.toMinResolution(16));
+            = new ImageIcon(IMAGE_REMOTESTATION.toMinResolution(IMAGE_HEIGHT));
 
     /**
      * Constructs a default renderer object for an item in a list.
@@ -190,6 +196,7 @@ public class ListCellRendererPartner extends JLabel implements ListCellRenderer 
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         setComponentOrientation(list.getComponentOrientation());
+        setBorder(new EmptyBorder(0,2,0,0));
         if (isSelected) {
             this.setBackground(list.getSelectionBackground());
             this.setForeground(list.getSelectionForeground());
@@ -218,7 +225,13 @@ public class ListCellRendererPartner extends JLabel implements ListCellRenderer 
         }
         this.setHorizontalAlignment(SwingConstants.LEADING);
         this.setHorizontalTextPosition(SwingConstants.RIGHT);
-
         return (this);
     }
+    
+    @Override
+   public Dimension getPreferredSize() {
+      Dimension dimension = super.getPreferredSize();
+      dimension.height = ROW_HEIGHT;
+      return (dimension);
+   }
 }

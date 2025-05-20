@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 19    2/11/23 15:53 Heller $Revision: 1 $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/RemoteFileBrowser.java 21    11/03/25 14:52 Heller $Revision: 1 $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,14 +26,23 @@ import javax.swing.tree.TreePath;
  * Browser widget for remote files/directories
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class RemoteFileBrowser extends JDialog {
 
     private String selectedPath = null;
     private String selectedFilename = null;
     private final FileSystemViewClientServer fileView;
-    private final MecResourceBundle rb;
+    private static final  MecResourceBundle rb;
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleFileBrowser.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private TreeSelectionListener treeChangeListener;
     private String preselectedPath = null;
 
@@ -42,14 +51,6 @@ public class RemoteFileBrowser extends JDialog {
      */
     public RemoteFileBrowser(JFrame parent, BaseClient client, String title) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleFileBrowser.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.setTitle(title);
         initComponents();
         //generate a gap to the scroll pane

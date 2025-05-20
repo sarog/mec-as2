@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 48    29/11/23 14:00 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_fr.java 51    8/01/25 16:18 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 48 $
+ * @version $Revision: 51 $
  */
 public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
 
@@ -25,7 +25,7 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"menu.file", "Fichier"},
         {"menu.file.exit", "Fermer"},
         {"menu.file.partner", "Partenaire"},
@@ -58,15 +58,15 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"filter.showpending", "Voir les en-cours"},
         {"filter.showstopped", "Voir les stoppés"},
         {"filter.none", "-- Aucun --"},
-        {"filter.partner", "Filtrer le partenaire:"},
-        {"filter.localstation", "Filtrer le station locale:"},
-        {"filter.direction", "Filtrer le direction:"},
+        {"filter.partner", "Filtrer le partenaire"},
+        {"filter.localstation", "Filtrer le station locale"},
+        {"filter.direction", "Filtrer le direction"},
         {"filter.direction.inbound", "Entrer"},
         {"filter.direction.outbound", "Sortant"},
         {"filter", "Filtrer"},
         {"filter.use", "Utiliser le filtre de temps" },
-        {"filter.from", "De:" },
-        {"filter.to", "Jusqu''à:" },
+        {"filter.from", "De" },
+        {"filter.to", "Jusqu''à" },
         {"keyrefresh", "Recharger clés"},
         {"configurecolumns", "Colonnes" },
         {"delete.msg", "Suppression"},
@@ -100,5 +100,6 @@ public class ResourceBundleAS2Gui_fr extends MecResourceBundle {
         {"resend.failed.unknown.sender", "Échec de la retransmission: émetteur inconnu {0} - veuillez vérifier si ce partenaire existe encore dans le système." },
         {"resend.failed.unknown.receiver", "Échec du nouvel envoi: destinataire inconnu {0} - veuillez vérifier si ce partenaire existe encore dans le système." },
         {"buy.license", "Acheter une licence" },
+        {"no.helpset.for.language", "Désolé, il n''y a pas de système d''aide disponible pour votre langue, le système d''aide anglais sera utilisé." },
     };
 }

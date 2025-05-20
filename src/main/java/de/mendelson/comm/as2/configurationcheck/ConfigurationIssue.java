@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 20    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationIssue.java 23    19/06/24 13:20 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -19,7 +19,7 @@ import java.util.ResourceBundle;
  * Contains a single configuration issue
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 23 $
  */
 public class ConfigurationIssue implements Serializable {
 
@@ -40,7 +40,10 @@ public class ConfigurationIssue implements Serializable {
     public static final int JVM_32_BIT = 14;
     public static final int WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT = 15;
     public static final int TOO_MANY_DIR_POLLS = 16;
-
+    public static final int CRL_CERTIFICATE_REVOCATION_TLS = 17;
+    public static final int CRL_CERTIFICATE_REVOCATION_ENC_SIGN = 18;
+    public static final int CLIENT_SERVER_IN_ONE_PROCESS = 19;
+    public static final int NOT_ENOUGH_HANDLES = 20;
     private final int issueId;
     private String details = null;
     private String subject = null;
@@ -75,7 +78,9 @@ public class ConfigurationIssue implements Serializable {
                 || this.issueId == CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER
                 || this.issueId == KEY_MISSING_ENC_LOCAL_STATION
                 || this.issueId == KEY_MISSING_SIGN_LOCAL_STATION
-                || this.issueId == USE_OF_TEST_KEYS_IN_TLS);
+                || this.issueId == USE_OF_TEST_KEYS_IN_TLS
+                || this.issueId == CRL_CERTIFICATE_REVOCATION_ENC_SIGN
+                || this.issueId == CRL_CERTIFICATE_REVOCATION_TLS);
     }
     
     /**

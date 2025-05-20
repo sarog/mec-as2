@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2.java 13    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2.java 17    17/07/24 14:30 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundlePreferencesAS2 extends MecResourceBundle {
 
@@ -28,7 +28,7 @@ public class ResourceBundlePreferencesAS2 extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"module.name", "[SETTINGS]" }, 
         {"TRUE", "enabled" },
         {"FALSE", "disabled" },
@@ -74,6 +74,9 @@ public class ResourceBundlePreferencesAS2 extends MecResourceBundle {
         {PreferencesAS2.TLS_STRICT_HOST_CHECK, "(TLS) Strict host check"},   
         {PreferencesAS2.HTTPS_LISTEN_PORT, "HTTPS Listen port"},
         {PreferencesAS2.HTTP_LISTEN_PORT, "HTTP Listen port"},       
-        {PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG, "Local station security overwrite display"},        
+        {PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG, "Local station security overwrite display"}, 
+        {PreferencesAS2.EMBEDDED_HTTP_SERVER_REQUESTLOG, "Embedded HTTP server request log"}, 
+        {PreferencesAS2.CHECK_REVOCATION_LISTS, "Check revocation lists of certificates"}, 
+        {PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES, "Auto import partner TLS certificates on change"}, 
     };
 }

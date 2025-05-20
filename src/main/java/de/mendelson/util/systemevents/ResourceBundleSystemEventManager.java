@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEventManager.java 6     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/ResourceBundleSystemEventManager.java 8     15/01/25 10:18 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleSystemEventManager extends MecResourceBundle {
 
@@ -29,7 +29,8 @@ public class ResourceBundleSystemEventManager extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
+        {"module.name", "[SYSTEM EVENT MANAGER]" },
         {"label.body.clientip", "Client ip: {0}"},
         {"label.body.processid", "Client process id: {0}"},
         {"label.body.clientos", "Client OS: {0}"},
@@ -41,5 +42,8 @@ public class ResourceBundleSystemEventManager extends MecResourceBundle {
         {"label.error.clientserver", "Problem in the client-server connection" },
         {"label.body.tlsprotocol", "TLS protocol: {0}" },
         {"label.body.tlsciphersuite", "TLS cipher: {0}" },
+        {"error.createdir.subject", "Directory generation" },
+        {"error.createdir.body", "A problem occured during the genration of the following directory: {0}\nProblem: {1}" },
+        {"error.in.systemevent.registration", "A system problem could not be registered in the system event manager: {0}" },
     };
 }

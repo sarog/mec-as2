@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 7     9/08/24 10:55 Heller $
 package de.mendelson.util.security.encryption;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,7 +11,7 @@ import javax.swing.ImageIcon;
  * Container superclass for the encryption rendering
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
     
@@ -28,17 +28,19 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_broken.svg",
                     ListCellRendererEncryption.IMAGE_HEIGHT);
     
-    private final MecResourceBundle rb;
-    
-    
-    public EncryptionDisplayImplAS2( Integer wrappedValue ){
-        super(wrappedValue );
+    private final static MecResourceBundle rb;
+    static{
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleEncryptionAS2.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    
+    
+    public EncryptionDisplayImplAS2( Integer wrappedValue ){
+        super(wrappedValue );        
     }
 
     @Override
@@ -49,7 +51,7 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
 
     @Override
     public String getText() {
-        return( this.rb.getResourceString("encryption." + this.getWrappedValue().toString()));
+        return( rb.getResourceString("encryption." + this.getWrappedValue().toString()));
     }
     
     /**
@@ -70,6 +72,7 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_RC4_56
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_RC4_UNKNOWN
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_DES
+                || encryption == EncryptionConstantsAS2.ENCRYPTION_3DES
                 ) {
             return (new ImageIcon(IMAGE_ENCRYPTION_WEAK.toMinResolution(ListCellRendererEncryption.IMAGE_HEIGHT)));
         } else {

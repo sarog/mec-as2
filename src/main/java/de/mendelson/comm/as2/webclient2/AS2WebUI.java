@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/AS2WebUI.java 71    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/AS2WebUI.java 73    14/02/25 9:58 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.annotations.Theme;
@@ -63,6 +63,7 @@ import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.server.ServerPlugins;
+import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.user.UserAccess;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.PBKDF2;
@@ -96,7 +97,7 @@ import java.util.logging.Logger;
  * Main frame for the web interface
  *
  * @author S.Heller
- * @version $Revision: 71 $
+ * @version $Revision: 73 $
  */
 @Theme("valo")
 public class AS2WebUI extends UI {
@@ -174,9 +175,7 @@ public class AS2WebUI extends UI {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
-        AnonymousTextClient client = null;
-        try {
-            client = new AnonymousTextClient();
+        try(AnonymousTextClient client = new AnonymousTextClient(BaseClient.CLIENT_WEBINTERFACE)){
             client.setDisplayServerLogMessages(false);
             client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             ServerInfoResponse response = (ServerInfoResponse) client.sendSync(new ServerInfoRequest(), 30000);
@@ -210,10 +209,6 @@ public class AS2WebUI extends UI {
             this.dbDriverManager.setupConnectionPool();
         } catch (Throwable e) {
             throw new RuntimeException(e);
-        } finally {
-            if (client != null && client.isConnected()) {
-                client.disconnect();
-            }
         }
         this.labelUsername.setCaptionAsHtml(true);
     }
@@ -278,7 +273,7 @@ public class AS2WebUI extends UI {
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 71 $";
+        String revision = "$Revision: 73 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -361,9 +356,8 @@ public class AS2WebUI extends UI {
      * unit. A mismatch could happen if an update occurred
      */
     private void checkVersionMatch() throws Exception {
-        AnonymousTextClient client = null;
         try {
-            client = new AnonymousTextClient();
+            AnonymousTextClient client = new AnonymousTextClient(BaseClient.CLIENT_WEBINTERFACE);
             client.setDisplayServerLogMessages(false);
             client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             ServerInfoResponse response = (ServerInfoResponse) client.sendSync(new ServerInfoRequest(), 30000);
@@ -382,10 +376,6 @@ public class AS2WebUI extends UI {
             builder.append("Error connecting to mendelson AS2 processing unit: ");
             builder.append(e.getMessage());
             throw (e);
-        } finally {
-            if (client != null && client.isConnected()) {
-                client.disconnect();
-            }
         }
     }
 

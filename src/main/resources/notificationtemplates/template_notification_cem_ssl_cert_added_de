@@ -1,0 +1,22 @@
+$Header:$
+Diese Datei beinhaltet die Benachrichtigungsvorlage fuer die Benachrichtigung des Hinzufuegens eines SSL Zertifikats aufgrund eines CEM
+Folgende Variablen koennen verwendet werden, sie werden entsprechend ersetzt:
+${PRODUCTNAME}: Produktname
+${HOST}: AS2 Server Host
+${CERTIFICATETECHDETAILS}: Technische Einzelheiten zu dem Zertifikat
+${PARTNER}: Initiator des Austauschs
+
+
+[SUBJECT]
+SSL/TLS Zertifikat wurde hinzugefuegt (CEM)
+
+
+[BODY]
+In Folge einer Zertifikatanfrage (CEM) durch Ihren Partner "${PARTNER}" wurde dem System ein SSL/TLS Zertifikat hinzugefuegt.
+
+Bitte schauen Sie in das System, um Details des Prozesses zu sehen. Wenn Sie diesen Veraenderungen nicht
+trauen, stellen Sie sie bitte zurueck und kontaktieren Sie Ihren Partner.
+
+Technische Informationen zu dem Zertifikat:
+
+${CERTIFICATETECHDETAILS}

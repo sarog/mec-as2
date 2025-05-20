@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_fr.java 10    2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_fr.java 12    9/12/24 15:51 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleDialogSystemEvent_fr extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleDialogSystemEvent_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Visualiseur d''événements système"},
         {"label.user", "Propriétaire"},
         {"label.host", "Hôte"},
@@ -45,10 +45,10 @@ public class ResourceBundleDialogSystemEvent_fr extends MecResourceBundle {
         {"label.enddate", "Fin" },
         {"no.data", "Aucun événement système ne correspond à la sélection de date/type en cours." },  
         {"label.freetext", "Rechercher du texte" },
-        {"label.freetext.hint", "Identifiant complet de l''événement ou recherche textuelle dans le corps et le sujet" },
+        {"label.freetext.hint", "Numéro d''événement ou recherche de texte" },
         {"category.all", "-- Tous --" },      
         {"label.close", "Fermer" },
-        {"label.search", "<HTML><div style=\"text-align:center\">Recherche par événement</div></HTML>" },
-        {"label.resetfilter", "Réinitialiser le filtre" },
+        {"label.search", "Recherche" },
+        {"label.resetfilter", "Réinitialiser filtre" },
     };
 }

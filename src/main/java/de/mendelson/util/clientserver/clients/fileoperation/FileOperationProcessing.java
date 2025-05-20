@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/clients/fileoperation/FileOperationProcessing.java 1     2.11.18 10:01 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/clients/fileoperation/FileOperationProcessing.java 2     3/12/24 13:13 Heller $
 package de.mendelson.util.clientserver.clients.fileoperation;
 
 import java.io.IOException;
@@ -16,10 +16,11 @@ import java.util.List;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Performs the file operations on the server - could be included in the server processing
+ * Performs the file operations on the server - could be included in the server
+ * processing
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class FileOperationProcessing {
 
@@ -28,15 +29,9 @@ public class FileOperationProcessing {
      */
     private List<Path> listFilesNIO(Path dir, DirectoryStream.Filter fileFilter) throws Exception {
         List<Path> result = new ArrayList<Path>();
-        DirectoryStream<Path> stream = null;
-        try {
-            stream = Files.newDirectoryStream(dir, fileFilter);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, fileFilter)) {
             for (Path entry : stream) {
                 result.add(entry);
-            }
-        } finally {
-            if (stream != null) {
-                stream.close();
             }
         }
         return result;
@@ -45,23 +40,23 @@ public class FileOperationProcessing {
     /**
      * Deletes a directory with all subdirectories even if they are not empty
      */
-    public void deleteDirectoryWithSubdirectories(Path path)throws Exception {
-        if (Files.exists(path)) {            
-                List<Path> files = this.listFilesNIO(path, new DirectoryStream.Filter<Path>() {
-                    @Override
-                    public boolean accept(Path entry) throws IOException {
-                        return (true);
-                    }
-                });
-                for (Path file : files) {
-                    if (Files.isDirectory(file)) {
-                        this.deleteDirectoryWithSubdirectories(file);
-                    } else {
-                        Files.delete(file);
-                    }
+    public void deleteDirectoryWithSubdirectories(Path path) throws Exception {
+        if (Files.exists(path)) {
+            List<Path> files = this.listFilesNIO(path, new DirectoryStream.Filter<Path>() {
+                @Override
+                public boolean accept(Path entry) throws IOException {
+                    return (true);
                 }
+            });
+            for (Path file : files) {
+                if (Files.isDirectory(file)) {
+                    this.deleteDirectoryWithSubdirectories(file);
+                } else {
+                    Files.delete(file);
+                }
+            }
         }
         Files.delete(path);
     }
-    
+
 }

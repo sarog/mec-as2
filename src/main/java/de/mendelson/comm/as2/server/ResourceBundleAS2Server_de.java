@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_de.java 22    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2Server_de.java 24    18/02/25 14:39 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 24 $
  */
 public class ResourceBundleAS2Server_de extends MecResourceBundle {
 
@@ -35,6 +35,7 @@ public class ResourceBundleAS2Server_de extends MecResourceBundle {
             + "Systembenutzer: {5}\n"
             + "Systemidentifikation: {6}"},
         {"server.started", AS2ServerVersion.getFullProductName() + " gestartet in {0} ms."},
+        {"server.started.usedlibs", "Verwendete Bibliotheken" },
         {"server.already.running", "Eine " + AS2ServerVersion.getProductName() + " Instanz scheint bereits zu laufen.\nEs könnte jedoch auch sein, dass eine vorherige Instanz nicht korrekt beendet wurde." + " Wenn Sie sicher sind, dass keine andere Instanz läuft,\nlöschen Sie bitte die Lock Datei \"{0}\"\n(Start Datum {1}) und starten den Server erneut."},
         {"server.nohttp", "Der integrierte HTTP Server wurde nicht gestartet." }, 
         {"server.startup.failed", "Es gab ein Problem beim Starten des Servers - der Start wurde abgebrochen" },

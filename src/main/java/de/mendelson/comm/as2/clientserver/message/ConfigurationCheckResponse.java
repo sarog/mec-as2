@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/ConfigurationCheckResponse.java 4     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/ConfigurationCheckResponse.java 5     29/05/24 12:44 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
@@ -18,7 +18,7 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ConfigurationCheckResponse extends ClientServerResponse implements Serializable {
 
@@ -34,7 +34,7 @@ public class ConfigurationCheckResponse extends ClientServerResponse implements 
         return ("Configuration check response");
     }
 
-    public void addIsse(ConfigurationIssue issue) {
+    public void addIssue(ConfigurationIssue issue) {
         this.issueList.add(issue);
     }
 

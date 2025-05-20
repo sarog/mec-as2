@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 28    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 30    17/01/25 8:41 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageCreation;
+import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
@@ -29,24 +30,26 @@ import java.util.logging.Logger;
  * Sender class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 30 $
  */
 public class SendOrderSender {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private final MecResourceBundle rb;
-    private final SendOrderAccessDB sendOrderAccess;
-    private final IDBDriverManager dbDriverManager;
+    private final static MecResourceBundle rb;
 
-    public SendOrderSender(IDBDriverManager dbDriverManager) {
-        //Load default resourcebundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleSendOrderSender.class.getName());
         } //load up resourcebundle
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private final SendOrderAccessDB sendOrderAccess;
+    private final IDBDriverManager dbDriverManager;
+
+    public SendOrderSender(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
         this.sendOrderAccess = new SendOrderAccessDB(dbDriverManager);
     }
@@ -63,7 +66,7 @@ public class SendOrderSender {
             messageCreation.setLogger(this.logger);
             messageCreation.setServerResources(this.dbDriverManager);
             AS2Message message = messageCreation.createMessage(sender, receiver,
-                    files, originalFilenames, userdefinedId, subject, payloadContentTypes);
+                        files, originalFilenames, userdefinedId, subject, payloadContentTypes);                
             StringBuilder filenames = new StringBuilder();
             for (Path file : files) {
                 if (filenames.length() > 0) {
@@ -81,12 +84,12 @@ public class SendOrderSender {
                                 (userdefinedId == null ? "--" : userdefinedId)
                             }),
                     message.getAS2Info());
-            SendOrder order = new SendOrder();
-            order.setReceiver(receiver);
-            order.setMessage(message);
-            order.setSender(sender);
-            order.setUserdefinedId(userdefinedId);
-            this.send(order);
+            SendOrder sendOrder = new SendOrder()
+                    .setReceiver(receiver)
+                    .setMessage(message)
+                    .setSender(sender)
+                    .setUserdefinedId(userdefinedId);
+            this.send(sendOrder);
             return (message);
         } catch (Throwable e) {
             logger.severe(rb.getResourceString("sendoder.sendfailed",
@@ -96,7 +99,6 @@ public class SendOrderSender {
                     }
             ));
             SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
-            e.printStackTrace();
         }
         return (null);
     }

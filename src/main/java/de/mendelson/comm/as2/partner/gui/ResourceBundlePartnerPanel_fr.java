@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel_fr.java 59    20/12/23 14:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerPanel_fr.java 70    9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 59 $
+ * @version $Revision: 70 $
  */
 public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
 
@@ -40,7 +40,8 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.id", "AS2 id"},
         {"label.id.help", "<HTML><strong>AS2 id</strong><br><br>"
             + "L''identification unique (dans votre réseau de partenaires) utilisée dans le protocole AS2 pour identifier "
-            + "ce partenaire. Vous pouvez le choisir librement - assurez-vous simplement qu''il est unique."
+            + "ce partenaire. Vous pouvez le choisir librement - assurez-vous simplement qu''il est unique, "
+            + "dans le monde entier."
             + "</HTML>"},
         {"label.id.hint", "Identification des partenaires (protocole AS2)"},
         {"label.partnercomment", "Commentaire"},
@@ -53,7 +54,9 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "votre partenaire.<strong>CHEMIN</strong> est le "
             + "chemin de réception, par exemple \"/as2/HttpReceiver\".<br><br>"
             + "L''entrée entière est marquée comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
-            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL."
+            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL.<br><br>"
+            + "Ne saisissez pas ici d''URL qui renvoie à votre propre système via les indications \"localhost\" "
+            + "ou \"127.0.0.1\" - vous essaieriez ainsi d''envoyer les messages AS2 sortants vers votre propre système."
             + "</HTML>"},
         {"label.mdnurl", "URL des MDN"},
         {"label.mdnurl.help", "<HTML><strong>URL des MDN</strong> (<strong>M</strong>essage <strong>D</strong>elivery <strong>N</strong>otification)<br><br>"
@@ -64,7 +67,10 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "<strong>PORT</strong> est le port de réception de votre système AS2. <strong>CHEMIN</strong> indique le "
             + "chemin de réception, par exemple \"/as2/HttpReceiver\"."
             + "L''entrée entière est marquée comme invalide si le protocole n''est pas l''un des protocoles \"http\" ou \"https\", "
-            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL."
+            + "si l''URL a un format incorrect ou si le port n''est pas défini dans l''URL.<br><br>"
+            + "Veuillez ne pas saisir ici une URL qui renvoie à votre propre système via des indications de "
+            + "\"localhost\" ou \"127.0.0.1\" - cette indication sera évaluée après réception du message AS2 sur "
+            + "le site de votre partenaire et il s''enverrait alors le MDN à lui-même."
             + "</HTML>"},
         {"label.signalias.key", "Clef privée (Création de signature)"},
         {"label.signalias.key.help", "<HTML><strong>Clef privée (Création de signature)</strong><br><br>"
@@ -95,12 +101,18 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.signtype", "Algorithme de signature numérique"},
         {"label.signtype.help", "<HTML><strong>Algorithme de signature numérique</strong><br><br>"
             + "Vous choisissez ici l''algorithme de signature avec lequel les messages sortants destinés à ce partenaire doivent être signés.<br>"
-            + "Si vous avez choisi ici un algorithme de signature, un message signé est également attendu en entrée de ce partenaire - l''algorithme de signature est toutefois arbitraire."
+            + "Si vous avez choisi ici un algorithme de signature, un message signé est également attendu en entrée de ce partenaire "
+            + "- l''algorithme de signature est toutefois arbitraire.<br><br>"
+            + "Le message sortant destiné à ce partenaire est signé à l''aide de la clé privée de la station "
+            + "locale qui est l''émetteur de la transaction."
             + "</HTML>"},
         {"label.encryptiontype", "Algorithme de chiffrement des messages"},
         {"label.encryptiontype.help", "<HTML><strong>Algorithme de chiffrement des messages</strong><br><br>"
             + "Vous choisissez ici l''algorithme de cryptage avec lequel les messages sortants à destination de ce partenaire doivent être cryptés.<br>"
-            + "Si vous avez choisi ici un algorithme de cryptage, un message crypté est également attendu en entrée de ce partenaire - l''algorithme de cryptage est toutefois arbitraire."
+            + "Si vous avez choisi ici un algorithme de cryptage, un message crypté est également attendu en entrée de ce partenaire "
+            + "- l''algorithme de cryptage est toutefois arbitraire.<br><br>"
+            + "Pour plus d''informations sur l''algorithme de cryptage, veuillez consulter l''aide (section partenaire) - "
+            + "tous les algorithmes y sont expliqués."
             + "</HTML>"},
         {"label.email", "E-mail"},
         {"label.email.help", "<HTML><strong>E-mail</strong><br><br>"
@@ -109,6 +121,11 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.email.hint", "Non utilisé ou validé dans le protocole AS2"},
         {"label.localstation", "Station locale"},
         {"label.localstation.help", "<HTML><strong>Station locale</strong><br><br>"
+            + "Une station locale représente votre propre système.<br>"
+            + "Vous pouvez créer autant de stations locales que vous le souhaitez dans votre système.<br>"
+            + "Vous configurez séparément les stations locales et les partenaires de liaison. "
+            + "La configuration globale de la liaison avec le partenaire est alors créée automatiquement "
+            + "à partir des configurations de la station locale et du partenaire distant.<br><br>"
             + "Il existe deux types de partenaires:<br><br>"
             + "<table border=\"0\">"
             + "<tr>"
@@ -119,13 +136,21 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "<td style=\"padding-left: 10px\"><img src=\"/de/mendelson/comm/as2/partner/gui/singlepartner.svg\" height=\"20\" width=\"20\"></td>"
             + "<td>Les partenaires distants</td>"
             + "</tr>"
-            + "</table><br>"
-            + "Une station locale représente votre propre système."
+            + "</table>"            
             + "</HTML>"},
-        {"label.compression", "Compresser les messages sortants (nécessite une solution AS2 1.1 en face)"},
-        {"label.usecommandonreceipt", "Sur réception de message:"},
-        {"label.usecommandonsenderror", "Sur envoi échoué de message:"},
-        {"label.usecommandonsendsuccess", "Sur envoi réussi de message:"},
+        {"label.compression", "Compression"},
+        {"label.compression.help", "<HTML><strong>Compression</strong><br><br>"
+            + "Si cette option est activée, les messages sortants seront compressés à l''aide de l''algorithme ZLIB.<br>" 
+            + "L''avantage de la compression est que la taille du message est généralement réduite, ce qui permet un "
+            + "transfert plus rapide. En outre, la structure du message est modifiée, ce qui peut résoudre des problèmes "
+            + "de compatibilité.<br>" 
+            + "L''inconvénient est qu''il s''agit d''une étape de traitement supplémentaire qui se fait au détriment "
+            + "des performances.<br><br>" 
+            + "Cette option nécessite un système AS2 de l'autre côté qui supporte au moins AS2 1.1."
+            + "</HTML>"},
+        {"label.usecommandonreceipt", "Réception"},
+        {"label.usecommandonsenderror", "Envoi (échoué)"},
+        {"label.usecommandonsendsuccess", "Envoi réussi"},
         {"label.keepfilenameonreceipt", "Garder le nom de fichier original sur réception"},
         {"label.keepfilenameonreceipt.help", "<HTML><strong>Garder le nom de fichier original sur réception</strong><br><br>"
             + "Si cette option est activée, le système tente d''extraire le nom de fichier original des messages AS2 entrants "
@@ -186,7 +211,7 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "La solution AS2 de mendelson affiche un avertissement en cas d''échec de la vérification de la signature MDN.<br><br>"
             + "Il existe encore une particularité de ce réglage : si un problème est survenu lors du traitement côté partenaire, le MDN peut toujours être non signé - indépendamment de ce réglage."
             + "</HTML>"},
-        {"label.enabledirpoll", "Activer le sondage d''annuaire"},
+        {"label.enabledirpoll", "Sondage d''annuaire"},
         {"label.pollignore.help", "<HTML><strong>Activer le sondage d''annuaire</strong><br><br>"
             + "La surveillance des répertoires ira chercher à intervalles réguliers un nombre défini de fichiers dans le répertoire surveillé et les traitera. "
             + "Il faut s''assurer qu''à ce moment-là, le fichier soit "
@@ -253,7 +278,20 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
             + "</HTML>"},
         {"label.test.connection", "Connexion de test"},
         {"label.mdn.description", "<HTML>Le MDN (Message Delivery Notification) est la confirmation du message AS2. Cette section définit le comportement de votre partenaire pour vos messages AS2 sortants.</HTML>"},
-        {"label.algorithmidentifierprotection", "<HTML>Utiliser l''attribut de protection de l''identificateur d''algorithme dans la signature (recommandé), voir RFC 6211</HTML>"},
+        {"label.algorithmidentifierprotection", "Algorithm Identifier Protection Attribute"},
+        {"label.algorithmidentifierprotection.help", "<HTML><strong>Algorithm Identifier Protection Attribute</strong><br><br>"
+            + "Si vous activez cette option (ce qui est recommandé), l''attribut Algorithm Identifier Protection est "
+            + "utilisé dans la signature AS2. Cet attribut est défini dans le RFC 6211.<br>"
+            + "La signature d''AS2 utilisée est vulnérable aux attaques par substitution d''algorithme. "
+            + "Lors d''une attaque par substitution d''algorithme, l''attaquant modifie soit l''algorithme "
+            + "utilisé, soit les paramètres de l''algorithme, afin de modifier le résultat de la vérification "
+            + "de la signature. Cet attribut contient désormais une copie des identificateurs d''algorithme "
+            + "pertinents de la signature, de sorte qu''ils ne peuvent pas être modifiés. "
+            + "Cela empêche une attaque de substitution d''algorithme sur la signature.<br><br>"
+            + "Il existe des systèmes AS2 qui ne peuvent pas gérer cet attribut (bien que le RFC "
+            + "soit de 2011) et qui renvoient une erreur d'autorisation. Dans ce cas, l''attribut peut "
+            + "être désactivé ici."
+            + "</HTML>"},
         {"tooltip.button.editevent", "Modifier l''événement"},
         {"tooltip.button.addevent", "Créer un nouvel événement"},
         {"label.httpauthentication.credentials.help", "<HTML><strong>Authentification d''accès de base HTTP</strong><br><br>"
@@ -275,5 +313,6 @@ public class ResourceBundlePartnerPanel_fr extends MecResourceBundle {
         {"label.overwrite.sign", "Signer les messages sortants"},
         {"label.overwrite.sign.help", "<HTML><strong>Signer les messages sortants</strong><br><br>"
             + "Cette clé est utilisée pour signer les messages sortants destinés à ce partenaire - à la place de la clé définie pour la station locale concernée."
-            + "</HTML>"},};
+            + "</HTML>"},        
+    };
 }

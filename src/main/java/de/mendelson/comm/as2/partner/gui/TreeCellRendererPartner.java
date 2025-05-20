@@ -1,11 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TreeCellRendererPartner.java 8     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TreeCellRendererPartner.java 15    3/07/24 9:54 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.util.ColorUtil;
+import java.awt.Color;
 import java.awt.Component;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 
@@ -17,14 +21,14 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * TreeCellRenderer that will display the icons of the config tree
+ * TreeCellRenderer that will display the icons of the partner tree
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 15 $
  */
 public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
 
-    public final static int ICON_HEIGHT = JTreePartner.ICON_HEIGHT;
+    public final static int ICON_HEIGHT = AS2Gui.IMAGE_SIZE_TREENODE;
 
     private final static ImageIcon ICON_REMOTE
             = new ImageIcon(ListCellRendererPartner.IMAGE_REMOTESTATION.toMinResolution(ICON_HEIGHT));
@@ -37,6 +41,10 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
             = new ImageIcon(
                     ListCellRendererPartner.IMAGE_REMOTESTATION_CONFIGERROR.toMinResolution(ICON_HEIGHT));
 
+    private Color colorForegroundError = Color.RED.darker();
+    private Color colorForegroundUnselectedNoError = Color.BLACK;
+    private Color colorForegroundSelectedNoError = Color.BLACK;
+
     /**
      * Stores the selected node
      */
@@ -47,17 +55,52 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
      */
     public TreeCellRendererPartner() {
         super();
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            this.colorForegroundError = UIManager.getColor("Objects.RedStatus");
+        }
+        if (UIManager.getColor("Tree.selectionForeground") != null) {
+            this.colorForegroundSelectedNoError = UIManager.getColor("Tree.selectionForeground");
+        }
+        if (UIManager.getColor("Tree.foreground") != null) {
+            this.colorForegroundUnselectedNoError = UIManager.getColor("Tree.foreground");
+        }        
     }
 
     @Override
     public Component getTreeCellRendererComponent(JTree tree,
-            Object selectedObject, boolean sel,
+            Object selectedObject, boolean isSelected,
             boolean expanded,
             boolean leaf,
             int row, boolean hasFocus) {
         this.selectedNode = (DefaultMutableTreeNode) selectedObject;
-        return (super.getTreeCellRendererComponent(tree, selectedObject, sel, expanded,
-                leaf, row, hasFocus));
+        Component component = super.getTreeCellRendererComponent(tree, selectedObject, isSelected, expanded,
+                leaf, row, hasFocus);
+        Object object = null;
+        if (this.selectedNode != null) {
+            object = this.selectedNode.getUserObject();
+        }
+        if (object != null) {
+            if (object instanceof Partner) {
+                Partner partner = (Partner) object;
+                super.setText(partner.toString());
+                if (partner.hasConfigError()) {
+                    if (isSelected) {
+                        Color selectionBackground = super.getBackgroundSelectionColor();
+                        Color xorForeground = ColorUtil.getXORColor(selectionBackground);                        
+                        super.setForeground(xorForeground);
+                    } else {
+                        super.setForeground(this.colorForegroundError);
+                    }                    
+                } else {
+                    if (isSelected) {
+                        super.setForeground(this.colorForegroundSelectedNoError);
+                    } else {
+                        super.setForeground(this.colorForegroundUnselectedNoError);
+                    }
+                }
+            }
+        }
+        return (component);
     }
 
     /**
@@ -65,7 +108,10 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
      */
     private Icon getDefinedIcon() {
         ImageIcon icon = null;
-        Object object = this.selectedNode.getUserObject();
+        Object object = null;
+        if (this.selectedNode != null) {
+            object = this.selectedNode.getUserObject();
+        }
         //is this root node?
         if (object == null || !(object instanceof Partner)) {
             return (super.getOpenIcon());
@@ -84,7 +130,6 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
                 icon = ICON_REMOTE;
             }
         }
-
         return (icon);
     }
 

@@ -1,9 +1,10 @@
-//$Header: /converteride/de/mendelson/util/font/FontUtil.java 9     23/03/22 13:28 Heller $
+//$Header: /as2/de/mendelson/util/font/FontUtil.java 14    11/02/25 13:40 Heller $
 package de.mendelson.util.font;
 
 import java.awt.Color;
 import java.awt.Font;
 import java.io.InputStream;
+import javax.swing.UIManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -17,7 +18,7 @@ import java.io.InputStream;
  * products
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 14 $
  */
 public class FontUtil {
 
@@ -26,7 +27,6 @@ public class FontUtil {
     public static final String STYLE_PRODUCT_BOLD = "PRODUCT_BOLD";
     public static final String STYLE_PLAIN = "PLAIN";
     public static final String STYLE_BOLD = "BOLD";
-    
 
     public static final String PRODUCT_MBI = "mbi";
     public static final String PRODUCT_AS2 = "AS2";
@@ -46,80 +46,38 @@ public class FontUtil {
 
     static {
         String fontResourceProductPlain = "/de/mendelson/util/font/Square721ExtendedBT.ttf";
-        InputStream fontInStream = null;
-        try {
-            fontInStream = FontUtil.class.getResourceAsStream(fontResourceProductPlain);
+        try (InputStream fontInStream = FontUtil.class.getResourceAsStream(fontResourceProductPlain)) {
             fontProductPlain = Font.createFont(Font.TRUETYPE_FONT, fontInStream);
         } catch (Exception e) {
-            fontProductPlain = new Font("SansSerif", Font.BOLD, 18);
-        } finally {
-            if (fontInStream != null) {
-                try {
-                    fontInStream.close();
-                } catch (Exception e) {
-                }
-            }
+            fontProductPlain = new Font(Font.SANS_SERIF, Font.BOLD, 18);
         }
-        fontInStream = null;
         String fontResourceProductBold = "/de/mendelson/util/font/Square721BoldExtendedBT.ttf";
-        try {
-            fontInStream = FontUtil.class.getResourceAsStream(fontResourceProductBold);
+        try (InputStream fontInStream = FontUtil.class.getResourceAsStream(fontResourceProductBold)) {
             fontProductBold = Font.createFont(Font.TRUETYPE_FONT, fontInStream);
         } catch (Exception e) {
-            fontProductBold = new Font("SansSerif", Font.BOLD, 18);
-        } finally {
-            if (fontInStream != null) {
-                try {
-                    fontInStream.close();
-                } catch (Exception e) {
-                }
-            }
+            fontProductBold = new Font(Font.SANS_SERIF, Font.BOLD, 18);
         }
-        fontInStream = null;
         String fontResourcePlain = "/de/mendelson/util/font/Square721BTRoman.ttf";
-        try {
-            fontInStream = FontUtil.class.getResourceAsStream(fontResourcePlain);
+        try (InputStream fontInStream = FontUtil.class.getResourceAsStream(fontResourcePlain)) {
             fontPlain = Font.createFont(Font.TRUETYPE_FONT, fontInStream);
         } catch (Exception e) {
-            fontPlain = new Font("SansSerif", Font.PLAIN, 18);
-        } finally {
-            if (fontInStream != null) {
-                try {
-                    fontInStream.close();
-                } catch (Exception e) {
-                }
-            }
+            fontPlain = new Font(Font.SANS_SERIF, Font.PLAIN, 18);
         }
-        fontInStream = null;
         String fontResourceBold = "/de/mendelson/util/font/Square721DMNormal.ttf";
-        try {
-            fontInStream = FontUtil.class.getResourceAsStream(fontResourceBold);
+        try (InputStream fontInStream = FontUtil.class.getResourceAsStream(fontResourceBold)) {
             fontBold = Font.createFont(Font.TRUETYPE_FONT, fontInStream);
         } catch (Exception e) {
-            fontBold = new Font("SansSerif", Font.PLAIN, 18);
-        } finally {
-            if (fontInStream != null) {
-                try {
-                    fontInStream.close();
-                } catch (Exception e) {
-                }
-            }
+            fontBold = new Font(Font.SANS_SERIF, Font.PLAIN, 18);
         }
-        fontInStream = null;
         String fontResourceLogo = "/de/mendelson/util/font/NewDetroitRegular.ttf";
-        try {
-            fontInStream = FontUtil.class.getResourceAsStream(fontResourceLogo);
+        try (InputStream fontInStream = FontUtil.class.getResourceAsStream(fontResourceLogo)) {
             fontLogo = Font.createFont(Font.TRUETYPE_FONT, fontInStream);
         } catch (Exception e) {
-            fontBold = new Font("SansSerif", Font.PLAIN, 18);
-        } finally {
-            if (fontInStream != null) {
-                try {
-                    fontInStream.close();
-                } catch (Exception e) {
-                }
-            }
+            fontBold = new Font(Font.SANS_SERIF, Font.PLAIN, 18);
         }
+    }
+
+    private FontUtil() {
     }
 
     /**
@@ -130,12 +88,24 @@ public class FontUtil {
     public static Color getFontColor(final String PRODUCT) {
         if (PRODUCT.equals(PRODUCT_MBI)
                 || PRODUCT.equals(PRODUCT_EDIPAD)) {
+            if (UIManager.getColor("Objects.Blue") != null) {
+                Color blue = UIManager.getColor("Objects.Blue");
+                return (blue);
+            }
             return (Color.decode("#577076"));
         } else if (PRODUCT.equals(PRODUCT_AS2)
                 || PRODUCT.equals(PRODUCT_OFTP2)
                 || PRODUCT.equals(PRODUCT_AS4)) {
+            if (UIManager.getColor("Objects.Green") != null) {
+                Color green = UIManager.getColor("Objects.Green");
+                return (green);
+            }
             return (Color.decode("#274B18"));
         } else if (PRODUCT.equals(PRODUCT_CONVERTER_IDE)) {
+            if (UIManager.getColor("Objects.DarkYellow") != null) {
+                Color yellow = UIManager.getColor("Objects.DarkYellow");
+                return (yellow);
+            }
             return (Color.decode("#897C69"));
         } else if (PRODUCT.equals(PRODUCT_AS4_COMMUNITY)
                 || PRODUCT.equals(PRODUCT_AS2_COMMUNITY)
@@ -165,7 +135,7 @@ public class FontUtil {
             return (fontProductBold.deriveFont((float) size));
         } else if (STYLE.equals(STYLE_BOLD)) {
             return (fontBold.deriveFont((float) size));
-        }else if (STYLE.equals(STYLE_LOGO)) {
+        } else if (STYLE.equals(STYLE_LOGO)) {
             return (fontLogo.deriveFont(Font.PLAIN, (float) size));
         } else {
             return (fontPlain.deriveFont((float) size));

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/mailautoconfig/gui/ResourceBundleMailAutoConfigurationDetection_de.java 4     6/11/23 11:38 Heller $ 
+//$Header: /oftp2/de/mendelson/util/mailautoconfig/gui/ResourceBundleMailAutoConfigurationDetection_de.java 5     9/12/24 15:50 Heller $ 
 package de.mendelson.util.mailautoconfig.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.mailautoconfig.MailServiceConfiguration;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleMailAutoConfigurationDetection_de extends MecResourceBundle {
 

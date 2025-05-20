@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 50    23/01/24 10:08 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 54    11/02/25 13:39 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -19,11 +19,12 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.net.ssl.SSLSession;
-
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IdleStatus;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.core.write.WriteToClosedSessionException;
+import org.apache.mina.filter.FilterEvent;
+import org.apache.mina.filter.ssl.SslEvent;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -36,13 +37,15 @@ import org.apache.mina.core.write.WriteToClosedSessionException;
  * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 54 $
  */
 public class ClientServerSessionHandler extends IoHandlerAdapter {
 
     public static final String SESSION_ATTRIB_USER = "user";
     public static final String SESSION_ATTRIB_CLIENT_PID = "pid";
     public static final String SESSION_ATTRIB_CLIENT_IP = "ip";
+    public static final String SESSION_ATTRIB_CLIENT_TYPE = "clienttype";
+
     /**
      * User readable description of user permissions
      */
@@ -130,17 +133,19 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 loginRequest);
     }
 
-    /**Informs the event manager that a successful login has been performed. Finds out the TLS protocol and the cipher suite
-     *      
+    /**
+     * Informs the event manager that a successful login has been performed.
+     * Finds out the TLS protocol and the cipher suite
+     *
      */
     private void throwEventLoginSuccess(IoSession session, LoginState loginState, LoginRequest loginRequest) {
         String tlsProtocol = null;
         String tlsCipherSuite = null;
         if (session.isSecured()) {
             Set<Object> keys = session.getAttributeKeys();
-            for( Object key:keys){
-                if( session.getAttribute(key) instanceof SSLSession){
-                    SSLSession sslSession = (SSLSession)session.getAttribute(key);
+            for (Object key : keys) {
+                if (session.getAttribute(key) instanceof SSLSession) {
+                    SSLSession sslSession = (SSLSession) session.getAttribute(key);
                     tlsProtocol = sslSession.getProtocol();
                     tlsCipherSuite = sslSession.getCipherSuite();
                     break;
@@ -155,11 +160,15 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         try {
             String remoteProcessId = (String) session.getAttribute(SESSION_ATTRIB_CLIENT_PID);
             String userName = (String) session.getAttribute(SESSION_ATTRIB_USER);
+            int clientType = BaseClient.CLIENT_UNSPECIFIED;
+            if (session.containsAttribute(SESSION_ATTRIB_CLIENT_TYPE)) {
+                clientType = ((Integer) session.getAttribute(SESSION_ATTRIB_CLIENT_TYPE)).intValue();
+            }
             //this is tricky - if the session is closed it has no longer a remote IP - that is why it is stored
             //as session parameter
             String clientIP = (String) session.getAttribute(SESSION_ATTRIB_CLIENT_IP);
             this.eventManager.newEventClientLogoff(clientIP, userName, remoteProcessId,
-                    String.valueOf(session.getId()), message);
+                    String.valueOf(session.getId()), message, clientType);
         } catch (Exception e) {
             System.out.println("ClientServerSessionHandler.logoff: ["
                     + e.getClass().getSimpleName() + "] " + e.getMessage());
@@ -190,13 +199,6 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         //store immediatly the remote IP address in the session - if the session is closed it is no longer 
         //available and it might be required later even if the session goes into the closed state
         session.setAttribute(SESSION_ATTRIB_CLIENT_IP, session.getRemoteAddress().toString());
-        //send information about what this server is
-        ServerInfo info = new ServerInfo();
-        info.setProductname(this.productName);
-        session.write(info);
-        //request a login
-        LoginRequired loginRequired = new LoginRequired();
-        session.write(loginRequired);
     }
 
     public void setPermissionDescription(PermissionDescription permissionDescription) {
@@ -221,7 +223,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         } else {
             //it is a login request
             if (message instanceof LoginRequest) {
-                LoginRequest loginRequest = (LoginRequest) message;                
+                LoginRequest loginRequest = (LoginRequest) message;
                 //validate passwd first, close session if it fails
                 User definedUser = userAccess.readUser(loginRequest.getUserName());
                 if (definedUser != null && this.permissionDescription != null) {
@@ -294,18 +296,23 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 //user is logged in: add the user name to the session
                 session.setAttribute(SESSION_ATTRIB_USER, loginRequest.getUserName());
                 session.setAttribute(SESSION_ATTRIB_CLIENT_PID, loginRequest.getPID());
+                session.setAttribute(SESSION_ATTRIB_CLIENT_TYPE, Integer.valueOf(loginRequest.getClientType()));
                 //add the session to the list of available sessions
                 synchronized (this.sessions) {
                     this.sessions.add(session);
                 }
                 //success!
                 LoginState loginSuccessState = new LoginState(loginRequest);
-                if( this.serverHelloMessageGenerator != null ){
-                        loginSuccessState.setServerHelloMessages(
-                                this.serverHelloMessageGenerator.generateServerHelloMessages());
-                    }
+                if (this.serverHelloMessageGenerator != null) {
+                    loginSuccessState.setServerHelloMessages(
+                            this.serverHelloMessageGenerator.generateServerHelloMessages());
+                }
                 loginSuccessState.setState(LoginState.STATE_AUTHENTICATION_SUCCESS);
-                loginSuccessState.setStateDetails("Authentication successful, user [" + definedUser.getName() + "] logged in");
+                String userName = "undefined_user";
+                if( definedUser != null ){
+                    userName = definedUser.getName();
+                }
+                loginSuccessState.setStateDetails("Authentication successful, user [" + userName + "] logged in");
                 loginSuccessState.setUser(definedUser);
                 this.throwEventLoginSuccess(session, loginSuccessState, loginRequest);
                 session.write(loginSuccessState);
@@ -397,7 +404,6 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 this.sessions.remove(session);
             }
             this.throwEventLogoff(session, "");
-            //this.log(Level.INFO, "Session closed for user " + user);
             if (this.callback != null) {
                 this.callback.clientDisconnected(session);
             }
@@ -418,7 +424,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     public void exceptionCaught(IoSession session, Throwable cause) {
         //The method org.apache.mina.core.polling.AbstractPollingIoProcessor  seems to have a problem
         //in the method clearWriteRequestQueue(AbstractPollingIoProcessor.java:1200) in MINA 2.2.1 - this will be ignored here
-        if( cause instanceof WriteToClosedSessionException){
+        if (cause instanceof WriteToClosedSessionException) {
             return;
         }
         StringBuilder builder = new StringBuilder();
@@ -445,4 +451,23 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     public void setProductName(String productName) {
         this.productName = productName;
     }
+
+    /**
+     * Wait for the TLS handshake to be complete - then send the serverinfo and the login request to the client
+     * @param session
+     * @param event
+     * @throws Exception 
+     */
+    @Override
+    public void event(IoSession session, FilterEvent event) throws Exception {
+        if (event == SslEvent.SECURED) {
+            ServerInfo info = new ServerInfo();
+            info.setProductname(this.productName);
+            session.write(info);
+            //request a login
+            LoginRequired loginRequired = new LoginRequired();
+            session.write(loginRequired);
+        }
+    }
+
 }

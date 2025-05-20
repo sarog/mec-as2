@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleJettyStarter_fr.java 6     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleJettyStarter_fr.java 7     9/12/24 16:03 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleJettyStarter_fr extends MecResourceBundle {
 

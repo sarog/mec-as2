@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_fr.java 80    8/11/23 11:07 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_fr.java 89    9/12/24 16:03 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 80 $
+ * @version $Revision: 89 $
  */
 public class ResourceBundlePreferences_fr extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         //preferences localized
         {PreferencesAS2.DIR_MSG, "Archivage message"},
         {"button.ok", "Valider"},
@@ -61,25 +61,38 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"label.country.help", "<HTML><strong>Pays/Région</strong><br><br>"
             + "Ce paramètre contrôle principalement le format de date qui est utilisé pour afficher les dates de transaction, etc. dans le client."
             + "</HTML>"},
+        {"label.displaymode", "Affichage"},
+        {"label.displaymode.help", "<HTML><strong>Affichage</strong><br><br>"
+            + "Cette fonction permet de définir l''un des modes d'affichage pris en charge par l''interface utilisateur.<br>"
+            + "Il peut également être défini via des paramètres de ligne de commande lors de l''appel de l''exécutable ou du script de démarrage correspondant."
+            + "</HTML>"},
         {"label.keystore.https.pass", "Mot de passe du porte-clef (envoi https):"},
         {"label.keystore.pass", "Mot de passe du porte-clef (encryption/signature):"},
         {"label.keystore.https", "Porte-clef (envoi https):"},
         {"label.keystore.encryptionsign", "Porte-clef (enc, sign):"},
-        {"label.proxy.url", "URL du proxy:"},
+        {"label.proxy.url", "URL du proxy"},
         {"label.proxy.url.hint", "IP ou domaine du proxy"},
         {"label.proxy.port.hint", "Port"},
-        {"label.proxy.user", "Utilisateur:"},
+        {"label.proxy.user", "Utilisateur"},
         {"label.proxy.user.hint", "Login utilisateur du proxy"},
-        {"label.proxy.pass", "Mot de passe:"},
+        {"label.proxy.pass", "Mot de passe"},
         {"label.proxy.pass.hint", "Mot de passe utilisateur du proxy"},
         {"label.proxy.use", "Utiliser un proxy HTTP pour les connexions sortante HTTP/HTTPs"},
         {"label.proxy.useauthentification", "Utiliser l''authentification auprès du proxy"},
         {"filechooser.keystore", "Merci de sélectionner le fichier porte-clef (format jks)."},
         {"label.days", "jours"},
-        {"label.deletemsgolderthan", "Supprimer automatiquement les entrées de transactions plus vieux que"},
+        {"label.autodelete", "Supprimer automatiquement"},
+        {"label.deletemsgolderthan", "Les entrées de transactions plus vieux que"},
         {"label.deletemsglog", "Tenir informer dans le log à propos des messages automatiquement supprimés"},
-        {"label.deletestatsolderthan", "Supprimer automatiquement les statistiques qui sont plus vieux que"},
-        {"label.deletelogdirolderthan", "Suppression automatique des données de journal plus anciennes que"},
+        {"label.deletemsglog.help", "<HTML><strong>Tenir informer dans le log à propos des messages automatiquement supprimés</strong><br><br>"
+            + "Dans les paramètres, vous avez la possibilité de faire supprimer les anciens fichiers (Maintenance).<br>"
+            + "Si vous "
+            + "avez configuré et activé cette option, chaque processus de suppression d''un ancien fichier est consigné. "
+            + "De plus, un événement système est généré, ce qui vous permet d''être informé de ce processus via la "
+            + "fonction de notification."
+            + "</HTML>"},
+        {"label.deletestatsolderthan", "Les statistiques qui sont plus vieux que"},
+        {"label.deletelogdirolderthan", "Des données de journal plus anciennes que"},
         {"label.asyncmdn.timeout", "Temps d''attente maximal pour un MDN asynchrone"},
         {"label.asyncmdn.timeout.help", "<HTML><strong>Temps d''attente maximal pour un MDN asynchrone</strong>"
             + "<br><br>Le temps que le système attendra un MDN (message delivery notification) asynchrone pour un message AS2 envoyé avant de mettre la transaction en état d'échec.<br>"
@@ -100,14 +113,14 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
             + " ou <strong>&lt;Station locale&gt;/inbox/&lt;Nom du partenaire&gt;</strong>."
             + "</HTML>"},
         //notification
-        {"checkbox.notifycertexpire", "Notifier l''expiration de certificats"},
-        {"checkbox.notifytransactionerror", "Notifier les erreurs de transaction"},
-        {"checkbox.notifycem", "Notifier des événements d'échange certificats (CEM)"},
-        {"checkbox.notifyfailure", "Notifier les problems système"},
-        {"checkbox.notifyresend", "Notifier renvoie rejetés"},
-        {"checkbox.notifyconnectionproblem", "Notifier les problèmes de connexion"},
+        {"checkbox.notifycertexpire", "Expiration de certificats"},
+        {"checkbox.notifytransactionerror", "Erreurs de transaction"},
+        {"checkbox.notifycem", "Echange certificats (CEM)"},
+        {"checkbox.notifyfailure", "Problems système"},
+        {"checkbox.notifyresend", "Renvoie rejetés"},
+        {"checkbox.notifyconnectionproblem", "Problèmes de connexion"},
         {"checkbox.notifypostprocessing", "Problèmes lors du post-traitement"},
-        {"checkbox.notifyclientserver", "Notifier les problèmes client-serveur"},
+        {"checkbox.notifyclientserver", "Problèmes client-serveur"},
         {"button.testmail", "Envoyer un e-mail de test"},
         {"label.mailhost", "Hôte du serveur de mail (SMTP)"},
         {"label.mailhost.hint", "IP ou domaine du serveur"},
@@ -141,7 +154,7 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"testmail.message.success", "E-mail de test envoyé avec succés, a {0}"},
         {"testmail.message.error", "Erreur lors de l''envoi de l''e-mail de test:\n{0}"},
         {"testmail.title", "Résultat de l''envoi de l''email de test"},
-        {"testmail", "L''email de test"},                
+        {"testmail", "L''email de test"},
         {"info.restart.client", "Un redémarrage du client est requise pour effectuer ces modifications valide!"},
         {"remotedir.select", "Sélectionnez le répertoire sur le serveur"},
         //retry
@@ -167,7 +180,13 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"maintenancemultiplier.day", "jour(s)"},
         {"maintenancemultiplier.hour", "heure(s)"},
         {"maintenancemultiplier.minute", "minute(s)"},
-        {"label.logpollprocess", "Affichage d''informations sur le processus de vote dans le journal (Énorme quantité d'entrées - ne pas utiliser dans la production)"},
+        {"label.logpollprocess", "Informations sur le processus de vote"},
+        {"label.logpollprocess.help", "<HTML><strong>Informations sur le processus de vote</strong><br><br>"
+            + "Si vous activez cette option, chaque opération d'interrogation d''un répertoire de "
+            + "départ est notée dans le journal. Comme il peut s'agir d'un grand nombre d'entrées, "
+            + "n''utilisez en aucun cas cette option en mode productif, mais uniquement à des "
+            + "fins de test."
+            + "</HTML>"},
         {"label.max.outboundconnections", "Connexions sortantes parallèles (max)"},
         {"label.max.outboundconnections.help", "<HTML><strong>Connexions sortantes parallèles (max)</strong><br><br>"
             + "Il s''agit du nombre maximal de connexions sortantes parallèles que votre système ouvrira. "
@@ -204,17 +223,22 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
         {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Suppression des anciennes données statistiques</strong><br><br>"
             + "Le système collecte les données de compatibilité des systèmes partenaires et peut les afficher sous forme de "
             + "statistiques. Cela détermine la période pendant laquelle ces données sont conservées.</HTML>"},
-        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Suppression des anciens répertoires de logs</strong><br><br>Même si les anciennes transactions ont été supprimées, les opérations peuvent toujours être retracées grâce aux fichiers journaux existants. Ce paramètre permet de supprimer ces fichiers journaux ainsi que tous les fichiers relatifs aux événements du système qui tombent dans la même période.</HTML>"},
+        {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Suppression des anciens répertoires de logs</strong><br><br>"
+            + "Même si les anciennes transactions ont été supprimées, les opérations peuvent toujours "
+            + "être retracées grâce aux fichiers journaux existants. Ce paramètre permet de supprimer ces "
+            + "fichiers journaux ainsi que tous les fichiers relatifs aux événements du système qui tombent dans la même période."
+            + "</HTML>"},
         {"label.colorblindness", "Support pour le daltonisme"},
         {"warning.clientrestart.required", "Les paramètres du client ont été modifiés - veuillez redémarrer le client pour les rendre valides"},
         {"warning.serverrestart.required", "Veuillez redémarrer le serveur pour que ces modifications soient valables."},
         {"warning.changes.canceled", "L''utilisateur a annulé la boîte de dialogue des paramètres - aucune modification n''a été apportée aux paramètres."},
         {"label.darkmode", "Mode sombre"},
         {"label.litemode", "Mode allégé"},
+        {"label.hicontrastmode", "Mode contraste élevé"},
         {"label.trustallservercerts", "TLS: Faire confiance à tous les certificats de serveur final de vos partenaires AS2"},
         {"label.trustallservercerts.help", "<HTML><strong>TLS: Faire confiance à tous les certificats de serveur final de vos partenaires AS2</strong><br><br>"
             + "Normalement, TLS exige que tous les certificats de la chaîne de confiance du système AS2 de votre partenaire soient conservés dans votre gestionnaire de certificats TLS. "
-            + "Si vous activez cette option, vous faites confiance au certificat final de votre système partenaire lors de l'établissement de la connexion sortante, "
+            + "Si vous activez cette option, vous faites confiance au certificat final de votre système partenaire lors de l''établissement de la connexion sortante, "
             + "si vous ne conservez que les certificats racine et intermédiaires correspondants dans le gestionnaire de certificats TLS. "
             + "Veuillez noter que cette option n''est utile que si votre partenaire utilise un certificat certifié - les certificats auto-signés sont de toute façon acceptés."
             + "<br><br><strong>Avertissement:</strong> l''activation de cette option diminue le niveau de sécurité, car des attaques man-in-the-middle sont possibles!"
@@ -243,6 +267,15 @@ public class ResourceBundlePreferences_fr extends MecResourceBundle {
             + "</HTML>"
         },
         {"embedded.httpconfig.not.available", "Serveur HTTP non disponible ou problèmes d''accès au fichier de configuration"},
-        {"button.mailserverdetection", "Détecter serveur de messagerie"},        
-    };
+        {"button.mailserverdetection", "Détecter serveur"},
+        {"label.loghttprequests", "Journal des requêtes HTTP du serveur HTTP intégré"},
+        {"label.loghttprequests.help", "<HTML><strong>HTTP Request Log</strong><br><br>"
+            + "Si une connexion partenaire est réalisée via HTTPS "
+            + "(TLS, l''URL commence par https), il est possible de vérifier régulièrement si "
+            + "le certificat TLS a été modifié. S''il a été modifié et n'est pas encore dans le système, "
+            + "il est alors automatiquement importé avec toute la chaîne d''authentification.<br><br>"
+            + "Veuillez noter qu''il s''agit d''un réglage problématique au niveau de la sécurité, "
+            + "car vous faites ainsi automatiquement confiance à un certificat trouvé - sans demande."
+            + "</HTML>"
+        },};
 }

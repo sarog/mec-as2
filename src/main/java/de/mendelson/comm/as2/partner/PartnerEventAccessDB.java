@@ -1,17 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventAccessDB.java 11    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventAccessDB.java 14    14/01/25 15:07 Heller $
 package de.mendelson.comm.as2.partner;
 
-import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.security.Base64;
-import de.mendelson.util.systemevents.SystemEvent;
-import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -24,14 +20,9 @@ import java.util.logging.Logger;
  * Access the partner events in the database
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class PartnerEventAccessDB {
-
-    /**
-     * Logger to log information to
-     */
-    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
 
     public PartnerEventAccessDB() {
     }
@@ -40,37 +31,24 @@ public class PartnerEventAccessDB {
      * Populates the passed partner with the stored event data
      */
     public void loadPartnerEvents(Partner partner, Connection configConnection) throws Exception {
-        PreparedStatement statement = null;
-        ResultSet result = null;
         PartnerEventInformation eventInfo = partner.getPartnerEvents();
-        try {
-            statement = configConnection.prepareStatement("SELECT * FROM partnerevent WHERE partnerid=?");
+        try (PreparedStatement statement = configConnection.prepareStatement(
+                "SELECT * FROM partnerevent WHERE partnerid=?")) {
             statement.setInt(1, partner.getDBId());
-            result = statement.executeQuery();
-            while (result.next()) {
-                eventInfo.setProcess(PartnerEventInformation.TYPE_ON_RECEIPT, result.getInt("typeonreceipt"));
-                eventInfo.setProcess(PartnerEventInformation.TYPE_ON_SENDERROR, result.getInt("typeonsenderror"));
-                eventInfo.setProcess(PartnerEventInformation.TYPE_ON_SENDSUCCESS, result.getInt("typeonsendsuccess"));
-                eventInfo.setUseOnReceipt(result.getInt("useonreceipt") != 0);
-                eventInfo.setUseOnSenderror(result.getInt("useonsenderror") != 0);
-                eventInfo.setUseOnSendsuccess(result.getInt("useonsendsuccess") != 0);
-                eventInfo.setParameter(PartnerEventInformation.TYPE_ON_RECEIPT, this.deserializeList(result.getString("parameteronreceipt")));
-                eventInfo.setParameter(PartnerEventInformation.TYPE_ON_SENDERROR, this.deserializeList(result.getString("parameteronsenderror")));
-                eventInfo.setParameter(PartnerEventInformation.TYPE_ON_SENDSUCCESS, this.deserializeList(result.getString("parameteronsendsuccess")));
-            }
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
-            if (result != null) {
-                try {
-                    result.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            try (ResultSet result = statement.executeQuery()) {
+                while (result.next()) {
+                    eventInfo.setProcess(PartnerEventInformation.TYPE_ON_RECEIPT, result.getInt("typeonreceipt"));
+                    eventInfo.setProcess(PartnerEventInformation.TYPE_ON_SENDERROR, result.getInt("typeonsenderror"));
+                    eventInfo.setProcess(PartnerEventInformation.TYPE_ON_SENDSUCCESS, result.getInt("typeonsendsuccess"));
+                    eventInfo.setUseOnReceipt(result.getInt("useonreceipt") != 0);
+                    eventInfo.setUseOnSenderror(result.getInt("useonsenderror") != 0);
+                    eventInfo.setUseOnSendsuccess(result.getInt("useonsendsuccess") != 0);
+                    eventInfo.setParameter(PartnerEventInformation.TYPE_ON_RECEIPT,
+                            this.deserializeList(result.getString("parameteronreceipt")));
+                    eventInfo.setParameter(PartnerEventInformation.TYPE_ON_SENDERROR,
+                            this.deserializeList(result.getString("parameteronsenderror")));
+                    eventInfo.setParameter(PartnerEventInformation.TYPE_ON_SENDSUCCESS,
+                            this.deserializeList(result.getString("parameteronsendsuccess")));
                 }
             }
         }
@@ -125,13 +103,11 @@ public class PartnerEventAccessDB {
     public void storePartnerEvents(Partner partner, Connection configConnectionNoAutoCommit) throws Exception {
         this.deletePartnerEvents(partner, configConnectionNoAutoCommit);
         PartnerEventInformation partnerEvents = partner.getPartnerEvents();
-        PreparedStatement statement = null;
-        try {
-            statement = configConnectionNoAutoCommit.prepareStatement(
-                    "INSERT INTO partnerevent(partnerid,useonreceipt,useonsenderror,useonsendsuccess,"
-                    + "typeonreceipt,typeonsenderror,typeonsendsuccess,"
-                    + "parameteronreceipt,parameteronsenderror,parameteronsendsuccess)"
-                    + "VALUES(?,?,?,?,?,?,?,?,?,?)");
+        try (PreparedStatement statement = configConnectionNoAutoCommit.prepareStatement(
+                "INSERT INTO partnerevent(partnerid,useonreceipt,useonsenderror,useonsendsuccess,"
+                + "typeonreceipt,typeonsenderror,typeonsendsuccess,"
+                + "parameteronreceipt,parameteronsenderror,parameteronsendsuccess)"
+                + "VALUES(?,?,?,?,?,?,?,?,?,?)")) {
             statement.setInt(1, partner.getDBId());
             statement.setInt(2, partnerEvents.useOnReceipt() ? 1 : 0);
             statement.setInt(3, partnerEvents.useOnSenderror() ? 1 : 0);
@@ -155,14 +131,6 @@ public class PartnerEventAccessDB {
                 statement.setNull(10, java.sql.Types.VARCHAR);
             }
             statement.executeUpdate();
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
         }
     }
 
@@ -173,19 +141,10 @@ public class PartnerEventAccessDB {
      * for transactional operation
      */
     public void deletePartnerEvents(Partner partner, Connection configConnectionNoAutoCommit) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            statement = configConnectionNoAutoCommit.prepareStatement("DELETE FROM partnerevent WHERE partnerid=?");
+        try (PreparedStatement statement = configConnectionNoAutoCommit.prepareStatement(
+                "DELETE FROM partnerevent WHERE partnerid=?")) {
             statement.setInt(1, partner.getDBId());
-            statement.execute();
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
+            statement.executeUpdate();
         }
     }
 

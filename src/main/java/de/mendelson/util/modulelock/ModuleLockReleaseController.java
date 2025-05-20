@@ -1,10 +1,9 @@
-//$Header: /as2/de/mendelson/util/modulelock/ModuleLockReleaseController.java 4     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/modulelock/ModuleLockReleaseController.java 7     11/02/25 13:40 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEventManager;
-import java.sql.Connection;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -25,14 +24,10 @@ import java.util.logging.Logger;
  * cut or something else)
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class ModuleLockReleaseController {
 
-    /**
-     * Logger to log information to
-     */
-    private final Logger logger;
     private final LockReleaseThread releaseThread = new LockReleaseThread();
     private final SystemEventManager systemEventManager;
 
@@ -44,7 +39,6 @@ public class ModuleLockReleaseController {
             SystemEventManager systemEventManager,
             String serverLoggerName) throws Exception {
         this.dbDriverManager = dbDriverManager;
-        this.logger = Logger.getLogger(serverLoggerName);
         this.systemEventManager = systemEventManager;
     }
 
@@ -62,22 +56,7 @@ public class ModuleLockReleaseController {
 
         @Override
         public void run() {
-            Connection runtimeConnectionNoAutoCommit = null;
-            try {
-                runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
-                runtimeConnectionNoAutoCommit.setAutoCommit(false);
-                ModuleLock.releaseAllLocksOlderThan(dbDriverManager, runtimeConnectionNoAutoCommit, TimeUnit.SECONDS.toMillis(45));
-            } catch (Throwable e) {
-                systemEventManager.systemFailure(e);
-            } finally {
-                if (runtimeConnectionNoAutoCommit != null) {
-                    try {
-                        runtimeConnectionNoAutoCommit.close();
-                    } catch (Exception e) {
-                        systemEventManager.systemFailure(e);
-                    }
-                }
-            }
+            ModuleLock.releaseAllLocksOlderThan(dbDriverManager, systemEventManager, TimeUnit.SECONDS.toMillis(45));
         }
     }
 }

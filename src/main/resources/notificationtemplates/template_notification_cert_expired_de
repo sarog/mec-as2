@@ -1,0 +1,28 @@
+$Header:$
+Diese Datei beinhaltet die Benachrichtigungsvorlage fuer die Benachrichtigung eines abgelaufenen Zertifikats.
+Folgende Variablen koennen verwendet werden, sie werden entsprechend ersetzt:
+
+${PRODUCTNAME}: Produktname
+${HOST}: Server Host
+${ALIAS}: Alias des ensprechenden Zertifikats
+${ISSUER}: Issuer des Zertifikats/Schluessels
+${FINGERPRINT_SHA1}: Fingerprint des Zertifikats/Schluessels (SHA-1)
+${VALID_FROM}: Gueltig von Datum
+${VALID_TO}: Gueltig bis Datum
+
+
+[SUBJECT]
+Zertifikat ist abgelaufen
+
+
+[BODY]
+Das Zertifikat mit dem Alias "${ALIAS}" auf "${PRODUCTNAME}@${HOST}" ist abgelaufen. 
+
+Bitte aktualisieren Sie es, es ist aktuell nicht mehr benutzbar und kann nicht mehr fuer kryptographische Aufgaben eingesetzt werden.
+
+Zusaetzliche Informationen zum Zertifikat:
+Alias: ${ALIAS}
+Issuer: ${ISSUER}
+Fingerprint (SHA-1): ${FINGERPRINT_SHA1}
+Gueltig von: ${VALID_FROM}
+Gueltig bis: ${VALID_TO}

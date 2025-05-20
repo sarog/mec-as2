@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 13    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationDataImplAS2.java 14    19/02/25 10:09 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.oauth2.OAuth2Config;
@@ -17,7 +17,7 @@ import org.w3c.dom.NodeList;
 /**
  * Implementation of a server log for the as2 server database
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class NotificationDataImplAS2 extends NotificationData implements Serializable{
    
@@ -147,7 +147,7 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
                 if (key.equals("mailserver")) {
                     notification.setMailServer(value);
                 } else if (key.equals("mailserverport")) {
-                    notification.setMailServerPort(Integer.valueOf(value).intValue());
+                    notification.setMailServerPort(Integer.parseInt(value));
                 } else if (key.equals("notificationmail")) {
                     notification.setNotificationMail(value);
                 } else if (key.equals("notifycertexpire")) {
@@ -163,9 +163,9 @@ public class NotificationDataImplAS2 extends NotificationData implements Seriali
                 } else if (key.equals("replyto")) {
                     notification.setReplyTo(value);
                 }else if (key.equals("connectionsecurity")) {
-                    notification.setConnectionSecurity(Integer.valueOf(value).intValue());
+                    notification.setConnectionSecurity(Integer.parseInt(value));
                 }else if (key.equals("maxnotificationspermin")) {
-                    notification.setMaxNotificationsPerMin(Integer.valueOf(value).intValue());
+                    notification.setMaxNotificationsPerMin(Integer.parseInt(value));
                 }
             }
         }

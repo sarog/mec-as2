@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CertificateCEMController.java 21    1/11/23 11:29 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CertificateCEMController.java 22    18/12/24 17:06 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -9,14 +9,12 @@ import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.util.NamedThreadFactory;
+import de.mendelson.comm.as2.timing.TimingScheduledThreadPool;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -31,7 +29,7 @@ import java.util.logging.Logger;
  * Controller that executes CEM events
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 22 $
  */
 public class CertificateCEMController {
 
@@ -46,8 +44,6 @@ public class CertificateCEMController {
     private final CertificateManager certificateManager;
     private final ClientServer clientserver;
     private final CEMControllerThread checkThread;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-            new NamedThreadFactory("cem-controller"));
 
     public CertificateCEMController(ClientServer clientserver,
             IDBDriverManager dbDriverManager,
@@ -59,7 +55,7 @@ public class CertificateCEMController {
     }
 
     public void start() {        
-        this.scheduledExecutor.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
     }
 
     public class CEMControllerThread implements Runnable {

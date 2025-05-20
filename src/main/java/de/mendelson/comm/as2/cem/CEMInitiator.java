@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 44    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 45    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * Initiates a CEM request
  *
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 45 $
  */
 public class CEMInitiator {
 
@@ -61,7 +61,6 @@ public class CEMInitiator {
      */
     private final CertificateManager certificateManagerEncSign;
     private final IDBDriverManager dbDriverManager;
-    private final PartnerAccessDB partnerAccess;
     private final MecResourceBundle rb;
 
     /**
@@ -78,7 +77,6 @@ public class CEMInitiator {
         }
         this.dbDriverManager = dbDriverManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.partnerAccess = new PartnerAccessDB(dbDriverManager);
     }
 
     /**
@@ -192,26 +190,18 @@ public class CEMInitiator {
 
     private Path exportCertificate(KeystoreCertificate certificate, String certContentId)
             throws Exception {
-        KeyStoreUtil util = new KeyStoreUtil();
         String tempDir = System.getProperty("java.io.tmpdir");
-        byte[] exportData = util.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
+        byte[] exportData = KeyStoreUtil.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
                 certificate.getAlias());
-        Path exportFile = Paths.get(tempDir, certContentId + ".p7c" );
-        Files.write(exportFile, exportData);        
+        Path exportFile = Paths.get(tempDir, certContentId + ".p7c");
+        Files.write(exportFile, exportData);
         return (exportFile);
     }
 
     private Path storeRequest(EDIINTCertificateExchangeRequest request) throws Exception {
         Path descriptionFile = AS2Tools.createTempFile("request", ".xml");
-        Writer writer = null;
-        try {
-            writer = Files.newBufferedWriter(descriptionFile, StandardCharsets.UTF_8);
+        try (Writer writer = Files.newBufferedWriter(descriptionFile, StandardCharsets.UTF_8)) {
             writer.write(request.toXML());
-        } finally {
-            if (writer != null) {
-                writer.flush();
-                writer.close();
-            }
         }
         return (descriptionFile);
     }

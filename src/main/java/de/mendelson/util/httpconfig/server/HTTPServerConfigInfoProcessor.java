@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 18    2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/httpconfig/server/HTTPServerConfigInfoProcessor.java 19    3/02/25 11:14 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -31,7 +31,7 @@ import org.apache.mina.core.session.IoSession;
  * Processes a http config request on the server side
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class HTTPServerConfigInfoProcessor {
 
@@ -52,7 +52,7 @@ public class HTTPServerConfigInfoProcessor {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
-        if( httpServerConfigInfo != null){
+        if (httpServerConfigInfo != null) {
             this.miscConfigurationText = this.generateMiscConfigurationText(certificateManagerTLS);
             this.protocolConfigurationText = this.generateProtocolConfigurationText();
             this.cipherConfigurationText = this.generateCipherConfigurationText();
@@ -120,15 +120,15 @@ public class HTTPServerConfigInfoProcessor {
         if (this.httpServerConfigInfo.isSSLEnabled()) {
             //find out key
             KeystoreCertificate tlsKey = null;
-            for( KeystoreCertificate key:certificateManagerTLS.getKeyStoreCertificateList()){
-                if( key.getIsKeyPair()){
+            for (KeystoreCertificate key : certificateManagerTLS.getKeyStoreCertificateList()) {
+                if (key.getIsKeyPair()) {
                     tlsKey = key;
                     break;
                 }
             }
-            if( tlsKey == null ){
+            if (tlsKey == null) {
                 logBuilder.append(this.rb.getResourceString("http.server.config.tlskey.none")).append("\n");
-            }else{
+            } else {
                 DateFormat format = SimpleDateFormat.getDateInstance(DateFormat.MEDIUM);
                 logBuilder.append(this.rb.getResourceString("http.server.config.tlskey.info",
                         new Object[]{
@@ -154,9 +154,9 @@ public class HTTPServerConfigInfoProcessor {
             Path path = Paths.get(deployedWARPath);
             logBuilder.append("[");
             String filename = path.getFileName().toString();
-            if( this.rb.containsResourceString("webapp." + filename)){
+            if (this.rb.containsResourceString("webapp." + filename)) {
                 logBuilder.append(this.rb.getResourceString("webapp." + filename));
-            }else{
+            } else {
                 logBuilder.append(this.rb.getResourceString("webapp._unknown"));
             }
             logBuilder.append("] ");
@@ -170,14 +170,15 @@ public class HTTPServerConfigInfoProcessor {
         StringBuilder logBuilder = new StringBuilder();
         //find out WAN IP
         String hostname = null;
-        BufferedReader in = null;
         try {
             URL whatismyip = new URL("http://mendelson-e-c.com/mendelson_whatsmyip.php");
-            in = new BufferedReader(new InputStreamReader(
-                    whatismyip.openStream()));
-            String ip = in.readLine(); //you get the IP as a String
-            if (ip == null) {
-                ip = "Unknown IP";
+            String ip;
+            try (BufferedReader in = new BufferedReader(new InputStreamReader(
+                    whatismyip.openStream()))) {
+                ip = in.readLine(); //you get the IP as a String
+                if (ip == null) {
+                    ip = "Unknown IP";
+                }
             }
             //try to get host name for the answer            
             hostname = "Unknown host";
@@ -192,14 +193,6 @@ public class HTTPServerConfigInfoProcessor {
                     new Object[]{ip, hostname}));
         } catch (Exception e) {
             logBuilder.append(this.rb.getResourceString("external.ip.error"));
-        } finally {
-            if (in != null) {
-                try {
-                    in.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
         }
         return (logBuilder.toString());
     }
@@ -217,7 +210,7 @@ public class HTTPServerConfigInfoProcessor {
             protocolBuilder.append(protocol);
             protocolBuilder.append("\n");
         }
-        protocolBuilder.append("\n\n");        
+        protocolBuilder.append("\n\n");
         protocolBuilder.append(fold(this.rb.getResourceString("info.protocols.howtochange",
                 new Object[]{
                     this.httpServerConfigInfo.getHTTPServerConfigFile().normalize().toAbsolutePath().toString()

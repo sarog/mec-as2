@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/user/User.java 9     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/User.java 11    11/06/24 9:20 Heller $
 package de.mendelson.util.clientserver.user;
 
 import de.mendelson.util.security.PBKDF2;
@@ -18,7 +18,7 @@ import java.util.Map;
  * A single user for the client server system
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class User implements Serializable {
 

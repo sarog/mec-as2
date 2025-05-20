@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_fr.java 8     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_fr.java 2     9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 8 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleExportKeyPKCS12_fr extends MecResourceBundle {
 

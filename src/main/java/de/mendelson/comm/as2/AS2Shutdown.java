@@ -1,8 +1,9 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/AS2Shutdown.java 7     18/01/24 12:36 Heller $
+//$Header: /as2/de/mendelson/comm/as2/AS2Shutdown.java 9     14/02/25 9:58 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.comm.as2.clientserver.message.ServerShutdown;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.TextClient;
 
 /*
@@ -16,7 +17,7 @@ import de.mendelson.util.clientserver.TextClient;
  * Shutdown the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class AS2Shutdown {
 
@@ -55,14 +56,12 @@ public class AS2Shutdown {
                 System.exit(1);
             }
         }
-        try {
-            TextClient client = new TextClient();
-            client.connectAndLogin("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 
-                    AS2ServerVersion.getFullProductName(), 
+        try (TextClient client = new TextClient(BaseClient.CLIENT_COMMANDLINE_SHUTDOWN)) {
+            client.connectAndLogin("localhost", AS2Server.CLIENTSERVER_COMM_PORT,
+                    AS2ServerVersion.getFullProductName(),
                     user, password.toCharArray(), 15000,
                     "Shutdown-");
             client.sendAsync(new ServerShutdown());
-            client.logout();
         } catch (Throwable e) {
             System.out.println(e.getMessage());
         }

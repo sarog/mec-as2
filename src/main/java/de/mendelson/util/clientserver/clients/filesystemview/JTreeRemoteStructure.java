@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 12    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 13    11/02/25 13:39 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -24,7 +24,7 @@ import javax.swing.tree.TreePath;
  * Tree to display remote file structure
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class JTreeRemoteStructure extends JTree {
 
@@ -75,7 +75,7 @@ public class JTreeRemoteStructure extends JTree {
     /**
      * Expands a node
      */
-    private void expand(DefaultMutableTreeNode node) {
+    private void expand(final DefaultMutableTreeNode node) {
         TreePath treePath = null;
         synchronized (node) {
             treePath = new TreePath(node.getPath());
@@ -84,7 +84,7 @@ public class JTreeRemoteStructure extends JTree {
         this.fireTreeExpanded(treePath);
     }
 
-    public boolean isExplored(DefaultMutableTreeNode node) {
+    public boolean isExplored(final DefaultMutableTreeNode node) {
         synchronized (node) {
             if (node.getChildCount() == 1) {
                 DefaultMutableTreeNode firstChild = (DefaultMutableTreeNode) node.getFirstChild();
