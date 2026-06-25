@@ -1,11 +1,14 @@
-//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/StatisticDetailRequest.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/StatisticDetailRequest.java 8     23/03/26 13:42 Heller $
 package de.mendelson.comm.as2.statistic.clientserver;
 
+import de.mendelson.comm.as2.message.MessageDirectionType;
+import de.mendelson.comm.as2.message.MessageStateType;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import org.jfree.data.time.SimpleTimePeriod;
 /*
@@ -20,25 +23,25 @@ import org.jfree.data.time.SimpleTimePeriod;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class StatisticDetailRequest extends ClientServerMessage implements Serializable {
     
     private static final long serialVersionUID = 1L;
     private String as2IdentificationLocal;
     private String as2IdentificationPartner;
-    private int direction;
+    private MessageDirectionType direction;
     
-    private final List<SimpleTimePeriod> periods = new ArrayList<SimpleTimePeriod>();
-    private final List<Integer> states = new ArrayList<Integer>();
-    private final List<String> seriesName = new ArrayList<String>();
+    private List<SimpleTimePeriod> periods = new ArrayList<SimpleTimePeriod>();
+    private List<MessageStateType> states = new ArrayList<MessageStateType>();
+    private List<String> seriesName = new ArrayList<String>();
     
     public StatisticDetailRequest() {
     }
 
-    public void addRequest( SimpleTimePeriod period, int state, String seriesName ){
+    public void addRequest( SimpleTimePeriod period, MessageStateType state, String seriesName ){
         this.periods.add( period );
-        this.states.add( Integer.valueOf(state));
+        this.states.add( state);
         this.getSeriesName().add( seriesName);
     }
     
@@ -79,14 +82,14 @@ public class StatisticDetailRequest extends ClientServerMessage implements Seria
     /**
      * @return the direction
      */
-    public int getDirection() {
+    public MessageDirectionType getDirection() {
         return direction;
     }
 
     /**
      * @param direction the direction to set
      */
-    public void setDirection(int direction) {
+    public void setDirection(MessageDirectionType direction) {
         this.direction = direction;
     }
 
@@ -100,8 +103,8 @@ public class StatisticDetailRequest extends ClientServerMessage implements Seria
     /**
      * @return the states
      */
-    public List<Integer> getStates() {
-        return states;
+    public List<MessageStateType> getStates() {
+        return(Collections.unmodifiableList(states));
     }
 
     /**

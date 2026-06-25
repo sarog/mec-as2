@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerCodecFactory.java 7     2/11/23 14:03 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/codec/ClientServerCodecFactory.java 10    19/02/26 9:19 Heller $
 package de.mendelson.util.clientserver.codec;
 
+import de.mendelson.IProductVersion;
 import de.mendelson.util.clientserver.ClientSessionHandlerCallback;
+import de.mendelson.util.systemevents.SystemEventManager;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFactory;
 import org.apache.mina.filter.codec.ProtocolDecoder;
@@ -17,7 +19,7 @@ import org.apache.mina.filter.codec.ProtocolEncoder;
 /**
  * Factory that handles encoding/decoding of the requests
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 10 $
  */
 public class ClientServerCodecFactory implements ProtocolCodecFactory {
 
@@ -27,10 +29,12 @@ public class ClientServerCodecFactory implements ProtocolCodecFactory {
     /**
      * 
      * @param clientCallback This may be null if there is no callback or this is not a client instance
+     * @param systemEventManager The system event manager, might be null
      */
-    public ClientServerCodecFactory( ClientSessionHandlerCallback clientCallback) {
-        this.encoder = new ClientServerEncoder();
-        this.decoder = new ClientServerDecoder(clientCallback);
+    public ClientServerCodecFactory( ClientSessionHandlerCallback clientCallback, 
+            IProductVersion productVersion, SystemEventManager systemEventManager) {
+        this.encoder = new ClientServerEncoder(productVersion.getMagicNumber());
+        this.decoder = new ClientServerDecoder(clientCallback, productVersion.getMagicNumber(), systemEventManager);
     }
 
     @Override

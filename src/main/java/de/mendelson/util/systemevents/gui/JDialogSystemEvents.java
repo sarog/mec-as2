@@ -1,4 +1,4 @@
-//$Header: /mec_oftp2/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 43    14/03/25 11:33 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/gui/JDialogSystemEvents.java 47    15/04/26 12:44 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import com.toedter.calendar.JDateChooser;
@@ -16,6 +16,7 @@ import de.mendelson.util.systemevents.clientserver.SystemEventSearchRequest;
 import de.mendelson.util.systemevents.clientserver.SystemEventSearchResponse;
 import de.mendelson.util.systemevents.search.ServerSideEventFilter;
 import de.mendelson.util.tables.TableCellRendererDate;
+import de.mendelson.util.uinotification.UINotification;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.event.ActionEvent;
@@ -39,6 +40,7 @@ import javax.swing.KeyStroke;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
@@ -54,14 +56,27 @@ import javax.swing.table.TableColumn;
 public class JDialogSystemEvents extends JDialog implements ListSelectionListener {
 
     private static final MendelsonMultiResolutionImage IMAGE_MAGNIFYING_GLASS
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/magnifying_glass.svg", 24);
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/magnifying_glass.svg", 24);
     private static final MendelsonMultiResolutionImage IMAGE_RESET_FILTER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/refresh.svg", 24);
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/refresh.svg", 24);
     private final BaseClient baseClient;
     private Date currentStartDate = new Date();
     private Date currentEndDate = new Date();
-    private final MecResourceBundle rb;
-    private final MecResourceBundle rbSystemEvent;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbSystemEvent;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleDialogSystemEvent.class.getName());
+            rbSystemEvent = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleSystemEvent.class.getName());
+        }    
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private final IStatusBar statusBar;
 
     /**
@@ -69,22 +84,12 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
      */
     public JDialogSystemEvents(JFrame parent, BaseClient baseClient, IStatusBar statusBar) {
         super(parent, true);
-        //Load resourcebundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleDialogSystemEvent.class.getName());
-            this.rbSystemEvent = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleSystemEvent.class.getName());
-        } //load up  resourcebundle        
-        catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         this.statusBar = statusBar;
         this.baseClient = baseClient;
         initComponents();
         TextOverlay.addTo(this.jTextFieldFreeTextSearch,
-                this.rb.getResourceString("label.freetext.hint"));
-        this.setTitle(this.rb.getResourceString("title"));
+                rb.getResourceString("label.freetext.hint"));
+        this.setTitle(rb.getResourceString("title"));
         this.jTableSystemEvents.setRowHeight(TableModelSystemEvents.ROW_HEIGHT);
         this.jTableSystemEvents.getSelectionModel().addListSelectionListener(this);
         this.jTableSystemEvents.getTableHeader().setReorderingAllowed(false);
@@ -104,16 +109,16 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         this.setupDateChooser();
         this.setMultiresolutionIcons();
         //setup localized event label
-        this.jLabelSeverityError.setText(this.rbSystemEvent.getResourceString("severity." + SystemEvent.SEVERITY_ERROR));
-        this.jLabelSeverityWarning.setText(this.rbSystemEvent.getResourceString("severity." + SystemEvent.SEVERITY_WARNING));
-        this.jLabelSeverityInfo.setText(this.rbSystemEvent.getResourceString("severity." + SystemEvent.SEVERITY_INFO));
-        this.jLabelOriginSystem.setText(this.rbSystemEvent.getResourceString("origin." + SystemEvent.ORIGIN_SYSTEM));
-        this.jLabelOriginTransaction.setText(this.rbSystemEvent.getResourceString("origin." + SystemEvent.ORIGIN_TRANSACTION));
-        this.jLabelOriginUser.setText(this.rbSystemEvent.getResourceString("origin." + SystemEvent.ORIGIN_USER));
+        this.jLabelSeverityError.setText(rbSystemEvent.getResourceString("severity." + SystemEvent.Severity.ERROR.toInt()));
+        this.jLabelSeverityWarning.setText(rbSystemEvent.getResourceString("severity." + SystemEvent.Severity.WARNING.toInt()));
+        this.jLabelSeverityInfo.setText(rbSystemEvent.getResourceString("severity." + SystemEvent.Severity.INFO.toInt()));
+        this.jLabelOriginSystem.setText(rbSystemEvent.getResourceString("origin." + SystemEvent.Origin.SYSTEM.toInt()));
+        this.jLabelOriginTransaction.setText(rbSystemEvent.getResourceString("origin." + SystemEvent.Origin.TRANSACTION.toInt()));
+        this.jLabelOriginUser.setText(rbSystemEvent.getResourceString("origin." + SystemEvent.Origin.USER.toInt()));
         List<UIEventCategory> categoryList = UIEventCategory.getAllSorted();
         // +1 because there is an "all" entry
         this.jComboBoxCategory.setMaximumRowCount(categoryList.size() + 1);
-        this.jComboBoxCategory.addItem(this.rb.getResourceString("category.all"));
+        this.jComboBoxCategory.addItem(rb.getResourceString("category.all"));
         for (UIEventCategory category : categoryList) {
             this.jComboBoxCategory.addItem(category);
         }
@@ -125,7 +130,7 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
                 jButtonClose.doClick();
             }
         };
-        this.jScrollPaneTableEvents.setBorder(new EmptyBorder(10,10,10,10));
+        this.jScrollPaneTableEvents.setBorder(new EmptyBorder(10, 10, 10, 10));
         KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         this.getRootPane().registerKeyboardAction(actionListenerESC, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
         this.getRootPane().setDefaultButton(this.jButtonSearch);
@@ -133,14 +138,22 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
     }
 
     private void setMultiresolutionIcons() {
-        this.jButtonSearch.setIcon(new ImageIcon(IMAGE_MAGNIFYING_GLASS.toMinResolution(24)));
-        this.jButtonResetFilter.setIcon(new ImageIcon(IMAGE_RESET_FILTER.toMinResolution(24)));
-        this.jLabelSeverityError.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_ERROR_MULTIRESOLUTION.toMinResolution(20)));
-        this.jLabelSeverityInfo.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_INFO_MULTIRESOLUTION.toMinResolution(20)));
-        this.jLabelSeverityWarning.setIcon(new ImageIcon(SystemEvent.ICON_SEVERITY_WARNING_MULTIRESOLUTION.toMinResolution(20)));
-        this.jLabelOriginSystem.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_SYSTEM_MULTIRESOLUTION.toMinResolution(20)));
-        this.jLabelOriginTransaction.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION.toMinResolution(20)));
-        this.jLabelOriginUser.setIcon(new ImageIcon(SystemEvent.ICON_ORIGIN_USER_MULTIRESOLUTION.toMinResolution(20)));
+        this.jButtonSearch.setIcon(new ImageIcon(
+                IMAGE_MAGNIFYING_GLASS.toMinResolution(24)));
+        this.jButtonResetFilter.setIcon(new ImageIcon(
+                IMAGE_RESET_FILTER.toMinResolution(24)));
+        this.jLabelSeverityError.setIcon(new ImageIcon(
+                SystemEvent.ICON_SEVERITY_ERROR_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelSeverityInfo.setIcon(new ImageIcon(
+                SystemEvent.ICON_SEVERITY_INFO_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelSeverityWarning.setIcon(new ImageIcon(
+                SystemEvent.ICON_SEVERITY_WARNING_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelOriginSystem.setIcon(new ImageIcon(
+                SystemEvent.ICON_ORIGIN_SYSTEM_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelOriginTransaction.setIcon(new ImageIcon(
+                SystemEvent.ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION.toMinResolution(20)));
+        this.jLabelOriginUser.setIcon(new ImageIcon(
+                SystemEvent.ICON_ORIGIN_USER_MULTIRESOLUTION.toMinResolution(20)));
     }
 
     /**
@@ -224,7 +237,7 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         eventFilter.setAcceptOriginUser(this.switchOriginUser.isSelected());
         Object selectedCategoryObj = this.jComboBoxCategory.getSelectedItem();
         if (selectedCategoryObj == null || selectedCategoryObj instanceof String) {
-            eventFilter.setAcceptCategory(-1);
+            eventFilter.setAcceptCategory(SystemEvent.Category.FILTER_ACCEPT_ALL);
         } else {
             UIEventCategory selectedCategory = (UIEventCategory) selectedCategoryObj;
             eventFilter.setAcceptCategory(selectedCategory.getCategoryValue());
@@ -252,16 +265,26 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
         if (!(this.getGlassPane() instanceof LockingGlassPane)) {
             this.setGlassPane(new LockingGlassPane());
         }
-        this.getGlassPane().setVisible(true);
-        this.getGlassPane().requestFocusInWindow();
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                getGlassPane().setVisible(true);
+                getGlassPane().requestFocusInWindow();
+            }
+        });
     }
 
     /**
-     * Unlock the component: remove the glasspane that prevents any action on
+     * Unlock the component: remove the glass pane that prevents any action on
      * the UI
      */
     private void unlock() {
-        getGlassPane().setVisible(false);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                getGlassPane().setVisible(false);
+            }
+        });
     }
 
     /**
@@ -269,35 +292,37 @@ public class JDialogSystemEvents extends JDialog implements ListSelectionListene
      * first and performing the action afterwards
      */
     private synchronized void performSearch() {
-        final String uniqueId = this.getClass().getName() + ".performSearch." + System.currentTimeMillis();
-        final SystemEventSearchRequest request = new SystemEventSearchRequest(this.generateFilterFromGUI());
-        this.displayNoSelection();
+        final String uniqueId = this.getClass().getName() + ".performSearch." + System.currentTimeMillis();                
         //this could take some time as indicies might be first created
         final long SEARCH_TIMEOUT = TimeUnit.MINUTES.toMillis(1);
-
-        Runnable runnable = new Runnable() {
+        JDialogSystemEvents.this.lock();
+        SwingWorker<Void, Void> worker = new SwingWorker<Void, Void>() {
             @Override
-            public void run() {
-                JDialogSystemEvents.this.lock();
+            protected Void doInBackground() throws Exception {
+                final SystemEventSearchRequest request = new SystemEventSearchRequest(generateFilterFromGUI());
                 //display wait indicator
                 JDialogSystemEvents.this.statusBar.startProgressIndeterminate(rb.getResourceString("label.search"), uniqueId);
                 try {
                     SystemEventSearchResponse response = (SystemEventSearchResponse) baseClient.sendSync(request, SEARCH_TIMEOUT);
-                    List<SystemEvent> resultList = response.getSearchResults();
+                    List<SystemEvent> resultList = response.getEventResultList();
                     ((TableModelSystemEvents) jTableSystemEvents.getModel()).passNewData(resultList);
                     jPanelEmptyTable.setVisible(resultList.isEmpty());
                     if (!resultList.isEmpty()) {
                         jTableSystemEvents.getSelectionModel().setSelectionInterval(resultList.size() - 1, resultList.size() - 1);
                         scrollScrollPane(jScrollPaneTableEvents, SwingUtilities.BOTTOM);
+                    }else{
+                        displayNoSelection();
                     }
                 } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
                 } finally {
                     JDialogSystemEvents.this.unlock();
                     JDialogSystemEvents.this.statusBar.stopProgressIfExists(uniqueId);
                 }
+                return null;
             }
         };
-        GUIClient.submit( runnable );
+        worker.execute();
     }
 
     /**

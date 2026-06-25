@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemResponse.java 7     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerSystemResponse.java 9     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.PartnerSystem;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -19,17 +20,26 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class PartnerSystemResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final List<PartnerSystem> partnerSystemList = new ArrayList<PartnerSystem>();
+    private List<PartnerSystem> partnerSystemList = new ArrayList<PartnerSystem>();
 
     public PartnerSystemResponse(PartnerSystemRequest request) {
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public PartnerSystemResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Request partner system");

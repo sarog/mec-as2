@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/ListCellRendererCertificates.java 13    19/09/24 12:12 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/ListCellRendererCertificates.java 14    14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,14 +26,14 @@ import javax.swing.SwingConstants;
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ListCellRendererCertificates extends JLabel implements ListCellRenderer {
 
     protected static final int IMAGE_HEIGHT = JDialogCertificates.IMAGE_SIZE_LIST;
     public static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
 
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
     static{
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(

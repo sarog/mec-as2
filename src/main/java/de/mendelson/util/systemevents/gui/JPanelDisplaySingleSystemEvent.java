@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 11    11/02/25 16:26 Heller $
+//$Header: /mec_as4/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 13    14/04/26 9:05 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -21,13 +21,13 @@ import javax.swing.JPanel;
  * Panel that takes a single system event and displays it
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 13 $
  */
 public class JPanelDisplaySingleSystemEvent extends JPanel {
 
     public static final int IMAGE_SIZE = 24;
 
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -188,7 +188,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         jPanelAdditionalInfo.add(jLabelEventOriginHost, gridBagConstraints);
 
         jLabelEventOwnerContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelEventOwnerContent.setText("<content>");
+        jLabelEventOwnerContent.setText("--");
         jLabelEventOwnerContent.setPreferredSize(new java.awt.Dimension(140, 14));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -216,7 +216,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         jPanelAdditionalInfo.add(jLabelEventDate, gridBagConstraints);
 
         jLabelEventDateContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelEventDateContent.setText("<content>");
+        jLabelEventDateContent.setText("--");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 3;
@@ -235,7 +235,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         jPanelAdditionalInfo.add(jLabelEventType, gridBagConstraints);
 
         jLabelEventTypeContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelEventTypeContent.setText("<content>");
+        jLabelEventTypeContent.setText("--");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 2;
@@ -246,7 +246,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
 
         jTextFieldOriginHostContent.setEditable(false);
         jTextFieldOriginHostContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jTextFieldOriginHostContent.setText("<content>");
+        jTextFieldOriginHostContent.setText("--");
         jTextFieldOriginHostContent.setBorder(null);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 7;
@@ -259,7 +259,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
 
         jTextFieldEventIdContent.setEditable(false);
         jTextFieldEventIdContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jTextFieldEventIdContent.setText("<content>");
+        jTextFieldEventIdContent.setText("--");
         jTextFieldEventIdContent.setBorder(null);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 7;

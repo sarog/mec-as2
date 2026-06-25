@@ -1,10 +1,14 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ServerLogMessage.java 7     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/messages/ServerLogMessage.java 11    24/03/26 11:14 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import de.mendelson.util.MecResourceBundle;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 import java.util.logging.Level;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -14,21 +18,32 @@ import java.util.logging.Level;
  */
 /**
  * Msg for the client server protocol
+ *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 11 $
  */
-public class ServerLogMessage extends ClientServerMessage implements Serializable{
+public final class ServerLogMessage extends ClientServerMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleServerLogMessage.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private Level level = Level.INFO;
-        
+
     private String message = null;
-    
-    private Object[] parameter = null;
-    
-    public ServerLogMessage(){
-    }    
-    
+
+    private String[] parameter = null;
+
+    public ServerLogMessage() {
+    }
+
     public Level getLevel() {
         return level;
     }
@@ -41,27 +56,28 @@ public class ServerLogMessage extends ClientServerMessage implements Serializabl
         return message;
     }
 
-    public void setMessage(String message) {
+    public void setMessage(String message) {        
         this.message = message;
     }
 
-    public Object[] getParameter() {
+    public String[] getParameter() {
         return parameter;
     }
 
-    public void setParameter(Object[] parameter) {
+    public void setParameter(String[] parameter) {
         this.parameter = parameter;
     }
- 
-        
+
     @Override
-    public String toString(){
-        return( "Server message '" + this.getMessage() + "'");
+    public String toString() {
+        return ("Server message '" + this.getMessage() + "'");
     }
 
-    /**Prevent an overwrite of the readObject method for de-serialization*/
-    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+    /**
+     * Prevent an overwrite of the readObject method for de-serialization
+     */
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException {
         inStream.defaultReadObject();
     }
-    
+
 }

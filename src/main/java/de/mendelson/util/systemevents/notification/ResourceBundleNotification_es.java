@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_es.java 2     9/12/24 15:51 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_es.java 3     13/06/25 15:23 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 2 $
+* @version $Revision: 3 $
 */
 public class ResourceBundleNotification_es extends MecResourceBundle {
 
@@ -25,21 +25,21 @@ public class ResourceBundleNotification_es extends MecResourceBundle {
 	}
 	/**List of messages in the specific language*/
 	private static final Object[][] CONTENTS = {
-		{"test.message.debug", "\nHa fallado el envío del mensaje.\n"},
-		{"notification.about.event", "Esta notificación se refiere al evento del sistema de {0}.\nUrgencia: {1}\nOrigen: {2}\nTipo: {3}\nId: {4}"},
-		{"notification.summary", "Resumen de {0} eventos del sistema"},
+		{"authorization.credentials", "Usuario/contraseña"},
+		{"authorization.none", "NONE"},
+		{"authorization.oauth2", "OAUTH2"},
 		{"authorization.oauth2.authorizationcode", "Código de autorización"},
 		{"authorization.oauth2.clientcredentials", "Credenciales del cliente"},
-		{"authorization.credentials", "Usuario/contraseña"},
-		{"test.message.send", "Se ha enviado un mensaje de prueba a {0}."},
-		{"authorization.oauth2", "OAUTH2"},
-		{"notification.summary.info", "Recibe este mensaje de resumen porque ha definido un número limitado\nde notificaciones por unidad de tiempo.\nPara obtener detalles sobre los eventos individuales, inicie el cliente\nel cliente y navegue hasta \"Eventos del sistema de archivos\".\nIntroduzca el número único del evento en la máscara de búsqueda.\ndel evento en la máscara de búsqueda."},
-		{"misc.message.summary.send", "Se ha enviado un correo electrónico de notificación de resumen a {0}."},
-		{"authorization.none", "NONE"},
-		{"misc.message.summary.failed", "Falló el envío de un correo electrónico de notificación de resumen a {0}."},
-		{"misc.message.send", "Se ha enviado un correo electrónico de notificación a {0} ({1}-{2}-{3})."},
-		{"module.name", "[NOTIFICACIÓN POR CORREO ELECTRÓNICO]"},
-		{"misc.message.send.failed", "Falló el envío de un correo electrónico de notificación a {0}."},
 		{"do.not.reply", "Por favor, no responda a este mensaje."},
+		{"misc.message.send", "Se ha enviado un correo electrónico de notificación a {0} ({1}-{2}-{3})."},
+		{"misc.message.send.failed", "Falló el envío de un correo electrónico de notificación a {0}."},
+		{"misc.message.summary.failed", "Falló el envío de un correo electrónico de notificación de resumen a {0}."},
+		{"misc.message.summary.send", "Se ha enviado un correo electrónico de notificación de resumen a {0}."},
+		{"module.name", "[NOTIFICACIÓN POR CORREO ELECTRÓNICO]"},
+		{"notification.about.event", "Esta notificación se refiere al evento del sistema de {0}.\nUrgencia: {1}\nOrigen: {2}\nTipo: {3}\nId: {4}"},
+		{"notification.summary", "Resumen de {0} eventos del sistema"},
+		{"notification.summary.info", "Recibe este mensaje de resumen porque ha definido un número limitado\nde notificaciones por unidad de tiempo.\nPara obtener detalles sobre los eventos individuales, inicie el cliente\nel cliente y navegue hasta \"Eventos del sistema de archivos\".\nIntroduzca el número único del evento en la máscara de búsqueda.\ndel evento en la máscara de búsqueda."},
+		{"test.message.debug", "\nHa fallado el envío del mensaje.\n"},
+		{"test.message.send", "Se ha enviado un mensaje de prueba a {0}."},
 	};
 }

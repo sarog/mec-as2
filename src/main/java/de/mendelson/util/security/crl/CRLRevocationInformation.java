@@ -1,6 +1,7 @@
-//$Header: /as4/de/mendelson/util/security/crl/CRLRevocationInformation.java 1     29/02/24 10:06 Heller $
+//$Header: /as4/de/mendelson/util/security/crl/CRLRevocationInformation.java 4     15/12/25 14:54 Heller $
 package de.mendelson.util.security.crl;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 
 /*
@@ -14,28 +15,39 @@ import java.io.Serializable;
  * Stores information regarding a single revocation request
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 4 $
  */
 public class CRLRevocationInformation implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final CRLRevocationState state;
-    private final String fingerprintSHA1;
-    private final String logLine;
+    private CRLRevocationState revocationState;
+    private String fingerprintSHA1;
+    private String logLine;
+    private long validUntil = 0L;
 
     public CRLRevocationInformation(CRLRevocationState state, String fingerprintSHA1,
-            String logLine) {
-        this.state = state;
+            String logLine, long validUntil) {
+        this.revocationState = state;
         this.fingerprintSHA1 = fingerprintSHA1;
         this.logLine = logLine;
+        this.validUntil = validUntil;
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CRLRevocationInformation(){        
+    }            
+    
+    
     /**
      * @return the state
      */
     public CRLRevocationState getRevocationState() {
-        return this.state;
+        return this.revocationState;
     }
 
     /**
@@ -50,6 +62,41 @@ public class CRLRevocationInformation implements Serializable {
      */
     public String getLogLine() {
         return logLine;
+    }
+
+    /**
+     * @param revocationState the revocationState to set
+     */
+    public void setRevocationState(CRLRevocationState revocationState) {
+        this.revocationState = revocationState;
+    }
+
+    /**
+     * @param fingerprintSHA1 the fingerprintSHA1 to set
+     */
+    public void setFingerprintSHA1(String fingerprintSHA1) {
+        this.fingerprintSHA1 = fingerprintSHA1;
+    }
+
+    /**
+     * @param logLine the logLine to set
+     */
+    public void setLogLine(String logLine) {
+        this.logLine = logLine;
+    }
+
+    /**
+     * @return the validUntil
+     */
+    public long getValidUntil() {
+        return validUntil;
+    }
+
+    /**
+     * @param validUntil the validUntil to set
+     */
+    public void setValidUntil(long validUntil) {
+        this.validUntil = validUntil;
     }
 
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/gui/TableModelSystemEvents.java 15    5/12/23 8:58 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/gui/TableModelSystemEvents.java 16    5/11/25 11:31 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -24,7 +24,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display all files that are open and save/close them
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class TableModelSystemEvents extends AbstractTableModel {
 
@@ -32,20 +32,18 @@ public class TableModelSystemEvents extends AbstractTableModel {
     private static final int IMAGE_HEIGHT = ROW_HEIGHT-3;
     private final List<SystemEvent> systemEventList = Collections.synchronizedList(new ArrayList<SystemEvent>());
 
-    private final MecResourceBundle rb;
-
-    /**
-     * Load resources
-     */
-    public TableModelSystemEvents() {
-        //Load resourcebundle
+    private static final MecResourceBundle rb;
+    static{
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleDialogSystemEvent.class.getName());
         } //load up  resourcebundle        
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+
+    public TableModelSystemEvents() {        
     }
 
     public void passNewData(List<SystemEvent> newSystemEvents) {
@@ -125,9 +123,9 @@ public class TableModelSystemEvents extends AbstractTableModel {
     ) {
         return (new String[]{
             " ", "  ", 
-            this.rb.getResourceString("header.timestamp"), 
-            this.rb.getResourceString("header.category"), 
-            this.rb.getResourceString("header.type")
+            rb.getResourceString("header.timestamp"), 
+            rb.getResourceString("header.category"), 
+            rb.getResourceString("header.type")
         }[col]);
     }
 

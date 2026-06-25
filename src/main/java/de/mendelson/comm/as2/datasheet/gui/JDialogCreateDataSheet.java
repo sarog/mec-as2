@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 34    19/12/24 8:54 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 38    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
 import de.mendelson.util.security.signature.ListCellRendererSignature;
 import de.mendelson.comm.as2.datasheet.DatasheetBuilder;
 import de.mendelson.comm.as2.datasheet.DatasheetInformation;
-import de.mendelson.comm.as2.message.AS2Message;
+import de.mendelson.comm.as2.message.MessageCompressionType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
@@ -25,6 +25,7 @@ import de.mendelson.util.security.encryption.EncryptionDisplayImplAS2;
 import de.mendelson.util.security.encryption.ListCellRendererEncryption;
 import de.mendelson.util.security.signature.SignatureConstantsAS2;
 import de.mendelson.util.security.signature.SignatureDisplayImplAS2;
+import de.mendelson.util.uinotification.UINotification;
 import java.awt.Desktop;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -48,14 +49,15 @@ import javax.swing.JFrame;
  * Winzard to create a PDF that contains a data sheet
  *
  * @author S.Heller
- * @version $Revision: 34 $
+ * @version $Revision: 38 $
  */
 public class JDialogCreateDataSheet extends JDialog {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final AS2StatusBar statusbar;
     private final static MecResourceBundle rb;
-    static{
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleCreateDataSheet.class.getName());
@@ -74,13 +76,13 @@ public class JDialogCreateDataSheet extends JDialog {
     public JDialogCreateDataSheet(JFrame parent, BaseClient baseClient,
             AS2StatusBar statusbar, CertificateManager certificateManagerEncSign,
             CertificateManager certificateManagerSSL) {
-        super(parent, true);        
+        super(parent, true);
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.certificateManagerTLS = certificateManagerSSL;
         this.statusbar = statusbar;
         this.setTitle(rb.getResourceString("title"));
         initComponents();
-        PartnerListResponse response = (PartnerListResponse) baseClient.sendSync(new PartnerListRequest(PartnerListRequest.LIST_ALL));
+        PartnerListResponse response = (PartnerListResponse) baseClient.sendSync(new PartnerListRequest(PartnerListRequest.ListOption.ALL));
         List<Partner> partnerList = response.getList();
         this.jComboBoxRemotePartner.addItem(rb.getResourceString("label.newpartner"));
         for (Partner partner : partnerList) {
@@ -112,7 +114,7 @@ public class JDialogCreateDataSheet extends JDialog {
     private void initializeComboboxes() {
         this.jComboBoxEncryptionType.setRenderer(new ListCellRendererEncryption(this.jComboBoxEncryptionType));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_NONE)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));        
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC)));
@@ -130,7 +132,7 @@ public class JDialogCreateDataSheet extends JDialog {
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM_RSAES_AOEP)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_128_CBC)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_192_CBC)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_256_CBC)));        
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_256_CBC)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CHACHA20_POLY1305)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_40)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_64)));
@@ -186,33 +188,40 @@ public class JDialogCreateDataSheet extends JDialog {
                     information.setSignature(((Integer) signatureDisplay.getWrappedValue()).intValue());
                     information.setRequestSyncMDN(JDialogCreateDataSheet.this.jCheckBoxSyncMDN.isSelected());
                     information.setRequestSignedMDN(JDialogCreateDataSheet.this.jCheckBoxSignedMDN.isSelected());
-                    information.setCompression(JDialogCreateDataSheet.this.jCheckBoxCompression.isSelected() ? AS2Message.COMPRESSION_ZLIB : AS2Message.COMPRESSION_NONE);
-                    CertificateManager certificateManagerEncSign = JDialogCreateDataSheet.this.certificateManagerEncSign;
-                    PartnerCertificateInformation infoEncryption = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT);
-                    if (infoEncryption != null && !infoEncryption.isEmpty()) {                                                
-                        String alias = certificateManagerEncSign.getAliasByFingerprint(infoEncryption.getFingerprintSHA1());
+                    information.setCompression(JDialogCreateDataSheet.this.jCheckBoxCompression.isSelected()
+                            ? MessageCompressionType.ZLIB : MessageCompressionType.NONE);
+                    CertificateManager certificateManagerEncSign
+                            = JDialogCreateDataSheet.this.certificateManagerEncSign;
+                    PartnerCertificateInformation infoEncryption
+                            = localPartner.getCertificateInformation(
+                                    PartnerCertificateInformation.Category.CRYPT);
+                    if (infoEncryption != null && !infoEncryption.isEmpty()) {
+                        String alias = certificateManagerEncSign.getAliasByFingerprint(
+                                infoEncryption.getFingerprintSHA1());
                         List<X509Certificate> trustChain = certificateManagerEncSign.computeTrustChain(alias);
                         X509Certificate[] trustChainArray = new X509Certificate[trustChain.size()];
-                        trustChainArray = trustChain.toArray(trustChainArray);                        
+                        trustChainArray = trustChain.toArray(trustChainArray);
                         byte[] pkcs7 = KeyStoreUtil.convertX509CertificateToPKCS7(trustChainArray);
                         information.setCertDecryptData(pkcs7);
                     }
-                    PartnerCertificateInformation infoSignature = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN);
+                    PartnerCertificateInformation infoSignature = localPartner.getCertificateInformation(
+                            PartnerCertificateInformation.Category.SIGN);
                     if (infoSignature != null && !infoSignature.isEmpty()) {
                         String alias = certificateManagerEncSign.getAliasByFingerprint(infoSignature.getFingerprintSHA1());
                         List<X509Certificate> trustChain = certificateManagerEncSign.computeTrustChain(alias);
                         X509Certificate[] trustChainArray = new X509Certificate[trustChain.size()];
-                        trustChainArray = trustChain.toArray(trustChainArray);                        
+                        trustChainArray = trustChain.toArray(trustChainArray);
                         byte[] pkcs7 = KeyStoreUtil.convertX509CertificateToPKCS7(trustChainArray);
                         information.setCertVerifySignature(pkcs7);
                     }
-                    PartnerCertificateInformation infoTLS = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_TLS);
+                    PartnerCertificateInformation infoTLS = localPartner.getCertificateInformation(
+                            PartnerCertificateInformation.Category.TLS);
                     if (infoTLS != null && !infoTLS.isEmpty()) {
                         String alias = certificateManagerTLS.getAliasByFingerprint(infoTLS.getFingerprintSHA1());
                         List<X509Certificate> trustChain = certificateManagerEncSign.computeTrustChain(alias);
                         X509Certificate[] trustChainArray = new X509Certificate[trustChain.size()];
-                        trustChainArray = trustChain.toArray(trustChainArray);                        
-                        byte[] pkcs7 = KeyStoreUtil.convertX509CertificateToPKCS7(trustChainArray);                        
+                        trustChainArray = trustChain.toArray(trustChainArray);
+                        byte[] pkcs7 = KeyStoreUtil.convertX509CertificateToPKCS7(trustChainArray);
                         information.setCertTLS(pkcs7);
                     }
                     DatasheetBuilder builder = new DatasheetBuilder(localPartner, remotePartner, information);
@@ -508,7 +517,11 @@ public class JDialogCreateDataSheet extends JDialog {
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
         this.setVisible(false);
         //store the entered preferences
-        this.preferenceClient.put(PreferencesAS2.DATASHEET_RECEIPT_URL, this.jTextFieldReceiptURL.getText());
+        try {
+            this.preferenceClient.put(PreferencesAS2.DATASHEET_RECEIPT_URL, this.jTextFieldReceiptURL.getText());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
         this.createPDF();
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
@@ -537,7 +550,7 @@ public class JDialogCreateDataSheet extends JDialog {
         } else {
             Partner remotePartner = (Partner) remoteObject;
             this.jCheckBoxCompression.setEnabled(false);
-            this.jCheckBoxCompression.setSelected(remotePartner.getCompressionType() != AS2Message.COMPRESSION_NONE);
+            this.jCheckBoxCompression.setSelected(remotePartner.getCompressionType() != MessageCompressionType.NONE);
             this.jCheckBoxSignedMDN.setEnabled(false);
             this.jCheckBoxSignedMDN.setSelected(remotePartner.isSignedMDN());
             this.jCheckBoxSyncMDN.setEnabled(false);

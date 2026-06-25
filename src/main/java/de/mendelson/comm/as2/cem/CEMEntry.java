@@ -1,6 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMEntry.java 12    2/11/23 15:52 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/CEMEntry.java 13    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
+import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.util.MecResourceBundle;
 import java.io.Serializable;
 import java.util.MissingResourceException;
@@ -15,29 +18,82 @@ import java.util.ResourceBundle;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Container that stores certificate information where the respond by date requests to change a certificate
+ * Container that stores certificate information where the respond by date
+ * requests to change a certificate
+ *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
-public class CEMEntry implements Serializable{
+public class CEMEntry implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    
-    public static final int CATEGORY_CRYPT = 1;
-    public static final int CATEGORY_SIGN = 2;
-    public static final int CATEGORY_TLS = 3;
-    public static final int STATUS_PENDING_INT = 1;
-    public static final int STATUS_REJECTED_INT = 2;
-    public static final int STATUS_ACCEPTED_INT = 3;
-    public static final int STATUS_EXPIRED_INT = 4;
-    public static final int STATUS_REVOKED_INT = 5;
-    //canceled by user
-    public static final int STATUS_CANCELED_INT = 99;
-    //processing error - mainly a bad MDN on a request
-    public static final int STATUS_PROCESSING_ERROR_INT = 999;
+
+    public enum Category {
+        CRYPT(PartnerCertificateInformation.CategoryID.ID_CRYPT),
+        SIGN(PartnerCertificateInformation.CategoryID.ID_SIGN),
+        TLS(PartnerCertificateInformation.CategoryID.ID_TLS);
+        private final int id;
+
+        Category(int id) {
+            this.id = id;
+        }
+
+        @JsonValue
+        public int toInt() {
+            return this.id;
+        }
+
+        @JsonCreator
+        public static Category of(int id) {
+            for (Category category : Category.values()) {
+                if (category.id == id) {
+                    return category;
+                }
+            }
+            throw new IllegalArgumentException("Unknown PartnerCertificateInformation.Category " + id);
+        }
+    }
+
+    public enum Status {
+        PENDING(1),
+        REJECTED(2),
+        ACCEPTED(3),
+        EXPIRED(4),
+        REVOKED(5),
+        /**
+         * Cancelled by user
+         */
+        CANCELED(99),
+        /**
+         * Processing error - mainly a bad MDN on a request
+         */
+        PROCESSING_ERROR(999);
+
+        private final int id;
+
+        Status(int id) {
+            this.id = id;
+        }
+
+        @JsonValue
+        public int toInt() {
+            return this.id;
+        }
+
+        @JsonCreator
+        public static Status of(int id) {
+            for (Status status : Status.values()) {
+                if (status.id == id) {
+                    return status;
+                }
+            }
+            return( PROCESSING_ERROR );
+        }
+    }
+
     private String initiatorAS2Id = null;
     private String receiverAS2Id = null;
-    private int category = CEMEntry.CATEGORY_CRYPT;
+    private CEMEntry.Category category = CEMEntry.Category.CRYPT;
     private long respondByDate = -1L;
     private String serialId = null;
     private String requestId = null;
@@ -45,53 +101,60 @@ public class CEMEntry implements Serializable{
     private String responseMessageid = null;
     private long requestMessageOriginated = 0L;
     private long responseMessageOriginated = 0L;
-    private int cemState = CEMEntry.STATUS_PENDING_INT;
+    private CEMEntry.Status cemState = CEMEntry.Status.PENDING;
     private String issuername = null;
     private boolean processed = false;
     private long processDate = 0L;
-    /**Only filled if a response has the state "Rejected"*/
+    /**
+     * Only filled if a response has the state "Rejected"
+     */
     private String reasonForRejection = null;
 
-    public boolean hasRespondByDate(){
-        return( this.respondByDate != -1L);
+    public boolean hasRespondByDate() {
+        return (this.respondByDate != -1L);
     }
 
-    /**Returns a localized string that represents the category*/
-    public static final String getCategoryLocalized(int category) {
+    /**
+     * Returns a localized string that represents the category
+     */
+    public static final String getCategoryLocalized(CEMEntry.Category category) {
         MecResourceBundle rb;
         //load resource bundle
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleCEM.class.getName());
-            return (rb.getResourceString("category." + category));
+            return (rb.getResourceString("category." + category.toInt()));
         } catch (MissingResourceException e) {
             return ("###");
         }
     }
 
-    /**Returns a localized string that represents the state*/
-    public static final String getStateLocalized(int state, String receiver) {
+    /**
+     * Returns a localized string that represents the state
+     */
+    public static final String getStateLocalized(CEMEntry.Status state, String receiver) {
         MecResourceBundle rb;
         //load resource bundle
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleCEM.class.getName());
-            return (rb.getResourceString("state." + state, receiver));
+            return (rb.getResourceString("state." + state.toInt(), receiver));
         } catch (MissingResourceException e) {
             return ("###");
         }
     }
+
     /**
      * @return the category
      */
-    public int getCategory() {
+    public CEMEntry.Category getCategory() {
         return category;
     }
 
     /**
      * @param category the category to set
      */
-    public void setCategory(int category) {
+    public void setCategory(CEMEntry.Category category) {
         this.category = category;
     }
 
@@ -224,14 +287,14 @@ public class CEMEntry implements Serializable{
     /**
      * @return the cemState
      */
-    public int getCemState() {
+    public CEMEntry.Status getCemState() {
         return cemState;
     }
 
     /**
      * @param cemState the cemState to set
      */
-    public void setCemState(int cemState) {
+    public void setCemState(CEMEntry.Status cemState) {
         this.cemState = cemState;
     }
 
@@ -290,7 +353,7 @@ public class CEMEntry implements Serializable{
     public void setReasonForRejection(String reasonForRejection) {
         this.reasonForRejection = reasonForRejection;
     }
-    
+
     /**
      * Overwrite the equal method of object
      *
@@ -312,22 +375,11 @@ public class CEMEntry implements Serializable{
     @Override
     public int hashCode() {
         int hash = 5;
-        hash = 41 * hash + Objects.hashCode(this.initiatorAS2Id);
-        hash = 41 * hash + Objects.hashCode(this.receiverAS2Id);
-        hash = 41 * hash + this.category;
-        hash = 41 * hash + (int) (this.respondByDate ^ (this.respondByDate >>> 32));
-        hash = 41 * hash + Objects.hashCode(this.serialId);
-        hash = 41 * hash + Objects.hashCode(this.requestId);
-        hash = 41 * hash + Objects.hashCode(this.requestMessageid);
-        hash = 41 * hash + Objects.hashCode(this.responseMessageid);
-        hash = 41 * hash + (int) (this.requestMessageOriginated ^ (this.requestMessageOriginated >>> 32));
-        hash = 41 * hash + (int) (this.responseMessageOriginated ^ (this.responseMessageOriginated >>> 32));
-        hash = 41 * hash + this.cemState;
-        hash = 41 * hash + Objects.hashCode(this.issuername);
-        hash = 41 * hash + (this.processed ? 1 : 0);
-        hash = 41 * hash + (int) (this.processDate ^ (this.processDate >>> 32));
-        hash = 41 * hash + Objects.hashCode(this.reasonForRejection);
+        hash = 53 * hash + Objects.hashCode(this.category);
+        hash = 53 * hash + Objects.hashCode(this.requestId);
+        hash = 53 * hash + Objects.hashCode(this.cemState);
+        hash = 53 * hash + (int) (this.processDate ^ (this.processDate >>> 32));
         return hash;
     }
-    
+
 }

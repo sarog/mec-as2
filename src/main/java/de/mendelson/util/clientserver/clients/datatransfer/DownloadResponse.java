@@ -1,10 +1,9 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponse.java 13    5/03/25 17:52 Hell $
+//$Header: /oftp2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponse.java 16    23/02/26 11:00 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -17,7 +16,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public abstract class DownloadResponse extends ClientServerResponse implements Serializable {
 
@@ -29,8 +28,13 @@ public abstract class DownloadResponse extends ClientServerResponse implements S
         super(request);
     }
 
-    public void setData(InputStream inStream) throws IOException {
-        this.data = inStream.readAllBytes();
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public DownloadResponse() {
+        super();
     }
 
     public void setData(byte[] data) throws IOException {
@@ -40,16 +44,8 @@ public abstract class DownloadResponse extends ClientServerResponse implements S
     /**
      * @return the data
      */
-    public InputStream getDataStream() {
-        InputStream inStream = new ByteArrayInputStream(this.data);
-        return (inStream);
-    }
-
-    /**
-     * @return the data
-     */
-    public byte[] getDataBytes() {
-        return data;
+    public byte[] getData() {
+        return this.data;
     }
 
     @Override

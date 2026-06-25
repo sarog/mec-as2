@@ -1,8 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileFilter.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileFilter.java 6     28/05/25 16:54 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.io.Serializable;
-import java.nio.file.Path;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,17 +15,33 @@ import java.nio.file.Path;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class FileFilter implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    private int dummy = 1;
+    
     public FileFilter() {
     }
 
-    public boolean displayFile(Path file) {
+    public boolean displayFile(String filePath) {
         return (true);
+    }
+
+    /**
+     * Required for Bean serialisation, e.g. via Jackson
+     */
+    public int getDummy() {
+        return dummy;
+    }
+
+    /**
+     * Required for Bean serialisation, e.g. via Jackson
+     */
+    public void setDummy(int dummy) {
+        this.dummy = dummy;
     }
 
 }

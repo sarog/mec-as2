@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/gui/SystemEventFilter.java 3     10.10.18 12:18 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/gui/SystemEventFilter.java 5     15/04/26 12:44 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.systemevents.SystemEvent;
@@ -17,64 +17,64 @@ import java.util.List;
  * Filter to display system events in the user interface
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class SystemEventFilter {
 
-    private final List<Integer> originList = Collections.synchronizedList(new ArrayList<Integer>());
-    private final List<Integer> severityList = Collections.synchronizedList(new ArrayList<Integer>());
-    private int acceptedCategory = -1;
+    private final List<SystemEvent.Origin> originList 
+            = Collections.synchronizedList(new ArrayList<SystemEvent.Origin>());
+    private final List<SystemEvent.Severity> severityList 
+            = Collections.synchronizedList(new ArrayList<SystemEvent.Severity>());
+    private SystemEvent.Category acceptedCategory = SystemEvent.Category.FILTER_ACCEPT_ALL;
 
-    public SystemEventFilter(){
+    public SystemEventFilter() {
         //default: no not filter any entry
-        synchronized( this.originList){
-            this.originList.add( SystemEvent.ORIGIN_SYSTEM);
-            this.originList.add( SystemEvent.ORIGIN_TRANSACTION);
-            this.originList.add( SystemEvent.ORIGIN_USER);
+        synchronized (this.originList) {
+            this.originList.add(SystemEvent.Origin.SYSTEM);
+            this.originList.add(SystemEvent.Origin.TRANSACTION);
+            this.originList.add(SystemEvent.Origin.USER);
         }
-        synchronized( this.severityList ){
-            this.severityList.add( SystemEvent.SEVERITY_ERROR);
-            this.severityList.add( SystemEvent.SEVERITY_INFO);
-            this.severityList.add( SystemEvent.SEVERITY_WARNING);
+        synchronized (this.severityList) {
+            this.severityList.add(SystemEvent.Severity.ERROR);
+            this.severityList.add(SystemEvent.Severity.INFO);
+            this.severityList.add(SystemEvent.Severity.WARNING);
         }
     }
-    
-    public void setAcceptedCategory( int category ){
+
+    public void setAcceptedCategory(SystemEvent.Category category) {
         this.acceptedCategory = category;
     }
-    
-    public int getAcceptedCategory(){
-        return( this.acceptedCategory );
+
+    public SystemEvent.Category getAcceptedCategory() {
+        return (this.acceptedCategory);
     }
-    
-    public void addAcceptedOrigin(final int ORIGIN) {
+
+    public void addAcceptedOrigin(SystemEvent.Origin origin) {
         synchronized (this.originList) {
-            this.originList.add(ORIGIN);
+            this.originList.add(origin);
         }
     }
 
-    public void addAcceptedSeverity(final int SEVERITY) {
+    public void addAcceptedSeverity(SystemEvent.Severity severity) {
         synchronized (this.severityList) {
-            this.severityList.add(SEVERITY);
+            this.severityList.add(severity);
         }
     }
 
-    private List<Integer> getOriginList() {
-        List<Integer> tempList = new ArrayList<Integer>();
+    private List<SystemEvent.Origin> getOriginList() {
         synchronized (this.originList) {
-            tempList.addAll(this.originList);
+            List<SystemEvent.Origin> tempList = new ArrayList<SystemEvent.Origin>(this.originList);
+            return (tempList);
         }
-        return (tempList);
     }
 
-    private List<Integer> getSeverityList() {
-        List<Integer> tempList = new ArrayList<Integer>();
+    private List<SystemEvent.Severity> getSeverityList() {
         synchronized (this.severityList) {
-            tempList.addAll(this.severityList);
+            List<SystemEvent.Severity> tempList = new ArrayList<SystemEvent.Severity>(this.severityList);
+            return (tempList);
         }
-        return (tempList);
     }
-    
+
     public void setValues(SystemEventFilter filter) {
         synchronized (this.originList) {
             this.originList.clear();
@@ -82,7 +82,7 @@ public class SystemEventFilter {
         }
         synchronized (this.severityList) {
             this.severityList.clear();
-            this.severityList.addAll( filter.getSeverityList() );
+            this.severityList.addAll(filter.getSeverityList());
         }
         this.acceptedCategory = filter.getAcceptedCategory();
     }
@@ -94,7 +94,7 @@ public class SystemEventFilter {
         synchronized (this.severityList) {
             this.severityList.clear();
         }
-        this.acceptedCategory = -1;
+        this.acceptedCategory = SystemEvent.Category.FILTER_ACCEPT_ALL;
     }
 
     /**
@@ -103,14 +103,15 @@ public class SystemEventFilter {
     public boolean accept(SystemEvent systemEvent) {
         boolean severityAccepted = false;
         synchronized (this.severityList) {
-            severityAccepted = this.severityList.contains(Integer.valueOf(systemEvent.getSeverity()));
+            severityAccepted = this.severityList.contains(systemEvent.getSeverity());
         }
         boolean originAccepted = false;
         synchronized (this.originList) {
-            originAccepted = this.originList.contains(Integer.valueOf(systemEvent.getOrigin()));
+            originAccepted = this.originList.contains(systemEvent.getOrigin());
         }
         boolean categoryAccepted = true;
-        if( this.acceptedCategory != -1 && systemEvent.getCategory() != this.acceptedCategory ){
+        if (this.acceptedCategory != SystemEvent.Category.FILTER_ACCEPT_ALL 
+                && systemEvent.getCategory() != this.acceptedCategory) {
             categoryAccepted = false;
         }
         return (severityAccepted && originAccepted && categoryAccepted);

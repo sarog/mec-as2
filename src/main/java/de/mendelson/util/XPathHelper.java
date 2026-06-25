@@ -1,7 +1,9 @@
-//$Header: /converteride/de/mendelson/util/XPathHelper.java 34    26/02/25 17:55 Heller $
+//$Header: /converteride/de/mendelson/util/XPathHelper.java 37    29/01/26 17:29 Heller $
 package de.mendelson.util;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -9,7 +11,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -19,6 +20,7 @@ import org.jaxen.XPathSyntaxException;
 import org.jaxen.dom.DOMXPath;
 import org.jaxen.dom.NamespaceNode;
 import org.w3c.dom.Document;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -37,7 +39,7 @@ import org.xml.sax.SAXParseException;
  * parameters of XPATH pathes, get values of nodes ...
  *
  * @author S.Heller
- * @version $Revision: 34 $
+ * @version $Revision: 37 $
  */
 public class XPathHelper {
 
@@ -51,6 +53,17 @@ public class XPathHelper {
     private SimpleNamespaceContext namespaceContext = null;
     //Stores all defined namespaces to look up the alias by providing the URI. Its [URI,ALIAS]
     private final Map<String, String> namespaceLookupMap = new ConcurrentHashMap<String, String>();
+    //Cache for compiled XPath expressions
+    private final Map<String, XPath> XPATH_CACHE = new ConcurrentHashMap<String, XPath>();
+    //Build the factory just once, this is an expensive operation
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+
+    static {
+        DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
+        DOCUMENT_BUILDER_FACTORY.setXIncludeAware(false);
+        DOCUMENT_BUILDER_FACTORY.setExpandEntityReferences(false);
+        preventXXEAttack(DOCUMENT_BUILDER_FACTORY);
+    }
 
     /**
      * Parses the passed filename document and creates a DOM document
@@ -76,10 +89,16 @@ public class XPathHelper {
     }
 
     private void parse(InputSource source) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        this.preventXXEAttack(factory);
-        factory.setNamespaceAware(true);
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
+        //do never look in the filesystem or external for a file if there is something
+        //like xsi:noNamespaceSchemaLocation="formatdescription.xsd"
+        builder.setEntityResolver(new EntityResolver() {
+            @Override
+            public InputSource resolveEntity(String publicId, String systemId)
+                    throws SAXException, IOException {
+                return new InputSource(new StringReader(""));
+            }
+        });
         builder.setErrorHandler(new ErrorHandler() {
             @Override
             public void warning(SAXParseException exception) throws SAXException {
@@ -159,13 +178,14 @@ public class XPathHelper {
      * Gets the value of a node given by the node path, the node path has the
      * syntax /value/value where every path could have a repeat in [] like
      * /value/value/value[3]/value, without a repeat you are looking for the 1th
-     * element
+     * element. If the XPath does not match any node in the Document, getValue()
+     * returns an empty string ""
      *
      * @param nodePath Path to look for
      */
     public String getValue(String nodePath) throws Exception {
         try {
-            XPath xPath = new DOMXPath(nodePath);
+            XPath xPath = this.getCompiledXPath(nodePath);
             if (this.namespaceContext != null) {
                 xPath.setNamespaceContext(this.namespaceContext);
             }
@@ -185,7 +205,7 @@ public class XPathHelper {
     public boolean pathExists(String nodePath) throws Exception {
         XPath xPath = null;
         try {
-            xPath = new DOMXPath(nodePath);
+            xPath = this.getCompiledXPath(nodePath);
             if (this.namespaceContext != null) {
                 xPath.setNamespaceContext(this.namespaceContext);
             }
@@ -238,7 +258,7 @@ public class XPathHelper {
     public List getNodes(String nodePath) throws Exception {
         XPath xPath = null;
         try {
-            xPath = new DOMXPath(nodePath);
+            xPath = this.getCompiledXPath(nodePath);
             if (this.namespaceContext != null) {
                 xPath.setNamespaceContext(this.namespaceContext);
             }
@@ -275,7 +295,7 @@ public class XPathHelper {
         return (nsMap);
     }
 
-    private void preventXXEAttack(DocumentBuilderFactory builderFactory) {
+    private static void preventXXEAttack(DocumentBuilderFactory builderFactory) {
         builderFactory.setCoalescing(true);
         builderFactory.setValidating(false);
         builderFactory.setIgnoringComments(false);
@@ -312,6 +332,22 @@ public class XPathHelper {
         // per Timothy Morgans 2014 paper: "XML Schema, DTD, and Entity Attacks"
         builderFactory.setXIncludeAware(false);
         builderFactory.setExpandEntityReferences(false);
+    }
+
+    /**
+     * Internal method to compile an XPath object or get it from the cache
+     */
+    private XPath getCompiledXPath(String nodePath) throws Exception {
+        XPath xPath = XPATH_CACHE.get(nodePath);
+        if (xPath == null) {
+            try {
+                xPath = new DOMXPath(nodePath);
+                XPATH_CACHE.put(nodePath, xPath);
+            } catch (XPathSyntaxException e) {
+                throw new Exception(e.getMultilineMessage());
+            }
+        }
+        return xPath;
     }
 
 }

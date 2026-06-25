@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 94    20/03/25 14:45 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2ServerVersion.java 98    15/04/26 16:11 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.Copyright;
@@ -11,14 +11,31 @@ import de.mendelson.IProductVersion;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Class to check the version and the build of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 94 $
+ * @version $Revision: 98 $
  */
 public class AS2ServerVersion implements IProductVersion {
+
+    private static AS2ServerVersion instance;
+
+    /**
+     * Prevent a direct instance by new()
+     */
+    private AS2ServerVersion() {
+    }
+
+    /**
+     * Singleton for the whole application
+     */
+    public static synchronized AS2ServerVersion instance() {
+        if (instance == null) {
+            instance = new AS2ServerVersion();
+        }
+        return instance;
+    }
 
     /**
      * Returns the used user agent
@@ -27,7 +44,7 @@ public class AS2ServerVersion implements IProductVersion {
         StringBuilder agent = new StringBuilder();
         agent.append(AS2ServerVersion.getProductName()).append(" ");
         agent.append(AS2ServerVersion.getVersion()).append(" ");
-        agent.append(AS2ServerVersion.getBuild()).append(" - www.mendelson-e-c.com");
+        agent.append(AS2ServerVersion.getBuild()).append(" - www.mendelson.de");
         return (agent.toString());
     }
 
@@ -49,7 +66,7 @@ public class AS2ServerVersion implements IProductVersion {
      * Returns the internal build number
      */
     public static int getBuildNo() {
-        return (67);
+        return (69);
     }
 
     /**
@@ -65,7 +82,7 @@ public class AS2ServerVersion implements IProductVersion {
      * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionConfig() {
-        return (56);
+        return (57);
     }
 
     /**
@@ -74,7 +91,7 @@ public class AS2ServerVersion implements IProductVersion {
      * defined here, an auto update of the database is performed.
      */
     public static int getRequiredDBVersionRuntime() {
-        return (51);
+        return (56);
     }
 
     /**
@@ -89,7 +106,7 @@ public class AS2ServerVersion implements IProductVersion {
      * Returns the date the package was last modified
      */
     public static String getLastModificationDate() {
-        String fullDate = "$Date: 20/03/25 14:45 $";
+        String fullDate = "$Date: 15/04/26 16:11 $";
         return (fullDate.substring(fullDate.indexOf(":") + 1, fullDate.lastIndexOf("$")));
     }
 
@@ -147,5 +164,11 @@ public class AS2ServerVersion implements IProductVersion {
     @Override
     public String getFullName() {
         return (AS2ServerVersion.getFullProductName());
+    }
+
+    @Override
+    public long getMagicNumber() {
+        //"MENOSAS2" in ASCII
+        return 0x4D454E4F53415332L;
     }
 }

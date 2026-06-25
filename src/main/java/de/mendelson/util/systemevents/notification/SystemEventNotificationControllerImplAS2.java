@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 19    2/11/23 14:03 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/notification/SystemEventNotificationControllerImplAS2.java 22    15/04/26 12:44 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -22,7 +22,7 @@ import java.util.logging.Logger;
  * a partner
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 22 $
  */
 public class SystemEventNotificationControllerImplAS2 extends SystemEventNotificationController {
 
@@ -51,54 +51,54 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
         if (!AS2Server.inShutdownProcess) {
             NotificationDataImplAS2 notificationData = (NotificationDataImplAS2) this.notificationAccessDB.getNotificationData();
             for (SystemEvent event : foundSystemEvents) {
-                if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION
-                        && event.getType() == SystemEvent.TYPE_TRANSACTION_ERROR) {
+                if (event.getOrigin() == SystemEvent.Origin.TRANSACTION
+                        && event.getType() == SystemEvent.Type.TRANSACTION_ERROR) {
                     //Transaction failures
-                    if (notificationData.notifyTransactionError()) {
+                    if (notificationData.getNotifyTransactionError()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION
-                        && event.getType() == SystemEvent.TYPE_CONNECTIVITY_ANY) {
+                } else if (event.getOrigin() == SystemEvent.Origin.TRANSACTION
+                        && event.getType() == SystemEvent.Type.CONNECTIVITY_ANY) {
                     //connection problem
-                    if (notificationData.notifyConnectionProblem()) {
+                    if (notificationData.isNotifyConnectionProblem()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getOrigin() == SystemEvent.ORIGIN_TRANSACTION
-                        && event.getType() == SystemEvent.TYPE_POST_PROCESSING) {
+                } else if (event.getOrigin() == SystemEvent.Origin.TRANSACTION
+                        && event.getType() == SystemEvent.Type.POST_PROCESSING) {
                     //postprocessing problem
-                    if (notificationData.notifyPostprocessingProblem()) {
+                    if (notificationData.isNotifyPostprocessingProblem()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getOrigin() == SystemEvent.ORIGIN_SYSTEM
-                        && event.getType() == SystemEvent.TYPE_CERTIFICATE_EXPIRE) {
+                } else if (event.getOrigin() == SystemEvent.Origin.SYSTEM
+                        && event.getType() == SystemEvent.Type.CERTIFICATE_EXPIRE) {
                     //certificate expire
-                    if (notificationData.notifyCertExpire()) {
+                    if (notificationData.getNotifyCertExpire()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getType() == SystemEvent.TYPE_CERTIFICATE_EXCHANGE_ANY
-                        || event.getType() == SystemEvent.TYPE_CERTIFICATE_EXCHANGE_REQUEST_RECEIVED) {
+                } else if (event.getType() == SystemEvent.Type.CERTIFICATE_EXCHANGE_ANY
+                        || event.getType() == SystemEvent.Type.CERTIFICATE_EXCHANGE_REQUEST_RECEIVED) {
                     //certificate exchange event
-                    if (notificationData.notifyCEM()) {
+                    if (notificationData.getNotifyCEM()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getType() == SystemEvent.TYPE_TRANSACTION_REJECTED_RESEND) {
+                } else if (event.getType() == SystemEvent.Type.TRANSACTION_REJECTED_RESEND) {
                     //rejected resend
-                    if (notificationData.notifyResendDetected()) {
+                    if (notificationData.isNotifyResendDetected()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getOrigin() == SystemEvent.ORIGIN_SYSTEM
-                        && event.getType() == SystemEvent.TYPE_CLIENT_ANY) {
+                } else if (event.getOrigin() == SystemEvent.Origin.SYSTEM
+                        && event.getType() == SystemEvent.Type.CLIENT_ANY) {
                     //client-server problem
-                    if (notificationData.notifyClientServerProblem()) {
+                    if (notificationData.isNotifyClientServerProblem()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getSeverity() == SystemEvent.SEVERITY_ERROR
-                        && event.getOrigin() == SystemEvent.ORIGIN_SYSTEM) {
+                } else if (event.getSeverity() == SystemEvent.Severity.ERROR
+                        && event.getOrigin() == SystemEvent.Origin.SYSTEM) {
                     //system error
-                    if (notificationData.notifySystemFailure()) {
+                    if (notificationData.isNotifySystemFailure()) {
                         filteredEventsForNotification.add(event);
                     }
-                } else if (event.getType() == SystemEvent.TYPE_LICENSE_EXPIRE) {
+                } else if (event.getType() == SystemEvent.Type.LICENSE_EXPIRE) {
                     //license expire - always try to notify the user, there is currently no way to prevent this
                     //notification
                     filteredEventsForNotification.add(event);
@@ -115,7 +115,7 @@ public class SystemEventNotificationControllerImplAS2 extends SystemEventNotific
     public void sendNotification(List<SystemEvent> systemEventsToNotifyUserOf) throws Throwable {
         NotificationImplAS2 notification = new NotificationImplAS2();
         NotificationData notificationData = this.notificationAccessDB.getNotificationData();
-        if (notificationData.usesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
+        if (notificationData.isUsesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
             OAuth2Util.ensureValidAccessToken(this.dbDriverManager,
                     SystemEventManagerImplAS2.instance(),
                     notificationData.getOAuth2Config());

@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponseFile.java 3     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponseFile.java 6     17/03/26 9:24 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -12,10 +14,12 @@ import java.io.Serializable;
 
 /**
  * Msg for the client server protocol
+ *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
-public class DownloadResponseFile extends DownloadResponse implements Serializable {
+public sealed class DownloadResponseFile extends DownloadResponse implements Serializable
+        permits DownloadResponseFileChunk, DownloadResponseFileLimited {
 
     private static final long serialVersionUID = 1L;
     private String fullFilename = null;
@@ -23,6 +27,15 @@ public class DownloadResponseFile extends DownloadResponse implements Serializab
 
     public DownloadResponseFile(DownloadRequestFile request) {
         super(request);
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public DownloadResponseFile() {
+        super();
     }
 
     @Override

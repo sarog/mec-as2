@@ -12,7 +12,7 @@ Verschluesselungs-/Signaturzertifikat wurde hinzugefuegt (CEM)
 
 
 [BODY]
-In Folge einer Zertifikataustauschanfrage (CEM) durch Ihren Partner "${Partner}" wurde dem System ein neues Verschluesselungs-/Signaturzertifikat hinzugefuegt. 
+In Folge einer Zertifikataustauschanfrage (CEM) durch Ihren Partner "${PARTNER}" wurde dem System ein neues Verschluesselungs-/Signaturzertifikat hinzugefuegt. 
 
 Bitte schauen Sie in das System, um Details des Prozesses zu sehen. Wenn Sie diesen Veraenderungen nicht
 trauen, stellen Sie sie bitte zurueck und kontaktieren Sie Ihren Partner.

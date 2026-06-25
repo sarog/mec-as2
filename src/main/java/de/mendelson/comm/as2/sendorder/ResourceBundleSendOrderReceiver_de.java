@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver_de.java 11    9/12/24 16:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderReceiver_de.java 12    23/05/25 10:10 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleSendOrderReceiver_de extends MecResourceBundle{
     
@@ -29,7 +29,7 @@ public class ResourceBundleSendOrderReceiver_de extends MecResourceBundle{
         {"max.retry.reached", "Die maximale Anzahl von Wiederholungsversuchen ({0}) wurde erreicht, die Transaktion wird beendet." },
         {"retry", "Versuche eine erneute Übertragung nach {0}s, Wiederholung {1}/{2}." },
         {"as2.send.disabled", "** Die Anzahl der parallelen ausgehenden Verbindungen ist auf 0 gestellt - das System wird weder MDN noch AS2 Nachrichten versenden. Bitte ändern Sie diese Einstellung in den Servereinstellungen, wenn Sie senden wollen **" },        
-        {"outbound.connection.prepare.mdn", "Bereite ausgehende MDN Verbindung vor nach to \"{0}\", aktive Verbindungen: {1}/{2}." },
+        {"outbound.connection.prepare.mdn", "Bereite ausgehende MDN Verbindung vor nach \"{0}\", aktive Verbindungen: {1}/{2}." },
         {"outbound.connection.prepare.message", "Bereite ausgehende AS2 Nachrichtenverbindung vor nach \"{0}\", aktive Verbindungen: {1}/{2}." },        
         {"send.connectionsstillopen", "Sie haben die Anzahl der ausgehenden Verbindungen auf {0} reduziert, aber zur Zeit gibt es noch {1} ausgehende Verbindungen." },
     };

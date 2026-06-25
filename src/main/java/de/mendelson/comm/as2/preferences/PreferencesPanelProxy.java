@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 29    19/02/25 10:08 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelProxy.java 31    17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -7,6 +7,7 @@ import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.passwordfield.PasswordOverlay;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
@@ -23,9 +24,9 @@ import javax.swing.SwingConstants;
  * Panel to define the proxy settings
  *
  * @author S.Heller
- * @version: $Revision: 29 $
+ * @version: $Revision: 31 $
  */
-public class PreferencesPanelProxy extends PreferencesPanel {
+public final class PreferencesPanelProxy extends PreferencesPanel {
 
     private final static MecResourceBundle rb;
 
@@ -402,16 +403,20 @@ public class PreferencesPanelProxy extends PreferencesPanel {
     @Override
     public void savePreferences() {
         try {
-            int proxyPort = Integer.parseInt(this.jTextFieldProxyPort.getText().trim());
-            this.preferences.putInt(PreferencesAS2.PROXY_PORT, proxyPort);
-        } catch (Exception e) {
-            //just ignore this - the formerly value will be kept and the user will see this one he opens the preferences again
+            try {
+                int proxyPort = Integer.parseInt(this.jTextFieldProxyPort.getText().trim());
+                this.preferences.putInt(PreferencesAS2.PROXY_PORT, proxyPort);
+            } catch (NumberFormatException e) {
+                //just ignore this - the formerly value will be kept and the user will see this one he opens the preferences again
+            }
+            this.preferences.putBoolean(PreferencesAS2.AUTH_PROXY_USE, this.switchUseProxyAuthentification.isSelected());
+            this.preferences.put(PreferencesAS2.PROXY_HOST, this.jTextFieldProxyURL.getText());
+            this.preferences.putBoolean(PreferencesAS2.PROXY_USE, this.switchUseProxy.isSelected());
+            this.preferences.put(PreferencesAS2.AUTH_PROXY_PASS, new String(this.jPasswordFieldProxyPass.getPassword()));
+            this.preferences.put(PreferencesAS2.AUTH_PROXY_USER, this.jTextFieldProxyUser.getText());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
         }
-        this.preferences.putBoolean(PreferencesAS2.AUTH_PROXY_USE, this.switchUseProxyAuthentification.isSelected());
-        this.preferences.put(PreferencesAS2.PROXY_HOST, this.jTextFieldProxyURL.getText());
-        this.preferences.putBoolean(PreferencesAS2.PROXY_USE, this.switchUseProxy.isSelected());
-        this.preferences.put(PreferencesAS2.AUTH_PROXY_PASS, new String(this.jPasswordFieldProxyPass.getPassword()));
-        this.preferences.put(PreferencesAS2.AUTH_PROXY_USER, this.jTextFieldProxyUser.getText());
     }
 
     @Override

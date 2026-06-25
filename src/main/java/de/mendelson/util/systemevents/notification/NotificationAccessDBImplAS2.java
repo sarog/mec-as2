@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationAccessDBImplAS2.java 22    12/03/25 17:28 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/notification/NotificationAccessDBImplAS2.java 27    15/04/26 12:44 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.database.IDBDriverManager;
@@ -23,7 +23,7 @@ import java.sql.Types;
  * Stores the notification data for the AS2
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 27 $
  */
 public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
 
@@ -38,54 +38,70 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
      */
     @Override
     public NotificationData getNotificationData() {
-        try (Connection configConnectionAutoCommit = this.dbDriverManager
+        NotificationDataImplAS2 notificationData = null;
+        String transactionName = "NotificationAccess_getNotificationData";
+        try (Connection configConnectionNoAutoCommit = this.dbDriverManager
                 .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
-            try (PreparedStatement statement = configConnectionAutoCommit.prepareStatement(
-                    "SELECT * FROM notification")) {
-                try (ResultSet result = statement.executeQuery()) {
-                    if (result.next()) {
-                        NotificationDataImplAS2 data = new NotificationDataImplAS2();
-                        data.setMailServer(result.getString("mailhost"));
-                        data.setMailServerPort(result.getInt("mailhostport"));
-                        data.setNotificationMail(result.getString("notificationemailaddress"));
-                        data.setNotifyCertExpire(result.getInt("notifycertexpire") == 1 ? true : false);
-                        data.setNotifyTransactionError(result.getInt("notifytransactionerror") == 1 ? true : false);
-                        data.setNotifyCEM(result.getInt("notifycem") == 1 ? true : false);
-                        data.setNotifySystemFailure(result.getInt("notifysystemfailure") == 1 ? true : false);
-                        data.setNotifyResendDetected(result.getInt("notifyresend") == 1 ? true : false);
-                        data.setReplyTo(result.getString("replyto"));
-                        data.setUsesSMTPAuthCredentials(result.getInt("usesmtpauth") == 1 ? true : false);
-                        data.setSMTPUser(result.getString("smtpauthuser"));
-                        String smtpPass = result.getString("smtpauthpass");
-                        if (!result.wasNull()) {
-                            data.setSMTPPass(smtpPass.toCharArray());
-                        }
-                        data.setUsesSMTPAuthOAuth2(result.getInt("usesmtpoauth2") == 1 ? true : false);
-                        data.setConnectionSecurity(result.getInt("security"));
-                        data.setMaxNotificationsPerMin(result.getInt("maxnotificationspermin"));
-                        data.setNotifyConnectionProblem(result.getInt("notifyconnectionproblem") == 1 ? true : false);
-                        data.setNotifyPostprocessingProblem(result.getInt("notifypostprocessing") == 1 ? true : false);
-                        int oAuth2Id = result.getInt("smtpoauth2id");
-                        if (!result.wasNull()) {
-                            OAuth2AccessDB oauth2Access = new OAuth2AccessDB(this.dbDriverManager, SystemEventManagerImplAS2.instance());
-                            OAuth2Config config = oauth2Access.getOAuth2Config(oAuth2Id, configConnectionAutoCommit);
-                            if (config != null) {
-                                data.setOAuth2Config(config);
-                            } else {
-                                data.setUsesSMTPAuthOAuth2(false);
+            configConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = configConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                this.dbDriverManager.setTableLockREAD(transactionStatement,
+                        new String[]{
+                            "oauth2", "notification"});
+                try {
+                    try (PreparedStatement statement 
+                            = configConnectionNoAutoCommit.prepareStatement(
+                            "SELECT * FROM notification")) {
+                        try (ResultSet result = statement.executeQuery()) {
+                            if (result.next()) {
+                                notificationData = new NotificationDataImplAS2();
+                                notificationData.setMailServer(result.getString("mailhost"));
+                                notificationData.setMailServerPort(result.getInt("mailhostport"));
+                                notificationData.setNotificationMail(result.getString("notificationemailaddress"));
+                                notificationData.setNotifyCertExpire(result.getInt("notifycertexpire") == 1);
+                                notificationData.setNotifyTransactionError(result.getInt("notifytransactionerror") == 1);
+                                notificationData.setNotifyCEM(result.getInt("notifycem") == 1);
+                                notificationData.setNotifySystemFailure(result.getInt("notifysystemfailure") == 1);
+                                notificationData.setNotifyResendDetected(result.getInt("notifyresend") == 1);
+                                notificationData.setReplyTo(result.getString("replyto"));
+                                notificationData.setUsesSMTPAuthCredentials(result.getInt("usesmtpauth") == 1);
+                                notificationData.setSMTPUser(result.getString("smtpauthuser"));
+                                String smtpPass = result.getString("smtpauthpass");
+                                if (!result.wasNull()) {
+                                    notificationData.setSMTPPass(smtpPass.toCharArray());
+                                }
+                                notificationData.setUsesSMTPAuthOAuth2(result.getInt("usesmtpoauth2") == 1);
+                                notificationData.setConnectionSecurity(result.getInt("security"));
+                                notificationData.setMaxNotificationsPerMin(result.getInt("maxnotificationspermin"));
+                                notificationData.setNotifyConnectionProblem(result.getInt("notifyconnectionproblem") == 1);
+                                notificationData.setNotifyPostprocessingProblem(result.getInt("notifypostprocessing") == 1);
+                                int oAuth2Id = result.getInt("smtpoauth2id");
+                                if (!result.wasNull()) {
+                                    OAuth2AccessDB oauth2Access 
+                                            = new OAuth2AccessDB(this.dbDriverManager, SystemEventManagerImplAS2.instance());
+                                    OAuth2Config config = oauth2Access.getOAuth2Config(oAuth2Id, configConnectionNoAutoCommit);
+                                    if (config != null) {
+                                        notificationData.setOAuth2Config(config);
+                                    } else {
+                                        notificationData.setUsesSMTPAuthOAuth2(false);
+                                    }
+                                } else {
+                                    notificationData.setUsesSMTPAuthOAuth2(false);
+                                }
+                                notificationData.setNotifyClientServerProblem(result.getInt("notifyclientserver") == 1 ? true : false);
                             }
-                        } else {
-                            data.setUsesSMTPAuthOAuth2(false);
                         }
-                        data.setNotifyClientServerProblem(result.getInt("notifyclientserver") == 1 ? true : false);
-                        return (data);
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
-        return (null);
+        return (notificationData);
     }
 
     /**
@@ -116,12 +132,12 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
                         statement.setString(1, data.getMailServer());
                         statement.setInt(2, data.getMailServerPort());
                         statement.setString(3, data.getNotificationMail());
-                        statement.setInt(4, data.notifyCertExpire() ? 1 : 0);
-                        statement.setInt(5, data.notifyTransactionError() ? 1 : 0);
-                        statement.setInt(6, data.notifyCEM() ? 1 : 0);
-                        statement.setInt(7, data.notifySystemFailure() ? 1 : 0);
+                        statement.setInt(4, data.getNotifyCertExpire() ? 1 : 0);
+                        statement.setInt(5, data.getNotifyTransactionError() ? 1 : 0);
+                        statement.setInt(6, data.getNotifyCEM() ? 1 : 0);
+                        statement.setInt(7, data.isNotifySystemFailure() ? 1 : 0);
                         statement.setString(8, data.getReplyTo());
-                        statement.setInt(9, data.usesSMTPAuthCredentials() ? 1 : 0);
+                        statement.setInt(9, data.isUsesSMTPAuthCredentials() ? 1 : 0);
                         if (data.getSMTPUser() != null) {
                             statement.setString(10, data.getSMTPUser());
                         } else {
@@ -132,28 +148,28 @@ public class NotificationAccessDBImplAS2 implements NotificationAccessDB {
                         } else {
                             statement.setNull(11, Types.VARCHAR);
                         }
-                        statement.setInt(12, data.notifyResendDetected() ? 1 : 0);
+                        statement.setInt(12, data.isNotifyResendDetected() ? 1 : 0);
                         statement.setInt(13, data.getConnectionSecurity());
                         statement.setInt(14, data.getMaxNotificationsPerMin());
-                        statement.setInt(15, data.notifyConnectionProblem() ? 1 : 0);
-                        statement.setInt(16, data.notifyPostprocessingProblem() ? 1 : 0);
-                        statement.setInt(17, data.usesSMTPAuthOAuth2() ? 1 : 0);
+                        statement.setInt(15, data.isNotifyConnectionProblem() ? 1 : 0);
+                        statement.setInt(16, data.isNotifyPostprocessingProblem() ? 1 : 0);
+                        statement.setInt(17, data.isUsesSMTPAuthOAuth2() ? 1 : 0);
                         if (data.getOAuth2Config() != null) {
                             statement.setInt(18, data.getOAuth2Config().getDBId());
                         } else {
                             statement.setNull(18, Types.INTEGER);
                         }
-                        statement.setInt(19, data.notifyClientServerProblem() ? 1 : 0);
+                        statement.setInt(19, data.isNotifyClientServerProblem() ? 1 : 0);
                         statement.executeUpdate();
                     }
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 

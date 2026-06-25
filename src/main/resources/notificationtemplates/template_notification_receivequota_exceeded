@@ -1,0 +1,16 @@
+$Header:$
+This file contains the mail template for the send quota exceed notification
+The following variables will be substituted:
+${PRODUCTNAME}: Product name
+${HOST}: AS2 server host
+${PARTNER}: The name of the partner the receive quota has been exceeded
+${QUOTA}: The defined quota value
+
+
+[SUBJECT]
+AS2 message receive quota exceeded for ${PARTNER}
+
+
+[BODY]
+The number of messages received from the partner ${PARTNER} has been exceeded your set up quota of ${QUOTA}. This is an information notification only, all resulting activities have to be performed manually on the AS2 server.
+

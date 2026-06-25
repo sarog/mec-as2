@@ -1,8 +1,9 @@
-//$Header: /as2/de/mendelson/util/log/panel/LogConsolePanel.java 25    20/02/25 13:42 Heller $
+//$Header: /oftp2/de/mendelson/util/log/panel/LogConsolePanel.java 27    7/04/26 16:29 Heller $
 package de.mendelson.util.log.panel;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.log.ANSI;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.JTextPaneOutputStream;
@@ -33,7 +34,7 @@ import javax.swing.JPanel;
  * The frame system output/debug info is written to
  *
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 27 $
  */
 public class LogConsolePanel extends JPanel implements ClipboardOwner {
 
@@ -55,7 +56,7 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
     public static final String COLOR_LIGHT_YELLOW = ANSI.COLOR_SYSTEM_YELLOW_BRIGHT;
 
     private static final int IMAGE_SIZE = 18;
-    
+
     /**
      * PrintStream to write in, this is just a wrapper to the internal logger.
      */
@@ -67,7 +68,7 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
     /**
      * ResourceBundle to localize this GUI
      */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -91,13 +92,13 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
      * @param font
      * @param displayMode LIGHT, DARK or HICONTRAST
      */
-    public LogConsolePanel(Logger logger, LogFormatter logFormatter, Font font, String displayMode) {
+    public LogConsolePanel(Logger logger, LogFormatter logFormatter, Font font, DisplayMode displayMode) {
         this.initComponents();
         this.setMultiresolutionIcons();
         this.initialize(logger, logFormatter, font, displayMode);
     }
 
-    public LogConsolePanel(Logger logger, String displayMode) {
+    public LogConsolePanel(Logger logger, DisplayMode displayMode) {
         this(logger, new LogFormatter(LogFormatter.FORMAT_CONSOLE), new Font(Font.DIALOG, Font.PLAIN, 12), displayMode);
     }
 
@@ -130,9 +131,9 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
 
     /**
      * @param displayMode LIGHT, DARK or HICONTRAST
-     */    
+     */
     private void initialize(Logger logger, LogFormatter logFormatter, Font font,
-            String displayMode) {
+            DisplayMode displayMode) {
         this.logger = logger;
         this.logger.setUseParentHandlers(false);
         OutputStream logStream = new JTextPaneOutputStream(this.jTextPane);
@@ -142,7 +143,6 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
         this.logger.addHandler(handler);
         this.jPopupMenu.setInvoker(this.jTextPane);
     }
-
 
     /**
      * Sets a special color for a special log level. Please use the class

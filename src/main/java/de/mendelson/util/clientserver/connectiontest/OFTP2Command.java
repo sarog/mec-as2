@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2Command.java 1     4/06/17 2:13p Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2Command.java 2     17/03/26 10:28 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 /*
@@ -12,9 +12,9 @@ package de.mendelson.util.clientserver.connectiontest;
  * Interface all OFTP2 commands have to implement
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public interface OFTP2Command {
+public sealed interface OFTP2Command permits OFTP2AbstractCommand{
 
     public static final String COMMANDNAME_AUCH = "AUCH";
     public static final String COMMANDNAME_AURP = "AURP";

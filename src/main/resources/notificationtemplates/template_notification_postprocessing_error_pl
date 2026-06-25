@@ -1,0 +1,35 @@
+$Header:$
+Ten plik zawiera szablon do wysyłania powiadomień,
+jeśli przetwarzanie wiadomości nie powiedzie się
+Następujące zmienne są zastępowane:
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host, na którym działa serwer
+${EVENT_TYPE}: Typ zdarzenia (po otrzymaniu, po wysłaniu (błąd/sukces)).
+${PROCESS_TYPE}: Typ procesu (przekazywanie do partnera, wiersz poleceń...).
+${MESSAGEID}: Odpowiedni numer wiadomości
+${ERROR_MESSAGE}: Komunikat o błędzie
+${SENDER}: Kanał informacyjny
+${RECEIVER}: Odbiorca wiadomości
+
+
+
+
+[SUBJECT]
+Problem z przetwarzaniem końcowym (${SENDER} do ${RECEIVER}) [${MESSAGEID}]
+
+
+[BODY]
+Wystąpił problem z przetworzeniem wiadomości na koncie ${PRODUCTNAME}@${HOST}.
+Nie ma to wpływu na status transakcji. Ponieważ jednak przetwarzanie końcowe nie działało prawidłowo
+przetwarzanie końcowe mogło zostać przerwane. Prosimy o sprawdzenie
+transakcji w systemie.
+
+Typ zdarzenia: ${EVENT_TYPE}
+Typ procesu: ${PROCESS_TYPE}
+Numer wiadomości: ${MESSAGEID}
+Nadawca: ${SENDER}
+Odbiorca: ${RECEIVER}
+
+
+${ERROR_MESSAGE}
+

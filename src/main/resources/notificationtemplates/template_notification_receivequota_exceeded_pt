@@ -1,0 +1,17 @@
+$Header:$
+Este ficheiro contém o modelo de notificação para a notificação da ultrapassagem de um contingente de mensagens definido para um parceiro específico
+Podem ser utilizadas as seguintes variáveis, que são substituídas em conformidade:
+${PRODUCTNAME}: Nome do produto
+${HOST}: Anfitrião do servidor AS2
+${PARTNER}: Nome do parceiro para o qual a quota de receção foi excedida
+${QUOTA}: O número de mensagens de receção autorizadas (quota)
+
+
+
+
+[SUBJECT]
+Quota de receção excedida para ${PARTNER}
+
+
+[BODY]
+O número de mensagens recebidas do parceiro ${PARTNER} excedeu ${QUOTA}. No lado do servidor isto não tem qualquer efeito, quaisquer actividades teriam de ser executadas manualmente.

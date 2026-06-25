@@ -1,14 +1,16 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEvent.java 14    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEvent.java 24    1/04/26 11:28 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2MDNInfo;
-import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
+import de.mendelson.comm.as2.message.MessageStateType;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.database.IDBDriverManager;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -31,110 +33,107 @@ import java.util.logging.Level;
  * panel
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 24 $
  */
 public class ProcessingEvent implements Serializable {
 
-    
-
     private static final long serialVersionUID = 1L;
-
-    public static final int TYPE_SEND_SUCCESS = 1;
-    public static final int TYPE_SEND_FAILURE = 2;
-    public static final int TYPE_RECEIPT_SUCCESS = 3;
-    
-    public static final int PROCESS_EXECUTE_SHELL = 1;
-    public static final int PROCESS_MOVE_TO_PARTNER = 2;
-    public static final int PROCESS_MOVE_TO_DIR = 3;
-    
-    
     public static final MecResourceBundle rb;
-    static{
-        //Load resourcebundle
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleProcessingEvent.class.getName());
-        } //load up  resourcebundle
+        }
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
 
-    
     private static final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     /**
      * Related message/mdn id
      */
-    private final String messageId;
-    private final String mdnId;
+    private String messageId;
+    private String mdnId;
     /**
      * Date of this message
      */
-    private final long initDate;
+    private long initDate;
     /**
      * Command to execute
      */
-    private final List<String> parameter = new ArrayList<String>();
-    private int eventType = -1;
-    private int processType = -1;
+    private List<String> parameter = new ArrayList<String>();
+    private ProcessingEventType processType;
+    private ProcessingEventTriggerType triggerType;
 
-    public ProcessingEvent(final int EVENT_TYPE, final int PROCESS_TYPE, String messageId, String mdnId, List<String> parameter, long initDate) {
-        this.eventType = EVENT_TYPE;
-        this.processType = PROCESS_TYPE;
+    public ProcessingEvent(ProcessingEventTriggerType triggerType, ProcessingEventType processingEventType, String messageId,
+            String mdnId, List<String> parameter, long initDate) {
+        this.triggerType = triggerType;
+        this.processType = processingEventType;
         this.messageId = messageId;
         this.mdnId = mdnId;
-        this.parameter.addAll( parameter );
+        this.parameter.addAll(parameter);
         this.initDate = initDate;
     }
 
-    public ProcessingEvent(final int EVENT_TYPE, final int PROCESS_TYPE, String messageId, String mdnId, List<String> parameter) {
-        this(EVENT_TYPE, PROCESS_TYPE, messageId, mdnId, parameter, System.currentTimeMillis());
+    public ProcessingEvent(ProcessingEventTriggerType triggerType, ProcessingEventType processType, 
+            String messageId, String mdnId, List<String> parameter) {
+        this(triggerType, processType, messageId, mdnId, parameter, System.currentTimeMillis());
     }
 
-    public static String getLocalizedProcessType( final int PROCESS_TYPE ){
-        return( rb.getResourceString("processtype." + PROCESS_TYPE));
-    }
-    
-    public static String getLocalizedEventType( final int EVENT_TYPE ){
-        return( rb.getResourceString("eventtype." + EVENT_TYPE));
-    }
-    
-    
     /**
-     * Enqueue an event if it should be executed for the passed message/MDN id combination
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
      */
-    public static void enqueueEventIfRequired(IDBDriverManager dbDriverManager,             
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ProcessingEvent() {
+    }
+
+    public static String getLocalizedProcessType(ProcessingEventType processingEventType) {
+        return (rb.getResourceString("processtype." + processingEventType.toInt()));
+    }
+
+    public static String getLocalizedEventType(ProcessingEventTriggerType triggerType) {
+        return (rb.getResourceString("eventtype." + triggerType.toInt()));
+    }
+
+    /**
+     * Enqueue an event if it should be executed for the passed message/MDN id
+     * combination
+     */
+    public static void enqueueEventIfRequired(IDBDriverManager dbDriverManager,
             AS2MessageInfo messageInfo, AS2MDNInfo mdnInfo) {
         PartnerAccessDB partnerAccess = new PartnerAccessDB(dbDriverManager);
-        Partner messageSender = partnerAccess.getPartner(messageInfo.getSenderId());
-        Partner messageReceiver = partnerAccess.getPartner(messageInfo.getReceiverId());
+        Partner messageSender = partnerAccess.getPartnerByAS2Id(messageInfo.getSenderId());
+        Partner messageReceiver = partnerAccess.getPartnerByAS2Id(messageInfo.getReceiverId());
         PartnerEventInformation receiverEvents = messageReceiver.getPartnerEvents();
         PartnerEventInformation senderEvents = messageSender.getPartnerEvents();
-        int eventType = -1;
-        int processType = -1;
+        ProcessingEventTriggerType triggerType;
+        ProcessingEventType processType;
         List<String> parameter = new ArrayList<String>();
         if (messageSender.isLocalStation()) {
-            if (messageInfo.getState() == AS2Message.STATE_STOPPED) {
-                eventType = TYPE_SEND_FAILURE;
-                processType = receiverEvents.getProcess(eventType);
-                if (receiverEvents.useOnSenderror()
-                        && receiverEvents.hasParameter(eventType)) {
-                    parameter = receiverEvents.getParameter(eventType);
+            if (messageInfo.getState() == MessageStateType.STOPPED) {
+                triggerType = ProcessingEventTriggerType.SEND_FAILURE;
+                processType = receiverEvents.getProcess(triggerType);
+                if (receiverEvents.isUseOnSendError()
+                        && receiverEvents.hasParameter(triggerType)) {
+                    parameter = receiverEvents.getParameter(triggerType);
                 }
             } else {
-                eventType = TYPE_SEND_SUCCESS;
-                processType = receiverEvents.getProcess(eventType);
-                if (receiverEvents.useOnSendsuccess()
-                        && receiverEvents.hasParameter(eventType)) {
-                    parameter = receiverEvents.getParameter(eventType);
+                triggerType = ProcessingEventTriggerType.SEND_SUCCESS;
+                processType = receiverEvents.getProcess(triggerType);
+                if (receiverEvents.isUseOnSendSuccess()
+                        && receiverEvents.hasParameter(triggerType)) {
+                    parameter = receiverEvents.getParameter(triggerType);
                 }
             }
         } else {
-            eventType = TYPE_RECEIPT_SUCCESS;
-            processType = senderEvents.getProcess(eventType);
-            if (senderEvents.useOnReceipt()
-                    && senderEvents.hasParameter(eventType)) {
-                parameter = senderEvents.getParameter(eventType);
+            triggerType = ProcessingEventTriggerType.RECEIPT_SUCCESS;
+            processType = senderEvents.getProcess(triggerType);
+            if (senderEvents.isUseOnReceipt()
+                    && senderEvents.hasParameter(triggerType)) {
+                parameter = senderEvents.getParameter(triggerType);
             }
         }
         if (!parameter.isEmpty()) {
@@ -143,12 +142,18 @@ public class ProcessingEvent implements Serializable {
             if (mdnInfo != null) {
                 mdnId = mdnInfo.getMessageId();
             }
-            ProcessingEvent event = new ProcessingEvent(eventType, processType, messageId, mdnId, parameter);
-            ProcessingEventAccessDB processingEventDB = new ProcessingEventAccessDB(
-                    dbDriverManager);
-            processingEventDB.addEventToExecute(event);
-            logger.log( Level.INFO, rb.getResourceString( "event.enqueued",
-                    rb.getResourceString("processtype." + event.getProcessType())), messageInfo );
+            //do not enqueue this if its a CEM - but display that the postprocessing has been skipped
+            if (messageInfo.getMessageType() == MessageType.CEM) {
+                logger.log(Level.INFO, rb.getResourceString("event.skipped.cem"), messageInfo);
+                return;
+            } else {
+                ProcessingEvent event = new ProcessingEvent(triggerType, processType, messageId, mdnId, parameter);
+                ProcessingEventAccessDB processingEventDB = new ProcessingEventAccessDB(
+                        dbDriverManager);
+                processingEventDB.addEventToExecute(event);
+                logger.log(Level.INFO, rb.getResourceString("event.enqueued",
+                        rb.getResourceString("processtype." + event.getProcessType().toInt())), messageInfo);
+            }
         }
     }
 
@@ -170,14 +175,14 @@ public class ProcessingEvent implements Serializable {
      * @return the command
      */
     public List<String> getParameter() {
-        return( this.parameter );
+        return (this.parameter);
     }
 
     /**
      * @return the type
      */
-    public int getEventType() {
-        return eventType;
+    public ProcessingEventTriggerType getTriggerType() {
+        return triggerType;
     }
 
     /**
@@ -190,8 +195,8 @@ public class ProcessingEvent implements Serializable {
     /**
      * @return the processType
      */
-    public int getProcessType() {
+    public ProcessingEventType getProcessType() {
         return processType;
     }
-    
+
 }

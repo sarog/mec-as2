@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ModuleStarter.java 3     29/02/24 17:21 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ModuleStarter.java 4     17/03/26 9:45 Heller $ 
 package de.mendelson.comm.as2.client;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,9 +12,9 @@ package de.mendelson.comm.as2.client;
  * Interface to start some client modules
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
-public interface ModuleStarter {
+public sealed interface ModuleStarter permits AS2Gui{
 
     public void displayCertificateManagerEncSign(String selectedAlias);
 

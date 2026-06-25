@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/util/security/cert/DefaultKeyCopyHandler.java 5     2/11/23 14:03 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/DefaultKeyCopyHandler.java 9     8/04/26 15:35 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.modulelock.LockClientInformation;
+import de.mendelson.util.modulelock.ModuleLock;
 import de.mendelson.util.modulelock.message.ModuleLockRequest;
 import de.mendelson.util.modulelock.message.ModuleLockResponse;
 import de.mendelson.util.security.cert.clientserver.KeyCopyRequest;
@@ -25,12 +26,12 @@ import java.util.ResourceBundle;
  * to the other keystore manager of the system
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 9 $
  */
 public class DefaultKeyCopyHandler implements KeyCopyHandler {
 
     private final BaseClient baseClient;    
-    private final String targetModuleLockId;
+    private final ModuleLock.Module targetModule;
     private final int sourceKeystoreUsage;
     private final int targetKeystoreUsage;
     private final MecResourceBundle rb;
@@ -42,13 +43,13 @@ public class DefaultKeyCopyHandler implements KeyCopyHandler {
      * KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN
      * @param sourceKeystoreUsage What purpose has the source keystore, e.g.
      * KeystoreStorageImplClientServer.KEYSTORE_USAGE_ENC_SIGN
-     * @param targetModuleLockId The module lock String required to lock the
-     * access to the target keystore, e.g. ModuleLock.MODULE_ENCSIGN_KEYSTORE.
+     * @param module The module lock String required to lock the
+     * access to the target keystore, e.g. ModuleLock.Module.ENCSIGN_KEYSTORE.
      */
     public DefaultKeyCopyHandler(BaseClient baseClient, 
             int sourceKeystoreUsage, 
             int targetKeystoreUsage, 
-            String targetModuleLockId) {
+            ModuleLock.Module targetModule) {
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -59,7 +60,7 @@ public class DefaultKeyCopyHandler implements KeyCopyHandler {
         this.baseClient = baseClient;
         this.targetKeystoreUsage = targetKeystoreUsage;
         this.sourceKeystoreUsage = sourceKeystoreUsage;
-        this.targetModuleLockId = targetModuleLockId;
+        this.targetModule = targetModule;
     }
 
     @Override
@@ -68,18 +69,18 @@ public class DefaultKeyCopyHandler implements KeyCopyHandler {
         ModuleLockResponse lockResponse;
         try {
             //try to lock the target keystore module for write access
-            lockRequest = new ModuleLockRequest(this.targetModuleLockId, ModuleLockRequest.TYPE_SET);
+            lockRequest = new ModuleLockRequest(this.targetModule, ModuleLockRequest.Type.SET);
             lockResponse = (ModuleLockResponse) this.baseClient.sendSync(lockRequest);            
-            boolean hasLock = lockResponse.wasSuccessful();
+            boolean hasLock = lockResponse.getSuccess();
             if (!hasLock) {
                 LockClientInformation lockKeeper = lockResponse.getLockKeeper();
                 UINotification.instance().addNotification(
                         null,
-                        UINotification.TYPE_ERROR,
+                        UINotification.Type.ERROR,
                         this.rb.getResourceString("module.locked.title"),
                         this.rb.getResourceString("module.locked.text",
                                 new Object[]{
-                                    this.targetModuleLockId,
+                                    this.targetModule,
                                     lockKeeper.getClientIP()
                                 }));
                 return;
@@ -95,7 +96,7 @@ public class DefaultKeyCopyHandler implements KeyCopyHandler {
             }
             UINotification.instance().addNotification(
                         null,
-                        UINotification.TYPE_SUCCESS,
+                        UINotification.Type.SUCCESS,
                         null,
                         this.rb.getResourceString("keycopy.success.text",
                                 response.getUsedTargetAlias()));
@@ -103,7 +104,7 @@ public class DefaultKeyCopyHandler implements KeyCopyHandler {
             UINotification.instance().addNotification(e);
         } finally {
             //release the target module lock
-            lockRequest = new ModuleLockRequest(targetModuleLockId, ModuleLockRequest.TYPE_RELEASE);
+            lockRequest = new ModuleLockRequest(this.targetModule, ModuleLockRequest.Type.RELEASE);
             lockResponse = (ModuleLockResponse) this.baseClient.sendSync(lockRequest);
         }
     }

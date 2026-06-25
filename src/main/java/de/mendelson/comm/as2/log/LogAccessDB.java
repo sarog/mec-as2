@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/log/LogAccessDB.java 55    12/03/25 17:28 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/log/LogAccessDB.java 61    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.log;
 
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.database.RetryableDBOperation;
+import de.mendelson.util.database.RollbackRetryException;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
@@ -28,14 +30,14 @@ import java.util.logging.Level;
  * Access to the AS2 log that stores log messages for every transaction
  *
  * @author S.Heller
- * @version $Revision: 55 $
+ * @version $Revision: 61 $
  */
 public class LogAccessDB {
 
-    private final int LEVEL_FINE = 3;
-    private final int LEVEL_SEVERE = 2;
-    private final int LEVEL_WARNING = 1;
-    private final int LEVEL_INFO = 0;
+    private static final int LEVEL_FINE = 3;
+    private static final int LEVEL_SEVERE = 2;
+    private static final int LEVEL_WARNING = 1;
+    private static final int LEVEL_INFO = 0;
     private final IDBDriverManager dbDriverManager;
 
     /**
@@ -52,25 +54,25 @@ public class LogAccessDB {
 
     private int convertLevel(Level level) {
         if (level.equals(Level.WARNING)) {
-            return (this.LEVEL_WARNING);
+            return (LEVEL_WARNING);
         }
         if (level.equals(Level.SEVERE)) {
-            return (this.LEVEL_SEVERE);
+            return (LEVEL_SEVERE);
         }
         if (level.equals(Level.FINE)) {
-            return (this.LEVEL_FINE);
+            return (LEVEL_FINE);
         }
-        return (this.LEVEL_INFO);
+        return (LEVEL_INFO);
     }
 
     private Level convertLevel(int level) {
-        if (level == this.LEVEL_WARNING) {
+        if (level == LEVEL_WARNING) {
             return (Level.WARNING);
         }
-        if (level == this.LEVEL_SEVERE) {
+        if (level == LEVEL_SEVERE) {
             return (Level.SEVERE);
         }
-        if (level == this.LEVEL_FINE) {
+        if (level == LEVEL_FINE) {
             return (Level.FINE);
         }
         return (Level.INFO);
@@ -81,11 +83,11 @@ public class LogAccessDB {
      * transaction table and is performed all the time this is threaded. It must
      * not block the processing in a critical way, its just the logging..
      */
-    public Runnable generateThreadToInsert(Level level, long millis, String message, String messageId) {
+    public Runnable generateThreadToInsert(Level level, long millis, String message, String messageId, long sequenceNo) {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-                insertInBackground(level, millis, message, messageId);
+                insertInBackground(level, millis, message, messageId, sequenceNo);
             }
         };
         return (runnable);
@@ -94,16 +96,16 @@ public class LogAccessDB {
     /**
      * Adds a log line to the db - opens a new database connection first
      */
-    private void insertInBackground(Level level, long millis, String logMessage, String messageId) {
+    private void insertInBackground(Level level, long millis, String logMessage, String messageId, long sequenceNo) {
         if (logMessage == null) {
             return;
         }
         try (Connection runtimeConnectionNoAutoCommit
                 = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            this.logAsTransaction(runtimeConnectionNoAutoCommit, level, millis, logMessage, messageId);
+            this.logAsTransaction(runtimeConnectionNoAutoCommit, level, millis, logMessage, messageId, sequenceNo);
         } catch (SQLException e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         } catch (Throwable e) {
             SystemEventManagerImplAS2.instance().systemFailure(e);
         }
@@ -113,44 +115,56 @@ public class LogAccessDB {
      * Adds a single log line to the db
      */
     private void logAsTransaction(Connection runtimeConnectionNoAutoCommit,
-            Level level, long millis, String logMessage, String messageId) {
+            Level level, long millis, String logMessage, String messageId, long sequenceNo) {
         if (logMessage == null) {
             return;
         }
         String transactionName = "LogAccessDB_logAsTransaction";
-        try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
-            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            //a lock might not be necessary here because this is a single statement query only but MySQL seems to have
-            //problems with the locks
-            this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
-                    new String[]{"messagelog"});
-            try (PreparedStatement insertStatement = runtimeConnectionNoAutoCommit.prepareStatement(
-                    "INSERT INTO messagelog(timestamputc,messageid,loglevel,details)VALUES(?,?,?,?)")) {
-                insertStatement.setTimestamp(1, new Timestamp(millis), this.calendarUTC);
-                insertStatement.setString(2, messageId);
-                insertStatement.setInt(3, this.convertLevel(level));
-                this.dbDriverManager.setTextParameterAsJavaObject(insertStatement, 4, logMessage);
-                insertStatement.executeUpdate();
-                this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-            } catch (SQLIntegrityConstraintViolationException e) {
-                String errorMessage = "LogAccessDB.log "
-                        + "(" + e.getClass().getSimpleName() + "): "
-                        + " The system tries to store a log entry for the message id \"" + messageId
-                        + "\", but this message seems not to exist in the system.\n"
-                        + "The reason might be an unreferenced MDN or a bad inbound AS2 message structure.";
-                SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR,
-                        SystemEvent.ORIGIN_TRANSACTION, SystemEvent.TYPE_TRANSACTION_ANY);
-                event.setBody(errorMessage + "\n\nLog message: \"" + logMessage + "\"");
-                event.setSubject("Unreferenced MDN or bad message structure");
-                SystemEventManagerImplAS2.instance().newEvent(event);
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Throwable e) {
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
+        RetryableDBOperation<Void> dbOperation = new RetryableDBOperation<Void>() {
+            @Override
+            public Void execute() throws RollbackRetryException {
+                try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                    try {
+                        dbDriverManager.startTransaction(transactionStatement, transactionName);
+                        dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
+                                new String[]{"messagelog"});
+                        try (PreparedStatement insertStatement = runtimeConnectionNoAutoCommit.prepareStatement(
+                                "INSERT INTO messagelog(timestamputc,messageid,loglevel,details,sequenceno)VALUES(?,?,?,?,?)")) {
+                            insertStatement.setTimestamp(1, new Timestamp(millis), calendarUTC);
+                            insertStatement.setString(2, messageId);
+                            insertStatement.setInt(3, convertLevel(level));
+                            dbDriverManager.setTextParameterAsJavaObject(insertStatement, 4, logMessage);
+                            insertStatement.setLong(5, sequenceNo);
+                            insertStatement.executeUpdate();
+                            dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                        } catch (SQLIntegrityConstraintViolationException e) {
+                            String errorMessage = "LogAccessDB.log "
+                                    + "(" + e.getClass().getSimpleName() + "): "
+                                    + " The system tries to store a log entry for the message id \"" + messageId
+                                    + "\", but this message seems not to exist in the system.\n"
+                                    + "The reason might be an unreferenced MDN or a bad inbound AS2 message structure.";
+                            SystemEvent event = new SystemEvent(SystemEvent.Severity.ERROR,
+                                    SystemEvent.Origin.TRANSACTION, SystemEvent.Type.TRANSACTION_ANY);
+                            event.setBody(errorMessage + "\n\nLog message: \"" + logMessage + "\"")
+                                    .setSubject("Unreferenced MDN or bad message structure");
+                            SystemEventManagerImplAS2.instance().newEvent(event);
+                            dbDriverManager.rollbackTransaction(transactionStatement);
+                        }
+                    } catch (Throwable e) {
+                        dbDriverManager.rollbackTransaction(transactionStatement);
+                        throw new RollbackRetryException(e, transactionName);
+                    }
+                } catch (Throwable e) {
+                    //let the rollback exception pass
+                    if (e instanceof RollbackRetryException) {
+                        throw (RollbackRetryException) e;
+                    }
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
+                }
+                return (null);
             }
-        } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        }
+        };
+        this.dbDriverManager.executeWithRetry(SystemEventManagerImplAS2.instance(), dbOperation);
     }
 
     /**
@@ -160,7 +174,7 @@ public class LogAccessDB {
         List<LogEntry> list = new ArrayList<LogEntry>();
         try (Connection runtimeConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
             try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(
-                    "SELECT * FROM messagelog WHERE messageid=? ORDER BY timestamputc")) {
+                    "SELECT * FROM messagelog WHERE messageid=? ORDER BY timestamputc ASC, sequenceno ASC")) {
                 statement.setString(1, messageId);
                 ResultSet result = statement.executeQuery();
                 while (result.next()) {
@@ -176,7 +190,7 @@ public class LogAccessDB {
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (list);
     }
@@ -229,13 +243,13 @@ public class LogAccessDB {
                     this.deleteMessageLog(messageIds, runtimeConnectionNoAutoCommit);
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
 
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 

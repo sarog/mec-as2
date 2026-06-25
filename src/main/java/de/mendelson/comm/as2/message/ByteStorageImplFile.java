@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplFile.java 13    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ByteStorageImplFile.java 15    13/03/26 10:09 Heller $
 package de.mendelson.comm.as2.message;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.mendelson.util.AS2Tools;
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -13,9 +15,9 @@ import java.nio.file.StandardOpenOption;
  * Container that stores byte arrays in a temp file
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 15 $
  */
-public class ByteStorageImplFile implements IByteStorage {
+public final class ByteStorageImplFile implements IByteStorage {
 
     /**
      * IByteStorage extends Serializable
@@ -27,16 +29,17 @@ public class ByteStorageImplFile implements IByteStorage {
     public ByteStorageImplFile() {
     }
 
-    @Override
     /**
      * Returns the actual stored data size
      */
+    @Override
+    @JsonIgnore
     public int getSize() {
-        if (this.fullFilename == null) {
+        if (this.getFullFilename() == null) {
             return (0);
         }
         try {
-            return ((int) Files.size(Paths.get(this.fullFilename)));
+            return ((int) Files.size(Paths.get(this.getFullFilename())));
         } catch (IOException e) {
             return (0);
         }
@@ -46,10 +49,11 @@ public class ByteStorageImplFile implements IByteStorage {
     /**
      * store a byte array
      */
+    @JsonIgnore
     public void put(byte[] data) throws Exception {
         //create the file storage
         Path tempFile = AS2Tools.createTempFile("AS2ByteStorage", ".bin");
-        this.fullFilename = tempFile.toAbsolutePath().toString();
+        this.setFullFilename(tempFile.toAbsolutePath().toString());
         Files.write(tempFile, data,
                 StandardOpenOption.SYNC,
                 StandardOpenOption.CREATE,
@@ -58,30 +62,47 @@ public class ByteStorageImplFile implements IByteStorage {
     }
 
     @Override
+    @JsonIgnore
     public byte[] get() throws Exception {
-        if (this.fullFilename == null) {
+        if (this.getFullFilename() == null) {
             return (new byte[0]);
         }
-        return (Files.readAllBytes(Paths.get(this.fullFilename)));
+        return (Files.readAllBytes(Paths.get(this.getFullFilename())));
     }
 
     @Override
     /**
      * Returns an input stream to read directly from the underlaying buffer
      */
+    @JsonIgnore
     public InputStream getInputStream() throws Exception {
-        return (Files.newInputStream(Paths.get(this.fullFilename)));
+        return (Files.newInputStream(Paths.get(this.getFullFilename())));
     }
 
     @Override
+    @JsonIgnore
     public void release() {
         try {
-            Files.delete(Paths.get(this.fullFilename));
+            Files.delete(Paths.get(this.getFullFilename()));
         } catch (IOException e) {
             //nop
         } finally {
-            this.fullFilename = null;
+            this.setFullFilename(null);
         }
+    }
+
+    /**This is a dummy method for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public String getFullFilename() {
+        return fullFilename;
+    }
+
+    /**This is a dummy method for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setFullFilename(String fullFilename) {
+        this.fullFilename = fullFilename;
     }
 
 }

@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 44    19/12/24 8:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/JDialogManualSend.java 51    9/04/26 8:46 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.client.AS2StatusBar;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
@@ -41,23 +42,30 @@ import javax.swing.SwingUtilities;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 51 $
  */
 public class JDialogManualSend extends JDialog {
 
-    private final static boolean MULTIPLE_FILES = false;
+    private static final boolean MULTIPLE_FILES = false;
 
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private MecResourceBundle rb = null;
-    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleManualSend.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
+    private static final Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private final List<Partner> localStations = new ArrayList<Partner>();
-    //DB connection for the partner access
     private final BaseClient baseClient;
     private final AS2StatusBar statusbar;
-    private final MendelsonMultiResolutionImage IMAGE_MANUAL_SEND
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/send.svg", 32, 48);
+    private static final MendelsonMultiResolutionImage IMAGE_MANUAL_SEND
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/send.svg",
+                    AS2Gui.IMAGE_SIZE_DIALOG);
     /**
      * String that is displayed while the client uploads data to the server to
      * send
@@ -75,16 +83,8 @@ public class JDialogManualSend extends JDialog {
         super(parent, true);
         this.statusbar = statusbar;
         this.uploadDisplay = uploadDisplay;
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleManualSend.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.baseClient = baseClient;
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         TextOverlay.addTo(this.jTextFieldFilename1, rb.getResourceString("label.filename.hint"));
         this.setMultiresolutionIcons();
@@ -96,8 +96,7 @@ public class JDialogManualSend extends JDialog {
         //fill in data
         try {
             PartnerListResponse response = (PartnerListResponse) baseClient.sendSync(
-                    new PartnerListRequest(PartnerListRequest.LIST_ALL,
-                            PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE));
+                    new PartnerListRequest(PartnerListRequest.ListOption.ALL));
             List<Partner> allPartnerList = response.getList();
             for (Partner partner : allPartnerList) {
                 if (partner.isLocalStation()) {
@@ -107,11 +106,11 @@ public class JDialogManualSend extends JDialog {
                 }
             }
         } catch (Exception e) {
-            this.logger.severe("JDialogManualSend: " + e.getMessage());
+            logger.severe("JDialogManualSend: " + e.getMessage());
             UINotification.instance().addNotification(
                     IMAGE_MANUAL_SEND,
-                    UINotification.TYPE_WARNING,
-                    JDialogManualSend.this.rb.getResourceString("title"),
+                    UINotification.Type.WARNING,
+                    JDialogManualSend.rb.getResourceString("title"),
                     "JDialogManualSend: " + e.getMessage());
         }
         //single local station? No need to select the sender
@@ -133,7 +132,7 @@ public class JDialogManualSend extends JDialog {
     }
 
     private void setMultiresolutionIcons() {
-        this.jLabelIcon.setIcon(new ImageIcon(IMAGE_MANUAL_SEND.toMinResolution(32)));
+        this.jLabelIcon.setIcon(new ImageIcon(IMAGE_MANUAL_SEND.toMinResolution(AS2Gui.IMAGE_SIZE_DIALOG)));
     }
 
     /**
@@ -178,7 +177,7 @@ public class JDialogManualSend extends JDialog {
      */
     public ManualSendResponse performSend() throws Throwable {
         Partner receiver = (Partner) this.jComboBoxRemotePartner.getSelectedItem();
-        Partner sender = null;
+        Partner sender;
         if (this.localStations.size() == 1) {
             sender = this.localStations.get(0);
         } else {
@@ -199,22 +198,17 @@ public class JDialogManualSend extends JDialog {
                 files.add(Paths.get(this.jTextFieldFilename2.getText()));
             }
             for (Path uploadFile : files) {
-                InputStream inStream = null;
-                try {
-                    //perform the upload to the server, chunked
-                    TransferClientWithProgress transferClient = new TransferClientWithProgress(
-                            this.baseClient,
-                            this.statusbar.getProgressPanel());
-                    inStream = Files.newInputStream(uploadFile);
-                    String uploadHash = transferClient.uploadChunkedWithProgress(inStream, this.uploadDisplay,
+                //perform the upload to the server, chunked
+                TransferClientWithProgress transferClient = new TransferClientWithProgress(
+                        this.baseClient,
+                        this.statusbar.getProgressPanel());
+                try (InputStream inStream = Files.newInputStream(uploadFile)) {
+                    String uploadHash = transferClient.uploadChunkedWithProgress(inStream,
+                            this.uploadDisplay,
                             (int) Files.size(uploadFile));
                     uploadHashs.add(uploadHash);
-                    request.addFilename(uploadFile.getFileName().toString(), null);
-                } finally {
-                    if (inStream != null) {
-                        inStream.close();
-                    }
                 }
+                request.addFilename(uploadFile.getFileName().toString(), null);
             }
             request.setUploadHashs(uploadHashs);
         }
@@ -238,36 +232,29 @@ public class JDialogManualSend extends JDialog {
      * @throws Throwable
      */
     public ManualSendResponse performResend(String resendMessageId, Partner sender, Partner receiver,
-            Path dataFile, String originalFilename, String subject) throws Throwable {
-        InputStream inStream = null;
-        ManualSendResponse response = null;
-        try {
-            if (dataFile == null) {
-                throw new FileNotFoundException();
-            }
-            TransferClientWithProgress transferClient = new TransferClientWithProgress(
-                    this.baseClient,
-                    this.statusbar.getProgressPanel());
-            inStream = Files.newInputStream(dataFile);
+            Path dataFile, String originalFilename, String subject) throws Throwable {        
+        if (dataFile == null) {
+            throw new FileNotFoundException();
+        }
+        TransferClientWithProgress transferClient = new TransferClientWithProgress(
+                this.baseClient,
+                this.statusbar.getProgressPanel());
+        String uploadHash;
+        try (InputStream inStream = Files.newInputStream(dataFile)) {
             //perform the upload to the server, chunked
-            String uploadHash = transferClient.uploadChunkedWithProgress(inStream, this.uploadDisplay,
+            uploadHash = transferClient.uploadChunkedWithProgress(inStream, this.uploadDisplay,
                     (int) Files.size(dataFile));
-            ManualSendRequest request = new ManualSendRequest();
-            request.setResendMessageId(resendMessageId);
-            request.setUploadHash(uploadHash);
-            request.addFilename(originalFilename, null);
-            request.setReceiverAS2Id(receiver.getAS2Identification());
-            request.setSenderAS2Id(sender.getAS2Identification());
-            request.setSubject(subject);
-            response = (ManualSendResponse) transferClient.uploadWaitInfinite(request);
-            if (response.getException() != null) {
-                throw (response.getException());
-            }
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-
-            }
+        }
+        ManualSendRequest request = new ManualSendRequest();
+        request.setResendMessageId(resendMessageId);
+        request.setUploadHash(uploadHash);
+        request.addFilename(originalFilename, null);
+        request.setReceiverAS2Id(receiver.getAS2Identification());
+        request.setSenderAS2Id(sender.getAS2Identification());
+        request.setSubject(subject);
+        ManualSendResponse response = (ManualSendResponse) transferClient.uploadWaitInfinite(request);
+        if (response != null && response.getException() != null) {
+            throw (response.getException());
         }
         return (response);
     }
@@ -287,15 +274,15 @@ public class JDialogManualSend extends JDialog {
                     JDialogManualSend.this.unlock();
                     JDialogManualSend.this.setVisible(false);
                     UINotification.instance().addNotification(IMAGE_MANUAL_SEND,
-                            UINotification.TYPE_SUCCESS,
-                            JDialogManualSend.this.rb.getResourceString("title"),
-                            JDialogManualSend.this.rb.getResourceString("send.success"));
+                            UINotification.Type.SUCCESS,
+                            JDialogManualSend.rb.getResourceString("title"),
+                            JDialogManualSend.rb.getResourceString("send.success"));
                 } catch (Throwable e) {
-                    JDialogManualSend.this.logger.warning("Manual send: " + e.getMessage());
+                    JDialogManualSend.logger.warning("Manual send: " + e.getMessage());
                     UINotification.instance().addNotification(
                             IMAGE_MANUAL_SEND,
-                            UINotification.TYPE_WARNING,
-                            JDialogManualSend.this.rb.getResourceString("title"),
+                            UINotification.Type.WARNING,
+                            JDialogManualSend.rb.getResourceString("title"),
                             "Manual send: " + e.getMessage());
                 } finally {
                     JDialogManualSend.this.unlock();
@@ -599,7 +586,7 @@ public class JDialogManualSend extends JDialog {
     private void jButtonBrowse1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowse1ActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         MecFileChooser chooser = new MecFileChooser(parent,
-                this.rb.getResourceString("label.selectfile"));
+                rb.getResourceString("label.selectfile"));
         chooser.browseFilename(this.jTextFieldFilename1);
         this.setButtonState();
     }//GEN-LAST:event_jButtonBrowse1ActionPerformed
@@ -624,7 +611,7 @@ public class JDialogManualSend extends JDialog {
     private void jButtonBrowse2ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonBrowse2ActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         MecFileChooser chooser = new MecFileChooser(parent,
-                this.rb.getResourceString("label.selectfile"));
+                rb.getResourceString("label.selectfile"));
         chooser.browseFilename(this.jTextFieldFilename2);
         this.setButtonState();
     }//GEN-LAST:event_jButtonBrowse2ActionPerformed

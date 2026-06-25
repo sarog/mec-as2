@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpUploader.java 32    6/02/25 8:23 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpUploader.java 37    18/06/25 12:21 Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 37 $
  */
 public class ResourceBundleHttpUploader extends MecResourceBundle{
     
@@ -18,8 +18,10 @@ public class ResourceBundleHttpUploader extends MecResourceBundle{
     
     /**List of messages in the specific language*/
     private static final Object[][] CONTENTS = {
-        {"returncode.ok", "Message sent successfully (HTTP {0}); {1} transfered in {2} [{3} KB/s]." },
-        {"returncode.accepted", "Message sent successfully (HTTP {0}); {1} transfered in {2} [{3} KB/s]." },
+        {"connected.to", "Connected to {0}, waiting for a MDN and keeping connection open until {1}." },
+        {"connection.shut.down", "The outbound connection to {0} has been closed, it was open for {1}s." },
+        {"returncode.ok", "Message sent successfully (HTTP {0}); {1} uploaded in {2} [{3}]." },
+        {"returncode.accepted", "Message sent successfully (HTTP {0}); {1} transfered in {2} [{3}]." },
         {"connection.tls.info", "Outbound TLS connection established [{0}, {1}]" },
         {"sending.msg.sync", "Sending AS2 message to {0}, sync MDN requested." },
         {"sending.cem.sync", "Sending CEM message to {0}, sync MDN requested." },
@@ -42,6 +44,10 @@ public class ResourceBundleHttpUploader extends MecResourceBundle{
         {"trust.all.server.certificates", "The outbound TLS connection will trust all remote end server certificates if the root and intermediate certificates are available." },
         {"strict.hostname.check", "The outbound TLS connection will perform a strict hostname check on the server end certificate." },
         {"strict.hostname.check.skipped.selfsigned", "TLS: The strict hostname check has been skipped, self signed certificate found on remote server." },
+        {"httpheader.replaced", "The value of the HTTP header \"{0}\" has been replaced by the user defined value \"{1}\"" },
+        {"httpheader.deleted", "The HTTP header \"{0}\" has been deleted because of user defined HTTP settings" },
+        {"httpheader.set", "The HTTP header \"{0}\" has been set to the user defined value \"{1}\"" },
+        {"httpheader.added.basicauth", "The HTTP header for Basic Authentication has been added to the send request" },
     };
     
 }

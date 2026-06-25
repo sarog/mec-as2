@@ -1,16 +1,17 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 37    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 41    23/03/26 13:41 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
+import de.mendelson.comm.as2.message.MessageCompressionType;
+import de.mendelson.comm.as2.message.MessageDirectionType;
+import de.mendelson.comm.as2.message.MessageStateType;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.comm.as2.partner.Partner;
-import de.mendelson.util.ImageUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -34,7 +35,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 41 $
  */
 public class TableModelMessageOverview extends AbstractTableModel {
     
@@ -56,9 +57,16 @@ public class TableModelMessageOverview extends AbstractTableModel {
     public static final ImageIcon ICON_FINISHED
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_finished.svg", IMAGE_HEIGHT));
-    public static final ImageIcon ICON_RESEND_OVERLAY
+    public static final ImageIcon ICON_FINISHED_RESEND
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/resend_overlay.svg", IMAGE_HEIGHT));
+                    "/de/mendelson/comm/as2/message/loggui/state_finished.svg", 
+                    IMAGE_HEIGHT, 
+                    new String[]{"resend"}));    
+    public static final ImageIcon ICON_STOPPED_RESEND
+            = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/state_stopped.svg", 
+                    IMAGE_HEIGHT, 
+                    new String[]{"resend"}));
 
     /**
      * ResourceBundle to localize the headers
@@ -216,22 +224,22 @@ public class TableModelMessageOverview extends AbstractTableModel {
         AS2MessageInfo info = (AS2MessageInfo) overviewRow.getAS2Info();
         switch (col) {
             case 0:
-                if (info.getState() == AS2Message.STATE_FINISHED) {
+                if (info.getState() == MessageStateType.FINISHED) {
                     if (info.getResendCounter() == 0) {
                         return (ICON_FINISHED);
                     } else {
-                        return (ImageUtil.mixImages(ICON_FINISHED, ICON_RESEND_OVERLAY));
+                        return (ICON_FINISHED_RESEND);
                     }
-                } else if (info.getState() == AS2Message.STATE_STOPPED) {
+                } else if (info.getState() == MessageStateType.STOPPED) {
                     if (info.getResendCounter() == 0) {
                         return (ICON_STOPPED);
                     } else {
-                        return (ImageUtil.mixImages(ICON_STOPPED, ICON_RESEND_OVERLAY));
+                        return (ICON_STOPPED_RESEND);
                     }
                 }
                 return (ICON_PENDING);
             case 1:
-                if (info.getDirection() == AS2MessageInfo.DIRECTION_IN) {
+                if (info.getDirection() == MessageDirectionType.IN) {
                     return (ICON_IN);
                 } else {
                     return (ICON_OUT);
@@ -239,7 +247,7 @@ public class TableModelMessageOverview extends AbstractTableModel {
             case 2:
                 return (info.getInitDate());
             case 3:
-                if (info.getDirection() != AS2MessageInfo.DIRECTION_IN) {
+                if (info.getDirection() != MessageDirectionType.IN) {
                     String id = info.getSenderId();
                     Partner sender = this.partnerMap.get(id);
                     if (sender != null) {
@@ -257,7 +265,7 @@ public class TableModelMessageOverview extends AbstractTableModel {
                     }
                 }
             case 4:
-                if (info.getDirection() == AS2MessageInfo.DIRECTION_IN) {
+                if (info.getDirection() == MessageDirectionType.IN) {
                     String id = info.getSenderId();
                     Partner sender = this.partnerMap.get(id);
                     if (sender != null) {
@@ -290,7 +298,7 @@ public class TableModelMessageOverview extends AbstractTableModel {
             case 8:
                 return (this.rbMessage.getResourceString("signature." + info.getSignType()));
             case 9:
-                if (info.requestsSyncMDN()) {
+                if (info.isRequestsSyncMDN()) {
                     return ("SYNC");
                 } else {
                     return ("ASYNC");
@@ -308,7 +316,7 @@ public class TableModelMessageOverview extends AbstractTableModel {
                     return (info.getSubject());
                 }
             case 12:
-                if (info.getCompressionType() == AS2Message.COMPRESSION_ZLIB) {
+                if (info.getCompressionType() == MessageCompressionType.ZLIB) {
                     return (Boolean.TRUE);
                 } else {
                     return (Boolean.FALSE);

@@ -1,0 +1,42 @@
+$Header:$
+Ten plik zawiera szablon powiadomienia w przypadku, gdy
+Wiadomość z już przetworzonym numerem wiadomości została odebrana ponownie
+Następujące zmienne są zastępowane
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host serwera AS2
+${EXISTING_MESSAGE_INIT_TIME}: Czas utworzenia już przetworzonej wiadomości.
+${MESSAGEID}: Numer otrzymanej wiadomości
+${SENDER}: Kanał informacyjny
+${RECEIVER}: Odbiorca wiadomości
+
+
+
+
+[SUBJECT]
+Wiadomość odrzucona, która została już przetworzona
+
+
+[BODY]
+Twój partner ${NADAWCA} wysłał wiadomość, której numer wiadomości
+jest taki sam jak numer wiadomości, która została już przetworzona. Ta wiadomość
+wiadomość nie została przetworzona, lecz odrzucona.
+Odbiorcą jest lokalna stacja ${RECEIVER}.
+
+Może to mieć następujące przyczyny i wymaga ręcznego sprawdzenia:
+
+
+* Numery wiadomości tworzone przez ${SENDER} nie są unikalne - jest to problem po stronie partnera.
+    unikalne - jest to problem po stronie partnera
+*${SENDER} ponownie wysłał wiadomość, ponieważ nie otrzymał potwierdzenia odbioru.
+    nie otrzymał jej. Ta procedura jest obarczona ryzykiem, że plik zostanie odebrany i przetworzony dwukrotnie i nie jest zalecana.
+    odebrany i przetworzony dwukrotnie i nie jest zalecana. Protokół AS2
+    nie określa jednoznacznie, w jaki sposób należy obsługiwać zduplikowane numery wiadomości i czy
+    i czy zduplikowane wiadomości muszą być odrzucane.
+
+
+Data początkowa już przetworzonej wiadomości: ${EXISTING_MESSAGE_INIT_TIME}
+Numer już przetworzonej wiadomości: ${MESSAGEID}
+
+Sprawdź w swoim systemie AS2, co się tam stało. Możliwe, że
+możliwe, że ${SENDER} ma inny status transakcji niż Ty. Powinieneś
+skontaktować się z partnerem i wyjaśnić tę kwestię.

@@ -1,0 +1,24 @@
+$Header:$
+Questo file contiene il modello di notifica per testare le impostazioni della posta elettronica.
+È possibile utilizzare le seguenti variabili, che vengono sostituite di conseguenza:
+
+${PRODUCTNAME}: nome del prodotto
+${MESSAGEID}: Numero del messaggio AS2
+${MITTENTE}: Mittente delle notizie (se noto, altrimenti "--")
+${RECEIVER}: Destinatario del messaggio (se noto, altrimenti "--")
+${HOST}: Host del server AS2
+${LOG}: registro della transazione (diverse righe)
+
+
+
+
+[SUBJECT]
+Errore nel messaggio AS2 ${MESSAGEID}
+
+
+[BODY]
+Il messaggio AS2 ${MESSAGEID} da ${SENDER} a ${RECEIVER} con oggetto "${SUBJECT}" non può essere trasmesso con lo stato OK.
+
+Log della transazione:
+${LOG}
+

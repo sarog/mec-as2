@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/Notification.java 35    20/02/25 13:42 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/notification/Notification.java 38    9/03/26 10:55 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -6,6 +6,7 @@ import de.mendelson.util.systemevents.SystemEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -34,12 +35,12 @@ import javax.mail.internet.MimeMessage;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 38 $
  */
 public abstract class Notification {
 
-    private final static String MODULE_NAME;
-    private final static MecResourceBundle rb;
+    private static final String MODULE_NAME;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -107,13 +108,13 @@ public abstract class Notification {
             properties.setProperty("mail.smtp.ssl.protocols", "SSLv3 TLSv1 TLSv1.1 TLSv1.2 TLSv1.3");
         }
         Session session = null;
-        if (notificationData.usesSMTPAuthCredentials()) {
+        if (notificationData.isUsesSMTPAuthCredentials()) {
             properties.setProperty("mail.smtp.auth", "true");
             properties.setProperty("mail.debug.auth", "true");
             session = Session.getInstance(properties,
                     new SendMailAuthenticator(notificationData.getSMTPUser(),
                             String.valueOf(notificationData.getSMTPPass())));
-        } else if (notificationData.usesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
+        } else if (notificationData.isUsesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
             properties.setProperty("mail.smtp.auth.mechanisms", "XOAUTH2");
             properties.setProperty("mail.smtp.auth", "true");
             properties.setProperty("mail.debug.auth", "true");
@@ -132,6 +133,7 @@ public abstract class Notification {
 
     /**
      *
+     * This will send the mail using UTF-8 encoding - this might be necessary most languages
      * @param productName
      * @param event
      * @param notificationData
@@ -163,7 +165,7 @@ public abstract class Notification {
             if (!subject.startsWith(this.getNotificationSubjectServerIdentification())) {
                 subject = this.getNotificationSubjectServerIdentification() + " " + subject;
             }
-            msg.setSubject(subject);
+            msg.setSubject(subject, StandardCharsets.UTF_8.name());
             String bodyText = event.getBody();
             String footer = this.getNotificationFooter();
             if (footer != null && !footer.trim().isEmpty()) {
@@ -175,7 +177,7 @@ public abstract class Notification {
                         + System.lineSeparator()
                         + footer;
             }
-            msg.setText(bodyText);
+            msg.setText(bodyText, StandardCharsets.UTF_8.name());
             msg.setSentDate(new Date());
             msg.setHeader("X-Mailer", productName);
             // send the message
@@ -213,7 +215,7 @@ public abstract class Notification {
                     errorLog.append("] ");
                     errorLog.append(sendFailedException.getMessage()).append("\n");
                     errorLog.append(errorMessage.toString());
-                    String errorLogStr = MODULE_NAME + " " + this.replace(errorLog.toString(), "\n", "\n" + MODULE_NAME);
+                    String errorLogStr = MODULE_NAME + " " + errorLog.toString().replace("\n", "\n" + MODULE_NAME);
                     Exception detailledException = new Exception(errorLogStr, e);
                     throw (detailledException);
                 } else {
@@ -233,7 +235,7 @@ public abstract class Notification {
                                     + "or it does not answer to any request.");
                         }
                     }
-                    String errorLogStr = MODULE_NAME + " " + this.replace(errorLog.toString(), "\n", "\n" + MODULE_NAME + " ");
+                    String errorLogStr = MODULE_NAME + " " + errorLog.toString().replace("\n", "\n" + MODULE_NAME + " ");
                     Exception detailledException = new Exception(errorLogStr, e);
                     throw (detailledException);
                 }
@@ -246,31 +248,6 @@ public abstract class Notification {
                 }
             }
             return (traceOut.toString());
-        }
-    }
-
-    /**
-     * Replaces the string tag by the string replacement in the sourceString
-     *
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
-     */
-    private String replace(String source, String tag, String replacement) {
-        if (source == null) {
-            return null;
-        }
-        StringBuilder buffer = new StringBuilder();
-        while (true) {
-            int index = source.indexOf(tag);
-            if (index == -1) {
-                buffer.append(source);
-                return (buffer.toString());
-            }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
-            source = source.substring(index + tag.length());
         }
     }
 

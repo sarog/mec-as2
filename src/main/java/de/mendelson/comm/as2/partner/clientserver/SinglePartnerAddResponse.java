@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/SinglePartnerAddResponse.java 1     31/10/24 7:31 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/SinglePartnerAddResponse.java 3     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 /*
@@ -15,7 +16,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class SinglePartnerAddResponse extends ClientServerResponse implements Serializable {
 
@@ -25,6 +26,15 @@ public class SinglePartnerAddResponse extends ClientServerResponse implements Se
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public SinglePartnerAddResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Add partner");

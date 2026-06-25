@@ -1,0 +1,42 @@
+$Header:$
+Este ficheiro contém o modelo de notificação no caso de um
+É recebida novamente uma mensagem com um número de mensagem já processado
+São substituídas as seguintes variáveis
+${PRODUCTNAME}: Nome do produto
+${HOST}: Anfitrião do servidor AS2
+${EXISTING_MESSAGE_INIT_TIME}: Hora de criação da mensagem já processada
+${MESSAGEID}: Número da mensagem recebida
+${SENDER}: Canal de notícias
+${RECEIVER}: Destinatário da mensagem
+
+
+
+
+[SUBJECT]
+Mensagem rejeitada que já foi processada
+
+
+[BODY]
+O seu parceiro ${SENDER} enviou-lhe uma mensagem cujo número de mensagem
+é o mesmo que o número de uma mensagem que já foi processada. Esta
+mensagem não foi processada, mas sim rejeitada.
+O destinatário é a sua estação local ${RECEIVER}.
+
+Esta situação pode ter os seguintes motivos e requer uma verificação manual:
+
+
+*Os números de mensagem que ${SENDER} cria não são únicos - trata-se de um problema do lado do seu parceiro.
+    únicos - este é um problema do lado do seu parceiro
+*${SENDER} reenviou uma mensagem porque não recebeu o seu aviso de receção.
+    não a recebeu. Este procedimento está repleto de riscos de o ficheiro ser recebido e processado duas vezes e não é recomendado.
+    recebido e processado duas vezes e não é recomendado. O protocolo AS2
+    não especifica claramente como devem ser tratados os números de mensagens duplicados e se
+    e se as mensagens duplicadas devem ser rejeitadas.
+
+
+Data inicial da mensagem já processada: ${EXISTING_MESSAGE_INIT_TIME}
+Número da mensagem já processada: ${MESSAGEID}
+
+Consulte o seu sistema AS2 para ver o que se passa. É possível que
+que ${SENDER} tenha um status de transação diferente do seu. Deverá
+contactar o seu parceiro e esclarecer esta questão.

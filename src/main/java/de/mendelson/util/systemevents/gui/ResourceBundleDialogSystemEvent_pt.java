@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_pt.java 2     9/12/24 15:51 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_pt.java 3     13/06/25 15:30 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 2 $
+* @version $Revision: 3 $
 */
 public class ResourceBundleDialogSystemEvent_pt extends MecResourceBundle {
 
@@ -25,25 +25,25 @@ public class ResourceBundleDialogSystemEvent_pt extends MecResourceBundle {
 	}
 	/**List of messages in the specific language*/
 	private static final Object[][] CONTENTS = {
-		{"label.close", "Fechar"},
+		{"category.all", "-- Todos"},
+		{"header.category", "Categoria"},
 		{"header.timestamp", "Carimbo de data/hora"},
-		{"label.id", "Número do evento"},
+		{"header.type", "Tipo"},
 		{"label.category", "Categoria"},
+		{"label.close", "Fechar"},
+		{"label.date", "data"},
 		{"label.enddate", "Fim"},
 		{"label.freetext", "Texto de pesquisa"},
-		{"category.all", "-- Todos"},
-		{"label.type", "Tipo"},
-		{"title", "Visualização de eventos do sistema"},
-		{"label.search", "Pesquisa de eventos"},
-		{"label.resetfilter", "Reiniciar"},
-		{"label.host", "Anfitrião"},
-		{"header.category", "Categoria"},
-		{"label.startdate", "Início"},
 		{"label.freetext.hint", "Pesquisa de número de evento ou de texto"},
+		{"label.host", "Anfitrião"},
+		{"label.id", "Número do evento"},
+		{"label.resetfilter", "Reiniciar"},
+		{"label.search", "Pesquisa de eventos"},
+		{"label.startdate", "Início"},
+		{"label.type", "Tipo"},
 		{"label.user", "Proprietário"},
-		{"header.type", "Tipo"},
 		{"no.data", "Não existe nenhum evento do sistema que corresponda à seleção de data/tipo atual."},
+		{"title", "Visualização de eventos do sistema"},
 		{"user.server.process", "Processo do servidor"},
-		{"label.date", "data"},
 	};
 }

@@ -1,16 +1,21 @@
-//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplDB.java 11    16/12/24 14:02 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplDB.java 18    14/01/26 14:05 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.BCCryptoHelper;
+import de.mendelson.util.security.BouncyCastleProviderSingleton;
+import de.mendelson.util.security.FastKeyStoreUtil;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.keydata.KeydataAccessDB;
 import de.mendelson.util.security.keydata.KeystoreData;
+import de.mendelson.util.security.memkeystore.MendelsonInMemoryProvider;
 import de.mendelson.util.systemevents.SystemEventManager;
 import java.io.ByteArrayOutputStream;
 import java.security.Key;
 import java.security.KeyStore;
+import java.security.PrivateKey;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
@@ -18,6 +23,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /*
@@ -31,7 +37,7 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a database storage
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 18 $
  */
 public class KeystoreStorageImplDB implements KeystoreStorage {
 
@@ -47,7 +53,7 @@ public class KeystoreStorageImplDB implements KeystoreStorage {
     private final Object keystoreLock = new Object();
 
     private KeyStore keystore = null;
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -78,10 +84,47 @@ public class KeystoreStorageImplDB implements KeystoreStorage {
         }
         this.keystoreUsage = KEYSTORE_USAGE;
         this.keystoreStorageType = KEYSTORE_STORAGE_TYPE;
-        BCCryptoHelper cryptoHelper = new BCCryptoHelper();
-        this.keystore = cryptoHelper.createKeyStoreInstance(keystoreData.getStorageTypeAsStr(),
-                keystoreData.getSecurityProvider());
-        KeyStoreUtil.loadKeyStore(this.keystore, keystoreData.getData(), this.getKeystorePass());
+        //if this is a enc/sign BC pkcs#12: use inmemory implementation
+        if (
+              this.keystoreStorageType.equals(BCCryptoHelper.KEYSTORE_PKCS12)
+                && keystoreData.getSecurityProvider().equals(BouncyCastleProviderSingleton.instance().getName())) {
+            Security.addProvider(MendelsonInMemoryProvider.instance());
+            this.keystore = KeyStore.getInstance(MendelsonInMemoryProvider.KEYSTORE_INMEMORY,
+                    MendelsonInMemoryProvider.instance().getName());
+            //initialize keystore in memory
+            this.keystore.load(null, null);
+            BCCryptoHelper cryptoHelper = new BCCryptoHelper();
+            KeyStore sourceKeystore = cryptoHelper.createKeyStoreInstance(keystoreData.getStorageTypeAsStr(),
+                    keystoreData.getSecurityProvider());
+            KeyStoreUtil.loadKeyStore(sourceKeystore, keystoreData.getData(), this.getKeystorePass());
+            this.copyFromKeystore(sourceKeystore, this.keystore, this.getKeystorePass());
+        } else {
+            BCCryptoHelper cryptoHelper = new BCCryptoHelper();
+            this.keystore = cryptoHelper.createKeyStoreInstance(keystoreData.getStorageTypeAsStr(),
+                    keystoreData.getSecurityProvider());
+            KeyStoreUtil.loadKeyStore(this.keystore, keystoreData.getData(), this.getKeystorePass());
+        }
+    }
+
+    /**
+     * Copies ll entries from one keystore to another
+     *
+     * @param sourceKeystore
+     * @param targetKeystore
+     */
+    private void copyFromKeystore(KeyStore sourceKeystore, KeyStore targetKeystore, char[] password) throws Exception {
+        Enumeration<String> aliases = sourceKeystore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            if (sourceKeystore.isKeyEntry(alias)) {
+                PrivateKey key = (PrivateKey) sourceKeystore.getKey(alias, password);
+                Certificate[] chain = sourceKeystore.getCertificateChain(alias);
+                targetKeystore.setKeyEntry(alias, key, password, chain);
+            } else if (sourceKeystore.isCertificateEntry(alias)) {
+                Certificate cert = sourceKeystore.getCertificate(alias);
+                targetKeystore.setCertificateEntry(alias, cert);
+            }
+        }
     }
 
     @Override
@@ -92,14 +135,24 @@ public class KeystoreStorageImplDB implements KeystoreStorage {
                 throw new Exception(rb.getResourceString("error.save.notloaded"));
             }
             byte[] keyData;
-            try (ByteArrayOutputStream memOut = new ByteArrayOutputStream()) {
-                KeyStoreUtil.saveKeyStore(this.keystore, this.getKeystorePass(), memOut);
-                keyData = memOut.toByteArray();
+            //ensure for BC and PKCS#12 to use a fast keystore mechanism to serialize the keystore to a byte array.
+            //every KeyStore.store() will use the default security data to create the byte array which will be slow
+            if (this.keystoreStorageType.equals(BCCryptoHelper.KEYSTORE_PKCS12)
+                    && this.keystore.getProvider().getName().equals(BouncyCastleProviderSingleton.instance().getName())) {
+                keyData = FastKeyStoreUtil.serializeToFastPKCS12(this.keystore, this.getKeystorePass());
+            } else {
+                //use the default storage mechanism - but this will use the security providers default settings
+                //for the keystore security
+                try (ByteArrayOutputStream memOut = new ByteArrayOutputStream()) {
+                    KeyStoreUtil.saveKeyStore(this.keystore, this.getKeystorePass(), memOut);
+                    keyData = memOut.toByteArray();
+                }
             }
             KeydataAccessDB dataAccessDB = new KeydataAccessDB(this.dbDriverManager, this.systemEventManager);
             dataAccessDB.updateKeydata(keyData, this.keystoreStorageType, this.keystoreUsage,
                     this.keystore.getProvider().getName());
         }
+
     }
 
     @Override
@@ -107,6 +160,11 @@ public class KeystoreStorageImplDB implements KeystoreStorage {
         throw new IllegalAccessException("KeystoreStorageImplDB: loadKeystoreFromServer() is not available for this implementation of storage.");
     }
 
+    @Override
+    public Optional<KeystoreCertificate> getDownloadedEntriesMetadata(String fingerprintSHA1){
+        return( Optional.empty() );
+    }
+    
     @Override
     public void replaceAllEntriesAndSave(List<KeystoreCertificate> oldList, List<KeystoreCertificate> newList) throws Exception {
         synchronized (this.keystoreLock) {
@@ -122,9 +180,9 @@ public class KeystoreStorageImplDB implements KeystoreStorage {
             //ensure that there are not two same aliases in the new list
             List<String> newAliasList = new ArrayList<String>();
             long uniqueCounter = System.currentTimeMillis();
-            for( KeystoreCertificate certificate : newList){
+            for (KeystoreCertificate certificate : newList) {
                 String newAlias = certificate.getAlias();
-                if( newAliasList.contains(newAlias)){
+                if (newAliasList.contains(newAlias)) {
                     //this alias already exists - add a counter to make it unique
                     certificate.setAlias(certificate.getAlias() + "_" + uniqueCounter);
                     uniqueCounter++;
@@ -134,13 +192,13 @@ public class KeystoreStorageImplDB implements KeystoreStorage {
             //ensure that there are not two same entries with the same fingerprint to import - just take the first one
             List<KeystoreCertificate> newUniqueListToImport = new ArrayList<KeystoreCertificate>();
             List<String> newFingerprintList = new ArrayList<String>();
-            for( KeystoreCertificate certificate : newList){
+            for (KeystoreCertificate certificate : newList) {
                 String fingerprint = certificate.getFingerPrintSHA1();
-                if( !newFingerprintList.contains(fingerprint)){
+                if (!newFingerprintList.contains(fingerprint)) {
                     newFingerprintList.add(fingerprint);
-                    newUniqueListToImport.add( certificate );
+                    newUniqueListToImport.add(certificate);
                 }
-            }            
+            }
             for (KeystoreCertificate certificate : newUniqueListToImport) {
                 if (certificate.getIsKeyPair()) {
                     char[] keyPass = null;

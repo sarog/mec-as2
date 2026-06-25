@@ -6,6 +6,7 @@ import de.mendelson.util.clientserver.connectiontest.ConnectionTestResult;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.LogFormatter;
 import de.mendelson.util.log.LoggingHandlerLogEntryArray;
@@ -35,7 +36,6 @@ import javax.swing.JFrame;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
-import javax.swing.plaf.ButtonUI;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -48,17 +48,13 @@ import javax.swing.plaf.ButtonUI;
  * Dialog to display the test result of a connection test
  *
  * @author S.Heller
- * @version $Revision: 43 $
+ * @version $Revision: 48 $
  */
 public class JDialogConnectionTestResult extends JDialog {
 
-    public static final int CONNECTION_TEST_OFTP2 = ConnectionTest.CONNECTION_TEST_OFTP2;
-    public static final int CONNECTION_TEST_AS2 = ConnectionTest.CONNECTION_TEST_AS2;
-    public static final int CONNECTION_TEST_AS4 = ConnectionTest.CONNECTION_TEST_AS4;
-
     private final ConnectionTestResult result;
-    private final static MecResourceBundle rb;
-    private final static MecResourceBundle rbCerts;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbCerts;
 
     static {
         try {
@@ -88,18 +84,18 @@ public class JDialogConnectionTestResult extends JDialog {
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/util/clientserver/connectiontest/gui/singlepartner_gateway.svg", 24);
 
-    private final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
-    private final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
+    private static final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
+    private static final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
 
     /**
      * Creates new form JDialogTestResult
      */
     public JDialogConnectionTestResult(JFrame parent,
-            final int CONNECTION_TYPE_TEST,
+            ConnectionTest.Type connectionTypeTest,
             List<LoggingHandlerLogEntryArray.LogEntry> logEntries,
             ConnectionTestResult result,
             CertificateManager certManagerEncSign,
-            CertificateManager certManagerSSL, String displayMode) {
+            CertificateManager certManagerSSL, DisplayMode displayMode) {
         super(parent, true);
         initComponents();
         this.result = result;
@@ -122,13 +118,13 @@ public class JDialogConnectionTestResult extends JDialog {
         }
         this.jLabelRemoteOFTPService.setVisible(false);
         this.jLabelOFTPServiceState.setVisible(false);
-        if (CONNECTION_TYPE_TEST == CONNECTION_TEST_OFTP2) {
+        if (connectionTypeTest == ConnectionTest.Type.OFTP2) {
             this.jLabelRemoteOFTPService.setVisible(true);
             this.jLabelOFTPServiceState.setVisible(true);
         }
         this.certManagerSSL = certManagerSSL;
         this.setTitle(rb.getResourceString("title"));
-        if (result.wasSSLTest()) {
+        if (result.isWasSSLTest()) {
             this.jLabelHeader.setText(rb.getResourceString("header.ssl", result.getTestedRemoteAddress()));
             this.jLabelPartnerLock.setText(TEXT_SECURE_LOCK);
         } else {
@@ -142,7 +138,7 @@ public class JDialogConnectionTestResult extends JDialog {
             this.jLabelConnectionState.setForeground(errorColor);
             this.jLabelConnectionState.setText(rb.getResourceString("FAILED"));
         }
-        if (!result.wasSSLTest()) {
+        if (!result.isWasSSLTest()) {
             this.jButtonImportCertificates.setEnabled(false);
             this.jLabelRemoteCertificatesAvailableLocal.setEnabled(false);
             this.jLabelCertificateState.setEnabled(false);
@@ -178,7 +174,7 @@ public class JDialogConnectionTestResult extends JDialog {
         testLogger.setLevel(Level.ALL);
         testLogger.addHandler(handler);
         testLogger.log(Level.INFO,
-                rb.getResourceString("description." + CONNECTION_TYPE_TEST,
+                rb.getResourceString("description." + connectionTypeTest.toInt(),
                         new Object[]{
                             result.getTestedRemoteAddress().getHostString(),
                             String.valueOf(result.getTestedRemoteAddress().getPort())
@@ -187,9 +183,9 @@ public class JDialogConnectionTestResult extends JDialog {
         testLogger.log(Level.INFO, "");
         for (LoggingHandlerLogEntryArray.LogEntry logEntry : logEntries) {
             testLogger.log(logEntry.getLevel(), logEntry.getMessage());
-        }        
+        }
         //log some technical information - the ciphers
-        if (result.wasSSLTest()) {
+        if (result.isWasSSLTest()) {
             String cipher = result.getUsedCipherSuite();
             //SSL_NULL_WITH_NULL_NULL is the inital cipher - if it is still the selected then a successful handshake did not happen
             if (cipher != null && !cipher.equals("SSL_NULL_WITH_NULL_NULL")) {
@@ -213,7 +209,7 @@ public class JDialogConnectionTestResult extends JDialog {
         //Its possible to not display the partner panel
         if (this.result.getSenderName() != null) {
             this.jLabelPartnerSenderImage.setIcon(new ImageIcon(IMAGE_LOCALSTATION.toMinResolution(28)));
-            if (this.result.getPartnerRole() == ConnectionTest.PARTNER_ROLE_GATEWAY_PARTNER) {
+            if (this.result.getPartnerRole() == ConnectionTest.PartnerRole.GATEWAY_PARTNER) {
                 this.jLabelPartnerReceiverImage.setIcon(new ImageIcon(IMAGE_GATEWAY_PARTNER.toMinResolution(28)));
             } else {
                 this.jLabelPartnerReceiverImage.setIcon(new ImageIcon(IMAGE_REMOTE_PARTNER.toMinResolution(28)));
@@ -299,13 +295,13 @@ public class JDialogConnectionTestResult extends JDialog {
                 this.certManagerSSL.saveKeystore();
                 this.certManagerSSL.rereadKeystoreCertificates();
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_SUCCESS,
+                        UINotification.Type.SUCCESS,
                         rbCerts.getResourceString("certificate.import.success.title"),
                         rbCerts.getResourceString("certificate.import.success.message", alias));
             } catch (Throwable e) {
                 e.printStackTrace();
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_ERROR,
+                        UINotification.Type.ERROR,
                         rbCerts.getResourceString("certificate.import.error.title"),
                         rbCerts.getResourceString("certificate.import.error.message", e.getMessage()));
             }

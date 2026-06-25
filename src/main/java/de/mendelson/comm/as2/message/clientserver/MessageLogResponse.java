@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageLogResponse.java 3     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageLogResponse.java 5     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
 import de.mendelson.comm.as2.log.LogEntry;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.util.List;
@@ -17,7 +18,7 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class MessageLogResponse extends ClientServerResponse implements Serializable {
 
@@ -29,6 +30,15 @@ public class MessageLogResponse extends ClientServerResponse implements Serializ
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public MessageLogResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Message log response");

@@ -1,12 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/JDialogPreferences.java 65    9/12/24 16:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/JDialogPreferences.java 73    8/04/26 13:34 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.ColorUtil;
-import de.mendelson.util.DisplayMode;
 import de.mendelson.util.ImageButtonBar;
 import de.mendelson.util.ImageButtonBarUI;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.uinotification.UINotification;
 import java.awt.BorderLayout;
 import java.awt.GridBagConstraints;
@@ -38,23 +38,20 @@ import javax.swing.UIManager;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 65 $
+ * @version $Revision: 73 $
  */
 public class JDialogPreferences extends JDialog {
 
     public static final int IMAGE_HEIGHT = ImageButtonBarUI.DEFAULT_IMAGE_HEIGHT;
 
-    private final static MendelsonMultiResolutionImage IMAGE_LANGUAGE
+    private static final MendelsonMultiResolutionImage IMAGE_LANGUAGE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/language.svg",
                     IMAGE_HEIGHT);
-    private final static MendelsonMultiResolutionImage IMAGE_COLORBLIND
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/color_blindness.svg", 20,
-                    36, MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
-    private final static MendelsonMultiResolutionImage IMAGE_DARKMODE
+    private static final MendelsonMultiResolutionImage IMAGE_DARKMODE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/darkmode.svg", 20);
-    private final static MendelsonMultiResolutionImage IMAGE_LIGHTMODE
+    private static final MendelsonMultiResolutionImage IMAGE_LIGHTMODE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/lightmode.svg", 20);
-    private final static MendelsonMultiResolutionImage IMAGE_HICONTRASTMODE
+    private static final MendelsonMultiResolutionImage IMAGE_HICONTRASTMODE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/hicontrastmode.svg", 20);
 
     /**
@@ -110,10 +107,12 @@ public class JDialogPreferences extends JDialog {
             this.jRadioButtonLangFR.setSelected(true);
         } else if (this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("it")) {
             this.jRadioButtonLangIT.setSelected(true);
-        }else if (this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("es")) {
+        } else if (this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("es")) {
             this.jRadioButtonLangES.setSelected(true);
-        }else if (this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("pt")) {
+        } else if (this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("pt")) {
             this.jRadioButtonLangPT.setSelected(true);
+        } else if (this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("pl")) {
+            this.jRadioButtonLangPL.setSelected(true);
         }
         String selectedCountryCode = this.clientPreferences.get(PreferencesAS2.COUNTRY).toUpperCase();
         this.jListCountry.setSelectedValue(new DisplayCountry(selectedCountryCode), true);
@@ -167,10 +166,45 @@ public class JDialogPreferences extends JDialog {
     }
 
     private void setMultiresolutionIcons() {
-        this.jLabelIconBlind.setIcon(new ImageIcon(IMAGE_COLORBLIND.toMinResolution(20)));
         this.jLabelDarkMode.setIcon(new ImageIcon(IMAGE_DARKMODE.toMinResolution(20)));
         this.jLabelLightMode.setIcon(new ImageIcon(IMAGE_LIGHTMODE.toMinResolution(20)));
         this.jLabelHiContrastMode.setIcon(new ImageIcon(IMAGE_HICONTRASTMODE.toMinResolution(20)));
+        String svgResourceFinished = "/de/mendelson/comm/as2/preferences/state_finished.svg";
+        String svgResourceStopped = "/de/mendelson/comm/as2/preferences/state_stopped.svg";
+        String defaultOverlayFinished = "/de/mendelson/util/colorblind/overlay_state_finished.svg";
+        String defaultOverlayStopped = "/de/mendelson/util/colorblind/overlay_state_stopped.svg";
+        String usedOverlaySVGResourceFinished = MendelsonMultiResolutionImage.getSVGOverlay(svgResourceFinished);
+        String usedOverlaySVGResourceStopped = MendelsonMultiResolutionImage.getSVGOverlay(svgResourceStopped);
+        MendelsonMultiResolutionImage.removeSVGOverlay(svgResourceFinished);
+        MendelsonMultiResolutionImage.removeSVGOverlay(svgResourceStopped);
+        final MendelsonMultiResolutionImage IMAGE_OK_NO_OVERLAY
+                = MendelsonMultiResolutionImage.fromSVG(svgResourceFinished, 20);
+        final MendelsonMultiResolutionImage IMAGE_STOPPED_NO_OVERLAY
+                = MendelsonMultiResolutionImage.fromSVG(svgResourceStopped, 20);
+        MendelsonMultiResolutionImage.addSVGOverlay("state_finished.svg", defaultOverlayFinished);
+        MendelsonMultiResolutionImage.addSVGOverlay("state_stopped.svg", defaultOverlayStopped);
+        final MendelsonMultiResolutionImage IMAGE_OK_OVERLAY
+                = MendelsonMultiResolutionImage.fromSVG(svgResourceFinished, 20);
+        final MendelsonMultiResolutionImage IMAGE_STOPPED_OVERLAY
+                = MendelsonMultiResolutionImage.fromSVG(svgResourceStopped, 20);
+        if (usedOverlaySVGResourceFinished == null) {
+            MendelsonMultiResolutionImage.removeSVGOverlay("state_finished.svg");
+        } else {
+            MendelsonMultiResolutionImage.addSVGOverlay("state_finished.svg", usedOverlaySVGResourceFinished);
+        }
+        if (usedOverlaySVGResourceStopped == null) {
+            MendelsonMultiResolutionImage.removeSVGOverlay("state_stopped.svg");
+        } else {
+            MendelsonMultiResolutionImage.addSVGOverlay("state_stopped.svg", usedOverlaySVGResourceStopped);
+        }
+        this.jLabelOverlaySampleOkNoOverlay.setIcon(new ImageIcon(IMAGE_OK_NO_OVERLAY.toMinResolution(
+                20)));
+        this.jLabelOverlaySampleOkOverlay.setIcon(new ImageIcon(IMAGE_OK_OVERLAY.toMinResolution(
+                20)));
+        this.jLabelOverlaySampleStoppedNoOverlay.setIcon(new ImageIcon(IMAGE_STOPPED_NO_OVERLAY.toMinResolution(
+                20)));
+        this.jLabelOverlaySampleStoppedOverlay.setIcon(new ImageIcon(IMAGE_STOPPED_OVERLAY.toMinResolution(
+                20)));
     }
 
     private void captureGUIValues() {
@@ -195,16 +229,21 @@ public class JDialogPreferences extends JDialog {
                 clientRestartRequired = true;
             }
             this.clientPreferences.put(PreferencesAS2.LANGUAGE, "it");
-        }else if (this.jRadioButtonLangES.isSelected()) {
+        } else if (this.jRadioButtonLangES.isSelected()) {
             if (!this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("es")) {
                 clientRestartRequired = true;
             }
             this.clientPreferences.put(PreferencesAS2.LANGUAGE, "es");
-        }else if (this.jRadioButtonLangPT.isSelected()) {
+        } else if (this.jRadioButtonLangPT.isSelected()) {
             if (!this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("pt")) {
                 clientRestartRequired = true;
             }
             this.clientPreferences.put(PreferencesAS2.LANGUAGE, "pt");
+        } else if (this.jRadioButtonLangPL.isSelected()) {
+            if (!this.clientPreferences.get(PreferencesAS2.LANGUAGE).equals("pl")) {
+                clientRestartRequired = true;
+            }
+            this.clientPreferences.put(PreferencesAS2.LANGUAGE, "pl");
         }
         if (this.jListCountry.getSelectedValue() != null) {
             String newCountryCode = this.jListCountry.getSelectedValue().getCountryCode();
@@ -217,27 +256,25 @@ public class JDialogPreferences extends JDialog {
             clientRestartRequired = true;
         }
         this.clientPreferences.putBoolean(PreferencesAS2.COLOR_BLINDNESS, this.switchColorBlindness.isSelected());
-        if ((this.jRadioButtonDarkMode.isSelected()
-                && !this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT).equalsIgnoreCase(DisplayMode.DARK))
-                || (this.jRadioButtonLiteMode.isSelected()
-                && !this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT).equalsIgnoreCase(DisplayMode.LIGHT))
-                || (this.jRadioButtonHiContrastMode.isSelected()
-                && !this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT).equalsIgnoreCase(DisplayMode.HICONTRAST))) {
+        DisplayMode oldDisplayMode = DisplayMode.of(this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT));
+        if ((this.jRadioButtonDarkMode.isSelected() && oldDisplayMode != DisplayMode.DARK)
+                || (this.jRadioButtonLiteMode.isSelected() && oldDisplayMode != DisplayMode.LIGHT)
+                || (this.jRadioButtonHiContrastMode.isSelected() && oldDisplayMode != DisplayMode.HICONTRAST)) {
             if (this.jRadioButtonDarkMode.isSelected()) {
-                this.clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.DARK);
+                this.clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.DARK.toDisplayStr());
             }
             if (this.jRadioButtonHiContrastMode.isSelected()) {
-                this.clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.HICONTRAST);
+                this.clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.HICONTRAST.toDisplayStr());
             }
             if (this.jRadioButtonLiteMode.isSelected()) {
-                this.clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, "LIGHT");
+                this.clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.LIGHT.toDisplayStr());
             }
             clientRestartRequired = true;
         }
         if (clientRestartRequired) {
             UINotification.instance().addNotification(
                     PreferencesPanelMDN.IMAGE_PREFS,
-                    UINotification.TYPE_INFORMATION,
+                    UINotification.Type.INFORMATION,
                     rb.getResourceString("title"),
                     rb.getResourceString("warning.clientrestart.required"));
         }
@@ -258,10 +295,12 @@ public class JDialogPreferences extends JDialog {
             builder.append("fr");
         } else if (this.jRadioButtonLangIT.isSelected()) {
             builder.append("it");
-        }else if (this.jRadioButtonLangES.isSelected()) {
+        } else if (this.jRadioButtonLangES.isSelected()) {
             builder.append("es");
-        }else if (this.jRadioButtonLangPT.isSelected()) {
+        } else if (this.jRadioButtonLangPT.isSelected()) {
             builder.append("pt");
+        } else if (this.jRadioButtonLangPL.isSelected()) {
+            builder.append("pl");
         }
         builder.append(";");
         builder.append(PreferencesAS2.DISPLAY_MODE_CLIENT).append("=");
@@ -275,9 +314,11 @@ public class JDialogPreferences extends JDialog {
         builder.append(";");
         builder.append(PreferencesAS2.COLOR_BLINDNESS).append("=")
                 .append(this.switchColorBlindness.isSelected()).append(";");
-        String countryCode = this.jListCountry.getSelectedValue().getCountryCode();
-        builder.append(PreferencesAS2.COUNTRY).append("=")
-                .append(countryCode).append(";");
+        if (this.jListCountry.getSelectedValue() != null) {
+            String countryCode = this.jListCountry.getSelectedValue().getCountryCode();
+            builder.append(PreferencesAS2.COUNTRY).append("=")
+                    .append(countryCode).append(";");
+        }
         return (builder.toString());
     }
 
@@ -304,10 +345,10 @@ public class JDialogPreferences extends JDialog {
     }
 
     private void setDisplayModeRadio() {
-        String displayMode = this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
-        if (displayMode.equalsIgnoreCase(DisplayMode.DARK)) {
+        DisplayMode displayMode = DisplayMode.of(this.clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT));
+        if (displayMode == DisplayMode.DARK) {
             this.jRadioButtonDarkMode.setSelected(true);
-        } else if (displayMode.equalsIgnoreCase(DisplayMode.HICONTRAST)) {
+        } else if (displayMode == DisplayMode.HICONTRAST) {
             this.jRadioButtonHiContrastMode.setSelected(true);
         } else {
             this.jRadioButtonLiteMode.setSelected(true);
@@ -336,7 +377,7 @@ public class JDialogPreferences extends JDialog {
         if (changesHaveBeenMade) {
             UINotification.instance().addNotification(
                     PreferencesPanelMDN.IMAGE_PREFS,
-                    UINotification.TYPE_WARNING,
+                    UINotification.Type.WARNING,
                     rb.getResourceString("title"),
                     rb.getResourceString("warning.changes.canceled"));
         }
@@ -365,9 +406,14 @@ public class JDialogPreferences extends JDialog {
         jListCountry = new javax.swing.JList<>();
         jPanelSpace44 = new javax.swing.JPanel();
         jPanelColorBlindness = new javax.swing.JPanel();
-        jLabelIconBlind = new javax.swing.JLabel();
         jLabelColorBlindness = new javax.swing.JLabel();
         switchColorBlindness = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        jPanelIconOverlaySample = new javax.swing.JPanel();
+        jLabelOverlaySampleOkNoOverlay = new javax.swing.JLabel();
+        jLabelOverlaySampleStoppedNoOverlay = new javax.swing.JLabel();
+        jLabelOverlaySampleArrow = new javax.swing.JLabel();
+        jLabelOverlaySampleOkOverlay = new javax.swing.JLabel();
+        jLabelOverlaySampleStoppedOverlay = new javax.swing.JLabel();
         jPanelDarkMode = new javax.swing.JPanel();
         jRadioButtonDarkMode = new javax.swing.JRadioButton();
         jRadioButtonLiteMode = new javax.swing.JRadioButton();
@@ -382,6 +428,7 @@ public class JDialogPreferences extends JDialog {
         jPanelUIHelpLabelDisplayMode = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jRadioButtonLangES = new javax.swing.JRadioButton();
         jRadioButtonLangPT = new javax.swing.JRadioButton();
+        jRadioButtonLangPL = new javax.swing.JRadioButton();
         jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jPanelButtonBar = new javax.swing.JPanel();
@@ -484,17 +531,10 @@ public class JDialogPreferences extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        gridBagConstraints.insets = new java.awt.Insets(3, 3, 3, 3);
         jPanelLanguage.add(jPanelSpace44, gridBagConstraints);
 
         jPanelColorBlindness.setLayout(new java.awt.GridBagLayout());
-
-        jLabelIconBlind.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelColorBlindness.add(jLabelIconBlind, gridBagConstraints);
 
         jLabelColorBlindness.setText(this.rb.getResourceString( "label.colorblindness"));
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -515,6 +555,41 @@ public class JDialogPreferences extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 5);
         jPanelColorBlindness.add(switchColorBlindness, gridBagConstraints);
+
+        jPanelIconOverlaySample.setLayout(new java.awt.GridBagLayout());
+
+        jLabelOverlaySampleOkNoOverlay.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+        jPanelIconOverlaySample.add(jLabelOverlaySampleOkNoOverlay, gridBagConstraints);
+
+        jLabelOverlaySampleStoppedNoOverlay.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+        jPanelIconOverlaySample.add(jLabelOverlaySampleStoppedNoOverlay, gridBagConstraints);
+
+        jLabelOverlaySampleArrow.setFont(new java.awt.Font("Dialog", 0, 24)); // NOI18N
+        jLabelOverlaySampleArrow.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
+        jLabelOverlaySampleArrow.setText("<HTML>&#11020;</HTML>");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(0, 2, 2, 2);
+        jPanelIconOverlaySample.add(jLabelOverlaySampleArrow, gridBagConstraints);
+
+        jLabelOverlaySampleOkOverlay.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+        jPanelIconOverlaySample.add(jLabelOverlaySampleOkOverlay, gridBagConstraints);
+
+        jLabelOverlaySampleStoppedOverlay.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image24x24.gif"))); // NOI18N
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+        jPanelIconOverlaySample.add(jLabelOverlaySampleStoppedOverlay, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelColorBlindness.add(jPanelIconOverlaySample, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -662,11 +737,21 @@ public class JDialogPreferences extends JDialog {
         jRadioButtonLangPT.setText("Português");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridy = 7;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelLanguage.add(jRadioButtonLangPT, gridBagConstraints);
+
+        buttonGroupLanguage.add(jRadioButtonLangPL);
+        jRadioButtonLangPL.setText("Polski");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
+        jPanelLanguage.add(jRadioButtonLangPL, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -751,15 +836,20 @@ public class JDialogPreferences extends JDialog {
     private javax.swing.JLabel jLabelColorBlindness;
     private javax.swing.JLabel jLabelDarkMode;
     private javax.swing.JLabel jLabelHiContrastMode;
-    private javax.swing.JLabel jLabelIconBlind;
     private javax.swing.JLabel jLabelLanguageInfo;
     private javax.swing.JLabel jLabelLightMode;
+    private javax.swing.JLabel jLabelOverlaySampleArrow;
+    private javax.swing.JLabel jLabelOverlaySampleOkNoOverlay;
+    private javax.swing.JLabel jLabelOverlaySampleOkOverlay;
+    private javax.swing.JLabel jLabelOverlaySampleStoppedNoOverlay;
+    private javax.swing.JLabel jLabelOverlaySampleStoppedOverlay;
     private javax.swing.JList<DisplayCountry> jListCountry;
     private javax.swing.JPanel jPanelButtonBar;
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelColorBlindness;
     private javax.swing.JPanel jPanelDarkMode;
     private javax.swing.JPanel jPanelEdit;
+    private javax.swing.JPanel jPanelIconOverlaySample;
     private javax.swing.JPanel jPanelLanguage;
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JPanel jPanelSpace44;
@@ -775,6 +865,7 @@ public class JDialogPreferences extends JDialog {
     private javax.swing.JRadioButton jRadioButtonLangES;
     private javax.swing.JRadioButton jRadioButtonLangFR;
     private javax.swing.JRadioButton jRadioButtonLangIT;
+    private javax.swing.JRadioButton jRadioButtonLangPL;
     private javax.swing.JRadioButton jRadioButtonLangPT;
     private javax.swing.JRadioButton jRadioButtonLiteMode;
     private javax.swing.JScrollPane jScrollPaneCountry;
@@ -804,7 +895,7 @@ public class JDialogPreferences extends JDialog {
             }
             if (anObject != null && anObject instanceof DisplayCountry) {
                 DisplayCountry entry = (DisplayCountry) anObject;
-                return (entry.getCountryCode().equals(this.getCountryCode()));
+                return (entry.countryCode.equals(this.countryCode));
             }
             return (false);
         }

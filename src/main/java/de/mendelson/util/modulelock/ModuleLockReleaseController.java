@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/modulelock/ModuleLockReleaseController.java 7     11/02/25 13:40 Heller $
+//$Header: /as2/de/mendelson/util/modulelock/ModuleLockReleaseController.java 8     30/01/26 9:47 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.NamedThreadFactory;
@@ -24,7 +24,7 @@ import java.util.logging.Logger;
  * cut or something else)
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ModuleLockReleaseController {
 
@@ -32,7 +32,7 @@ public class ModuleLockReleaseController {
     private final SystemEventManager systemEventManager;
 
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-            new NamedThreadFactory("module-lock-heartbeat"));
+            new NamedThreadFactory("modulelock-heartbeat"));
     private final IDBDriverManager dbDriverManager;
 
     public ModuleLockReleaseController(IDBDriverManager dbDriverManager,

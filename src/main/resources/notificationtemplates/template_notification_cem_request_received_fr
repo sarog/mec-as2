@@ -1,0 +1,18 @@
+$Header:$
+Ce fichier contient le modèle de notification pour la notification des demandes d'échange de certificats (CEM) entrantes.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+${PARTENAIRE} : partenaire qui a fait la demande d'échange
+${PRODUCTNAME} : nom du produit
+${HOST} : Hôte du serveur AS2
+${REQUEST_ID} : identifiant de la demande CEM
+
+
+
+
+[SUBJECT]
+CEM Demande reçue de ${PARTNER}
+
+
+[BODY]
+Votre partenaire ${PARTNER} a envoyé un message avec une demande d'échange de certificat, le numéro de la demande est ${REQUEST_ID}.
+La demande a reçu une réponse. Veuillez consulter le système (CEM Management) pour voir les détails du processus.

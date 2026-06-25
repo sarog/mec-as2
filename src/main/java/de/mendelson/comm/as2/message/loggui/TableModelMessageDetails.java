@@ -1,10 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 20    20/02/25 13:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageDetails.java 23    23/03/26 14:37 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.message.AS2Info;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
+import de.mendelson.comm.as2.message.MessageDirectionType;
+import de.mendelson.comm.as2.message.MessageStateType;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -28,7 +30,7 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 23 $
  */
 public class TableModelMessageDetails extends AbstractTableModel {
 
@@ -136,13 +138,13 @@ public class TableModelMessageDetails extends AbstractTableModel {
      */
     @Override
     public Object getValueAt(int row, int col) {
-        AS2Info detailRow = null;
+        AS2Info detailRow;
         synchronized (this.DATA) {
             detailRow = this.DATA.get(row);
         }
         switch (col) {
             case 0:
-                if (detailRow.getDirection() == AS2MessageInfo.DIRECTION_IN) {
+                if (detailRow.getDirection() == MessageDirectionType.IN) {
                     return (ICON_IN);
                 } else {
                     return (ICON_OUT);
@@ -151,7 +153,7 @@ public class TableModelMessageDetails extends AbstractTableModel {
                 return (this.FORMAT.format(detailRow.getInitDate()));
             case 2:
                 if (detailRow.isMDN()) {
-                    if (detailRow.getState() == AS2Message.STATE_FINISHED) {
+                    if (detailRow.getState() == MessageStateType.FINISHED) {
                         return (ICON_SIGNAL_OK);
                     } else {
                         return (ICON_SIGNAL_FAILURE);
@@ -162,7 +164,7 @@ public class TableModelMessageDetails extends AbstractTableModel {
             case 3:
                 return (detailRow.getMessageId());
             case 4:
-                return (this.rbMessage.getResourceString("signature." + detailRow.getSignType()));
+                return (rbMessage.getResourceString("signature." + detailRow.getSignType()));
             case 5:
                 if (detailRow.isMDN()) {
                     return ("--");

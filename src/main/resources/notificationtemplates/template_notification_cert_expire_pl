@@ -1,0 +1,32 @@
+$Header:$
+Ten plik zawiera szablon powiadomienia o wygasających certyfikatach.
+Można użyć następujących zmiennych, które są odpowiednio zastępowane:
+
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host serwera
+${ALIAS}: Alias odpowiedniego certyfikatu
+${DURATION}: dni do wygaśnięcia certyfikatu
+${ISSUER}: Wystawca certyfikatu/klucza
+${FINGERPRINT_SHA1}: Odcisk palca certyfikatu/klucza (SHA-1)
+${VALID_FROM}: Obowiązuje od daty
+${VALID_TO}: Ważne do daty
+
+
+
+
+[SUBJECT]
+Certyfikat wygasa
+
+
+[BODY]
+Certyfikat z aliasem ${ALIAS} na "${PRODUCTNAME}@${HOST}" wygaśnie za ${DURATION} dni.
+
+Zaktualizuj go, ponieważ po tym czasie nie będzie już użyteczny i nie będzie można go używać do zadań kryptograficznych.
+
+Dodatkowe informacje o certyfikacie:
+Alias: ${ALIAS}
+Wydawca: ${ISSUER}
+Odcisk palca (SHA-1): ${FINGERPRINT_SHA1}
+Ważny od: ${VALID_FROM}
+Ważny do: ${VALID_TO}
+

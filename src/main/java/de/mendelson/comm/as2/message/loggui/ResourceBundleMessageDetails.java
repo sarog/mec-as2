@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails.java 23    17/01/25 9:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails.java 24    21/10/25 15:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class ResourceBundleMessageDetails extends MecResourceBundle{
     
@@ -67,6 +67,7 @@ public class ResourceBundleMessageDetails extends MecResourceBundle{
         {"header.signature", "Signature" },
         {"header.senderhost", "Sender" },
         {"header.useragent", "AS2 server" },
+        {"mdn.nopayload", "This is an MDN - there does no payload exist"},
     };
     
 }

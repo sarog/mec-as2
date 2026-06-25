@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/BCCryptoHelper.java 157   12/02/25 9:26 Heller $
+//$Header: /as4/de/mendelson/util/security/BCCryptoHelper.java 167   27/02/26 12:42 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -34,7 +34,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import javax.activation.CommandMap;
@@ -63,14 +62,17 @@ import org.bouncycastle.asn1.smime.SMIMECapabilityVector;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCertStore;
+import org.bouncycastle.cms.CMSAbsentContent;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSCompressedDataParser;
 import org.bouncycastle.cms.CMSCompressedDataStreamGenerator;
+import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
 import org.bouncycastle.cms.CMSEnvelopedDataParser;
 import org.bouncycastle.cms.CMSEnvelopedDataStreamGenerator;
 import org.bouncycastle.cms.CMSException;
+import org.bouncycastle.cms.CMSProcessable;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
@@ -127,7 +129,7 @@ import org.bouncycastle.util.encoders.Base64;
  * Utility class to handle bouncycastle cryptography
  *
  * @author S.Heller
- * @version $Revision: 157 $
+ * @version $Revision: 167 $
  */
 public class BCCryptoHelper {
 
@@ -263,7 +265,7 @@ public class BCCryptoHelper {
     public static final String KEYSTORE_JKS = "JKS";
     public static final String KEYSTORE_PKCS11 = "PKCS11";
 
-    private final static Map SMIME_3_1_MICALGS;
+    private static final Map<ASN1ObjectIdentifier, String> SMIME_3_1_MICALGS;
 
     static {
         Map<ASN1ObjectIdentifier, String> smime31MicAlgs = new HashMap<ASN1ObjectIdentifier, String>();
@@ -278,6 +280,92 @@ public class BCCryptoHelper {
         smime31MicAlgs.put(CMSAlgorithm.GOST3411_2012_512, "gostr3411-2012-512");
         SMIME_3_1_MICALGS = Collections.unmodifiableMap(smime31MicAlgs);
     }
+
+    private static final Map<String, String> ALGORITHM_NAME_TO_OID;
+
+    static {
+        Map<String, String> algs2OID = new HashMap<String, String>();
+        algs2OID.put(ALGORITHM_MD5.toLowerCase(), CMSSignedGenerator.DIGEST_MD5);
+        algs2OID.put(ALGORITHM_SHA1.toLowerCase(), CMSSignedGenerator.DIGEST_SHA1);
+        algs2OID.put(ALGORITHM_SHA224.toLowerCase(), CMSSignedGenerator.DIGEST_SHA224);
+        algs2OID.put("sha224".toLowerCase(), CMSSignedGenerator.DIGEST_SHA224);
+        algs2OID.put(ALGORITHM_SHA256.toLowerCase(), CMSSignedGenerator.DIGEST_SHA256);
+        algs2OID.put("sha256".toLowerCase(), CMSSignedGenerator.DIGEST_SHA256);
+        algs2OID.put(ALGORITHM_SHA384.toLowerCase(), CMSSignedGenerator.DIGEST_SHA384);
+        algs2OID.put("sha384".toLowerCase(), CMSSignedGenerator.DIGEST_SHA384);
+        algs2OID.put(ALGORITHM_SHA512.toLowerCase(), CMSSignedGenerator.DIGEST_SHA512);
+        algs2OID.put("sha512".toLowerCase(), CMSSignedGenerator.DIGEST_SHA512);
+        algs2OID.put(ALGORITHM_SHA3_224.toLowerCase(), NISTObjectIdentifiers.id_sha3_224.getId());
+        algs2OID.put(ALGORITHM_SHA3_256.toLowerCase(), NISTObjectIdentifiers.id_sha3_256.getId());
+        algs2OID.put(ALGORITHM_SHA3_384.toLowerCase(), NISTObjectIdentifiers.id_sha3_384.getId());
+        algs2OID.put(ALGORITHM_SHA3_512.toLowerCase(), NISTObjectIdentifiers.id_sha3_512.getId());
+        algs2OID.put(ALGORITHM_3DES.toLowerCase(), CMSAlgorithm.DES_EDE3_CBC.getId());
+        algs2OID.put(ALGORITHM_DES.toLowerCase(), CMSAlgorithm.DES_CBC.getId());
+        algs2OID.put(ALGORITHM_CAST5.toLowerCase(), CMSEnvelopedDataGenerator.CAST5_CBC);
+        algs2OID.put(ALGORITHM_IDEA.toLowerCase(), CMSEnvelopedDataGenerator.IDEA_CBC);
+        algs2OID.put(ALGORITHM_RC2.toLowerCase(), CMSEnvelopedDataGenerator.RC2_CBC);
+        algs2OID.put(ALGORITHM_RC4.toLowerCase(), PKCSObjectIdentifiers.rc4.getId());
+        algs2OID.put(ALGORITHM_AES_128.toLowerCase(), CMSEnvelopedDataGenerator.AES128_CBC);
+        algs2OID.put(ALGORITHM_AES_192.toLowerCase(), CMSEnvelopedDataGenerator.AES192_CBC);
+        algs2OID.put(ALGORITHM_AES_256.toLowerCase(), CMSEnvelopedDataGenerator.AES256_CBC);
+        algs2OID.put(ALGORITHM_AES_128_CBC.toLowerCase(), CMSEnvelopedDataGenerator.AES128_CBC);
+        algs2OID.put(ALGORITHM_AES_192_CBC.toLowerCase(), CMSEnvelopedDataGenerator.AES192_CBC);
+        algs2OID.put(ALGORITHM_AES_256_CBC.toLowerCase(), CMSEnvelopedDataGenerator.AES256_CBC);
+        algs2OID.put(ALGORITHM_AES_128_GCM.toLowerCase(), CMSAlgorithm.AES128_GCM.getId());
+        algs2OID.put(ALGORITHM_AES_192_GCM.toLowerCase(), CMSAlgorithm.AES192_GCM.getId());
+        algs2OID.put(ALGORITHM_AES_256_GCM.toLowerCase(), CMSAlgorithm.AES256_GCM.getId());
+        algs2OID.put(ALGORITHM_CHACHA20_POLY1305.toLowerCase(), PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.getId());
+        algs2OID.put(ALGORITHM_AES_128_CCM.toLowerCase(), CMSAlgorithm.AES128_CCM.getId());
+        algs2OID.put(ALGORITHM_AES_192_CCM.toLowerCase(), CMSAlgorithm.AES192_CCM.getId());
+        algs2OID.put(ALGORITHM_AES_256_CCM.toLowerCase(), CMSAlgorithm.AES256_CCM.getId());
+        algs2OID.put(ALGORITHM_CAMELLIA_128_CBC.toLowerCase(), CMSAlgorithm.CAMELLIA128_CBC.getId());
+        algs2OID.put(ALGORITHM_CAMELLIA_192_CBC.toLowerCase(), CMSAlgorithm.CAMELLIA192_CBC.getId());
+        algs2OID.put(ALGORITHM_CAMELLIA_256_CBC.toLowerCase(), CMSAlgorithm.CAMELLIA256_CBC.getId());
+        algs2OID.put(ALGORITHM_SPHINCS_PLUS.toLowerCase(), "1.3.9999.6.4.13");
+        ALGORITHM_NAME_TO_OID = Collections.unmodifiableMap(algs2OID);
+    }
+
+    private static final Map<String, String> OID_TO_ALGORITHM_NAME;
+
+    static {
+        Map<String, String> oid2Alg = new HashMap<String, String>();
+        oid2Alg.put(CMSSignedGenerator.DIGEST_MD5, ALGORITHM_MD5);
+        oid2Alg.put(CMSSignedGenerator.DIGEST_SHA1, ALGORITHM_SHA1);
+        oid2Alg.put(CMSSignedGenerator.DIGEST_SHA224, ALGORITHM_SHA224);
+        oid2Alg.put(CMSSignedGenerator.DIGEST_SHA256, ALGORITHM_SHA256);
+        oid2Alg.put(CMSSignedGenerator.DIGEST_SHA384, ALGORITHM_SHA384);
+        oid2Alg.put(CMSSignedGenerator.DIGEST_SHA512, ALGORITHM_SHA512);
+        oid2Alg.put(NISTObjectIdentifiers.id_sha3_224.getId(), ALGORITHM_SHA3_224);
+        oid2Alg.put(NISTObjectIdentifiers.id_sha3_256.getId(), ALGORITHM_SHA3_256);
+        oid2Alg.put(NISTObjectIdentifiers.id_sha3_384.getId(), ALGORITHM_SHA3_384);
+        oid2Alg.put(NISTObjectIdentifiers.id_sha3_512.getId(), ALGORITHM_SHA3_512);
+        oid2Alg.put(CMSAlgorithm.DES_EDE3_CBC.getId(), ALGORITHM_3DES);
+        oid2Alg.put(CMSAlgorithm.DES_CBC.getId(), ALGORITHM_DES);
+        oid2Alg.put(CMSEnvelopedDataGenerator.CAST5_CBC, ALGORITHM_CAST5);
+        oid2Alg.put(CMSEnvelopedDataGenerator.IDEA_CBC, ALGORITHM_IDEA);
+        oid2Alg.put(CMSEnvelopedDataGenerator.RC2_CBC, ALGORITHM_RC2);
+        oid2Alg.put(PKCSObjectIdentifiers.rc4.getId(), ALGORITHM_RC4);
+        oid2Alg.put(CMSEnvelopedDataGenerator.AES128_CBC, ALGORITHM_AES_128_CBC);
+        oid2Alg.put(CMSEnvelopedDataGenerator.AES192_CBC, ALGORITHM_AES_192_CBC);
+        oid2Alg.put(CMSEnvelopedDataGenerator.AES256_CBC, ALGORITHM_AES_256_CBC);
+        oid2Alg.put(CMSAlgorithm.AES128_GCM.getId(), ALGORITHM_AES_128_GCM);
+        oid2Alg.put(CMSAlgorithm.AES192_GCM.getId(), ALGORITHM_AES_192_GCM);
+        oid2Alg.put(CMSAlgorithm.AES256_GCM.getId(), ALGORITHM_AES_256_GCM);
+        oid2Alg.put(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.getId(), ALGORITHM_CHACHA20_POLY1305);
+        oid2Alg.put(CMSAlgorithm.AES128_CCM.getId(), ALGORITHM_AES_128_CCM);
+        oid2Alg.put(CMSAlgorithm.AES192_CCM.getId(), ALGORITHM_AES_192_CCM);
+        oid2Alg.put(CMSAlgorithm.AES256_CCM.getId(), ALGORITHM_AES_256_CCM);
+        oid2Alg.put(CMSAlgorithm.CAMELLIA128_CBC.getId(), ALGORITHM_CAMELLIA_128_CBC);
+        oid2Alg.put(CMSAlgorithm.CAMELLIA192_CBC.getId(), ALGORITHM_CAMELLIA_192_CBC);
+        oid2Alg.put(CMSAlgorithm.CAMELLIA256_CBC.getId(), ALGORITHM_CAMELLIA_256_CBC);
+        oid2Alg.put("1.3.9999.6.4.13", ALGORITHM_SPHINCS_PLUS);
+        OID_TO_ALGORITHM_NAME = Collections.unmodifiableMap(oid2Alg);
+    }
+
+    /**
+     * Just a buffer size for streams etc
+     */
+    private static final int SIZE_64KB = 1024 * 64;
 
     public BCCryptoHelper() {
     }
@@ -331,7 +419,7 @@ public class BCCryptoHelper {
      */
     public Part getSignedEmbeddedPart(Part part) throws MessagingException, IOException {
         if (part == null) {
-            throw new MessagingException("Part is absent");
+            throw new MessagingException("Signed part is absent");
         }
         if (part.isMimeType("multipart/signed")) {
             return (part);
@@ -359,47 +447,29 @@ public class BCCryptoHelper {
      */
     public boolean micIsEqual(String mic1, String mic2) {
         try {
+            if (mic1 == null || mic2 == null) {
+                return false;
+            }
             mic1 = mic1.trim();
             mic2 = mic2.trim();
             if (mic1.equals(mic2)) {
-                return (true);
+                return true;
             }
-            //parse the mics
             int index1 = mic1.lastIndexOf(',');
             int index2 = mic2.lastIndexOf(',');
             String digest1Str = mic1.substring(index1 + 1).trim();
             String digest2Str = mic2.substring(index2 + 1).trim();
-            String oid1 = this.convertAlgorithmNameToOID(digest1Str);
-            String oid2 = this.convertAlgorithmNameToOID(digest2Str);
-            String hashbase641 = mic1.substring(0, index1);
-            String hashbase642 = mic2.substring(0, index2);
-            byte[] bytes1 = Base64.decode(hashbase641);
-            byte[] bytes2 = Base64.decode(hashbase642);
-            byte[] bytesHashValue1;
-            try (InputStream bytes1In = new ByteArrayInputStream(bytes1)) {
-                try (DigestInputStream inStream1 = new DigestInputStream(bytes1In,
-                        MessageDigest.getInstance(oid1, BouncyCastleProvider.PROVIDER_NAME))) {
-                    bytesHashValue1 = inStream1.readAllBytes();
-                }
-            }
-            byte[] bytesHashValue2;
-            try (InputStream bytes2In = new ByteArrayInputStream(bytes2)) {
-                try (DigestInputStream inStream2 = new DigestInputStream(bytes2In,
-                        MessageDigest.getInstance(oid2, BouncyCastleProvider.PROVIDER_NAME))) {
-                    bytesHashValue2 = inStream2.readAllBytes();
-                }
-            }
-            if (bytesHashValue1.length != bytesHashValue2.length) {
-                return (false);
-            }
-            for (int i = 0; i < bytesHashValue1.length; i++) {
-                if (bytesHashValue1[i] != bytesHashValue2[i]) {
-                    return (false);
-                }
-            }
-            return (true);
+            String oid1 = convertAlgorithmNameToOID(digest1Str);
+            String oid2 = convertAlgorithmNameToOID(digest2Str);
+            byte[] bytes1 = java.util.Base64.getDecoder().decode(mic1.substring(0, index1));
+            byte[] bytes2 = java.util.Base64.getDecoder().decode(mic2.substring(0, index2));
+            MessageDigest md1 = MessageDigest.getInstance(oid1, BouncyCastleProvider.PROVIDER_NAME);
+            MessageDigest md2 = MessageDigest.getInstance(oid2, BouncyCastleProvider.PROVIDER_NAME);
+            byte[] hash1 = md1.digest(bytes1);
+            byte[] hash2 = md2.digest(bytes2);
+            return (Arrays.equals(hash1, hash2));
         } catch (Exception e) {
-            return (false);
+            return false;
         }
     }
 
@@ -565,7 +635,12 @@ public class BCCryptoHelper {
         if (content == null) {
             throw new Exception("sign: content is absent");
         }
-        CMSTypedData processable = new CMSProcessableByteArray(content);
+        CMSTypedData processable;
+        if (embeddOriginalData) {
+            processable = new CMSProcessableByteArray(content);
+        } else {
+            processable = new CMSAbsentContent();
+        }
         CMSSignedData signatureData = signedDataGenerator.generate(processable, embeddOriginalData);
         return (signatureData.getEncoded());
     }
@@ -855,12 +930,12 @@ public class BCCryptoHelper {
      * Returns the digest OID algorithm from a signature that signs the passed
      * message part The return value for sha1 is e.g. "1.3.14.3.2.26".
      */
-    public String getDigestAlgOIDFromSignature(Part part) throws Exception {
+    public SignatureInfo getSignatureInformationFromSignature(Part part) throws Exception {
         if (part == null) {
-            throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Part is absent");
+            throw new GeneralSecurityException("getSignatureInformationFromSignature: Part is absent");
         }
         if (part.isMimeType("multipart/signed")) {
-            MimeMultipart signedMultiPart = null;
+            MimeMultipart signedMultiPart;
             if (part.getContent() instanceof MimeMultipart) {
                 signedMultiPart = (MimeMultipart) part.getContent();
             } else {
@@ -872,45 +947,18 @@ public class BCCryptoHelper {
             SignerInformationStore signerStore = signed.getSignerInfos();
             Collection<SignerInformation> signerCollection = signerStore.getSigners();
             for (SignerInformation signerInfo : signerCollection) {
-                return (signerInfo.getDigestAlgOID());
+                return (new SignatureInfo(signerInfo.getDigestAlgOID(), signerInfo.getEncryptionAlgOID()));
             }
-            throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Unable to identify signature algorithm.");
-        }
-        throw new GeneralSecurityException("Content-Type indicates data isn't signed");
-    }
-
-    /**
-     * Returns the encryption OID algorithm from a signature that signs the
-     * passed message part The return value for RSASSA-PSS is for example
-     * 1.2.840.113549.1.1.10
-     */
-    public String getEncryptionAlgOIDFromSignature(Part part) throws Exception {
-        if (part == null) {
-            throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Part is absent");
-        }
-        if (part.isMimeType("multipart/signed")) {
-            MimeMultipart signedMultiPart = null;
-            if (part.getContent() instanceof MimeMultipart) {
-                signedMultiPart = (MimeMultipart) part.getContent();
-            } else {
-                //assuming it is an inputstream now
-                signedMultiPart = new MimeMultipart(new ByteArrayDataSource(
-                        (InputStream) part.getContent(), part.getContentType()));
-            }
-            SMIMESigned signed = new SMIMESigned(signedMultiPart);
-            SignerInformationStore signerStore = signed.getSignerInfos();
-            Collection<SignerInformation> signerCollection = signerStore.getSigners();
-            for (SignerInformation signerInfo : signerCollection) {
-                return (signerInfo.getEncryptionAlgOID());
-            }
-            throw new GeneralSecurityException("getEncryptionAlgOIDFromSignature: Unable to identify encryption algorithm.");
+            throw new GeneralSecurityException("getSignatureInformationFromSignature: Unable to identify signature algorithm.");
         }
         throw new GeneralSecurityException("Content-Type indicates data isn't signed");
     }
 
     /**
      * Returns the digest OID algorithm from a pkcs7 signature The return value
-     * for sha1 is e.g. "1.3.14.3.2.26".
+     * for sha1 is e.g. "1.3.14.3.2.26". This is the in memory method for faster
+     * processing, please do not use for huge data arrays. In this case please
+     * use the streamed method
      */
     public String getDigestAlgOIDFromSignature(byte[] signature) throws Exception {
         if (signature == null) {
@@ -919,30 +967,26 @@ public class BCCryptoHelper {
         CMSSignedData signedData = new CMSSignedData(signature);
         SignerInformationStore signers = signedData.getSignerInfos();
         Collection<SignerInformation> signerCollection = signers.getSigners();
-        for (SignerInformation signerInfo : signerCollection) {
-            return (signerInfo.getDigestAlgOID());
+        if (signerCollection.isEmpty()) {
+            throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Unable to identify signature algorithm, no signers found");
         }
-        throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Unable to identify signature algorithm.");
+        return (signerCollection.iterator().next().getDigestAlgOID());
     }
 
     /**
      * Returns the digest OID algorithm from a signature. The return value for
      * sha1 is e.g. "1.3.14.3.2.26".
      */
-    public String getDigestAlgOIDFromSignature(InputStream signed, Certificate cert) throws Exception {
-        CMSSignedDataParser parser = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME).build(), signed);
+    public String getDigestAlgOIDFromSignature(InputStream signed) throws Exception {
+        CMSSignedDataParser parser = new CMSSignedDataParser(
+                new JcaDigestCalculatorProviderBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME).build(), signed);
         parser.getSignedContent().drain();
         SignerInformationStore signers = parser.getSignerInfos();
         Collection<SignerInformation> signerCollection = signers.getSigners();
-        X509CertificateHolder certHolder = new X509CertificateHolder(cert.getEncoded());
-        SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME).build(certHolder);
-        for (SignerInformation signerInformation : signerCollection) {
-            boolean verified = signerInformation.verify(verifier);
-            if (verified) {
-                return (signerInformation.getDigestAlgOID());
-            }
+        if (signerCollection.isEmpty()) {
+            throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Unable to identify signature algorithm, no signers found");
         }
-        throw new GeneralSecurityException("getDigestAlgOIDFromSignature: Unable to identify signature algorithm.");
+        return (signerCollection.iterator().next().getDigestAlgOID());
     }
 
     /**
@@ -959,16 +1003,24 @@ public class BCCryptoHelper {
             throw new Exception("Signature verification: The signature length is 0");
         }
         X509CertificateHolder certHolder = new X509CertificateHolder(cert.getEncoded());
-        CMSSignedDataParser dataParser;
-        try (InputStream contentStream = new ByteArrayInputStream(content)) {
-            CMSTypedStream signedContent = new CMSTypedStream(contentStream);
-            try (InputStream signatureStream = new ByteArrayInputStream(signature)) {
-                dataParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(),
-                        signedContent, signatureStream);
-                dataParser.getSignedContent().drain();
+        SignerInformationStore signers;
+        //for content < 1MB perform a in memory verification of the signature, this is faster but needs some more
+        //memory - else perform a streamed verification which is slower but works up to a huge content size
+        if (content.length < 1000000) {
+            CMSSignedData signedData = new CMSSignedData(new CMSProcessableByteArray(content), signature);
+            signers = signedData.getSignerInfos();
+        } else {
+            CMSSignedDataParser dataParser;
+            try (InputStream contentStream = new ByteArrayInputStream(content)) {
+                CMSTypedStream signedContent = new CMSTypedStream(contentStream);
+                try (InputStream signatureStream = new ByteArrayInputStream(signature)) {
+                    dataParser = new CMSSignedDataParser(new BcDigestCalculatorProvider(),
+                            signedContent, signatureStream);
+                    dataParser.getSignedContent().drain();
+                }
             }
+            signers = dataParser.getSignerInfos();
         }
-        SignerInformationStore signers = dataParser.getSignerInfos();
         Collection<SignerInformation> signerCollection = signers.getSigners();
         SignerInformationVerifier signerInfoVerifier = new JcaSimpleSignerInfoVerifierBuilder()
                 .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(certHolder);
@@ -1026,7 +1078,7 @@ public class BCCryptoHelper {
         if (part.isMimeType("multipart/signed")) {
             MimeMultipart signedMultiPart = (MimeMultipart) part.getContent();
             //possible encoding: 7bit quoted-printable base64 8bit binary
-            SMIMESigned signed = null;
+            SMIMESigned signed;
             if (contentTransferEncoding == null) {
                 //the default encoding in BC is 7bit but the default content transfer encoding in AS2 is binary.
                 signed = new SMIMESigned(signedMultiPart, "binary");
@@ -1059,12 +1111,12 @@ public class BCCryptoHelper {
                             }
                         }
                         if (signatureCertInfo.length() > 0) {
-                            signatureCertInfo.insert(0, "Signature certificate information:\n");
+                            signatureCertInfo.insert(0, "Signature generation certificate:\n");
                         }
                         StringBuilder checkCertInfo = new StringBuilder();
                         KeystoreCertificate certificate = new KeystoreCertificate();
                         certificate.setCertificate(x509Certificate, null);
-                        checkCertInfo.append("Verification certificate information:\n")
+                        checkCertInfo.append("Signature verification certificate:\n")
                                 .append("Serial number (DEC): ")
                                 .append(certificate.getSerialNumberDEC())
                                 .append("\n")
@@ -1120,150 +1172,32 @@ public class BCCryptoHelper {
     }
 
     /**
-     * Converts the passed algorithm or OID
+     * Converts the passed internal algorithm name to a OID
      */
     public String convertAlgorithmNameToOID(String algorithm) throws NoSuchAlgorithmException {
         if (algorithm == null) {
             throw new NoSuchAlgorithmException("convertAlgorithmNameToOID: Unable to proceed - Algorithm is absent");
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_MD5)) {
-            return (CMSSignedGenerator.DIGEST_MD5);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA1)) {
-            return (CMSSignedGenerator.DIGEST_SHA1);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA224) || algorithm.equalsIgnoreCase("sha224")) {
-            return (CMSSignedGenerator.DIGEST_SHA224);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA256) || algorithm.equalsIgnoreCase("sha256")) {
-            return (CMSSignedGenerator.DIGEST_SHA256);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA384) || algorithm.equalsIgnoreCase("sha384")) {
-            return (CMSSignedGenerator.DIGEST_SHA384);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA512) || algorithm.equalsIgnoreCase("sha512")) {
-            return (CMSSignedGenerator.DIGEST_SHA512);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_224)) {
-            return (NISTObjectIdentifiers.id_sha3_224.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_256)) {
-            return (NISTObjectIdentifiers.id_sha3_256.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_384)) {
-            return (NISTObjectIdentifiers.id_sha3_384.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SHA3_512)) {
-            return (NISTObjectIdentifiers.id_sha3_512.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_3DES)) {
-            return (CMSAlgorithm.DES_EDE3_CBC.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_DES)) {
-            return (CMSAlgorithm.DES_CBC.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_CAST5)) {
-            return (CMSEnvelopedDataGenerator.CAST5_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_IDEA)) {
-            return (CMSEnvelopedDataGenerator.IDEA_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_RC2)) {
-            return (CMSEnvelopedDataGenerator.RC2_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_RC4)) {
-            return (PKCSObjectIdentifiers.rc4.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_128)) {
-            return (CMSEnvelopedDataGenerator.AES128_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_192)) {
-            return (CMSEnvelopedDataGenerator.AES192_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_256)) {
-            return (CMSEnvelopedDataGenerator.AES256_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_128_CBC)) {
-            return (CMSEnvelopedDataGenerator.AES128_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_192_CBC)) {
-            return (CMSEnvelopedDataGenerator.AES192_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_256_CBC)) {
-            return (CMSEnvelopedDataGenerator.AES256_CBC);
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_128_GCM)) {
-            return (CMSAlgorithm.AES128_GCM.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_192_GCM)) {
-            return (CMSAlgorithm.AES192_GCM.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_256_GCM)) {
-            return (CMSAlgorithm.AES256_GCM.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_CHACHA20_POLY1305)) {
-            return (PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_128_CCM)) {
-            return (CMSAlgorithm.AES128_CCM.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_192_CCM)) {
-            return (CMSAlgorithm.AES192_CCM.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_AES_256_CCM)) {
-            return (CMSAlgorithm.AES256_CCM.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_CAMELLIA_128_CBC)) {
-            return (CMSAlgorithm.CAMELLIA128_CBC.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_CAMELLIA_192_CBC)) {
-            return (CMSAlgorithm.CAMELLIA192_CBC.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_CAMELLIA_256_CBC)) {
-            return (CMSAlgorithm.CAMELLIA256_CBC.getId());
-        } else if (algorithm.equalsIgnoreCase(ALGORITHM_SPHINCS_PLUS)) {
-            return ("1.3.9999.6.4.13");
-        } else {
+        }
+        String oid = ALGORITHM_NAME_TO_OID.get(algorithm.toLowerCase());
+        if (oid == null) {
             throw new NoSuchAlgorithmException("Unsupported algorithm: " + algorithm);
+        } else {
+            return (oid);
         }
     }
 
     /**
-     * Converts the passed algorithm or OID
+     * Converts the passed OID to the internal algorithm name
      */
     public String convertOIDToAlgorithmName(String oid) throws NoSuchAlgorithmException {
         if (oid == null) {
             throw new NoSuchAlgorithmException("convertOIDToAlgorithmName: OID is absent");
-        } else if (oid.equalsIgnoreCase(CMSSignedGenerator.DIGEST_MD5)) {
-            return (ALGORITHM_MD5);
-        } else if (oid.equalsIgnoreCase(CMSSignedGenerator.DIGEST_SHA1)) {
-            return (ALGORITHM_SHA1);
-        } else if (oid.equalsIgnoreCase(CMSSignedGenerator.DIGEST_SHA224)) {
-            return (ALGORITHM_SHA224);
-        } else if (oid.equalsIgnoreCase(CMSSignedGenerator.DIGEST_SHA256)) {
-            return (ALGORITHM_SHA256);
-        } else if (oid.equalsIgnoreCase(CMSSignedGenerator.DIGEST_SHA384)) {
-            return (ALGORITHM_SHA384);
-        } else if (oid.equalsIgnoreCase(CMSSignedGenerator.DIGEST_SHA512)) {
-            return (ALGORITHM_SHA512);
-        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_224.getId())) {
-            return (ALGORITHM_SHA3_224);
-        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_256.getId())) {
-            return (ALGORITHM_SHA3_256);
-        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_384.getId())) {
-            return (ALGORITHM_SHA3_384);
-        } else if (oid.equalsIgnoreCase(NISTObjectIdentifiers.id_sha3_512.getId())) {
-            return (ALGORITHM_SHA3_512);
-        } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.CAST5_CBC)) {
-            return (ALGORITHM_CAST5);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.DES_EDE3_CBC.getId())) {
-            return (ALGORITHM_3DES);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.DES_CBC.getId())) {
-            return (ALGORITHM_DES);
-        } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.IDEA_CBC)) {
-            return (ALGORITHM_IDEA);
-        } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.RC2_CBC)) {
-            return (ALGORITHM_RC2);
-        } else if (oid.equalsIgnoreCase(PKCSObjectIdentifiers.rc4.getId())) {
-            return (ALGORITHM_RC4);
-        } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.AES128_CBC)) {
-            return (ALGORITHM_AES_128_CBC);
-        } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.AES192_CBC)) {
-            return (ALGORITHM_AES_192_CBC);
-        } else if (oid.equalsIgnoreCase(CMSEnvelopedDataGenerator.AES256_CBC)) {
-            return (ALGORITHM_AES_256_CBC);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.AES128_GCM.getId())) {
-            return (ALGORITHM_AES_128_GCM);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.AES192_GCM.getId())) {
-            return (ALGORITHM_AES_192_GCM);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.AES256_GCM.getId())) {
-            return (ALGORITHM_AES_256_GCM);
-        } else if (oid.equalsIgnoreCase(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305.getId())) {
-            return (ALGORITHM_CHACHA20_POLY1305);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.AES128_CCM.getId())) {
-            return (ALGORITHM_AES_128_CCM);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.AES192_CCM.getId())) {
-            return (ALGORITHM_AES_192_CCM);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.AES256_CCM.getId())) {
-            return (ALGORITHM_AES_256_CCM);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.CAMELLIA128_CBC.getId())) {
-            return (ALGORITHM_CAMELLIA_128_CBC);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.CAMELLIA192_CBC.getId())) {
-            return (ALGORITHM_CAMELLIA_192_CBC);
-        } else if (oid.equalsIgnoreCase(CMSAlgorithm.CAMELLIA256_CBC.getId())) {
-            return (ALGORITHM_CAMELLIA_256_CBC);
-        } else if (oid.equalsIgnoreCase("1.3.9999.6.4.13")) {
-            return (ALGORITHM_SPHINCS_PLUS);
-        } else {
+        }
+        String algorithm = OID_TO_ALGORITHM_NAME.get(oid.toLowerCase());
+        if (algorithm == null) {
             throw new NoSuchAlgorithmException("Unsupported algorithm: OID " + oid);
+        } else {
+            return (algorithm);
         }
     }
 
@@ -1317,18 +1251,6 @@ public class BCCryptoHelper {
     }
 
     /**
-     * returns a CMS encrypted byte array
-     */
-    public byte[] encryptCMS(byte[] data, final String ALGORITHM_NAME, Certificate cert) throws Exception {
-        try (InputStream dataMem = new ByteArrayInputStream(data)) {
-            try (ByteArrayOutputStream encryptedMem = new ByteArrayOutputStream()) {
-                this.encryptCMS(dataMem, encryptedMem, ALGORITHM_NAME, cert, true);
-                return (encryptedMem.toByteArray());
-            }
-        }
-    }
-
-    /**
      * Generates a CMSEnvelopedDataStreamGenerator to encrypt a data stream.
      * This method checks if the passed certificate is a EC certificate or a
      * DSA/RSA certificate. For different certificates there are different ways
@@ -1337,7 +1259,8 @@ public class BCCryptoHelper {
      * @param cert
      * @return
      */
-    public CMSEnvelopedDataStreamGenerator generateCMSEnvelopedDataStreamGenerator(Certificate cert, AlgorithmIdentifier keyTransportScheme) throws Exception {
+    public CMSEnvelopedDataStreamGenerator generateCMSEnvelopedDataStreamGenerator(
+            Certificate cert, AlgorithmIdentifier keyTransportScheme) throws Exception {
         CMSEnvelopedDataStreamGenerator dataStreamGenerator = new CMSEnvelopedDataStreamGenerator();
         String algorithm = cert.getPublicKey().getAlgorithm();
         if (algorithm.equalsIgnoreCase("EC")) {
@@ -1362,38 +1285,53 @@ public class BCCryptoHelper {
     }
 
     /**
-     * Encrypts data to a stream
+     * Encrypts data (CMS Enveloped) completely in memory using
+     * CMSEnvelopedDataGenerator - Supports both RSA (KeyTransport) and EC
+     * (KeyAgreement) recipient certificates.
+     *
+     * @param inputData Raw input data to encrypt
+     * @param algorithm Algorithm name like AES256_CBC
+     * @param cert Recipient certificate (X.509)
+     * @return CMS encrypted byte array
+     */
+    public byte[] encryptCMS(byte[] inputData, final String algorithm, Certificate cert) throws Exception {
+        X509Certificate x509Cert = this.castCertificate(cert);
+        CMSEnvelopedDataGenerator generator = new CMSEnvelopedDataGenerator();
+        generator.addRecipientInfoGenerator(
+                new JceKeyTransRecipientInfoGenerator(x509Cert)
+                        .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+        );
+        ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier(this.convertAlgorithmNameToOID(algorithm));
+        OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(oid)
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build();
+        CMSTypedData content = new CMSProcessableByteArray(inputData);
+        CMSEnvelopedData envelopedData = generator.generate(content, encryptor);
+        return envelopedData.getEncoded();
+    }
+
+    /**
+     * Encrypts data from and to a stream
      */
     public void encryptCMS(InputStream rawStream, OutputStream encryptedStream,
-            final String ALGORITHM_NAME, Certificate cert, boolean inMemory) throws Exception {
+            final String ALGORITHM_NAME, Certificate cert) throws Exception {
         CMSEnvelopedDataStreamGenerator dataStreamGenerator = this.generateCMSEnvelopedDataStreamGenerator(cert, null);
         String oid = this.convertAlgorithmNameToOID(ALGORITHM_NAME);
-        if (inMemory) {
-            ASN1ObjectIdentifier objectIdentifier = new ASN1ObjectIdentifier(oid);
-            OutputEncryptor outputEncryptor = new JceCMSContentEncryptorBuilder(objectIdentifier).build();
-            try (ByteArrayOutputStream memBuffer = new ByteArrayOutputStream()) {
-                try (OutputStream cmsEnveloped = dataStreamGenerator.open(memBuffer, outputEncryptor)) {
-                    rawStream.transferTo(cmsEnveloped);
-                }
-                encryptedStream.write(memBuffer.toByteArray());
+        Path tempFile = Files.createTempFile("encrypt", ".temp");
+        ASN1ObjectIdentifier objectIdentifier = new ASN1ObjectIdentifier(oid);
+        OutputEncryptor outputEncryptor = new JceCMSContentEncryptorBuilder(objectIdentifier).build();
+        try (OutputStream fileBuffer = new BufferedOutputStream(Files.newOutputStream(tempFile))) {
+            try (OutputStream cmsEnveloped = dataStreamGenerator.open(fileBuffer, outputEncryptor)) {
+                rawStream.transferTo(cmsEnveloped);
             }
-        } else {
-            Path tempFile = Files.createTempFile("encrypt", ".temp");
-            ASN1ObjectIdentifier objectIdentifier = new ASN1ObjectIdentifier(oid);
-            OutputEncryptor outputEncryptor = new JceCMSContentEncryptorBuilder(objectIdentifier).build();
-            try (OutputStream fileBuffer = Files.newOutputStream(tempFile)) {
-                try (OutputStream cmsEnveloped = dataStreamGenerator.open(fileBuffer, outputEncryptor)) {
-                    rawStream.transferTo(cmsEnveloped);
-                }
-            }
-            try (InputStream fileIn = Files.newInputStream(tempFile)) {
-                fileIn.transferTo(encryptedStream);
-            }
-            try {
-                Files.delete(tempFile);
-            } catch (IOException e) {
-                //nop
-            }
+        }
+        try (InputStream fileIn = Files.newInputStream(tempFile)) {
+            fileIn.transferTo(encryptedStream);
+        }
+        try {
+            Files.delete(tempFile);
+        } catch (IOException e) {
+            //nop
         }
     }
 
@@ -1413,27 +1351,15 @@ public class BCCryptoHelper {
     }
 
     /**
-     * Decrypts a formerly encrypted byte array
-     */
-    public byte[] decryptCMS(byte[] encrypted, Certificate cert, Key key) throws Exception {
-        try (InputStream encryptedMem = new ByteArrayInputStream(encrypted)) {
-            try (ByteArrayOutputStream decryptedMem = new ByteArrayOutputStream()) {
-                this.decryptCMS(encryptedMem, decryptedMem, cert, key);
-                return (decryptedMem.toByteArray());
-            }
-        }
-    }
-
-    /**
      * Decrypts a formerly encrypted stream. An exception will be thrown if
-     * decryption is not possible
+     * decryption is not possible. For all data sizes
      */
     public void decryptCMS(InputStream encrypted, OutputStream decrypted, Certificate certificateReceiver, Key key) throws Exception {
         X509Certificate x509Cert = this.castCertificate(certificateReceiver);
-        try (InputStream bufferedEncrypted = new BufferedInputStream(encrypted)) {
-            try (OutputStream bufferedDecrypted = new BufferedOutputStream(decrypted)) {
+        try (InputStream bufferedEncrypted = new BufferedInputStream(encrypted, SIZE_64KB)) {
+            try (OutputStream bufferedDecrypted = new BufferedOutputStream(decrypted, SIZE_64KB)) {
                 CMSEnvelopedDataParser parser = new CMSEnvelopedDataParser(bufferedEncrypted);
-                RecipientId recipientId = null;
+                RecipientId recipientId;
                 boolean isECKey = certificateReceiver.getPublicKey().getAlgorithm().equals("EC");
                 if (isECKey) {
                     recipientId = new JceKeyAgreeRecipientId(x509Cert);
@@ -1462,107 +1388,205 @@ public class BCCryptoHelper {
     }
 
     /**
-     * Decompress a data stream - ZLIB algorithm
+     * CMS encryption, just for small data size, in memory, faster
+     *
+     * @param encryptedCMS
+     * @param recipientCert
+     * @param recipientKey
+     * @return
+     * @throws Exception
      */
-    public void decompressZLIB(InputStream compressed, OutputStream uncompressed) throws Exception {
-        CMSCompressedDataParser compressedParser = new CMSCompressedDataParser(new BufferedInputStream(compressed));
-        compressedParser.getContent(new ZlibExpanderProvider()).getContentStream().transferTo(uncompressed);
-        uncompressed.flush();
+    public byte[] decryptCMS(byte[] encryptedCMS, Certificate certificateReceiver, Key recipientKey) throws Exception {
+        //the decrypted data should have the same size
+        int initialSize = Math.max(encryptedCMS.length, SIZE_64KB);
+        try (ByteArrayInputStream memIn = new ByteArrayInputStream(encryptedCMS)) {
+            try (ByteArrayOutputStream memOut = new ByteArrayOutputStream(initialSize)) {
+                this.decryptCMS(memIn, memOut, certificateReceiver, recipientKey);
+                return memOut.toByteArray();
+            }
+        }
     }
 
     /**
-     * Compress a data stream - ZLIB algorithm
+     * Decompress a data stream - ZLIB algorithm - streamed
      */
-    public void compressZLIB(InputStream uncompressed, OutputStream compressed, boolean inMemory) throws Exception {
-        //fully streamed compression does not work without a stream buffer
-        CMSCompressedDataStreamGenerator generator = new CMSCompressedDataStreamGenerator();
-        if (inMemory) {
-            try (ByteArrayOutputStream memBuffer = new ByteArrayOutputStream()) {
-                try (OutputStream cOut = generator.open(memBuffer, new ZlibCompressor())) {
-                    uncompressed.transferTo(cOut);
-                    cOut.flush();
-                }
-                compressed.write(memBuffer.toByteArray());
-            }
-        } else {
-            Path tempFile = Files.createTempFile("compress", ".temp");
-            try (OutputStream fileBuffer = Files.newOutputStream(tempFile)) {
-                try (OutputStream cOut = generator.open(fileBuffer, new ZlibCompressor())) {
-                    uncompressed.transferTo(cOut);
-                    cOut.flush();
-                }
-            }
-            try (InputStream fileIn = Files.newInputStream(tempFile)) {
-                fileIn.transferTo(compressed);
-            }
-            try {
-                Files.delete(tempFile);
-            } catch (IOException e) {
-                //nop
+    public void decompressZLIB_CMS(InputStream compressed, OutputStream uncompressed) throws Exception {
+        InputStream bufferedInStream = new BufferedInputStream(compressed, SIZE_64KB);
+        CMSCompressedDataParser compressedParser = new CMSCompressedDataParser(bufferedInStream);
+        try (InputStream zlibStream = compressedParser.getContent(new ZlibExpanderProvider()).getContentStream()) {
+            try (BufferedOutputStream bufferedOutput = new BufferedOutputStream(uncompressed, SIZE_64KB)) {
+                zlibStream.transferTo(bufferedOutput);
+                bufferedOutput.flush();
             }
         }
     }
 
-    public void signCMS(InputStream unsigned, OutputStream signed, final String ALGORITHM_NAME, Certificate signCert, Key signKey,
-            boolean inMemory) throws Exception {
+    /**
+     * Decompress a data stream - ZLIB algorithm - in memory
+     */
+    public byte[] decompressZLIB_CMS(byte[] compressedBytes) throws Exception {
+        //zlib has the compression from 1-3
+        int initialSize = Math.max(compressedBytes.length * 3, SIZE_64KB);
+        try (ByteArrayInputStream memIn = new ByteArrayInputStream(compressedBytes)) {
+            try (ByteArrayOutputStream memOut = new ByteArrayOutputStream(initialSize)) {
+                this.decompressZLIB_CMS(memIn, memOut);
+                return (memOut.toByteArray());
+            }
+        }
+    }
+
+    /**
+     * Compress a data stream - ZLIB algorithm, in memory
+     */
+    public byte[] compressZLIB_CMS(byte[] uncompressedData) throws Exception {
+        CMSCompressedDataStreamGenerator generator = new CMSCompressedDataStreamGenerator();
+        try (ByteArrayOutputStream memBuffer = new ByteArrayOutputStream()) {
+            try (OutputStream cOut = generator.open(memBuffer, new ZlibCompressor())) {
+                try (InputStream uncompressed = new ByteArrayInputStream(uncompressedData)) {
+                    uncompressed.transferTo(cOut);
+                }
+                cOut.flush();
+            }
+            return memBuffer.toByteArray();
+        }
+    }
+
+    /**
+     * Compress a data stream - ZLIB algorithm, streamed
+     */
+    public void compressZLIB_CMS(InputStream uncompressed, OutputStream compressed) throws Exception {
+        //fully streamed compression does not work without a stream buffer
+        CMSCompressedDataStreamGenerator generator = new CMSCompressedDataStreamGenerator();
+        Path tempFile = Files.createTempFile("compress", ".temp");
+        try (OutputStream fileBuffer = new BufferedOutputStream(Files.newOutputStream(tempFile))) {
+            try (OutputStream cOut = generator.open(fileBuffer, new ZlibCompressor())) {
+                uncompressed.transferTo(cOut);
+                cOut.flush();
+            }
+        }
+        try (InputStream fileIn = Files.newInputStream(tempFile)) {
+            fileIn.transferTo(compressed);
+        }
+        try {
+            Files.deleteIfExists(tempFile);
+        } catch (Exception e) {
+        }
+    }
+
+    public void signCMS(byte[] dataToSign,
+            OutputStream signedOutput,
+            final String ALGORITHM_NAME,
+            Certificate signCert,
+            Key signKey) throws Exception {
         CMSSignedDataStreamGenerator generator = new CMSSignedDataStreamGenerator();
         PrivateKey signPrivKey = this.getPrivateKey(signKey);
         ContentSigner contentSigner = new JcaContentSignerBuilder(ALGORITHM_NAME)
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(signPrivKey);
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(signPrivKey);
         generator.addSignerInfoGenerator(
                 new JcaSignerInfoGeneratorBuilder(
-                        new JcaDigestCalculatorProviderBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME).build())
-                        .build(contentSigner, new X509CertificateHolder(signCert.getEncoded())));
-        if (inMemory) {
-            try (ByteArrayOutputStream memBuffer = new ByteArrayOutputStream()) {
-                try (OutputStream signedOut = generator.open(memBuffer, true)) {
-                    unsigned.transferTo(signedOut);
-                    signedOut.flush();
-                }
-                signed.write(memBuffer.toByteArray());
-            }
-        } else {
-            Path tempFile = Files.createTempFile("sign", ".temp");
-            try (OutputStream fileBuffer = Files.newOutputStream(tempFile)) {
-                try (OutputStream signedOut = generator.open(fileBuffer, true)) {
-                    unsigned.transferTo(signedOut);
-                }
-            }
-            try (InputStream fileIn = Files.newInputStream(tempFile)) {
-                fileIn.transferTo(signed);
-            }
-            try {
-                Files.delete(tempFile);
-            } catch (IOException e) {
-                //nop
-            }
+                        new JcaDigestCalculatorProviderBuilder()
+                                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                                .build())
+                        .build(contentSigner, new X509CertificateHolder(signCert.getEncoded()))
+        );
+        //in this case its allowed to write directly into the output stream
+        try (OutputStream cmsOut = generator.open(signedOutput, true)) {
+            cmsOut.write(dataToSign);
+            cmsOut.flush();
         }
     }
 
+    public void signCMS(InputStream unsigned, OutputStream signed, final String ALGORITHM_NAME,
+            Certificate signCert, Key signKey) throws Exception {
+        CMSSignedDataStreamGenerator generator = new CMSSignedDataStreamGenerator();
+        PrivateKey signPrivKey = this.getPrivateKey(signKey);
+        ContentSigner contentSigner = new JcaContentSignerBuilder(ALGORITHM_NAME)
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(signPrivKey);
+        generator.addSignerInfoGenerator(
+                new JcaSignerInfoGeneratorBuilder(
+                        new JcaDigestCalculatorProviderBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                                .build())
+                        .build(contentSigner, new X509CertificateHolder(signCert.getEncoded())));
+        Path tempFile = Files.createTempFile("sign", ".temp");
+        try (OutputStream fileBuffer = new BufferedOutputStream(Files.newOutputStream(tempFile))) {
+            try (OutputStream signedOut = generator.open(fileBuffer, true)) {
+                unsigned.transferTo(signedOut);
+            }
+        }
+        try (InputStream fileIn = Files.newInputStream(tempFile)) {
+            fileIn.transferTo(signed);
+        }
+        try {
+            Files.deleteIfExists(tempFile);
+        } catch (Exception e) {
+        }
+    }
+
+    /**
+     * In memory CMS signature verification, do not use for huge data arrays
+     */
+    public boolean verifySignatureCMS(byte[] signedData, Certificate cert) throws Exception {
+        CMSSignedData cms = new CMSSignedData(signedData);
+        SignerInformationStore signers = cms.getSignerInfos();
+        Collection<SignerInformation> signerCollection = signers.getSigners();
+        X509CertificateHolder certHolder = new X509CertificateHolder(cert.getEncoded());
+        SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(certHolder);
+        for (SignerInformation signerInformation : signerCollection) {
+            if (signerInformation.verify(verifier)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Streamed CMS signature verification, do use for huge data arrays
+     */
     public boolean verifySignatureCMS(InputStream signed, Certificate cert) throws Exception {
         CMSSignedDataParser parser = new CMSSignedDataParser(
                 new JcaDigestCalculatorProviderBuilder()
                         .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(), signed);
         parser.getSignedContent().drain();
         SignerInformationStore signers = parser.getSignerInfos();
-        Collection signerCollection = signers.getSigners();
-        Iterator it = signerCollection.iterator();
+        Collection<SignerInformation> signerCollection = signers.getSigners();
         boolean verified = false;
         X509CertificateHolder certHolder = new X509CertificateHolder(cert.getEncoded());
-        SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME).build(certHolder);
-        while (it.hasNext()) {
-            SignerInformation signerInformation = (SignerInformation) it.next();
-            if (!verified) {
-                verified = signerInformation.verify(verifier);
-            }
-            if (verified) {
-                break;
+        SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder()
+                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .build(certHolder);
+        for (SignerInformation signerInformation : signerCollection) {
+            if (signerInformation.verify(verifier)) {
+                return true;
             }
         }
         return (verified);
     }
 
-    public void removeSignatureCMS(InputStream signed, OutputStream unsigned, Certificate cert) throws Exception {
+    /**
+     * Remove signature CMS, only for small data, in memory processing
+     */
+    public void removeSignatureCMS(byte[] signedData, OutputStream unsignedOutput) throws Exception {
+        CMSSignedData cms = new CMSSignedData(signedData);
+        CMSProcessable signedContent = cms.getSignedContent();
+        if (signedContent == null) {
+            throw new GeneralSecurityException("removeSignatureCMS: No encapsulated content found.");
+        }
+        signedContent.write(unsignedOutput);
+        unsignedOutput.flush();
+    }
+
+    /**
+     * Remove signature CMS, streamed - slower but for all data size
+     *
+     * @param signed
+     * @param unsigned
+     * @throws Exception
+     */
+    public void removeSignatureCMS(InputStream signed, OutputStream unsigned) throws Exception {
         CMSSignedDataParser parser = new CMSSignedDataParser(
                 new JcaDigestCalculatorProviderBuilder()
                         .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(), signed);
@@ -1576,15 +1600,41 @@ public class BCCryptoHelper {
      * Generates a hash of a passed input stream
      */
     public byte[] generateFileHash(MessageDigest digest, InputStream in) throws IOException {
-        try (BufferedInputStream inStream = new BufferedInputStream(in)) {
-            byte[] buffer = new byte[4096];
-            int sizeRead = -1;
-            while ((sizeRead = inStream.read(buffer)) != -1) {
-                digest.update(buffer, 0, sizeRead);
-            }
+        byte[] buffer = new byte[SIZE_64KB];
+        int sizeRead;
+        while ((sizeRead = in.readNBytes(buffer, 0, buffer.length)) > 0) {
+            digest.update(buffer, 0, sizeRead);
         }
-        byte[] hash = digest.digest();
-        return hash;
+        return digest.digest();
+    }
+
+    /**
+     * Subclass that contains information about a signature, delivered from the
+     * verify method of the BCCrytoHelper
+     */
+    public class SignatureInfo {
+
+        private final String digestAlgOID;
+        private final String encryptionAlgOID;
+
+        public SignatureInfo(String digestAlgOID, String encryptionAlgOID) {
+            this.digestAlgOID = digestAlgOID;
+            this.encryptionAlgOID = encryptionAlgOID;
+        }
+
+        /**
+         * @return the digestAlgOID
+         */
+        public String getDigestAlgOID() {
+            return digestAlgOID;
+        }
+
+        /**
+         * @return the encryptionAlgOID
+         */
+        public String getEncryptionAlgOID() {
+            return encryptionAlgOID;
+        }
     }
 
 //    public static final void main( String[] args ){

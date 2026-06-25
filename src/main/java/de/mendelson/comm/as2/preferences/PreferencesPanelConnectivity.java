@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelConnectivity.java 9     19/02/25 10:08 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelConnectivity.java 14    8/04/26 13:34 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -24,14 +24,14 @@ import javax.swing.ImageIcon;
  * Panel to define the interface preferences
  *
  * @author S.Heller
- * @version: $Revision: 9 $
+ * @version: $Revision: 14 $
  */
-public class PreferencesPanelConnectivity extends PreferencesPanel {
+public final class PreferencesPanelConnectivity extends PreferencesPanel {
 
-    private final static MendelsonMultiResolutionImage IMAGE_CONNECTIVITY
+    private static final MendelsonMultiResolutionImage IMAGE_CONNECTIVITY
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/ports.svg",
                     JDialogPreferences.IMAGE_HEIGHT);
-    private final static MendelsonMultiResolutionImage IMAGE_WARNING
+    private static final MendelsonMultiResolutionImage IMAGE_WARNING
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/warning_sign.svg",
                     AS2Gui.IMAGE_SIZE_MENU_ITEM);
     private String oldHTTPPort = "";
@@ -42,8 +42,9 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     /**
      * Localize the GUI
      */
-    private final static MecResourceBundle rb;
-    static{
+    private static final MecResourceBundle rb;
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundlePreferences.class.getName());
@@ -104,8 +105,8 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         this.oldHTTPSPort = this.preferences.get(PreferencesAS2.HTTPS_LISTEN_PORT);
         this.oldConnectionCountInbound = this.preferences.get(PreferencesAS2.MAX_INBOUND_CONNECTIONS);
         this.jTextFieldHTTPPort.setText(oldHTTPPort);
-        this.jTextFieldHTTPSPort.setText(oldHTTPSPort);       
-        this.jTextFieldInboundConnections.setText(oldConnectionCountInbound);  
+        this.jTextFieldHTTPSPort.setText(oldHTTPSPort);
+        this.jTextFieldInboundConnections.setText(oldConnectionCountInbound);
         boolean jettySettingsCouldBeChanged
                 = this.preferences.getBoolean(PreferencesAS2.EMBEDDED_HTTP_SERVER_SETTINGS_ACCESSIBLE)
                 && this.preferences.getBoolean(PreferencesAS2.EMBEDDED_HTTP_SERVER_STARTED);
@@ -120,37 +121,38 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
-    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
-    private String captureSettingsToStr(){
+    /**
+     * Helper method to find out if there are changes in the GUI before storing
+     * them to the server
+     */
+    private String captureSettingsToStr() {
         StringBuilder builder = new StringBuilder();
-        builder.append( PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES ).append("=")
-                .append( this.switchTrustAllServerCerts.isSelected()).append(";");                
-        builder.append( PreferencesAS2.TLS_STRICT_HOST_CHECK ).append("=")
-                .append( this.switchStrictHostnameCheck.isSelected()).append(";");
-        builder.append( PreferencesAS2.HTTP_SEND_TIMEOUT ).append("=")
-                .append( this.jTextFieldSendHttpTimeout.getText()).append(";");
-        builder.append( PreferencesAS2.MAX_CONNECTION_RETRY_COUNT ).append("=")
-                .append( this.jTexFieldRetryCount.getText()).append(";");
-        builder.append( PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S ).append("=")
-                .append( this.jTextFieldRetryWaittime.getText()).append(";");
-        builder.append( PreferencesAS2.MAX_OUTBOUND_CONNECTIONS ).append("=")
-                .append( this.jTextFieldOutboundConnections.getText()).append(";");
-        builder.append( PreferencesAS2.HTTP_LISTEN_PORT ).append("=")
-                .append( this.jTextFieldHTTPPort.getText()).append(";");
-        builder.append( PreferencesAS2.HTTPS_LISTEN_PORT ).append("=")
-                .append( this.jTextFieldHTTPSPort.getText()).append(";");
-        builder.append( PreferencesAS2.MAX_INBOUND_CONNECTIONS ).append("=")
-                .append( this.jTextFieldInboundConnections.getText()).append(";");
-        return( builder.toString() );
+        builder.append(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES).append("=")
+                .append(this.switchTrustAllServerCerts.isSelected()).append(";");
+        builder.append(PreferencesAS2.TLS_STRICT_HOST_CHECK).append("=")
+                .append(this.switchStrictHostnameCheck.isSelected()).append(";");
+        builder.append(PreferencesAS2.HTTP_SEND_TIMEOUT).append("=")
+                .append(this.jTextFieldSendHttpTimeout.getText()).append(";");
+        builder.append(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT).append("=")
+                .append(this.jTexFieldRetryCount.getText()).append(";");
+        builder.append(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S).append("=")
+                .append(this.jTextFieldRetryWaittime.getText()).append(";");
+        builder.append(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS).append("=")
+                .append(this.jTextFieldOutboundConnections.getText()).append(";");
+        builder.append(PreferencesAS2.HTTP_LISTEN_PORT).append("=")
+                .append(this.jTextFieldHTTPPort.getText()).append(";");
+        builder.append(PreferencesAS2.HTTPS_LISTEN_PORT).append("=")
+                .append(this.jTextFieldHTTPSPort.getText()).append(";");
+        builder.append(PreferencesAS2.MAX_INBOUND_CONNECTIONS).append("=")
+                .append(this.jTextFieldInboundConnections.getText()).append(";");
+        return (builder.toString());
     }
-    
-    
+
     @Override
     public boolean preferencesAreModified() {
-        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+        return (!this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()));
     }
-    
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -234,6 +236,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 8;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelConnectionRetryTime, gridBagConstraints);
 
         jPanelUIHelpLabelConnectionRetryCount.setToolTipText(this.rb.getResourceString( "label.retry.max.help"));
@@ -243,6 +246,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 7;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelConnectionRetryCount, gridBagConstraints);
 
         jPanelUIHelpLabelMaxOutboundConnections.setToolTipText(this.rb.getResourceString("label.max.outboundconnections.help"));
@@ -252,6 +256,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 4;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelMaxOutboundConnections, gridBagConstraints);
 
         jPanelUIHelpLabelSendTimeout.setToolTipText(this.rb.getResourceString( "label.httpsend.timeout.help"));
@@ -261,6 +266,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 2;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelSendTimeout, gridBagConstraints);
 
         jTextFieldRetryWaittime.setMinimumSize(new java.awt.Dimension(50, 20));
@@ -324,6 +330,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelHTTPPort, gridBagConstraints);
 
         jTextFieldHTTPSPort.setMinimumSize(new java.awt.Dimension(50, 20));
@@ -342,6 +349,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelHTTPSPort, gridBagConstraints);
 
         jTextFieldHTTPPort.setMinimumSize(new java.awt.Dimension(50, 20));
@@ -382,6 +390,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 5;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelMaxInboundConnections, gridBagConstraints);
 
         jTextFieldInboundConnections.setMinimumSize(new java.awt.Dimension(50, 20));
@@ -424,6 +433,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 12;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelTrustAllServerCerts, gridBagConstraints);
 
         jPanelUIHelpLabelStrictHostnameCheck.setToolTipText(this.rb.getResourceString( "label.stricthostcheck.help" ));
@@ -436,6 +446,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.gridy = 10;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(3, 0, 3, 0);
         jPanelMargin.add(jPanelUIHelpLabelStrictHostnameCheck, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -488,14 +499,22 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     @Override
     public void savePreferences() {
         boolean serverRestartRequired = false;
-        this.preferences.putBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES, this.switchTrustAllServerCerts.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK, this.switchStrictHostnameCheck.isSelected());
+        try {
+            this.preferences.putBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES, this.switchTrustAllServerCerts.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK, this.switchStrictHostnameCheck.isSelected());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
         try {
             int value = Integer.parseInt(this.jTextFieldSendHttpTimeout.getText().trim());
             if (value < 0) {
                 value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.HTTP_SEND_TIMEOUT));
             }
-            this.preferences.putInt(PreferencesAS2.HTTP_SEND_TIMEOUT, value);
+            try {
+                this.preferences.putInt(PreferencesAS2.HTTP_SEND_TIMEOUT, value);
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
         } catch (NumberFormatException e) {
             //nop
         }
@@ -504,7 +523,11 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
             if (value < 0) {
                 value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT));
             }
-            this.preferences.putInt(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT, value);
+            try {
+                this.preferences.putInt(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT, value);
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
         } catch (NumberFormatException e) {
             //nop
         }
@@ -513,7 +536,11 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
             if (value < 0) {
                 value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S));
             }
-            this.preferences.putInt(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S, value);
+            try {
+                this.preferences.putInt(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S, value);
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
         } catch (NumberFormatException e) {
             //nop
         }
@@ -522,7 +549,11 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
             if (value < 0) {
                 value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS));
             }
-            this.preferences.putInt(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS, value);
+            try {
+                this.preferences.putInt(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS, value);
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
         } catch (NumberFormatException e) {
             //nop
         }
@@ -533,7 +564,11 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
                 if (value < 0) {
                     value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT));
                 }
-                this.preferences.putInt(PreferencesAS2.HTTP_LISTEN_PORT, value);
+                try {
+                    this.preferences.putInt(PreferencesAS2.HTTP_LISTEN_PORT, value);
+                } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
+                }
                 serverRestartRequired = true;
             } catch (NumberFormatException e) {
                 //nop
@@ -546,7 +581,11 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
                 if (value < 0) {
                     value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT));
                 }
-                this.preferences.putInt(PreferencesAS2.HTTPS_LISTEN_PORT, value);
+                try {
+                    this.preferences.putInt(PreferencesAS2.HTTPS_LISTEN_PORT, value);
+                } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
+                }
                 serverRestartRequired = true;
             } catch (NumberFormatException e) {
                 //nop
@@ -559,7 +598,11 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
                 if (value < 0) {
                     value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS));
                 }
-                this.preferences.putInt(PreferencesAS2.MAX_INBOUND_CONNECTIONS, value);
+                try {
+                    this.preferences.putInt(PreferencesAS2.MAX_INBOUND_CONNECTIONS, value);
+                } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
+                }
                 serverRestartRequired = true;
             } catch (NumberFormatException e) {
                 //nop
@@ -568,7 +611,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         if (serverRestartRequired) {
             UINotification.instance().addNotification(
                     IMAGE_CONNECTIVITY,
-                    UINotification.TYPE_INFORMATION,
+                    UINotification.Type.INFORMATION,
                     rb.getResourceString("title"),
                     rb.getResourceString("warning.serverrestart.required"));
         }

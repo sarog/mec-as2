@@ -1,12 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MessageAccessDB.java 157   12/03/25 16:07 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/message/MessageAccessDB.java 179   15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.statistic.ServerInteroperabilityAccessDB;
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.database.RetryableDBOperation;
+import de.mendelson.util.database.RollbackRetryException;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import de.mendelson.util.throughput.ThroughputAccessDB;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,6 +18,7 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.concurrent.ExecutorService;
@@ -31,7 +35,7 @@ import java.util.concurrent.Executors;
  * Implementation of a server log for the as2 server database
  *
  * @author S.Heller
- * @version $Revision: 157 $
+ * @version $Revision: 179 $
  */
 public class MessageAccessDB {
 
@@ -49,21 +53,33 @@ public class MessageAccessDB {
     /**
      * Returns the number of transmissions in the system of a special state
      */
-    public int getMessageCount(int state) {
+    public int getMessageCount(MessageStateType state) {
+        String transactionName = "MessageAccessDB_getMessageCount_state";
         int counter = 0;
-        try (Connection runtimeConnectionAutoCommit
+        try (Connection runtimeConnectionNoAutoCommit
                 = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(
-                    "SELECT COUNT(1) AS messagecount FROM messages WHERE state=?")) {
-                statement.setInt(1, state);
-                try (ResultSet result = statement.executeQuery()) {
-                    if (result.next()) {
-                        counter = result.getInt("messagecount");
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement, new String[]{"messages"});
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                            "SELECT COUNT(1) AS messagecount FROM messages WHERE state=?")) {
+                        statement.setInt(1, state.toInt());
+                        try (ResultSet result = statement.executeQuery()) {
+                            if (result.next()) {
+                                counter = result.getInt("messagecount");
+                            }
+                        }
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (counter);
     }
@@ -72,19 +88,31 @@ public class MessageAccessDB {
      * Returns the number of transmissions in the system
      */
     public int getMessageCount() {
+        String transactionName = "MessageAccessDB_getMessageCount";
         int counter = 0;
-        try (Connection runtimeConnectionAutoCommit
+        try (Connection runtimeConnectionNoAutoCommit
                 = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(
-                    "SELECT COUNT(1) AS messagecount FROM messages")) {
-                try (ResultSet result = statement.executeQuery()) {
-                    if (result.next()) {
-                        counter = result.getInt("messagecount");
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement, new String[]{"messages"});
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                            "SELECT COUNT(1) AS messagecount FROM messages")) {
+                        try (ResultSet result = statement.executeQuery()) {
+                            if (result.next()) {
+                                counter = result.getInt("messagecount");
+                            }
+                        }
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (counter);
     }
@@ -96,45 +124,71 @@ public class MessageAccessDB {
      * @return One of AS2Message.STATE_PENDING, AS2Message.STATE_FINISHED,
      * AS2Message.STATE_STOPPED
      */
-    public int getMessageState(String messageId) {
-        int state = AS2Message.STATE_PENDING;
-        try (Connection runtimeConnectionAutoCommit
-                = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            //desc because the latest message should be first in resultset
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(
-                    "SELECT state FROM messages WHERE messageid=? ORDER BY initdateutc DESC")) {
-                statement.setString(1, messageId);
-                try (ResultSet result = statement.executeQuery()) {
-                    if (result.next()) {
-                        state = result.getInt("state");
-                    }
-                }
-            }
-        } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        }
-        return (state);
-    }
-
-    public void setMessageState(String messageId, int fromState, int toState) {
-        String transactionName = "MessageAccessDB_setMessageState";
+    public MessageStateType getMessageState(String messageId) {
+        String transactionName = "MessageAccessDB_getMessageState_messageid";
+        MessageStateType state = MessageStateType.PENDING;
         try (Connection runtimeConnectionNoAutoCommit
                 = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
                 this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-                this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement, new String[]{"messages"});
                 try {
-                    this.setMessageState(runtimeConnectionNoAutoCommit,
-                            messageId, fromState, toState);
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    //desc because the latest message should be first in resultset
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                            "SELECT state FROM messages WHERE messageid=? ORDER BY initdateutc DESC")) {
+                        statement.setString(1, messageId);
+                        try (ResultSet result = statement.executeQuery()) {
+                            if (result.next()) {
+                                state = MessageStateType.of(result.getInt("state"));
+                            }
+                        }
+                    }
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
+        } catch (Exception e) {
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
+        }
+        return (state);
+    }
+
+    public void setMessageState(String messageId, MessageStateType fromState, MessageStateType toState) {
+        String transactionName = "MessageAccessDB_setMessageState";
+        try (Connection runtimeConnectionNoAutoCommit
+                = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                try {
+                    this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                    String lockedMessageId = this.dbDriverManager.<String>setSingleRowLockForModification(
+                            transactionStatement, "messages",
+                            "state=? AND messageid=?",
+                            List.of(fromState.toInt(), messageId),
+                            "messageid", String.class);
+                    if (lockedMessageId == null) {
+                        this.dbDriverManager.rollbackTransaction(transactionStatement);
+                    } else {
+                        this.setMessageState(runtimeConnectionNoAutoCommit,
+                                messageId, fromState, toState);
+                        this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                    }
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
+                }
+            }
+            if (toState == MessageStateType.FINISHED && fromState != MessageStateType.FINISHED) {
+                ThroughputAccessDB throughputAccess
+                        = new ThroughputAccessDB(this.dbDriverManager, SystemEventManagerImplAS2.instance());
+                throughputAccess.addTransactionAsTransaction(runtimeConnectionNoAutoCommit);
+            }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -144,17 +198,17 @@ public class MessageAccessDB {
      * messages
      */
     private void setMessageState(Connection runtimeConnectionNoAutoCommit,
-            String messageId, int fromState, int toState) throws Exception {
+            String messageId, MessageStateType fromState, MessageStateType toState) throws Exception {
         try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
                 "UPDATE messages SET state=? WHERE state=? AND messageid=?")) {
-            statement.setInt(1, toState);
-            statement.setInt(2, fromState);
+            statement.setInt(1, toState.toInt());
+            statement.setInt(2, fromState.toInt());
             statement.setString(3, messageId);
             statement.executeUpdate();
         }
         //A transaction has been stopped. This is worth a system event because a notification might be triggered
         //for such an event
-        if (toState == AS2Message.STATE_STOPPED) {
+        if (toState == MessageStateType.STOPPED) {
             Runnable runnable = new Runnable() {
                 @Override
                 public void run() {
@@ -176,44 +230,58 @@ public class MessageAccessDB {
      * only effects if the actual message state is "pending". "Stopped" and
      * "finished" are states that MUST not be changed.
      *
-     * @param newState one of the states defined in the class AS2Message
+     * @param newMessageState one of the states defined in the class AS2Message
      */
-    public void setMessageState(String messageId, int newState) {
-        int oldState = this.getMessageState(messageId);
+    public void setMessageState(String messageId, MessageStateType newMessageState) {
+        MessageStateType oldMessageState = this.getMessageState(messageId);
         //keep red state and keep green state - only the pending state may be changed
-        if (oldState != AS2Message.STATE_PENDING) {
+        if (oldMessageState != MessageStateType.PENDING) {
             return;
         }
-        this.setMessageState(messageId, oldState, newState);
+        this.setMessageState(messageId, oldMessageState, newMessageState);
         //store the entry in the interoperability statistic
         ServerInteroperabilityAccessDB statisticAccess
                 = new ServerInteroperabilityAccessDB(this.dbDriverManager);
         List<AS2MessageInfo> overviewList = this.getMessageOverview(messageId);
-        statisticAccess.addEntry(messageId, newState, overviewList);
+        statisticAccess.addEntry(messageId, newMessageState, overviewList);
     }
 
     /**
      * Returns information about the payload of a special message
      */
     public List<AS2Payload> getPayload(String messageId) {
+        String transactionName = "MessageAccess_getPayload";
         List<AS2Payload> payloadList = new ArrayList<AS2Payload>();
-        try (Connection runtimeConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(
-                    "SELECT * FROM payload WHERE messageid=?")) {
-                statement.setString(1, messageId);
-                try (ResultSet result = statement.executeQuery()) {
-                    while (result.next()) {
-                        AS2Payload payload = new AS2Payload();
-                        payload.setPayloadFilename(result.getString("payloadfilename"));
-                        payload.setOriginalFilename(result.getString("originalfilename"));
-                        payload.setContentId(result.getString("contentid"));
-                        payload.setContentType(result.getString("contenttype"));
-                        payloadList.add(payload);
+        try (Connection runtimeConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"payload"});
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                            "SELECT * FROM payload WHERE messageid=?")) {
+                        statement.setString(1, messageId);
+                        try (ResultSet result = statement.executeQuery()) {
+                            while (result.next()) {
+                                AS2Payload payload = new AS2Payload();
+                                payload.setPayloadFilename(result.getString("payloadfilename"))
+                                        .setOriginalFilename(result.getString("originalfilename"))
+                                        .setContentId(result.getString("contentid"))
+                                        .setContentType(result.getString("contenttype"));
+                                payloadList.add(payload);
+                            }
+                        }
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-        } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+        } catch (Throwable e) {
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (payloadList);
     }
@@ -233,29 +301,72 @@ public class MessageAccessDB {
      * Checks if a passed message id exists
      */
     public boolean messageIdExists(String messageId) {
-        AS2MessageInfo info = this.getLastMessageEntry(messageId);
-        return (info != null);
+        boolean messageIdExists = false;
+        String transactionName = "MessageAccess_messageIdExists_messageid";
+        try (Connection runtimeConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                            "SELECT 1 FROM messages WHERE messageid=?")) {
+                        statement.setString(1, messageId);
+                        try (ResultSet result = statement.executeQuery()) {
+                            if (result.next()) {
+                                messageIdExists = true;
+                            }
+                        }
+                    }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
+                }
+            }
+        } catch (Throwable e) {
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
+        }
+        return (messageIdExists);
     }
 
     public String getLastMessageIdByUserdefinedId(String userdefinedId) {
         if (userdefinedId == null) {
             return (null);
         }
-        try (Connection runtimeConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            //desc because we need the latest
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(
-                    "SELECT messageid FROM messages WHERE userdefinedid=? ORDER BY initdateutc DESC")) {
-                statement.setString(1, userdefinedId);
-                try (ResultSet result = statement.executeQuery()) {
-                    if (result.next()) {
-                        return (result.getString("messageid"));
+        String transactionname = "MessageAccess_getLastMessageIdByUserdefinedId";
+        String lastMessageId = null;
+        try (Connection runtimeConnectionNoAutoCommit
+                = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionname);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    //desc because we need the latest
+                    String query = "SELECT messageid FROM messages WHERE userdefinedid=? ORDER BY initdateutc DESC";
+                    query = this.dbDriverManager.addLimitToQuery(query, 1);
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(query)) {
+                        statement.setString(1, userdefinedId);
+                        try (ResultSet result = statement.executeQuery()) {
+                            if (result.next()) {
+                                lastMessageId = result.getString("messageid");
+                            }
+                        }
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
-        return (null);
+        return (lastMessageId);
     }
 
     /**
@@ -263,45 +374,60 @@ public class MessageAccessDB {
      * the latest message of this id
      */
     public AS2MessageInfo getLastMessageEntry(String messageId) {
-        try (Connection runtimeConnectionAutoCommit
+        AS2MessageInfo info = null;
+        String transactionname = "MessageAccess_getLastMessageEntry";
+        try (Connection runtimeConnectionNoAutoCommit
                 = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            //desc because we need the latest
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(
-                    "SELECT * FROM messages WHERE messageid=? ORDER BY initdateutc DESC")) {
-                statement.setString(1, messageId);
-                try (ResultSet result = statement.executeQuery()) {
-                    if (result.next()) {
-                        AS2MessageInfo info = new AS2MessageInfo();
-                        info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
-                        info.setEncryptionType(result.getInt("encryption"));
-                        info.setDirection(result.getInt("direction"));
-                        info.setMessageType(result.getInt("messagetype"));
-                        info.setMessageId(result.getString("messageid"));
-                        info.setRawFilename(result.getString("rawfilename"));
-                        info.setReceiverId(result.getString("receiverid"));
-                        info.setSenderId(result.getString("senderid"));
-                        info.setSignType(result.getInt("signature"));
-                        info.setState(result.getInt("state"));
-                        info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
-                        info.setHeaderFilename(result.getString("headerfilename"));
-                        info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
-                        info.setSenderHost(result.getString("senderhost"));
-                        info.setUserAgent(result.getString("useragent"));
-                        info.setReceivedContentMIC(result.getString("contentmic"));
-                        info.setCompressionType(result.getInt("msgcompression"));
-                        info.setAsyncMDNURL(result.getString("asyncmdnurl"));
-                        info.setSubject(result.getString("msgsubject"));
-                        info.setResendCounter(result.getInt("resendcounter"));
-                        info.setUserdefinedId(result.getString("userdefinedid"));
-                        info.setUsesTLS(result.getInt("secureconnection") == 1);
-                        return (info);
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionname);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    //desc because we need the latest
+                    String query = "SELECT * FROM messages WHERE messageid=? ORDER BY initdateutc DESC";
+                    query = this.dbDriverManager.addLimitToQuery(query, 1);
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(query)) {
+                        statement.setString(1, messageId);
+                        try (ResultSet result = statement.executeQuery()) {
+                            if (result.next()) {
+                                info = new AS2MessageInfo();
+                                info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
+                                info.setSendDate(result.getTimestamp("senddateutc", this.calendarUTC));
+                                info.setEncryptionType(result.getInt("encryption"));
+                                info.setDirection(MessageDirectionType.of(result.getInt("direction")));
+                                info.setMessageType(MessageType.of(result.getInt("messagetype")));
+                                info.setMessageId(result.getString("messageid"));
+                                info.setRawFilename(result.getString("rawfilename"));
+                                info.setReceiverId(result.getString("receiverid"));
+                                info.setSenderId(result.getString("senderid"));
+                                info.setSignType(result.getInt("signature"));
+                                info.setState(MessageStateType.of(result.getInt("state")));
+                                info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
+                                info.setHeaderFilename(result.getString("headerfilename"));
+                                info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
+                                info.setSenderHost(result.getString("senderhost"));
+                                info.setUserAgent(result.getString("useragent"));
+                                info.setReceivedContentMIC(result.getString("contentmic"));
+                                info.setCompressionType(MessageCompressionType.of(result.getInt("msgcompression")));
+                                info.setAsyncMDNURL(result.getString("asyncmdnurl"));
+                                info.setSubject(result.getString("msgsubject"));
+                                info.setResendCounter(result.getInt("resendcounter"));
+                                info.setUserdefinedId(result.getString("userdefinedid"));
+                                info.setUsesTLS(result.getInt("secureconnection") == 1);
+                            }
+                        }
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
-        return (null);
+        return (info);
     }
 
     /**
@@ -309,58 +435,61 @@ public class MessageAccessDB {
      */
     public List<AS2MessageInfo> getMessageOverview(String messageId) {
         List<AS2MessageInfo> messageList = new ArrayList<AS2MessageInfo>();
-        String transactionname = "Message_getOverview";
+        String transactionname = "MessageAccess_getMessageOverview";
         try (Connection runtimeConnectionNoAutoCommit = this.dbDriverManager
                 .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
                 this.dbDriverManager.startTransaction(transactionStatement, transactionname);
-                String query = "SELECT * FROM messages WHERE messageid=? ORDER BY initdateutc ASC";
-                try (PreparedStatement selectStatement = runtimeConnectionNoAutoCommit.prepareStatement(query)) {
-                    selectStatement.setString(1, messageId);
-                    try (ResultSet result = selectStatement.executeQuery()) {
-                        while (result.next()) {
-                            AS2MessageInfo info = new AS2MessageInfo();
-                            info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
-                            Timestamp sendDate = result.getTimestamp("senddateutc", this.calendarUTC);
-                            if (result.wasNull()) {
-                                info.setSendDate(null);
-                            } else {
-                                info.setSendDate(sendDate);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    String query = "SELECT * FROM messages WHERE messageid=? ORDER BY initdateutc ASC";
+                    try (PreparedStatement selectStatement = runtimeConnectionNoAutoCommit.prepareStatement(query)) {
+                        selectStatement.setString(1, messageId);
+                        try (ResultSet result = selectStatement.executeQuery()) {
+                            while (result.next()) {
+                                AS2MessageInfo info = new AS2MessageInfo();
+                                info.setInitDate(new Date(result.getTimestamp("initdateutc", this.calendarUTC).getTime()));
+                                Timestamp sendDate = result.getTimestamp("senddateutc", this.calendarUTC);
+                                if (result.wasNull()) {
+                                    info.setSendDate(null);
+                                } else {
+                                    info.setSendDate(new Date(sendDate.getTime()));
+                                }
+                                info.setEncryptionType(result.getInt("encryption"));
+                                info.setDirection(MessageDirectionType.of(result.getInt("direction")));
+                                info.setMessageType(MessageType.of(result.getInt("messagetype")));
+                                info.setMessageId(result.getString("messageid"));
+                                info.setRawFilename(result.getString("rawfilename"));
+                                info.setReceiverId(result.getString("receiverid"));
+                                info.setSenderId(result.getString("senderid"));
+                                info.setSignType(result.getInt("signature"));
+                                info.setState(MessageStateType.of(result.getInt("state")));
+                                info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
+                                info.setHeaderFilename(result.getString("headerfilename"));
+                                info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
+                                info.setSenderHost(result.getString("senderhost"));
+                                info.setUserAgent(result.getString("useragent"));
+                                info.setReceivedContentMIC(result.getString("contentmic"));
+                                info.setCompressionType(MessageCompressionType.of(result.getInt("msgcompression")));
+                                info.setAsyncMDNURL(result.getString("asyncmdnurl"));
+                                info.setSubject(result.getString("msgsubject"));
+                                info.setResendCounter(result.getInt("resendcounter"));
+                                info.setUserdefinedId(result.getString("userdefinedid"));
+                                info.setUsesTLS(result.getInt("secureconnection") == 1);
+                                messageList.add(info);
                             }
-                            info.setEncryptionType(result.getInt("encryption"));
-                            info.setDirection(result.getInt("direction"));
-                            info.setMessageType(result.getInt("messagetype"));
-                            info.setMessageId(result.getString("messageid"));
-                            info.setRawFilename(result.getString("rawfilename"));
-                            info.setReceiverId(result.getString("receiverid"));
-                            info.setSenderId(result.getString("senderid"));
-                            info.setSignType(result.getInt("signature"));
-                            info.setState(result.getInt("state"));
-                            info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
-                            info.setHeaderFilename(result.getString("headerfilename"));
-                            info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
-                            info.setSenderHost(result.getString("senderhost"));
-                            info.setUserAgent(result.getString("useragent"));
-                            info.setReceivedContentMIC(result.getString("contentmic"));
-                            info.setCompressionType(result.getInt("msgcompression"));
-                            info.setAsyncMDNURL(result.getString("asyncmdnurl"));
-                            info.setSubject(result.getString("msgsubject"));
-                            info.setResendCounter(result.getInt("resendcounter"));
-                            info.setUserdefinedId(result.getString("userdefinedid"));
-                            info.setUsesTLS(result.getInt("secureconnection") == 1);
-                            messageList.add(info);
                         }
+                        this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
                     }
-                    this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
-
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (messageList);
     }
@@ -403,7 +532,7 @@ public class MessageAccessDB {
                     queryCondition.append(" AND");
                 }
                 queryCondition.append(" state <>?");
-                parameterList.add(Integer.valueOf(AS2Message.STATE_FINISHED));
+                parameterList.add(MessageStateType.FINISHED.toInt());
             }
             if (!filter.isShowPending()) {
                 if (queryCondition.length() == 0) {
@@ -412,7 +541,7 @@ public class MessageAccessDB {
                     queryCondition.append(" AND");
                 }
                 queryCondition.append(" state <>?");
-                parameterList.add(Integer.valueOf(AS2Message.STATE_PENDING));
+                parameterList.add(MessageStateType.PENDING.toInt());
             }
             if (!filter.isShowStopped()) {
                 if (queryCondition.length() == 0) {
@@ -421,25 +550,25 @@ public class MessageAccessDB {
                     queryCondition.append(" AND");
                 }
                 queryCondition.append(" state <>?");
-                parameterList.add(Integer.valueOf(AS2Message.STATE_STOPPED));
+                parameterList.add(MessageStateType.STOPPED.toInt());
             }
-            if (filter.getShowDirection() != MessageOverviewFilter.DIRECTION_ALL) {
+            if (filter.getShowDirection() != MessageDirectionType.ALL) {
                 if (queryCondition.length() == 0) {
                     queryCondition.append(" WHERE");
                 } else {
                     queryCondition.append(" AND");
                 }
                 queryCondition.append(" direction=?");
-                parameterList.add(Integer.valueOf(filter.getShowDirection()));
+                parameterList.add(filter.getShowDirection().toInt());
             }
-            if (filter.getShowMessageType() != MessageOverviewFilter.MESSAGETYPE_ALL) {
+            if (filter.getShowMessageType() != MessageType.ALL) {
                 if (queryCondition.length() == 0) {
                     queryCondition.append(" WHERE");
                 } else {
                     queryCondition.append(" AND");
                 }
                 queryCondition.append(" messagetype=?");
-                parameterList.add(Integer.valueOf(filter.getShowMessageType()));
+                parameterList.add(filter.getShowMessageType().toInt());
             }
             if (filter.getUserdefinedId() != null) {
                 if (queryCondition.length() == 0) {
@@ -498,22 +627,23 @@ public class MessageAccessDB {
                     while (result.next()) {
                         AS2MessageInfo info = new AS2MessageInfo();
                         info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
+                        info.setSendDate(result.getTimestamp("senddateutc", this.calendarUTC));
                         info.setEncryptionType(result.getInt("encryption"));
-                        info.setDirection(result.getInt("direction"));
-                        info.setMessageType(result.getInt("messagetype"));
+                        info.setDirection(MessageDirectionType.of(result.getInt("direction")));
+                        info.setMessageType(MessageType.of(result.getInt("messagetype")));
                         info.setMessageId(result.getString("messageid"));
                         info.setRawFilename(result.getString("rawfilename"));
                         info.setReceiverId(result.getString("receiverid"));
                         info.setSenderId(result.getString("senderid"));
                         info.setSignType(result.getInt("signature"));
-                        info.setState(result.getInt("state"));
+                        info.setState(MessageStateType.of(result.getInt("state")));
                         info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
                         info.setHeaderFilename(result.getString("headerfilename"));
                         info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
                         info.setSenderHost(result.getString("senderhost"));
                         info.setUserAgent(result.getString("useragent"));
                         info.setReceivedContentMIC(result.getString("contentmic"));
-                        info.setCompressionType(result.getInt("msgcompression"));
+                        info.setCompressionType(MessageCompressionType.of(result.getInt("msgcompression")));
                         info.setAsyncMDNURL(result.getString("asyncmdnurl"));
                         info.setSubject(result.getString("msgsubject"));
                         info.setResendCounter(result.getInt("resendcounter"));
@@ -525,7 +655,7 @@ public class MessageAccessDB {
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (messageList);
     }
@@ -651,142 +781,165 @@ public class MessageAccessDB {
             try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
                 //start transaction
                 this.dbDriverManager.startTransaction(transactionStatement, transactionname);
-                //lock tables
-                this.dbDriverManager.setTableLockDELETE(transactionStatement,
-                        new String[]{
-                            "mdn",
-                            "payload",
-                            "messages",});
                 try {
+                    this.dbDriverManager.setTableLockDELETE(transactionStatement,
+                            new String[]{
+                                "mdn",
+                                "payload",
+                                "messages",});
                     int deletedMessages = this.deleteMessages(messageIds, runtimeConnectionNoAutoCommit);
                     //all ok - finish transaction and release all locks
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionname);
                     return (deletedMessages);
                 } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (0);
     }
 
-    /**
-     * Deletes messages and MDNs of the passed id
-     */
-    public void deleteMessagesByInfo(List<AS2MessageInfo> infoList) {
-        List<String> messageIdList = new ArrayList<String>();
-        for (AS2MessageInfo messageInfo : infoList) {
-            messageIdList.add(messageInfo.getMessageId());
-        }
-        this.deleteMessages(messageIdList);
-    }
-
-    public void setMessageSendDate(AS2MessageInfo info) {
+    public void setMessageSendDate(final AS2MessageInfo info) {
         String transactionName = "MessageAccessDB_setMessageSendDate";
-        try (Connection runtimeConnectionNoAutoCommit = this.dbDriverManager
-                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
-                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-                try {
-                    this.setMessageSendDate(runtimeConnectionNoAutoCommit, info);
-                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
-                    this.dbDriverManager.rollbackTransaction(transactionStatement);
+        RetryableDBOperation<Void> dbOperation = new RetryableDBOperation<Void>() {
+            @Override
+            public Void execute() throws RollbackRetryException {
+                try (Connection runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+                    runtimeConnectionNoAutoCommit.setAutoCommit(false);
+                    try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                        dbDriverManager.startTransaction(transactionStatement, transactionName);
+                        try {
+                            String lockedMessageId = dbDriverManager.<String>setSingleRowLockForModification(
+                                    transactionStatement, "messages",
+                                    "messageid=?", List.of(info.getMessageId()),
+                                    "messageid",
+                                    String.class);
+                            if (lockedMessageId == null) {
+                                dbDriverManager.rollbackTransaction(transactionStatement);
+                            } else {
+                                try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                                        "UPDATE messages SET senddateutc=? WHERE messageid=?")) {
+                                    statement.setTimestamp(1, new Timestamp(System.currentTimeMillis()), calendarUTC);
+                                    statement.setString(2, lockedMessageId);
+                                    statement.executeUpdate();
+                                }
+                                dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                            }
+                        } catch (Exception e) {
+                            dbDriverManager.rollbackTransaction(transactionStatement);
+                            throw new RollbackRetryException(e, transactionName);
+                        }
+                    }
+                } catch (RollbackRetryException e) {
+                    throw e;
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
                 }
+                return null;
             }
-        } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        }
+        };
+        this.dbDriverManager.executeWithRetry(SystemEventManagerImplAS2.instance(), dbOperation);
     }
 
     /**
-     * Updates a message entry in the database, only the "senddateutc" col
+     * Updates the filenames of a single message
      */
-    private void setMessageSendDate(Connection runtimeConnectionNoAutoCommit, AS2MessageInfo info) throws Exception {
-        try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
-                "UPDATE messages SET senddateutc=? WHERE messageid=?")) {
-            statement.setTimestamp(1, new Timestamp(System.currentTimeMillis()), this.calendarUTC);
-            //WHERE
-            statement.setString(2, info.getMessageId());
-            statement.executeUpdate();
-        }
-    }
-
-    public void updateFilenames(AS2MessageInfo info) {
-        try (Connection runtimeConnectionNoAutoCommit
-                = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            this.updateFilenamesAsTransaction(runtimeConnectionNoAutoCommit, info);
-        } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e);
-        }
-    }
-
-    /**
-     * Updates a message entry in the database, only the filenames
-     */
-    private void updateFilenamesAsTransaction(Connection runtimeConnectionNoAutoCommit, AS2MessageInfo info) {
-        String transactionName = "MessageAccessDB_updateFilenames";
-        try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
-            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            this.dbDriverManager.setTableLockINSERTAndUPDATE(
-                    transactionStatement, new String[]{"messages"});
-            try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
-                    "UPDATE messages SET rawfilename=?,headerfilename=?,rawdecryptedfilename=? WHERE messageid=?")) {
-                statement.setString(1, info.getRawFilename());
-                statement.setString(2, info.getHeaderFilename());
-                statement.setString(3, info.getRawFilenameDecrypted());
-                //WHERE
-                statement.setString(4, info.getMessageId());
-                statement.executeUpdate();
-                this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-            } catch (Throwable e) {
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
+    public void updateFilenames(final AS2MessageInfo info) {
+        final String transactionName = "MessageAccessDB_updateFilenames";
+        RetryableDBOperation<Void> dbOperation = new RetryableDBOperation<Void>() {
+            @Override
+            public Void execute() throws RollbackRetryException {
+                try (Connection runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+                    runtimeConnectionNoAutoCommit.setAutoCommit(false);
+                    try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                        dbDriverManager.startTransaction(transactionStatement, transactionName);
+                        try {
+                            String lockedMessageId = dbDriverManager.<String>setSingleRowLockForModification(
+                                    transactionStatement,
+                                    "messages",
+                                    "messageid=?",
+                                    List.of(info.getMessageId()),
+                                    "messageid",
+                                    String.class);
+                            if (lockedMessageId == null) {
+                                dbDriverManager.rollbackTransaction(transactionStatement);
+                            } else {
+                                try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                                        "UPDATE messages SET rawfilename=?,headerfilename=?,rawdecryptedfilename=? WHERE messageid=?")) {
+                                    statement.setString(1, info.getRawFilename());
+                                    statement.setString(2, info.getHeaderFilename());
+                                    statement.setString(3, info.getRawFilenameDecrypted());
+                                    statement.setString(4, lockedMessageId);
+                                    statement.executeUpdate();
+                                }
+                                dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                            }
+                        } catch (Throwable e) {
+                            dbDriverManager.rollbackTransaction(transactionStatement);
+                            throw new RollbackRetryException(e, transactionName);
+                        }
+                    }
+                } catch (RollbackRetryException e) {
+                    throw e;
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
+                }
+                return null;
             }
-        } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        }
-    }
-
-    public void updateSubject(AS2MessageInfo info) {
-        try (Connection runtimeConnectionNoAutoCommit
-                = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            this.updateSubjectAsTransaction(runtimeConnectionNoAutoCommit, info);
-        } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e);
-        }
+        };
+        this.dbDriverManager.executeWithRetry(
+                SystemEventManagerImplAS2.instance(), dbOperation);
     }
 
     /**
      * Updates the subject of a message
      */
-    private void updateSubjectAsTransaction(Connection runtimeConnectionNoAutoCommit, AS2MessageInfo info) {
-        String transactionName = "MessageAccessDB_updateSubject";
-        try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
-            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
-                    new String[]{"messages"});
-            try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
-                    "UPDATE messages SET msgsubject=? WHERE messageid=?")) {
-                statement.setString(1, info.getSubject());
-                //condition
-                statement.setString(2, info.getMessageId());
-                statement.executeUpdate();
-                this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-            } catch (Throwable e) {
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
+    public void updateSubject(final AS2MessageInfo info) {
+        final String transactionName = "MessageAccessDB_updateSubject";
+        RetryableDBOperation<Void> dbOperation = new RetryableDBOperation<Void>() {
+            @Override
+            public Void execute() throws RollbackRetryException {
+                try (Connection runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+                    runtimeConnectionNoAutoCommit.setAutoCommit(false);
+                    try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                        dbDriverManager.startTransaction(transactionStatement, transactionName);
+                        try {
+                            String lockedMessageId = dbDriverManager.<String>setSingleRowLockForModification(
+                                    transactionStatement,
+                                    "messages",
+                                    "messageid=?",
+                                    List.of(info.getMessageId()),
+                                    "messageid",
+                                    String.class);
+                            if (lockedMessageId == null) {
+                                dbDriverManager.rollbackTransaction(transactionStatement);
+                            } else {
+                                try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                                        "UPDATE messages SET msgsubject=? WHERE messageid=?")) {
+                                    statement.setString(1, info.getSubject());
+                                    statement.setString(2, lockedMessageId);
+                                    statement.executeUpdate();
+                                }
+                                dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                            }
+                        } catch (Throwable e) {
+                            dbDriverManager.rollbackTransaction(transactionStatement);
+                            throw new RollbackRetryException(e, transactionName);
+                        }
+                    }
+                } catch (RollbackRetryException e) {
+                    throw e;
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
+                }
+                return null;
             }
-        } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        }
+        };
+        this.dbDriverManager.executeWithRetry(
+                SystemEventManagerImplAS2.instance(), dbOperation);
     }
 
     public void incResendCounter(String messageId) {
@@ -796,18 +949,25 @@ public class MessageAccessDB {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
                 this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-                this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
-                        new String[]{"messages"});
                 try {
-                    this.incResendCounter(runtimeConnectionNoAutoCommit, messageId);
-                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                    String lockedMessageId = this.dbDriverManager.<String>setSingleRowLockForModification(
+                            transactionStatement, "messages",
+                            "messageid=?", List.of(messageId),
+                            "messageid",
+                            String.class);
+                    if (lockedMessageId == null) {
+                        this.dbDriverManager.rollbackTransaction(transactionStatement);
+                    } else {
+                        this.incResendCounter(runtimeConnectionNoAutoCommit, lockedMessageId);
+                        this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                    }
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -848,21 +1008,19 @@ public class MessageAccessDB {
                 .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
-                //start transaction
                 this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-                //get table lock - as insertPayloads contains a delete this is the lock level
-                this.dbDriverManager.setTableLockDELETE(transactionStatement,
-                        new String[]{"payload"});
                 try {
-                    this.insertPayloads(messageId, payloadList, runtimeConnectionNoAutoCommit);
+                    this.dbDriverManager.setTableLockDELETE(transactionStatement,
+                            new String[]{"payload"});
+                    this.deleteThenInsertPayloads(messageId, payloadList, runtimeConnectionNoAutoCommit);
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -871,7 +1029,7 @@ public class MessageAccessDB {
      * entries first (only if a payload has been passed) This needs a DELETE
      * lock on the table payload
      */
-    private void insertPayloads(String messageId, List<AS2Payload> payloadList,
+    private void deleteThenInsertPayloads(String messageId, List<AS2Payload> payloadList,
             Connection runtimeConnectionNoAutoCommit) throws Exception {
         if (payloadList == null || payloadList.isEmpty()) {
             return;
@@ -881,18 +1039,18 @@ public class MessageAccessDB {
                         "DELETE FROM payload WHERE messageid=?")) {
             statementDelete.setString(1, messageId);
             statementDelete.executeUpdate();
+        }
+        try (PreparedStatement statementInsert
+                = runtimeConnectionNoAutoCommit.prepareStatement(
+                        "INSERT INTO payload(messageid,originalfilename,payloadfilename,contentid,contenttype)"
+                        + "VALUES(?,?,?,?,?)")) {
             for (AS2Payload payload : payloadList) {
-                try (PreparedStatement statementInsert
-                        = runtimeConnectionNoAutoCommit.prepareStatement(
-                                "INSERT INTO payload(messageid,originalfilename,payloadfilename,contentid,contenttype)"
-                                + "VALUES(?,?,?,?,?)")) {
-                    statementInsert.setString(1, messageId);
-                    statementInsert.setString(2, payload.getOriginalFilename());
-                    statementInsert.setString(3, payload.getPayloadFilename());
-                    statementInsert.setString(4, payload.getContentId());
-                    statementInsert.setString(5, payload.getContentType());
-                    statementInsert.executeUpdate();
-                }
+                statementInsert.setString(1, messageId);
+                statementInsert.setString(2, payload.getOriginalFilename());
+                statementInsert.setString(3, payload.getPayloadFilename());
+                statementInsert.setString(4, payload.getContentId());
+                statementInsert.setString(5, payload.getContentType());
+                statementInsert.executeUpdate();
             }
         }
     }
@@ -909,21 +1067,21 @@ public class MessageAccessDB {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
             try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
                 this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-                this.dbDriverManager.setTableLockDELETE(transactionStatement,
-                        new String[]{"payload", "messages"});
                 try {
+                    this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
+                            new String[]{"messages"});
                     int updatedMessageCount = this.updateMessage(info, runtimeConnectionNoAutoCommit);
                     if (updatedMessageCount == 0) {
                         this.initializeMessage(info, runtimeConnectionNoAutoCommit);
                     }
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -940,21 +1098,21 @@ public class MessageAccessDB {
                         + "?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
             preparedStatement.setTimestamp(1, new java.sql.Timestamp(info.getInitDate().getTime()), this.calendarUTC);
             preparedStatement.setInt(2, info.getEncryptionType());
-            preparedStatement.setInt(3, info.getDirection());
+            preparedStatement.setInt(3, info.getDirection().toInt());
             preparedStatement.setString(4, info.getMessageId());
             preparedStatement.setString(5, info.getRawFilename());
             preparedStatement.setString(6, info.getReceiverId());
             preparedStatement.setString(7, info.getSenderId());
             preparedStatement.setInt(8, info.getSignType());
-            preparedStatement.setInt(9, info.getState());
-            preparedStatement.setInt(10, info.requestsSyncMDN() ? 1 : 0);
+            preparedStatement.setInt(9, info.getState().toInt());
+            preparedStatement.setInt(10, info.isRequestsSyncMDN() ? 1 : 0);
             preparedStatement.setString(11, info.getHeaderFilename());
             preparedStatement.setString(12, info.getRawFilenameDecrypted());
             preparedStatement.setString(13, info.getSenderHost());
             preparedStatement.setString(14, info.getUserAgent());
             preparedStatement.setString(15, info.getReceivedContentMIC());
-            preparedStatement.setInt(16, info.getCompressionType());
-            preparedStatement.setInt(17, info.getMessageType());
+            preparedStatement.setInt(16, info.getCompressionType().toInt());
+            preparedStatement.setInt(17, info.getMessageType().toInt());
             preparedStatement.setString(18, info.getAsyncMDNURL());
             preparedStatement.setString(19, info.getSubject());
             if (info.getUserdefinedId() != null) {
@@ -962,60 +1120,44 @@ public class MessageAccessDB {
             } else {
                 preparedStatement.setNull(20, Types.VARCHAR);
             }
-            preparedStatement.setInt(21, info.usesTLS() ? 1 : 0);
+            preparedStatement.setInt(21, info.isUsesTLS() ? 1 : 0);
             preparedStatement.executeUpdate();
-            //insert payload and inc transaction counter
-            AS2Message message = new AS2Message(info);
-            this.insertPayloads(info.getMessageId(), message.getPayloads(), runtimeConnectionNoAutoCommit);
-            AS2Server.incTransactionCounter();
         }
+        AS2Server.incTransactionCounter();
     }
 
     /**
      * Updates an existing message in the database and returns a value != 0 if
      * this was successful - means the message id did already exist and has been
-     * updated. This needs a DELETE lock on the table payload and messages
+     * updated. This needs a INSERT/UPDATE lock on the table payload and
+     * messages
      */
     private int updateMessage(AS2MessageInfo info, Connection runtimeConnectionNoAutoCommit) throws Exception {
-        int updatedEntries = 0;
+        int updatedEntries;
         try (PreparedStatement preparedStatement = runtimeConnectionNoAutoCommit.prepareStatement(
-                "UPDATE messages SET encryption=?,direction=?,rawfilename=?,receiverid=?,"
-                + "senderid=?,signature=?,state=?,syncmdn=?,headerfilename=?,useragent=?,"
+                "UPDATE messages SET encryption=?,rawfilename=?,receiverid=?,"
+                + "senderid=?,signature=?,syncmdn=?,headerfilename=?,"
                 + "rawdecryptedfilename=?,senderhost=?,"
-                + "contentmic=?,msgcompression=?,messagetype=?,asyncmdnurl=?,msgsubject=?,userdefinedid=?,"
+                + "contentmic=?,msgcompression=?,messagetype=?,asyncmdnurl=?,"
                 + "secureconnection=?"
                 + " WHERE messageid=?")) {
             preparedStatement.setInt(1, info.getEncryptionType());
-            preparedStatement.setInt(2, info.getDirection());
-            preparedStatement.setString(3, info.getRawFilename());
-            preparedStatement.setString(4, info.getReceiverId());
-            preparedStatement.setString(5, info.getSenderId());
-            preparedStatement.setInt(6, info.getSignType());
-            preparedStatement.setInt(7, info.getState());
-            preparedStatement.setInt(8, info.requestsSyncMDN() ? 1 : 0);
-            preparedStatement.setString(9, info.getHeaderFilename());
-            preparedStatement.setString(10, info.getUserAgent());
-            preparedStatement.setString(11, info.getRawFilenameDecrypted());
-            preparedStatement.setString(12, info.getSenderHost());
-            preparedStatement.setString(13, info.getReceivedContentMIC());
-            preparedStatement.setInt(14, info.getCompressionType());
-            preparedStatement.setInt(15, info.getMessageType());
-            preparedStatement.setString(16, info.getAsyncMDNURL());
-            preparedStatement.setString(17, info.getSubject());
-            if (info.getUserdefinedId() != null) {
-                preparedStatement.setString(18, info.getUserdefinedId());
-            } else {
-                preparedStatement.setNull(18, Types.VARCHAR);
-            }
-            preparedStatement.setInt(19, info.usesTLS() ? 1 : 0);
+            preparedStatement.setString(2, info.getRawFilename());
+            preparedStatement.setString(3, info.getReceiverId());
+            preparedStatement.setString(4, info.getSenderId());
+            preparedStatement.setInt(5, info.getSignType());
+            preparedStatement.setInt(6, info.isRequestsSyncMDN() ? 1 : 0);
+            preparedStatement.setString(7, info.getHeaderFilename());
+            preparedStatement.setString(8, info.getRawFilenameDecrypted());
+            preparedStatement.setString(9, info.getSenderHost());
+            preparedStatement.setString(10, info.getReceivedContentMIC());
+            preparedStatement.setInt(11, info.getCompressionType().toInt());
+            preparedStatement.setInt(12, info.getMessageType().toInt());
+            preparedStatement.setString(13, info.getAsyncMDNURL());
+            preparedStatement.setInt(14, info.isUsesTLS() ? 1 : 0);
             //condition
-            preparedStatement.setString(20, info.getMessageId());
+            preparedStatement.setString(15, info.getMessageId());
             updatedEntries = preparedStatement.executeUpdate();
-            if (updatedEntries > 0) {
-                //insert payload and inc transaction counter
-                AS2Message message = new AS2Message(info);
-                this.insertPayloads(info.getMessageId(), message.getPayloads(), runtimeConnectionNoAutoCommit);
-            }
         }
         return (updatedEntries);
     }
@@ -1025,44 +1167,59 @@ public class MessageAccessDB {
      *
      */
     public List<AS2MessageInfo> getMessagesSendOlderThan(long yourCurrentTimezoneTime) {
+        String transactionName = "MessageAccess_getMessagesSendOlderThan";
         List<AS2MessageInfo> messageList = new ArrayList<AS2MessageInfo>();
-        try (Connection runtimeConnectionAutoCommit
+        try (Connection runtimeConnectionNoAutoCommit
                 = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            String query = "SELECT * FROM messages WHERE (senddateutc IS NOT NULL) AND senddateutc < ? AND state=?";
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(query)) {
-                statement.setTimestamp(1, new java.sql.Timestamp(yourCurrentTimezoneTime), this.calendarUTC);
-                statement.setInt(2, AS2Message.STATE_PENDING);
-                try (ResultSet result = statement.executeQuery()) {
-                    while (result.next()) {
-                        AS2MessageInfo info = new AS2MessageInfo();
-                        info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
-                        info.setEncryptionType(result.getInt("encryption"));
-                        info.setDirection(result.getInt("direction"));
-                        info.setMessageType(result.getInt("messagetype"));
-                        info.setMessageId(result.getString("messageid"));
-                        info.setRawFilename(result.getString("rawfilename"));
-                        info.setReceiverId(result.getString("receiverid"));
-                        info.setSenderId(result.getString("senderid"));
-                        info.setSignType(result.getInt("signature"));
-                        info.setState(result.getInt("state"));
-                        info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
-                        info.setHeaderFilename(result.getString("headerfilename"));
-                        info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
-                        info.setSenderHost(result.getString("senderhost"));
-                        info.setUserAgent(result.getString("useragent"));
-                        info.setReceivedContentMIC(result.getString("contentmic"));
-                        info.setCompressionType(result.getInt("msgcompression"));
-                        info.setAsyncMDNURL(result.getString("asyncmdnurl"));
-                        info.setSubject(result.getString("msgsubject"));
-                        info.setResendCounter(result.getInt("resendcounter"));
-                        info.setUserdefinedId(result.getString("userdefinedid"));
-                        info.setUsesTLS(result.getInt("secureconnection") == 1);
-                        messageList.add(info);
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    String query = "SELECT * FROM messages WHERE (senddateutc IS NOT NULL) "
+                            + "AND senddateutc < ? AND state=?";
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(query)) {
+                        statement.setTimestamp(1, new java.sql.Timestamp(yourCurrentTimezoneTime), this.calendarUTC);
+                        statement.setInt(2, MessageStateType.PENDING.toInt());
+                        try (ResultSet result = statement.executeQuery()) {
+                            while (result.next()) {
+                                AS2MessageInfo info = new AS2MessageInfo();
+                                info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
+                                info.setSendDate(result.getTimestamp("senddateutc", this.calendarUTC));
+                                info.setEncryptionType(result.getInt("encryption"));
+                                info.setDirection(MessageDirectionType.of(result.getInt("direction")));
+                                info.setMessageType(MessageType.of(result.getInt("messagetype")));
+                                info.setMessageId(result.getString("messageid"));
+                                info.setRawFilename(result.getString("rawfilename"));
+                                info.setReceiverId(result.getString("receiverid"));
+                                info.setSenderId(result.getString("senderid"));
+                                info.setSignType(result.getInt("signature"));
+                                info.setState(MessageStateType.of(result.getInt("state")));
+                                info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
+                                info.setHeaderFilename(result.getString("headerfilename"));
+                                info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
+                                info.setSenderHost(result.getString("senderhost"));
+                                info.setUserAgent(result.getString("useragent"));
+                                info.setReceivedContentMIC(result.getString("contentmic"));
+                                info.setCompressionType(MessageCompressionType.of( result.getInt("msgcompression")));
+                                info.setAsyncMDNURL(result.getString("asyncmdnurl"));
+                                info.setSubject(result.getString("msgsubject"));
+                                info.setResendCounter(result.getInt("resendcounter"));
+                                info.setUserdefinedId(result.getString("userdefinedid"));
+                                info.setUsesTLS(result.getInt("secureconnection") == 1);
+                                messageList.add(info);
+                            }
+                        }
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (messageList);
     }
@@ -1074,46 +1231,60 @@ public class MessageAccessDB {
      * state are returned
      */
     public List<AS2MessageInfo> getMessagesOlderThan(long initTimestamp, int state) {
+        String transactionName = "MessageAccess_getMessagesOlderThan";
         List<AS2MessageInfo> messageList = new ArrayList<AS2MessageInfo>();
-        try (Connection runtimeConnectionAutoCommit
+        try (Connection runtimeConnectionNoAutoCommit
                 = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            String query = "SELECT * FROM messages WHERE initdateutc < ?";
-            if (state != -1) {
-                query = query + " AND state=" + state;
-            }
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(query)) {
-                statement.setTimestamp(1, new java.sql.Timestamp(initTimestamp), this.calendarUTC);
-                try (ResultSet result = statement.executeQuery()) {
-                    while (result.next()) {
-                        AS2MessageInfo info = new AS2MessageInfo();
-                        info.setInitDate(result.getTimestamp("initdateutc"));
-                        info.setEncryptionType(result.getInt("encryption"));
-                        info.setDirection(result.getInt("direction"));
-                        info.setMessageType(result.getInt("messagetype"));
-                        info.setMessageId(result.getString("messageid"));
-                        info.setRawFilename(result.getString("rawfilename"));
-                        info.setReceiverId(result.getString("receiverid"));
-                        info.setSenderId(result.getString("senderid"));
-                        info.setSignType(result.getInt("signature"));
-                        info.setState(result.getInt("state"));
-                        info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
-                        info.setHeaderFilename(result.getString("headerfilename"));
-                        info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
-                        info.setSenderHost(result.getString("senderhost"));
-                        info.setUserAgent(result.getString("useragent"));
-                        info.setReceivedContentMIC(result.getString("contentmic"));
-                        info.setCompressionType(result.getInt("msgcompression"));
-                        info.setAsyncMDNURL(result.getString("asyncmdnurl"));
-                        info.setSubject(result.getString("msgsubject"));
-                        info.setResendCounter(result.getInt("resendcounter"));
-                        info.setUserdefinedId(result.getString("userdefinedid"));
-                        info.setUsesTLS(result.getInt("secureconnection") == 1);
-                        messageList.add(info);
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    String query = "SELECT * FROM messages WHERE initdateutc < ?";
+                    if (state != -1) {
+                        query = query + " AND state=" + state;
                     }
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(query)) {
+                        statement.setTimestamp(1, new java.sql.Timestamp(initTimestamp), this.calendarUTC);
+                        try (ResultSet result = statement.executeQuery()) {
+                            while (result.next()) {
+                                AS2MessageInfo info = new AS2MessageInfo();
+                                info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
+                                info.setSendDate(result.getTimestamp("senddateutc", this.calendarUTC));
+                                info.setEncryptionType(result.getInt("encryption"));
+                                info.setDirection(MessageDirectionType.of(result.getInt("direction")));
+                                info.setMessageType(MessageType.of(result.getInt("messagetype")));
+                                info.setMessageId(result.getString("messageid"));
+                                info.setRawFilename(result.getString("rawfilename"));
+                                info.setReceiverId(result.getString("receiverid"));
+                                info.setSenderId(result.getString("senderid"));
+                                info.setSignType(result.getInt("signature"));
+                                info.setState(MessageStateType.of(result.getInt("state")));
+                                info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
+                                info.setHeaderFilename(result.getString("headerfilename"));
+                                info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
+                                info.setSenderHost(result.getString("senderhost"));
+                                info.setUserAgent(result.getString("useragent"));
+                                info.setReceivedContentMIC(result.getString("contentmic"));
+                                info.setCompressionType(MessageCompressionType.of(result.getInt("msgcompression")));
+                                info.setAsyncMDNURL(result.getString("asyncmdnurl"));
+                                info.setSubject(result.getString("msgsubject"));
+                                info.setResendCounter(result.getInt("resendcounter"));
+                                info.setUserdefinedId(result.getString("userdefinedid"));
+                                info.setUsesTLS(result.getInt("secureconnection") == 1);
+                                messageList.add(info);
+                            }
+                        }
+                    }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (messageList);
     }
@@ -1125,46 +1296,60 @@ public class MessageAccessDB {
      * state are returned
      */
     public List<AS2MessageInfo> getMessagesYoungerThan(long initTimestamp, int state) {
+        String transactionName = "MessageAccess_getMessagesYoungerThan";
         List<AS2MessageInfo> messageList = new ArrayList<AS2MessageInfo>();
-        try (Connection runtimeConnectionAutoCommit
+        try (Connection runtimeConnectionNoAutoCommit
                 = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
-            String query = "SELECT * FROM messages WHERE initdateutc > ?";
-            if (state != -1) {
-                query = query + " AND state=" + state;
-            }
-            try (PreparedStatement statement = runtimeConnectionAutoCommit.prepareStatement(query)) {
-                statement.setTimestamp(1, new java.sql.Timestamp(initTimestamp), this.calendarUTC);
-                try (ResultSet result = statement.executeQuery()) {
-                    while (result.next()) {
-                        AS2MessageInfo info = new AS2MessageInfo();
-                        info.setInitDate(result.getTimestamp("initdateutc"));
-                        info.setEncryptionType(result.getInt("encryption"));
-                        info.setDirection(result.getInt("direction"));
-                        info.setMessageType(result.getInt("messagetype"));
-                        info.setMessageId(result.getString("messageid"));
-                        info.setRawFilename(result.getString("rawfilename"));
-                        info.setReceiverId(result.getString("receiverid"));
-                        info.setSenderId(result.getString("senderid"));
-                        info.setSignType(result.getInt("signature"));
-                        info.setState(result.getInt("state"));
-                        info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
-                        info.setHeaderFilename(result.getString("headerfilename"));
-                        info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
-                        info.setSenderHost(result.getString("senderhost"));
-                        info.setUserAgent(result.getString("useragent"));
-                        info.setReceivedContentMIC(result.getString("contentmic"));
-                        info.setCompressionType(result.getInt("msgcompression"));
-                        info.setAsyncMDNURL(result.getString("asyncmdnurl"));
-                        info.setSubject(result.getString("msgsubject"));
-                        info.setResendCounter(result.getInt("resendcounter"));
-                        info.setUserdefinedId(result.getString("userdefinedid"));
-                        info.setUsesTLS(result.getInt("secureconnection") == 1);
-                        messageList.add(info);
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                try {
+                    this.dbDriverManager.setTableLockREAD(transactionStatement,
+                            new String[]{"messages"});
+                    String query = "SELECT * FROM messages WHERE initdateutc > ?";
+                    if (state != -1) {
+                        query = query + " AND state=" + state;
                     }
+                    try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(query)) {
+                        statement.setTimestamp(1, new java.sql.Timestamp(initTimestamp), this.calendarUTC);
+                        try (ResultSet result = statement.executeQuery()) {
+                            while (result.next()) {
+                                AS2MessageInfo info = new AS2MessageInfo();
+                                info.setInitDate(result.getTimestamp("initdateutc", this.calendarUTC));
+                                info.setSendDate(result.getTimestamp("senddateutc", this.calendarUTC));
+                                info.setEncryptionType(result.getInt("encryption"));
+                                info.setDirection(MessageDirectionType.of( result.getInt("direction")));
+                                info.setMessageType(MessageType.of(result.getInt("messagetype")));
+                                info.setMessageId(result.getString("messageid"));
+                                info.setRawFilename(result.getString("rawfilename"));
+                                info.setReceiverId(result.getString("receiverid"));
+                                info.setSenderId(result.getString("senderid"));
+                                info.setSignType(result.getInt("signature"));
+                                info.setState(MessageStateType.of(result.getInt("state")));
+                                info.setRequestsSyncMDN(result.getInt("syncmdn") == 1);
+                                info.setHeaderFilename(result.getString("headerfilename"));
+                                info.setRawFilenameDecrypted(result.getString("rawdecryptedfilename"));
+                                info.setSenderHost(result.getString("senderhost"));
+                                info.setUserAgent(result.getString("useragent"));
+                                info.setReceivedContentMIC(result.getString("contentmic"));
+                                info.setCompressionType(MessageCompressionType.of(result.getInt("msgcompression")));
+                                info.setAsyncMDNURL(result.getString("asyncmdnurl"));
+                                info.setSubject(result.getString("msgsubject"));
+                                info.setResendCounter(result.getInt("resendcounter"));
+                                info.setUserdefinedId(result.getString("userdefinedid"));
+                                info.setUsesTLS(result.getInt("secureconnection") == 1);
+                                messageList.add(info);
+                            }
+                        }
+                    }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (messageList);
     }

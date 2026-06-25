@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_es.java 2     9/12/24 15:51 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_es.java 3     13/06/25 15:30 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 2 $
+* @version $Revision: 3 $
 */
 public class ResourceBundleDialogSystemEvent_es extends MecResourceBundle {
 
@@ -25,25 +25,25 @@ public class ResourceBundleDialogSystemEvent_es extends MecResourceBundle {
 	}
 	/**List of messages in the specific language*/
 	private static final Object[][] CONTENTS = {
-		{"label.close", "Cerrar"},
+		{"category.all", "-- Todos --"},
+		{"header.category", "Categoría"},
 		{"header.timestamp", "Marca de tiempo"},
-		{"label.id", "Número del acontecimiento"},
+		{"header.type", "Tipo"},
 		{"label.category", "Categoría"},
+		{"label.close", "Cerrar"},
+		{"label.date", "fecha"},
 		{"label.enddate", "Fin"},
 		{"label.freetext", "Buscar texto"},
-		{"category.all", "-- Todos --"},
-		{"label.type", "Tipo"},
-		{"title", "Vista de los eventos del sistema"},
-		{"label.search", "Búsqueda de eventos"},
-		{"label.resetfilter", "Restablecer"},
-		{"label.host", "Anfitrión"},
-		{"header.category", "Categoría"},
-		{"label.startdate", "Inicio"},
 		{"label.freetext.hint", "Búsqueda por número de evento o texto"},
+		{"label.host", "Anfitrión"},
+		{"label.id", "Número del acontecimiento"},
+		{"label.resetfilter", "Restablecer"},
+		{"label.search", "Búsqueda de eventos"},
+		{"label.startdate", "Inicio"},
+		{"label.type", "Tipo"},
 		{"label.user", "Propietario"},
-		{"header.type", "Tipo"},
 		{"no.data", "No hay ningún evento del sistema que coincida con la selección de fecha/tipo actual."},
+		{"title", "Vista de los eventos del sistema"},
 		{"user.server.process", "Proceso de servidor"},
-		{"label.date", "fecha"},
 	};
 }

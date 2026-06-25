@@ -1,6 +1,7 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/CRLVerificationResponse.java 3     29/02/24 10:22 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/CRLVerificationResponse.java 6     11/06/25 13:17 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.security.crl.CRLRevocationInformation;
 import java.io.IOException;
@@ -21,12 +22,12 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class CRLVerificationResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final List<CRLRevocationInformation> informationList = new ArrayList<CRLRevocationInformation>();
+    private List<CRLRevocationInformation> informationList = new ArrayList<CRLRevocationInformation>();
     //indicates that the server will not output anything during the check - the client will handle it
     private boolean displayOnClientside = false;
 
@@ -34,6 +35,15 @@ public class CRLVerificationResponse extends ClientServerResponse implements Ser
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CRLVerificationResponse() {
+        super();
+    }
+    
     public void add(CRLRevocationInformation information) {
         this.getInformationList().add(information);
     }
@@ -69,6 +79,14 @@ public class CRLVerificationResponse extends ClientServerResponse implements Ser
      */
     public List<CRLRevocationInformation> getInformationList() {
         return informationList;
+    }
+
+    /**
+     * @param informationList the informationList to set
+     */
+    public void setInformationList(List<CRLRevocationInformation> informationList) {
+        this.informationList.clear();
+        this.informationList.addAll(informationList);
     }
 
 }

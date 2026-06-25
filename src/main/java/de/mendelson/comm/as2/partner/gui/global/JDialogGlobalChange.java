@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/JDialogGlobalChange.java 8     11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/JDialogGlobalChange.java 10    8/04/26 13:34 Heller $
 package de.mendelson.comm.as2.partner.gui.global;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -27,29 +27,31 @@ import javax.swing.JFrame;
  * application
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class JDialogGlobalChange extends JDialog {
 
-    private final static MendelsonMultiResolutionImage IMAGE_SET
+    private static final MendelsonMultiResolutionImage IMAGE_SET
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/global/set_profile_defaults.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
-    private final static MendelsonMultiResolutionImage IMAGE_PARTNER_GROUP
+    private static final MendelsonMultiResolutionImage IMAGE_PARTNER_GROUP
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/global/partner_group.svg",
                     AS2Gui.IMAGE_SIZE_DIALOG);
 
-    private final MecResourceBundle rb;
-    private final List<Partner> partnerList;
-
-    public JDialogGlobalChange(JFrame parent, List<Partner> partnerList) {
-        super(parent, true);
-        //load resource bundle
+    private static final MecResourceBundle rb;
+    static{
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleGlobalChange.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private final List<Partner> partnerList;
+
+    public JDialogGlobalChange(JFrame parent, List<Partner> partnerList) {
+        super(parent, true);
+        
         initComponents();
         this.setMultiresolutionIcons();
         this.partnerList = partnerList;
@@ -67,27 +69,26 @@ public class JDialogGlobalChange extends JDialog {
     }
 
     private void performChangeErrorNotification() {
-            UINotification.instance().addNotification(
-                    IMAGE_SET,
-                    UINotification.TYPE_ERROR,
-                    this.rb.getResourceString("title"),
-                    this.rb.getResourceString("partnersetting.notchanged"));
+        UINotification.instance().addNotification(
+                IMAGE_SET,
+                UINotification.Type.ERROR,
+                rb.getResourceString("title"),
+                rb.getResourceString("partnersetting.notchanged"));
     }
-    
-    
+
     private void performChangeNotification(int changeCount) {
         if (changeCount > 0) {
             UINotification.instance().addNotification(
                     IMAGE_SET,
-                    UINotification.TYPE_SUCCESS,
-                    this.rb.getResourceString("title"),
-                    this.rb.getResourceString("partnersetting.changed", String.valueOf(changeCount)));
+                    UINotification.Type.SUCCESS,
+                    rb.getResourceString("title"),
+                    rb.getResourceString("partnersetting.changed", String.valueOf(changeCount)));
         } else {
             UINotification.instance().addNotification(
                     IMAGE_SET,
-                    UINotification.TYPE_WARNING,
-                    this.rb.getResourceString("title"),
-                    this.rb.getResourceString("partnersetting.changed", String.valueOf(changeCount)));
+                    UINotification.Type.WARNING,
+                    rb.getResourceString("title"),
+                    rb.getResourceString("partnersetting.changed", String.valueOf(changeCount)));
         }
     }
 
@@ -110,7 +111,7 @@ public class JDialogGlobalChange extends JDialog {
         int maxPollFiles = 100;
         try {
             maxPollFiles = Integer.valueOf(this.jTextFieldMaxPollFiles.getText());
-            if( maxPollFiles <= 0){
+            if (maxPollFiles <= 0) {
                 throw new Exception();
             }
         } catch (Exception e) {
@@ -134,7 +135,7 @@ public class JDialogGlobalChange extends JDialog {
         int pollIntervalInS = 30;
         try {
             pollIntervalInS = Integer.valueOf(this.jTextFieldPollInterval.getText());
-            if( pollIntervalInS <= 0){
+            if (pollIntervalInS <= 0) {
                 throw new Exception();
             }
         } catch (Exception e) {

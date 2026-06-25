@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/SinglePartnerAddRequest.java 1     31/10/24 7:31 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/SinglePartnerAddRequest.java 3     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -19,7 +20,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class SinglePartnerAddRequest extends ClientServerMessage implements Serializable {
     
@@ -31,7 +32,15 @@ public class SinglePartnerAddRequest extends ClientServerMessage implements Seri
     public SinglePartnerAddRequest(Partner partner) {
         this.partner = partner;
     }
-
+    
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public SinglePartnerAddRequest() {
+    }
+    
     @Override
     public String toString() {
         return ("Add partner");

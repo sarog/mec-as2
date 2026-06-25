@@ -1,11 +1,14 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JPanelPartner.java 218   19/02/25 10:08 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JPanelPartner.java 232   15/04/26 16:41 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.client.AS2StatusBar;
 import de.mendelson.util.security.signature.ListCellRendererSignature;
-import de.mendelson.comm.as2.message.AS2Message;
+import de.mendelson.comm.as2.message.MessageCompressionType;
+import de.mendelson.comm.as2.message.MessageContentTransferEncodingType;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventTriggerType;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
@@ -34,6 +37,7 @@ import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 import de.mendelson.util.clientserver.connectiontest.clientserver.ConnectionTestRequest;
 import de.mendelson.util.clientserver.connectiontest.clientserver.ConnectionTestResponse;
 import de.mendelson.util.clientserver.connectiontest.gui.JDialogConnectionTestResult;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.oauth2.gui.JDialogOAuth2Config;
 import de.mendelson.util.oauth2.gui.JDialogOAuth2ConfigClientCredentials;
@@ -91,14 +95,12 @@ import javax.swing.text.AbstractDocument;
  * Panel to edit a single partner
  *
  * @author S.Heller
- * @version $Revision: 218 $
+ * @version $Revision: 232 $
  */
 public class JPanelPartner extends JPanel {
 
-    private final String STR_CONTENT_TRANSFER_ENCODING_BINARY = "binary";
-    private final String STR_CONTENT_TRANSFER_ENCODING_BASE64 = "base64";
-    private final static MecResourceBundle rb;
-    private final static MecResourceBundle rbEvents;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbEvents;
 
     static {
         try {
@@ -138,23 +140,23 @@ public class JPanelPartner extends JPanel {
     private Component lastSelectedPanel = null;
 
     private final static MendelsonMultiResolutionImage IMAGE_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_ADD
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_EDIT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/event/edit.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/event/edit.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_TESTCONNECTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/testconnection.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/testconnection.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
     private final static MendelsonMultiResolutionImage IMAGE_SYNC_MDN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/sync_mdn.svg", 90, 130);
     private final static MendelsonMultiResolutionImage IMAGE_ASYNC_MDN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/async_mdn.svg", 90, 130);
     private final static MendelsonMultiResolutionImage IMAGE_OAUTH2
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/oauth2/gui/oauth2.svg", 
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/oauth2/gui/oauth2.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
 
     private final String activatedPlugins;
@@ -190,7 +192,7 @@ public class JPanelPartner extends JPanel {
         this.setMultiresolutionIcons();
         ButtonUtil.reformatButtonText(this.jButtonTestConnection);
         this.initializeHelp();
-        this.buttonOk.initialize(tree, this.jTextFieldName, 
+        this.buttonOk.initialize(tree, this.jTextFieldName,
                 this.jTextFieldId, this.jTextFieldReceiptURL, this.jTextFieldMDNURL,
                 changesAllowed, this.jPanelConfigurationWarning);
         //some disabled checkboxes should still have black text: wrapp their text in html tags
@@ -199,11 +201,11 @@ public class JPanelPartner extends JPanel {
         this.jCheckBoxEdiintFeaturesMA.setText("<html>" + this.jCheckBoxEdiintFeaturesMA.getText() + "</html>");
         this.jTextAreaPartnerSystemInformation.setText(rb.getResourceString("partnerinfo"));
         this.jComboBoxContentTransferEncoding.removeAllItems();
-        this.jComboBoxContentTransferEncoding.addItem(STR_CONTENT_TRANSFER_ENCODING_BINARY);
-        this.jComboBoxContentTransferEncoding.addItem(STR_CONTENT_TRANSFER_ENCODING_BASE64);
+        this.jComboBoxContentTransferEncoding.addItem(MessageContentTransferEncodingType.BINARY.getDisplayStr());
+        this.jComboBoxContentTransferEncoding.addItem(MessageContentTransferEncodingType.BASE64.getDisplayStr());
         this.jComboBoxHTTPProtocolVersion.removeAllItems();
-        this.jComboBoxHTTPProtocolVersion.addItem(HttpConnectionParameter.HTTP_1_0);
-        this.jComboBoxHTTPProtocolVersion.addItem(HttpConnectionParameter.HTTP_1_1);
+        this.jComboBoxHTTPProtocolVersion.addItem(HttpConnectionParameter.HttpProtocolVersion.HTTP_1_0.toString());
+        this.jComboBoxHTTPProtocolVersion.addItem(HttpConnectionParameter.HttpProtocolVersion.HTTP_1_1.toString());
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.certificateManagerSSL = certificateManagerTLS;
         this.jComboBoxSignType.setRenderer(new ListCellRendererSignature(this.jComboBoxSignType));
@@ -227,19 +229,19 @@ public class JPanelPartner extends JPanel {
         this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_SHA3_512_RSASSA_PSS)));
         //this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_DILITHIUM)));
         //this.jComboBoxSignType.addItem(new SignatureDisplayImplAS2(Integer.valueOf(SignatureConstantsAS2.SIGNATURE_SPHINCS_PLUS)));
-        
+
         this.jComboBoxEncryptionType.setRenderer(new ListCellRendererEncryption(this.jComboBoxEncryptionType));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_NONE)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));        
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC)));  
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_CCM)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_CCM)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CCM)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_GCM)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_GCM)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM)));        
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC_RSAES_AOEP)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC_RSAES_AOEP)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC_RSAES_AOEP)));
@@ -257,7 +259,7 @@ public class JPanelPartner extends JPanel {
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_196)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_40)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_56)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_128)));        
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_128)));
         List<KeystoreCertificate> encSignCertificateList = this.certificateManagerEncSign.getKeyStoreCertificateList();
         //clone the array
         List<KeystoreCertificate> sortedEncSignCertificateList = new ArrayList<KeystoreCertificate>();
@@ -378,7 +380,7 @@ public class JPanelPartner extends JPanel {
         }
         combobox.setSelectedItem(item);
         //selected item is not in the list - select the first item if this is possible
-        if( combobox.getSelectedIndex() == -1 && combobox.getItemCount() > 0){
+        if (combobox.getSelectedIndex() == -1 && combobox.getItemCount() > 0) {
             combobox.setSelectedIndex(0);
         }
         for (ActionListener listener : actionListener) {
@@ -460,7 +462,7 @@ public class JPanelPartner extends JPanel {
                     ConnectionTestRequest request = new ConnectionTestRequest(url.getHost(),
                             port, url.getProtocol().equalsIgnoreCase("https"),
                             JPanelPartner.this.jTextFieldName.getText(),
-                            ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER);
+                            ConnectionTest.PartnerRole.REMOTE_PARTNER);
                     request.setTimeout(connectionTimeoutInMS);
                     ConnectionTestResponse response = (ConnectionTestResponse) JPanelPartner.this.baseClient.sendSync(request);
                     if (response.getException() != null) {
@@ -468,11 +470,11 @@ public class JPanelPartner extends JPanel {
                     }
                     JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, JPanelPartner.this);
                     JDialogConnectionTestResult dialog = new JDialogConnectionTestResult(parent,
-                            JDialogConnectionTestResult.CONNECTION_TEST_AS2,
+                            ConnectionTest.Type.AS2,
                             response.getLogEntries(),
                             response.getResult(),
                             JPanelPartner.this.certificateManagerEncSign, JPanelPartner.this.certificateManagerSSL,
-                            JPanelPartner.this.preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT)
+                            DisplayMode.of(JPanelPartner.this.preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT))
                     );
                     JPanelPartner.this.statusbar.stopProgressIfExists(uniqueId);
                     parentDialog.unlock();
@@ -574,7 +576,8 @@ public class JPanelPartner extends JPanel {
         }
         this.jTextFieldPollMaxFiles.setText(String.valueOf(this.partner.getMaxPollFiles()));
         this.jTextFieldPollInterval.setText(String.valueOf(this.partner.getPollInterval()));
-        this.setUIValueWithoutEvent(this.switchCompress, this.partner.getCompressionType() == AS2Message.COMPRESSION_ZLIB);
+        this.setUIValueWithoutEvent(this.switchCompress,
+                this.partner.getCompressionType() == MessageCompressionType.ZLIB);
         if (this.partner.getAuthenticationCredentialsMessage().isEnabled()) {
             this.setUIValueWithoutEvent(this.jRadioButtonHttpAuthCredentialsMessage, true);
         } else {
@@ -623,16 +626,18 @@ public class JPanelPartner extends JPanel {
         this.jTextFieldNotifySend.setText(String.valueOf(this.partner.getNotifySend()));
         this.jTextFieldNotifyReceive.setText(String.valueOf(this.partner.getNotifyReceive()));
         this.jTextFieldNotifySendReceive.setText(String.valueOf(this.partner.getNotifySendReceive()));
-        if (this.partner.getContentTransferEncoding() == AS2Message.CONTENT_TRANSFER_ENCODING_BINARY) {
-            this.setUIValueWithoutEvent(this.jComboBoxContentTransferEncoding, STR_CONTENT_TRANSFER_ENCODING_BINARY);
+        if (this.partner.getContentTransferEncoding() == MessageContentTransferEncodingType.BINARY) {
+            this.setUIValueWithoutEvent(this.jComboBoxContentTransferEncoding,
+                    MessageContentTransferEncodingType.BINARY.getDisplayStr());
         } else {
-            this.setUIValueWithoutEvent(this.jComboBoxContentTransferEncoding, STR_CONTENT_TRANSFER_ENCODING_BASE64);
+            this.setUIValueWithoutEvent(this.jComboBoxContentTransferEncoding,
+                    MessageContentTransferEncodingType.BASE64.getDisplayStr());
         }
         this.updatePartnerSystemInformation(this.partner);
         if (this.displayHttpHeaderPanel) {
             ((TableModelHttpHeader) this.jTableHttpHeader.getModel()).passNewData(partner);
         }
-        this.setUIValueWithoutEvent(this.jComboBoxHTTPProtocolVersion, partner.getHttpProtocolVersion());
+        this.setUIValueWithoutEvent(this.jComboBoxHTTPProtocolVersion, partner.getHttpProtocolVersion().toString());
         this.setUIValueWithoutEvent(this.switchUseAlgorithmIdentifierProtectionAttribute,
                 partner.getUseAlgorithmIdentifierProtectionAttribute());
         this.setUIValueWithoutEvent(this.switchEnableDirPoll, partner.isEnableDirPoll());
@@ -682,57 +687,73 @@ public class JPanelPartner extends JPanel {
      * not. Has to be called every time the local station state changes.
      */
     private void handleVisibilityStateOfWidgets() {
-        this.jTextFieldMDNURL.setVisible(this.partner.isLocalStation());
-        this.jLabelMDNDescription.setVisible(!this.partner.isLocalStation());
-        this.jPanelUIHelpLabelSignedMDN.setVisible(!this.partner.isLocalStation());
-        this.jPanelUIHelpAsyncMDN.setVisible(!this.partner.isLocalStation());
-        this.jPanelUIHelpSyncMDN.setVisible(!this.partner.isLocalStation());
-        this.jPanelUIHelpLabelMDNURL.setVisible(this.partner.isLocalStation());
-        this.jRadioButtonAsyncMDN.setVisible(!partner.isLocalStation());
-        this.jLabelIconAsyncMDN.setVisible(!partner.isLocalStation());
-        this.jLabelIconSyncMDN.setVisible(!partner.isLocalStation());
-        this.jRadioButtonSyncMDN.setVisible(!partner.isLocalStation());
-        this.switchSignedMDN.setVisible(!partner.isLocalStation());
-        this.switchUseAlgorithmIdentifierProtectionAttribute.setVisible(!partner.isLocalStation());
-        this.jPanelUIHelpLabelUseAlgorithmIdentifierProtectionAttribute.setVisible(!partner.isLocalStation());
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                jTextFieldMDNURL.setVisible(partner.isLocalStation());
+                jLabelMDNDescription.setVisible(!partner.isLocalStation());
+                jPanelUIHelpLabelSignedMDN.setVisible(!partner.isLocalStation());
+                jPanelUIHelpAsyncMDN.setVisible(!partner.isLocalStation());
+                jPanelUIHelpSyncMDN.setVisible(!partner.isLocalStation());
+                jPanelUIHelpLabelMDNURL.setVisible(partner.isLocalStation());
+                jRadioButtonAsyncMDN.setVisible(!partner.isLocalStation());
+                jLabelIconAsyncMDN.setVisible(!partner.isLocalStation());
+                jLabelIconSyncMDN.setVisible(!partner.isLocalStation());
+                jRadioButtonSyncMDN.setVisible(!partner.isLocalStation());
+                switchSignedMDN.setVisible(!partner.isLocalStation());
+                switchUseAlgorithmIdentifierProtectionAttribute.setVisible(!partner.isLocalStation());
+                jPanelUIHelpLabelUseAlgorithmIdentifierProtectionAttribute.setVisible(!partner.isLocalStation());
+            }
+        });
     }
 
     private void disableEnableWidgets() {
-        this.jTextFieldIgnorePollFilterList.setEnabled(this.partner.isEnableDirPoll());
-        this.jTextFieldIgnorePollFilterList.setEditable(this.partner.isEnableDirPoll());
-        this.jPanelUIHelpLabelPollIgnoreList.setEnabled(this.partner.isEnableDirPoll());
-        this.jTextFieldPollInterval.setEnabled(this.partner.isEnableDirPoll());
-        this.jTextFieldPollInterval.setEditable(this.partner.isEnableDirPoll());
-        this.jLabelPollInterval.setEnabled(this.partner.isEnableDirPoll());
-        this.jLabelPollMaxFiles.setEnabled(this.partner.isEnableDirPoll());
-        this.jTextFieldPollMaxFiles.setEnabled(this.partner.isEnableDirPoll());
-        this.jTextFieldPollMaxFiles.setEditable(this.partner.isEnableDirPoll());
-        this.jLabelPollIntervalSeconds.setEnabled(this.partner.isEnableDirPoll());
-        this.jLabelPollDir.setEnabled(this.partner.isEnableDirPoll());
-        this.jTextFieldPollDir.setEnabled(this.partner.isEnableDirPoll());
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                jTextFieldIgnorePollFilterList.setEnabled(partner.isEnableDirPoll());
+                jTextFieldIgnorePollFilterList.setEditable(partner.isEnableDirPoll());
+                jPanelUIHelpLabelPollIgnoreList.setEnabled(partner.isEnableDirPoll());
+                jTextFieldPollInterval.setEnabled(partner.isEnableDirPoll());
+                jTextFieldPollInterval.setEditable(partner.isEnableDirPoll());
+                jLabelPollInterval.setEnabled(partner.isEnableDirPoll());
+                jLabelPollMaxFiles.setEnabled(partner.isEnableDirPoll());
+                jTextFieldPollMaxFiles.setEnabled(partner.isEnableDirPoll());
+                jTextFieldPollMaxFiles.setEditable(partner.isEnableDirPoll());
+                jLabelPollIntervalSeconds.setEnabled(partner.isEnableDirPoll());
+                jLabelPollDir.setEnabled(partner.isEnableDirPoll());
+                jTextFieldPollDir.setEnabled(partner.isEnableDirPoll());
+            }
+        });
     }
 
     private void setPanelVisiblilityState() {
-        this.jTabbedPane.removeAll();
-        this.jTabbedPane.addTab(rb.getResourceString("tab.misc"), this.jPanelMiscMain);
-        this.jTabbedPane.addTab(rb.getResourceString("tab.security"), this.jPanelSecurityMain);
-        if (!this.partner.isLocalStation()) {
-            this.jTabbedPane.addTab(rb.getResourceString("tab.send"), this.jPanelSend);
-        }
-        this.jTabbedPane.addTab(rb.getResourceString("tab.mdn"), this.jPanelMDN);
-        if (!this.partner.isLocalStation()) {
-            this.jTabbedPane.addTab(rb.getResourceString("tab.dirpoll"), this.jPanelDirPoll);
-            this.jTabbedPane.addTab(rb.getResourceString("tab.receipt"), this.jPanelReceipt);
-            this.jTabbedPane.addTab(rb.getResourceString("tab.httpauth"), this.jPanelHTTPAuth);
-            if (this.displayHttpHeaderPanel) {
-                this.jTabbedPane.addTab(rb.getResourceString("tab.httpheader"), this.jPanelHTTPHeader);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                jTabbedPane.removeAll();
+                jTabbedPane.addTab(rb.getResourceString("tab.misc"), jPanelMiscMain);
+                jTabbedPane.addTab(rb.getResourceString("tab.security"), jPanelSecurityMain);
+                if (!partner.isLocalStation()) {
+                    jTabbedPane.addTab(rb.getResourceString("tab.send"), jPanelSend);
+                }
+                jTabbedPane.addTab(rb.getResourceString("tab.mdn"), jPanelMDN);
+                if (!partner.isLocalStation()) {
+                    jTabbedPane.addTab(rb.getResourceString("tab.dirpoll"), jPanelDirPoll);
+                    jTabbedPane.addTab(rb.getResourceString("tab.receipt"), jPanelReceipt);
+                    jTabbedPane.addTab(rb.getResourceString("tab.httpauth"), jPanelHTTPAuth);
+                    if (displayHttpHeaderPanel) {
+                        jTabbedPane.addTab(rb.getResourceString("tab.httpheader"), jPanelHTTPHeader);
+                    }
+                    if (displayNotificationPanel) {
+                        jTabbedPane.addTab(rb.getResourceString("tab.notification"), jPanelNotification);
+                    }
+                    jTabbedPane.addTab(rb.getResourceString("tab.events"), jPanelEvents);
+                    jTabbedPane.addTab(rb.getResourceString("tab.partnersystem"), jPanelPartnerSystem);
+                }
             }
-            if (this.displayNotificationPanel) {
-                this.jTabbedPane.addTab(rb.getResourceString("tab.notification"), this.jPanelNotification);
-            }
-            this.jTabbedPane.addTab(rb.getResourceString("tab.events"), this.jPanelEvents);
-            this.jTabbedPane.addTab(rb.getResourceString("tab.partnersystem"), this.jPanelPartnerSystem);
-        }
+        });
+
     }
 
     /**
@@ -850,17 +871,27 @@ public class JPanelPartner extends JPanel {
      * if there were any changes
      */
     private void renderEvents() {
-        int processTypeOnReceipt = this.partner.getPartnerEvents().getProcess(PartnerEventInformation.TYPE_ON_RECEIPT);
-        int processTypeOnSendSuccess = this.partner.getPartnerEvents().getProcess(PartnerEventInformation.TYPE_ON_SENDSUCCESS);
-        int processTypeOnSendError = this.partner.getPartnerEvents().getProcess(PartnerEventInformation.TYPE_ON_SENDERROR);
-        this.jLabelIconProcessTypeOnReceipt.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(processTypeOnReceipt).toMinResolution(24)));
-        this.jLabelIconProcessTypeOnSendError.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(processTypeOnSendError).toMinResolution(24)));
-        this.jLabelIconProcessTypeOnSendSuccess.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(processTypeOnSendSuccess).toMinResolution(24)));
-        List<String> onReceiptParameter = this.partner.getPartnerEvents().getParameter(PartnerEventInformation.TYPE_ON_RECEIPT);
+        ProcessingEventType processTypeOnReceipt
+                = this.partner.getPartnerEvents().getProcess(ProcessingEventTriggerType.RECEIPT_SUCCESS);
+        ProcessingEventType processTypeOnSendSuccess
+                = this.partner.getPartnerEvents().getProcess(ProcessingEventTriggerType.SEND_SUCCESS);
+        ProcessingEventType processTypeOnSendError = this.partner.getPartnerEvents().getProcess(
+                ProcessingEventTriggerType.SEND_FAILURE);
+        this.jLabelIconProcessTypeOnReceipt.setIcon(new ImageIcon(
+                PartnerEventInformation.getImageForProcess(
+                        processTypeOnReceipt).toMinResolution(24)));
+        this.jLabelIconProcessTypeOnSendError.setIcon(
+                new ImageIcon(PartnerEventInformation.getImageForProcess(
+                        processTypeOnSendError).toMinResolution(24)));
+        this.jLabelIconProcessTypeOnSendSuccess.setIcon(
+                new ImageIcon(PartnerEventInformation.getImageForProcess(
+                        processTypeOnSendSuccess).toMinResolution(24)));
+        List<String> onReceiptParameter = this.partner.getPartnerEvents().getParameter(
+                ProcessingEventTriggerType.RECEIPT_SUCCESS);
         if (onReceiptParameter.isEmpty()) {
             this.jTextFieldEventInfoOnReceipt.setText("");
         } else {
-            if (processTypeOnReceipt == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
+            if (processTypeOnReceipt == ProcessingEventType.MOVE_TO_PARTNER) {
                 String as2Id = onReceiptParameter.get(0);
                 List<Partner> partnerList = this.tree.getAllPartner();
                 Partner foundPartner = null;
@@ -879,15 +910,16 @@ public class JPanelPartner extends JPanel {
                 this.jTextFieldEventInfoOnReceipt.setText(onReceiptParameter.get(0));
             }
         }
-        this.switchUseEventOnReceipt.setSelected(this.partner.getPartnerEvents().useOnReceipt());
+        this.switchUseEventOnReceipt.setSelected(this.partner.getPartnerEvents().isUseOnReceipt());
         this.jButtonAddEventOnReceipt.setEnabled(this.switchUseEventOnReceipt.isSelected());
         this.jButtonEditEventOnReceipt.setEnabled(this.switchUseEventOnReceipt.isSelected());
         this.jLabelIconProcessTypeOnReceipt.setEnabled(this.switchUseEventOnReceipt.isSelected());
-        List<String> onSendErrorParameter = this.partner.getPartnerEvents().getParameter(PartnerEventInformation.TYPE_ON_SENDERROR);
+        List<String> onSendErrorParameter = this.partner.getPartnerEvents().getParameter(
+                ProcessingEventTriggerType.SEND_FAILURE);
         if (onSendErrorParameter.isEmpty()) {
             this.jTextFieldEventInfoOnSendError.setText("");
         } else {
-            if (processTypeOnSendError == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
+            if (processTypeOnSendError == ProcessingEventType.MOVE_TO_PARTNER) {
                 String as2Id = onSendErrorParameter.get(0);
                 List<Partner> partnerList = this.tree.getAllPartner();
                 Partner foundPartner = null;
@@ -906,15 +938,16 @@ public class JPanelPartner extends JPanel {
                 this.jTextFieldEventInfoOnSendError.setText(onSendErrorParameter.get(0));
             }
         }
-        this.switchUseEventOnSendError.setSelected(this.partner.getPartnerEvents().useOnSenderror());
+        this.switchUseEventOnSendError.setSelected(this.partner.getPartnerEvents().isUseOnSendError());
         this.jButtonAddEventOnSendError.setEnabled(this.switchUseEventOnSendError.isSelected());
         this.jButtonEditEventOnSendError.setEnabled(this.switchUseEventOnSendError.isSelected());
         this.jLabelIconProcessTypeOnSendError.setEnabled(this.switchUseEventOnSendError.isSelected());
-        List<String> onSendSuccessParameter = this.partner.getPartnerEvents().getParameter(PartnerEventInformation.TYPE_ON_SENDSUCCESS);
+        List<String> onSendSuccessParameter = this.partner.getPartnerEvents().getParameter(
+                ProcessingEventTriggerType.SEND_SUCCESS);
         if (onSendSuccessParameter.isEmpty()) {
             this.jTextFieldEventInfoOnSendSuccess.setText("");
         } else {
-            if (processTypeOnSendSuccess == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
+            if (processTypeOnSendSuccess == ProcessingEventType.MOVE_TO_PARTNER) {
                 String as2Id = onSendSuccessParameter.get(0);
                 List<Partner> partnerList = this.tree.getAllPartner();
                 Partner foundPartner = null;
@@ -933,7 +966,7 @@ public class JPanelPartner extends JPanel {
                 this.jTextFieldEventInfoOnSendSuccess.setText(onSendSuccessParameter.get(0));
             }
         }
-        this.switchUseEventOnSendSuccess.setSelected(this.partner.getPartnerEvents().useOnSendsuccess());
+        this.switchUseEventOnSendSuccess.setSelected(this.partner.getPartnerEvents().isUseOnSendSuccess());
         this.jButtonAddEventOnSendSuccess.setEnabled(this.switchUseEventOnSendSuccess.isSelected());
         this.jButtonEditEventOnSendSuccess.setEnabled(this.switchUseEventOnSendSuccess.isSelected());
         this.jLabelIconProcessTypeOnSendSuccess.setEnabled(this.switchUseEventOnSendSuccess.isSelected());
@@ -942,20 +975,20 @@ public class JPanelPartner extends JPanel {
     /**
      * Creates a new process and configures it for the passed event type
      *
-     * @param EVENT_TYPE
+     * @param triggerType
      */
-    private void createProcess(final int EVENT_TYPE) {
+    private void createProcess(ProcessingEventTriggerType triggerType) {
         ActionListener actionListener = new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent evt) {
                 String actionCommand = evt.getActionCommand();
                 try {
                     if (actionCommand.equals(rbEvents.getResourceString("process.executeshell"))) {
-                        editEvent(EVENT_TYPE, PartnerEventInformation.PROCESS_EXECUTE_SHELL);
+                        editEvent(triggerType, ProcessingEventType.EXECUTE_SHELL);
                     } else if (actionCommand.equals(rbEvents.getResourceString("process.movetopartner"))) {
-                        editEvent(EVENT_TYPE, PartnerEventInformation.PROCESS_MOVE_TO_PARTNER);
+                        editEvent(triggerType, ProcessingEventType.MOVE_TO_PARTNER);
                     } else if (actionCommand.equals(rbEvents.getResourceString("process.movetodirectory"))) {
-                        editEvent(EVENT_TYPE, PartnerEventInformation.PROCESS_MOVE_TO_DIR);
+                        editEvent(triggerType, ProcessingEventType.MOVE_TO_DIR);
                     }
                 } catch (Exception e) {
                     UINotification.instance().addNotification(e);
@@ -967,27 +1000,30 @@ public class JPanelPartner extends JPanel {
                 this);
         JDialogCategorySelection dialog = new JDialogCategorySelection(parentFrame);
         dialog.setTitle(rbEvents.getResourceString("title.select.process",
-                rbEvents.getResourceString("type." + EVENT_TYPE)));
+                rbEvents.getResourceString("type." + triggerType.toInt())));
         Category category = new Category();
         category.setTitle(rbEvents.getResourceString("tab.newprocess"));
         Subcategory subExecuteShell = new Subcategory();
         subExecuteShell.setActionCommand(
                 rbEvents.getResourceString("process.executeshell"));
-        subExecuteShell.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(PartnerEventInformation.PROCESS_EXECUTE_SHELL).toMinResolution(36)));
+        subExecuteShell.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(
+                ProcessingEventType.EXECUTE_SHELL).toMinResolution(36)));
         subExecuteShell.setTitle(rbEvents.getResourceString("process.executeshell"));
         subExecuteShell.setDescription(rbEvents.getResourceString("process.executeshell.description"));
         category.addSubcategory(subExecuteShell);
         Subcategory subMoveToPartner = new Subcategory();
         subMoveToPartner.setActionCommand(
                 rbEvents.getResourceString("process.movetopartner"));
-        subMoveToPartner.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(PartnerEventInformation.PROCESS_MOVE_TO_PARTNER).toMinResolution(36)));
+        subMoveToPartner.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(
+                ProcessingEventType.MOVE_TO_PARTNER).toMinResolution(36)));
         subMoveToPartner.setTitle(rbEvents.getResourceString("process.movetopartner"));
         subMoveToPartner.setDescription(rbEvents.getResourceString("process.movetopartner.description"));
         category.addSubcategory(subMoveToPartner);
         Subcategory subMoveToDirectory = new Subcategory();
         subMoveToDirectory.setActionCommand(
                 rbEvents.getResourceString("process.movetodirectory"));
-        subMoveToDirectory.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(PartnerEventInformation.PROCESS_MOVE_TO_DIR).toMinResolution(36)));
+        subMoveToDirectory.setIcon(new ImageIcon(PartnerEventInformation.getImageForProcess(
+                ProcessingEventType.MOVE_TO_DIR).toMinResolution(36)));
         subMoveToDirectory.setTitle(rbEvents.getResourceString("process.movetodirectory"));
         subMoveToDirectory.setDescription(rbEvents.getResourceString("process.movetodirectory.description"));
         category.addSubcategory(subMoveToDirectory);
@@ -996,23 +1032,23 @@ public class JPanelPartner extends JPanel {
         dialog.setVisible(true);
     }
 
-    private void editEvent(final int EVENT_TYPE, final int PROCESS_TYPE) {
+    private void editEvent(ProcessingEventTriggerType triggerType, ProcessingEventType processType) {
         JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class,
                 JPanelPartner.this);
-        if (PROCESS_TYPE == PartnerEventInformation.PROCESS_EXECUTE_SHELL) {
+        if (processType == ProcessingEventType.EXECUTE_SHELL) {
             JDialogConfigureEventShell dialog = new JDialogConfigureEventShell(
                     parentFrame, JPanelPartner.this.partner,
-                    EVENT_TYPE);
+                    triggerType);
             dialog.setVisible(true);
-        } else if (PROCESS_TYPE == PartnerEventInformation.PROCESS_MOVE_TO_DIR) {
+        } else if (processType == ProcessingEventType.MOVE_TO_DIR) {
             JDialogConfigureEventMoveToDir dialog = new JDialogConfigureEventMoveToDir(
                     parentFrame, JPanelPartner.this.baseClient, JPanelPartner.this.partner,
-                    EVENT_TYPE);
+                    triggerType);
             dialog.setVisible(true);
-        } else if (PROCESS_TYPE == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
+        } else if (processType == ProcessingEventType.MOVE_TO_PARTNER) {
             JDialogConfigureEventMoveToPartner dialog = new JDialogConfigureEventMoveToPartner(
                     parentFrame, this.tree.getAllPartner(), JPanelPartner.this.partner,
-                    EVENT_TYPE);
+                    triggerType);
             dialog.setVisible(true);
         }
         this.renderEvents();
@@ -1059,7 +1095,7 @@ public class JPanelPartner extends JPanel {
                     UINotification.instance().addNotification(e);
                 }
             }
-            String displayMode = this.preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
+            DisplayMode displayMode = DisplayMode.of(this.preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT));
             JDialogOAuth2Config dialog = new JDialogOAuth2Config(parentFrame,
                     this.baseClient,
                     config,
@@ -1089,7 +1125,7 @@ public class JPanelPartner extends JPanel {
                     UINotification.instance().addNotification(e);
                 }
             }
-            String displayMode = this.preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
+            DisplayMode displayMode = DisplayMode.of(this.preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT));
             JDialogOAuth2Config dialog = new JDialogOAuth2Config(parentFrame,
                     this.baseClient,
                     config,
@@ -1199,6 +1235,7 @@ public class JPanelPartner extends JPanel {
         jPanelUIHelpLabelCompress = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelSpace77646 = new javax.swing.JPanel();
         jPanelSpace45 = new javax.swing.JPanel();
+        jPanel1 = new javax.swing.JPanel();
         jPanelMDN = new javax.swing.JPanel();
         jPanelMDNMain = new javax.swing.JPanel();
         jTextFieldMDNURL = new javax.swing.JTextField();
@@ -1405,7 +1442,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(15, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelSendMain.add(jTextFieldReceiptURL, gridBagConstraints);
 
         jTextFieldSubject.addKeyListener(new java.awt.event.KeyAdapter() {
@@ -1512,7 +1549,6 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 6;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 0);
         jPanelSendMain.add(jPanelUIHelpLabelURL, gridBagConstraints);
 
         jPanelUIHelpLabelSubject.setToolTipText(this.rb.getResourceString( "label.subject.help"));
@@ -1582,7 +1618,6 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 21;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 15);
         jPanelSendMain.add(jPanelUIHelpLabelCompress, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -1598,6 +1633,13 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 0, 5);
         jPanelSendMain.add(jPanelSpace45, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(10, 5, 0, 5);
+        jPanelSendMain.add(jPanel1, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -1677,6 +1719,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         jPanelMDNMain.add(jPanelUIHelpLabelMDNURL, gridBagConstraints);
 
         jPanelSyncMDN.setLayout(new java.awt.GridBagLayout());
@@ -1782,6 +1825,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 10;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelMDNMain.add(jPanelUIHelpLabelSignedMDN, gridBagConstraints);
 
@@ -3142,7 +3186,6 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelMiscMain.add(jPanelUIHelpLabelName, gridBagConstraints);
@@ -3152,7 +3195,6 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelMiscMain.add(jPanelUIHelpLabelAS2Id, gridBagConstraints);
@@ -3162,7 +3204,6 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelMiscMain.add(jPanelUIHelpLabelEMail, gridBagConstraints);
@@ -3173,8 +3214,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 7;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelMiscMain.add(jPanelUIHelpLabelAddress, gridBagConstraints);
 
@@ -3184,8 +3224,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 9;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelMiscMain.add(jPanelUIHelpLabelComment, gridBagConstraints);
 
@@ -3195,8 +3234,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 8;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         jPanelMiscMain.add(jPanelUIHelpLabelContact, gridBagConstraints);
 
@@ -3205,7 +3243,6 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(2, 5, 2, 0);
         jPanelMiscMain.add(jPanelUIHelpLabelName1, gridBagConstraints);
@@ -3255,6 +3292,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridy = 2;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelSecurityMain.add(jComboBoxSignCert, gridBagConstraints);
@@ -3277,6 +3315,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
@@ -3293,7 +3332,8 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelSecurityMain.add(jComboBoxEncryptionType, gridBagConstraints);
@@ -3308,6 +3348,7 @@ public class JPanelPartner extends JPanel {
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 10);
         jPanelSecurityMain.add(jComboBoxCryptCert, gridBagConstraints);
@@ -3513,7 +3554,7 @@ public class JPanelPartner extends JPanel {
             KeystoreCertificate certificate = (KeystoreCertificate) this.jComboBoxCryptCert.getSelectedItem();
             PartnerCertificateInformation cryptInfo = new PartnerCertificateInformation(
                     certificate.getFingerPrintSHA1(),
-                    PartnerCertificateInformation.CATEGORY_CRYPT);
+                    PartnerCertificateInformation.Category.CRYPT);
             partner.setCertificateInformation(cryptInfo);
             this.informTreeModelNodeChanged();
         }
@@ -3638,7 +3679,7 @@ public class JPanelPartner extends JPanel {
     private void jTextFieldMDNURLKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_jTextFieldMDNURLKeyReleased
         if (this.partner != null) {
             if (this.jTextFieldMDNURL.getText().trim().isEmpty()) {
-                this.partner.setMdnURL(this.partner.getDefaultURL());
+                this.partner.setMdnURL(Partner.DEFAULT_URL);
             } else {
                 this.partner.setMdnURL(this.jTextFieldMDNURL.getText());
             }
@@ -3663,7 +3704,7 @@ public class JPanelPartner extends JPanel {
             KeystoreCertificate certificate = (KeystoreCertificate) this.jComboBoxSignCert.getSelectedItem();
             PartnerCertificateInformation signInfo = new PartnerCertificateInformation(
                     certificate.getFingerPrintSHA1(),
-                    PartnerCertificateInformation.CATEGORY_SIGN);
+                    PartnerCertificateInformation.Category.SIGN);
             partner.setCertificateInformation(signInfo);
             this.buttonOk.computeErrorState();
             this.informTreeModelNodeChanged();
@@ -3777,11 +3818,12 @@ private void jCheckBoxNotifySendReceiveActionPerformed(java.awt.event.ActionEven
 
 private void jComboBoxContentTransferEncodingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxContentTransferEncodingActionPerformed
     if (this.partner != null) {
-        int newTransferEncoding = -1;
-        if (this.jComboBoxContentTransferEncoding.getSelectedItem().equals(STR_CONTENT_TRANSFER_ENCODING_BINARY)) {
-            newTransferEncoding = AS2Message.CONTENT_TRANSFER_ENCODING_BINARY;
+        MessageContentTransferEncodingType newTransferEncoding;
+        if (this.jComboBoxContentTransferEncoding.getSelectedItem().equals(
+                MessageContentTransferEncodingType.BINARY.getDisplayStr())) {
+            newTransferEncoding = MessageContentTransferEncodingType.BINARY;
         } else {
-            newTransferEncoding = AS2Message.CONTENT_TRANSFER_ENCODING_BASE64;
+            newTransferEncoding = MessageContentTransferEncodingType.BASE64;
         }
         if (this.partner.getContentTransferEncoding() != newTransferEncoding) {
             this.partner.setContentTransferEncoding(newTransferEncoding);
@@ -3809,7 +3851,9 @@ private void jButtonHttpHeaderRemoveActionPerformed(java.awt.event.ActionEvent e
 
 private void jComboBoxHTTPProtocolVersionActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxHTTPProtocolVersionActionPerformed
     if (this.partner != null) {
-        this.partner.setHttpProtocolVersion((String) this.jComboBoxHTTPProtocolVersion.getSelectedItem());
+        this.partner.setHttpProtocolVersion(
+                HttpConnectionParameter.HttpProtocolVersion.of(
+                        (String) this.jComboBoxHTTPProtocolVersion.getSelectedItem()));
         this.buttonOk.computeErrorState();
         this.informTreeModelNodeChanged();
     }
@@ -3833,30 +3877,33 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     }//GEN-LAST:event_jButtonTestConnectionActionPerformed
 
     private void jButtonAddEventOnReceiptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonAddEventOnReceiptActionPerformed
-        this.createProcess(PartnerEventInformation.TYPE_ON_RECEIPT);
+        this.createProcess(ProcessingEventTriggerType.RECEIPT_SUCCESS);
     }//GEN-LAST:event_jButtonAddEventOnReceiptActionPerformed
 
     private void jButtonEditEventOnReceiptActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEditEventOnReceiptActionPerformed
-        this.editEvent(PartnerEventInformation.TYPE_ON_RECEIPT,
-                this.partner.getPartnerEvents().getProcess(PartnerEventInformation.TYPE_ON_RECEIPT));
+        this.editEvent(ProcessingEventTriggerType.RECEIPT_SUCCESS,
+                this.partner.getPartnerEvents().getProcess(
+                        ProcessingEventTriggerType.RECEIPT_SUCCESS));
     }//GEN-LAST:event_jButtonEditEventOnReceiptActionPerformed
 
     private void jButtonEditEventOnSendErrorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEditEventOnSendErrorActionPerformed
-        this.editEvent(PartnerEventInformation.TYPE_ON_SENDERROR,
-                this.partner.getPartnerEvents().getProcess(PartnerEventInformation.TYPE_ON_SENDERROR));
+        this.editEvent(ProcessingEventTriggerType.SEND_FAILURE,
+                this.partner.getPartnerEvents().getProcess(
+                        ProcessingEventTriggerType.SEND_FAILURE));
     }//GEN-LAST:event_jButtonEditEventOnSendErrorActionPerformed
 
     private void jButtonAddEventOnSendErrorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonAddEventOnSendErrorActionPerformed
-        this.createProcess(PartnerEventInformation.TYPE_ON_SENDERROR);
+        this.createProcess(ProcessingEventTriggerType.SEND_FAILURE);
     }//GEN-LAST:event_jButtonAddEventOnSendErrorActionPerformed
 
     private void jButtonEditEventOnSendSuccessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonEditEventOnSendSuccessActionPerformed
-        this.editEvent(PartnerEventInformation.TYPE_ON_SENDSUCCESS,
-                this.partner.getPartnerEvents().getProcess(PartnerEventInformation.TYPE_ON_SENDSUCCESS));
+        this.editEvent(ProcessingEventTriggerType.SEND_SUCCESS,
+                this.partner.getPartnerEvents().getProcess(
+                        ProcessingEventTriggerType.SEND_SUCCESS));
     }//GEN-LAST:event_jButtonEditEventOnSendSuccessActionPerformed
 
     private void jButtonAddEventOnSendSuccessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonAddEventOnSendSuccessActionPerformed
-        this.createProcess(PartnerEventInformation.TYPE_ON_SENDSUCCESS);
+        this.createProcess(ProcessingEventTriggerType.SEND_SUCCESS);
     }//GEN-LAST:event_jButtonAddEventOnSendSuccessActionPerformed
 
     private void jRadioButtonHttpAuthCredentialsMessageItemStateChanged(java.awt.event.ItemEvent evt) {//GEN-FIRST:event_jRadioButtonHttpAuthCredentialsMessageItemStateChanged
@@ -3940,7 +3987,7 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
             KeystoreCertificate certificate = (KeystoreCertificate) this.jComboBoxOverwriteLocalStationCryptKey.getSelectedItem();
             PartnerCertificateInformation cryptInfo = new PartnerCertificateInformation(
                     certificate.getFingerPrintSHA1(),
-                    PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION);
+                    PartnerCertificateInformation.Category.CRYPT_OVERWRITE_LOCALSTATION);
             partner.setCertificateInformation(cryptInfo);
             this.informTreeModelNodeChanged();
         }
@@ -3952,7 +3999,7 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
             KeystoreCertificate certificate = (KeystoreCertificate) this.jComboBoxOverwriteLocalstationSignKey.getSelectedItem();
             PartnerCertificateInformation cryptInfo = new PartnerCertificateInformation(
                     certificate.getFingerPrintSHA1(),
-                    PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION);
+                    PartnerCertificateInformation.Category.SIGN_OVERWRITE_LOCALSTATION);
             partner.setCertificateInformation(cryptInfo);
             this.informTreeModelNodeChanged();
         }
@@ -3977,7 +4024,8 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
 
     private void switchCompressActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_switchCompressActionPerformed
         if (this.partner != null) {
-            this.partner.setCompressionType(this.switchCompress.isSelected() ? AS2Message.COMPRESSION_ZLIB : AS2Message.COMPRESSION_NONE);
+            this.partner.setCompressionType(this.switchCompress.isSelected()
+                    ? MessageCompressionType.ZLIB : MessageCompressionType.NONE);
             this.informTreeModelNodeChanged();
         }
     }//GEN-LAST:event_switchCompressActionPerformed
@@ -4036,7 +4084,7 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
 
     private void switchUseEventOnSendSuccessActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_switchUseEventOnSendSuccessActionPerformed
         if (this.partner != null) {
-            this.partner.getPartnerEvents().setUseOnSendsuccess(this.switchUseEventOnSendSuccess.isSelected());
+            this.partner.getPartnerEvents().setUseOnSendSuccess(this.switchUseEventOnSendSuccess.isSelected());
             this.buttonOk.computeErrorState();
             this.informTreeModelNodeChanged();
         }
@@ -4045,7 +4093,7 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
 
     private void switchUseEventOnSendErrorActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_switchUseEventOnSendErrorActionPerformed
         if (this.partner != null) {
-            this.partner.getPartnerEvents().setUse(PartnerEventInformation.TYPE_ON_SENDERROR, 
+            this.partner.getPartnerEvents().setUse(ProcessingEventTriggerType.SEND_FAILURE,
                     this.switchUseEventOnSendError.isSelected());
             this.buttonOk.computeErrorState();
             this.informTreeModelNodeChanged();
@@ -4120,6 +4168,7 @@ private void jTextFieldPollMaxFilesKeyReleased(java.awt.event.KeyEvent evt) {//G
     private javax.swing.JLabel jLabelUseEventOnReceipt;
     private javax.swing.JLabel jLabelUseEventOnSendError;
     private javax.swing.JLabel jLabelUseEventOnSendSuccess;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JPanel jPanelAsyncMDN;
     private javax.swing.JPanel jPanelDirPoll;
     private javax.swing.JPanel jPanelEvents;

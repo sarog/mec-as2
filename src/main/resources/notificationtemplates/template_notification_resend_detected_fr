@@ -1,0 +1,42 @@
+$Header:$
+Ce fichier contient le modèle de notification pour le cas où une
+le message est reçu à nouveau avec un numéro de message déjà traité
+Les variables suivantes sont remplacées
+${PRODUCTNAME} : nom du produit
+${HOST} : Hôte du serveur AS2
+${EXISTING_MESSAGE_INIT_TIME} : heure de création du message déjà traité
+${MESSAGEID} : numéro du message reçu
+${SENDER} : Chaîne d'information
+${RECEIVER} : Récepteur de messages
+
+
+
+
+[SUBJECT]
+Message rejeté alors qu'il a déjà été traité
+
+
+[BODY]
+Votre partenaire ${SENDER} vous a envoyé un message dont le numéro de message est
+correspond au numéro de message d'un message déjà traité. Ce
+message n'a pas été traité, mais rejeté.
+Le destinataire est votre station locale ${RECEIVER}.
+
+Cela peut être dû aux raisons suivantes et nécessite une vérification manuelle :
+
+
+*Les numéros de messages créés par ${SENDER} ne sont pas uniques et
+    uniques - c'est un problème du côté de votre partenaire
+*${SENDER} a renvoyé un message parce qu'il n'a pas reçu votre accusé de réception
+    n'a pas reçu le message. Cette procédure comporte le risque que le fichier soit envoyé deux fois.
+    être reçu et traité deux fois et n'est pas recommandé. Le protocole AS2
+    n'indique pas clairement comment traiter les numéros de message en double.
+    et si les messages en double doivent être rejetés.
+
+
+Date initiale du message déjà traité : ${EXISTING_MESSAGE_INIT_TIME}
+Numéro de message du message déjà traité : ${MESSAGEID}
+
+Veuillez consulter votre système AS2 pour voir ce qui s'y est passé. Il se peut que
+il se peut que ${SENDER} ait un statut de transaction différent du vôtre. Vous devriez
+contacter votre partenaire pour clarifier la situation.

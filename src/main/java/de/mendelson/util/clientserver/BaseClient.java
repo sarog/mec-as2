@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 73    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseClient.java 96    23/03/26 17:58 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.IProductVersion;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.codec.ClientServerCodecFactory;
+import de.mendelson.util.clientserver.codec.ClientServerEncoder;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.clientserver.messages.LoginRequest;
@@ -13,8 +15,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
@@ -24,6 +24,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import org.apache.mina.core.future.ConnectFuture;
 import org.apache.mina.core.future.WriteFuture;
+import org.apache.mina.core.session.IoEventType;
 import org.apache.mina.core.session.IoSession;
 import org.apache.mina.filter.codec.ProtocolCodecFilter;
 import org.apache.mina.filter.executor.ExecutorFilter;
@@ -42,75 +43,48 @@ import org.apache.mina.transport.socket.nio.NioSocketConnector;
  * Abstract client for a user
  *
  * @author S.Heller
- * @version $Revision: 73 $
+ * @version $Revision: 96 $
  */
 public class BaseClient {
 
-    public static final int CLIENT_UNSPECIFIED = 0;
-    public static final int CLIENT_RICH_CLIENT = 1;
-    public static final int CLIENT_REST = 2;
-    public static final int CLIENT_XML = 3;
-    public static final int CLIENT_SENDORDER = 4;
-    public static final int CLIENT_WEBINTERFACE = 5;
-    public static final int CLIENT_COMMANDLINE_SHUTDOWN = 6;
-    public static final int CLIENT_WEB = 7;
-
-    private int clientType = CLIENT_UNSPECIFIED;
+    private ClientType clientType = ClientType.UNSPECIFIED;
 
     private Logger logger = Logger.getAnonymousLogger();
     private final ClientSessionHandler clientSessionHandler;
     private IoSession session = null;
-    private final NioSocketConnector connector = new NioSocketConnector();
+    private final NioSocketConnector connector;
     private ExecutorFilter executorFilter = null;
-    private final static UnorderedThreadPoolExecutor THREAD_POOL_EXECUTOR
-            = new UnorderedThreadPoolExecutor(2, 16, 30, TimeUnit.SECONDS,
-                    new NamedThreadFactory("client-server-clientside-exec"));
-
-    /**
-     * SSLContext is thread safe and could be used over all client connections
-     */
-    private final static SSLContext SSL_CONTEXT_CLIENT;
-
-    static {
-        try {
-            X509TrustManager trustManagerTrustAll = new X509TrustManager() {
-                @Override
-                public void checkClientTrusted(X509Certificate[] x509Certificates,
-                        String s) throws CertificateException {
-                }
-
-                @Override
-                public void checkServerTrusted(X509Certificate[] x509Certificates,
-                        String s) throws CertificateException {
-                }
-
-                @Override
-                public X509Certificate[] getAcceptedIssuers() {
-                    return new X509Certificate[0];
-                }
-            };
-            SSLContext context = SSLContext.getInstance("TLS");
-            context.init(null, new TrustManager[]{trustManagerTrustAll}, null);
-            SSL_CONTEXT_CLIENT = context;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    //use an ordered thred pool - the order for the write process is important for
+    //the serialization/deserialization process
+    private static final UnorderedThreadPoolExecutor THREAD_POOL_EXECUTOR
+            = new UnorderedThreadPoolExecutor(
+                    6,
+                    16,
+                    30,
+                    TimeUnit.SECONDS,
+                    new NamedThreadFactory("client-server-clientside-exec")
+            );
     /**
      * Set default timeout for sync requests to 30s
      */
     public static final long TIMEOUT_SYNC_RECEIVE = TimeUnit.SECONDS.toMillis(60);
     public static final long TIMEOUT_SYNC_SEND = TimeUnit.SECONDS.toMillis(60);
+    private final IProductVersion productVersion;
 
     /**
      * User that is connected
      */
     private User user = null;
 
-    public BaseClient(ClientSessionHandlerCallback callback, final int CLIENT_TYPE) {
-        this.clientType = CLIENT_TYPE;
+    public BaseClient(ClientSessionHandlerCallback callback, ClientType clientType,
+            IProductVersion productVersion) {
+        //determine the number of CPU cores + 1, this is the default for the threads in the NIO processor
+        int defaultIoThreads = Runtime.getRuntime().availableProcessors() + 1;
+        int ioThreadNumber = Math.max(6, defaultIoThreads);
+        this.connector = new NioSocketConnector(ioThreadNumber);
+        this.clientType = clientType;
         this.clientSessionHandler = new ClientSessionHandler(callback);
+        this.productVersion = productVersion;
     }
 
     /**
@@ -157,13 +131,19 @@ public class BaseClient {
         }
         LoginRequest login = new LoginRequest(this.clientType);
         login.setPasswd(passwd);
-        login.setUserName(user);
+        login.setUsername(user);
         login.setClientId(clientId);
         LoginState state = (LoginState) this.sendSync(login);
-        if (state.getState() == LoginState.STATE_INCOMPATIBLE_CLIENT) {
-            this.clientSessionHandler.getCallback().clientIsIncompatible(state.getStateDetails());
+        if (state != null) {
+            if( state.getState() == LoginState.STATE_INCOMPATIBLE_CLIENT) {
+                this.clientSessionHandler.getCallback().clientIsIncompatible(state.getStateDetails());
+            }
+            return (state);
+        }else{
+            LoginState newState = new LoginState();
+            newState.setState(LoginState.STATE_REJECTED);
+            return( newState );
         }
-        return (state);
     }
 
     /**
@@ -189,17 +169,31 @@ public class BaseClient {
             this.connector.setConnectTimeoutMillis(timeout);
             this.connector.setHandler(this.clientSessionHandler);
             //add SSL support
-            SslFilter sslFilter = new SslFilter(SSL_CONTEXT_CLIENT);
-            sslFilter.setEnabledProtocols(ClientServer.SERVERSIDE_ACCEPTED_TLS_PROTOCOLS[0]);
+            SslFilter sslFilter = new SslFilter(this.generateSSLContext());
+            sslFilter.setEnabledProtocols(ClientServer.SERVERSIDE_ACCEPTED_TLS_PROTOCOLS);
             sslFilter.setNeedClientAuth(false);
-            sslFilter.setUseNonBlockingPipeline(true);
             this.connector.getFilterChain().addFirst("TLS", sslFilter);
-            //add CPU bound tasks first
             this.connector.getFilterChain().addLast("protocol", new ProtocolCodecFilter(
-                    new ClientServerCodecFactory(this.clientSessionHandler.getCallback())));
-            //multi threaded model: allow and receive simulanously            
-            this.executorFilter = new ExecutorFilter(THREAD_POOL_EXECUTOR);
+                    new ClientServerCodecFactory(this.clientSessionHandler.getCallback(),
+                            this.productVersion, null)
+            ));
+            //The executor filter allows all following
+            //filter to work on the executors thread model. Use the executor for inbound messages only,
+            //send message have to be written serialized in the right order
+            this.executorFilter = new ExecutorFilter(THREAD_POOL_EXECUTOR, IoEventType.MESSAGE_RECEIVED);
             this.connector.getFilterChain().addLast("executor", this.executorFilter);
+
+            //Set send and receive buffers to 64KB, the default is 2kB. Some messages are up to 512kB 
+            this.connector.getSessionConfig().setReadBufferSize(2 * ClientServerEncoder.SINGLE_PACKAGE_SIZE_IN_BYTE);
+            this.connector.getSessionConfig().setMaxReadBufferSize(4 * ClientServerEncoder.SINGLE_PACKAGE_SIZE_IN_BYTE);
+            this.connector.getSessionConfig().setMinReadBufferSize(ClientServerEncoder.SINGLE_PACKAGE_SIZE_IN_BYTE);
+            this.connector.getSessionConfig().setSendBufferSize(2 * ClientServerEncoder.SINGLE_PACKAGE_SIZE_IN_BYTE);
+            //Setting TCP_NODELAY to true disables the Nagles algorithm. This is critical 
+            //for synchronous request-response patterns to avoid the 40ms-200ms buffering 
+            //delay for small data packets, ensuring immediatly sending of packages
+            this.connector.getSessionConfig().setTcpNoDelay(true);
+            //dont let the firewall cut the connection if idle
+            this.connector.getSessionConfig().setKeepAlive(true);
             ConnectFuture connectFuture = null;
             boolean connected = false;
             try {
@@ -207,7 +201,7 @@ public class BaseClient {
             } finally {
                 if (connectFuture != null) {
                     if (connectFuture.isConnected()) {
-                        this.session = connectFuture.getSession();                        
+                        this.session = connectFuture.getSession();
                         connected = true;
                     } else {
                         this.connector.dispose();
@@ -221,6 +215,31 @@ public class BaseClient {
                     + "BaseClient.connect: " + e.getMessage());
             return false;
         }
+    }
+
+    /**
+     * Generates the SSL context for the TLS handling
+     */
+    private SSLContext generateSSLContext() throws Exception {
+        X509TrustManager trustManagerTrustAll = new X509TrustManager() {
+            @Override
+            public void checkClientTrusted(X509Certificate[] x509Certificates,
+                    String s) throws CertificateException {
+            }
+
+            @Override
+            public void checkServerTrusted(X509Certificate[] x509Certificates,
+                    String s) throws CertificateException {
+            }
+
+            @Override
+            public X509Certificate[] getAcceptedIssuers() {
+                return new X509Certificate[0];
+            }
+        };
+        SSLContext context = SSLContext.getInstance("TLS");
+        context.init(null, new TrustManager[]{trustManagerTrustAll}, null);
+        return (context);
     }
 
     public void broadcast(ClientServerMessage message) {
@@ -264,7 +283,7 @@ public class BaseClient {
                     + "Not connected to a server. Please connect first.");
         }
         ClientServerResponse response = null;
-        request._setSyncRequest(true);
+        request.setSyncRequest(true);
         try {
             this.clientSessionHandler.addSyncRequest(request);
             WriteFuture writeFuture = this.session.write(request);
@@ -301,7 +320,7 @@ public class BaseClient {
                     + "BaseClient.sendSync: Not connected to a server. Please connect first.");
         }
         ClientServerResponse response = null;
-        request._setSyncRequest(true);
+        request.setSyncRequest(true);
         try {
             this.clientSessionHandler.addSyncRequest(request);
             WriteFuture writeFuture = this.session.write(request);
@@ -406,27 +425,15 @@ public class BaseClient {
     /**
      * @return the clientType
      */
-    public int getClientType() {
+    public ClientType getClientType() {
         return clientType;
     }
 
-    public static String clientTypeToStr(int clientType) {
-        if (clientType == CLIENT_SENDORDER) {
-            return ("COMMAND SEND");
-        } else if (clientType == CLIENT_REST) {
-            return ("REST");
-        } else if (clientType == CLIENT_RICH_CLIENT) {
-            return ("RICH CLIENT");
-        } else if (clientType == CLIENT_WEBINTERFACE) {
-            return ("WEB INTERFACE");
-        } else if (clientType == CLIENT_XML) {
-            return ("XML");
-        } else if (clientType == CLIENT_COMMANDLINE_SHUTDOWN) {
-            return ("COMMANDLINE SHUTDOWN");
-        } else if (clientType == CLIENT_WEB) {
-            return ("WEB");
-        }
-        return ("UNSPECIFIED");
+    /**
+     * Sets a new client type, this makes only sense for a reuse of the client
+     */
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
     }
 
 }

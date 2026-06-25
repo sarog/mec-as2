@@ -1,0 +1,25 @@
+$Header:$
+Este ficheiro contém o modelo de notificação para testar as definições de correio eletrónico.
+Podem ser utilizadas as seguintes variáveis, que são substituídas em conformidade:
+${PRODUCTNAME}: Nome do produto
+${HOST}: Anfitrião no qual o servidor está a ser executado
+${USER}: Utilizador sob o qual o servidor está a ser executado
+${MAILHOST}: Nome do anfitrião SMTP
+${MAILPORT}: Porta do servidor SMTP
+${CONNECTIONSECURITY}: Segurança da ligação (NONE/STARTSSL/SSL)
+${AUTHORIZATION}: Utilizador/palavra-passe, OAUTH2 ou NENHUM
+
+
+
+[SUBJECT]
+Mensagem para o controlo da configuração
+
+
+[BODY]
+Esta mensagem foi iniciada pelo utilizador ${USER} no anfitrião ${HOST}. A receção desta mensagem garante que as definições em ${PRODUCTNAME} para notificação por correio eletrónico estão corretas.
+
+Definições desta tentativa bem sucedida:
+
+Servidor de correio eletrónico SMTP: ${MAILHOST}:${MAILPORT}
+Segurança da ligação: ${CONNECTIONSECURITY}
+Autorização: ${AUTHORIZATION}

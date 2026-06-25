@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableModelCEMOverview.java 6     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableModelCEMOverview.java 8     22/10/25 11:28 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.util.MecResourceBundle;
 import java.text.DateFormat;
 import java.util.*;
@@ -19,17 +20,24 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class TableModelCEMOverview extends AbstractTableModel {
 
-    /**
-     * ResourceBundle to localize the headers
-     */
-    private MecResourceBundle rb = null;
-    /**
-     * Data to display
-     */
+    protected static final int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_TABLE;
+    public static final int ROW_HEIGHT = IMAGE_HEIGHT+2;
+        
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCEMOverview.class.getName());
+        } //load up  resourcebundle
+        catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private final List<CEMEntry> data = Collections.synchronizedList(new ArrayList<CEMEntry>());
     private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
@@ -37,14 +45,6 @@ public class TableModelCEMOverview extends AbstractTableModel {
      * Creates new LogTableModel
      */
     public TableModelCEMOverview() {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCEMOverview.class.getName());
-        } //load up  resourcebundle
-        catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
     }
 
     /**
@@ -106,11 +106,12 @@ public class TableModelCEMOverview extends AbstractTableModel {
                 case 4:
                     return (entry.getReceiverAS2Id());
                 case 5:
-                    return (new String[]{entry.getIssuername(),entry.getSerialId()});
+                    return (new String[]{entry.getIssuername(), entry.getSerialId()});
                 case 6:
                     return (CEMEntry.getCategoryLocalized(entry.getCategory()));
+                default:
+                    return (null);
             }
-            return (null);
         }
     }
 
@@ -123,21 +124,22 @@ public class TableModelCEMOverview extends AbstractTableModel {
     public String getColumnName(int col) {
         switch (col) {
             case 0:
-                return (this.rb.getResourceString("header.activity"));
+                return (rb.getResourceString("header.activity"));
             case 1:
-                return (this.rb.getResourceString("header.state"));
+                return (rb.getResourceString("header.state"));
             case 2:
-                return (this.rb.getResourceString("header.requestdate"));
+                return (rb.getResourceString("header.requestdate"));
             case 3:
-                return (this.rb.getResourceString("header.initiator"));
+                return (rb.getResourceString("header.initiator"));
             case 4:
-                return (this.rb.getResourceString("header.receiver"));
+                return (rb.getResourceString("header.receiver"));
             case 5:
-                return (this.rb.getResourceString("header.alias"));
+                return (rb.getResourceString("header.alias"));
             case 6:
-                return (this.rb.getResourceString("header.category"));
+                return (rb.getResourceString("header.category"));
+            default:
+                return (null);
         }
-        return (null);
     }
 
     /**
@@ -148,13 +150,13 @@ public class TableModelCEMOverview extends AbstractTableModel {
     @Override
     public Class getColumnClass(int col) {
         return (new Class[]{
-                    CEMSystemActivity.class,
-                    CEMEntry.class,
-                    String.class,
-                    String.class,
-                    String.class,
-                    String.class,
-                    String.class,
-                    String.class,}[col]);
+            CEMSystemActivity.class,
+            CEMEntry.class,
+            String.class,
+            String.class,
+            String.class,
+            String.class,
+            String.class,
+            String.class,}[col]);
     }
 }

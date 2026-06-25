@@ -1,0 +1,24 @@
+$Header:$
+Ce fichier contient le modèle de notification pour le test des paramètres de messagerie.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+
+${PRODUCTNAME} : nom du produit
+${MESSAGEID} : Numéro de message AS2
+${SENDER} : chaîne d'information (si connue, sinon "--")
+${RECEIVER} : destinataire du message (si connu, sinon "--")
+${HOST} : Hôte du serveur AS2
+${LOG} : Log de la transaction (plusieurs lignes)
+
+
+
+
+[SUBJECT]
+Erreur dans le message AS2 ${MESSAGEID}
+
+
+[BODY]
+Le message AS2 ${MESSAGEID} de ${SENDER} à ${RECEIVER} avec le sujet "${SUBJECT}" n'a pas pu être transmis avec le statut OK.
+
+Journal des transactions :
+${LOG}
+

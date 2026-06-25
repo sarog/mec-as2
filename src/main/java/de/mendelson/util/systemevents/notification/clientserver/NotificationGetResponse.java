@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationGetResponse.java 2     2/11/23 15:53 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/notification/clientserver/NotificationGetResponse.java 5     26/06/ $
 package de.mendelson.util.systemevents.notification.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.systemevents.notification.NotificationData;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -16,16 +18,24 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class NotificationGetResponse extends ClientServerResponse implements Serializable {
 
-    
     private static final long serialVersionUID = 1L;
     private NotificationData data = null;
 
     public NotificationGetResponse(NotificationGetRequest request) {
         super(request);
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public NotificationGetResponse() {
+        super();
     }
 
     @Override

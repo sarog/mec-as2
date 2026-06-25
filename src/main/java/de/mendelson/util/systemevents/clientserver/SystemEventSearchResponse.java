@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/systemevents/clientserver/SystemEventSearchResponse.java 5     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/clientserver/SystemEventSearchResponse.java 9     17/02/26 11:08 Heller $
 package de.mendelson.util.systemevents.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
+import de.mendelson.util.clientserver.codec.ClientServerDecoder;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.systemevents.SystemEvent;
 import java.io.Serializable;
@@ -18,21 +20,31 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 9 $
  */
 public class SystemEventSearchResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final List<SystemEvent> eventResultList = new ArrayList<SystemEvent>();
+    private List<SystemEvent> eventResultList = new ArrayList<SystemEvent>();
       
     public SystemEventSearchResponse(SystemEventSearchRequest request) {
         super(request);
     }
     
     /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public SystemEventSearchResponse() {
+        super();
+    }
+    
+    
+    /**
      * @return the event result List
      */
-    public List<SystemEvent> getSearchResults() {
+    public List<SystemEvent> getEventResultList() {
         return (this.eventResultList);
     }
 
@@ -40,7 +52,7 @@ public class SystemEventSearchResponse extends ClientServerResponse implements S
      * @param eventList the eventList to set
      */
     public void setEventResultList(List<SystemEvent> eventList) {
-        this.eventResultList.addAll(eventList);
+        this.eventResultList.addAll(eventList);        
     }
 
     @Override

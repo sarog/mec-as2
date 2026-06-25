@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 10    27/06/24 15:49 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 13    20/10/25 10:44 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -10,6 +10,7 @@ import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 
 /*
@@ -24,7 +25,7 @@ import javax.swing.UIManager;
  * partner config and renders the fields that are erroneous
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class JButtonPartnerConfigOk extends JButton {
 
@@ -67,18 +68,17 @@ public class JButtonPartnerConfigOk extends JButton {
         boolean error = false;
         if (!checkPartner.isLocalStation()) {
             //no local station - check receipt URL
-            if (receiverURL == null 
+            if (receiverURL == null
                     || receiverURL.toLowerCase().startsWith("http://localhost")
                     || receiverURL.toLowerCase().startsWith("https://localhost")
                     || receiverURL.toLowerCase().startsWith("https://127.0.0.1")
-                    || receiverURL.toLowerCase().startsWith("http://127.0.0.1")
-                    ) {
+                    || receiverURL.toLowerCase().startsWith("http://127.0.0.1")) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
                     this.markErrorInTextField(this.jTextFieldReceiptURL);
                 }
                 error = true;
-            } 
+            }
             if (!error) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
@@ -91,14 +91,13 @@ public class JButtonPartnerConfigOk extends JButton {
                     || mdnURL.toLowerCase().startsWith("http://localhost")
                     || mdnURL.toLowerCase().startsWith("https://localhost")
                     || mdnURL.toLowerCase().startsWith("https://127.0.0.1")
-                    || mdnURL.toLowerCase().startsWith("http://127.0.0.1")
-                    ){
+                    || mdnURL.toLowerCase().startsWith("http://127.0.0.1")) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
                     this.markErrorInTextField(this.jTextFieldMDNURL);
                 }
                 error = true;
-            } 
+            }
             if (!error) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
@@ -108,9 +107,7 @@ public class JButtonPartnerConfigOk extends JButton {
         }
         return (error);
     }
-    
-    
-    
+
     /**
      * Checks if the passed URLs contain a leading protocol entry
      *
@@ -241,7 +238,7 @@ public class JButtonPartnerConfigOk extends JButton {
         if (newAS2Id != null && !newAS2Id.trim().isEmpty() && idCount == 1) {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
-                this.markNoErrorInTextField(this.jTextFieldAS2Id);                
+                this.markNoErrorInTextField(this.jTextFieldAS2Id);
             }
         } else {
             //graphical modifications for current displayed partner only!
@@ -270,8 +267,13 @@ public class JButtonPartnerConfigOk extends JButton {
     }
 
     private void markNoErrorInTextField(JTextField textfield) {
-        textfield.setBackground(UIManager.getDefaults().getColor("TextField.background"));
-        textfield.setForeground(UIManager.getDefaults().getColor("TextField.foreground"));
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                textfield.setBackground(UIManager.getDefaults().getColor("TextField.background"));
+                textfield.setForeground(UIManager.getDefaults().getColor("TextField.foreground"));
+            }
+        });
     }
 
     public void computeErrorState() {
@@ -280,27 +282,40 @@ public class JButtonPartnerConfigOk extends JButton {
             return;
         } else {
             final List<Partner> partnerList = this.tree.getAllPartner();
-            Runnable runnable = new Runnable() {
+            SwingWorker<Void, Boolean> worker = new SwingWorker<Void, Boolean>() {
                 @Override
-                public void run() {
+                protected Void doInBackground() {
                     boolean errorInConfig = false;
                     for (Partner checkPartner : partnerList) {
                         boolean error = JButtonPartnerConfigOk.this.checkForNonUniqueOrInvalidValues(
                                 checkPartner, partnerList);
-                        boolean hasErrorBefore = checkPartner.hasConfigError();
+                        boolean hasErrorBefore = checkPartner.isConfigError();
                         if (error != hasErrorBefore) {
                             checkPartner.setConfigError(error);
-                            JButtonPartnerConfigOk.this.tree.partnerChanged(checkPartner);
+                            SwingUtilities.invokeLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    JButtonPartnerConfigOk.this.tree.partnerChanged(checkPartner);
+                                }
+                            });
                         }
                         if (error) {
                             errorInConfig = true;
                         }
                     }
-                    JButtonPartnerConfigOk.this.setEnabled(!errorInConfig);
-                    JButtonPartnerConfigOk.this.jPanelErrorInConfig.setVisible(errorInConfig);
+                    this.publish(errorInConfig);
+                    return (null);
+                }
+
+                @Override
+                protected void process(List<Boolean> stateList) {
+                    for (Boolean state : stateList) {
+                        JButtonPartnerConfigOk.this.setEnabled(!state);
+                        JButtonPartnerConfigOk.this.jPanelErrorInConfig.setVisible(state);
+                    }
                 }
             };
-            SwingUtilities.invokeLater(runnable);
+            worker.execute();
         }
     }
 

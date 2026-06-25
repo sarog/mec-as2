@@ -1,6 +1,7 @@
-//$Header: /mec_oftp2/de/mendelson/util/ha/clientserver/ServerInstanceHAListResponse.java 3     13/03/25 12:51 Heller $
+//$Header: /mec_oftp2/de/mendelson/util/ha/clientserver/ServerInstanceHAListResponse.java 4     8/04/26 8:13 Heller $
 package de.mendelson.util.ha.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.ha.ServerInstanceHA;
 import java.io.Serializable;
@@ -17,17 +18,25 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ServerInstanceHAListResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private List<ServerInstanceHA> list = null;
 
+    
     public ServerInstanceHAListResponse(ServerInstanceHAListRequest request) {
         super(request);
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ServerInstanceHAListResponse() {
+        super();
+    }   
+    
     @Override
     public String toString() {
         return ("List HA instances");

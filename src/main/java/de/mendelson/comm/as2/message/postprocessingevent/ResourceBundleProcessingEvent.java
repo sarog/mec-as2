@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent.java 4     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent.java 6     31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleProcessingEvent extends MecResourceBundle{
     
@@ -26,12 +26,13 @@ public class ResourceBundleProcessingEvent extends MecResourceBundle{
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
         {"event.enqueued", "The defined postprocessing event ({0}) has been enqueued and will be executed in some seconds." },
-        {"processtype." + ProcessingEvent.PROCESS_EXECUTE_SHELL, "Execute shell command" },
-        {"processtype." + ProcessingEvent.PROCESS_MOVE_TO_DIR, "Move message to directory" },
-        {"processtype." + ProcessingEvent.PROCESS_MOVE_TO_PARTNER, "Forward message to partner" },
-        {"eventtype." + ProcessingEvent.TYPE_RECEIPT_SUCCESS, "Receipt" },
-        {"eventtype." + ProcessingEvent.TYPE_SEND_FAILURE, "Send (failed)" },
-        {"eventtype." + ProcessingEvent.TYPE_SEND_SUCCESS, "Send (success)" },
+        {"processtype." + ProcessingEventType.EXECUTE_SHELL.toInt(), "Execute shell command" },
+        {"processtype." + ProcessingEventType.MOVE_TO_DIR.toInt(), "Move message to directory" },
+        {"processtype." + ProcessingEventType.MOVE_TO_PARTNER.toInt(), "Forward message to partner" },
+        {"eventtype." + ProcessingEventTriggerType.RECEIPT_SUCCESS.toInt(), "Receipt" },
+        {"eventtype." + ProcessingEventTriggerType.SEND_FAILURE.toInt(), "Send (failed)" },
+        {"eventtype." + ProcessingEventTriggerType.SEND_SUCCESS.toInt(), "Send (success)" },
+        {"event.skipped.cem", "The defined postprocessing has been skipped because this is a CEM" },
     };
     
 }
