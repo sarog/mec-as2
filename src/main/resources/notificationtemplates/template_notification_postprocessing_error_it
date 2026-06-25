@@ -1,0 +1,35 @@
+$Header:$
+Questo file contiene il modello per l'invio di una notifica,
+se la post-elaborazione di un messaggio fallisce
+Vengono sostituite le seguenti variabili:
+${NOME PRODOTTO}: Il nome del prodotto
+${HOST}: L'host su cui è in esecuzione il server
+${EVENT_TYPE}: Tipo di evento (dopo la ricezione, dopo l'invio (errore/successo))
+${PROCESS_TYPE}: Il tipo di processo (inoltro al partner, linea di comando...)
+${MESSAGEID}: Il numero del messaggio corrispondente
+${ERROR_MESSAGE}: Il messaggio di errore
+${SENDER}: Il canale di notizie
+${RECEIVER}: Il destinatario del messaggio
+
+
+
+
+[SUBJECT]
+Problema di post-elaborazione (${SENDER} a ${RECEIVER}) [${MESSAGEID}]
+
+
+[BODY]
+Si è verificato un problema nell'elaborazione di un messaggio sul vostro ${PRODUCTNAME}@${HOST}.
+Lo stato della transazione non è influenzato. Tuttavia, dato che la postelaborazione non ha funzionato correttamente, è possibile che la postelaborazione sia stata interrotta.
+la postelaborazione potrebbe essere stata interrotta. Si prega di dare un'occhiata alla
+transazione sul sistema.
+
+Tipo di evento: ${EVENT_TYPE}
+Tipo di processo: ${PROCESS_TYPE}
+Numero del messaggio: ${MESSAGEID}
+Mittente: ${SENDER}
+Destinatario: ${RECEIVER}
+
+
+${ERROR_MESSAGE}
+

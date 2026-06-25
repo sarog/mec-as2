@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/ClientServerTLSImplDefault.java 3     7/05/24 10:33 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/ClientServerTLSImplDefault.java 4     21/07/25 10:21 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.security.BCCryptoHelper;
@@ -9,11 +9,13 @@ import de.mendelson.util.security.keygeneration.KeyGenerator;
 import java.net.InetAddress;
 import java.security.KeyStore;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.Certificate;
 import java.util.Locale;
 import javax.net.ssl.KeyManager;
 import javax.net.ssl.KeyManagerFactory;
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
 
@@ -28,7 +30,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
  * Default implementation of the TLS layer of the client-server connection
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ClientServerTLSImplDefault implements ClientServerTLS{
 
@@ -58,16 +60,15 @@ public class ClientServerTLSImplDefault implements ClientServerTLS{
                 SecureRandom.getInstance("SHA1PRNG"));
         return sslContext;
     }
-
+    
     /**
      * Generates the TLS key for the client-server connection
      */
     private KeyGenerationResult generateTLSKey() throws Exception {
         KeyGenerator generator = new KeyGenerator();
         KeyGenerationValues parameter = new KeyGenerationValues();
-        //generating a longer key takes some time.
-        parameter.setKeySize(2048);
         parameter.setKeyAlgorithm(KeyGenerationValues.KEYALGORITHM_RSA);
+        parameter.setKeySize(2048);
         //one shutdown every 10 years should be ok
         parameter.setKeyValidInDays(365 * 10);
         parameter.setSignatureAlgorithm(KeyGenerationValues.SIGNATUREALGORITHM_SHA256_WITH_RSA);
@@ -88,7 +89,8 @@ public class ClientServerTLSImplDefault implements ClientServerTLS{
         extKeyUsage[0] = KeyPurposeId.id_kp_serverAuth;
         extKeyUsage[1] = KeyPurposeId.id_kp_clientAuth;
         parameter.setExtendedKeyExtension(new ExtendedKeyUsage(extKeyUsage));
-        return (generator.generateKeyPair(parameter));
+        KeyGenerationResult result = generator.generateKeyPair(parameter);
+        return (result);
     }
 
     @Override

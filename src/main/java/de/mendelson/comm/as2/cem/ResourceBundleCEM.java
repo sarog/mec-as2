@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM.java 16    2/11/23 15:52 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/ResourceBundleCEM.java 18    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.TrustResponse;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleCEM extends MecResourceBundle {
 
@@ -42,14 +42,14 @@ public class ResourceBundleCEM extends MecResourceBundle {
         {CEMReceiptController.KEYSTORE_TYPE_SSL + ".cert.already.imported", "The submitted CEM certificate does already exist in the underlaying TLS keystore (alias {0}), the import has been skipped."},
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN + ".cert.imported.success", "The submitted CEM certificate has been imported sucessfully to the underlaying enc/sign keystore (alias {0})."},
         {CEMReceiptController.KEYSTORE_TYPE_SSL + ".cert.imported.success", "The submitted CEM certificate has been imported sucessfully to the underlaying TLS keystore (alias {0})."},
-        {"category." + CEMEntry.CATEGORY_CRYPT, "Encryption"},
-        {"category." + CEMEntry.CATEGORY_SIGN, "Signature"},
-        {"category." + CEMEntry.CATEGORY_TLS, "SSL"},
-        {"state." + CEMEntry.STATUS_ACCEPTED_INT, "Accepted by {0}"},
-        {"state." + CEMEntry.STATUS_PENDING_INT, "No answer so far from {0}"},
-        {"state." + CEMEntry.STATUS_REJECTED_INT, "Rejected by {0}"},
-        {"state." + CEMEntry.STATUS_CANCELED_INT, "Canceled"},
-        {"state." + CEMEntry.STATUS_PROCESSING_ERROR_INT, "Processing error"},
+        {"category." + CEMEntry.Category.CRYPT.toInt(), "Encryption"},
+        {"category." + CEMEntry.Category.SIGN.toInt(), "Signature"},
+        {"category." + CEMEntry.Category.TLS.toInt(), "TLS"},
+        {"state." + CEMEntry.Status.ACCEPTED.toInt(), "Accepted by {0}"},
+        {"state." + CEMEntry.Status.PENDING.toInt(), "No answer so far from {0}"},
+        {"state." + CEMEntry.Status.REJECTED.toInt(), "Rejected by {0}"},
+        {"state." + CEMEntry.Status.CANCELED.toInt(), "Canceled"},
+        {"state." + CEMEntry.Status.PROCESSING_ERROR.toInt(), "Processing error"},
         {"cemtype.response", "The CEM message is a certificate response"},
         {"cemtype.request", "The CEM message is a certificate request"},
         {"cem.response.relatedrequest.found", "The CEM response refers to the existing request \"{0}\""},

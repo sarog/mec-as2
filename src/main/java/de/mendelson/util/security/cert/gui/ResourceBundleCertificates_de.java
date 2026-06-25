@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 45    11/03/25 16:42 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_de.java 51    5/02/26 15:42 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 45 $
+ * @version $Revision: 51 $
  */
 public class ResourceBundleCertificates_de extends MecResourceBundle {
 
@@ -25,7 +25,6 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
     }
     /**List of messages in the specific language*/
     private static final Object[][] CONTENTS = {
-        {"display.ca.certs", "CA Zertifikate anzeigen ({0})"},
         {"button.delete", "Schlüssel/Zertifikat löschen"},
         {"button.delete.all.expired", "Alle abgelaufenen Schlüssel/Zertifikate löschen" },
         {"button.edit", "Alias umbenennen"},
@@ -47,15 +46,17 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"menu.tools.importcsr", "Zertifikat beglaubigen: Antwort der CA auf Beglaubigungsanfrage importieren"},
         {"menu.tools.importcsr.renew", "Zertifikat erneuern: Antwort der CA auf Beglaubigungsanfrage importieren"},
         {"menu.tools.verifyall", "Sperrlisten aller Zertifikate prüfen (CRL)" },
+        {"menu.tools.crmf", "CRMF Anfragegenerierung (BDEW)"},
         {"label.selectcsrfile", "Bitte wählen Sie die Datei zum Speichern des Beglaubigungsanfrage"},
         {"label.cert.import", "Zertifikat importieren (vom Partner)"},
         {"label.cert.export", "Zertifikat exportieren (für den Partner)"},
         {"label.key.import", "Eigenen privaten Schlüssel importieren (von Keystore PKCS#12, JKS)"},
+        {"label.key.import.pem", "Eigenen privaten Schlüssel importieren (von PEM)" },    
         {"label.key.export.pkcs12", "Schlüssel exportieren (PKCS#12, PEM) (nur für Backup Zwecke!)"},
         {"label.keystore.export", "Alle Einträge als Keystore Datei exportieren (nur für Backup Zwecke!)" },
         {"label.keystore", "Speicherort"},
         {"title.signencrypt", "Schlüssel und Zertifikate (Verschlüsselung, Signaturen)"},
-        {"title.ssl", "Schlüssel und Zertifikate (TLS)"},
+        {"title.tls", "Schlüssel und Zertifikate (TLS)"},
         {"button.ok", "Ok"},
         {"button.cancel", "Abbrechen"},
         {"filechooser.certificate.import", "Bitte wählen Sie die Zertifikatdatei für den Import"},
@@ -79,11 +80,10 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"cert.delete.impossible", "Der Eintrag kann nicht gelöscht werden, er wird verwendet.\nBitte verwenden Sie \"Verwendung anzeigen\" für weitere Informationen." },
         {"module.locked", "Diese Zertifikatverwaltung wird aktuell exklusiv von einem anderen Client geöffnet, Sie können keine Änderungen vornehmen!" },
         {"label.trustanchor", "Trust anchor" },
-        {"warning.testkey", "Öffentlich verfügbarer mendelson Testschlüssel - nicht im produktiven Betrieb verwenden!" },
         {"label.key.valid", "Dieser Schlüssel ist gültig" },
-        {"label.key.invalid", "Dieser Schlüssel ist ungültig" },
+        {"label.key.invalid", "Dieser Schlüssel ist ungültig {0}" },
         {"label.cert.valid", "Dieses Zertifikat ist gültig" },
-        {"label.cert.invalid", "Dieses Zertifikat ist ungültig" },
+        {"label.cert.invalid", "Dieses Zertifikat ist ungültig {0}" },
         {"warning.deleteallexpired.text", "Wollen Sie wirlich {0} abgelaufene und unbenutzte Einträge löschen?" },
         {"warning.deleteallexpired.title", "Abgelaufene und unbenutzte Schlüssel/Zertifkate löschen" },
         {"warning.deleteallexpired.noneavailable.title", "Keine verfügbar" },
@@ -99,5 +99,6 @@ public class ResourceBundleCertificates_de extends MecResourceBundle {
         {"keycopy.target.ro.title", "Ziel ist schreibgeschützt" },
         {"keycopy.target.ro.text", "Operation fehlgeschlagen - Schlüsseldatei des Ziels ist schreibgeschützt." },
         {"keycopy.success.text", "Der Eintrag [{0}] wurde erfolgreich kopiert" },
+        {"certificates.save", "Zertifikate speichern" },
     };
 }

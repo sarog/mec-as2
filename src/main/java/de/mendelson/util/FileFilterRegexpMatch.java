@@ -1,4 +1,4 @@
- //$Header: /as2/de/mendelson/util/FileFilterRegexpMatch.java 9     11/02/25 13:39 Heller $
+ //$Header: /as4/de/mendelson/util/FileFilterRegexpMatch.java 10    9/03/26 10:55 Heller $
 package de.mendelson.util;
 import java.io.File;
 import java.io.FileFilter;
@@ -17,7 +17,7 @@ import java.util.regex.Pattern;
  * File filter that stores lists of wildcard pattern to match file lists. There
  * are positive and negative patterns possible (matching/nonmatching).
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 
 
@@ -52,9 +52,9 @@ public class FileFilterRegexpMatch implements FileFilter{
     
     /**Adds a passed pattern to a passed list*/
     private void addPattern( List<Pattern> patternList, String pattern ){
-        pattern = this.replace( pattern, ".", "\\." );
-        pattern = this.replace( pattern, "*", ".*" );
-        pattern = this.replace( pattern, "?", "." );
+        pattern = pattern.replace( ".", "\\." );
+        pattern = pattern.replace( "*", ".*" );
+        pattern = pattern.replace( "?", "." );
         Pattern compiledPattern = Pattern.compile( pattern );
         patternList.add( compiledPattern );
     }
@@ -88,27 +88,6 @@ public class FileFilterRegexpMatch implements FileFilter{
     /**Descibr the filter*/
     public String getDescription(){
         return( "RegExp pattern matching/nonmatching" );
-    }
-    
-    /** Replaces the string tag by the string replacement in the sourceString
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
-     */
-    private String replace( String source, String tag, String replacement ){
-        if (source == null) return null;
-        StringBuilder buffer = new StringBuilder();
-        while( true ){
-            int index= source.indexOf(tag);
-            if( index == -1 ){
-                buffer.append( source );
-                return( buffer.toString() );
-            }
-            buffer.append( source.substring(0, index) );
-            buffer.append( replacement );
-            source = source.substring(index + tag.length());
-        }
     }
         
         

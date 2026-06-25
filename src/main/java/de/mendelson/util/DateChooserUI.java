@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/DateChooserUI.java 11    27/06/24 12:21 Heller $
+//$Header: /mec_as4/de/mendelson/util/DateChooserUI.java 12    14/04/26 9:04 Heller $
 package de.mendelson.util;
 
 import com.toedter.calendar.JCalendar;
@@ -32,11 +32,11 @@ import javax.swing.plaf.PanelUI;
  * jDateChooser.setUI(new DateChooserUI());
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class DateChooserUI extends PanelUI {
 
-    private final static int IMAGE_HEIGHT = 18;
+    private static final int IMAGE_HEIGHT = 18;
 
     private static final MendelsonMultiResolutionImage IMAGE_CALENDAR
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/calendar.svg",

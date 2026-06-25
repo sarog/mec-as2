@@ -1,6 +1,7 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/ExportRequestPrivateKey.java 1     13/09/24 12:24 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/ExportRequestPrivateKey.java 4     11/06/25 13:17 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import java.io.IOException;
@@ -18,21 +19,21 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 4 $
  */
 public class ExportRequestPrivateKey extends ClientServerMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public final static String EXPORTFORMAT_PKCS12 = "PKCS#12";
-    public final static String EXPORTFORMAT_PEM = "PEM";
+    public static final String EXPORTFORMAT_PKCS12 = "PKCS#12";
+    public static final String EXPORTFORMAT_PEM = "PEM";
     public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplFile.KEYSTORE_USAGE_TLS;
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
-    private final int keystoreUsageSource;
-    private final String fingerprintSHA1;
-    private final String serverSideFilename;
-    private final char[] serverSidePass;
-    private final String exportFormat;
+    private int keystoreUsageSource;
+    private String fingerprintSHA1;
+    private String serverSideFilename;
+    private char[] serverSidePass;
+    private String exportFormat;
 
     public ExportRequestPrivateKey(final int KEYSTORE_USAGE_SOURCE,
             String fingerprintSHA1,
@@ -44,6 +45,15 @@ public class ExportRequestPrivateKey extends ClientServerMessage implements Seri
         this.serverSideFilename = serverSideFilename;
         this.serverSidePass = serverSidePass;
         this.exportFormat = exportFormat;
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ExportRequestPrivateKey() {
+        super();
     }
 
     @Override
@@ -59,10 +69,11 @@ public class ExportRequestPrivateKey extends ClientServerMessage implements Seri
     }
 
     /**
-     * @return the keystoreType, one of ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS 
-     * or ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN
+     * @return the keystoreType, one of
+     * ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS or
+     * ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN
      */
-    public int getKeystoreUsage() {
+    public int getKeystoreUsageSource() {
         return keystoreUsageSource;
     }
 
@@ -92,5 +103,40 @@ public class ExportRequestPrivateKey extends ClientServerMessage implements Seri
      */
     public String getExportFormat() {
         return exportFormat;
+    }
+
+    /**
+     * @param keystoreUsageSource the keystoreUsageSource to set
+     */
+    public void setKeystoreUsageSource(int keystoreUsageSource) {
+        this.keystoreUsageSource = keystoreUsageSource;
+    }
+
+    /**
+     * @param fingerprintSHA1 the fingerprintSHA1 to set
+     */
+    public void setFingerprintSHA1(String fingerprintSHA1) {
+        this.fingerprintSHA1 = fingerprintSHA1;
+    }
+
+    /**
+     * @param serverSideFilename the serverSideFilename to set
+     */
+    public void setServerSideFilename(String serverSideFilename) {
+        this.serverSideFilename = serverSideFilename;
+    }
+
+    /**
+     * @param serverSidePass the serverSidePass to set
+     */
+    public void setServerSidePass(char[] serverSidePass) {
+        this.serverSidePass = serverSidePass;
+    }
+
+    /**
+     * @param exportFormat the exportFormat to set
+     */
+    public void setExportFormat(String exportFormat) {
+        this.exportFormat = exportFormat;
     }
 }

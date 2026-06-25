@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2Message_fr.java 19    3/09/24 16:40 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2Message_fr.java 20    23/03/26 12:56 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 19 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundleAS2Message_fr extends MecResourceBundle{
     
@@ -87,12 +87,12 @@ public class ResourceBundleAS2Message_fr extends MecResourceBundle{
         {"encryption." + AS2Message.ENCRYPTION_CAMELLIA_192_CBC, "CAMELLIA-192 (CBC)"},
         {"encryption." + AS2Message.ENCRYPTION_CAMELLIA_256_CBC, "CAMELLIA-256 (CBC)"},
         {"encryption." + AS2Message.ENCRYPTION_UNKNOWN_ALGORITHM, "Inconnu" },
-        {"compression." + AS2Message.COMPRESSION_NONE, "Aucun"},
-        {"compression." + AS2Message.COMPRESSION_UNKNOWN, "Inconnu"},
-        {"compression." + AS2Message.COMPRESSION_ZLIB, "ZLIB"},
-        {"direction." + AS2MessageInfo.DIRECTION_IN, "Entrer"},
-        {"direction." + AS2MessageInfo.DIRECTION_OUT, "Sortir"},
-        {"direction." + AS2MessageInfo.DIRECTION_UNKNOWN, "Inconnu"},
+        {"compression." + MessageCompressionType.NONE.toInt(), "Aucun"},
+        {"compression." + MessageCompressionType.UNKNOWN.toInt(), "Inconnu"},
+        {"compression." + MessageCompressionType.ZLIB.toInt(), "ZLIB"},
+        {"direction." + MessageDirectionType.IN.toInt(), "Entrer"},
+        {"direction." + MessageDirectionType.OUT.toInt(), "Sortir"},
+        {"direction." + MessageDirectionType.UNKNOWN.toInt(), "Inconnu"},
     };
     
 }

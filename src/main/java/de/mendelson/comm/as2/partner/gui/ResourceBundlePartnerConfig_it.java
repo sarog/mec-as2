@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig_it.java 4     9/12/24 16:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig_it.java 5     3/12/25 11:08 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 4 $
+* @version $Revision: 5 $
 */
 public class ResourceBundlePartnerConfig_it extends MecResourceBundle {
 
@@ -55,5 +55,6 @@ public class ResourceBundlePartnerConfig_it extends MecResourceBundle {
 		{"dialog.partner.deletedir.title", "Eliminazione di una directory di messaggi"},
 		{"event.partner.deleted.body", "Dati del partner cancellato:\n\n{0}"},
 		{"directory.rename.success", "La directory \"{0}\" è stata rinominata in \"{1}\"."},
-	};
+                {"button.filter", "Filtro"},
+        {"label.filterdisplay", "{0}/{1} partner visualizzati"},};
 }

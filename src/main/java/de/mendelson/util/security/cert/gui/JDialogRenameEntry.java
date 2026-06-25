@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogRenameEntry.java 18    3/07/24 14:19 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogRenameEntry.java 19    8/04/26 13:35 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -25,7 +25,7 @@ import javax.swing.JFrame;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class JDialogRenameEntry extends JDialog {
 
@@ -215,7 +215,7 @@ public class JDialogRenameEntry extends JDialog {
             this.setVisible(false);
         } else {
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     this.rb.getResourceString("alias.exists.title"),
                     this.rb.getResourceString("alias.exists.message", newAliasTemp));
         }

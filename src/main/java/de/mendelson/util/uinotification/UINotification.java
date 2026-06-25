@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/uinotification/UINotification.java 37    21/06/24 8:59 Heller $
+//$Header: /as2/de/mendelson/util/uinotification/UINotification.java 39    8/04/26 13:35 Heller $
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.ColorUtil;
@@ -40,20 +40,20 @@ import javax.swing.UIManager;
  * Main UI Notification
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 39 $
  */
 public class UINotification implements INotificationHandler {
 
-    protected final static MendelsonMultiResolutionImage IMAGE_SUCCESS
+    protected static final MendelsonMultiResolutionImage IMAGE_SUCCESS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_ok.svg",
                     NotificationPanel.IMAGESIZE_ICON);
-    protected final static MendelsonMultiResolutionImage IMAGE_ERROR
+    protected static final MendelsonMultiResolutionImage IMAGE_ERROR
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_error.svg",
                     NotificationPanel.IMAGESIZE_ICON);
-    protected final static MendelsonMultiResolutionImage IMAGE_WARNING
+    protected static final MendelsonMultiResolutionImage IMAGE_WARNING
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_warning.svg",
                     NotificationPanel.IMAGESIZE_ICON);
-    protected final static MendelsonMultiResolutionImage IMAGE_INFORMATION
+    protected static final MendelsonMultiResolutionImage IMAGE_INFORMATION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_information.svg",
                     NotificationPanel.IMAGESIZE_ICON);
 
@@ -83,10 +83,30 @@ public class UINotification implements INotificationHandler {
     public static final int START_POS_LEFT_UPPER = 3;
     public static final int START_POS_RIGHT_UPPER = 4;
 
-    public static final int TYPE_SUCCESS = 1;
-    public static final int TYPE_WARNING = 2;
-    public static final int TYPE_ERROR = 3;
-    public static final int TYPE_INFORMATION = 4;
+    public enum Type {
+        SUCCESS(1),
+        WARNING(2),
+        ERROR(3),
+        INFORMATION(4);
+
+        private final int id;
+
+        Type(int id) {
+            this.id = id;
+        }
+        public int toInt() {
+            return this.id;
+        }
+        
+        public static Type of(int id) {
+            for (Type type : Type.values()) {
+                if (type.id == id) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Unknown UINotification.Type " + id);
+        }
+    }
 
     public static final int INTERACTION_TYPE_INTERNAL_STACKED_FRAMES = 1;
     public static final int INTERACTION_TYPE_MESSAGE_DIALOGS = 2;
@@ -104,31 +124,31 @@ public class UINotification implements INotificationHandler {
     private Color foregroundTitle = DEFAULT_COLOR_FOREGROUND_TITLE;
 
     private Color borderColor = null;
-    
+
     private Color crossColor = Color.GRAY;
     private Color crossColorMouseOver = Color.WHITE;
 
-    protected final static String UIMANAGER_KEY_FOREGROUND = "ToolTip.foreground";
-    protected final static String UIMANAGER_KEY_BACKGROUND = "ToolTip.background";
-    protected final static String UIMANAGER_KEY_CROSS = "ToolTip.foreground";
-    protected final static String UIMANAGER_KEY_CROSS_MOUSEOVER = "ToolTip.background";
+    protected static final String UIMANAGER_KEY_FOREGROUND = "ToolTip.foreground";
+    protected static final String UIMANAGER_KEY_BACKGROUND = "ToolTip.background";
+    protected static final String UIMANAGER_KEY_CROSS = "ToolTip.foreground";
+    protected static final String UIMANAGER_KEY_CROSS_MOUSEOVER = "ToolTip.background";
 
     /**
      * How long is a single notification frame visible?
      */
-    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS = 4500;
+    public static final long DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS = 4500;
     /**
      * Fade out time
      */
-    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEOUT_IN_MS = 1000;
+    public static final long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEOUT_IN_MS = 1000;
     /**
      * Fade in time
      */
-    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEIN_IN_MS = 200;
+    public static final long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEIN_IN_MS = 200;
     /**
      * At which opacity should each notification frame disappear?
      */
-    public final static float VISIBLE_OPACITY_THRESHOLD = 0.3f;
+    public static final float VISIBLE_OPACITY_THRESHOLD = 0.3f;
 
     private JFrame anchorFrame = null;
     /**
@@ -153,13 +173,13 @@ public class UINotification implements INotificationHandler {
     private final List<NotificationWindow> notificationList
             = Collections.synchronizedList(new ArrayList<NotificationWindow>());
 
-    private final static ConcurrentHashMap<String, MendelsonMultiResolutionImage> crossImageCache
+    private static final ConcurrentHashMap<String, MendelsonMultiResolutionImage> crossImageCache
             = new ConcurrentHashMap<String, MendelsonMultiResolutionImage>();
 
     /**
      * Resourcebundle to localize the GUI
      */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -269,13 +289,12 @@ public class UINotification implements INotificationHandler {
      * defined in the UI manager and also sets the dark mode colors if requested
      */
     public UINotification setBorderColorDefaultFromUIManager() {
-        if( UIManager.getColor("InternalFrame.borderColor") != null) {
+        if (UIManager.getColor("InternalFrame.borderColor") != null) {
             this.borderColor = UIManager.getColor("InternalFrame.borderColor");
         }
         return (this);
     }
-    
-    
+
     /**
      * Redefines the used cross colors for the panels - takes the default colors
      * defined in the UI manager and also sets the dark mode colors if requested
@@ -307,8 +326,7 @@ public class UINotification implements INotificationHandler {
         this.borderColor = borderColor;
         return (this);
     }
-    
-    
+
     /**
      * Redefines the used background colors for the panels - takes the default
      * colors defined in the UI manager and also sets the dark mode colors if
@@ -320,30 +338,30 @@ public class UINotification implements INotificationHandler {
             this.backgroundColorWarning = UIManager.getColor(UIMANAGER_KEY_BACKGROUND);
             this.backgroundColorError = UIManager.getColor(UIMANAGER_KEY_BACKGROUND);
             this.backgroundColorInformation = UIManager.getColor(UIMANAGER_KEY_BACKGROUND);
-        }        
+        }
         //green
-        if( UIManager.getColor( "Objects.Green") != null ){
-            this.accentColorSuccess = UIManager.getColor( "Objects.Green");
-        }else{
+        if (UIManager.getColor("Objects.Green") != null) {
+            this.accentColorSuccess = UIManager.getColor("Objects.Green");
+        } else {
             this.accentColorSuccess = new Color(0, 104, 55);
         }
         //yellow
-        if( UIManager.getColor( "Objects.Yellow") != null ){
-            this.accentColorWarning = UIManager.getColor( "Objects.Yellow");
-        }else{
+        if (UIManager.getColor("Objects.Yellow") != null) {
+            this.accentColorWarning = UIManager.getColor("Objects.Yellow");
+        } else {
             this.accentColorWarning = new Color(255, 176, 59);
         }
         //red status
-        if( UIManager.getColor( "Objects.RedStatus") != null ){
-            this.accentColorError = UIManager.getColor( "Objects.RedStatus");
-        }else{
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            this.accentColorError = UIManager.getColor("Objects.RedStatus");
+        } else {
             this.accentColorError = new Color(193, 39, 45);
         }
         //blue
-        if( UIManager.getColor( "Objects.Blue") != null ){
-            this.accentColorInformation = UIManager.getColor( "Objects.Blue");
-        }else{
-            this.accentColorInformation =new Color(0, 113, 188);
+        if (UIManager.getColor("Objects.Blue") != null) {
+            this.accentColorInformation = UIManager.getColor("Objects.Blue");
+        } else {
+            this.accentColorInformation = new Color(0, 113, 188);
         }
         return (this);
     }
@@ -441,11 +459,11 @@ public class UINotification implements INotificationHandler {
      *
      * @param image The image to display. If this is null a default image for
      * the notification type is displayed (warning, error, ok)
-     * @param NOTIFICATION_TYPE One of the notification types that are defined
+     * @param type One of the notification types that are defined
      * in this class. The background color of the notification depends on the
-     * type (green/yellow/red..). One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR,
-     * UINotification.TYPE_INFORMATION
+     * type (green/yellow/red..). One of UINotification.Type.OK,
+     * UINotification.Type.WARNING, UINotification.Type.ERROR,
+     * UINotification.Type.INFORMATION
      * @param notificationDetails The text that is displayed. It is folded
      * automatically
      * @param notificationTitle The title of the notification - not folded -
@@ -457,14 +475,14 @@ public class UINotification implements INotificationHandler {
      * UINotification().instance().setAnchor( JFrame frame )
      */
     public void addNotification(MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE,
+            UINotification.Type type,
             String notificationTitle,
             String notificationDetails) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 try {
-                    _addNotification(image, NOTIFICATION_TYPE, notificationTitle, notificationDetails);
+                    _addNotification(image, type, notificationTitle, notificationDetails);
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
                 }
@@ -479,11 +497,11 @@ public class UINotification implements INotificationHandler {
      *
      * @param image The image to display. If this is null a default image for
      * the notification type is displayed (warning, error, ok)
-     * @param NOTIFICATION_TYPE One of the notification types that are defined
+     * @param type One of the notification types that are defined
      * in this class. The background color of the notification depends on the
-     * type (green/yellow/red..). One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR,
-     * UINotification.TYPE_INFORMATION
+     * type (green/yellow/red..). One of UINotification.Type.OK,
+     * UINotification.Type.WARNING, UINotification.Type.ERROR,
+     * UINotification.Type.INFORMATION
      * @param notificationDetails The text that is displayed. It is folded
      * automatically
      * @param notificationTitle The title of the notification - not folded -
@@ -495,7 +513,7 @@ public class UINotification implements INotificationHandler {
      * UINotification().instance().setAnchor( JFrame frame )
      */
     private void _addNotification(MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE,
+            UINotification.Type type,
             String notificationTitle,
             String notificationDetails) throws IllegalArgumentException {
         //check if the notifcation system has been already initialized
@@ -506,13 +524,13 @@ public class UINotification implements INotificationHandler {
         }
         //display notification title that depends on the type of the notification if none is set
         if (notificationTitle == null) {
-            if (NOTIFICATION_TYPE == UINotification.TYPE_SUCCESS) {
+            if (type == Type.SUCCESS) {
                 notificationTitle = rb.getResourceString("title.ok");
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_ERROR) {
+            } else if (type == Type.ERROR) {
                 notificationTitle = rb.getResourceString("title.error");
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_WARNING) {
+            } else if (type == Type.WARNING) {
                 notificationTitle = rb.getResourceString("title.warning");
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_INFORMATION) {
+            } else if (type == Type.INFORMATION) {
                 notificationTitle = rb.getResourceString("title.information");
             } else {
                 notificationTitle = "--";
@@ -522,7 +540,7 @@ public class UINotification implements INotificationHandler {
             NotificationWindow notificationWindow = new NotificationWindow(
                     this.anchorFrame,
                     image,
-                    NOTIFICATION_TYPE,
+                    type,
                     notificationTitle, notificationDetails,
                     new Rectangle(0, 0, this.notificationWidth, this.notificationHeight),
                     this,
@@ -550,12 +568,12 @@ public class UINotification implements INotificationHandler {
             notificationWindow.setVisible(true);
         } else {
             int optionPaneMessageType = JOptionPane.INFORMATION_MESSAGE;
-            if (NOTIFICATION_TYPE == UINotification.TYPE_ERROR) {
+            if (type == Type.ERROR) {
                 optionPaneMessageType = JOptionPane.ERROR_MESSAGE;
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_WARNING) {
+            } else if (type == Type.WARNING) {
                 optionPaneMessageType = JOptionPane.WARNING_MESSAGE;
             }
-            image = UINotification.getMultiresolutionImage(image, NOTIFICATION_TYPE);
+            image = UINotification.getMultiresolutionImage(image, type);
             notificationDetails = this.foldString(notificationDetails, "\n", 80);
             JOptionPane.showMessageDialog(this.anchorFrame,
                     notificationDetails,
@@ -571,7 +589,7 @@ public class UINotification implements INotificationHandler {
     public void addNotification(Throwable e) {
         this.addNotification(
                 null,
-                UINotification.TYPE_ERROR,
+                Type.ERROR,
                 e.getClass().getSimpleName(),
                 "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
     }
@@ -692,15 +710,16 @@ public class UINotification implements INotificationHandler {
         this.interactionType = INTERACTION_TYPE;
     }
 
-    public static MendelsonMultiResolutionImage getMultiresolutionImage(MendelsonMultiResolutionImage image, final int NOTIFICATION_TYPE) {
+    public static MendelsonMultiResolutionImage getMultiresolutionImage(MendelsonMultiResolutionImage image, 
+            UINotification.Type notificationType) {
         //no image passed - take default image
         if (image == null) {
             image = UINotification.IMAGE_SUCCESS;
-            if (NOTIFICATION_TYPE == UINotification.TYPE_WARNING) {
+            if (notificationType == UINotification.Type.WARNING) {
                 image = UINotification.IMAGE_WARNING;
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_ERROR) {
+            } else if (notificationType == UINotification.Type.ERROR) {
                 image = UINotification.IMAGE_ERROR;
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_INFORMATION) {
+            } else if (notificationType == UINotification.Type.INFORMATION) {
                 image = UINotification.IMAGE_INFORMATION;
             }
         }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 18    8/11/24 9:00 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2ShutdownThread.java 19    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.comm.as2.server.AS2Server;
@@ -22,7 +22,7 @@ import java.util.ResourceBundle;
  * shut down)
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class AS2ShutdownThread extends Thread {
 
@@ -54,9 +54,9 @@ public class AS2ShutdownThread extends Thread {
             //nop
         }
         SystemEventManagerImplAS2.instance().newEvent(
-                SystemEvent.SEVERITY_INFO,
-                SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_MAIN_SERVER_SHUTDOWN,
+                SystemEvent.Severity.INFO,
+                SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.MAIN_SERVER_SHUTDOWN,
                 this.rb.getResourceString("server.shutdown", AS2ServerVersion.getProductName()),
                 "");
         System.out.println(this.rb.getResourceString("server.shutdown", AS2ServerVersion.getProductName()));

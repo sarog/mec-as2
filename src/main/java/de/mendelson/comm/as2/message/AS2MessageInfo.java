@@ -1,12 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 67    17/01/25 9:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageInfo.java 79    26/03/26 9:37 Heller $
 package de.mendelson.comm.as2.message;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import de.mendelson.comm.as2.AS2ServerVersion;
+import de.mendelson.util.clientserver.messages.LoggableParameterClientServer;
 import de.mendelson.util.security.BCCryptoHelper;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.math.BigDecimal;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
@@ -22,17 +25,14 @@ import java.util.Properties;
  * Stores all information about a as2 message
  *
  * @author S.Heller
- * @version $Revision: 67 $
+ * @version $Revision: 79 $
  */
-public class AS2MessageInfo implements AS2Info {
+public final class AS2MessageInfo implements AS2Info, LoggableParameterClientServer {
 
     /**
      * AS2Info extends Serializable
      */
     private static final long serialVersionUID = 1L;
-    public static final int DIRECTION_UNKNOWN = 0;
-    public static final int DIRECTION_IN = 1;
-    public static final int DIRECTION_OUT = 2;
     private String senderId;
     private String receiverId;
     /**
@@ -70,36 +70,38 @@ public class AS2MessageInfo implements AS2Info {
     /**
      * Stores the compression type of this entry
      */
-    private int compressionType = AS2Message.COMPRESSION_NONE;
+    private MessageCompressionType compressionType = MessageCompressionType.NONE;
     /**
      * This is the product name submitted in the user agent header
      */
-    private String useragent = null;
-    private int direction = DIRECTION_UNKNOWN;
+    private String userAgent = AS2ServerVersion.getUserAgent();
+    private MessageDirectionType direction = MessageDirectionType.UNKNOWN;
     private String receivedContentMIC;
     /**
      * Possible are AS2Message.STATE_STATE_FINISHED
      * AS2Message.STATE_STATE_PENDING AS2Message.STATE_STATE_STOPPED
      */
-    private int state = AS2Message.STATE_PENDING;
+    private MessageStateType state = MessageStateType.PENDING;
     /**
      * stores if the MDN to this message should be sync or async
      */
     private boolean requestsSyncMDN = true;
     private String asyncMDNURL = null;
-    private String subject;
+    private String subject = null;
     /**
-     * There are several message types that are tansported by the AS2 protocol.
+     * There are several message types that are transported by the AS2 protocol.
      * These are the AS2 message (EDI data) and the Certificate Exchange Message
      * (CEM, contains certificates).
      */
-    private int messageType = AS2Message.MESSAGETYPE_AS2;
+    private MessageType messageType = MessageType.AS2;
     private int resendCounter = 0;
     /**
      * Allows to track this transmission later using the RPC XML interface
      */
     private String userdefinedId = null;
-    /**Stores if the transmission was transmitted using a secure connection*/
+    /**
+     * Stores if the transmission was transmitted using a secure connection
+     */
     private boolean usesTLS = false;
 
     /**
@@ -108,7 +110,6 @@ public class AS2MessageInfo implements AS2Info {
     private DispositionNotificationOptions dispositionNotificationOptions;
 
     public AS2MessageInfo() {
-        this.useragent = AS2ServerVersion.getUserAgent();
         this.dispositionNotificationOptions = new DispositionNotificationOptions(
                 new String[]{BCCryptoHelper.ALGORITHM_SHA1});
     }
@@ -117,6 +118,7 @@ public class AS2MessageInfo implements AS2Info {
      * Initializes the message info from the passed MDN/AS2 message request
      * headers
      */
+    @JsonIgnore
     public void initializeByRequestHeader(Properties requestHeader) {
         if (requestHeader.containsKey("message-id")) {
             this.setMessageId(requestHeader.getProperty("message-id"));
@@ -148,54 +150,58 @@ public class AS2MessageInfo implements AS2Info {
      * @param level level in the XML hierarchy for the xml beautifying
      */
     public String toXML(int level) {
-        String offset = "";
-        for (int i = 0; i < level; i++) {
-            offset += "\t";
-        }
+        String offset = "\t".repeat(level);
         StringBuilder builder = new StringBuilder();
-        builder.append(offset).append("<messageinfo>\n");
-        builder.append(offset).append("\t<id>").append(this.toCDATA(this.messageId)).append("</id>\n");
-        builder.append(offset).append("\t<userdefinedid>");
+        builder.append(offset).append("<messageinfo>\n")
+                .append(offset).append("\t<id>").append(this.toCDATA(this.messageId)).append("</id>\n")
+                .append(offset).append("\t<userdefinedid>");
         if (this.userdefinedId != null) {
             builder.append(this.toCDATA(this.userdefinedId));
         }
-        builder.append("</userdefinedid>\n");
-        builder.append(offset).append("\t<senderid>").append(this.senderId).append("</senderid>\n");
-        builder.append(offset).append("\t<receiverid>").append(this.receiverId).append("</receiverid>\n");
-        builder.append(offset).append("\t<signtype>").append(this.signType).append("</signtype>\n");
-        builder.append(offset).append("\t<encryptiontype>").append(this.encryptionType).append("</encryptiontype>\n");
-        builder.append(offset).append("\t<compressiontype>").append(this.compressionType).append("</compressiontype>\n");
-        builder.append(offset).append("\t<state>").append(this.state).append("</state>\n");
-        builder.append(offset).append("</messageinfo>\n");
+        builder.append("</userdefinedid>\n")
+                .append(offset).append("\t<senderid>").append(this.getSenderId()).append("</senderid>\n")
+                .append(offset).append("\t<receiverid>").append(this.receiverId).append("</receiverid>\n")
+                .append(offset).append("\t<signtype>").append(this.signType).append("</signtype>\n")
+                .append(offset).append("\t<encryptiontype>").append(this.encryptionType).append("</encryptiontype>\n")
+                .append(offset).append("\t<compressiontype>").append(this.compressionType).append("</compressiontype>\n")
+                .append(offset).append("\t<state>").append(this.state).append("</state>\n")
+                .append(offset).append("</messageinfo>\n");
         return (builder.toString());
     }
 
-    /**Adds this entry to the passed parent JSON node*/
-    public void addToJSON( ArrayNode parent, Map<String,String> as2Id2NameMap){
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSS' UTC'");
-        ObjectNode node = parent.addObject();
-        node.put( "messageid", this.messageId);
-        node.put( "userdefinedid", this.userdefinedId == null?"--":this.userdefinedId);
-        node.put( "initdate", dateFormat.format(this.initDate));
-        if( this.sendDate != null ){
-            node.put( "senddate", dateFormat.format(this.sendDate));
-        }
-        node.put( "senderid", this.senderId);
-        node.put( "sendername", as2Id2NameMap.getOrDefault(this.senderId, "_UNKNOWN"));
-        node.put( "receiverid", this.receiverId);
-        node.put( "receivername", as2Id2NameMap.getOrDefault(this.receiverId, "_UNKNOWN"));
-        node.put( "messagetype", this.getMessageType());
-        node.put( "signtype", this.signType);
-        node.put( "encryptiontype", this.encryptionType);
-        node.put( "compressiontype", this.compressionType);
-        node.put( "state", this.state);
-        node.put( "direction", this.direction);
-        node.put( "mdnmode", this.requestsSyncMDN?"SYNC":"ASYNC");
-    }
-    
-    
     /**
-     * Adds a cdata indicator to xml data
+     * Adds this entry to the passed parent JSON node
+     */
+    public void addToJSON(ArrayNode parent, Map<String, String> as2Id2NameMap) {
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                .withZone(ZoneOffset.UTC);
+        ObjectNode node = parent.addObject();
+        node.put("messageid", this.messageId)
+                .put("userdefinedid", this.userdefinedId == null ? "--" : this.userdefinedId)
+                .put("initdate", dateFormat.format(this.initDate.toInstant()));
+        if (this.sendDate != null) {
+            node.put("senddate", dateFormat.format(this.sendDate.toInstant()));
+        }
+        node.put("senderid", this.getSenderId())
+                .put("sendername", as2Id2NameMap.getOrDefault(this.getSenderId(), "_UNKNOWN"))
+                .put("receiverid", this.receiverId)
+                .put("receivername", as2Id2NameMap.getOrDefault(this.receiverId, "_UNKNOWN"))
+                .put("messagetype", this.getMessageType().toInt())
+                .put("signtype", this.signType)
+                .put("encryptiontype", this.encryptionType)
+                .put("compressiontype", this.compressionType.toInt())
+                .put("state", this.state.toInt())
+                .put("direction", this.direction.toInt())
+                .put("mdnmode", this.isRequestsSyncMDN() ? "SYNC" : "ASYNC")
+                .put("useragent", this.userAgent);
+        if (this.subject != null) {
+            node.put("subject", this.subject);
+        }
+        node.put("tls", this.usesTLS);
+    }
+
+    /**
+     * Adds a CDATA indicator to XML data
      */
     private String toCDATA(String data) {
         return ("<![CDATA[" + data + "]]>");
@@ -206,7 +212,7 @@ public class AS2MessageInfo implements AS2Info {
      */
     @Override
     public String getSenderId() {
-        return this.senderId;
+        return (this.senderId);
     }
 
     /**
@@ -277,26 +283,28 @@ public class AS2MessageInfo implements AS2Info {
         this.senderEMail = senderEMail;
     }
 
-    /**Returns the direction of the transaction: inbound or outbound
+    /**
+     * Returns the direction of the transaction: inbound or outbound
+     *
      * @return AS2MessageInfo.DIRECTION_IN or AS2MessageInfo.DIRECTION_OUT
-     */    
+     */
     @Override
-    public int getDirection() {        
+    public MessageDirectionType getDirection() {
         return direction;
     }
 
     @Override
-    public void setDirection(int direction) {
+    public void setDirection(MessageDirectionType direction) {
         this.direction = direction;
     }
 
     @Override
-    public int getState() {
+    public MessageStateType getState() {
         return state;
     }
 
     @Override
-    public void setState(int state) {
+    public void setState(MessageStateType state) {
         this.state = state;
     }
 
@@ -338,7 +346,7 @@ public class AS2MessageInfo implements AS2Info {
             this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_384);
         } else if (signType == AS2Message.SIGNATURE_SHA3_512) {
             this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_512);
-        }else if (signType == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
+        } else if (signType == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
             this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_224_RSASSA_PSS);
         } else if (signType == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
             this.dispositionNotificationOptions.setSignaturHashFunction(BCCryptoHelper.ALGORITHM_SHA3_256_RSASSA_PSS);
@@ -364,10 +372,6 @@ public class AS2MessageInfo implements AS2Info {
 
     public void setReceivedContentMIC(String receivedContentMIC) {
         this.receivedContentMIC = receivedContentMIC;
-    }
-
-    public boolean requestsSyncMDN() {
-        return requestsSyncMDN;
     }
 
     public void setRequestsSyncMDN(boolean requestsSyncMDN) {
@@ -423,11 +427,12 @@ public class AS2MessageInfo implements AS2Info {
      * Returns the content of this object for debug purpose
      */
     @Override
+    @JsonIgnore
     public String getDebugDisplay() {
         StringBuilder buffer = new StringBuilder();
         buffer.append("asyncMDNURL=\t\t").append(this.asyncMDNURL);
         buffer.append("\n");
-        buffer.append("direction=\t\t").append(this.direction);
+        buffer.append("direction=\t\t").append(this.direction.name());
         buffer.append("\n");
         buffer.append("encryptionType=\t\t").append(this.encryptionType);
         buffer.append("\n");
@@ -445,30 +450,30 @@ public class AS2MessageInfo implements AS2Info {
         buffer.append("\n");
         buffer.append("receiverId=\t\t").append(this.receiverId);
         buffer.append("\n");
-        buffer.append("requestsSyncMDN=\t\t").append(this.requestsSyncMDN);
+        buffer.append("requestsSyncMDN=\t\t").append(this.isRequestsSyncMDN());
         buffer.append("\n");
         buffer.append("senderEMail=\t\t").append(this.senderEMail);
         buffer.append("\n");
         buffer.append("senderHost=\t\t").append(this.senderHost);
         buffer.append("\n");
-        buffer.append("senderId=\t\t").append(this.senderId);
+        buffer.append("senderId=\t\t").append(this.getSenderId());
         buffer.append("\n");
         buffer.append("signType=\t\t").append(this.signType);
         buffer.append("\n");
         buffer.append("subject=\t\t").append(this.subject);
         buffer.append("\n");
-        buffer.append("state=\t\t").append(this.state);
+        buffer.append("state=\t\t").append(this.state.name());
         return (buffer.toString());
     }
 
     @Override
     public String getUserAgent() {
-        return useragent;
+        return this.userAgent;
     }
 
     @Override
     public void setUserAgent(String useragent) {
-        this.useragent = useragent;
+        this.userAgent = useragent;
     }
 
     public DispositionNotificationOptions getDispositionNotificationOptions() {
@@ -482,23 +487,24 @@ public class AS2MessageInfo implements AS2Info {
     /**
      * @return the compressionType
      */
-    public int getCompressionType() {
+    public MessageCompressionType getCompressionType() {
         return compressionType;
     }
 
     /**
      * @param compressionType the compressionType to set
      */
-    public void setCompressionType(int compressionType) {
+    public void setCompressionType(MessageCompressionType compressionType) {
         this.compressionType = compressionType;
     }
 
     /**
      * There are several message types that are tansported by the AS2 protocol.
      * These are the AS2 message (EDI data) and the Certificate Exchange Message
-     * (CEM, contains certificates).
+     * (CEM, contains certificates). The constants are
+     * AS2Message.MESSAGETYPE_CEM and AS2Message.MESSAGETYPE_AS2
      */
-    public int getMessageType() {
+    public MessageType getMessageType() {
         return messageType;
     }
 
@@ -507,11 +513,12 @@ public class AS2MessageInfo implements AS2Info {
      * These are the AS2 message (EDI data) and the Certificate Exchange Message
      * (CEM, contains certificates).
      */
-    public void setMessageType(int messageType) {
+    public void setMessageType(MessageType messageType) {
         this.messageType = messageType;
     }
 
     @Override
+    @JsonIgnore
     public boolean isMDN() {
         return (false);
     }
@@ -569,14 +576,6 @@ public class AS2MessageInfo implements AS2Info {
     }
 
     /**
-     * @return the usesTLS
-     */
-    @Override
-    public boolean usesTLS() {
-        return usesTLS;
-    }
-
-    /**
      * @param usesTLS the usesTLS to set
      */
     @Override
@@ -596,6 +595,37 @@ public class AS2MessageInfo implements AS2Info {
      */
     public void setSendDate(Date sendDate) {
         this.sendDate = sendDate;
+    }
+
+    /**
+     * stores if the MDN to this message should be sync or async
+     *
+     * @return the requestsSyncMDN
+     */
+    public boolean isRequestsSyncMDN() {
+        return requestsSyncMDN;
+    }
+
+    /**
+     * Stores if the transmission was transmitted using a secure connection
+     *
+     * @return the usesTLS
+     */
+    @Override
+    public boolean isUsesTLS() {
+        return usesTLS;
+    }
+
+    @JsonIgnore
+    @Override
+    public String getLoggingId() {
+        return (this.messageId == null ? "" : this.messageId);
+    }
+
+    @JsonIgnore
+    @Override
+    public String getLoggingPrefix() {
+        return ("MSG");
     }
 
 }

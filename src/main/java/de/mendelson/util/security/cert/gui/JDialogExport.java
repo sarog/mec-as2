@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogExport.java 6     3/07/24 14:07 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/JDialogExport.java 8     14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -21,27 +21,28 @@ import javax.swing.JFrame;
  * Dialog to preselect what to import - a key or a certificate and how
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class JDialogExport extends JDialog {
 
-    protected final static MendelsonMultiResolutionImage IMAGE_KEYSTORE_FILE
+    protected static final MendelsonMultiResolutionImage IMAGE_KEYSTORE_FILE
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/util/security/cert/gui/document_keystore.svg", 
+                    "/de/mendelson/util/security/cert/gui/document_keystore.svg",
                     JDialogCertificates.IMAGE_SIZE_MENUITEM, 64);
-    
-    protected final static int SELECTION_CANCEL = 0;
-    protected final static int SELECTION_EXPORT_CERTIFICATE = 1;
-    protected final static int SELECTION_EXPORT_KEY = 2;
-    protected final static int SELECTION_EXPORT_KEYSTORE = 3;
+
+    protected static final int SELECTION_CANCEL = 0;
+    protected static final int SELECTION_EXPORT_CERTIFICATE = 1;
+    protected static final int SELECTION_EXPORT_KEY = 2;
+    protected static final int SELECTION_EXPORT_KEYSTORE = 3;
     private int selection = SELECTION_CANCEL;
 
     /**
      * ResourceBundle to localize the GUI
      */
-    private final static MecResourceBundle rb;
-    private final static MecResourceBundle rbCertificates;
-    static{
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbCertificates;
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleExport.class.getName());
@@ -52,13 +53,13 @@ public class JDialogExport extends JDialog {
                     + e.getClassName() + " not found.");
         }
     }
-    
+
     /**
      * Creates new form JDialogPartnerConfig
      *
      */
     public JDialogExport(JFrame parent) {
-        super(parent, true);        
+        super(parent, true);
         this.setTitle(rb.getResourceString("title"));
         initComponents();
         this.setMultiresolutionIcons();
@@ -71,7 +72,7 @@ public class JDialogExport extends JDialog {
     private void setMultiresolutionIcons() {
         this.jLabelImage.setIcon(new ImageIcon(
                 JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(
-            JDialogCertificates.IMAGE_SIZE_DIALOG)));
+                        JDialogCertificates.IMAGE_SIZE_DIALOG)));
         this.jLabelImageCert.setIcon(new ImageIcon(
                 JDialogCertificates.IMAGE_CERTIFICATE.toMinResolution(
                         JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
@@ -93,7 +94,7 @@ public class JDialogExport extends JDialog {
     private void computeSelection() {
         if (this.jRadioButtonExportCertificate.isSelected()) {
             this.selection = SELECTION_EXPORT_CERTIFICATE;
-        }        
+        }
         if (this.jRadioButtonExportKey.isSelected()) {
             this.selection = SELECTION_EXPORT_KEY;
         }
@@ -338,11 +339,11 @@ public class JDialogExport extends JDialog {
     }//GEN-LAST:event_jLabelExportKeyMouseClicked
 
     private void jLabelImageKeystoreMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelImageKeystoreMouseClicked
-       this.jRadioButtonExportKeystore.setSelected(true);
+        this.jRadioButtonExportKeystore.setSelected(true);
     }//GEN-LAST:event_jLabelImageKeystoreMouseClicked
 
     private void jLabelExportKeyStoreMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelExportKeyStoreMouseClicked
-         this.jRadioButtonExportKeystore.setSelected(true);
+        this.jRadioButtonExportKeystore.setSelected(true);
     }//GEN-LAST:event_jLabelExportKeyStoreMouseClicked
 
 

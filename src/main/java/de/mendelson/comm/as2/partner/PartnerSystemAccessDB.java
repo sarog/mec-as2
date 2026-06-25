@@ -1,18 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 35    12/03/25 17:28 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 37    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.partner;
 
-import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -27,7 +24,7 @@ import java.util.logging.Logger;
  * system, it will be displayed in the partner panel
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 37 $
  */
 public class PartnerSystemAccessDB {
 
@@ -49,7 +46,7 @@ public class PartnerSystemAccessDB {
      */
     public List<PartnerSystem> getAllPartnerSystems() {
         List<PartnerSystem> list = new ArrayList<PartnerSystem>();
-        List<Partner> allPartnerList = this.partnerAccess.getAllPartner(PartnerAccessDB.DATA_COMPLETENESS_FULL);
+        List<Partner> allPartnerList = this.partnerAccess.getAllPartner();
         try(Connection configConnectionAutoCommit = this.dbDriverManager
                 .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)){
             try (PreparedStatement statement = configConnectionAutoCommit.prepareStatement("SELECT * FROM partnersystem")) {
@@ -79,7 +76,7 @@ public class PartnerSystemAccessDB {
             }
             return (list);
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (null);
     }
@@ -106,7 +103,7 @@ public class PartnerSystemAccessDB {
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (null);
     }
@@ -162,12 +159,12 @@ public class PartnerSystemAccessDB {
                     }
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
 
     }

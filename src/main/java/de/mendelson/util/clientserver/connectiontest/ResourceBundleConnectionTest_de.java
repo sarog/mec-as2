@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 16    9/12/24 15:50 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 18    16/02/26 14:07 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleConnectionTest_de extends MecResourceBundle {
 
@@ -61,7 +61,7 @@ public class ResourceBundleConnectionTest_de extends MecResourceBundle {
         {"info.protocols", "Der Client lässt eine Verhandlung über folgende TLS Protokolle zu: {0}" },
         {"info.securityprovider", "Verwendeter TLS Security Provider: {0}" },
         {"sni.extension.set", "Der Hostname für die TLS SNI Erweiterung wurde auf \"{0}\" gesetzt" },
-        {"local.station", "Lokale Station" },
+        {"local.station", "Lokale Station" }
     };
 
 }

@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerlogfileSearchResponse.java 3     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/log/search/ServerlogfileSearchResponse.java 6     11/06/25 13:17 Heller $
 package de.mendelson.util.clientserver.log.search;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,29 +18,39 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class ServerlogfileSearchResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final List<Logline> resultList = new ArrayList<Logline>();
+    private List<Logline> resultList = new ArrayList<Logline>();
       
     public ServerlogfileSearchResponse(ServerlogfileSearchRequest request) {
         super(request);
     }
     
     /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ServerlogfileSearchResponse() {
+        super();
+    }
+    
+    /**
      * @return the event result List
      */
-    public List<Logline> getSearchResults() {
+    public List<Logline> getResultList() {
         return (this.resultList);
     }
 
     /**
      * @param eventList the eventList to set
      */
-    public void setLoglineResultList(List<Logline> eventList) {
-        this.resultList.addAll(eventList);
+    public void setResultList(List<Logline> resultList) {
+        this.resultList.clear();
+        this.resultList.addAll(resultList);
     }
 
     @Override

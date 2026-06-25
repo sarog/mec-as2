@@ -1,25 +1,22 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/statistic/StatisticDetailEntry.java 1     2/02/22 15:36 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/statistic/StatisticDetailEntry.java 2     14/04/26 17:02 Heller $
 package de.mendelson.comm.as2.statistic;
-import de.mendelson.comm.as2.message.AS2MessageInfo;
+import de.mendelson.comm.as2.message.MessageDirectionType;
 import java.io.Serializable;
 /**
  * Stores a statistic overview entry
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class StatisticDetailEntry implements Serializable{
         
     public static final long serialVersionUID = 1L;
-    public static final int DIRECTION_ALL = 23;
-    public static final int DIRECTION_IN = AS2MessageInfo.DIRECTION_IN;
-    public static final int DIRECTION_OUT = AS2MessageInfo.DIRECTION_OUT;
         
     private int counter = 0;    
     private String localStation = null;
     private String partner = null;
     private long startTime = 0;
     private long endTime = 0;
-    private int direction = DIRECTION_ALL;
+    private MessageDirectionType direction = MessageDirectionType.ALL;
     private String seriesName = "";
     
     public StatisticDetailEntry() {
@@ -41,11 +38,11 @@ public class StatisticDetailEntry implements Serializable{
         this.endTime = endTime;
     }
 
-    public int getDirection() {
+    public MessageDirectionType getDirection() {
         return direction;
     }
 
-    public void setDirection(int direction) {
+    public void setDirection(MessageDirectionType direction) {
         this.direction = direction;
     }
 

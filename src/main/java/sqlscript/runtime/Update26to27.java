@@ -1,7 +1,7 @@
-//$Header: /as2/sqlscript/runtime/Update26to27.java 3     19.03.13 17:59 Heller $
+//$Header: /as2/sqlscript/runtime/Update26to27.java 4     8/11/24 9:05 Heller $
 package sqlscript.runtime;
 
-import de.mendelson.comm.as2.database.IUpdater;
+import de.mendelson.util.database.IUpdater;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -20,7 +20,7 @@ import java.util.List;
  *
  * Update the database from version 26 to version 27
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  * @since build 128
  */
 public class Update26to27 implements IUpdater {

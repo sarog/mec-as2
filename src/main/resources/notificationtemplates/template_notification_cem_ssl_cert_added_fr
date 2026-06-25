@@ -1,0 +1,24 @@
+$Header:$
+Ce fichier contient le modèle de notification pour l'ajout d'un certificat SSL suite à un CEM.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+${PRODUCTNAME} : nom du produit
+${HOST} : Hôte du serveur AS2
+${CERTIFICATETECHDETAILS} : détails techniques du certificat
+${PARTENAIRE} : Initiateur de l'échange
+
+
+
+
+[SUBJECT]
+Ajout d'un certificat SSL/TLS (CEM)
+
+
+[BODY]
+Suite à une demande de certificat (CEM) de votre partenaire "${PARTNER}", un certificat SSL/TLS a été ajouté au système.
+
+Veuillez consulter le système pour voir les détails du processus. Si vous n'êtes pas d'accord avec ces changements
+veuillez les annuler et contacter votre partenaire.
+
+Informations techniques sur le certificat :
+
+${CERTIFICATETECHDETAILS}

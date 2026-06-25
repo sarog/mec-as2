@@ -1,0 +1,24 @@
+$Header:$
+Este ficheiro contém o modelo de notificação para testar as definições de correio eletrónico.
+Podem ser utilizadas as seguintes variáveis, que são substituídas em conformidade:
+
+${PRODUCTNAME}: Nome do produto
+${MESSAGEID}: Número da mensagem AS2
+${SENDER}: Remetente da notícia (se conhecido, caso contrário "--")
+${RECEIVER}: Destinatário da mensagem (se conhecido, caso contrário "--")
+${HOST}: Anfitrião do servidor AS2
+${LOG}: Registo da transação (várias linhas)
+
+
+
+
+[SUBJECT]
+Erro na mensagem AS2 ${MESSAGEID}
+
+
+[BODY]
+A mensagem AS2 ${MESSAGEID} de ${SENDER} para ${RECEIVER} com o assunto "${SUBJECT}" não pôde ser transmitida com o estado OK.
+
+Registo da transação:
+${LOG}
+

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 52    21/02/25 16:04 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 54    14/01/26 16:29 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -12,15 +12,20 @@ import de.mendelson.util.AS2Tools;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.CertificateValiditySettings;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.crl.CRLRevocationInformation;
 import de.mendelson.util.security.crl.CRLRevocationState;
 import de.mendelson.util.security.crl.CRLVerification;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.x500.X500Principal;
 import oshi.SystemInfo;
 import oshi.software.os.OSProcess;
 import oshi.software.os.OperatingSystem;
@@ -36,7 +41,7 @@ import oshi.software.os.OperatingSystem;
  * Checks several issues of the configuration
  *
  * @author S.Heller
- * @version $Revision: 52 $
+ * @version $Revision: 54 $
  */
 public class ConfigurationCheckController {
 
@@ -269,36 +274,49 @@ public class ConfigurationCheckController {
          * @param newIssueList
          */
         private void checkCRL(List<ConfigurationIssue> newIssueList) {
-            List<KeystoreCertificate> encSignList = managerEncSign.getKeyStoreCertificateList();
-            CRLVerification verification = new CRLVerification();
-            for (KeystoreCertificate cert : encSignList) {
-                CRLRevocationInformation information = verification.checkCertificate(cert);
-                if (information.getRevocationState().getState() != CRLRevocationState.STATE_OK) {
-                    ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN);
-                    issue.setDetails(cert.getAlias());
-                    issue.setHintParameter(new Object[]{
-                        information.getRevocationState().getDetails(),
-                        cert.getAlias(),
-                        cert.getIssuerDN(),
-                        cert.getFingerPrintSHA1()
-                    });
-                    newIssueList.add(issue);
+            try {
+                List<KeystoreCertificate> encSignList = managerEncSign.getKeyStoreCertificateList();
+                Map<X500Principal, X509Certificate> certMapEncSign = managerEncSign.getSubjectCertificateMap();
+                CRLVerification verification = new CRLVerification();
+                for (KeystoreCertificate testCertificate : encSignList) {
+                    X509Certificate issuerCertificate = certMapEncSign.get(testCertificate.getIssuerX500Principal());
+                    CRLRevocationInformation information = verification.checkCertificate(testCertificate, issuerCertificate);
+                    if (information.getRevocationState().getState() != CRLRevocationState.STATE_OK) {
+                        ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN);
+                        issue.setDetails(testCertificate.getAlias());
+                        issue.setHintParameter(new Object[]{
+                            information.getRevocationState().getDetails(),
+                            testCertificate.getAlias(),
+                            testCertificate.getIssuerDN(),
+                            testCertificate.getFingerPrintSHA1()
+                        });
+                        newIssueList.add(issue);
+                    }
                 }
+            } catch (Throwable e) {
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             }
-            List<KeystoreCertificate> sslList = managerTLS.getKeyStoreCertificateList();
-            for (KeystoreCertificate cert : sslList) {
-                CRLRevocationInformation information = verification.checkCertificate(cert);
-                if (information.getRevocationState().getState() != CRLRevocationState.STATE_OK) {
-                    ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS);
-                    issue.setDetails(cert.getAlias());
-                    issue.setHintParameter(new Object[]{
-                        information.getRevocationState().getDetails(),
-                        cert.getAlias(),
-                        cert.getIssuerDN(),
-                        cert.getFingerPrintSHA1()
-                    });
-                    newIssueList.add(issue);
+            try {
+                List<KeystoreCertificate> tlsList = managerTLS.getKeyStoreCertificateList();
+                Map<X500Principal, X509Certificate> certMapEncSign = managerTLS.getSubjectCertificateMap();
+                CRLVerification verification = new CRLVerification();
+                for (KeystoreCertificate testCertificate : tlsList) {
+                    X509Certificate issuerCertificate = certMapEncSign.get(testCertificate.getIssuerX500Principal());
+                    CRLRevocationInformation information = verification.checkCertificate(testCertificate, issuerCertificate);
+                    if (information.getRevocationState().getState() != CRLRevocationState.STATE_OK) {
+                        ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS);
+                        issue.setDetails(testCertificate.getAlias());
+                        issue.setHintParameter(new Object[]{
+                            information.getRevocationState().getDetails(),
+                            testCertificate.getAlias(),
+                            testCertificate.getIssuerDN(),
+                            testCertificate.getFingerPrintSHA1()
+                        });
+                        newIssueList.add(issue);
+                    }
                 }
+            } catch (Throwable e) {
+                SystemEventManagerImplAS2.instance().systemFailure(e);
             }
         }
 
@@ -354,13 +372,14 @@ public class ConfigurationCheckController {
             }
             if (keyCount > 0) {
                 KeystoreCertificate usedTLSKey = keystoreKeysList.get(0);
-                String foundFingerprint = usedTLSKey.getFingerPrintSHA1();
-                for (String testFingerprint : KeystoreCertificate.TEST_KEYS_FINGERPRINTS_SHA1) {
-                    if (foundFingerprint.equalsIgnoreCase(testFingerprint)) {
-                        ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS);
-                        issue.setDetails(usedTLSKey.getAlias());
-                        newIssueList.add(issue);
-                    }
+                int validityCheckBitField = CertificateValiditySettings.CHECK_MENDELSON_PUBLIC_CERT;
+                int checkStatusBitField = usedTLSKey.getValidityValue(
+                        CertificateValiditySettings.OPERATION_ANY,
+                        validityCheckBitField);
+                if ((checkStatusBitField & CertificateValiditySettings.STATE_MENDELSON_PUBLIC_CERT) != 0) {
+                    ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS);
+                    issue.setDetails(usedTLSKey.getAlias());
+                    newIssueList.add(issue);
                 }
             }
         }
@@ -439,8 +458,7 @@ public class ConfigurationCheckController {
                     issue.setHintParameter(new Object[]{
                         String.valueOf(softOpenFileLimit),
                         String.valueOf(currentOpenFiles),
-                        String.valueOf(requiredOpenFileLimit),
-                    });
+                        String.valueOf(requiredOpenFileLimit),});
                     newIssueList.add(issue);
                 }
             } catch (Throwable e) {

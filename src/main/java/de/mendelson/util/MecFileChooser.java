@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/MecFileChooser.java 26    11/02/25 13:39 Heller $
+//$Header: /mec_as4/de/mendelson/util/MecFileChooser.java 27    14/04/26 9:04 Heller $
 package de.mendelson.util;
 
 import java.awt.Frame;
@@ -34,7 +34,7 @@ import javax.swing.text.JTextComponent;
  * file chooser.
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 27 $
  */
 public class MecFileChooser extends JFileChooser {
     //supports only one type of choosers at the moment
@@ -56,7 +56,7 @@ public class MecFileChooser extends JFileChooser {
      * Remind the selected directories and restore them if the widget is called
      * in the same context again
      */
-    public final static Map<Long, File> lastGoodSelectionMap = new HashMap<Long, File>();
+    public static final Map<Long, File> lastGoodSelectionMap = new HashMap<Long, File>();
     /**
      * Stores a unique id for this call
      */

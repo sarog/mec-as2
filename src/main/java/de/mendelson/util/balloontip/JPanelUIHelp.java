@@ -1,10 +1,9 @@
-//$Header: /oftp2/de/mendelson/util/balloontip/JPanelUIHelp.java 21    19/02/25 12:59 Heller $
+//$Header: /as2/de/mendelson/util/balloontip/JPanelUIHelp.java 29    3/03/26 15:30 Heller $
 package de.mendelson.util.balloontip;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.event.MouseAdapter;
@@ -19,6 +18,7 @@ import javax.imageio.IIOImage;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageWriteParam;
 import javax.imageio.ImageWriter;
+import javax.swing.BorderFactory;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.JToolTip;
@@ -36,14 +36,22 @@ import javax.swing.ToolTipManager;
  * to explain details direct in the UI
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 29 $
  */
 public class JPanelUIHelp extends JPanel {
 
-    private final static MendelsonMultiResolutionImage IMAGE_HELP
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/balloontip/help.svg", 8, 48);
+    //keep 16 px here, this is important for the UI scaling!
+    //16*(scaling)1 = 16 px
+    //16*(scaling)1.25 = 20 px
+    //16*(scaling)1.5 = 24 px
+    //means using 16 here will never create a clipping
+    
+    private static final int IMAGE_SIZE = 16;
+    private static final MendelsonMultiResolutionImage IMAGE_HELP
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/balloontip/help.svg", IMAGE_SIZE);
+    private static final ImageIcon ICON_HELP = new ImageIcon(IMAGE_HELP.toMinResolution(IMAGE_SIZE));
 
-    private final int GAP_X = 10;
+    private static final int GAP_X = 10;
     private int maxTooltipWidth = 200;
 
     private Color balloontipBackground = Color.LIGHT_GRAY;
@@ -54,18 +62,18 @@ public class JPanelUIHelp extends JPanel {
     private String originalTooltipText = null;
     private int triangleAlignment = BalloonToolTip.TRIANGLE_ALIGNMENT_TOP;
 
-    private final static Map<String, Path> imageFileCache = new ConcurrentHashMap<String, Path>();
-    
-    public final static int TRIANGLE_ALIGNMENT_CENTER = BalloonToolTip.TRIANGLE_ALIGNMENT_CENTER;
-    public final static int TRIANGLE_ALIGNMENT_TOP = BalloonToolTip.TRIANGLE_ALIGNMENT_TOP;
-    public final static int TRIANGLE_ALIGNMENT_BOTTOM = BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM;
-    
+    private static final Map<String, Path> imageFileCache = new ConcurrentHashMap<String, Path>();
+
+    public static final int TRIANGLE_ALIGNMENT_CENTER = BalloonToolTip.TRIANGLE_ALIGNMENT_CENTER;
+    public static final int TRIANGLE_ALIGNMENT_TOP = BalloonToolTip.TRIANGLE_ALIGNMENT_TOP;
+    public static final int TRIANGLE_ALIGNMENT_BOTTOM = BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM;
 
     /**
      * Creates new form JPanelUIHelp
      */
     public JPanelUIHelp() {
         initComponents();
+        this.jLabelImage.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         this.setMultiresolutionIcons();
         //this is a just bad code - but there seems no way to modify a single tooltip timing,
         //no idea to solve this without this hack
@@ -91,9 +99,7 @@ public class JPanelUIHelp extends JPanel {
     }
 
     private void setMultiresolutionIcons() {
-        int imageSize = Math.min(this.getPreferredSize().height, this.getPreferredSize().width);
-        ImageIcon icon = new ImageIcon(IMAGE_HELP.toMinResolution((int) (imageSize * 0.7f)));
-        this.jLabelImage.setIcon(icon);
+        this.jLabelImage.setIcon(ICON_HELP);
     }
 
     @Override
@@ -186,7 +192,7 @@ public class JPanelUIHelp extends JPanel {
     private Path getSVGImagePathFromCache(String resource, int height, int width) throws Exception {
         String imageStr = resource + "," + String.valueOf(height) + "," + String.valueOf(width);
         if (!imageFileCache.containsKey(imageStr)) {
-            MendelsonMultiResolutionImage tempImage = null;
+            MendelsonMultiResolutionImage tempImage;
             if (height > 0) {
                 tempImage
                         = MendelsonMultiResolutionImage.fromSVG(resource, height,
@@ -286,20 +292,10 @@ public class JPanelUIHelp extends JPanel {
         }
     }
 
-    /**
-     * Rescale the icon - means the icon size could be set by the preferred size
-     * of the widget
-     */
-    @Override
-    public void setPreferredSize(Dimension dimension) {
-        super.setPreferredSize(dimension);
-        this.setMultiresolutionIcons();
-    }
-
     @Override
     public Point getToolTipLocation(MouseEvent e) {
         int x = this.getWidth() + GAP_X;
-        int y = 0;
+        int y;
         if (this.balloonTip == null) {
             BalloonToolTip tempBalloonTip = new BalloonToolTip();
             tempBalloonTip.setTriangleAlignment(this.getTriangleAlignment());
@@ -350,29 +346,23 @@ public class JPanelUIHelp extends JPanel {
         java.awt.GridBagConstraints gridBagConstraints;
 
         jLabelImage = new javax.swing.JLabel();
-        jPanelSpacer = new javax.swing.JPanel();
 
         setLayout(new java.awt.GridBagLayout());
 
+        jLabelImage.setFont(new java.awt.Font("Segoe UI", 0, 14)); // NOI18N
+        jLabelImage.setHorizontalAlignment(javax.swing.SwingConstants.CENTER);
         jLabelImage.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/balloontip/missing_image32x32.gif"))); // NOI18N
+        jLabelImage.setHorizontalTextPosition(javax.swing.SwingConstants.RIGHT);
+        jLabelImage.setIconTextGap(0);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.PAGE_START;
         add(jLabelImage, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
-        gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
-        add(jPanelSpacer, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
     /**
-     * @return the triangleAlignment.
-     * One of
-     * BalloonToolTipTRIANGLE_ALIGNMENT_CENTER, BalloonToolTipTRIANGLE_ALIGNMENT_TOP,
+     * @return the triangleAlignment. One of
+     * BalloonToolTipTRIANGLE_ALIGNMENT_CENTER,
+     * BalloonToolTipTRIANGLE_ALIGNMENT_TOP,
      * BalloonToolTipTRIANGLE_ALIGNMENT_BOTTOM
      */
     public int getTriangleAlignment() {
@@ -380,9 +370,9 @@ public class JPanelUIHelp extends JPanel {
     }
 
     /**
-     * @param triangleAlignment the triangleAlignment to set. 
-     * One of
-     * BalloonToolTipTRIANGLE_ALIGNMENT_CENTER, BalloonToolTipTRIANGLE_ALIGNMENT_TOP,
+     * @param triangleAlignment the triangleAlignment to set. One of
+     * BalloonToolTipTRIANGLE_ALIGNMENT_CENTER,
+     * BalloonToolTipTRIANGLE_ALIGNMENT_TOP,
      * BalloonToolTipTRIANGLE_ALIGNMENT_BOTTOM
      */
     public void setTriangleAlignment(int triangleAlignment) {
@@ -391,7 +381,6 @@ public class JPanelUIHelp extends JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabelImage;
-    private javax.swing.JPanel jPanelSpacer;
     // End of variables declaration//GEN-END:variables
 
 }

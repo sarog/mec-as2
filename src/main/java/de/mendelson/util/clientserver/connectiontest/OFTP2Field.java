@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/OFTP2Field.java 6     20/02/25 13:41 Heller $
+//$Header: /mec_as4/de/mendelson/util/clientserver/connectiontest/OFTP2Field.java 8     14/04/26 9:04 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.math.BigInteger;
@@ -20,9 +20,10 @@ import java.util.Date;
  * A field in a command structure
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
-public abstract class OFTP2Field {
+public abstract sealed class OFTP2Field 
+        permits OFTP2FieldAN {
 
     public static final int TYPE_AN = 1;
     public static final int TYPE_N = 2;
@@ -41,9 +42,9 @@ public abstract class OFTP2Field {
      */
     private OFTP2Field lengthGivenByField = null;
     //DateTimeFormatter is thread safe
-    private final static DateTimeFormatter FORMAT_DATE_FIELD = DateTimeFormatter.ofPattern("yyyyMMdd");
+    private static final DateTimeFormatter FORMAT_DATE_FIELD = DateTimeFormatter.ofPattern("yyyyMMdd");
     //DateTimeFormatter is thread safe
-    private final static DateTimeFormatter FORMAT_TIME_FIELD = DateTimeFormatter.ofPattern("HHmmss");
+    private static final DateTimeFormatter FORMAT_TIME_FIELD = DateTimeFormatter.ofPattern("HHmmss");
 
     protected OFTP2Field(String name, int maxLength, String description) {
         this.initialize(name, maxLength, description, null);

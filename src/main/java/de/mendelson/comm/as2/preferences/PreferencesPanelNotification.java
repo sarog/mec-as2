@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelNotification.java 71    19/02/25 10:08 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelNotification.java 79    8/04/26 13:34 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -18,6 +18,7 @@ import de.mendelson.util.balloontip.BalloonToolTip;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.mailautoconfig.MailServiceConfiguration;
 import de.mendelson.util.mailautoconfig.gui.JDialogMailAutoConfigurationDetection;
 import de.mendelson.util.oauth2.OAuth2Config;
@@ -43,14 +44,11 @@ import javax.swing.SwingUtilities;
  * Panel to define the directory preferences
  *
  * @author S.Heller
- * @version: $Revision: 71 $
+ * @version: $Revision: 79 $
  */
-public class PreferencesPanelNotification extends PreferencesPanel {
+public final class PreferencesPanelNotification extends PreferencesPanel {
 
-    /**
-     * Localize the GUI
-     */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -65,14 +63,14 @@ public class PreferencesPanelNotification extends PreferencesPanel {
     private OAuth2Config oauth2Config = null;
     private NotificationDataImplAS2 serverSideNotificationData = null;
 
-    private final static MendelsonMultiResolutionImage IMAGE_NOTIFICATION
+    private static final MendelsonMultiResolutionImage IMAGE_NOTIFICATION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/notification.svg",
                     JDialogPreferences.IMAGE_HEIGHT);
-    private final static MendelsonMultiResolutionImage IMAGE_TESTCONNECTION
+    private static final MendelsonMultiResolutionImage IMAGE_TESTCONNECTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/testconnection.svg", 24);
-    private final static MendelsonMultiResolutionImage IMAGE_OAUTH2
+    private static final MendelsonMultiResolutionImage IMAGE_OAUTH2
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/oauth2/gui/oauth2.svg", 24);
-    private final static MendelsonMultiResolutionImage IMAGE_MAILSERVERDETECTION
+    private static final MendelsonMultiResolutionImage IMAGE_MAILSERVERDETECTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/mailautoconfig/gui/detect.svg", 24);
 
     /**
@@ -105,7 +103,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         this.jButtonSendTestMail.setIcon(new ImageIcon(IMAGE_TESTCONNECTION.toMinResolution(24)));
         this.jButtonOAuth2AuthorizationCode.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
         this.jButtonOAuth2ClientCredentials.setIcon(new ImageIcon(IMAGE_OAUTH2.toMinResolution(24)));
-        this.jButtonMailAutoConfig.setIcon(new ImageIcon(IMAGE_MAILSERVERDETECTION.toMinResolution(24)));        
+        this.jButtonMailAutoConfig.setIcon(new ImageIcon(IMAGE_MAILSERVERDETECTION.toMinResolution(24)));
     }
 
     private void initializeHelp() {
@@ -134,15 +132,15 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         this.jTextFieldNotificationMail.setText(this.serverSideNotificationData.getNotificationMail());
         this.jTextFieldPort.setText(String.valueOf(this.serverSideNotificationData.getMailServerPort()));
         this.jTextFieldReplyTo.setText(this.serverSideNotificationData.getReplyTo());
-        this.switchNotifyCert.setSelected(this.serverSideNotificationData.notifyCertExpire());
-        this.switchNotifyTransactionError.setSelected(this.serverSideNotificationData.notifyTransactionError());
-        this.switchNotifyCEM.setSelected(this.serverSideNotificationData.notifyCEM());
-        this.switchNotifySystemFailure.setSelected(this.serverSideNotificationData.notifySystemFailure());
-        this.switchNotifyResend.setSelected(this.serverSideNotificationData.notifyResendDetected());
-        this.switchNotifyClientServerProblem.setSelected(this.serverSideNotificationData.notifyClientServerProblem());
-        if (this.serverSideNotificationData.usesSMTPAuthCredentials()) {
+        this.switchNotifyCert.setSelected(this.serverSideNotificationData.getNotifyCertExpire());
+        this.switchNotifyTransactionError.setSelected(this.serverSideNotificationData.getNotifyTransactionError());
+        this.switchNotifyCEM.setSelected(this.serverSideNotificationData.getNotifyCEM());
+        this.switchNotifySystemFailure.setSelected(this.serverSideNotificationData.isNotifySystemFailure());
+        this.switchNotifyResend.setSelected(this.serverSideNotificationData.isNotifyResendDetected());
+        this.switchNotifyClientServerProblem.setSelected(this.serverSideNotificationData.isNotifyClientServerProblem());
+        if (this.serverSideNotificationData.isUsesSMTPAuthCredentials()) {
             this.jRadioButtonAuthorizationCredentials.setSelected(true);
-        } else if (this.serverSideNotificationData.usesSMTPAuthOAuth2()) {
+        } else if (this.serverSideNotificationData.isUsesSMTPAuthOAuth2()) {
             if (this.serverSideNotificationData.getOAuth2Config().getRFCMethod() == OAuth2Config.METHOD_RFC6749_4_1) {
                 this.jRadioButtonOAuth2AuthorizationCode.setSelected(true);
             } else {
@@ -151,8 +149,8 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         } else {
             this.jRadioButtonAuthorizationNone.setSelected(true);
         }
-        this.switchNotifyConnectionProblem.setSelected(this.serverSideNotificationData.notifyConnectionProblem());
-        this.switchNotifyPostprocessing.setSelected(this.serverSideNotificationData.notifyPostprocessingProblem());
+        this.switchNotifyConnectionProblem.setSelected(this.serverSideNotificationData.isNotifyConnectionProblem());
+        this.switchNotifyPostprocessing.setSelected(this.serverSideNotificationData.isNotifyPostprocessingProblem());
         if (this.serverSideNotificationData.getSMTPUser() != null) {
             this.jTextFieldSMTPUser.setText(this.serverSideNotificationData.getSMTPUser());
         } else {
@@ -270,7 +268,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
                     if (response == null) {
                         UINotification.instance().addNotification(
                                 null,
-                                UINotification.TYPE_ERROR,
+                                UINotification.Type.ERROR,
                                 PreferencesPanelNotification.rb.getResourceString("testmail.title"),
                                 PreferencesPanelNotification.rb.getResourceString("testmail.message.error", "Timeout")
                         );
@@ -281,14 +279,14 @@ public class PreferencesPanelNotification extends PreferencesPanel {
                                 response.getException().getMessage());
                         UINotification.instance().addNotification(
                                 null,
-                                UINotification.TYPE_ERROR,
+                                UINotification.Type.ERROR,
                                 PreferencesPanelNotification.rb.getResourceString("testmail.title"),
                                 body
                         );
                     } else {
                         UINotification.instance().addNotification(
                                 null,
-                                UINotification.TYPE_SUCCESS,
+                                UINotification.Type.SUCCESS,
                                 PreferencesPanelNotification.rb.getResourceString("testmail.title"),
                                 PreferencesPanelNotification.rb.getResourceString("testmail.message.success",
                                         data.getNotificationMail())
@@ -314,7 +312,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
             config = this.oauth2Config;
         }
         PreferencesAS2 preferencesClient = new PreferencesAS2();
-        String displayMode = preferencesClient.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
+        DisplayMode displayMode = DisplayMode.of(preferencesClient.get(PreferencesAS2.DISPLAY_MODE_CLIENT));
         JDialogOAuth2Config dialog = new JDialogOAuth2Config(parentFrame,
                 this.baseClient,
                 config,
@@ -471,11 +469,11 @@ public class PreferencesPanelNotification extends PreferencesPanel {
 
         jPanelMargin.setLayout(new java.awt.GridBagLayout());
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 23;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMargin.add(jPanelSpace, gridBagConstraints);
 
         jLabelHost.setText(this.rb.getResourceString("label.mailhost"));
@@ -674,7 +672,7 @@ public class PreferencesPanelNotification extends PreferencesPanel {
         gridBagConstraints.gridy = 1;
         jPanelNotificationSwitch1.add(switchNotifyTransactionError, gridBagConstraints);
 
-        jLabelNotifyTransactionError.setText(this.rb.getResourceString( "checkbox.notifycertexpire"));
+        jLabelNotifyTransactionError.setText(this.rb.getResourceString( "checkbox.notifytransactionerror"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;

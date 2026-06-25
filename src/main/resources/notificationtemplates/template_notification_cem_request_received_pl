@@ -1,0 +1,18 @@
+$Header:$
+Ten plik zawiera szablon powiadomienia o przychodzących żądaniach wymiany certyfikatów (CEM).
+Można użyć następujących zmiennych, które są odpowiednio zastępowane:
+${PARTNER}: Partner, który złożył wniosek o wymianę
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host serwera AS2
+${REQUEST_ID}: identyfikator żądania CEM
+
+
+
+
+[SUBJECT]
+Otrzymano żądanie CEM od ${PARTNER}
+
+
+[BODY]
+Twój partner ${PARTNER} wysłał wiadomość z żądaniem wymiany certyfikatu, numer żądania to ${REQUEST_ID}.
+Odpowiedź na wniosek została udzielona. Zajrzyj do systemu (CEM Management), aby zobaczyć szczegóły procesu.

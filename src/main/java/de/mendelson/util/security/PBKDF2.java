@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/PBKDF2.java 4     11/02/25 13:40 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/PBKDF2.java 5     14/04/26 9:05 Heller $
 package de.mendelson.util.security;
 
 import java.math.BigInteger;
@@ -21,12 +21,12 @@ import javax.crypto.spec.PBEKeySpec;
  * hashes are stored using the PBKDF2 algorithm
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class PBKDF2 {
 
-    private final static int KEY_LENGTH = 128;
-    private final static String ALGORITHM = "PBKDF2WithHmacSHA1";
+    private static final int KEY_LENGTH = 128;
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA1";
     
     private static final String DELIMITER = "#";
     /**

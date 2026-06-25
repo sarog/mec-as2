@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 28    11/02/25 13:40 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportCertificate.java 30    8/04/26 13:35 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecFileChooser;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
-import de.mendelson.util.security.KeyStoreUtil;
+import de.mendelson.util.security.CertificateFormatType;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.ListCellRendererCertificates;
@@ -17,10 +17,6 @@ import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.security.cert.CertPath;
-import java.security.cert.PKIXCertPathBuilderResult;
-import java.security.cert.X509Certificate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -34,11 +30,11 @@ import javax.swing.SwingUtilities;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 30 $
  */
 public class JDialogExportCertificate extends JDialog {
 
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -51,6 +47,30 @@ public class JDialogExportCertificate extends JDialog {
     }
     private final CertificateManager manager;
     private final BaseClient baseClient;
+
+    private record ExportFormat(CertificateFormatType type) {
+
+        private static final MecResourceBundle rb;
+
+        static {
+            try {
+                rb = (MecResourceBundle) ResourceBundle.getBundle(
+                        ResourceBundleExportCertificate.class.getName());
+            } catch (MissingResourceException e) {
+                throw new RuntimeException("Oops..resource bundle "
+                        + e.getClassName() + " not found.");
+            }
+        }
+
+        @Override
+        public String toString() {
+            return rb.getResourceString(type.toString());
+        }
+
+        public CertificateFormatType getType() {
+            return type;
+        }
+    }
 
     /**
      * @param manager Manages all certificates
@@ -69,11 +89,11 @@ public class JDialogExportCertificate extends JDialog {
         this.manager = manager;
         this.getRootPane().setDefaultButton(this.jButtonOk);
         //fill data into comboboxes
-        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_DER));
-        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PEM));
-        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PEM_CHAIN));
-        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7));
-        this.jComboBoxExportFormat.addItem(new ExportFormat(KeystoreCertificate.CERTIFICATE_FORMAT_SSH2));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(CertificateFormatType.DER));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(CertificateFormatType.PEM));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(CertificateFormatType.PEM_CHAIN));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(CertificateFormatType.PKCS7));
+        this.jComboBoxExportFormat.addItem(new ExportFormat(CertificateFormatType.SSH2));
         KeystoreCertificate selectedCert = this.manager.getKeystoreCertificate(selectedAlias);
         List<KeystoreCertificate> list = this.manager.getKeyStoreCertificateList();
         for (KeystoreCertificate cert : list) {
@@ -116,23 +136,23 @@ public class JDialogExportCertificate extends JDialog {
             }
             byte[] exportData = response.getExportData();
             String exportFilename = this.jTextFieldExportFile.getText();
-            if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_PEM)) {
+            if (exportFormat.getType().equals(CertificateFormatType.PEM)) {
                 if (!exportFilename.toLowerCase().endsWith(".cer")) {
                     exportFilename += ".cer";
                 }
-            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_PEM_CHAIN)) {
+            } else if (exportFormat.getType() == CertificateFormatType.PEM_CHAIN) {
                 if (!exportFilename.toLowerCase().endsWith(".pem")) {
                     exportFilename += ".pem";
                 }
-            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_DER)) {
+            } else if (exportFormat.getType() == CertificateFormatType.DER) {
                 if (!exportFilename.toLowerCase().endsWith(".cer")) {
                     exportFilename += ".cer";
                 }
-            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7)) {
+            } else if (exportFormat.getType() == CertificateFormatType.PKCS7) {
                 if (!exportFilename.toLowerCase().endsWith(".p7b")) {
                     exportFilename += ".p7b";
                 }
-            } else if (exportFormat.getType().equals(KeystoreCertificate.CERTIFICATE_FORMAT_SSH2)) {
+            } else if (exportFormat.getType() == CertificateFormatType.SSH2) {
                 if (!exportFilename.toLowerCase().endsWith(".pub")) {
                     exportFilename += ".pub";
                 }
@@ -146,7 +166,7 @@ public class JDialogExportCertificate extends JDialog {
                 }
                 String exportFilenameDisplay = Paths.get(exportFilename).toAbsolutePath().toString();
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_SUCCESS,
+                        UINotification.Type.SUCCESS,
                         rb.getResourceString("certificate.export.success.title"),
                         rb.getResourceString("certificate.export.success.message",
                                 exportFilenameDisplay));
@@ -155,7 +175,7 @@ public class JDialogExportCertificate extends JDialog {
             }
         } catch (Throwable e) {
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     rb.getResourceString("certificate.export.error.title"),
                     rb.getResourceString("certificate.export.error.message",
                             "[" + e.getClass().getSimpleName() + "] "
@@ -372,62 +392,4 @@ public class JDialogExportCertificate extends JDialog {
     private javax.swing.JTextField jTextFieldExportFile;
     // End of variables declaration//GEN-END:variables
 
-    public static class ExportFormat {
-
-        private final static MecResourceBundle rb;
-
-        static {
-            try {
-                rb = (MecResourceBundle) ResourceBundle.getBundle(
-                        ResourceBundleExportCertificate.class.getName());
-            } catch (MissingResourceException e) {
-                throw new RuntimeException("Oops..resource bundle "
-                        + e.getClassName() + " not found.");
-            }
-        }
-
-        private final String type;
-
-        public ExportFormat(String type) {
-            this.type = type;
-            //load resource bundle
-
-        }
-
-        @Override
-        public String toString() {
-            return (rb.getResourceString(type));
-        }
-
-        /**
-         * Overwrite the equal method of object
-         *
-         * @param anObject object to compare
-         */
-        @Override
-        public boolean equals(Object anObject) {
-            if (anObject == this) {
-                return (true);
-            }
-            if (anObject != null && anObject instanceof ExportFormat) {
-                ExportFormat exportFormat = (ExportFormat) anObject;
-                return (exportFormat.getType().equals(this.getType()));
-            }
-            return (false);
-        }
-
-        @Override
-        public int hashCode() {
-            int hash = 7;
-            hash = 29 * hash + (this.getType() != null ? this.getType().hashCode() : 0);
-            return hash;
-        }
-
-        /**
-         * @return the type
-         */
-        public String getType() {
-            return type;
-        }
-    }
 }

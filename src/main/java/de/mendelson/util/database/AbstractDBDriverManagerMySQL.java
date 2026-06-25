@@ -1,10 +1,13 @@
-//$Header: /mec_as2/de/mendelson/util/database/AbstractDBDriverManagerMySQL.java 3     2/02/22 13:44 Heller $
+//$Header: /mec_as2/de/mendelson/util/database/AbstractDBDriverManagerMySQL.java 4     14/04/26 16:46 Heller $
 package de.mendelson.util.database;
 
+import de.mendelson.util.systemevents.SystemEventManager;
 import java.sql.SQLException;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Optional;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -17,7 +20,7 @@ import java.sql.Statement;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public abstract class AbstractDBDriverManagerMySQL implements IDBDriverManager {
 @Override
@@ -84,5 +87,20 @@ public abstract class AbstractDBDriverManagerMySQL implements IDBDriverManager {
         throw new IllegalAccessError();
     }
 
+    
+    @Override
+    public void setTableLockREAD(Statement a, String[] b) throws SQLException {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public <T> Optional<T> executeWithRetry(SystemEventManager a, RetryableDBOperation<T> b) {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public <T> T setSingleRowLockForModification(Statement s, String c, String b, List<Object> e, String f, Class<T> a) throws SQLException {
+        throw new IllegalAccessError();
+    }
 
 }

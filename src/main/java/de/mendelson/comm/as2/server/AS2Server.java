@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AS2Server.java 201   18/02/25 14:39 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/server/AS2Server.java 208   15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
@@ -52,7 +52,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -87,15 +86,16 @@ import java.time.format.FormatStyle;
 import java.util.ArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Class to start the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 201 $
+ * @version $Revision: 208 $
  * @since build 68
  */
-public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, ServerHelloMessageGenerator {
+public final class AS2Server extends AbstractAS2Server implements AS2ServerMBean, ServerHelloMessageGenerator {
 
     public static final String SERVER_LOGGER_NAME = "de.mendelson.as2.server";
     public static final int CLIENTSERVER_COMM_PORT = 1234;
@@ -104,9 +104,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     static {
         LOG_DIR = Paths.get(System.getProperty("user.dir"), "log");
     }
-    private final static AtomicInteger transactionCounter = new AtomicInteger(0);
-    private final static AtomicLong rawDataSent = new AtomicLong(0);
-    private final static AtomicLong rawDataReceived = new AtomicLong(0);
+    private static final AtomicInteger transactionCounter = new AtomicInteger(0);
+    private static final AtomicLong rawDataSent = new AtomicLong(0);
+    private static final AtomicLong rawDataReceived = new AtomicLong(0);
     /**
      * Server start time in ms
      */
@@ -160,8 +160,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     private StatisticDeleteController statsDeleteController = null;
     private SystemEventNotificationController notificationController = null;
     private final Handler loggingHandlerSystemOut = new ConsoleHandlerStdout();
-    public final static CryptoProvider CRYPTO_PROVIDER = new CryptoProvider();
+    public static final CryptoProvider CRYPTO_PROVIDER = new CryptoProvider();
     private ServerCertificateRefreshControllerHA serverCertificateRefreshController = null;
+    private static final AtomicReference<String> licenseType = new AtomicReference<String>();
 
     /**
      * Creates a new AS2 server and starts it
@@ -195,7 +196,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         this.serverStartupSequence.performWork();
         dbDriverManager = getActivatedDBDriverManager();
         this.clientserver = new ClientServer(this.logger, CLIENTSERVER_COMM_PORT,
-                new ClientServerTLSImplDefault(AS2ServerVersion.getFullProductName()));
+                new ClientServerTLSImplDefault(AS2ServerVersion.getFullProductName()),
+                AS2ServerVersion.instance(), SystemEventManagerImplAS2.instance());
         this.clientserver.setProductName(AS2ServerVersion.getFullProductName());
         this.initializeServerInstanceHA();
         this.setupClientServerSessionHandler();
@@ -268,9 +270,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     ServerInstance.ID
                 });
         SystemEventManagerImplAS2.instance().newEvent(
-                SystemEvent.SEVERITY_INFO,
-                SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                SystemEvent.Severity.INFO,
+                SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.MAIN_SERVER_STARTUP_BEGIN,
                 subject, body);
     }
 
@@ -306,7 +308,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     System.getProperty("user.name"),
                     ServerInstance.ID
                 });
-        int severity = SystemEvent.SEVERITY_INFO;
+        SystemEvent.Severity severity = SystemEvent.Severity.INFO;
         if (!configurationIssues.isEmpty()) {
             StringBuilder issueListStr = new StringBuilder();
             for (ConfigurationIssue issue : configurationIssues) {
@@ -316,7 +318,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                 }
                 issueListStr.append("\n");
             }
-            severity = SystemEvent.SEVERITY_WARNING;
+            severity = SystemEvent.Severity.WARNING;
             if (configurationIssues.size() > 1) {
                 body = this.rb.getResourceString("server.started.issues", configurationIssues.size())
                         + "\n"
@@ -333,16 +335,16 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         }
         //display the used libs
         List<String> usedLibsList = LibVersion.getLibVersions();
-        if( !usedLibsList.isEmpty()){
+        if (!usedLibsList.isEmpty()) {
             body = body + "\n\n";
-            body = body + this.rb.getResourceString( "server.started.usedlibs") + ":\n";
-            for( String usedLibsListStr:usedLibsList){
+            body = body + this.rb.getResourceString("server.started.usedlibs") + ":\n";
+            for (String usedLibsListStr : usedLibsList) {
                 body = body + usedLibsListStr + "\n";
             }
         }
         SystemEventManagerImplAS2.instance().newEvent(severity,
-                SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_MAIN_SERVER_RUNNING,
+                SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.MAIN_SERVER_RUNNING,
                 subject, body);
     }
 
@@ -361,9 +363,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
             String subject
                     = this.rb.getResourceString("fatal.limited.strength");
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.MAIN_SERVER_STARTUP_BEGIN,
                     subject, "");
             System.exit(1);
         }
@@ -467,9 +469,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                 issueDetails.append("\n\n");
                 issueDetails.append(this.html2txt(issue.getHintAsHTML()));
                 SystemEventManagerImplAS2.instance().newEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_SERVER_CONFIGURATION_CHECK,
+                        SystemEvent.Severity.WARNING,
+                        SystemEvent.Origin.SYSTEM,
+                        SystemEvent.Type.SERVER_CONFIGURATION_CHECK,
                         issue.getSubject(), issueDetails.toString());
             }
             this.fireSystemEventServerRunning(configurationIssues);
@@ -477,9 +479,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     String.valueOf(System.currentTimeMillis() - this.startTime)));
         } catch (BindException e) {
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.MAIN_SERVER_STARTUP_BEGIN,
                     this.rb.getResourceString("server.startup.failed"),
                     this.rb.getResourceString("bind.exception",
                             new Object[]{e.getMessage(),
@@ -493,9 +495,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
             throw bindException;
         } catch (Exception e) {
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.MAIN_SERVER_STARTUP_BEGIN,
                     this.rb.getResourceString("server.startup.failed"),
                     e.getMessage());
             throw e;
@@ -503,11 +505,11 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     }
 
     private String html2txt(String htmlStr) {
-        htmlStr = AS2Tools.replace(htmlStr, "<HTML>", "");
-        htmlStr = AS2Tools.replace(htmlStr, "<br>", "\n");
-        htmlStr = AS2Tools.replace(htmlStr, "</HTML>", "");
-        htmlStr = AS2Tools.replace(htmlStr, "<strong>", "");
-        htmlStr = AS2Tools.replace(htmlStr, "</strong>", "");
+        htmlStr = htmlStr.replace("<HTML>", "");
+        htmlStr = htmlStr.replace("<br>", "\n");
+        htmlStr = htmlStr.replace("</HTML>", "");
+        htmlStr = htmlStr.replace("<strong>", "");
+        htmlStr = htmlStr.replace("</strong>", "");
         return (htmlStr);
     }
 
@@ -589,16 +591,16 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
             } catch (IOException e) {
                 //nop
             }
-            DateFormat format = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+            DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
             this.logger.severe(rb.getResourceString("server.already.running",
                     new Object[]{
                         lockFile.toAbsolutePath().toString(),
                         format.format(new java.util.Date(lastModificationTime))
                     }));
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.MAIN_SERVER_STARTUP_BEGIN,
                     this.rb.getResourceString("server.startup.failed"),
                     rb.getResourceString("server.already.running",
                             new Object[]{
@@ -612,8 +614,8 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
                     }));
         } else {
             //write the lock file
-            try(Writer writer = Files.newBufferedWriter(lockFile)){
-                writer.write("");                
+            try (Writer writer = Files.newBufferedWriter(lockFile)) {
+                writer.write("");
             } catch (Exception e) {
                 this.logger.severe("Problem writing the lock file: [" + e.getClass().getName() + "]: " + e.getMessage());
                 System.exit(1);
@@ -742,7 +744,7 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     public static void deleteLockFile() {
         Path lockFile = Paths.get(AS2ServerVersion.getProductName().replace(' ', '_') + ".lock");
         try {
-            Files.delete(lockFile);
+            Files.deleteIfExists(lockFile);
         } catch (Exception e) {
             //nop
         }
@@ -769,9 +771,9 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
         RuntimeMXBean runtimeBean = ManagementFactory.getRuntimeMXBean();
         this.serverInstanceHA.setHost(runtimeBean.getName());
         //try to figure out if this instance runs on aws - then add some additional values that are conditional
-        String publicIP = AWSRESTAccess.retrieveIP4Address();
+        String publicIP = AWSRESTAccess.getIP4Address();
         this.serverInstanceHA.setPublicIP(publicIP);
-        String cloudInstanceId = AWSRESTAccess.retrieveInstanceId();
+        String cloudInstanceId = AWSRESTAccess.getInstanceId();
         this.serverInstanceHA.setCloudInstanceId(cloudInstanceId);
     }
 
@@ -785,6 +787,20 @@ public class AS2Server extends AbstractAS2Server implements AS2ServerMBean, Serv
     }
 
     public static String getLicenseType() {
+        String result = licenseType.get();
+        if (result == null) {
+            String computed = computeLicenseType();
+            if (licenseType.compareAndSet(null, computed)) {
+                result = computed;
+            } else {
+                result = computeLicenseType();
+            }
+        }
+        //String is immutable, no copy required as return
+        return result;
+    }
+
+    private static String computeLicenseType() {
         //figure out the license type
         if (AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_HA)
                 || AS2Server.PLUGINS.isActivated(ServerPlugins.PLUGIN_ORACLE_DB)) {

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorage.java 13    11/03/24 16:47 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorage.java 14    14/01/26 14:05 Heller $
 package de.mendelson.util.security.cert;
 
 import java.security.Key;
@@ -7,6 +7,7 @@ import java.security.KeyStore;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -19,7 +20,7 @@ import java.util.Map;
  * Interface for a keystore storage implementation. It should be possible to pass the
  * keystore as file, as byte array, as inputstream etc, this depends on the implementation
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public interface KeystoreStorage {
 
@@ -52,5 +53,7 @@ public interface KeystoreStorage {
     public int getKeystoreUsage();
     
     public boolean isReadOnly();
+    
+    public Optional<KeystoreCertificate> getDownloadedEntriesMetadata(String fingerprintSHA1);
 
 }

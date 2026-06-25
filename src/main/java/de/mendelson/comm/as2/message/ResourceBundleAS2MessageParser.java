@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 54    21/03/25 9:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 57    23/05/25 11:10 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 54 $
+ * @version $Revision: 57 $
  */
 public class ResourceBundleAS2MessageParser extends MecResourceBundle{
     
@@ -24,7 +24,8 @@ public class ResourceBundleAS2MessageParser extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    private static final Object[][] CONTENTS = {        
+    private static final Object[][] CONTENTS = {      
+        {"inbound.connection.transferinfo", "Received {0} in {1} [{2} ].\"" },
         {"inbound.connection.tls", "Inbound TLS connection from [{0}] on port {1} [{2}, {3}]"},
         {"inbound.connection.raw", "Inbound connection from [{0}] on port {1}"},
         {"inbound.connection.syncmdn", "Sync MDN has been received on the backchannel of your outbound connection"},

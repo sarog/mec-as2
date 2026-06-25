@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMDNReceipt_it.java 3     9/12/24 16:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleMDNReceipt_it.java 4     29/07/25 9:30 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 3 $
+* @version $Revision: 4 $
 */
 public class ResourceBundleMDNReceipt_it extends MecResourceBundle {
 
@@ -24,7 +24,7 @@ public class ResourceBundleMDNReceipt_it extends MecResourceBundle {
 		return CONTENTS;
 	}
 	/**List of messages in the specific language*/
-	static final Object[][] CONTENTS = {
-		{"expired", "Il tempo di attesa per MDN è stato superato."},
+	private static final Object[][] CONTENTS = {
+		{"expired", "Il tempo di attesa per l''MDN per il messaggio \"{0}\" è stato superato. Mittente: {1}, Destinatario: {2}, Data di creazione del messaggio: {3}"},
 	};
 }

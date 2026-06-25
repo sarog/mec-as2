@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 71    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/DialogMessageDetails.java 82    9/04/26 8:46 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -6,9 +6,11 @@ import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.log.LogEntry;
 import de.mendelson.comm.as2.message.AS2Info;
 import de.mendelson.comm.as2.message.AS2MDNInfo;
-import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
+import de.mendelson.comm.as2.message.MessageDirectionType;
+import de.mendelson.comm.as2.message.MessageStateType;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.message.clientserver.MessageDetailRequest;
 import de.mendelson.comm.as2.message.clientserver.MessageDetailResponse;
 import de.mendelson.comm.as2.message.clientserver.MessageLogRequest;
@@ -21,6 +23,7 @@ import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.LogFormatter;
 import de.mendelson.util.tables.JTableColumnResizer;
@@ -52,25 +55,27 @@ import javax.swing.table.TableColumn;
  * Dialog to show the details of a transaction
  *
  * @author S.Heller
- * @version $Revision: 71 $
+ * @version $Revision: 82 $
  */
 public class DialogMessageDetails extends JDialog implements ListSelectionListener {
 
     public static final ImageIcon ICON_LOCALSTATION
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/localstation.svg", AS2Gui.IMAGE_SIZE_TOOLBAR));
+                    "/de/mendelson/comm/as2/message/loggui/localstation.svg",
+                    AS2Gui.IMAGE_SIZE_TOOLBAR));
     public static final ImageIcon ICON_REMOTEPARTNER
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", AS2Gui.IMAGE_SIZE_TOOLBAR));
+                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg",
+                    AS2Gui.IMAGE_SIZE_TOOLBAR));
     public static final ImageIcon ICON_PENDING
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/state_pending.svg", 15, 48));
+                    "/de/mendelson/comm/as2/message/loggui/state_pending.svg", 15));
     public static final ImageIcon ICON_STOPPED
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/state_stopped.svg", 15, 48));
+                    "/de/mendelson/comm/as2/message/loggui/state_stopped.svg", 15));
     public static final ImageIcon ICON_FINISHED
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/state_finished.svg", 15, 48));
+                    "/de/mendelson/comm/as2/message/loggui/state_finished.svg", 15));
     public static final ImageIcon OVERVIEWSTATE_OUTBOUND_OK
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/comm_ok_outbound.svg", 170, 230));
@@ -96,10 +101,10 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/comm_pending.svg", 170, 230));
 
-    private final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
-    private final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
+    private static final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
+    private static final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
 
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -138,7 +143,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         this.jPanelFileDisplayHeader = new JPanelFileDisplay(baseClient);
         this.payloadList = payloadList;
         this.overviewInfo = overviewInfo;
-        if (overviewInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
+        if (overviewInfo.getMessageType() == MessageType.CEM) {
             this.setTitle(rb.getResourceString("title.cem"));
         } else {
             this.setTitle(rb.getResourceString("title"));
@@ -197,14 +202,14 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
      */
     private void populateTransactionOverviewPanel(AS2MessageInfo overviewInfo) {
         String messageTypeStr = "AS2";
-        if (overviewInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
+        if (overviewInfo.getMessageType() == MessageType.CEM) {
             messageTypeStr = "CEM";
         }
         //get all partner from server - just to display the icons. No full partner
         //information is required
         PartnerListRequest partnerRequest
                 = new PartnerListRequest(
-                        PartnerListRequest.LIST_BY_AS2_ID, PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE);
+                        PartnerListRequest.ListOption.AS2_ID);
         partnerRequest.setAdditionalListOptionStr(overviewInfo.getSenderId());
         PartnerListResponse partnerResponse = (PartnerListResponse) this.baseClient.sendSync(partnerRequest);
         List<Partner> partnerList = partnerResponse.getList();
@@ -213,7 +218,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             sender = partnerList.get(0);
         }
         partnerRequest
-                = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID, PartnerListRequest.DATA_COMPLETENESS_NAME_AS2ID_TYPE);
+                = new PartnerListRequest(PartnerListRequest.ListOption.AS2_ID);
         partnerRequest.setAdditionalListOptionStr(overviewInfo.getReceiverId());
         partnerResponse = (PartnerListResponse) this.baseClient.sendSync(partnerRequest);
         partnerList = partnerResponse.getList();
@@ -234,35 +239,35 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         } else {
             this.jLabelAS2TransmissionReceiver.setText(receiver.getName());
         }
-        if (overviewInfo.usesTLS()) {
+        if (overviewInfo.isUsesTLS()) {
             this.jLabelTLSIcon.setText(TEXT_SECURE_LOCK);
         } else {
             this.jLabelTLSIcon.setText(TEXT_INSECURE_LOCK);
         }
         //display some general transaction details
         StringBuilder transactionDetailsText = new StringBuilder();
-        if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
-            if (overviewInfo.usesTLS()) {
+        if (overviewInfo.getDirection() == MessageDirectionType.OUT) {
+            if (overviewInfo.isUsesTLS()) {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.secure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             } else {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.insecure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             }
-            if (overviewInfo.requestsSyncMDN()) {
+            if (overviewInfo.isRequestsSyncMDN()) {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.sync"));
             } else {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.outbound.async"));
             }
         } else {
-            if (overviewInfo.usesTLS()) {
+            if (overviewInfo.isUsesTLS()) {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.secure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             } else {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.insecure",
                         this.jLabelAS2TransmissionReceiver.getText()));
             }
-            if (overviewInfo.requestsSyncMDN()) {
+            if (overviewInfo.isRequestsSyncMDN()) {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.sync"));
             } else {
                 transactionDetailsText.append(rb.getResourceString("transactiondetails.inbound.async"));
@@ -276,15 +281,16 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             transactionDetails = ((MessageDetailResponse) this.baseClient.sendSync(new MessageDetailRequest(overviewInfo.getMessageId()))).getList();
         } catch (Exception e) {
         }
-        if (overviewInfo.getState() == AS2Message.STATE_STOPPED) {
+        if (overviewInfo.getState() == MessageStateType.STOPPED) {
             this.jLabelTransactionStateGeneral.setForeground(this.colorRed);
             this.jLabelTransactionStateDetails.setForeground(this.colorRed);
             if (transactionDetails == null) {
                 this.jLabelTransactionStateDetails.setVisible(false);
             } else {
+                //just a single entry - means there is no MDN for outbound data
                 if (transactionDetails.size() < 2) {
                     //generation problem
-                    if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT && overviewInfo.getSendDate() == null) {
+                    if (overviewInfo.getDirection() == MessageDirectionType.OUT && overviewInfo.getSendDate() == null) {
                         this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_GENERATION_FAILED);
                         this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.messagecreation"));
                         this.jLabelTransactionStateDetails.setVisible(true);
@@ -311,7 +317,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                         if (dispositionState == null) {
                             dispositionState = "Unknown";
                         }
-                        if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
+                        if (overviewInfo.getDirection() == MessageDirectionType.OUT) {
                             this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_OUTBOUND_FAILED);
                             this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.out",
                                     new Object[]{
@@ -329,7 +335,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                             //special: If the transaction direction was inbound and the transaction state is stopped anyway but the MDN state
                             //is processed and the MDN was async then there is a connection problem sending the async MDN or the async MDN has been
                             //rejected with a HTTP 400 by the partner
-                            if (mdnInfo.getState() == AS2Message.STATE_FINISHED && !overviewInfo.requestsSyncMDN()) {
+                            if (mdnInfo.getState() == MessageStateType.FINISHED && !overviewInfo.isRequestsSyncMDN()) {
                                 this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_INBOUND_ANSWER_FAILED);
                                 this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.error.asyncmdnsend"));
                                 this.jLabelTransactionStateDetails.setVisible(true);
@@ -367,10 +373,10 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
 
                 }
             }
-        } else if (overviewInfo.getState() == AS2Message.STATE_FINISHED) {
+        } else if (overviewInfo.getState() == MessageStateType.FINISHED) {
             this.jLabelTransactionStateGeneral.setForeground(this.colorGreen);
             this.jLabelTransactionStateDetails.setForeground(this.colorGreen);
-            if (overviewInfo.getDirection() == AS2MessageInfo.DIRECTION_OUT) {
+            if (overviewInfo.getDirection() == MessageDirectionType.OUT) {
                 this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_OUTBOUND_OK);
                 this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.ok.send",
                         new Object[]{
@@ -389,7 +395,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                 this.jLabelTransactionStateDetails.setVisible(true);
                 this.jLabelTransactionStateDetails.setText(rb.getResourceString("transactionstate.ok.details"));
             }
-        } else if (overviewInfo.getState() == AS2Message.STATE_PENDING) {
+        } else if (overviewInfo.getState() == MessageStateType.PENDING) {
             this.jLabelStateOverviewImage.setIcon(OVERVIEWSTATE_PENDING);
             this.jLabelTransactionStateGeneral.setForeground(this.colorYellow);
             this.jLabelTransactionStateGeneral.setText(rb.getResourceString("transactionstate.pending"));
@@ -418,7 +424,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
         detailsLogger.setUseParentHandlers(false);
         detailsLogger.setLevel(Level.ALL);
         PreferencesAS2 preferences = new PreferencesAS2();
-        String displayMode = preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
+        DisplayMode displayMode = DisplayMode.of(preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT));
         JTextPaneLoggingHandler detailsHandler = new JTextPaneLoggingHandler(this.jTextPaneLog,
                 new LogFormatter(LogFormatter.FORMAT_CONSOLE_COLORED), displayMode);
         detailsHandler.setLevel(Level.ALL);
@@ -461,6 +467,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             AS2Info info = ((TableModelMessageDetails) this.jTableMessageDetails.getModel()).getRow(selectedRow);
             String rawFileName = null;
             if (!info.isMDN()) {
+                //selected a message row
                 AS2MessageInfo messageInfo = (AS2MessageInfo) info;
                 if (messageInfo.getRawFilenameDecrypted() != null) {
                     rawFileName = messageInfo.getRawFilenameDecrypted();
@@ -468,6 +475,7 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
                     rawFileName = messageInfo.getRawFilename();
                 }
             } else {
+                //selected a MDN row
                 if (info.getRawFilename() != null) {
                     rawFileName = info.getRawFilename();
                 }
@@ -481,8 +489,12 @@ public class DialogMessageDetails extends JDialog implements ListSelectionListen
             try {
                 if (!this.payloadList.isEmpty()) {
                     for (int i = 0; i < payloadList.size(); i++) {
-                        String payloadFilename = this.payloadList.get(i).getPayloadFilename();
-                        this.jPanelFileDisplayPayload[i].displayFile(payloadFilename, true);
+                        if (info.isMDN()) {
+                            this.jPanelFileDisplayPayload[i].displayText(rb.getResourceString("mdn.nopayload"));
+                        } else {
+                            String payloadFilename = this.payloadList.get(i).getPayloadFilename();
+                            this.jPanelFileDisplayPayload[i].displayFile(payloadFilename, true);
+                        }
                     }
                 }
             } catch (Exception e) {

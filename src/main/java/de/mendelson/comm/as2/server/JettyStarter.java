@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/JettyStarter.java 14    11/02/25 13:39 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/server/JettyStarter.java 17    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -15,10 +15,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.TimeZone;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
@@ -29,11 +31,15 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
 import java.util.logging.Logger;
-import java.util.prefs.Preferences;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.CustomRequestLog;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.RequestLogWriter;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.AbstractHandler;
+import org.eclipse.jetty.server.handler.HandlerCollection;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
 
@@ -48,7 +54,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
  * Helper class that starts up the internal jetty web server
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 17 $
  */
 public class JettyStarter {
 
@@ -81,9 +87,9 @@ public class JettyStarter {
     public Server startWebserver() throws Exception {
         this.logger.info(MODULE_NAME + " " + this.rb.getResourceString("httpserver.willstart"));
         SystemEventManagerImplAS2.instance().newEvent(
-                SystemEvent.SEVERITY_INFO,
-                SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,
+                SystemEvent.Severity.INFO,
+                SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.HTTP_SERVER_STARTUP_BEGIN,
                 rb.getResourceString("httpserver.willstart"),
                 "");
         try {
@@ -142,7 +148,9 @@ public class JettyStarter {
                     logger.info(MODULE_NAME + " " + rb.getResourceString("httpserver.stopped"));
                 }
             });
-            //add bean listener to jetty
+            //add bean listener to jetty - log every listener just one time even if it has more than one
+            //listener threads
+            final Set<Integer> loggedListeningConnectors = new HashSet<Integer>();
             tempHTTPServer.addEventListener(new Container.InheritedListener() {
                 @Override
                 public void beanAdded(Container parent, Object child) {
@@ -150,11 +158,15 @@ public class JettyStarter {
                     if (parent instanceof ServerConnector
                             && child.getClass().getName().equals("org.eclipse.jetty.server.AbstractConnector$Acceptor")) {
                         ServerConnector connector = (ServerConnector) parent;
-                        String connectorStr = String.format("(%s{%s:%d})",
-                                connector.getDefaultProtocol(),
-                                connector.getHost() == null ? "0.0.0.0" : connector.getHost(),
-                                connector.getLocalPort() <= 0 ? connector.getPort() : connector.getLocalPort());
-                        logger.info(MODULE_NAME + " " + rb.getResourceString("listener.started", connectorStr));
+                        int connectorId = connector.hashCode();
+                        if (!loggedListeningConnectors.contains(connectorId)) {
+                            String connectorStr = String.format("(%s{%s:%d})",
+                                    connector.getDefaultProtocol(),
+                                    connector.getHost() == null ? "0.0.0.0" : connector.getHost(),
+                                    connector.getLocalPort() <= 0 ? connector.getPort() : connector.getLocalPort());
+                            logger.info(MODULE_NAME + " " + rb.getResourceString("listener.started", connectorStr));
+                            loggedListeningConnectors.add(connectorId);
+                        }
                     }
                 }
 
@@ -183,6 +195,20 @@ public class JettyStarter {
                 // Set the RequestLog to log to the given file, rolling over at midnight.
                 tempHTTPServer.setRequestLog(new CustomRequestLog(logWriter, CustomRequestLog.EXTENDED_NCSA_FORMAT));
             }
+            //add timing handler to get the receipt time
+            AbstractHandler timingHandler = new AbstractHandler() {
+                @Override
+                public void handle(String target, Request baseRequest,
+                        HttpServletRequest request, HttpServletResponse response) {
+                    request.setAttribute("jetty.request.startTime", baseRequest.getTimeStamp());
+                }
+            };
+            HandlerCollection newHandlerCollection = new HandlerCollection();
+            newHandlerCollection.setHandlers(new Handler[]{
+                timingHandler,
+                tempHTTPServer.getHandler()
+            });
+            tempHTTPServer.setHandler(newHandlerCollection);
             //finally start the embedded HTTP server
             tempHTTPServer.start();
             //ensure the wars have been deployed
@@ -200,9 +226,9 @@ public class JettyStarter {
                                 + "] " + context.getUnavailableException().getMessage()
                             }));
                     SystemEventManagerImplAS2.instance().newEvent(
-                            SystemEvent.SEVERITY_WARNING,
-                            SystemEvent.ORIGIN_SYSTEM,
-                            SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,
+                            SystemEvent.Severity.WARNING,
+                            SystemEvent.Origin.SYSTEM,
+                            SystemEvent.Type.HTTP_SERVER_STARTUP_BEGIN,
                             context.getDisplayName(),
                             this.rb.getResourceString("deployment.failed",
                                     new Object[]{
@@ -224,18 +250,18 @@ public class JettyStarter {
                     this.getHttpServerConfigInfo(), certificateManagerTLS);
             StringBuilder body = new StringBuilder();
             body.append(infoProcessor.getMiscConfigurationText());
-            SystemEventManagerImplAS2.instance().newEvent(SystemEvent.SEVERITY_INFO,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_HTTP_SERVER_RUNNING,
+            SystemEventManagerImplAS2.instance().newEvent(SystemEvent.Severity.INFO,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.HTTP_SERVER_RUNNING,
                     rb.getResourceString("httpserver.running",
                             "jetty " + this.getHttpServerConfigInfo().getJettyHTTPServerVersion()),
                     body.toString());
             return (tempHTTPServer);
         } catch (Exception e) {
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.HTTP_SERVER_STARTUP_BEGIN,
                     rb.getResourceString("httpserver.willstart"),
                     "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
             throw e;

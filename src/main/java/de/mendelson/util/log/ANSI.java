@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/ANSI.java 10    11/02/25 13:40 Heller $
+//$Header: /mec_as4/de/mendelson/util/log/ANSI.java 11    14/04/26 9:05 Heller $
 package de.mendelson.util.log;
 
 import java.awt.Color;
@@ -28,14 +28,14 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class ANSI {
 
     /**
      * Control Sequence Inducer (CSI)
      */
-    public final static String CSI = "\u001B[";
+    public static final String CSI = "\u001B[";
 
     /**
      * All Attributes reset
@@ -366,7 +366,7 @@ public class ANSI {
     public static final String COLOR_GREY89 = CSI + "38;5;254m";
     public static final String COLOR_LIGHTGREY = CSI + "38;5;255m";
 
-    private final static Map<String, Color> COLOR_MAP = new ConcurrentHashMap<String, Color>();
+    private static final Map<String, Color> COLOR_MAP = new ConcurrentHashMap<String, Color>();
 
     static {
         //basic system colors

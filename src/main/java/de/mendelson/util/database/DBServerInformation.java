@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/database/DBServerInformation.java 1     8/11/24 8:59 Heller $
+//$Header: /as2/de/mendelson/util/database/DBServerInformation.java 2     17/09/25 13:16 Heller $
 package de.mendelson.util.database;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicReference;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,10 +16,12 @@ import java.io.Serializable;
  * Stores some information of the used data base system - just for information purpose
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class DBServerInformation implements Serializable{
     private static final long serialVersionUID = 1L;
+    
+    private final AtomicReference<String> dbServerInfoStringRef = new AtomicReference<String>();
     
     private String productName = "UNKNOWN";
     private String productVersion = "UNKNOWN";
@@ -27,6 +31,31 @@ public class DBServerInformation implements Serializable{
     public DBServerInformation(){
     }
 
+    @JsonIgnore
+    public String getDBServerInfoString(){
+        String result = this.dbServerInfoStringRef.get();
+        if (result == null) {
+            String computed = this.computeDBServerInfoString();
+            if (this.dbServerInfoStringRef.compareAndSet(null, computed)) {
+                result = computed;
+            } else {
+                result = this.computeDBServerInfoString();
+            }
+        }
+        //String is immutable, no copy required as return
+        return result;
+    }
+    
+    @JsonIgnore
+    private String computeDBServerInfoString(){
+        return( this.productName + " "
+                + this.productVersion
+                + "@" + this.host
+                + " [JDBC " + jdbcVersion + "]");
+    }
+    
+    
+    
     /**
      * @return the productName
      */

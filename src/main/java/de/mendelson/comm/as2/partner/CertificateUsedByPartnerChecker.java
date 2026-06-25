@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/CertificateUsedByPartnerChecker.java 8     1/11/23 11:29 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/CertificateUsedByPartnerChecker.java 11    9/04/26 9:42 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
@@ -26,11 +26,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * Checks if a certificate is in use by a partner
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 11 $
  */
 public class CertificateUsedByPartnerChecker implements CertificateInUseChecker {
 
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -56,7 +56,7 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
      */
     private void loadCertificateInUseInformation() {
         PartnerListResponse response = (PartnerListResponse) this.baseClient.sendSync(
-                new PartnerListRequest(PartnerListRequest.LIST_ALL),
+                new PartnerListRequest(PartnerListRequest.ListOption.ALL),
                 Partner.TIMEOUT_PARTNER_REQUEST);
         List<Partner> partnerList = response.getList();
         //build up list of all fingerprints that are in use
@@ -89,17 +89,17 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
             for (Partner singlePartner : partnerList) {
                 String cryptFingerprint = singlePartner.getCryptFingerprintSHA1();
                 String signFingerprint = singlePartner.getSignFingerprintSHA1();
-                int partnerType = CertificateInUseInfo.PARTNER_REMOTE;
+                CertificateInUseInfo.UsedByPartner usedByPartnerType = CertificateInUseInfo.UsedByPartner.REMOTE;
                 if (singlePartner.isLocalStation()) {
-                    partnerType = CertificateInUseInfo.PARTNER_LOCALSTATION;
+                    usedByPartnerType = CertificateInUseInfo.UsedByPartner.LOCALSTATION;
                 }
                 if (fingerPrintSHA1.equals(cryptFingerprint)) {
-                    info.addUsage(partnerType,
+                    info.addUsage(usedByPartnerType,
                             singlePartner.getName(),
                             rb.getResourceString("used.crypt"));
                 }
                 if (fingerPrintSHA1.equals(signFingerprint)) {
-                    info.addUsage(partnerType,
+                    info.addUsage(usedByPartnerType,
                             singlePartner.getName(),
                             rb.getResourceString("used.sign"));
                 }
@@ -109,7 +109,7 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
                             = singlePartner.getCryptOverwriteLocalstationFingerprintSHA1();
                     if (cryptOverwriteLocalFingerprint != null
                             && fingerPrintSHA1.equals(cryptOverwriteLocalFingerprint)) {
-                        info.addUsage(partnerType,
+                        info.addUsage(usedByPartnerType,
                                 singlePartner.getName(),
                                 rb.getResourceString("used.crypt.overwritelocalsecurity"));
                     }
@@ -117,7 +117,7 @@ public class CertificateUsedByPartnerChecker implements CertificateInUseChecker 
                             = singlePartner.getSignOverwriteLocalstationFingerprintSHA1();
                     if (signOverwriteLocalFingerprint != null
                             && fingerPrintSHA1.equals(signOverwriteLocalFingerprint)) {
-                        info.addUsage(partnerType,
+                        info.addUsage(usedByPartnerType,
                                 singlePartner.getName(),
                                 rb.getResourceString("used.sign.overwritelocalsecurity"));
                     }

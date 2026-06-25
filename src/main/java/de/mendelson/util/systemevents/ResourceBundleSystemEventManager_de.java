@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/ResourceBundleSystemEventManager_de.java 10    15/01/25 10:18 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEventManager_de.java 11    20/02/26 16:54 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class ResourceBundleSystemEventManager_de extends MecResourceBundle {
 
@@ -40,6 +40,7 @@ public class ResourceBundleSystemEventManager_de extends MecResourceBundle {
         {"label.subject.login.failed", "Benutzeranmeldung fehlgeschlagen [{0}]"},
         {"label.subject.logoff", "Benutzerabmeldung [{0}]"}, 
         {"label.error.clientserver", "Problem in der Client-Server Verbindung" },
+        {"label.body.sessionid", "Session id: [{0}]"},
         {"label.body.tlsprotocol", "TLS Protokoll: {0}" },
         {"label.body.tlsciphersuite", "TLS Chiffre: {0}" },
         {"error.createdir.subject", "Verzeichniserzeugung" },

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2LoggerOutputStream.java 4     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2LoggerOutputStream.java 5     23/04/25 17:53 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.OutputStream;
@@ -21,15 +21,15 @@ import java.util.logging.Logger;
 public class AS2LoggerOutputStream extends OutputStream{
     
     /**Level to use for the logging: All print output will be written
-     *to the log unsing this level. Mainly this is INFO
+     *to the log using this level. Mainly this is INFO
      */
-    private Level level = null;
+    private final Level level;
     
     /**Logger to write the output to*/
-    private Logger logger = null;
+    private final Logger logger;
     
     /**Buffer to store the text contents*/
-    private StringBuilder text = new StringBuilder();
+    private final StringBuilder text = new StringBuilder();
     
     private final AS2MessageInfo messageInfo;
         
@@ -48,14 +48,14 @@ public class AS2LoggerOutputStream extends OutputStream{
     
     @Override
     public void write( int i ){
-        char value = (char)this.int2char(i);
+        char value = this.int2char(i);
         //update only on println
         if( (byte)i == (byte)'\n' ){
             this.text.insert( 0, " [Shell]:" );
             this.text.insert( 0, this.messageInfo.getMessageId() );
             this.logger.log( this.level, this.text.toString(), this.messageInfo );
             //delete the actual buffer
-            this.text = new StringBuilder();
+            this.text.setLength(0);
         } else
             this.text.append( value );
         

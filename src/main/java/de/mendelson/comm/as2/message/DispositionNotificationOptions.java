@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 19    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 21    11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.message;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -20,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Stores the options about the MDN, have been set by an inbound AS2 message
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class DispositionNotificationOptions implements Serializable {
 
@@ -28,11 +30,12 @@ public class DispositionNotificationOptions implements Serializable {
     
     //"signed-receipt-protocol=optional, pkcs7-signature; signed-receipt-micalg=optional"
     private String headerValue = "";
-    private final String DEFAULT_HEADER_VALUE = "signed-receipt-protocol=optional, pkcs7-signature; signed-receipt-micalg=optional";
+    private static final String DEFAULT_HEADER_VALUE 
+            = "signed-receipt-protocol=optional, pkcs7-signature; signed-receipt-micalg=optional";
     /**
      * Stores the parsed options
      */
-    private final Map<String, String> propertyMap = new ConcurrentHashMap<String, String>();
+    private Map<String, String> propertyMap = new ConcurrentHashMap<String, String>();
 
     /**
      * Creates a new instance of DispositionNotificationOptions
@@ -45,15 +48,23 @@ public class DispositionNotificationOptions implements Serializable {
      * Creates a new instance of DispositionNotificationOptions
      */
     public DispositionNotificationOptions(String[] digestList) {
-        this.headerValue = this.DEFAULT_HEADER_VALUE;
+        this.headerValue = DEFAULT_HEADER_VALUE;
         for (String digest : digestList) {
             this.headerValue += ", " + digest;
         }
         this.parseHeaderValue();
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public DispositionNotificationOptions() {
+        super();
+    }
+    
+    @JsonIgnore
     public void setSignaturHashFunction(final String DIGEST) {
-        this.headerValue = this.DEFAULT_HEADER_VALUE + ", " + DIGEST;
+        this.headerValue = DEFAULT_HEADER_VALUE + ", " + DIGEST;
         this.parseHeaderValue();
     }
 
@@ -104,6 +115,7 @@ public class DispositionNotificationOptions implements Serializable {
      * returns SIGNATURE_NONE if no signature digest is defined
      *
      */
+    @JsonIgnore
     public int getPreferredSignatureAlgorithm() {
         int[] algorithmList = this.getPossibleSignatureAlgorithm();
         if (algorithmList.length == 0) {
@@ -128,6 +140,7 @@ public class DispositionNotificationOptions implements Serializable {
      * Returns the allowed signature algorithm requested by the disposition
      * notification
      */
+    @JsonIgnore
     protected int[] getPossibleSignatureAlgorithm() {
         String value = this.propertyMap.get("signed-receipt-micalg");
         if (value == null) {

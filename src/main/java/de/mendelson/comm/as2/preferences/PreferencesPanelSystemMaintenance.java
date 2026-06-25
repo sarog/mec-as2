@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesPanelSystemMaintenance.java 35    20/03/25 16:04 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelSystemMaintenance.java 37    17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.JTextFieldLimitDocument;
@@ -24,16 +24,17 @@ import javax.swing.SwingConstants;
  * Panel to define the inbox settings
  *
  * @author S.Heller
- * @version: $Revision: 35 $
+ * @version: $Revision: 37 $
  */
-public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
+public final class PreferencesPanelSystemMaintenance extends PreferencesPanel {
 
-    private static final  MendelsonMultiResolutionImage ICON_MAINTENANCE
+    private static final MendelsonMultiResolutionImage ICON_MAINTENANCE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/maintenance.svg",
                     JDialogPreferences.IMAGE_HEIGHT);
 
-    private static final  MecResourceBundle rb;
-    static{
+    private static final MecResourceBundle rb;
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundlePreferences.class.getName());
@@ -59,7 +60,7 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
             this.switchDeleteStatsOlderThan.setVisible(false);
             this.jTextFieldDeleteStatsOlderThan.setVisible(false);
             this.jLabelDays2.setVisible(false);
-            this.jLabelDeleteStatsOlderThan.setVisible( false );
+            this.jLabelDeleteStatsOlderThan.setVisible(false);
             this.jPanelUIHelpDelStatistic.setVisible(false);
         }
         this.jComboBoxTimeUnit.addItem(new TimeUnitMaintenance(TimeUnitMaintenance.MULTIPLIER_DAY));
@@ -134,18 +135,26 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
             if (olderThantransactions <= 0) {
                 olderThantransactions = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN));
             }
-            this.preferences.putInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN, olderThantransactions);
-            this.preferences.putInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S,
-                    (int) ((TimeUnitMaintenance) this.jComboBoxTimeUnit.getSelectedItem()).getMultiplier());
-            this.preferences.putBoolean(PreferencesAS2.AUTO_MSG_DELETE, this.switchDeleteMsgOlderThan.isSelected());
+            try {
+                this.preferences.putInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN, olderThantransactions);
+                this.preferences.putInt(PreferencesAS2.AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S,
+                        (int) ((TimeUnitMaintenance) this.jComboBoxTimeUnit.getSelectedItem()).getMultiplier());
+                this.preferences.putBoolean(PreferencesAS2.AUTO_MSG_DELETE, this.switchDeleteMsgOlderThan.isSelected());
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
             //stats auto delete capabilites
             if (!this.preferences.getBoolean(PreferencesAS2.COMMUNITY_EDITION)) {
                 int olderThanStats = Integer.parseInt(this.jTextFieldDeleteStatsOlderThan.getText());
                 if (olderThanStats <= 0) {
                     olderThanStats = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.AUTO_STATS_DELETE_OLDERTHAN));
                 }
-                this.preferences.putInt(PreferencesAS2.AUTO_STATS_DELETE_OLDERTHAN, olderThanStats);
-                this.preferences.putBoolean(PreferencesAS2.AUTO_STATS_DELETE, this.switchDeleteStatsOlderThan.isSelected());
+                try {
+                    this.preferences.putInt(PreferencesAS2.AUTO_STATS_DELETE_OLDERTHAN, olderThanStats);
+                    this.preferences.putBoolean(PreferencesAS2.AUTO_STATS_DELETE, this.switchDeleteStatsOlderThan.isSelected());
+                } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
+                }
             }
             //log dir delete settings
             int olderThanLogDir = Integer.parseInt(this.jTextFieldDeleteLogDirOlderThan.getText());
@@ -153,8 +162,12 @@ public class PreferencesPanelSystemMaintenance extends PreferencesPanel {
             if (olderThanLogDir <= 0) {
                 olderThanLogDir = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.AUTO_LOGDIR_DELETE_OLDERTHAN));
             }
-            this.preferences.putInt(PreferencesAS2.AUTO_LOGDIR_DELETE_OLDERTHAN, olderThanLogDir);
-            this.preferences.putBoolean(PreferencesAS2.AUTO_LOGDIR_DELETE, this.switchDeleteLogDirOlderThan.isSelected());
+            try {
+                this.preferences.putInt(PreferencesAS2.AUTO_LOGDIR_DELETE_OLDERTHAN, olderThanLogDir);
+                this.preferences.putBoolean(PreferencesAS2.AUTO_LOGDIR_DELETE, this.switchDeleteLogDirOlderThan.isSelected());
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
         } catch (Exception ex) {
             UINotification.instance().addNotification(ex);
         }

@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/security/KeyStoreUtil.java 81    11/02/25 13:40 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/KeyStoreUtil.java 89    14/04/26 9:05 Heller $
 package de.mendelson.util.security;
 
 import de.mendelson.util.MecResourceBundle;
+import java.io.BufferedOutputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -27,6 +28,7 @@ import java.security.cert.CertPath;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
+import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAParams;
 import java.security.interfaces.DSAPublicKey;
@@ -37,14 +39,17 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.StringTokenizer;
+import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import javax.security.auth.x500.X500Principal;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.BCStyle;
@@ -65,11 +70,11 @@ import org.bouncycastle.util.io.pem.PemObject;
  * Utility class to handle java keyStore issues
  *
  * @author S.Heller
- * @version $Revision: 81 $
+ * @version $Revision: 89 $
  */
 public class KeyStoreUtil {
 
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -90,11 +95,11 @@ public class KeyStoreUtil {
      * @param filename Filename where to save the keystore to
      */
     public static void saveKeyStore(KeyStore keystore, char[] keystorePass, String filename) throws Exception {
-        try (OutputStream out = Files.newOutputStream(Paths.get(filename),
+        try (OutputStream out = new BufferedOutputStream(Files.newOutputStream(Paths.get(filename),
                 StandardOpenOption.SYNC,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.WRITE)) {
+                StandardOpenOption.WRITE))) {
             saveKeyStore(keystore, keystorePass, out);
         }
     }
@@ -259,30 +264,49 @@ public class KeyStoreUtil {
     }
 
     /**
-     * Checks that an alias for an import is unique in this keystore
+     * Ensures that the alias name is unique within the given KeyStore. If the
+     * alias already exists, a numeric suffix is appended. This implementation
+     * scans existing aliases once and determines the highest numeric suffix
+     * directly for optimal performance.
      */
     public static String ensureUniqueAliasName(KeyStore keystore, String alias) throws Exception {
-        int counter = 1;
-        String newAlias = alias;
-        //add a number to the alias if it already exists with this name
-        while (keystore.containsAlias(newAlias)) {
-            newAlias = alias + counter;
-            counter++;
+        Set<String> existingAliases = new HashSet<String>();
+        Enumeration<String> aliases = keystore.aliases();
+        int maxCounter = 0;
+        while (aliases.hasMoreElements()) {
+            String currentAlias = aliases.nextElement();
+            existingAliases.add(currentAlias);
+            if (currentAlias.startsWith(alias)) {
+                String suffix = currentAlias.substring(alias.length());
+                //check if only numbers, else ignore
+                if (suffix.matches("\\d+")) {
+                    int foundValue = Integer.parseInt(suffix);
+                    if (foundValue > maxCounter) {
+                        maxCounter = foundValue;
+                    }
+                }
+            }
         }
-        alias = newAlias;
-        return (alias);
+        //If alias does not exist return it unchanged
+        if (!existingAliases.contains(alias)) {
+            return alias;
+        }
+        //Otherwise: append the next numeric suffix. This does not exist for sure
+        return (alias + (maxCounter + 1));
     }
 
     /**
      * Checks the principal of a certificate and returns the proposed alias name
      */
     public static String getProposalCertificateAliasForImport(X509Certificate cert) {
-        X500Principal principal = cert.getSubjectX500Principal();
-        StringTokenizer tokenizer = new StringTokenizer(principal.getName(X500Principal.RFC2253), ",");
-        while (tokenizer.hasMoreTokens()) {
-            String token = tokenizer.nextToken().trim();
-            if (token.startsWith("CN=")) {
-                return (token.substring(3));
+        final ASN1ObjectIdentifier CN_OID = new ASN1ObjectIdentifier("2.5.4.3");
+        X500Name x500Name = X500Name.getInstance(cert.getSubjectX500Principal().getEncoded());
+        for (RDN rdn : x500Name.getRDNs()) {
+            for (AttributeTypeAndValue attributeAndValue : rdn.getTypesAndValues()) {
+                ASN1ObjectIdentifier oid = attributeAndValue.getType();
+                if (oid.equals(CN_OID)) {
+                    return (attributeAndValue.getValue().toString());
+                }
             }
         }
         //fallback: return a common name. Please check if this alias exists before importing the certificate
@@ -538,7 +562,7 @@ public class KeyStoreUtil {
      */
     public static String convertX509CertificateToPEM(X509Certificate certificate)
             throws CertificateEncodingException, IOException {
-        return (convertCertificatesToPEM(List.of(certificate)));
+        return (convertCertificatesToPEM(List.<X509Certificate>of(certificate)));
     }
 
     /**
@@ -604,11 +628,11 @@ public class KeyStoreUtil {
      */
     public static byte[] exportX509Certificate(KeyStore keystore, String alias, String encoding) throws Exception {
         if (keystore.isKeyEntry(alias)) {
-            Certificate[] certificates = keystore.getCertificateChain(alias);            
+            Certificate[] certificates = keystore.getCertificateChain(alias);
             X509Certificate[] x509Certificates = new X509Certificate[certificates.length];
             for (int i = 0; i < certificates.length; i++) {
                 x509Certificates[i] = convertToX509Certificate(certificates[i]);
-            }            
+            }
             x509Certificates = orderX509CertChain(x509Certificates);
             X509Certificate singleCertificate = x509Certificates[0];
             //write certificate to file
@@ -690,7 +714,7 @@ public class KeyStoreUtil {
         Key privateKey = keystore.getKey(alias, keystorePass);
         if (privateKey != null) {
             PKCS8EncodedKeySpec pkcs8 = new PKCS8EncodedKeySpec(privateKey.getEncoded());
-            try (OutputStream os = Files.newOutputStream(outFile)) {
+            try (OutputStream os = new BufferedOutputStream(Files.newOutputStream(outFile))) {
                 os.write(pkcs8.getEncoded());
             }
         }
@@ -747,9 +771,9 @@ public class KeyStoreUtil {
      */
     public static Map<String, Certificate> getCertificatesFromKeystore(KeyStore keystore) throws GeneralSecurityException {
         Map<String, Certificate> certMap = new HashMap<String, Certificate>();
-        Enumeration enumeration = keystore.aliases();
+        Enumeration<String> enumeration = keystore.aliases();
         while (enumeration.hasMoreElements()) {
-            String certAlias = (String) enumeration.nextElement();
+            String certAlias = enumeration.nextElement();
             certMap.put(certAlias, keystore.getCertificate(certAlias));
         }
         return (certMap);
@@ -776,10 +800,10 @@ public class KeyStoreUtil {
      * Returns a list of aliases for a specified keystore
      */
     public static List<String> getKeyAliases(KeyStore keystore) throws KeyStoreException {
-        Enumeration enumeration = keystore.aliases();
+        Enumeration<String> enumeration = keystore.aliases();
         List<String> keyList = new ArrayList<String>();
         while (enumeration.hasMoreElements()) {
-            String alias = (String) enumeration.nextElement();
+            String alias = enumeration.nextElement();
             if (keystore.isKeyEntry(alias)) {
                 keyList.add(alias);
             }
@@ -792,10 +816,10 @@ public class KeyStoreUtil {
      * because this may be used for GUI lists
      */
     public static List<String> getNonKeyAliases(KeyStore keystore) throws KeyStoreException {
-        Enumeration enumeration = keystore.aliases();
+        Enumeration<String> enumeration = keystore.aliases();
         List<String> nonkeyList = new ArrayList<String>();
         while (enumeration.hasMoreElements()) {
-            String alias = (String) enumeration.nextElement();
+            String alias = enumeration.nextElement();
             if (!keystore.isKeyEntry(alias)) {
                 nonkeyList.add(alias);
             }
@@ -825,6 +849,42 @@ public class KeyStoreUtil {
             hextStringBuilder.append(singleByte);
         }
         return hextStringBuilder.toString();
+    }
+
+    /**
+     * Extracts all X509Certificates from the KeyStore and returns them as
+     * TrustAnchors. Equivalent to what PKIXBuilderParameters(KeyStore, ...)
+     * does internally, but avoids repeated X500Name parsing.
+     *
+     * @param keystore the KeyStore containing trusted CA certificates
+     * @return a Set of TrustAnchor objects representing the trusted CAs
+     * @throws Exception if the keystore cannot be read
+     */
+    public static Set<TrustAnchor> getTrustAnchors(KeyStore keystore) throws Exception {
+        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
+        Enumeration<String> aliases = keystore.aliases();
+        while (aliases.hasMoreElements()) {
+            String alias = aliases.nextElement();
+            if (keystore.isCertificateEntry(alias)) {
+                X509Certificate cert = (X509Certificate) keystore.getCertificate(alias);
+                if (cert != null) {
+                    boolean isSelfSigned = false;
+                    try {
+                        // A certificate is considered self-signed when it can be validated using its own public key
+                        cert.verify(cert.getPublicKey());
+                        isSelfSigned = cert.getSubjectX500Principal().equals(cert.getIssuerX500Principal());
+                    } catch (Exception e) {
+                        isSelfSigned = false;
+                    }
+                    // Only self-signed certificates (Roots) should be trust anchors to allow 
+                    // the PKIX builder to resolve the path via intermediate certificates correctly.
+                    if (isSelfSigned) {
+                        trustAnchors.add(new TrustAnchor(cert, null));
+                    }
+                }
+            }
+        }
+        return trustAnchors;
     }
 
 }

@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToDir.java 7     11/03/25 17:00 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToDir.java 9     15/04/26 16:41 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventTriggerType;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
 import de.mendelson.util.MecResourceBundle;
@@ -27,23 +29,23 @@ import javax.swing.SwingUtilities;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class JDialogConfigureEventMoveToDir extends JDialog {
 
     private final MecResourceBundle rb;
     private final BaseClient baseClient;
     private final Partner partner;
-    private final int eventType;
+    private final ProcessingEventTriggerType triggerType;
 
     /**
      * Creates new form JDialogMigrateFromHSQLDB
      */
     public JDialogConfigureEventMoveToDir(JFrame frameParent, BaseClient baseClient,
-            Partner partner, final int EVENT_TYPE){
+            Partner partner, ProcessingEventTriggerType triggerType){
         super(frameParent, true);
         this.partner = partner;
-        this.eventType = EVENT_TYPE;
+        this.triggerType = triggerType;
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -55,14 +57,14 @@ public class JDialogConfigureEventMoveToDir extends JDialog {
         this.setTitle(this.rb.getResourceString("title.configuration.movetodir",
                 new Object[]{
                     partner.getName(),
-                    this.rb.getResourceString("type." + EVENT_TYPE)
+                    this.rb.getResourceString("type." + triggerType.toInt())
                 }
         ));
         initComponents();
         this.setMultiresolutionIcons();
         this.jLabelInfo.setText(this.rb.getResourceString("label.movetodir.info"));
         this.jLabelTargetDir.setText(this.rb.getResourceString("label.movetodir.targetdir",
-                this.rb.getResourceString("type." + EVENT_TYPE)));
+                this.rb.getResourceString("type." + triggerType.toInt())));
         this.displayParameter();
         this.getRootPane().setDefaultButton(this.jButtonOk);
     }
@@ -77,9 +79,9 @@ public class JDialogConfigureEventMoveToDir extends JDialog {
      *
      */
     private void displayParameter() {
-        if (this.partner.getPartnerEvents().getProcess(this.eventType)
-                == PartnerEventInformation.PROCESS_MOVE_TO_DIR) {
-            List<String> parameter = this.partner.getPartnerEvents().getParameter(this.eventType);
+        if (this.partner.getPartnerEvents().getProcess(this.triggerType)
+                == ProcessingEventType.MOVE_TO_DIR) {
+            List<String> parameter = this.partner.getPartnerEvents().getParameter(this.triggerType);
             if (!parameter.isEmpty()) {
                 this.jTextFieldRemoteDir.setText(parameter.get(0));
             }
@@ -90,8 +92,9 @@ public class JDialogConfigureEventMoveToDir extends JDialog {
         List<String> newParameter = new ArrayList<String>();
         String remoteDir = this.jTextFieldRemoteDir.getText();        
         newParameter.add(remoteDir);
-        this.partner.getPartnerEvents().setParameter(this.eventType, newParameter);
-        this.partner.getPartnerEvents().setProcess(this.eventType, PartnerEventInformation.PROCESS_MOVE_TO_DIR);
+        this.partner.getPartnerEvents().setParameter(this.triggerType, newParameter);
+        this.partner.getPartnerEvents().setProcess(this.triggerType, 
+                ProcessingEventType.MOVE_TO_DIR);
     }
     
     private void browseRemoteDir(){

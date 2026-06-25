@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_es.java 2     9/12/24 15:50 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_es.java 4     16/02/26 14:07 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 2 $
+* @version $Revision: 4 $
 */
 public class ResourceBundleConnectionTest_es extends MecResourceBundle {
 
@@ -55,6 +55,6 @@ public class ResourceBundleConnectionTest_es extends MecResourceBundle {
 		{"test.connection.direct", "Se utiliza una conexión IP directa"},
 		{"exception.occured.oftpservice", "No se ha podido identificar ningún servidor OFTP2 en ejecución en la dirección y puerto dados. Puede tratarse de un problema temporal, por ejemplo que el servidor OFTP2 remoto no se esté ejecutando en ese momento, pero los datos de la dirección son correctos. Se ha producido el siguiente problema: [{0}] {1}"},
 		{"service.found.success", "Éxito: Se ha encontrado un servicio OFTP en ejecución en {0}."},
-		{"check.for.service.oftp2", "Compruebe si se está ejecutando el servicio OFTP2..."},
+		{"check.for.service.oftp2", "Compruebe si se está ejecutando el servicio OFTP2..."}
 	};
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AbstractAS2Server.java 6     20/02/25 13:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AbstractAS2Server.java 7     13/03/26 10:27 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -15,9 +15,9 @@ import java.util.logging.Logger;
 /**
  * Server root for the mendelson client/server architecture
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
-public abstract class AbstractAS2Server {
+public abstract sealed class AbstractAS2Server permits AS2Server{
 
     private long startTime = 0;
     private CertificateManager certificateManager;

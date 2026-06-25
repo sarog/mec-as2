@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationResponse.java 9     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/httpconfig/clientserver/DisplayHTTPServerConfigurationResponse.java 12    11/06/25 13:17 Heller $
 package de.mendelson.util.httpconfig.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -17,7 +18,7 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse implements Serializable {
 
@@ -25,9 +26,9 @@ public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse
 
     private String httpServerConfigFile = null;
     private String httpServerUserConfigFile = null;
-    private final List<String> cipherList = new ArrayList<String>();
-    private final List<String> protocolList = new ArrayList<String>();
-    private boolean sslEnabled = false;
+    private List<String> cipherList = new ArrayList<String>();
+    private List<String> protocolList = new ArrayList<String>();
+    private boolean tlsEnabled = false;
     private boolean embeddedHTTPServerStarted = false;
     private String javaVersion = null;
     private String embeddedJettyServerVersion = null;
@@ -39,6 +40,15 @@ public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public DisplayHTTPServerConfigurationResponse() {
+        super();
+    }
+    
     /**
      * @return the protocolConfigurationText
      */
@@ -101,7 +111,12 @@ public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse
         this.cipherList.add(cipher);
     }
 
-    public List<String> getCipher() {
+    public void setCipherList( List<String> cipherList) {
+        this.cipherList.clear();
+        this.cipherList.addAll( cipherList);
+    }
+    
+    public List<String> getCipherList() {
         return (this.cipherList);
     }
 
@@ -109,22 +124,27 @@ public class DisplayHTTPServerConfigurationResponse extends ClientServerResponse
         this.protocolList.add(protocol);
     }
 
-    public List<String> getProtocol() {
+    public void setProtocolList( List<String> protocolList) {
+        this.protocolList.clear();
+        this.protocolList.addAll( protocolList);
+    }
+    
+    public List<String> getProtocolList() {
         return (this.protocolList);
     }
 
     /**
      * @return the sslEnabled
      */
-    public boolean isSSLEnabled() {
-        return sslEnabled;
+    public boolean isTLSEnabled() {
+        return tlsEnabled;
     }
 
     /**
-     * @param sslEnabled the sslEnabled to set
+     * @param tlsEnabled the sslEnabled to set
      */
-    public void setSSLEnabled(boolean sslEnabled) {
-        this.sslEnabled = sslEnabled;
+    public void setTLSEnabled(boolean tlsEnabled) {
+        this.tlsEnabled = tlsEnabled;
     }
 
     /**

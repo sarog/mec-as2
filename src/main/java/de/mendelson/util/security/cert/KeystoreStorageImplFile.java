@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 30    11/02/25 13:40 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 31    14/01/26 14:05 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,6 +15,7 @@ import java.util.Enumeration;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /*
@@ -28,7 +29,7 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a keystore file
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 31 $
  */
 public class KeystoreStorageImplFile implements KeystoreStorage {
 
@@ -92,6 +93,11 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     @Override
     public void loadKeystoreFromServer() throws Exception{
         throw new IllegalAccessException("KeystoreStorageImplFile: loadKeystoreFromServer() is not available for this implementation of storage.");
+    }
+    
+    @Override
+    public Optional<KeystoreCertificate> getDownloadedEntriesMetadata(String fingerprintSHA1){
+        return( Optional.empty() );
     }
     
     

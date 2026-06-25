@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleDialogSendCEM_pt.java 2     9/12/24 16:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleDialogSendCEM_pt.java 3     21/10/25 10:50 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 2 $
+* @version $Revision: 3 $
 */
 public class ResourceBundleDialogSendCEM_pt extends MecResourceBundle {
 
@@ -25,20 +25,20 @@ public class ResourceBundleDialogSendCEM_pt extends MecResourceBundle {
 	}
 	/**List of messages in the specific language*/
 	private static final Object[][] CONTENTS = {
-		{"label.certificate", "Certificado:"},
+		{"label.certificate", "Certificado"},
 		{"purpose.encryption", "Encriptação"},
 		{"cem.not.informed", "Os seguintes parceiros não foram informados através do CEM, por favor efectue a troca de certificados por correio eletrónico ou similar: {0}"},
 		{"purpose.signature", "Assinatura digital"},
 		{"title", "Trocar certificados com parceiros (CEM)"},
-		{"label.receiver", "Beneficiário:"},
+		{"label.receiver", "Beneficiário"},
 		{"cem.informed", "Foi feita uma tentativa de informar os seguintes parceiros através do CEM. Verifique o sucesso na administração do CEM: {0}"},
-		{"label.activationdate", "Data de ativação:"},
+		{"label.activationdate", "Data de ativação"},
 		{"cem.request.failed", "O pedido CEM não pôde ser executado:\n{0}"},
 		{"purpose.ssl", "TLS"},
 		{"button.cancel", "Cancelar"},
 		{"cem.request.title", "Troca de certificados via CEM"},
 		{"button.ok", "Ok"},
-		{"label.initiator", "Estação local:"},
+		{"label.initiator", "Estação local"},
 		{"partner.cem.hint", "Os sistemas parceiros devem suportar CEM para serem incluídos aqui"},
 		{"cem.request.success", "O pedido CEM foi executado com sucesso."},
 		{"partner.all", "--Todos os parceiros..."},

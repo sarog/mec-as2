@@ -1,11 +1,13 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogCertificates.java 137   11/02/25 13:40 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogCertificates.java 158   8/04/26 15:28 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.ColorUtil;
+import de.mendelson.util.IStatusBar;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.security.cert.gui.keygeneration.JDialogGenerateKey;
 import de.mendelson.util.LayoutManagerJToolbar;
+import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecFileChooser;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -22,8 +24,8 @@ import de.mendelson.util.security.cert.clientserver.CSRAnswerImportResponse;
 import de.mendelson.util.security.cert.clientserver.CSRGenerationRequest;
 import de.mendelson.util.security.cert.clientserver.CSRGenerationResponse;
 import de.mendelson.util.security.cert.clientserver.RefreshKeystoreCertificates;
+import de.mendelson.util.security.crmf.JDialogGenerateCRMF;
 import de.mendelson.util.security.csr.CSRUtil;
-import de.mendelson.util.security.csr.JDialogCSRTypeSelection;
 import de.mendelson.util.security.csr.ResourceBundleCSR;
 import de.mendelson.util.security.keygeneration.KeyGenerationResult;
 import de.mendelson.util.security.keygeneration.KeyGenerationValues;
@@ -67,6 +69,7 @@ import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.util.function.Consumer;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -82,7 +85,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Certificate manager UI
  *
  * @author S.Heller
- * @version $Revision: 137 $
+ * @version $Revision: 158 $
  */
 public class JDialogCertificates extends JDialog implements ListSelectionListener {
 
@@ -94,51 +97,50 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     public static final int IMAGE_SIZE_LIST = 18;
     public static final int IMAGE_SIZE_TABLE = 18;
 
-    protected final static MendelsonMultiResolutionImage IMAGE_DELETE_MULTIRESOLUTION
+    protected static final MendelsonMultiResolutionImage IMAGE_DELETE_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/delete.svg",
                     IMAGE_SIZE_MENUITEM, 64);
-    protected final static MendelsonMultiResolutionImage IMAGE_DELETE_EXPIRED_MULTIRESOLUTION
+    protected static final MendelsonMultiResolutionImage IMAGE_DELETE_EXPIRED_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/delete_expired.svg",
                     IMAGE_SIZE_MENUITEM, 64);
-    protected final static MendelsonMultiResolutionImage IMAGE_IMPORT_MULTIRESOLUTION
+    protected static final MendelsonMultiResolutionImage IMAGE_IMPORT_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/import.svg",
                     IMAGE_SIZE_MENUITEM, 64);
-    protected final static MendelsonMultiResolutionImage IMAGE_EXPORT_MULTIRESOLUTION
+    protected static final MendelsonMultiResolutionImage IMAGE_EXPORT_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/export.svg",
                     IMAGE_SIZE_MENUITEM, 64);
-    protected final static MendelsonMultiResolutionImage IMAGE_EDIT_MULTIRESOLUTION
+    protected static final MendelsonMultiResolutionImage IMAGE_EDIT_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/edit.svg",
                     IMAGE_SIZE_MENUITEM, 64);
-    protected final static MendelsonMultiResolutionImage IMAGE_ADD_MULTIRESOLUTION
+    protected static final MendelsonMultiResolutionImage IMAGE_ADD_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/add.svg",
                     IMAGE_SIZE_MENUITEM);
-    protected final static MendelsonMultiResolutionImage IMAGE_CA_MULTIRESOLUTION
+    protected static final MendelsonMultiResolutionImage IMAGE_CA_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/ca.svg",
                     IMAGE_SIZE_MENUITEM);
-    protected final static MendelsonMultiResolutionImage IMAGE_CERTIFICATE
+    protected static final MendelsonMultiResolutionImage IMAGE_CERTIFICATE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/certificate.svg",
                     IMAGE_SIZE_MENUITEM);
-    protected final static MendelsonMultiResolutionImage IMAGE_KEY
+    protected static final MendelsonMultiResolutionImage IMAGE_KEY
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg",
                     IMAGE_SIZE_MENUITEM);
-    protected final static MendelsonMultiResolutionImage IMAGE_REFERENCE
+    protected static final MendelsonMultiResolutionImage IMAGE_REFERENCE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/reference.svg",
                     IMAGE_SIZE_MENUITEM);
-    protected final static MendelsonMultiResolutionImage IMAGE_KEYCOPY
+    protected static final MendelsonMultiResolutionImage IMAGE_KEYCOPY
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keycopy.svg",
                     IMAGE_SIZE_MENUITEM);
-    protected final static MendelsonMultiResolutionImage IMAGE_CRL
+    protected static final MendelsonMultiResolutionImage IMAGE_CRL
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/crl.svg",
                     IMAGE_SIZE_MENUITEM);
 
     /**
      * Resource to localize the GUI
      */
-    private final static MecResourceBundle rb;
-    private final static MecResourceBundle rbCSR;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbCSR;
 
     static {
-        //load resource bundle
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleCertificates.class.getName());
@@ -155,24 +157,29 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     private final String productName;
     private final List<AllowModificationCallback> allowModificationCallbackList = new ArrayList<AllowModificationCallback>();
     private final LockClientInformation lockKeeper;
-    private final String moduleName;
+    private final ModuleLock.Module module;
     private Color colorOk = Color.green.darker().darker();
     private Color colorWarning = Color.red.darker();
-
-    private final static boolean ALLOW_CSR_TYPE_SELECTION = true;
+    private final IStatusBar statusBar;
+    private boolean showCRMFGeneration = false;
+    /**
+     * This will be used once the dialog is visible
+     */
+    private String selectionAliasOnVisibility = null;
 
     /**
-     * Creates new form JDialogMessageMapping
+     * @param statusBar this could be null, then there is no status written
      */
     public JDialogCertificates(JFrame parent, Logger logger, GUIClient guiClient,
             String title, String productName, boolean moduleLockedByAnotherClient,
-            String moduleName, LockClientInformation lockKeeper) {
+            ModuleLock.Module module, LockClientInformation lockKeeper, IStatusBar statusBar) {
         super(parent, title, true);
+        this.statusBar = statusBar;
         this.guiClient = guiClient;
         this.logger = logger;
         this.productName = productName;
         this.lockKeeper = lockKeeper;
-        this.moduleName = moduleName;
+        this.module = module;
         this.initComponents();
         if (UIManager.getColor("Objects.Green") != null) {
             this.colorOk = UIManager.getColor("Objects.Green");
@@ -190,8 +197,10 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         this.jLabelWarningRO.setForeground(colorWarning);
         this.setJMenuBar(this.jMenuBar);
         this.getRootPane().setDefaultButton(this.jButtonOk);
-        this.panelCertificates = new JPanelCertificates(this.logger, this, this.guiClient, moduleName,
-                this.colorOk, this.colorWarning);
+        int managerType = module == ModuleLock.Module.TLS_KEYSTORE
+                ? JPanelCertificates.MANAGER_TYPE_TLS : JPanelCertificates.MANAGER_TYPE_ENCSIGN;
+        this.panelCertificates = new JPanelCertificates(this.logger, this, this.guiClient, module,
+                this.colorOk, this.colorWarning, managerType);
         this.panelCertificates.setButtons(this.jButtonEditCertificate, this.jButtonDeleteCertificate);
         this.panelCertificates.setMenuItems(this.jMenuItemFileRenameAlias, this.jMenuItemFileDelete);
         //if no certificate is in the keystore a value should be displayed that shows this..
@@ -200,7 +209,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         this.jPanelCertificatesMain.add(this.panelCertificates);
         this.jPanelModuleLockWarning.setVisible(moduleLockedByAnotherClient);
         this.jToolBar.setLayout(new LayoutManagerJToolbar());
-        if (this.moduleName.equals(ModuleLock.MODULE_ENCSIGN_KEYSTORE)) {
+        if (this.module == ModuleLock.Module.ENCSIGN_KEYSTORE) {
             this.jMenuItemFileKeyCopy.setText(rb.getResourceString("button.keycopy",
                     rb.getResourceString("button.keycopy.tls")));
         } else {
@@ -246,15 +255,61 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         this.jMenuItemFileReference.setIcon(new ImageIcon(IMAGE_REFERENCE.toMinResolution(IMAGE_SIZE_MENUITEM)));
         this.jMenuItemFileKeyCopy.setIcon(new ImageIcon(IMAGE_KEYCOPY.toMinResolution(IMAGE_SIZE_MENUITEM)));
         this.jMenuItemVerifyCertificates.setIcon(new ImageIcon(IMAGE_CRL.toMinResolution(IMAGE_SIZE_MENUITEM)));
+        this.jMenuItemGenerateCRMF.setIcon(new ImageIcon(IMAGE_CA_MULTIRESOLUTION.toMinResolution(IMAGE_SIZE_MENUITEM)));
+    }
+
+    public void setShowCRMFGeneration(boolean showCRMFGeneration) {
+        this.showCRMFGeneration = showCRMFGeneration;
     }
 
     @Override
-    public void setVisible(boolean flag) {
-        if (flag) {
+    public void setVisible(boolean shouldBecomeVisible) {
+        if (shouldBecomeVisible) {
             this.setMultiresolutionIcons();
+            if (!this.showCRMFGeneration) {
+                this.jMenuTools.remove(this.jMenuItemGenerateCRMF);
+            }
             this.setButtonState();
+            //enqueue this async
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    panelCertificates.setSelectionByAlias(selectionAliasOnVisibility);
+                }
+            });
         }
-        super.setVisible(flag);
+        //now the process is blocking and then executing the Swing Queue
+        super.setVisible(shouldBecomeVisible);
+    }
+
+    /**
+     * Lock the component: Add a glasspane that prevents any action on the UI
+     */
+    private void lock() {
+        //init glasspane for first use
+        if (!(this.getGlassPane() instanceof LockingGlassPane)) {
+            this.setGlassPane(new LockingGlassPane());
+        }
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                getGlassPane().setVisible(true);
+                getGlassPane().requestFocusInWindow();
+            }
+        });
+    }
+
+    /**
+     * Unlock the component: remove the glass pane that prevents any action on
+     * the UI
+     */
+    private void unlock() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                getGlassPane().setVisible(false);
+            }
+        });
     }
 
     /**
@@ -347,15 +402,19 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         this.manager = new CertificateManager(this.logger);
         this.setTitle(this.getTitle());
         this.manager.loadKeystoreCertificates(keystoreStorage);
+        //as this is the initial load of the certificate manager the current state should be
+        //marked. A save attempt on the server is only required if there are changes in the certificate
+        //manager as a save process is very expensive
+        this.manager.markSnapshot();
         if (!this.manager.canWrite()) {
             this.jLabelWarningRO.setText(rb.getResourceString("keystore.readonly.message"));
         }
-        this.panelCertificates.addKeystore(manager);
+        this.panelCertificates.addCertificateManager(this.manager);
         this.setButtonState();
     }
 
     public void setSelectionByAlias(String selectedAlias) {
-        this.panelCertificates.setSelectionByAlias(selectedAlias);
+        this.selectionAliasOnVisibility = selectedAlias;
     }
 
     public void addCertificateInUseChecker(CertificateInUseChecker checker) {
@@ -425,7 +484,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                     messageKey = "certificate.ca.import.success.message";
                 }
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_SUCCESS,
+                        UINotification.Type.SUCCESS,
                         rb.getResourceString("certificate.import.success.title"),
                         rb.getResourceString(messageKey, alias));
                 //multiple certificates: show the import dialog again
@@ -437,7 +496,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             } catch (Throwable e) {
                 e.printStackTrace();
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_ERROR,
+                        UINotification.Type.ERROR,
                         rb.getResourceString("certificate.import.error.title"),
                         rb.getResourceString("certificate.import.error.message", e.getMessage()));
             }
@@ -448,7 +507,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
      * Imports a key in PKCS12/JKS format to the keystore - with the full trust
      * chain
      */
-    private void importPrivateKey() {
+    private void importPrivateKeyFromKeystore() {
         if (!isOperationAllowed(false)) {
             return;
         }
@@ -465,8 +524,27 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         }
     }
 
+    /**
+     * Imports a PEM key and certificate into the keystore
+     */
+    private void importPrivateKeyFromPEM() {
+        if (!isOperationAllowed(false)) {
+            return;
+        }
+        //take the main panel as anchor because it might be integrated in another swing program
+        JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this.jPanelMain);
+        JDialogImportKeyFromPEM dialog = new JDialogImportKeyFromPEM(parent, this.logger, this.manager);
+        dialog.setVisible(true);
+        try {
+            this.panelCertificates.refreshData();
+            this.panelCertificates.certificateAdded(dialog.getNewAlias());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+            this.logger.severe("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+        }
+    }
+
     private void generateCSR(boolean initial) {
-        CSRUtil util = new CSRUtil();
         KeystoreCertificate selectedPrivateKey = this.panelCertificates.getSelectedCertificate();
         try {
             //save the keystore on the server - it is possible that the key does not exist so far
@@ -506,71 +584,31 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 //take the main panel as anchor because it might be integrated in another swing program
                 JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class,
                         this.jPanelMain);
-                if (ALLOW_CSR_TYPE_SELECTION) {
-                    JDialogCSRTypeSelection dialogCSRType = new JDialogCSRTypeSelection(parentFrame);
-                    dialogCSRType.setVisible(true);
-                    int selectedCSRType = dialogCSRType.getSelection();
-                    if (selectedCSRType != JDialogCSRTypeSelection.SELECTION_CANCEL) {
-                        String outFilename = dialogCSRType.getSelectedFilename();
-                        CSRGenerationRequest request = new CSRGenerationRequest(this.manager.getStorageUsage(),
-                                selectedPrivateKey.getFingerPrintSHA1(), selectedCSRType);
-                        CSRGenerationResponse response = (CSRGenerationResponse) this.guiClient.getBaseClient().sendSync(request);
-                        if (response.getException() != null) {
-                            throw response.getException();
-                        }
-                        String csrStrPEM = response.getCSRBase64();
-                        if (csrStrPEM != null) {
-                            Path outFile = Paths.get(outFilename);
-                            util.storeRequestToFile(csrStrPEM, outFile);
-                        }
-                        String crmfSignature = response.getCrmfSignatureBase64();
-                        if (crmfSignature != null) {
-                            Path outFile = Paths.get(outFilename + ".signaturerequest");
-                            util.storeRequestToFile(crmfSignature, outFile);
-                        }
-                        String crmfEncryption = response.getCrmfEncryptionBase64();
-                        if (crmfEncryption != null) {
-                            Path outFile = Paths.get(outFilename + ".encryptionrequest");
-                            util.storeRequestToFile(crmfEncryption, outFile);
-                        }
-                        String crmfTLS = response.getCrmfTLSBase64();
-                        if (crmfTLS != null) {
-                            Path outFile = Paths.get(outFilename + ".TLSrequest");
-                            util.storeRequestToFile(crmfTLS, outFile);
-                        }
-                        UINotification.instance().addNotification(null,
-                                UINotification.TYPE_SUCCESS,
-                                rbCSR.getResourceString("csr.generation.success.title"),
-                                rbCSR.getResourceString("csr.generation.success.message",
-                                        Paths.get(outFilename).toAbsolutePath().toString()));
+                MecFileChooser chooser = new MecFileChooser(parentFrame,
+                        rb.getResourceString("label.selectcsrfile"));
+                String outFilename = chooser.browseFilename();
+                if (outFilename != null) {
+                    CSRGenerationRequest request = new CSRGenerationRequest(this.manager.getStorageUsage(),
+                            selectedPrivateKey.getFingerPrintSHA1(), CSRGenerationRequest.SELECTION_PKCS10);
+                    CSRGenerationResponse response = (CSRGenerationResponse) this.guiClient.getBaseClient().sendSync(request);
+                    if (response.getException() != null) {
+                        throw response.getException();
                     }
-                } else {
-                    MecFileChooser chooser = new MecFileChooser(parentFrame,
-                            rb.getResourceString("label.selectcsrfile"));
-                    String outFilename = chooser.browseFilename();
-                    if (outFilename != null) {
-                        CSRGenerationRequest request = new CSRGenerationRequest(this.manager.getStorageUsage(),
-                                selectedPrivateKey.getFingerPrintSHA1(), CSRGenerationRequest.SELECTION_PKCS10);
-                        CSRGenerationResponse response = (CSRGenerationResponse) this.guiClient.getBaseClient().sendSync(request);
-                        if (response.getException() != null) {
-                            throw response.getException();
-                        }
-                        Path outFile = Paths.get(outFilename);
-                        String csrStrPEM = response.getCSRBase64();
-                        util.storeRequestToFile(csrStrPEM, outFile);
-                        UINotification.instance().addNotification(null,
-                                UINotification.TYPE_SUCCESS,
-                                rbCSR.getResourceString("csr.generation.success.title"),
-                                rbCSR.getResourceString("csr.generation.success.message",
-                                        outFile.toAbsolutePath().toString()));
-                    }
+                    Path outFile = Paths.get(outFilename);
+                    String csrStrPEM = response.getCSRBase64();
+                    CSRUtil.storeRequestToFile(csrStrPEM, outFile);
+                    UINotification.instance().addNotification(null,
+                            UINotification.Type.SUCCESS,
+                            rbCSR.getResourceString("csr.generation.success.title"),
+                            rbCSR.getResourceString("csr.generation.success.message",
+                                    outFile.toAbsolutePath().toString()));
                 }
             }
         } catch (Throwable e) {
             this.logger.severe(e.getMessage());
             String errorDetails = "[" + e.getClass().getSimpleName() + "] " + e.getMessage();
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     rbCSR.getResourceString("csr.generation.failure.title"),
                     rbCSR.getResourceString("csr.generation.failure.message",
                             errorDetails));
@@ -621,7 +659,6 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     }
 
     private void generateKeypair() {
-        KeyGenerator generator = new KeyGenerator();
 
         try {
             //take the main panel as anchor because it might be integrated in another swing program
@@ -634,17 +671,20 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 //user break
                 return;
             }
-            KeyGenerationResult result = generator.generateKeyPair(values);
-            String alias = KeyStoreUtil.getProposalCertificateAliasForImport(result.getCertificate());
-            alias = KeyStoreUtil.ensureUniqueAliasName(this.manager.getKeystore(), alias);
-            this.manager.getKeystore().setKeyEntry(alias, result.getKeyPair().getPrivate(),
-                    null, new X509Certificate[]{result.getCertificate()});
-            this.panelCertificates.refreshData();
-            this.panelCertificates.certificateAdded(alias);
+            for (int i = 0; i < 1; i++) {
+                KeyGenerator generator = new KeyGenerator();
+                KeyGenerationResult result = generator.generateKeyPair(values);
+                String alias = KeyStoreUtil.getProposalCertificateAliasForImport(result.getCertificate());
+                alias = KeyStoreUtil.ensureUniqueAliasName(this.manager.getKeystore(), alias);
+                this.manager.getKeystore().setKeyEntry(alias, result.getKeyPair().getPrivate(),
+                        null, new X509Certificate[]{result.getCertificate()});
+                this.panelCertificates.refreshData();
+                this.panelCertificates.certificateAdded(alias);
+            }
         } catch (Throwable e) {
             String message = e.getClass().getName() + ": " + e.getMessage();
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     rb.getResourceString("generatekey.error.title"),
                     rb.getResourceString("generatekey.error.message", message));
             e.printStackTrace();
@@ -688,49 +728,56 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
                 RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
                 this.guiClient.sendAsync(signal);
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_SUCCESS,
+                        UINotification.Type.SUCCESS,
                         rbCSR.getResourceString("csrresponse.import.success.title"),
                         rbCSR.getResourceString("csrresponse.import.success.message"));
             }
         } catch (Throwable e) {
             this.logger.severe(e.getMessage());
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     rbCSR.getResourceString("csrresponse.import.failure.title"),
                     rbCSR.getResourceString("csrresponse.import.failure.message", e.getMessage()));
         }
     }
 
-    /**
-     * Saves the internal certificate manager
-     *
-     * @throws Throwable
-     */
-    public void saveCertificateManager() throws Throwable {
-        if (this.manager != null) {
-            this.manager.saveKeystore();
-            //signal the server that there are changes in the keystore
-            RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
-            this.guiClient.sendAsync(signal);
-        }
-    }
-
     private void saveAndClose() {
         if (this.manager != null) {
-            try {
-                this.manager.saveKeystore();
-                //signal the server that there are changes in the keystore
-                RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
-                this.guiClient.sendAsync(signal);
-            } catch (Throwable e) {
-                e.printStackTrace();
-                UINotification.instance().addNotification(e);
-                return;
-            }
+            JDialogCertificates.this.lock();
+            final String uniqueId = this.getClass().getName() + ".saveAndCloseCertManager." + System.currentTimeMillis();
 
+            SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
+                @Override
+                protected Void doInBackground() {
+                    try {
+                        if (JDialogCertificates.this.manager.hasChangedSinceSnapshot()) {
+                            if (statusBar != null) {
+                                statusBar.startProgressIndeterminate(rb.getResourceString("certificates.save"), uniqueId);
+                            }
+                            JDialogCertificates.this.manager.saveKeystore();
+                            //signal the server that there are changes in the keystore. It will create push
+                            //messages to all other attached clients
+                            RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+                            JDialogCertificates.this.guiClient.sendAsync(signal);
+                        }
+                    } catch (Throwable e) {
+                        UINotification.instance().addNotification(e);
+                    }
+                    return null;
+                }
+
+                @Override
+                protected void done() {
+                    JDialogCertificates.this.unlock();
+                    if (statusBar != null) {
+                        statusBar.stopProgressIfExists(uniqueId);
+                    }
+                    setVisible(false);
+                    dispose();
+                }
+            };
+            worker.execute();
         }
-        this.setVisible(false);
-        this.dispose();
     }
 
     public void setOkButtonVisible(boolean visible) {
@@ -779,8 +826,22 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         int selection = dialog.getSelection();
         if (selection == JDialogImport.SELECTION_IMPORT_CERTIFICATE) {
             this.importCertificate();
-        } else if (selection == JDialogImport.SELECTION_IMPORT_KEY) {
-            this.importPrivateKey();
+        } else if (selection == JDialogImport.SELECTION_IMPORT_KEY_KEYSTORE) {
+            this.importPrivateKeyFromKeystore();
+        } else if (selection == JDialogImport.SELECTION_IMPORT_KEY_PEM) {
+            this.importPrivateKeyFromPEM();
+        }
+    }
+
+    private void displayCRMFDialog() {
+        JFrame parentFrame = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this.jPanelMain);
+        try {
+            JDialogGenerateCRMF dialog = new JDialogGenerateCRMF(
+                    parentFrame, this.guiClient.getBaseClient(), this.logger,
+                    this.manager, this.statusBar);
+            dialog.setVisible(true);
+        } catch (Exception e) {
+            UINotification.instance().addNotification(e);
         }
     }
 
@@ -819,6 +880,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuItemImportSignRequestResponseRenew = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         jMenuItemVerifyCertificates = new javax.swing.JMenuItem();
+        jMenuItemGenerateCRMF = new javax.swing.JMenuItem();
         jToolBar = new javax.swing.JToolBar();
         jButtonImport = new javax.swing.JButton();
         jButtonExport = new javax.swing.JButton();
@@ -999,6 +1061,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         jMenuTools.add(jMenuItemImportSignRequestResponseRenew);
         jMenuTools.add(jSeparator1);
 
+        jMenuItemVerifyCertificates.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
         jMenuItemVerifyCertificates.setText(this.rb.getResourceString("menu.tools.verifyall"));
         jMenuItemVerifyCertificates.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -1006,6 +1069,15 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
             }
         });
         jMenuTools.add(jMenuItemVerifyCertificates);
+
+        jMenuItemGenerateCRMF.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image16x16.gif"))); // NOI18N
+        jMenuItemGenerateCRMF.setText(this.rb.getResourceString("menu.tools.crmf"));
+        jMenuItemGenerateCRMF.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jMenuItemGenerateCRMFActionPerformed(evt);
+            }
+        });
+        jMenuTools.add(jMenuItemGenerateCRMF);
 
         jMenuBar.add(jMenuTools);
 
@@ -1212,7 +1284,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
 
         getContentPane().add(jPanelStatusBar, java.awt.BorderLayout.SOUTH);
 
-        setSize(new java.awt.Dimension(1035, 777));
+        setSize(new java.awt.Dimension(1175, 840));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -1234,7 +1306,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
         if (!isOperationAllowed(false)) {
             return;
         }
-        this.importPrivateKey();
+        this.importPrivateKeyFromKeystore();
     }//GEN-LAST:event_jMenuItemImportKeyFromKeystoreActionPerformed
 
     private void jMenuItemImportCertificateActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemImportCertificateActionPerformed
@@ -1334,7 +1406,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     private void jButtonModuleLockInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonModuleLockInfoActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class,
                 this);
-        ModuleLock.displayDialogModuleLocked(parent, this.lockKeeper, this.moduleName);
+        ModuleLock.displayDialogModuleLocked(parent, this.lockKeeper, this.module);
     }//GEN-LAST:event_jButtonModuleLockInfoActionPerformed
 
     private void jButtonExportActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonExportActionPerformed
@@ -1361,8 +1433,12 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     }//GEN-LAST:event_jMenuItemExportKeystoreActionPerformed
 
     private void jMenuItemVerifyCertificatesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemVerifyCertificatesActionPerformed
-        this.panelCertificates.checkRevocationLists();
+        this.panelCertificates.checkRevocationLists(this.statusBar);
     }//GEN-LAST:event_jMenuItemVerifyCertificatesActionPerformed
+
+    private void jMenuItemGenerateCRMFActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemGenerateCRMFActionPerformed
+        this.displayCRMFDialog();
+    }//GEN-LAST:event_jMenuItemGenerateCRMFActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonDeleteCertificate;
@@ -1388,6 +1464,7 @@ public class JDialogCertificates extends JDialog implements ListSelectionListene
     private javax.swing.JMenuItem jMenuItemFileKeyCopy;
     private javax.swing.JMenuItem jMenuItemFileReference;
     private javax.swing.JMenuItem jMenuItemFileRenameAlias;
+    private javax.swing.JMenuItem jMenuItemGenerateCRMF;
     private javax.swing.JMenuItem jMenuItemGenerateKey;
     private javax.swing.JMenuItem jMenuItemGenerateSignRequestInitial;
     private javax.swing.JMenuItem jMenuItemGenerateSignRequestRenew;

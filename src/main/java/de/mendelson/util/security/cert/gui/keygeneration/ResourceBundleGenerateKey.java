@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey.java 17    5/09/24 11:25 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey.java 18    21/07/25 8:37 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleGenerateKey extends MecResourceBundle {
 
@@ -36,7 +36,14 @@ public class ResourceBundleGenerateKey extends MecResourceBundle {
         {"label.keytype", "Key type"},
         {"label.keytype.help", "<HTML><strong>Key type</strong><br><br>"
             + "This is the algorithm for creating the key. There are advantages and disadvantages for the resulting keys, depending on the algorithm.<br>"
-            + "As of 2022, we would recommend an RSA key with a key length of 2048 or 4096 bits."
+            + "As of 2023, we would recommend an RSA key with a key length of 2048 or 4096 bits.<br><br>"
+            + "There are the following types:<br>"
+            + "<ul>"
+            + "<li>DSA: Older algorithm, rarely used today.</li>"
+            + "<li>RSA: Classic standard, widely used.</li>"
+            + "<li>ECDSA: Efficient signature with elliptical curves.</li>"
+            + "<li>EdDSA: Modern, fast signature (e.g. Ed25519).</li>"
+            + "</ul>"
             + "</HTML>"
         },
         {"label.signature", "Signature"},

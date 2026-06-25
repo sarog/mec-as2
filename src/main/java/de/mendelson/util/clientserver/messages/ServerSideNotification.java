@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ServerSideNotification.java 5     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/messages/ServerSideNotification.java 6     12/06/25 16:04 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.IOException;
@@ -15,11 +15,12 @@ import java.io.Serializable;
  * This marks a client server message as a notification from the server. It should be sent to all client modules and requires no
  * processing notification
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ServerSideNotification extends ClientServerMessage implements Serializable{
 
     private static final long serialVersionUID = 1L;
+    
     public ServerSideNotification(){
         super();
     }

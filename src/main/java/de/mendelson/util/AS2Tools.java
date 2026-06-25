@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/AS2Tools.java 20    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/util/AS2Tools.java 25    4/02/26 17:40 Heller $
 package de.mendelson.util;
 
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
@@ -25,38 +25,13 @@ import java.util.Locale;
  * Some programming tools for mendelson business integration
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 25 $
  */
 public class AS2Tools {
 
-    private AS2Tools(){        
+    private AS2Tools() {
     }
     
-    /**
-     * Replaces the string tag by the string replacement in the sourceString
-     *
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
-     */
-    public static String replace(String source, String tag, String replacement) {
-        if (source == null) {
-            return null;
-        }
-        StringBuilder buffer = new StringBuilder();
-        while (true) {
-            int index = source.indexOf(tag);
-            if (index == -1) {
-                buffer.append(source);
-                return (buffer.toString());
-            }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
-            source = source.substring(index + tag.length());
-        }
-    }
-
     /**
      * Folds a string using the passed delimiter where the max line length is
      * the passed lineLenght
@@ -90,7 +65,7 @@ public class AS2Tools {
      *
      * @return
      */
-    public static String getDailyTempDir() throws IOException {
+    public static Path getDailyTempDir() throws IOException {
         //date format is not thread safe!
         DateFormat dateFormatTempName = new SimpleDateFormat("yyyyMMdd");
         Path tempDateDir = Paths.get("temp", dateFormatTempName.format(new Date()));
@@ -103,16 +78,16 @@ public class AS2Tools {
                 throw e;
             }
         }
-        return (tempDateDir.toAbsolutePath().toString());
+        return (tempDateDir);
     }
 
     /**
      * Creates a temp file in a data stamped folder below the directory temp
      */
     public static synchronized Path createTempFile(String prefix, String suffix) throws IOException {
-        String tempDateDirStr = getDailyTempDir();
+        Path tempDateDir = getDailyTempDir();
         //create a unique file in the temp subdirectory
-        Path tempFile = Files.createTempFile(Paths.get(tempDateDirStr), prefix, suffix);
+        Path tempFile = Files.createTempFile(tempDateDir, prefix, suffix);
         return (tempFile);
     }
 
@@ -133,6 +108,47 @@ public class AS2Tools {
             }
         }
         return (String.valueOf(size) + " Byte");
+    }
+
+    /**
+     * Displays the passed data size in a proper format
+     */
+    public static String getTransferrateDisplay(long byteCount, long transferTimeInMS) {
+        float bytePerSec = (float) ((float) byteCount * 1000f / (float) transferTimeInMS);
+        StringBuilder builder = new StringBuilder();
+        try (Formatter formatter = new Formatter(builder)) {
+            if (bytePerSec <= 1024) {
+                formatter.format(Locale.getDefault(), "~%.1f Byte/s", Float.valueOf((float) bytePerSec));
+            } else {
+                float kbPerSec = (float) (bytePerSec / 1024f);
+                if (kbPerSec <= 1024) {
+                    formatter.format(Locale.getDefault(), "~%.1f KB/s", Float.valueOf((float) kbPerSec));
+                } else {
+                    float mbPerSec = (float) (kbPerSec / 1024f);
+                    formatter.format(Locale.getDefault(), "~%.1f MB/s", Float.valueOf((float) mbPerSec));
+                }
+            }
+        }
+        return (builder.toString());
+    }
+
+    /**
+     * Displays the passed counter in a proper format, e.g. 1000 to 1k, 1000000
+     */
+    public static String getCountDisplay(long counter) {
+        StringBuilder builder = new StringBuilder();
+        try (Formatter formatter = new Formatter(builder)) {
+            if (counter > 1E6) {
+                formatter.format(Locale.getDefault(), "%.1f", Float.valueOf((float) counter / (float) 1.048E6));
+                builder.append("M");
+                return (builder.toString());
+            } else if (counter > 1000L) {
+                formatter.format(Locale.getDefault(), "%.1f", Float.valueOf((float) counter / 1024f));
+                builder.append("k");
+                return (builder.toString());
+            }
+        }
+        return (String.valueOf(counter));
     }
 
     /**

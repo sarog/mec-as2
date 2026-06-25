@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_pt.java 4     21/03/25 9:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_pt.java 7     23/05/25 11:10 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleAS2MessageParser_pt extends MecResourceBundle {
 
@@ -29,6 +29,7 @@ public class ResourceBundleAS2MessageParser_pt extends MecResourceBundle {
      * List of messages in the specific language
      */
     private static final Object[][] CONTENTS = {
+        {"inbound.connection.transferinfo", "Foram recebidos {0} em {1} [{2}].\"" },
         {"inbound.connection.syncmdn", "Foi recebida uma MDN síncrona no backchannel da sua ligação de saída"},
         {"original.filename.found", "O nome original do ficheiro foi transmitido pelo remetente como \"{0}\"."},
         {"msg.incoming.identproblem", "A transmissão de entrada é uma mensagem AS2. Não foi processada porque houve um problema com a identificação do parceiro."},

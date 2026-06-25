@@ -1,0 +1,26 @@
+$Header:$
+Ten plik zawiera szablon powiadomienia o zmianie certyfikatu spowodowanej CEM.
+Można używać następujących zmiennych, które zostaną odpowiednio zastąpione:
+${PRODUCTNAME}: nazwa produktu
+${HOST}: host serwera AS2
+${CERTIFICATEDESCRIPTION}: opis certyfikatu, który jest obecnie używany
+${CERTIFICATETECHDETAILS}: szczegóły techniczne dotyczące certyfikatów, do których odwołuje się to powiadomienie
+${PARTNER}: inicjator wiadomości CEM
+
+
+[SUBJECT]
+Certyfikat został dodany do systemu przez CEM i powinien zostać teraz przyjęty
+
+
+[BODY]
+W wyniku wniosku o certyfikat złożonego przez partnera „${PARTNER}” do magazynu kluczy systemu dodano nowy certyfikat. Twój partner zasugerował, abyś
+od teraz używał tego certyfikatu.
+
+${CERTIFICATEDESCRIPTION}
+
+Aby zapoznać się ze szczegółami procesu, proszę sprawdzić system. Jeśli nie mają Państwo zaufania do tych zmian,
+ proszę je cofnąć i skontaktować się ze swoim partnerem.
+
+Informacje techniczne dotyczące certyfikatów wymienionych w niniejszym powiadomieniu:
+
+${CERTIFICATETECHDETAILS}

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ListCellRendererPartner.java 13    3/07/24 9:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ListCellRendererPartner.java 14    11/09/25 15:41 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -19,13 +19,13 @@ import javax.swing.border.EmptyBorder;
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ListCellRendererPartner extends JLabel implements ListCellRenderer {
 
-    private final static int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_LIST;
-    private final static int ROW_HEIGHT = IMAGE_HEIGHT+2;
-    
+    private static final int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_LIST;
+    private static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
+
     public static final MendelsonMultiResolutionImage IMAGE_LOCALSTATION
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/partner/gui/localstation.svg", IMAGE_HEIGHT);
@@ -196,7 +196,7 @@ public class ListCellRendererPartner extends JLabel implements ListCellRenderer 
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         setComponentOrientation(list.getComponentOrientation());
-        setBorder(new EmptyBorder(0,2,0,0));
+        setBorder(new EmptyBorder(0, 2, 0, 0));
         if (isSelected) {
             this.setBackground(list.getSelectionBackground());
             this.setForeground(list.getSelectionForeground());
@@ -227,11 +227,11 @@ public class ListCellRendererPartner extends JLabel implements ListCellRenderer 
         this.setHorizontalTextPosition(SwingConstants.RIGHT);
         return (this);
     }
-    
+
     @Override
-   public Dimension getPreferredSize() {
-      Dimension dimension = super.getPreferredSize();
-      dimension.height = ROW_HEIGHT;
-      return (dimension);
-   }
+    public Dimension getPreferredSize() {
+        Dimension dimension = super.getPreferredSize();
+        dimension.height = ROW_HEIGHT;
+        return (dimension);
+    }
 }

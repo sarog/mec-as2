@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleGUIClient.java 12    30/05/24 11:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleGUIClient.java 13    4/04/25 9:43 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleGUIClient extends MecResourceBundle {
 
@@ -40,7 +40,7 @@ public class ResourceBundleGUIClient extends MecResourceBundle {
         {"connection.closed.title", "Disconnected"},
         {"connection.closed.message", "The local client-server connection has been disconnected by the server"},
         {"client.received.unprocessed.message", "A message has been received by the client that is not processed: {0}."},
-        {"error", "Error: {0}"},
+        {"error.client", "A problem occured in the client-server connection from this client to the server: {0}"},
         {"login.failed.client.incompatible.message", "The server reports that this client is incompatible. Please use the proper client version."},
         {"login.failed.client.incompatible.title", "Login rejected"},
     };

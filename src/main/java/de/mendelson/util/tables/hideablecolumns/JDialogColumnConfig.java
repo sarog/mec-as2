@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/tables/hideablecolumns/JDialogColumnConfig.java 7     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/JDialogColumnConfig.java 8     11/09/25 15:41 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 
 import de.mendelson.util.MecResourceBundle;
@@ -27,17 +27,23 @@ import javax.swing.table.TableColumn;
  * Dialog to configure the visibility of columns
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class JDialogColumnConfig extends JDialog {
-
-    /**
-     * Localize your GUI!
-     */
-    private MecResourceBundle rb = null;
     
-    private final MendelsonMultiResolutionImage ICON_COLUMN
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/tables/hideablecolumns/column.svg", 32, 64);
+    private static final MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleHideableColumns.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
+    
+    private static final MendelsonMultiResolutionImage ICON_COLUMN
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/tables/hideablecolumns/column.svg", 32);
 
     /**
      * Creates new form JDialogRowInfo
@@ -46,14 +52,6 @@ public class JDialogColumnConfig extends JDialog {
     public JDialogColumnConfig(JFrame parent, TableColumnModelHideable columnModel,
             TableColumnHiddenStateListener tableColumnHiddenStateListener) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleHideableColumns.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.initComponents();
         this.setMultiresolutionIcons();                
         //hide dialog on esc

@@ -1,11 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendResponse.java 6     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendResponse.java 8     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.cem.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -18,7 +20,7 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class CEMSendResponse extends ClientServerResponse implements Serializable {
 
@@ -27,6 +29,15 @@ public class CEMSendResponse extends ClientServerResponse implements Serializabl
 
     public CEMSendResponse(CEMSendRequest request) {
         super(request);
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CEMSendResponse() {
+        super();
     }
 
     @Override

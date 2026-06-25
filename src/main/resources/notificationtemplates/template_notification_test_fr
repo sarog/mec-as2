@@ -1,0 +1,25 @@
+$Header:$
+Ce fichier contient le modèle de notification pour le test des paramètres de messagerie.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+${PRODUCTNAME} : nom du produit
+${HOST} : Hôte sur lequel le serveur est exécuté
+${USER} : Utilisateur sous lequel le serveur est exécuté
+${MAILHOST} : Nom d'hôte SMTP
+${MAILPORT} : Port du serveur SMTP
+${CONNECTIONSECURITY} : Sécurité de la connexion (NONE/STARTSSL/SSL)
+${AUTHORIZATION} : Utilisateur/mot de passe, OAUTH2 ou AUCUNE
+
+
+
+[SUBJECT]
+Message de vérification de la configuration
+
+
+[BODY]
+Ce message a été initié par l'utilisateur ${USER} sur l'hôte ${HOST}. En recevant ce message, vous vous assurez que les paramètres de ${PRODUCTNAME} pour la notification par e-mail sont corrects.
+
+Paramètres de cette tentative réussie :
+
+Serveur de messagerie SMTP : ${MAILHOST}:${MAILPORT}
+Sécurité de la connexion : ${CONNECTIONSECURITY}
+Autorisation : ${AUTHORIZATION}

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 41    11/03/25 16:42 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleCertificates.java 47    5/02/26 15:42 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 41 $
+ * @version $Revision: 47 $
  */
 public class ResourceBundleCertificates extends MecResourceBundle{
     
@@ -25,7 +25,6 @@ public class ResourceBundleCertificates extends MecResourceBundle{
     
     /**List of messages in the specific language*/
     private static final Object[][] CONTENTS = {        
-        {"display.ca.certs", "Show CA certificates ({0})" },        
         {"button.delete", "Delete key/certificate" },
         {"button.delete.all.expired", "Delete all expired keys/certificates" },
         {"button.edit", "Rename alias" },
@@ -47,14 +46,16 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"menu.tools.importcsr", "Trust certificate: Import CAs answer to Sign Request" },
         {"menu.tools.importcsr.renew", "Renew certificate: Import CAs answer to Sign Request" },
         {"menu.tools.verifyall", "Check revocation lists of all certificates (CRL)" },
+        {"menu.tools.crmf", "CRMF Request Generation (BDEW)" },                
         {"label.selectcsrfile", "Please select the file where to store the request" },
         {"label.cert.import", "Import certificate (from your trading partner)" },
         {"label.cert.export", "Export certificate (for your trading partner)" },
-        {"label.key.import", "Import your own private key (from keystore PKCS#12, JKS)" },          
+        {"label.key.import", "Import your own private key (from keystore PKCS#12, JKS)" },      
+        {"label.key.import.pem", "Import your own private key (from PEM)" },      
         {"label.key.export.pkcs12", "Export your own private key (PKCS#12, PEM) (for backup purpose only!)" },
         {"label.keystore.export", "Export all entries as keystore file (for backup purpose only!)" },
         {"title.signencrypt", "Certificates and keys (encryption, signature)" },
-        {"title.ssl", "Certificates and keys (TLS)" },                
+        {"title.tls", "Certificates and keys (TLS)" },                
         {"button.ok", "Ok" },
         {"button.cancel", "Cancel" },
         {"filechooser.certificate.import", "Please select the certificate file for the import" },
@@ -78,11 +79,10 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"cert.delete.impossible", "Impossible to delete the entry, it''s in use by a partner. \nPlease use \"Show usage\" for details." },
         {"module.locked", "This certificate management is locked by another client, you are not allowed to commit your changes!" },
         {"label.trustanchor", "Trust anchor" },
-        {"warning.testkey", "Public mendelson test key - do not use in production!" },
         {"label.key.valid", "This key is valid" },
-        {"label.key.invalid", "This key is invalid" },
+        {"label.key.invalid", "This key is invalid {0}" },
         {"label.cert.valid", "This certificate is valid" },
-        {"label.cert.invalid", "This certificate is invalid" },
+        {"label.cert.invalid", "This certificate is invalid {0}" },
         {"warning.deleteallexpired.text", "Do you really want to delete {0} expired and unused entries?" },
         {"warning.deleteallexpired.title", "Delete all expired, unused keys/certificates" },
         {"warning.deleteallexpired.noneavailable.title", "None available" },
@@ -96,6 +96,7 @@ public class ResourceBundleCertificates extends MecResourceBundle{
         {"keycopy.target.exists.text", "This entry does already exist (alias {0})."},
         {"keycopy.target.ro.text", "The underlaying keystore file for the target certificate manager is read/only." },
         {"keycopy.success.text", "The entry [{0}] has been copied successfully" },
+        {"certificates.save", "Saving certificates" },
     };
     
 }

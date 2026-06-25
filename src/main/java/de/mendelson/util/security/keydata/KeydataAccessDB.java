@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/keydata/KeydataAccessDB.java 24    12/03/25 17:28 Heller $
+//$Header: /mec_as2/de/mendelson/util/security/keydata/KeydataAccessDB.java 28    15/04/26 12:44 Heller $
 package de.mendelson.util.security.keydata;
 
 import de.mendelson.util.MecResourceBundle;
@@ -29,16 +29,16 @@ import java.util.logging.Logger;
  * Database access wrapper for key/certificate information
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 28 $
  */
 public class KeydataAccessDB {
 
-    public static String REASON_IMPORT_INITIAL = "INITIAL";
-    public static String REASON_IMPORT_COMMAND_LINE_SETTINGS = "COMMAND_LINE_SETTINGS";
+    public static final String REASON_IMPORT_INITIAL = "INITIAL";
+    public static final String REASON_IMPORT_COMMAND_LINE_SETTINGS = "COMMAND_LINE_SETTINGS";
 
     private final IDBDriverManager dbDriverManager;
     private final SystemEventManager systemEventManager;
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -51,8 +51,8 @@ public class KeydataAccessDB {
 
     public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplDB.KEYSTORE_USAGE_TLS;
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN;
-    public static String KEYSTORE_JKS = BCCryptoHelper.KEYSTORE_JKS;
-    public static String KEYSTORE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
+    public static final String KEYSTORE_JKS = BCCryptoHelper.KEYSTORE_JKS;
+    public static final String KEYSTORE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
 
     public KeydataAccessDB(IDBDriverManager dbDriverManager, SystemEventManager systemEventManager) {
         this.dbDriverManager = dbDriverManager;
@@ -95,7 +95,7 @@ public class KeydataAccessDB {
                 }
             }
         } catch (Throwable e) {
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (0);
     }
@@ -104,25 +104,35 @@ public class KeydataAccessDB {
      * Returns the key storage of the requested purpose
      */
     public KeystoreData getKeydata(int purpose) {
-        try (Connection configConnectionAutoCommit = this.dbDriverManager
+        String transactionName = "Keydata_get";
+        KeystoreData keystoreData = null;
+        try (Connection configConnectionNoAutoCommit = this.dbDriverManager
                 .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
-            try (PreparedStatement selectStatement = configConnectionAutoCommit.prepareStatement(
-                    "SELECT * FROM keydata WHERE purpose=?")) {
-                selectStatement.setInt(1, purpose);
-                try (ResultSet result = selectStatement.executeQuery()) {
-                    if (result.next()) {
-                        byte[] keyData = this.dbDriverManager.readBytesStoredAsJavaObject(result, "storagedata");
-                        String securityProvider = result.getString("securityprovider");
-                        int storageType = result.getInt("storagetype");
-                        KeystoreData data = new KeystoreData(securityProvider, storageType, keyData);
-                        return (data);
+            configConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = configConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                this.dbDriverManager.setTableLockREAD(transactionStatement, new String[]{"keydata"});
+                try (PreparedStatement selectStatement = configConnectionNoAutoCommit.prepareStatement(
+                        "SELECT * FROM keydata WHERE purpose=?")) {
+                    selectStatement.setInt(1, purpose);
+                    try (ResultSet result = selectStatement.executeQuery()) {
+                        if (result.next()) {
+                            byte[] keyData = this.dbDriverManager.readBytesStoredAsJavaObject(result, "storagedata");
+                            String securityProvider = result.getString("securityprovider");
+                            int storageType = result.getInt("storagetype");
+                            keystoreData = new KeystoreData(securityProvider, storageType, keyData);
+                        }
                     }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
-        return (null);
+        return (keystoreData);
     }
 
     /**
@@ -147,8 +157,8 @@ public class KeydataAccessDB {
                     purpose == KeystoreStorageImplDB.KEYSTORE_USAGE_TLS ? "TLS" : "ENC/SIGN"
                 });
         logger.info(moveText);
-        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_CERTIFICATE_IMPORT_KEYSTORE);
+        SystemEvent event = new SystemEvent(SystemEvent.Severity.INFO, SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.CERTIFICATE_IMPORT_KEYSTORE);
         event.setBody(moveText + "\n" + reasonText);
         event.setSubject(moveTitle);
         systemEventManager.newEvent(event);
@@ -169,13 +179,13 @@ public class KeydataAccessDB {
                 this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
                         new String[]{
                             "keydata"});
-                boolean entryExists = true;
+                boolean entryExists = false;
                 try (PreparedStatement checkStatement = configConnectionNoAutoCommit.prepareStatement(
-                        "SELECT COUNT(1) AS counter FROM keydata WHERE purpose=?")) {
+                        "SELECT 1 FROM keydata WHERE purpose=?")) {
                     checkStatement.setInt(1, purpose);
                     try (ResultSet result = checkStatement.executeQuery()) {
                         if (result.next()) {
-                            entryExists = result.getInt("counter") > 0;
+                            entryExists = true;
                         }
                     }
                     if (!entryExists) {
@@ -195,13 +205,13 @@ public class KeydataAccessDB {
                     if (!entryExists) {
                         this.logKeystoreImport(logger, keystoreFile, purpose, REASON_IMPORT_INITIAL);
                     }
-                } catch (Exception e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                } catch (Throwable e) {
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -243,12 +253,12 @@ public class KeydataAccessDB {
                     updateStatement.executeUpdate();
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -272,12 +282,12 @@ public class KeydataAccessDB {
                     deleteStatement.executeUpdate();
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 }

@@ -1,0 +1,24 @@
+$Header:$
+Questo file contiene il modello di notifica per la notifica dell'aggiunta di un certificato SSL a causa di un CEM.
+È possibile utilizzare le seguenti variabili, che vengono sostituite di conseguenza:
+${PRODUCTNAME}: Nome del prodotto
+${HOST}: Host del server AS2
+${CERTIFICATETECHDETAILS}: Dettagli tecnici del certificato
+${PARTNER}: nome del partner dell'iniziatore del CEM
+
+
+
+
+[SUBJECT]
+È stato aggiunto il certificato di crittografia/firma (CEM)
+
+
+[BODY]
+A seguito di una richiesta di scambio di certificati (CEM) da parte del partner "${PARTNER}", è stato aggiunto al sistema un nuovo certificato di crittografia/firma.
+
+Si prega di consultare il sistema per vedere i dettagli del processo. Se non vi fidate di queste modifiche
+queste modifiche, si prega di ripristinarle e di contattare il partner.
+
+Informazioni tecniche sul certificato:
+
+${CERTIFICATETECHDETAILS}

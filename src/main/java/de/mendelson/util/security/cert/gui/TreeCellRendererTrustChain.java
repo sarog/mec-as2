@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/TreeCellRendererTrustChain.java 14    20/11/24 13:18 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/TreeCellRendererTrustChain.java 15    19/08/25 11:21 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -21,7 +21,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * TreeCellRenderer that will display the icons of the trust chain tree
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class TreeCellRendererTrustChain extends DefaultTreeCellRenderer {
 
@@ -105,10 +105,10 @@ public class TreeCellRendererTrustChain extends DefaultTreeCellRenderer {
         if (object != null) {
             if (object instanceof KeystoreCertificate) {
                 KeystoreCertificate certificate = (KeystoreCertificate) object;
-                if (certificate.isRootCertificate()) {
-                    return (ICON_ROOT);
-                } else if (certificate.getIsKeyPair()) {
+                if (certificate.getIsKeyPair()) {
                     return (ICON_KEY);
+                } else if (certificate.isRootCertificate()) {
+                    return (ICON_ROOT);
                 } else {
                     return (ICON_CERT);
                 }

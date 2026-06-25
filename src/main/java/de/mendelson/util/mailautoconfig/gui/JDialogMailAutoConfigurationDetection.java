@@ -1,11 +1,10 @@
-//$Header: /mec_oftp2/de/mendelson/util/mailautoconfig/gui/JDialogMailAutoConfigurationDetection.java 8     14/03/25 11:33 Heller $
+//$Header: /as2/de/mendelson/util/mailautoconfig/gui/JDialogMailAutoConfigurationDetection.java 11    8/04/26 13:35 Heller $
 package de.mendelson.util.mailautoconfig.gui;
 
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.GUIClient;
@@ -13,9 +12,9 @@ import de.mendelson.util.mailautoconfig.MailServiceConfiguration;
 import de.mendelson.util.mailautoconfig.clientserver.MailAutoConfigDetectRequest;
 import de.mendelson.util.mailautoconfig.clientserver.MailAutoConfigDetectResponse;
 import de.mendelson.util.uinotification.UINotification;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
 import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 import javax.swing.ImageIcon;
@@ -23,6 +22,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 
@@ -38,17 +38,25 @@ import javax.swing.event.ListSelectionListener;
  * Detect mail server settings by a give mail address
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 11 $
  */
 public class JDialogMailAutoConfigurationDetection extends JDialog implements ListSelectionListener {
 
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private MecResourceBundle rb = null;
+    private static final MecResourceBundle rb;
 
-    private final static MendelsonMultiResolutionImage IMAGE_MAILSERVERDETECTION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/mailautoconfig/gui/detect.svg", 32);
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleMailAutoConfigurationDetection.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
+
+    private static final MendelsonMultiResolutionImage IMAGE_MAILSERVERDETECTION
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/mailautoconfig/gui/detect.svg", 32);
     private final BaseClient baseClient;
     private final IStatusBar statusbar;
     private boolean useConfiguration = false;
@@ -58,15 +66,7 @@ public class JDialogMailAutoConfigurationDetection extends JDialog implements Li
         super(parent, true);
         this.baseClient = baseClient;
         this.statusbar = statusbar;
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleMailAutoConfigurationDetection.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         this.jTableConfiguration.setModel(new TableModelMailAutoDetection());
         this.jTableConfiguration.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -76,7 +76,7 @@ public class JDialogMailAutoConfigurationDetection extends JDialog implements Li
         this.jTextFieldMailAddress.setText(mailAddress);
         this.jTextFieldMailAddress.selectAll();
         TextOverlay.addTo(this.jTextFieldMailAddress,
-                this.rb.getResourceString("label.email.hint"));
+                rb.getResourceString("label.email.hint"));
         this.getRootPane().setDefaultButton(this.jButtonStartDetection);
         this.setButtonState();
     }
@@ -119,8 +119,13 @@ public class JDialogMailAutoConfigurationDetection extends JDialog implements Li
         if (!(this.getGlassPane() instanceof LockingGlassPane)) {
             this.setGlassPane(new LockingGlassPane());
         }
-        this.getGlassPane().setVisible(true);
-        this.getGlassPane().requestFocusInWindow();
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                getGlassPane().setVisible(true);
+                getGlassPane().requestFocusInWindow();
+            }
+        });
     }
 
     /**
@@ -128,7 +133,12 @@ public class JDialogMailAutoConfigurationDetection extends JDialog implements Li
      * the UI
      */
     private void unlock() {
-        getGlassPane().setVisible(false);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                getGlassPane().setVisible(false);
+            }
+        });
     }
 
     /**
@@ -138,32 +148,44 @@ public class JDialogMailAutoConfigurationDetection extends JDialog implements Li
         if (!this.emailAddressIsValid(this.jTextFieldMailAddress.getText())) {
             UINotification.instance().addNotification(
                     JDialogMailAutoConfigurationDetection.IMAGE_MAILSERVERDETECTION,
-                    UINotification.TYPE_ERROR,
-                    JDialogMailAutoConfigurationDetection.this.rb.getResourceString("email.invalid.title"),
-                    JDialogMailAutoConfigurationDetection.this.rb.getResourceString("email.invalid.text",
+                    UINotification.Type.ERROR,
+                    JDialogMailAutoConfigurationDetection.rb.getResourceString("email.invalid.title"),
+                    JDialogMailAutoConfigurationDetection.rb.getResourceString("email.invalid.text",
                             JDialogMailAutoConfigurationDetection.this.jTextFieldMailAddress.getText()));
             return;
         }
-        Runnable runnable = new Runnable() {
+        JDialogMailAutoConfigurationDetection.this.lock();
+        final String uniqueId = this.getClass().getName() + ".performDetection." + System.currentTimeMillis();
+        JDialogMailAutoConfigurationDetection.this.statusbar.startProgressIndeterminate(
+                JDialogMailAutoConfigurationDetection.rb.getResourceString("progress.detection"), uniqueId);
+        SwingWorker<Void, MailAutoConfigDetectResponse> worker = new SwingWorker<Void, MailAutoConfigDetectResponse>() {
             @Override
-            public void run() {
-                JDialogMailAutoConfigurationDetection.this.lock();
-                final String uniqueId = this.getClass().getName() + ".performDetection." + System.currentTimeMillis();
+            protected Void doInBackground() throws Exception {
                 try {
-                    JDialogMailAutoConfigurationDetection.this.statusbar.startProgressIndeterminate(
-                            JDialogMailAutoConfigurationDetection.this.rb.getResourceString("progress.detection"), uniqueId);
                     MailAutoConfigDetectRequest request
                             = new MailAutoConfigDetectRequest(
                                     JDialogMailAutoConfigurationDetection.this.jTextFieldMailAddress.getText());
                     MailAutoConfigDetectResponse response = (MailAutoConfigDetectResponse) baseClient.sendSync(request);
-                    if (response.getException() != null) {
+                    if (response != null && response.getException() != null) {
                         throw (response.getException());
                     }
+                    if (response != null) {
+                        publish(response);
+                    }
+                } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<MailAutoConfigDetectResponse> responseList) {
+                for (MailAutoConfigDetectResponse response : responseList) {
                     ((TableModelMailAutoDetection) JDialogMailAutoConfigurationDetection.this.jTableConfiguration.getModel())
                             .passNewData(response.getConfiguration());
                     if (!response.getConfiguration().isEmpty()) {
                         JDialogMailAutoConfigurationDetection.this.jLabelProvider.setText(
-                                JDialogMailAutoConfigurationDetection.this.rb.getResourceString("label.detectedprovider",
+                                JDialogMailAutoConfigurationDetection.rb.getResourceString("label.detectedprovider",
                                         response.getConfiguration().get(0).getMailProviderLongName()));
                         SwingUtilities.invokeLater(new Runnable() {
                             @Override
@@ -174,25 +196,26 @@ public class JDialogMailAutoConfigurationDetection extends JDialog implements Li
                         });
                     } else {
                         JDialogMailAutoConfigurationDetection.this.jLabelProvider.setText(
-                                JDialogMailAutoConfigurationDetection.this.rb.getResourceString("label.detectedprovider",
+                                JDialogMailAutoConfigurationDetection.rb.getResourceString("label.detectedprovider",
                                         "--"));
                         UINotification.instance().addNotification(
                                 JDialogMailAutoConfigurationDetection.IMAGE_MAILSERVERDETECTION,
-                                UINotification.TYPE_ERROR,
-                                JDialogMailAutoConfigurationDetection.this.rb.getResourceString("detection.failed.title"),
-                                JDialogMailAutoConfigurationDetection.this.rb.getResourceString("detection.failed.text",
+                                UINotification.Type.ERROR,
+                                JDialogMailAutoConfigurationDetection.rb.getResourceString("detection.failed.title"),
+                                JDialogMailAutoConfigurationDetection.rb.getResourceString("detection.failed.text",
                                         JDialogMailAutoConfigurationDetection.this.jTextFieldMailAddress.getText()));
                     }
-                } catch (Throwable e) {
-                    e.printStackTrace();
-                    UINotification.instance().addNotification(e);
-                } finally {
-                    JDialogMailAutoConfigurationDetection.this.unlock();
-                    JDialogMailAutoConfigurationDetection.this.statusbar.stopProgressIfExists(uniqueId);
                 }
             }
+
+            @Override
+            protected void done() {
+                JDialogMailAutoConfigurationDetection.this.unlock();
+                JDialogMailAutoConfigurationDetection.this.statusbar.stopProgressIfExists(uniqueId);
+            }
+
         };
-        GUIClient.submit( runnable );
+        worker.execute();
     }
 
     /**

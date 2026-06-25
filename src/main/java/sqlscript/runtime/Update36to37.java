@@ -1,7 +1,7 @@
-//$Header: /mec_as2/sqlscript/runtime/Update36to37.java 6     5.08.13 11:27 Heller $
+//$Header: /as2/sqlscript/runtime/Update36to37.java 7     8/11/24 9:05 Heller $
 package sqlscript.runtime;
 
-import de.mendelson.comm.as2.database.IUpdater;
+import de.mendelson.util.database.IUpdater;
 import de.mendelson.util.ConsoleProgressBar;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -24,7 +24,7 @@ import java.util.TimeZone;
  * UTC
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  * @since build 162
  */
 public class Update36to37 implements IUpdater {

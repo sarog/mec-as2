@@ -1,9 +1,10 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/Exec.java 16    5/03/25 17:52 Heller $
+//$Header: /as4/de/mendelson/util/Exec.java 17    8/10/25 13:48 Heller $
 package de.mendelson.util;
 
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 
 /*
@@ -17,7 +18,7 @@ import java.io.PrintStream;
  * Executes a native command
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class Exec {
 
@@ -60,18 +61,19 @@ public class Exec {
         ExecArgumentParser parser = new ExecArgumentParser();
         String[] arguments = parser.parse(command);
         Process process = Runtime.getRuntime().exec(arguments);
-        // copy input and error to the output stream
+        //copy input and error to the output stream
         StreamPumper inputPumper = new StreamPumper(process.getInputStream(), out);
         StreamPumper errorPumper = new StreamPumper(process.getErrorStream(), err);
-        // starts pumping away the generated output/error
+        //starts pumping away the generated output/error
         inputPumper.start();
         errorPumper.start();
         if (this.waitFor) {
-            //No idea what why this close of the process output stream should be useful but 
-            //without this line the whole process hangs under Linux - looks like an 
-            //implementation problem of the Linux JVM
+            //Close the streams else the process will hang
             process.getOutputStream().close();
             returnValue = process.waitFor();
+            //wait for pumpers to finish reading output
+            inputPumper.join();
+            errorPumper.join();
             process.destroy();
         }
         return (returnValue);
@@ -92,60 +94,28 @@ public class Exec {
      */
     public static class StreamPumper extends Thread {
 
-        /**
-         * Reader to read the data from
-         */
-        private final BufferedInputStream inStream;
-        private boolean endOfStream = false;
-        private static final int SLEEP_TIME = 3;
-        private static final int BUFFER_SIZE = 2048;
-        /**
-         * Stream to write the pumped info into
-         */
-        private PrintStream outputStream = null;
+        private final BufferedReader reader;
+        private final PrintStream outputStream;
 
-        /**
-         * Create a pumper
-         */
-        public StreamPumper(InputStream is, PrintStream outputStream) {
+        public StreamPumper(InputStream in, PrintStream outputStream) {
+            this.reader = new BufferedReader(new InputStreamReader(in));
             this.outputStream = outputStream;
-            this.inStream = new BufferedInputStream(is);
         }
 
-        /**
-         * Explicit pump of the stream
-         */
-        private void pumpStream() throws IOException {
-            byte[] buf = new byte[BUFFER_SIZE];
-            int read = 0;
-            if (!endOfStream) {
-                read = this.inStream.read(buf);
-                if (read > 0) {
-                    outputStream.write(buf, 0, read);
-                } else if (read == -1) {
-                    endOfStream = true;
-                }
-            }
-        }
-
-        /**
-         * Start method of the thread
-         */
         @Override
         public void run() {
+            String line;
             try {
-                try {
-                    while (!endOfStream) {
-                        pumpStream();
-                        sleep(SLEEP_TIME);
-                    }
-                } catch (InterruptedException ie) {
-                    //nop
-                } finally {
-                    inStream.close();
+                while ((line = reader.readLine()) != null) {
+                    outputStream.println(line);
+                    outputStream.flush();
                 }
-            } catch (Throwable ioe) {
-                //nop, ignore this
+            } catch (IOException e) {
+            } finally {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {
+                }
             }
         }
     }

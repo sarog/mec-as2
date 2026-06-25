@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/wizard/category/JDialogCategorySelection.java 10    11/02/25 13:40 Heller $
+//$Header: /oftp2/de/mendelson/util/wizard/category/JDialogCategorySelection.java 12    13/03/26 11:12 Heller $
 package de.mendelson.util.wizard.category;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,14 +26,20 @@ import javax.swing.KeyStroke;
  * Main class for the category selection wizard
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
-public class JDialogCategorySelection extends JDialog implements CategorySelectionListener {
+public final class JDialogCategorySelection extends JDialog implements CategorySelectionListener {
 
-    /**
-     * Localize the GUI
-     */
-    private MecResourceBundle rb = null;
+    private static final MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCategorySelection.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Synchronized structure that contains action listeners to be informed if a
@@ -47,15 +53,7 @@ public class JDialogCategorySelection extends JDialog implements CategorySelecti
      * Creates new form JDialogCategorySelection
      */
     public JDialogCategorySelection(JFrame parent) {
-        super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCategorySelection.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
+        super(parent, true);        
         initComponents();
         this.getRootPane().setDefaultButton(this.jButtonOk);     
         this.actionListenerESC = new ActionListener() {

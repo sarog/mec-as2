@@ -1,0 +1,17 @@
+$Header:$
+Plik ten zawiera szablon powiadomienia o przekroczeniu zdefiniowanego limitu wiadomości do określonego partnera
+Można użyć następujących zmiennych, które są odpowiednio zastępowane:
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host serwera AS2
+${PARTNER}: Nazwa partnera, dla którego przekroczono limit wysyłania+odbierania.
+${QUOTA}: Liczba autoryzowanych wiadomości wysyłanych i odbieranych (limit)
+
+
+
+
+[SUBJECT]
+Przekroczono limit wysyłania i odbierania dla ${PARTNER}
+
+
+[BODY]
+Liczba wiadomości otrzymanych od partnera ${PARTNER} i wysłanych do partnera ${PARTNER} przekroczyła ${QUOTA}. Po stronie serwera nie ma to żadnego wpływu, wszelkie działania musiałyby być wykonywane ręcznie.

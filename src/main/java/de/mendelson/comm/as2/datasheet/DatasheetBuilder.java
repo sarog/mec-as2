@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 23    21/11/24 17:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 24    23/03/26 12:56 Heller $
 package de.mendelson.comm.as2.datasheet;
 
 import de.intarsys.pdf.cds.CDSRectangle;
@@ -18,6 +18,7 @@ import de.intarsys.pdf.pd.PDWidgetAnnotation;
 import de.intarsys.tools.locator.FileLocator;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.message.AS2Message;
+import de.mendelson.comm.as2.message.MessageCompressionType;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.MecResourceBundle;
@@ -46,7 +47,7 @@ import java.util.ResourceBundle;
  * Class that is responsible for the creation of a PDF file
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class DatasheetBuilder {
 
@@ -297,7 +298,7 @@ public class DatasheetBuilder {
         this.writeText(creator, rowX1Abs, y - ygap - lineY, 10, "Compression");
         boolean crossYes = false;
         boolean crossNo = false;
-        if (this.localInformation.getCompression() == AS2Message.COMPRESSION_ZLIB) {
+        if (this.localInformation.getCompression() == MessageCompressionType.ZLIB) {
             crossYes = true;
         } else {
             crossNo = true;

@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 15    20/03/25 14:47 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 16    5/06/25 15:04 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.DateChooserUI;
@@ -49,7 +49,7 @@ import javax.swing.SwingUtilities;
  * Dialog to search on the server side in the log files
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class JDialogSearchLogfile extends JDialog {
 
@@ -202,7 +202,7 @@ public class JDialogSearchLogfile extends JDialog {
                                     response.getException().getClass().getSimpleName(),
                                     response.getException().getMessage(),}));
                     } else {
-                        List<Logline> resultList = response.getSearchResults();
+                        List<Logline> resultList = response.getResultList();
                         for (Logline line : resultList) {
                             try {
                                 long timestamp = Long.valueOf(line.getValue(Logline.KEY_MILLISECS));

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 21    11/03/25 17:00 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 22    31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -10,14 +10,13 @@ import de.mendelson.comm.as2.message.postprocessingevent.IProcessingExecution;
 import de.mendelson.comm.as2.message.postprocessingevent.PostprocessingException;
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventAccessDB;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventType;
 import de.mendelson.comm.as2.partner.Partner;
-import de.mendelson.comm.as2.partner.PartnerEventInformation;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
-import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.util.concurrent.Executors;
@@ -37,7 +36,7 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 22 $
  */
 public class PostProcessingEventController {
 
@@ -86,13 +85,13 @@ public class PostProcessingEventController {
                     ProcessingEvent event = this.processingEventAccess.getNextEventToExecuteAsTransaction(
                             runtimeConnectionNoAutoCommit);
                     IProcessingExecution processExecution = null;
-                    if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_EXECUTE_SHELL) {
+                    if (event != null && event.getProcessType() == ProcessingEventType.EXECUTE_SHELL) {
                         processExecution = new ExecuteShellCommand(this.dbDriverManager);
                         entryFound = true;
-                    } else if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_MOVE_TO_DIR) {
+                    } else if (event != null && event.getProcessType() == ProcessingEventType.MOVE_TO_DIR) {
                         processExecution = new ExecuteMoveToDir(this.dbDriverManager);
                         entryFound = true;
-                    } else if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
+                    } else if (event != null && event.getProcessType() == ProcessingEventType.MOVE_TO_PARTNER) {
                         processExecution = new ExecuteMoveToPartner(this.dbDriverManager,
                                 PostProcessingEventController.this.certificateManagerEncSign);
                         entryFound = true;
@@ -113,7 +112,7 @@ public class PostProcessingEventController {
                             }
                             SystemEventManagerImplAS2.instance().newEventPostprocessingError(errorMessage,
                                     event.getMessageId(), sender, receiver,
-                                    event.getProcessType(), event.getEventType());
+                                    event.getProcessType(), event.getTriggerType());
                         }
                     }
                 }

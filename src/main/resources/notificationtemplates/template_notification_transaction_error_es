@@ -1,0 +1,24 @@
+$Header:$
+Este archivo contiene la plantilla de notificación para probar la configuración del correo electrónico.
+Se pueden utilizar las siguientes variables, que se sustituyen en consecuencia:
+
+${PRODUCTNAME}: Nombre del producto
+${MESSAGEID}: Número de mensaje AS2
+${REMITENTE}: Remitente de la noticia (si se conoce, de lo contrario "--")
+${RECEIVER}: Destinatario del mensaje (si se conoce; de lo contrario, "--").
+${HOST}: Host del servidor AS2
+${LOG}: Registro de la transacción (varias líneas)
+
+
+
+
+[SUBJECT]
+Error en el mensaje AS2 ${MESSAGEID}
+
+
+[BODY]
+El mensaje AS2 ${MESSAGEID} de ${SENDER} a ${RECEIVER} con el asunto "${SUBJECT}" no se pudo transmitir con el estado OK.
+
+Registro de transacciones:
+${LOG}
+

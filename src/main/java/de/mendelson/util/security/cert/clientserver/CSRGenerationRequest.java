@@ -1,6 +1,7 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/CSRGenerationRequest.java 5     12/09/24 8:52 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/CSRGenerationRequest.java 10    7/01/26 14:08 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 10 $
  */
 public class CSRGenerationRequest extends ClientServerMessage implements Serializable {
 
@@ -26,17 +27,25 @@ public class CSRGenerationRequest extends ClientServerMessage implements Seriali
 
     public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplFile.KEYSTORE_USAGE_TLS;
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
-    private final int keystoreUsageSource;
-    private final String fingerprintSHA1;
-    private final int requestType;
-    public final static int SELECTION_PKCS10 = 1;
-    public final static int SELECTION_CRMF = 2;
+    private int keystoreUsageSource;
+    private String fingerprintSHA1;
+    private int requestType;
+    public static final int SELECTION_PKCS10 = 1;
 
     public CSRGenerationRequest(final int KEYSTORE_USAGE_SOURCE,
             String fingerprintSHA1, int requestType) {
         this.keystoreUsageSource = KEYSTORE_USAGE_SOURCE;
         this.fingerprintSHA1 = fingerprintSHA1;
         this.requestType = requestType;
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CSRGenerationRequest() {
+        super();
     }
 
     @Override
@@ -52,14 +61,6 @@ public class CSRGenerationRequest extends ClientServerMessage implements Seriali
     }
 
     /**
-     * @return the keystoreType, one of ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS 
-     * or ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN
-     */
-    public int getKeystoreUsage() {
-        return keystoreUsageSource;
-    }
-
-    /**
      * @return the fingerprintSHA1
      */
     public String getFingerprintSHA1() {
@@ -71,5 +72,33 @@ public class CSRGenerationRequest extends ClientServerMessage implements Seriali
      */
     public int getRequestType() {
         return requestType;
+    }
+
+    /**
+     * @return the keystoreUsageSource
+     */
+    public int getKeystoreUsageSource() {
+        return keystoreUsageSource;
+    }
+
+    /**
+     * @param keystoreUsageSource the keystoreUsageSource to set
+     */
+    public void setKeystoreUsageSource(int keystoreUsageSource) {
+        this.keystoreUsageSource = keystoreUsageSource;
+    }
+
+    /**
+     * @param fingerprintSHA1 the fingerprintSHA1 to set
+     */
+    public void setFingerprintSHA1(String fingerprintSHA1) {
+        this.fingerprintSHA1 = fingerprintSHA1;
+    }
+
+    /**
+     * @param requestType the requestType to set
+     */
+    public void setRequestType(int requestType) {
+        this.requestType = requestType;
     }
 }

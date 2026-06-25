@@ -1,0 +1,27 @@
+$Header:$
+Ce fichier contient le modèle de notification en cas de problème système.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+${PRODUCTNAME} : nom du produit
+${HOST} : Hôte du serveur AS2
+${CATEGORY} : Catégorie d'erreur
+${MESSAGE} : Message d'erreur
+${DETAILS} : Plus d'informations sur le problème
+
+
+
+
+[SUBJECT]
+Problème de système
+
+
+[BODY]
+Un problème est survenu sur le serveur AS2. En règle générale, les problèmes signalés par ce mail ne sont pas critiques pour l'état du système AS2. Si la transaction correspondante a le statut "vert", cela signifie qu'elle a été effectuée sans erreur.
+Veuillez néanmoins consulter le serveur pour voir ce qui s'y est passé.
+
+Catégorie : ${CATEGORY}
+Message : ${MESSAGE}
+
+
+
+Plus d'informations sur le problème :
+${DETAILS}

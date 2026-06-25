@@ -1,0 +1,32 @@
+$Header:$
+Este archivo contiene la plantilla de notificación para la notificación de certificados que caducan.
+Se pueden utilizar las siguientes variables, que se sustituyen en consecuencia:
+
+${PRODUCTNAME}: Nombre del producto
+${HOST}: Host del servidor
+${ALIAS}: Alias del certificado correspondiente
+${DURATION}: Días hasta que caduque el certificado
+${ISSUER}: Emisor del certificado/clave
+${FINGERPRINT_SHA1}: Huella digital del certificado/clave (SHA-1)
+${VALID_FROM}: Fecha de inicio de validez
+${VALID_TO}: Válido hasta la fecha
+
+
+
+
+[SUBJECT]
+Caduca el certificado
+
+
+[BODY]
+El certificado con el alias ${ALIAS} en "${PRODUCTNAME}@${HOST}" caducará en ${DURATION} día(s).
+
+Por favor, actualícelo, ya que una vez transcurrido este plazo dejará de ser utilizable y, por tanto, no podrá emplearse para tareas criptográficas.
+
+Información adicional sobre el certificado:
+Alias: ${ALIAS}
+Emisor: ${ISSUER}
+Huella digital (SHA-1): ${FINGERPRINT_SHA1}
+Válido desde: ${VALID_FROM}
+Válido hasta: ${VALID_TO}
+

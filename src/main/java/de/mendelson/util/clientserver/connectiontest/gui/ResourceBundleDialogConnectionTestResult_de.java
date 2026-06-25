@@ -1,7 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_de.java 15    9/12/24 15:50 Hell $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_de.java 16    9/04/26 8:08 Heller $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class ResourceBundleDialogConnectionTestResult_de extends MecResourceBundle {
 
@@ -31,20 +32,20 @@ public class ResourceBundleDialogConnectionTestResult_de extends MecResourceBund
      */
     private static final Object[][] CONTENTS = {
         {"title", "Ergebnis des Verbindungstests"},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_OFTP2, 
+        {"description." +  ConnectionTest.Type.OFTP2.toInt(), 
             "Das System hat einen Verbindungstest zur Addresse {0}, Port {1} durchgeführt. "
             + "Das folgende Ergebnis zeigt, ob der Verbindungsaufbau erfolgreich war und ob an dieser "
             + "Addresse ein OFTP2 Server läuft. Wenn eine TLS Verbindung verwendet werden sollte und dies "
             + "erfolgreich möglich war, können Sie die Zertifikate Ihres Partners herunterladen und in Ihren "
             + "Keystore importieren."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS2, 
+        {"description." +  ConnectionTest.Type.AS2.toInt(), 
             "Das System hat einen Verbindungstest zur Addresse {0}, Port {1} durchgeführt. "
             + "Das folgende Ergebnis zeigt, ob der Verbindungsaufbau erfolgreich war und ob an dieser "
             + "Addresse ein HTTP Server läuft. Auch wenn der Test erfolgreich ist, ist nicht sichergestellt, "
             + "ob dies ein normaler HTTP Server oder ein AS2 Server ist. Wenn eine TLS Verbindung verwendet "
             + "werden sollte (HTTPS) und dies erfolgreich möglich war, können Sie die Zertifikate Ihres "
             + "Partners herunterladen und in Ihren Keystore importieren."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS4, 
+        {"description." +  ConnectionTest.Type.AS4.toInt(), 
             "Das System hat einen Verbindungstest zur Addresse {0}, Port {1} durchgeführt. "
             + "Das folgende Ergebnis zeigt, ob der Verbindungsaufbau erfolgreich war und ob an dieser "
             + "Addresse ein HTTP Server läuft. Auch wenn der Test erfolgreich ist, ist nicht sichergestellt, "

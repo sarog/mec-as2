@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/uinotification/NotificationPanel.java 26    18/06/24 14:10 Heller $
+//$Header: /as2/de/mendelson/util/uinotification/NotificationPanel.java 27    8/04/26 13:31 Heller $
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -20,7 +20,7 @@ import javax.swing.JPanel;
  * Panel that contains the notification information
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 27 $
  */
 public class NotificationPanel extends JPanel {
 
@@ -36,10 +36,10 @@ public class NotificationPanel extends JPanel {
     protected static final Color DEFAULT_COLOR_FOREGROUND_TITLE = Color.GRAY;
     protected static final Color DEFAULT_COLOR_FOREGROUND_DETAILS = Color.GRAY;
 
-    private int notificationType = UINotification.TYPE_SUCCESS;
+    private UINotification.Type notificationType = UINotification.Type.SUCCESS;
 
-    protected final static int IMAGESIZE_CLOSECROSS = 13;
-    protected final static int IMAGESIZE_ICON = 34;
+    protected static final int IMAGESIZE_CLOSECROSS = 13;
+    protected static final int IMAGESIZE_ICON = 34;
 
     private MendelsonMultiResolutionImage image;
     /**
@@ -48,11 +48,11 @@ public class NotificationPanel extends JPanel {
      * the font to allow longer messages
      */
     private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_NO_SCALEDOWN = 80;
-    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1 
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1
             = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_NO_SCALEDOWN + 60;
-    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2 
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2
             = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1 + 60;
-    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_3 
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_3
             = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2 + 100;
 
     /**
@@ -62,8 +62,8 @@ public class NotificationPanel extends JPanel {
 
     /**
      * @param image Image to display - there is a default if this is null
-     * @param NOTIFICATION_TYPE One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR
+     * @param notificationType One of UINotification.TYPE.OK,
+     * UINotification.TYPE.WARNING, UINotification.TYPE.ERROR
      * @param notificationTitle The title of the notification - not folded -
      * means you have to ensure a short title. If this is null, the type OK,
      * WARNING, ERROR is displayed in the localized language of the current
@@ -73,9 +73,9 @@ public class NotificationPanel extends JPanel {
      * exceeds the defined MAX_NOTIFICATION_DETAILS_LENGTH it is simply cut off
      */
     public NotificationPanel(MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE, String notificationTitle, String notificationDetails,
+            UINotification.Type notificationType, String notificationTitle, String notificationDetails,
             Rectangle bounds, boolean graphicSupportsShapedWindows) {
-        this.notificationType = NOTIFICATION_TYPE;
+        this.notificationType = notificationType;
         this.image = image;
         this.graphicSupportsShapedWindows = graphicSupportsShapedWindows;
         initComponents();
@@ -169,22 +169,22 @@ public class NotificationPanel extends JPanel {
             Color accentColorError,
             Color backgroundColorInformation,
             Color accentColorInformation) {
-        if (this.notificationType == UINotification.TYPE_SUCCESS) {
+        if (this.notificationType == UINotification.Type.SUCCESS) {
             this.jPanelNotificationTypeBar.setBackground(accentColorSuccess);
             this.jPanelIcon.setBackground(backgroundColorSuccess);
             this.jPanelText.setBackground(backgroundColorSuccess);
             this.jPanelCross.setBackground(backgroundColorSuccess);
-        } else if (this.notificationType == UINotification.TYPE_WARNING) {
+        } else if (this.notificationType == UINotification.Type.WARNING) {
             this.jPanelNotificationTypeBar.setBackground(accentColorWarning);
             this.jPanelIcon.setBackground(backgroundColorWarning);
             this.jPanelText.setBackground(backgroundColorWarning);
             this.jPanelCross.setBackground(backgroundColorWarning);
-        } else if (this.notificationType == UINotification.TYPE_ERROR) {
+        } else if (this.notificationType == UINotification.Type.ERROR) {
             this.jPanelNotificationTypeBar.setBackground(accentColorError);
             this.jPanelIcon.setBackground(backgroundColorError);
             this.jPanelText.setBackground(backgroundColorError);
             this.jPanelCross.setBackground(backgroundColorError);
-        } else if (this.notificationType == UINotification.TYPE_INFORMATION) {
+        } else if (this.notificationType == UINotification.Type.INFORMATION) {
             this.jPanelNotificationTypeBar.setBackground(accentColorInformation);
             this.jPanelIcon.setBackground(backgroundColorInformation);
             this.jPanelText.setBackground(backgroundColorInformation);

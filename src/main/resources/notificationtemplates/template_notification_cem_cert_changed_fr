@@ -1,0 +1,26 @@
+$Header:$
+Ce fichier contient le modèle de notification pour signaler une modification de certificat suite à un CEM.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+${PRODUCTNAME} : nom du produit
+${HOST} : hôte du serveur AS2
+${CERTIFICATEDESCRIPTION} : description du certificat actuellement utilisé
+${CERTIFICATETECHDETAILS} : détails techniques des certificats référencés dans cette notification
+${PARTNER} : initiateur du message CEM
+
+
+[SUBJECT]
+Le certificat a été ajouté au système par CEM et doit maintenant être adopté
+
+
+[BODY]
+À la suite d'une demande de certificat par le partenaire ${PARTNER}, un nouveau certificat a été ajouté au magasin de clés du système. Votre partenaire a suggéré que vous
+utilisiez ce certificat à partir de maintenant.
+
+${CERTIFICATEDESCRIPTION}
+
+Veuillez consulter le système pour obtenir plus de détails sur le processus. Si vous ne faites pas confiance à ces modifications,
+ veuillez les annuler et contacter votre partenaire.
+
+Informations techniques sur les certificats mentionnés dans cette notification :
+
+${CERTIFICATETECHDETAILS}
