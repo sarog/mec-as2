@@ -54,8 +54,15 @@
             </includes>
         </fileSet>
 
+        <!-- Embedded Jetty distribution with as2.war in webapps/ -->
+        <!--<fileSet>
+            <directory>${project.build.directory}/jetty-distribution</directory>
+            <outputDirectory>/jetty10</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>-->
+
         <fileSet>
-            <directory>${project.build.directory}/jetty-distribution/jetty-home-${jetty.version}</directory>
+            <directory>${jetty.distribution.dir}/jetty-home-${jetty.version}</directory>
             <outputDirectory>/jetty10</outputDirectory>
             <includes>
                 <!--<include>bin/*</include>-->
@@ -75,7 +82,7 @@
         <!-- Include local system-scope help jars manually because Maven does not copy system dependencies normally -->
         <fileSet>
             <directory>${project.basedir}/lib/help</directory>
-            <outputDirectory>/jlib</outputDirectory>
+            <outputDirectory>/jlib/help</outputDirectory>
             <includes>
                 <include>*.jar</include>
             </includes>
@@ -96,12 +103,7 @@
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
 
-        <!-- Embedded Jetty distribution with as2.war in webapps/ -->
-        <fileSet>
-            <directory>${project.build.directory}/jetty-distribution</directory>
-            <outputDirectory>/jetty10</outputDirectory>
-            <useDefaultExcludes>true</useDefaultExcludes>
-        </fileSet>
+
 
     </fileSets>
 
