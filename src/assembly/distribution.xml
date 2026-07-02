@@ -1,0 +1,108 @@
+<assembly xmlns="http://maven.apache.org/ASSEMBLY/2.2.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/ASSEMBLY/2.2.0 https://maven.apache.org/xsd/assembly-2.2.0.xsd">
+
+    <id>distribution</id>
+
+    <formats>
+        <format>zip</format>
+        <format>tar.gz</format>
+    </formats>
+
+    <includeBaseDirectory>true</includeBaseDirectory>
+
+    <files>
+        <!-- Main application jar -->
+        <file>
+            <source>${project.build.directory}/${project.build.finalName}.jar</source>
+            <outputDirectory>/</outputDirectory>
+        </file>
+
+        <!-- Jetty web applications -->
+        <file>
+            <source>${project.build.directory}/as2.war</source>
+            <outputDirectory>/jetty10/webapps</outputDirectory>
+            <!--<outputDirectory>/webapps</outputDirectory>-->
+        </file>
+
+        <!--<file>
+            <source>${project.build.directory}/webas2.war</source>
+            <outputDirectory>/webapps</outputDirectory>
+        </file>-->
+
+        <!-- Documentation/license -->
+        <file>
+            <source>${project.basedir}/README.md</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+
+        <file>
+            <source>${project.basedir}/LICENSE.md</source>
+            <outputDirectory>/</outputDirectory>
+            <filtered>false</filtered>
+        </file>
+    </files>
+
+    <fileSets>
+        <!-- Runtime dependencies copied by maven-dependency-plugin -->
+        <fileSet>
+            <directory>${project.build.directory}/jlib</directory>
+            <outputDirectory>/jlib</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+        </fileSet>
+
+        <fileSet>
+            <directory>${project.build.directory}/jetty-distribution/jetty-home-${jetty.version}</directory>
+            <outputDirectory>/jetty10</outputDirectory>
+            <includes>
+                <!--<include>bin/*</include>-->
+                <include>etc/*</include>
+                <include>lib/*</include>
+                <include>LICENSE.txt</include>
+                <include>NOTICE.txt</include>
+                <include>README.adoc</include>
+                <include>start.jar</include>
+                <include>VERSION.txt</include>
+                <!--<include>modules/*</include>-->
+                <!--<include>start.d/*</include>-->
+            </includes>
+        </fileSet>
+
+
+        <!-- Include local system-scope help jars manually because Maven does not copy system dependencies normally -->
+        <fileSet>
+            <directory>${project.basedir}/lib/help</directory>
+            <outputDirectory>/jlib</outputDirectory>
+            <includes>
+                <include>*.jar</include>
+            </includes>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>
+
+        <!-- SQL scripts: this is copied into as2.jar -->
+        <!--<fileSet>
+            <directory>${project.basedir}/src/main/java/sqlscript</directory>
+            <outputDirectory>/sqlscript</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>-->
+
+        <!-- Optional runtime/config resources if needed by deployment -->
+        <fileSet>
+            <directory>${project.basedir}/src/main/resources/notificationtemplates</directory>
+            <outputDirectory>/notificationtemplates</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>
+
+        <!-- Embedded Jetty distribution with as2.war in webapps/ -->
+        <fileSet>
+            <directory>${project.build.directory}/jetty-distribution</directory>
+            <outputDirectory>/jetty10</outputDirectory>
+            <useDefaultExcludes>true</useDefaultExcludes>
+        </fileSet>
+
+    </fileSets>
+
+</assembly>
