@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app version="2.4" xmlns="http://java.sun.com/xml/ns/j2ee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd">
+    <servlet>
+        <servlet-name>HttpReceiver</servlet-name>
+        <servlet-class>de.mendelson.comm.as2.servlet.HttpReceiver</servlet-class>
+        <init-param>
+            <param-name>dirAllowed</param-name>
+            <param-value>false</param-value>
+        </init-param>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>ServerState</servlet-name>
+        <url-pattern>/ServerState</url-pattern>
+    </servlet-mapping>    
+    <servlet>
+        <servlet-name>ServerState</servlet-name>
+        <servlet-class>de.mendelson.comm.as2.servlet.ServerState</servlet-class>
+        <init-param>
+            <param-name>dirAllowed</param-name>
+            <param-value>false</param-value>
+        </init-param>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>HttpReceiver</servlet-name>
+        <url-pattern>/HttpReceiver</url-pattern>
+    </servlet-mapping>   
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>BlockAll</web-resource-name>
+            <url-pattern>/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint />
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>AllowReceiver</web-resource-name>
+            <url-pattern>/HttpReceiver</url-pattern>
+        </web-resource-collection>
+    </security-constraint>
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>AllowState</web-resource-name>
+            <url-pattern>/ServerState</url-pattern>
+        </web-resource-collection>
+    </security-constraint>
+</web-app>
