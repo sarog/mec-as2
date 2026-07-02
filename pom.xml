@@ -19,7 +19,6 @@
 
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <!-- Jetty 9.4 keeps javax.servlet compatibility -->
         <jetty.version>10.0.26</jetty.version>
         <lucene.version>9.12.2</lucene.version>
         <bouncycastle.version>1.83</bouncycastle.version>
@@ -85,39 +84,6 @@
             </plugin>
 
             <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.5.0</version>
-                <configuration>
-                    <encoding>${project.build.sourceEncoding}</encoding>
-                    <includeEmptyDirs>true</includeEmptyDirs>
-                </configuration>
-
-                <executions>
-                    <!-- Copy as2.war into Jetty's webapps directory -->
-                    <execution>
-                        <id>copy-as2-war-to-jetty-webapps</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${jetty.distribution.dir}/jetty-home-${jetty.version}/webapps</outputDirectory>
-                            <resources>
-                                <resource>
-                                    <directory>${project.build.directory}</directory>
-                                    <filtering>false</filtering>
-                                    <includes>
-                                        <include>as2.war</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
-
-            </plugin>
-
-            <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.15.0</version>
                 <configuration>
@@ -167,6 +133,87 @@
             <plugin>
                 <artifactId>maven-war-plugin</artifactId>
                 <version>3.5.1</version>
+                <configuration>
+                    <webXml>${project.basedir}/src/main/webapp/WEB-INF/web.xml</webXml>
+                    <failOnMissingWebXml>true</failOnMissingWebXml>
+                    <archiveClasses>true</archiveClasses>
+                    <archive>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                        <manifest>
+                            <mainClass>de.mendelson.comm.as2.AS2</mainClass>
+                            <addClasspath>false</addClasspath>
+                            <!--<classpathPrefix>jlib/</classpathPrefix>-->
+                        </manifest>
+                    </archive>
+                    <!--<packagingExcludes>
+                        WEB-INF/lib/*.jar
+                    </packagingExcludes>-->
+
+                    <!-- %regex[WEB-INF/lib/(as2|commons|dnsjava|fluent-hc|httpclient|httpclient-cache|httpcore|httpmime|jakarta.activation|jakarta.mail|jaxen|jcalendar|jfreechart|jfreechart_common|jsch|l2fprod-common-all|mina-core|slf4j-api|slf4j-nop)-*.jar] -->
+                    <packagingIncludes>
+                        images/**,
+                        includes/**,
+                        WEB-INF/lib/as2-*.jar,
+                        WEB-INF/lib/commons-*.jar,
+                        WEB-INF/lib/dnsjava-*.jar,
+                        WEB-INF/lib/fluent-hc-*.jar,
+                        WEB-INF/lib/httpclient-*.jar,
+                        WEB-INF/lib/httpclient-cache-*.jar,
+                        WEB-INF/lib/httpcore-*.jar,
+                        WEB-INF/lib/httpmime-*.jar,
+                        WEB-INF/lib/jakarta.activation-*.jar,
+                        WEB-INF/lib/jakarta.mail-*.jar,
+                        WEB-INF/lib/jaxen-*.jar,
+                        WEB-INF/lib/jcalendar-*.jar,
+                        WEB-INF/lib/jfreechart-*.jar,
+                        WEB-INF/lib/jfreechart_common-*.jar,
+                        WEB-INF/lib/jsch-*.jar,
+                        WEB-INF/lib/l2fprod-common-all.jar,
+                        WEB-INF/lib/mina-core-*.jar,
+                        WEB-INF/lib/slf4j-api-*.jar,
+                        WEB-INF/lib/slf4j-nop-*.jar
+                    </packagingIncludes>
+
+                    <webResources>
+                        <!-- Put the built project jar into WEB-INF/lib/as2.jar -->
+                        <!--<resource>
+                             <directory>${project.build.directory}</directory>
+                             <targetPath>WEB-INF/lib</targetPath>
+                             <filtering>false</filtering>
+                             <includes>
+                                 <include>${project.build.finalName}.jar</include>
+                             </includes>
+                         </resource>-->
+
+                        <!-- Add only the approved dependency jars to WEB-INF/lib. -->
+                        <resource>
+                            <directory>${project.build.directory}/jlib</directory>
+                            <targetPath>WEB-INF/lib</targetPath>
+                            <filtering>false</filtering>
+                            <includes>
+                                <include>commons-*.jar</include>
+                                <include>dnsjava-*.jar</include>
+                                <include>fluent-hc-*.jar</include>
+                                <include>httpclient-*.jar</include>
+                                <include>httpclient-cache-*.jar</include>
+                                <include>httpcore-*.jar</include>
+                                <include>httpmime-*.jar</include>
+                                <include>jakarta.activation-*.jar</include>
+                                <include>jakarta.mail-*.jar</include>
+                                <include>jaxen-*.jar</include>
+                                <include>jcalendar-*.jar</include>
+                                <include>jfreechart-*.jar</include>
+                                <include>jfreechart_common-*.jar</include>
+                                <include>jsch-*.jar</include>
+                                <include>l2fprod-common-all.jar</include>
+                                <include>mina-core-*.jar</include>
+                                <include>slf4j-api-*.jar</include>
+                                <include>slf4j-nop-*.jar</include>
+                            </includes>
+                        </resource>
+                    </webResources>
+                </configuration>
+
                 <executions>
                     <execution>
                         <id>build-as2-war</id>
@@ -175,27 +222,34 @@
                             <goal>war</goal>
                         </goals>
                         <configuration>
-                            <warName>as2</warName>
                             <warSourceDirectory>${project.basedir}/src/main/webapp</warSourceDirectory>
                             <webXml>${project.basedir}/src/main/webapp/WEB-INF/web.xml</webXml>
                             <failOnMissingWebXml>true</failOnMissingWebXml>
                             <archiveClasses>true</archiveClasses>
+                            <archive>
+                                <addMavenDescriptor>false</addMavenDescriptor>
+                                <manifest>
+                                    <mainClass>de.mendelson.comm.as2.AS2</mainClass>
+                                    <addClasspath>false</addClasspath>
+                                    <!--<classpathPrefix>jlib/</classpathPrefix>-->
+                                </manifest>
+                            </archive>
 
                             <!-- Do not let maven-war-plugin add every compile/runtime dependency. -->
-                            <packagingExcludes>
+                            <!--<packagingExcludes>
                                 WEB-INF/lib/*.jar
-                            </packagingExcludes>
+                            </packagingExcludes>-->
 
                             <webResources>
                                 <!-- Put the built project jar into WEB-INF/lib/as2.jar -->
-                               <!--<resource>
-                                    <directory>${project.build.directory}</directory>
-                                    <targetPath>WEB-INF/lib</targetPath>
-                                    <filtering>false</filtering>
-                                    <includes>
-                                        <include>${project.build.finalName}.jar</include>
-                                    </includes>
-                                </resource>-->
+                                <!--<resource>
+                                     <directory>${project.build.directory}</directory>
+                                     <targetPath>WEB-INF/lib</targetPath>
+                                     <filtering>false</filtering>
+                                     <includes>
+                                         <include>${project.build.finalName}.jar</include>
+                                     </includes>
+                                 </resource>-->
 
                                 <!-- Add only the approved dependency jars to WEB-INF/lib. -->
                                 <resource>
@@ -242,6 +296,39 @@
                         </configuration>
                     </execution>-->
                 </executions>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.5.0</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <includeEmptyDirs>true</includeEmptyDirs>
+                </configuration>
+
+                <executions>
+                    <!-- Copy as2.war into Jetty's webapps directory -->
+                    <execution>
+                        <id>copy-as2-war-to-jetty-webapps</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${jetty.distribution.dir}/jetty-home-${jetty.version}/webapps</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>as2.war</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+
             </plugin>
 
             <plugin>
@@ -315,18 +402,47 @@
                 <version>3.6.3</version>
                 <configuration>
                     <mainClass>de.mendelson.comm.as2.AS2</mainClass>
+                    <executable>java</executable>
+                    <workingDirectory>${project.build.directory}/as2-exec</workingDirectory>
+                    <arguments>
+                        <argument>-classpath</argument>
+                        <!-- automatically creates the classpath using all project dependencies,
+                             also adding the project build directory -->
+                        <classpath/>
+                        <argument>de.mendelson.comm.as2.AS2</argument>
+                        <!--<argument>-jar</argument>
+                        <argument>${project.build.directory}/${project.build.finalName}.jar</argument>-->
+                    </arguments>
                 </configuration>
+
+                <!--<executions>
+                    <execution>
+                        <id>run-jetty-server</id>
+                        &lt;!&ndash;<phase>test</phase>&ndash;&gt;
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>de.mendelson.comm.as2.server.JettyStarter</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>-->
             </plugin>
 
-            <!-- Optional: run the webapp locally on Jetty 10 -->
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
                 <version>${jetty.version}</version>
                 <configuration>
-                    <deployMode>external</deployMode>
+                    <deployMode>EXTERNAL</deployMode>
                     <modules>server,http,webapp,deploy</modules>
                     <!--<jettyProperties></jettyProperties>-->
+                    <!--<jettyXmls>
+                        <jettyXml>${project.basedir}/src/main/resources/jetty.xml</jettyXml>
+                    </jettyXmls>-->
+                    <!--<jettyOptions>
+                        <option>-Dorg.eclipse.jetty.server.Request.maxFormContentSize=100000000</option>
+                    </jettyOptions>-->
 
                     <webApp>
                         <contextPath>/as2</contextPath>
@@ -356,12 +472,14 @@
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>${jetty.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
             <version>${jetty.version}</version>
+            <scope>provided</scope>
         </dependency>
 
         <!--<dependency>
@@ -429,20 +547,27 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- Mail / activation -->
+        <!-- Source: https://mvnrepository.com/artifact/com.sun.mail/jakarta.mail -->
         <dependency>
             <groupId>com.sun.mail</groupId>
-            <artifactId>javax.mail</artifactId>
-            <version>1.6.2</version>
+            <artifactId>jakarta.mail</artifactId>
+            <version>1.6.8</version>
+            <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>jakarta.activation</groupId>
+                    <artifactId>jakarta.activation-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Source: https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api -->
-        <dependency>
+        <!--<dependency>
             <groupId>jakarta.mail</groupId>
             <artifactId>jakarta.mail-api</artifactId>
             <version>1.6.8</version>
             <scope>compile</scope>
-        </dependency>
+        </dependency>-->
 
         <!-- Source: https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api -->
         <dependency>
@@ -477,10 +602,35 @@
             <version>3.6.2</version>
         </dependency>
 
+        <!-- Source: https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+            <version>4.5.14</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient-cache -->
+        <!--<dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient-cache</artifactId>
+            <version>4.5.14</version>
+            <scope>compile</scope>
+        </dependency>-->
+
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>fluent-hc</artifactId>
             <version>4.5.14</version>
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/org.apache.httpcomponents/httpmime -->
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpmime</artifactId>
+            <version>4.5.14</version>
+            <scope>runtime</scope>
         </dependency>
 
         <!-- Lucene -->
@@ -522,16 +672,23 @@
             <version>${flatlaf.version}</version>
         </dependency>
 
-        <dependency>
+        <!--<dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-swingx</artifactId>
             <version>${flatlaf.version}</version>
-        </dependency>
+        </dependency>-->
 
-        <dependency>
+        <!--<dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-extras</artifactId>
             <version>${flatlaf.version}</version>
+        </dependency>-->
+
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-intellij-themes</artifactId>
+            <version>${flatlaf.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
         <dependency>
@@ -547,6 +704,12 @@
             <version>1.0.19</version>
             <scope>compile</scope>
         </dependency>
+
+        <!--<dependency>
+            <groupId>com.l2fprod</groupId>
+            <artifactId>l2fprod-common-all</artifactId>
+            <version>6.9.1</version>
+        </dependency>-->
 
         <dependency>
             <groupId>com.l2fprod.common</groupId>
