@@ -1,99 +1,137 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>de.mendelson</groupId>
     <artifactId>as2</artifactId>
-    <version>1.1b65-gh</version>
-    <name>Mendelson AS2 Community Server</name>
+    <version>1.1b69-gh</version>
     <packaging>jar</packaging>
-    <url>https://github.com/sarog/mendelson-as2</url>
+
+    <name>Mendelson AS2 Community Server</name>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
+
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <jetty.version>10.0.24</jetty.version>
-        <lucene.version>9.11.1</lucene.version>
-        <vaadin.version>8.26.0</vaadin.version>
-        <bouncycastle.version>1.78.1</bouncycastle.version>
+        <!-- Jetty 9.4 keeps javax.servlet compatibility -->
+        <jetty.version>10.0.26</jetty.version>
+        <lucene.version>9.12.2</lucene.version>
+        <bouncycastle.version>1.83</bouncycastle.version>
         <mina.version>2.2.3</mina.version>
-        <flatlaf.version>3.5.1</flatlaf.version>
-        <hikaricp.version>5.1.0</hikaricp.version>
-        <jackson.version>2.17.0</jackson.version>
+        <flatlaf.version>3.7</flatlaf.version>
+        <hikaricp.version>7.0.2</hikaricp.version>
+        <jackson.version>2.20.0</jackson.version>
+        <!--<vaadin.version>8.30.0</vaadin.version>-->
 
-        <assembly-directory>target/assembly</assembly-directory>
-        <root-dist-directory>target/jetty-distribution</root-dist-directory>
-        <jetty-webapps-directory>${root-dist-directory}/jetty-distribution-${jetty.version}</jetty-webapps-directory>
+        <distribution.name>${project.artifactId}-${project.version}</distribution.name>
+        <distribution.dir>${project.build.directory}/${distribution.name}</distribution.dir>
+        <jetty.distribution.dir>${project.build.directory}/jetty-distribution</jetty.distribution.dir>
     </properties>
 
     <repositories>
         <repository>
             <id>central</id>
-            <url>https://repo1.maven.org/maven2/</url>
+            <url>https://repo.maven.apache.org/maven2</url>
         </repository>
+
+        <!-- Needed by some legacy dependencies -->
         <repository>
-            <id>jboss-3p</id>
+            <id>jboss-thirdparty-releases</id>
             <url>https://repository.jboss.org/nexus/content/repositories/thirdparty-releases/</url>
         </repository>
     </repositories>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <id>central</id>
-            <url>https://repo.maven.apache.org/maven2</url>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </pluginRepository>
-    </pluginRepositories>
-
     <build>
-        <defaultGoal>compile</defaultGoal>
-        <directory>${basedir}/target</directory>
-        <!--<finalName>${project.artifactId}-${project.version}</finalName>-->
+        <finalName>${project.artifactId}</finalName>
 
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-wrapper-plugin</artifactId>
-                    <version>3.3.2</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <excludes>
+                    <exclude>notificationtemplates/**</exclude>
+                </excludes>
+            </resource>
+            <resource>
+                <directory>src/main/java</directory>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*.gif</include>
+                    <include>**/*.svg</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>src/main/java/sqlscript</directory>
+                <targetPath>sqlscript</targetPath>
+                <filtering>false</filtering>
+                <includes>
+                    <include>**/*</include>
+                </includes>
+                <excludes>
+                    <exclude>**/*.java</exclude>
+                </excludes>
+            </resource>
+        </resources>
 
         <plugins>
-            <!--<plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.1</version>
-            </plugin>-->
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>3.3.0</version>
+                <artifactId>maven-clean-plugin</artifactId>
+                <version>3.5.0</version>
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+                <version>3.5.0</version>
                 <configuration>
-                    <mainClass>de.mendelson.comm.as2.AS2</mainClass>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <includeEmptyDirs>true</includeEmptyDirs>
+                </configuration>
+
+                <executions>
+                    <!-- Copy as2.war into Jetty's webapps directory -->
+                    <execution>
+                        <id>copy-as2-war-to-jetty-webapps</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${jetty.distribution.dir}/jetty-home-${jetty.version}/webapps</outputDirectory>
+                            <resources>
+                                <resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>as2.war</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+
+            </plugin>
+
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.15.0</version>
+                <configuration>
+                    <release>${maven.compiler.release}</release>
+                    <encoding>${project.build.sourceEncoding}</encoding>
                 </configuration>
             </plugin>
+
+            <!-- Main application jar -->
             <plugin>
-                <!-- as2.jar -->
                 <artifactId>maven-jar-plugin</artifactId>
-                <version>3.4.2</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>lib/</classpathPrefix>
-                            <classpathLayoutType>repository</classpathLayoutType>
-                        </manifest>
-                    </archive>
-                </configuration>
-                <executions>
+                <version>3.5.0</version>
+
+                <!--<executions>
                     <execution>
                         <phase>package</phase>
                         <goals>
@@ -106,260 +144,423 @@
                             </includes>
                         </configuration>
                     </execution>
+                </executions>-->
+
+                <configuration>
+                    <!--<includes>
+                        <include>**/*.class</include>
+                        <include>**/*.svg</include>
+                        <include>**/*.gif</include>
+                    </includes>-->
+                    <archive>
+                        <addMavenDescriptor>false</addMavenDescriptor>
+                        <manifest>
+                            <mainClass>de.mendelson.comm.as2.AS2</mainClass>
+                            <addClasspath>false</addClasspath>
+                            <!--<classpathPrefix>jlib/</classpathPrefix>-->
+                        </manifest>
+                    </archive>
+                </configuration>
+            </plugin>
+
+            <!-- Build as2.war -->
+            <plugin>
+                <artifactId>maven-war-plugin</artifactId>
+                <version>3.5.1</version>
+                <executions>
+                    <execution>
+                        <id>build-as2-war</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>war</goal>
+                        </goals>
+                        <configuration>
+                            <warName>as2</warName>
+                            <warSourceDirectory>${project.basedir}/src/main/webapp</warSourceDirectory>
+                            <webXml>${project.basedir}/src/main/webapp/WEB-INF/web.xml</webXml>
+                            <failOnMissingWebXml>true</failOnMissingWebXml>
+                            <archiveClasses>true</archiveClasses>
+
+                            <!-- Do not let maven-war-plugin add every compile/runtime dependency. -->
+                            <packagingExcludes>
+                                WEB-INF/lib/*.jar
+                            </packagingExcludes>
+
+                            <webResources>
+                                <!-- Put the built project jar into WEB-INF/lib/as2.jar -->
+                               <!--<resource>
+                                    <directory>${project.build.directory}</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>${project.build.finalName}.jar</include>
+                                    </includes>
+                                </resource>-->
+
+                                <!-- Add only the approved dependency jars to WEB-INF/lib. -->
+                                <resource>
+                                    <directory>${project.build.directory}/jlib</directory>
+                                    <targetPath>WEB-INF/lib</targetPath>
+                                    <filtering>false</filtering>
+                                    <includes>
+                                        <include>commons-*.jar</include>
+                                        <include>dnsjava-*.jar</include>
+                                        <include>fluent-hc-*.jar</include>
+                                        <include>httpclient-*.jar</include>
+                                        <include>httpclient-cache-*.jar</include>
+                                        <include>httpcore-*.jar</include>
+                                        <include>httpmime-*.jar</include>
+                                        <include>jakarta.activation-*.jar</include>
+                                        <include>jakarta.mail-*.jar</include>
+                                        <include>jaxen-*.jar</include>
+                                        <include>jcalendar-*.jar</include>
+                                        <include>jfreechart-*.jar</include>
+                                        <include>jfreechart_common-*.jar</include>
+                                        <include>jsch-*.jar</include>
+                                        <include>l2fprod-common-all.jar</include>
+                                        <include>mina-core-*.jar</include>
+                                        <include>slf4j-api-*.jar</include>
+                                        <include>slf4j-nop-*.jar</include>
+                                    </includes>
+                                </resource>
+                            </webResources>
+
+                        </configuration>
+                    </execution>
+
+                    <!--<execution>
+                        <id>build-webas2-war</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>war</goal>
+                        </goals>
+                        <configuration>
+                            <warName>webas2</warName>
+                            <warSourceDirectory>${project.basedir}/webas2</warSourceDirectory>
+                            <webXml>${project.basedir}/webas2/WEB-INF/web.xml</webXml>
+                            <failOnMissingWebXml>false</failOnMissingWebXml>
+                        </configuration>
+                    </execution>-->
                 </executions>
             </plugin>
 
             <plugin>
-                <!-- webapps\as2.war and webapps\as2web.war -->
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.4.0</version>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.11.0</version>
+                <executions>
+                    <!-- Copy runtime dependencies into target/jlib -->
+                    <execution>
+                        <id>copy-runtime-dependencies</id>
+                        <phase>prepare-package</phase>
+                        <!--<phase>package</phase>-->
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/jlib</outputDirectory>
+                            <includeScope>runtime</includeScope>
+                            <excludeTransitive>false</excludeTransitive>
+                        </configuration>
+                    </execution>
+
+                    <!-- Unpack the Jetty distribution into target/jetty-distribution -->
+                    <execution>
+                        <id>unpack-jetty-distribution</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>org.eclipse.jetty</groupId>
+                                    <artifactId>jetty-home</artifactId>
+                                    <version>${jetty.version}</version>
+                                    <type>zip</type>
+                                    <outputDirectory>${jetty.distribution.dir}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                            <!--<stripVersion>true</stripVersion>-->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Create final distribution zip/tar.gz -->
+            <plugin>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <version>3.8.0</version>
                 <configuration>
-                    <webappDirectory>web</webappDirectory>
-                    <archive>
-                        <manifest>
-                            <addClasspath>true</addClasspath>
-                        </manifest>
-                    </archive>
-                    <webResources>
-                        <resource>
-                            <directory>${project.basedir}\lib\help</directory>
-                            <targetPath>WEB-INF/lib/help</targetPath>
-                            <filtering>false</filtering>
-                            <includes>
-                                <include>**/*.jar</include>
-                            </includes>
-                            <!-- <excludes>
-                                <include>**/javax.servlet-api-3.1.0.jar</include>
-                            </excludes>-->
-                        </resource>
-                        <resource>
-                            <directory>${project.basedir}\web</directory>
-                            <targetPath>/</targetPath>
-                            <filtering>false</filtering>
-                            <includes>
-                                <include>images</include>
-                                <include>includes</include>
-                            </includes>
-                        </resource>
-                    </webResources>
+                    <descriptors>
+                        <descriptor>src/assembly/distribution.xml</descriptor>
+                    </descriptors>
+                    <finalName>${distribution.name}</finalName>
+                    <appendAssemblyId>false</appendAssemblyId>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-distribution</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <!-- Optional: run app from Maven -->
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <mainClass>de.mendelson.comm.as2.AS2</mainClass>
                 </configuration>
             </plugin>
 
+            <!-- Optional: run the webapp locally on Jetty 10 -->
             <plugin>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-maven-plugin</artifactId>
                 <version>${jetty.version}</version>
                 <configuration>
-                    <deployMode>EXTERNAL</deployMode>
-                    <jettyXmls>
-                        <!--<jettyXml>${project.basedir}\webas2\jetty.xml</jettyXml>-->
-                        <!--<jettyXml>jetty.xml,jetty-ssl.xml,jetty-https.xml</jettyXml>-->
-                    </jettyXmls>
-
-                    <scan>2</scan>
-                    <!--<war>${project.basedir}/target/webas2.war</war>-->
+                    <deployMode>external</deployMode>
+                    <modules>server,http,webapp,deploy</modules>
+                    <!--<jettyProperties></jettyProperties>-->
 
                     <webApp>
-                        <contextPath>/webas2</contextPath>
-                        <!--<allowDuplicateFragmentNames>true</allowDuplicateFragmentNames>-->
+                        <contextPath>/as2</contextPath>
+                        <war>${project.build.directory}/as2.war</war>
+                        <!--<baseResource></baseResource>-->
+                        <!--<webInfIncludeJarPattern></webInfIncludeJarPattern>-->
                     </webApp>
-
-                    <!-- todo: Running More than One Webapp -->
-                    <!--<contextHandlers>
-                        <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext">
-                            <war>${project.basedir}\out\artifacts\as2.war</war>
-                            <contextPath>/as2</contextPath>
-                        </contextHandler>
-                       <contextHandler implementation="org.eclipse.jetty.maven.plugin.JettyWebAppContext">
-                            <war>${project.basedir}\out\artifacts\webas2.war</war>
+                   <!-- <contextHandlers>
+                        <contextHandler implementation="org.eclipse.jetty.webapp.WebAppContext">
+                            <war>${project.build.directory}/webas2.war</war>
                             <contextPath>/webas2</contextPath>
                         </contextHandler>
                     </contextHandlers>-->
+                    <scan>-1</scan>
+                    <httpConnector>
+                        <port>8080</port>
+                    </httpConnector>
+                    <supportedPackagings>jar</supportedPackagings>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-release-plugin</artifactId>
-                <version>3.1.1</version>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.7.0</version>
-                <!--<configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                </configuration>-->
-            </plugin>
-
-            <plugin>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>3.3.1</version>
-                <configuration>
-                    <includeEmptyDirs>true</includeEmptyDirs>
-                    <outputDirectory>${assembly-directory}</outputDirectory>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>generate-resources</phase>
-                        <goals>
-                            <goal>resources</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.7.1</version>
-            </plugin>
-            <plugin>
-                <groupId>com.vaadin</groupId>
-                <artifactId>vaadin-maven-plugin</artifactId>
-                <version>${vaadin.version}</version>
             </plugin>
         </plugins>
     </build>
 
     <dependencies>
+        <!-- Jetty runtime / servlet stack -->
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-server</artifactId>
             <version>${jetty.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.eclipse.jetty</groupId>
             <artifactId>jetty-webapp</artifactId>
             <version>${jetty.version}</version>
         </dependency>
+
+        <!--<dependency>
+            <groupId>javax.servlet</groupId>
+            <artifactId>javax.servlet-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
+        </dependency>-->
+
+        <!-- Database -->
         <dependency>
             <groupId>org.hsqldb</groupId>
             <artifactId>hsqldb</artifactId>
-            <version>2.7.2</version>
+            <version>2.7.4</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikaricp.version}</version>
+        </dependency>
+
+        <!--<dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-dbcp2</artifactId>
+            <version>2.12.0</version>
+        </dependency>-->
+
+        <!-- Crypto / AS2 -->
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk18on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
+
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcmail-jdk18on</artifactId>
             <version>${bouncycastle.version}</version>
         </dependency>
+
         <dependency>
-            <groupId>commons-io</groupId>
-            <artifactId>commons-io</artifactId>
-            <version>2.16.1</version>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bctls-jdk18on</artifactId>
+            <version>${bouncycastle.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcutil-jdk18on</artifactId>
+            <version>${bouncycastle.version}</version>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.unboundid/unboundid-ldapsdk -->
+        <dependency>
+            <groupId>com.unboundid</groupId>
+            <artifactId>unboundid-ldapsdk</artifactId>
+            <version>7.0.5</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Mail / activation -->
         <dependency>
             <groupId>com.sun.mail</groupId>
             <artifactId>javax.mail</artifactId>
             <version>1.6.2</version>
         </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/jakarta.mail/jakarta.mail-api -->
         <dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>javax.mail-api</artifactId>
-            <version>1.6.2</version>
+            <groupId>jakarta.mail</groupId>
+            <artifactId>jakarta.mail-api</artifactId>
+            <version>1.6.8</version>
+            <scope>compile</scope>
         </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/jakarta.activation/jakarta.activation-api -->
         <dependency>
-            <groupId>javax.activation</groupId>
-            <artifactId>javax.activation-api</artifactId>
-            <version>1.2.0</version>
+            <groupId>jakarta.activation</groupId>
+            <artifactId>jakarta.activation-api</artifactId>
+            <version>1.2.2</version>
+            <scope>compile</scope>
         </dependency>
+
+        <!-- Common libraries -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.19.0</version>
+        </dependency>
+
         <dependency>
             <groupId>jaxen</groupId>
             <artifactId>jaxen</artifactId>
             <version>1.2.0</version>
         </dependency>
-        <dependency>
-            <groupId>com.toedter</groupId>
-            <artifactId>jcalendar</artifactId>
-            <version>1.4</version>
-        </dependency>
-        <dependency>
-            <groupId>jfree</groupId>
-            <artifactId>jfreechart</artifactId>
-            <version>1.0.13</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-core</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-backward-codecs</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.lucene</groupId>
-            <artifactId>lucene-analysis-common</artifactId>
-            <version>${lucene.version}</version>
-        </dependency>
+
         <dependency>
             <groupId>org.apache.mina</groupId>
             <artifactId>mina-core</artifactId>
             <version>${mina.version}</version>
         </dependency>
+
         <dependency>
+            <groupId>dnsjava</groupId>
+            <artifactId>dnsjava</artifactId>
+            <version>3.6.2</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>fluent-hc</artifactId>
+            <version>4.5.14</version>
+        </dependency>
+
+        <!-- Lucene -->
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-core</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-backward-codecs</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.lucene</groupId>
+            <artifactId>lucene-analysis-common</artifactId>
+            <version>${lucene.version}</version>
+        </dependency>
+
+        <!-- UI -->
+        <!--<dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-server</artifactId>
             <version>${vaadin.version}</version>
         </dependency>
+
         <dependency>
             <groupId>com.vaadin</groupId>
             <artifactId>vaadin-client</artifactId>
             <version>${vaadin.version}</version>
             <scope>provided</scope>
-        </dependency>
+        </dependency>-->
+
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf</artifactId>
             <version>${flatlaf.version}</version>
-            <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-swingx</artifactId>
             <version>${flatlaf.version}</version>
-            <scope>runtime</scope>
         </dependency>
+
         <dependency>
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-extras</artifactId>
             <version>${flatlaf.version}</version>
-            <scope>runtime</scope>
         </dependency>
+
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-dbcp2</artifactId>
-            <version>2.12.0</version>
+            <groupId>com.toedter</groupId>
+            <artifactId>jcalendar</artifactId>
+            <version>1.4</version>
         </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/org.jfree/jfreechart -->
         <dependency>
-            <groupId>org.apache.httpcomponents</groupId>
-            <artifactId>fluent-hc</artifactId>
-            <version>4.5.14</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-codec</groupId>
-                    <artifactId>commons-codec</artifactId>
-                </exclusion>
-            </exclusions>
+            <groupId>org.jfree</groupId>
+            <artifactId>jfreechart</artifactId>
+            <version>1.0.19</version>
+            <scope>compile</scope>
         </dependency>
+
+        <dependency>
+            <groupId>com.l2fprod.common</groupId>
+            <artifactId>l2fprod-common-buttonbar</artifactId>
+            <version>6.9.1</version>
+        </dependency>
+
+        <!-- XML / PDF / image-related legacy libraries -->
         <dependency>
             <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-all</artifactId>
-            <version>1.17</version>
+            <version>1.19</version>
         </dependency>
+
         <dependency>
             <groupId>commons-beanutils</groupId>
             <artifactId>commons-beanutils</artifactId>
@@ -371,156 +572,120 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <dependency>
-            <groupId>com.l2fprod.common</groupId>
-            <artifactId>l2fprod-common-buttonbar</artifactId>
-            <version>6.9.1</version>
-        </dependency>
-        <dependency>
+
+       <!-- <dependency>
             <groupId>com.sun.media</groupId>
             <artifactId>jai-codec</artifactId>
             <version>1.1.3</version>
         </dependency>
+
         <dependency>
             <groupId>javax.media</groupId>
             <artifactId>jai-core</artifactId>
             <version>1.1.3</version>
-        </dependency>
+        </dependency>-->
+
         <dependency>
             <groupId>de.intarsys.opensource</groupId>
             <artifactId>jPod</artifactId>
             <version>5.6</version>
         </dependency>
-        <dependency>
-            <groupId>dnsjava</groupId>
-            <artifactId>dnsjava</artifactId>
-            <version>3.5.3</version>
-        </dependency>
+
+        <!-- JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-xml -->
         <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>${hikaricp.version}</version>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
         </dependency>
 
-        <!-- local repository -->
-        <!--><dependency>
-           <groupId>com.oracle.ohj</groupId>
-           <artifactId>oracle_ice</artifactId>
-           <version>12.1.3</version>
-       </dependency>
-       <dependency>
-           <groupId>com.oracle.ohj</groupId>
-           <artifactId>jewt</artifactId>
-           <version>12.1.3</version>
-       </dependency>-->
+        <!-- Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
 
-        <!-- local filesystem -->
+        <!-- Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.module/jackson-module-parameter-names -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-parameter-names</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-cbor -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-cbor</artifactId>
+            <version>${jackson.version}</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Local Oracle Help jars.
+             Prefer installing these into a private/local Maven repository later.
+             For now, they are included as system dependencies. -->
         <dependency>
             <groupId>com.oracle</groupId>
             <artifactId>help</artifactId>
             <version>1.0.0</version>
-            <systemPath>${project.basedir}\lib\help\ohj.jar</systemPath>
             <scope>system</scope>
+            <systemPath>${project.basedir}/lib/help/ohj.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>com.oracle</groupId>
             <artifactId>help-share</artifactId>
             <version>1.0.0</version>
-            <systemPath>${project.basedir}\lib\help\help-share.jar</systemPath>
             <scope>system</scope>
+            <systemPath>${project.basedir}/lib/help/help-share.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>com.oracle</groupId>
             <artifactId>jewt4</artifactId>
             <version>1.0.0</version>
-            <systemPath>${project.basedir}\lib\help\jewt.jar</systemPath>
             <scope>system</scope>
+            <systemPath>${project.basedir}/lib/help/jewt.jar</systemPath>
         </dependency>
+
         <dependency>
             <groupId>com.oracle</groupId>
             <artifactId>icebrowser</artifactId>
             <version>1.0.0</version>
-            <systemPath>${project.basedir}\lib\help\oracle_ice.jar</systemPath>
             <scope>system</scope>
+            <systemPath>${project.basedir}/lib/help/oracle_ice.jar</systemPath>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>3.2.2</version>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.github.mwiede/jsch -->
+        <dependency>
+            <groupId>com.github.mwiede</groupId>
+            <artifactId>jsch</artifactId>
+            <version>2.27.7</version>
+            <scope>compile</scope>
+        </dependency>
+
+        <!-- Source: https://mvnrepository.com/artifact/com.github.oshi/oshi-core -->
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>6.8.3</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
-
-    <profiles>
-        <profile>
-            <!-- Production mode is activated using -Pproduction -->
-            <id>production</id>
-
-            <dependencies>
-                <!-- Exclude development dependencies from production -->
-                <dependency>
-                    <groupId>com.vaadin</groupId>
-                    <artifactId>vaadin-core</artifactId>
-                    <exclusions>
-                        <exclusion>
-                            <groupId>com.vaadin</groupId>
-                            <artifactId>vaadin-dev</artifactId>
-                        </exclusion>
-                    </exclusions>
-                </dependency>
-            </dependencies>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.vaadin</groupId>
-                        <artifactId>vaadin-maven-plugin</artifactId>
-                        <version>${vaadin.version}</version>
-                        <!--<executions>
-                            <execution>
-                                <goals>
-                                    <goal>build-frontend</goal>
-                                </goals>
-                                <phase>compile</phase>
-                            </execution>
-                        </executions>-->
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-
-        <profile>
-            <id>it</id>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>org.eclipse.jetty</groupId>
-                        <artifactId>jetty-maven-plugin</artifactId>
-                        <version>${jetty.version}</version>
-                        <configuration>
-                            <scan>0</scan>
-                            <stopPort>8081</stopPort>
-                            <stopWait>5</stopWait>
-                            <stopKey>${project.artifactId}</stopKey>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>start-jetty</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>start</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>stop-jetty</id>
-                                <phase>post-integration-test</phase>
-                                <goals>
-                                    <goal>stop</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-                </plugins>
-            </build>
-        </profile>
-    </profiles>
 
 </project>
