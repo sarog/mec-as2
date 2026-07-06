@@ -1,17 +1,14 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 28    2/11/23 14:02 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/timing/CertificateExpireController.java 31    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
@@ -26,7 +23,7 @@ import java.util.logging.Logger;
  * Controlls the certificates and checks if they will expire soon
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 31 $
  */
 public class CertificateExpireController {
 
@@ -38,8 +35,6 @@ public class CertificateExpireController {
     private final CertificateManager managerSSL;
     private final CertificateManager managerEncSign;
     private final CertificationExpireThread expireThread;
-    private final ScheduledExecutorService expireCheckScheduler = Executors.newSingleThreadScheduledExecutor(
-            new NamedThreadFactory("certificate-expire-check"));
 
     public CertificateExpireController(CertificateManager managerEncSign, CertificateManager managerSSL) {        
         this.managerEncSign = managerEncSign;
@@ -50,9 +45,8 @@ public class CertificateExpireController {
     /**
      * Starts the embedded task that guards the log
      */
-    public void startCertExpireControl() {
-        
-        this.expireCheckScheduler.scheduleWithFixedDelay(this.expireThread, 0, 1, TimeUnit.DAYS);
+    public void startCertExpireControl() {        
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.expireThread, 0, 1, TimeUnit.DAYS);
     }
 
     /**
@@ -105,7 +99,7 @@ public class CertificateExpireController {
                         } catch (Exception e) {
                             String exceptionClass = "[" + e.getClass().getName() + "]";
                             logger.severe("CertificateExpireThread: " + exceptionClass + " " + e.getMessage());
-                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.PROCESSING_ANY);
                         }
                     }
                 }
@@ -116,7 +110,7 @@ public class CertificateExpireController {
                     } catch (Exception e) {
                         String exceptionClass = "[" + e.getClass().getName() + "]";
                         logger.severe("CertificateExpireThread: " + exceptionClass + " " + e.getMessage());
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.PROCESSING_ANY);
                     }
                 }
             }

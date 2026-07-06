@@ -1,13 +1,16 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesPanelInterface.java 2     29/11/23 14:14 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelInterface.java 33    17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.balloontip.BalloonToolTip;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
+import javax.swing.SwingConstants;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -20,15 +23,25 @@ import javax.swing.ImageIcon;
  * Panel to define the interface preferences
  *
  * @author S.Heller
- * @version: $Revision: 2 $
+ * @version: $Revision: 33 $
  */
-public class PreferencesPanelInterface extends PreferencesPanel {
+public final class PreferencesPanelInterface extends PreferencesPanel {
 
-    private final static MendelsonMultiResolutionImage IMAGE_INTERFACE
+    private static final MendelsonMultiResolutionImage IMAGE_INTERFACE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/interface.svg",
                     JDialogPreferences.IMAGE_HEIGHT);
 
-    private final MecResourceBundle rb;
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundlePreferencesInterface.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private final PreferencesClient preferences;
     private String preferencesStrAtLoadTime = "";
 
@@ -36,14 +49,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
      * Creates new form PreferencesPanelDirectories
      */
     public PreferencesPanelInterface(BaseClient baseClient) {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundlePreferencesInterface.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.preferences = new PreferencesClient(baseClient);
         this.initComponents();
         this.initializeHelp();
@@ -57,37 +62,51 @@ public class PreferencesPanelInterface extends PreferencesPanel {
      */
     @Override
     public void loadPreferences() {
-        this.jCheckBoxShowHttpHeader.setSelected(
+        this.switchShowQuota.setSelected(
+                this.preferences.getBoolean(PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG));
+        this.switchShowHttpHeader.setSelected(
                 this.preferences.getBoolean(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG));
-        this.jCheckBoxCEM.setSelected(
+        this.switchCEM.setSelected(
                 this.preferences.getBoolean(PreferencesAS2.CEM));
-        this.jCheckBoxOutboundStatusFiles.setSelected(
+        this.switchOutboundStatusFiles.setSelected(
                 this.preferences.getBoolean(PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE));
-        this.jCheckBoxDisplaySecurityOverwriteLocalstation.setSelected(
+        this.switchDisplaySecurityOverwriteLocalstation.setSelected(
                 this.preferences.getBoolean(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG));
+        this.switchCheckRevocationLists.setSelected(
+                this.preferences.getBoolean(PreferencesAS2.CHECK_REVOCATION_LISTS));
+        this.switchCheckPartnerTLSCertificates.setSelected(
+                this.preferences.getBoolean(PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES));
         this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
-    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
-    private String captureSettingsToStr(){
+    /**
+     * Helper method to find out if there are changes in the GUI before storing
+     * them to the server
+     */
+    private String captureSettingsToStr() {
         StringBuilder builder = new StringBuilder();
-        builder.append( PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG ).append("=")
-                .append( this.jCheckBoxShowHttpHeader.isSelected()).append(";");
-        builder.append( PreferencesAS2.CEM ).append("=")
-                .append( this.jCheckBoxCEM.isSelected()).append(";");
-        builder.append( PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE ).append("=")
-                .append( this.jCheckBoxOutboundStatusFiles.isSelected()).append(";");
-        builder.append( PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG ).append("=")
-                .append( this.jCheckBoxDisplaySecurityOverwriteLocalstation.isSelected()).append(";");
-        return( builder.toString() );
+        builder.append(PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG).append("=")
+                .append(this.switchShowQuota.isSelected()).append(";");
+        builder.append(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG).append("=")
+                .append(this.switchShowHttpHeader.isSelected()).append(";");
+        builder.append(PreferencesAS2.CEM).append("=")
+                .append(this.switchCEM.isSelected()).append(";");
+        builder.append(PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE).append("=")
+                .append(this.switchOutboundStatusFiles.isSelected()).append(";");
+        builder.append(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG).append("=")
+                .append(this.switchDisplaySecurityOverwriteLocalstation.isSelected()).append(";");
+        builder.append(PreferencesAS2.CHECK_REVOCATION_LISTS).append("=")
+                .append(this.switchCheckRevocationLists.isSelected()).append(";");
+        builder.append(PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES).append("=")
+                .append(this.switchCheckPartnerTLSCertificates.isSelected()).append(";");
+        return (builder.toString());
     }
-    
-    
+
     @Override
     public boolean preferencesAreModified() {
-        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+        return (!this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()));
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -98,157 +117,234 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         java.awt.GridBagConstraints gridBagConstraints;
 
         jPanelSpace = new javax.swing.JPanel();
-        jCheckBoxCEM = new javax.swing.JCheckBox();
-        jCheckBoxOutboundStatusFiles = new javax.swing.JCheckBox();
         jPanelSpace123 = new javax.swing.JPanel();
         jPanelSpace124 = new javax.swing.JPanel();
-        jPanelHTTPHeader = new javax.swing.JPanel();
-        jCheckBoxShowHttpHeader = new javax.swing.JCheckBox();
-        jPanelUIHelpShowHTTPHeader = new de.mendelson.util.balloontip.JPanelUIHelp();
-        jPanelSpace334 = new javax.swing.JPanel();
-        jPanelPverwriteLocalstationSecurity = new javax.swing.JPanel();
-        jCheckBoxDisplaySecurityOverwriteLocalstation = new javax.swing.JCheckBox();
-        jPanelUIHelpOverwriteLocalstationSecurity = new de.mendelson.util.balloontip.JPanelUIHelp();
-        jPanel1 = new javax.swing.JPanel();
+        jLabelShowQuota = new javax.swing.JLabel();
+        jLabelCEM = new javax.swing.JLabel();
+        jPanelUIHelpLabelShowHTTPHeader = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        switchShowQuota = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        switchCEM = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        switchShowHttpHeader = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        switchOutboundStatusFiles = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        switchDisplaySecurityOverwriteLocalstation = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        jPanelSpace7743 = new javax.swing.JPanel();
+        jPanelUIHelpLabelOutboundStatusFiles = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelCheckRevocationLists = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        switchCheckRevocationLists = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        jPanelUIHelpLabelCheckPartnerTLSCertificates = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        switchCheckPartnerTLSCertificates = new de.mendelson.util.toggleswitch.ToggleSwitch();
 
         setLayout(new java.awt.GridBagLayout());
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 8;
+        gridBagConstraints.gridx = 6;
+        gridBagConstraints.gridy = 13;
+        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.gridheight = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         add(jPanelSpace, gridBagConstraints);
-
-        jCheckBoxCEM.setText(this.rb.getResourceString( "label.cem" ));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 6;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jCheckBoxCEM, gridBagConstraints);
-
-        jCheckBoxOutboundStatusFiles.setText(this.rb.getResourceString( "label.outboundstatusfiles" ));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 7;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jCheckBoxOutboundStatusFiles, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jPanelSpace123, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jPanelSpace124, gridBagConstraints);
 
-        jPanelHTTPHeader.setLayout(new java.awt.GridBagLayout());
-
-        jCheckBoxShowHttpHeader.setText(this.rb.getResourceString( "label.showhttpheader" ));
+        jLabelShowQuota.setText(this.rb.getResourceString( "label.showquota" ));
+        jLabelShowQuota.setMaximumSize(new java.awt.Dimension(200, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelHTTPHeader.add(jCheckBoxShowHttpHeader, gridBagConstraints);
-
-        jPanelUIHelpShowHTTPHeader.setToolTipText(this.rb.getResourceString( "label.showhttpheader.help" ));
-        jPanelUIHelpShowHTTPHeader.setPreferredSize(new java.awt.Dimension(20, 20));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 2;
-        jPanelHTTPHeader.add(jPanelUIHelpShowHTTPHeader, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
-        jPanelHTTPHeader.add(jPanelSpace334, gridBagConstraints);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        add(jPanelHTTPHeader, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
+        add(jLabelShowQuota, gridBagConstraints);
 
-        jPanelPverwriteLocalstationSecurity.setLayout(new java.awt.GridBagLayout());
+        jLabelCEM.setText(this.rb.getResourceString( "label.cem" ));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
+        add(jLabelCEM, gridBagConstraints);
 
-        jCheckBoxDisplaySecurityOverwriteLocalstation.setText(this.rb.getResourceString( "label.showsecurityoverwrite" ));
+        jPanelUIHelpLabelShowHTTPHeader.setToolTipText(this.rb.getResourceString( "label.showhttpheader.help" ));
+        jPanelUIHelpLabelShowHTTPHeader.setText(this.rb.getResourceString( "label.showhttpheader" ));
+        jPanelUIHelpLabelShowHTTPHeader.setTooltipWidth(350);
+        jPanelUIHelpLabelShowHTTPHeader.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_TOP
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jPanelUIHelpLabelShowHTTPHeader, gridBagConstraints);
+
+        jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation.setToolTipText(this.rb.getResourceString( "label.showsecurityoverwrite.help" ));
+        jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation.setText(this.rb.getResourceString( "label.showsecurityoverwrite" ));
+        jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation.setTooltipWidth(350);
+        jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_TOP
+        );
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelPverwriteLocalstationSecurity.add(jCheckBoxDisplaySecurityOverwriteLocalstation, gridBagConstraints);
+        add(jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation, gridBagConstraints);
 
-        jPanelUIHelpOverwriteLocalstationSecurity.setToolTipText(this.rb.getResourceString( "label.showsecurityoverwrite.help" ));
-        jPanelUIHelpOverwriteLocalstationSecurity.setPreferredSize(new java.awt.Dimension(20, 20));
-        jPanelUIHelpOverwriteLocalstationSecurity.setTooltipWidth(350);
+        switchShowQuota.setDisplayStatusText(true);
+        switchShowQuota.setHorizontalTextPosition(SwingConstants.LEFT
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(switchShowQuota, gridBagConstraints);
+
+        switchCEM.setDisplayStatusText(true);
+        switchCEM.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(switchCEM, gridBagConstraints);
+
+        switchShowHttpHeader.setDisplayStatusText(true);
+        switchShowHttpHeader.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 2;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(switchShowHttpHeader, gridBagConstraints);
+
+        switchOutboundStatusFiles.setDisplayStatusText(true);
+        switchOutboundStatusFiles.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(switchOutboundStatusFiles, gridBagConstraints);
+
+        switchDisplaySecurityOverwriteLocalstation.setDisplayStatusText(true);
+        switchDisplaySecurityOverwriteLocalstation.setHorizontalTextPosition(SwingConstants.LEFT);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 3;
-        jPanelPverwriteLocalstationSecurity.add(jPanelUIHelpOverwriteLocalstationSecurity, gridBagConstraints);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(switchDisplaySecurityOverwriteLocalstation, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
-        jPanelPverwriteLocalstationSecurity.add(jPanel1, gridBagConstraints);
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridheight = 9;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 30, 5, 5);
+        add(jPanelSpace7743, gridBagConstraints);
 
+        jPanelUIHelpLabelOutboundStatusFiles.setToolTipText(this.rb.getResourceString( "label.outboundstatusfiles.help" ));
+        jPanelUIHelpLabelOutboundStatusFiles.setText(this.rb.getResourceString( "label.outboundstatusfiles" ));
+        jPanelUIHelpLabelOutboundStatusFiles.setTooltipWidth(350);
+        jPanelUIHelpLabelOutboundStatusFiles.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM
+        );
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.gridwidth = 2;
-        add(jPanelPverwriteLocalstationSecurity, gridBagConstraints);
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jPanelUIHelpLabelOutboundStatusFiles, gridBagConstraints);
+
+        jPanelUIHelpLabelCheckRevocationLists.setToolTipText(this.rb.getResourceString( "label.checkrevocationlists.help" ));
+        jPanelUIHelpLabelCheckRevocationLists.setText(this.rb.getResourceString( "label.checkrevocationlists" ));
+        jPanelUIHelpLabelCheckRevocationLists.setTooltipWidth(350);
+        jPanelUIHelpLabelCheckRevocationLists.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jPanelUIHelpLabelCheckRevocationLists, gridBagConstraints);
+
+        switchCheckRevocationLists.setDisplayStatusText(true);
+        switchCheckRevocationLists.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(switchCheckRevocationLists, gridBagConstraints);
+
+        jPanelUIHelpLabelCheckPartnerTLSCertificates.setToolTipText(this.rb.getResourceString( "autoimport.tls.help"));
+        jPanelUIHelpLabelCheckPartnerTLSCertificates.setText(this.rb.getResourceString( "autoimport.tls"));
+        jPanelUIHelpLabelCheckPartnerTLSCertificates.setTooltipWidth(350);
+        jPanelUIHelpLabelCheckPartnerTLSCertificates.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(jPanelUIHelpLabelCheckPartnerTLSCertificates, gridBagConstraints);
+
+        switchCheckPartnerTLSCertificates.setDisplayStatusText(true);
+        switchCheckPartnerTLSCertificates.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        add(switchCheckPartnerTLSCertificates, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JCheckBox jCheckBoxCEM;
-    private javax.swing.JCheckBox jCheckBoxDisplaySecurityOverwriteLocalstation;
-    private javax.swing.JCheckBox jCheckBoxOutboundStatusFiles;
-    private javax.swing.JCheckBox jCheckBoxShowHttpHeader;
-    private javax.swing.JPanel jPanel1;
-    private javax.swing.JPanel jPanelHTTPHeader;
-    private javax.swing.JPanel jPanelPverwriteLocalstationSecurity;
+    private javax.swing.JLabel jLabelCEM;
+    private javax.swing.JLabel jLabelShowQuota;
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JPanel jPanelSpace123;
     private javax.swing.JPanel jPanelSpace124;
-    private javax.swing.JPanel jPanelSpace334;
-    private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelpOverwriteLocalstationSecurity;
-    private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelpShowHTTPHeader;
+    private javax.swing.JPanel jPanelSpace7743;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelCheckPartnerTLSCertificates;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelCheckRevocationLists;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelOutboundStatusFiles;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelShowHTTPHeader;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchCEM;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchCheckPartnerTLSCertificates;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchCheckRevocationLists;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchDisplaySecurityOverwriteLocalstation;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchOutboundStatusFiles;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchShowHttpHeader;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchShowQuota;
     // End of variables declaration//GEN-END:variables
 
     @Override
     public void savePreferences() {
-        this.preferences.putBoolean(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG, 
-                this.jCheckBoxShowHttpHeader.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.CEM, 
-                this.jCheckBoxCEM.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE, 
-                this.jCheckBoxOutboundStatusFiles.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG, 
-                this.jCheckBoxDisplaySecurityOverwriteLocalstation.isSelected());
+        try {
+            this.preferences.putBoolean(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG,
+                    this.switchShowHttpHeader.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG,
+                    this.switchShowQuota.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.CEM,
+                    this.switchCEM.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE,
+                    this.switchOutboundStatusFiles.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG,
+                    this.switchDisplaySecurityOverwriteLocalstation.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.CHECK_REVOCATION_LISTS,
+                    this.switchCheckRevocationLists.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES,
+                    this.switchCheckPartnerTLSCertificates.isSelected());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
     }
 
     @Override

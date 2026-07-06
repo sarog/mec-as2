@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToPartner.java 6     2/11/23 15:52 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToPartner.java 10    15/04/26 16:41 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventTriggerType;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
 import de.mendelson.comm.as2.partner.gui.ListCellRendererPartner;
@@ -26,23 +28,21 @@ import javax.swing.JFrame;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 10 $
  */
 public class JDialogConfigureEventMoveToPartner extends JDialog {
 
     private final MecResourceBundle rb;
-    private final JFrame parent;
     private final Partner eventPartner;
-    private final int eventType;
+    private final ProcessingEventTriggerType triggerType;
     private final List<Partner> partnerList;
 
-    public JDialogConfigureEventMoveToPartner(JFrame parent, List<Partner> partnerList,
-            Partner eventPartner, final int EVENT_TYPE) {
-        super(parent, true);
-        this.parent = parent;
+    public JDialogConfigureEventMoveToPartner(JFrame frameParent, List<Partner> partnerList,
+            Partner eventPartner, ProcessingEventTriggerType triggerType) {
+        super(frameParent, true);
         this.eventPartner = eventPartner;
         this.partnerList = partnerList;
-        this.eventType = EVENT_TYPE;
+        this.triggerType = triggerType;
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -53,7 +53,7 @@ public class JDialogConfigureEventMoveToPartner extends JDialog {
         this.setTitle(this.rb.getResourceString("title.configuration.movetopartner",
                 new Object[]{
                     eventPartner.getName(),
-                    this.rb.getResourceString("type." + EVENT_TYPE)
+                    this.rb.getResourceString("type." + triggerType.toInt())
                 }
         ));
         initComponents();
@@ -61,7 +61,7 @@ public class JDialogConfigureEventMoveToPartner extends JDialog {
         this.jComboBoxPartner.setRenderer(new ListCellRendererPartner());
         this.jLabelInfo.setText(this.rb.getResourceString("label.movetopartner.info"));
         this.jLabelTargetPartner.setText(this.rb.getResourceString("label.movetopartner",
-                this.rb.getResourceString("type." + EVENT_TYPE)));
+                this.rb.getResourceString("type." + triggerType.toInt())));
         this.displayParameter();
         this.getRootPane().setDefaultButton(this.jButtonOk);
     }
@@ -90,9 +90,9 @@ public class JDialogConfigureEventMoveToPartner extends JDialog {
             this.jButtonOk.setEnabled(false);
         } else {
             this.jLabelNoRoutingPartnersAvailable.setVisible(false);
-            if (this.eventPartner.getPartnerEvents().getProcess(this.eventType)
-                    == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
-                List<String> parameter = this.eventPartner.getPartnerEvents().getParameter(this.eventType);
+            if (this.eventPartner.getPartnerEvents().getProcess(this.triggerType)
+                    == ProcessingEventType.MOVE_TO_PARTNER) {
+                List<String> parameter = this.eventPartner.getPartnerEvents().getParameter(this.triggerType);
                 if (!parameter.isEmpty()) {
                     for (Partner partner : this.partnerList) {
                         if (partner.getAS2Identification().equals(parameter.get(0))) {
@@ -109,8 +109,8 @@ public class JDialogConfigureEventMoveToPartner extends JDialog {
         List<String> newParameter = new ArrayList<String>();
         Partner partner = (Partner) this.jComboBoxPartner.getSelectedItem();
         newParameter.add(partner.getAS2Identification());
-        this.eventPartner.getPartnerEvents().setParameter(this.eventType, newParameter);
-        this.eventPartner.getPartnerEvents().setProcess(this.eventType, PartnerEventInformation.PROCESS_MOVE_TO_PARTNER);
+        this.eventPartner.getPartnerEvents().setParameter(this.triggerType, newParameter);
+        this.eventPartner.getPartnerEvents().setProcess(this.triggerType, ProcessingEventType.MOVE_TO_PARTNER);
     }
 
     /**
@@ -206,6 +206,7 @@ public class JDialogConfigureEventMoveToPartner extends JDialog {
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMain.add(jPanelSpace, gridBagConstraints);
 
         jComboBoxPartner.setMinimumSize(new java.awt.Dimension(160, 22));

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/DeleteMessageRequest.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/DeleteMessageRequest.java 6     4/06/25 11:44 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -18,12 +18,12 @@ import java.util.List;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class DeleteMessageRequest extends ClientServerMessage implements Serializable{
     
     private static final long serialVersionUID = 1L;
-    private final List<AS2MessageInfo> deleteList = new ArrayList<AS2MessageInfo>();
+    private List<AS2MessageInfo> deleteList = new ArrayList<AS2MessageInfo>();
 
     @Override
     public String toString(){

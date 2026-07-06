@@ -1,0 +1,25 @@
+$Header:$
+Diese Datei beinhaltet die Benachrichtigungsvorlage fuer die Benachrichtigung im Falle eines System Problems
+Folgende Variablen koennen verwendet werden, sie werden entsprechend ersetzt:
+${PRODUCTNAME}: Produktname
+${HOST}: AS2 Server Host
+${CATEGORY}: Fehlerkategory
+${MESSAGE}: Fehlermeldung
+${DETAILS}: Naehere Informationen bezueglich des Problems
+
+
+[SUBJECT]
+Systemproblem
+
+
+[BODY]
+Auf dem AS2 Server trat ein Problem auf. In der Regel sind mit dieser Mail gemeldete Probleme nicht kritisch fuer den Zustand des AS2 Systems. Wenn die entsprechende Transaktion den Status "gruen" hat, ist sie auch fehlerfrei vollendet worden. 
+Bitte schauen Sie trotzdem auf den Server, um zu sehen, was dort geschehen ist. 
+
+Kategorie: ${CATEGORY}
+Meldung: ${MESSAGE}
+
+
+
+Naehere Informationen zu dem Problem:
+${DETAILS}

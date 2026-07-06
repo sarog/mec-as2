@@ -1,7 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/ListCellRendererEventCategory.java 1     4/12/23 12:41 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/gui/ListCellRendererEventCategory.java 3     14/05/24 13:47 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.ImageIcon;
@@ -9,17 +10,18 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Renderer to render the workflows that could be selected
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class ListCellRendererEventCategory extends JLabel implements ListCellRenderer {
-
-    public static final int ROW_HEIGHT = 20;
-    protected static final int IMAGE_HEIGHT = ROW_HEIGHT-3;
+    
+    public static final int IMAGE_HEIGHT = 18;
+    public static final int ROW_HEIGHT = IMAGE_HEIGHT+2;
     
 
     /**
@@ -160,6 +162,7 @@ public class ListCellRendererEventCategory extends JLabel implements ListCellRen
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         setComponentOrientation(list.getComponentOrientation());
+        setBorder(new EmptyBorder(0,2,0,0));
         if (isSelected) {
             this.setBackground(list.getSelectionBackground());
             this.setForeground(list.getSelectionForeground());
@@ -188,7 +191,14 @@ public class ListCellRendererEventCategory extends JLabel implements ListCellRen
         return (this);
     }
 
-    public static ImageIcon getEventIcon(UIEventCategory category, int height) {
+    private static ImageIcon getEventIcon(UIEventCategory category, int height) {
         return( new ImageIcon(category.getImage().toMinResolution(height)));
+    }
+    
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension dimension = super.getPreferredSize();
+        dimension.height = ROW_HEIGHT;
+        return (dimension);
     }
 }

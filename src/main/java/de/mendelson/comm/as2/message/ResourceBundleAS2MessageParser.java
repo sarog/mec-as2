@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 51    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser.java 57    23/05/25 11:10 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 51 $
+ * @version $Revision: 57 $
  */
 public class ResourceBundleAS2MessageParser extends MecResourceBundle{
     
@@ -24,7 +24,11 @@ public class ResourceBundleAS2MessageParser extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {        
+    private static final Object[][] CONTENTS = {      
+        {"inbound.connection.transferinfo", "Received {0} in {1} [{2} ].\"" },
+        {"inbound.connection.tls", "Inbound TLS connection from [{0}] on port {1} [{2}, {3}]"},
+        {"inbound.connection.raw", "Inbound connection from [{0}] on port {1}"},
+        {"inbound.connection.syncmdn", "Sync MDN has been received on the backchannel of your outbound connection"},
         {"mdn.answerto", "The inbound MDN with the message id \"{0}\" is the answer to the outbound AS2 message \"{1}\"." },  
         {"mdn.state", "Inbound MDN state is [{0}]." },          
         {"mdn.details", "Inbound MDN details received from {0}: \"{1}\"" },
@@ -48,9 +52,9 @@ public class ResourceBundleAS2MessageParser extends MecResourceBundle{
         {"message.signature.ok", "Digital signature of inbound AS2 message has been verified successful." },
         {"message.signature.failure", "Verification of digital signature of inbound AS2 message failed {0}" },
         {"mdn.signature.failure", "Verification of digital signature of inbound MDN failed {0}" },
-        {"mdn.signature.using.alias", "Using certificate \"{0}\" to verify inbound MDN signature." }, 
-        {"message.signature.using.alias", "Using certificate \"{0}\" to verify inbound AS2 message signature." }, 
-        {"decryption.done.alias", "The inbound AS2 message data has been decrypted using the key \"{0}\", the encryption algorithm was \"{1}\", the key encryption algorithm was \"{2}\"." },
+        {"mdn.signature.using.alias", "Using certificate \"{0}\" of the remote partner \"{1}\" to verify inbound MDN signature." }, 
+        {"message.signature.using.alias", "Using certificate \"{0}\" of the remote partner \"{1}\" to verify inbound AS2 message signature." }, 
+        {"decryption.done.alias", "The inbound AS2 message data has been decrypted using the private key \"{0}\" of the local station \"{3}\", the encryption algorithm was \"{1}\", the key encryption algorithm was \"{2}\"." },
         {"mdn.unexpected.messageid", "The inbound MDN references a AS2 message with the message id \"{0}\" that does not exist." },
         {"mdn.unexpected.state", "The inbound MDN references the AS2 message with the message id \"{0}\" that is not waiting for an MDN." },
         {"data.compressed.expanded", "The compressed payload of the inbound AS2 message has been expanded from {0} to {1}." },

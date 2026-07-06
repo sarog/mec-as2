@@ -1,0 +1,23 @@
+$Header:$
+O ficheiro seguinte contém um modelo que é utilizado para o evento de sistema de um problema de ligação.
+${MENSAGEM}: A mensagem de erro
+${HINT}: Alguma ideia do que poderá ser a causa
+${PARTNER}: O parceiro com o qual a ligação deve ser estabelecida
+${URL}: O URL que foi utilizado
+${MESSAGE_ID}: Número da mensagem que deve ser transmitida
+
+
+
+
+[SUBJECT]
+Problema de ligação com o parceiro ${PARTNER} [${MESSAGE_ID}]
+
+
+[BODY]
+Tentou estabelecer uma ligação de saída com o parceiro "${PARTNER}", mas a tentativa falhou.
+
+URL: ${URL}
+Descrição: ${MESSAGE}
+
+${HINT}
+

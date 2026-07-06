@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 55    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 62    23/03/26 13:42 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -6,6 +6,8 @@ import de.mendelson.comm.as2.message.AS2MDNInfo;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageStateType;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -47,7 +49,7 @@ import java.util.logging.Logger;
  * send process for each message
  *
  * @author S.Heller
- * @version $Revision: 55 $
+ * @version $Revision: 62 $
  */
 public class SendOrderReceiver {
 
@@ -62,7 +64,7 @@ public class SendOrderReceiver {
     private SendOrderReceiverThread sendOrderReceiverThread = null;
     private final ScheduledExecutorService scheduledExecutor
             = Executors.newSingleThreadScheduledExecutor(
-                    new NamedThreadFactory("sendorder-receiver"));    
+                    new NamedThreadFactory("sendorder-receiver"));
 
     public SendOrderReceiver(ClientServer clientserver, IDBDriverManager dbDriverManager) throws Exception {
         //Load default resourcebundle
@@ -108,7 +110,7 @@ public class SendOrderReceiver {
             //If the queue is full, and the number of threads is greater than or equal to maxPoolSize, reject the task.
             //--as this uses a sync queue which will always block until taken a new thread is created for every execute!
             //Unused threads will be killed after 30s once they are idle
-            this.threadExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+            this.threadExecutor = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
                     30, TimeUnit.SECONDS, syncQueue,
                     new NamedThreadFactory("sendorder-processing")) {
                 /**
@@ -134,9 +136,9 @@ public class SendOrderReceiver {
                 this.detectModification();
                 //check if new outbound connection are currently possible. The Math.max value is taken because its possible that
                 //the number of active connections is already reduced in the afterExecute method of the queue but the thread does still exist.
-                int possibleNewConnections = this.maxOutboundConnections - Math.max(activeConnections.get(), 
+                int possibleNewConnections = this.maxOutboundConnections - Math.max(activeConnections.get(),
                         threadExecutor.getActiveCount());
-                if (possibleNewConnections > 0) {                    
+                if (possibleNewConnections > 0) {
                     //Get max number of outbound send orders and pass them to the thread executor
                     waitingOrders.addAll(sendOrderAccess.getNext(possibleNewConnections));
                 }
@@ -217,13 +219,13 @@ public class SendOrderReceiver {
                     }
                 } else {
                     AS2MessageInfo messageInfo = (AS2MessageInfo) order.getMessage().getAS2Info();
-                    if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_AS2) {
+                    if (messageInfo.getMessageType() == MessageType.AS2) {
                         //update the message info from the database
                         messageInfo = messageAccess.getLastMessageEntry(messageInfo.getMessageId());
-                        if (messageInfo == null || messageInfo.getState() == AS2Message.STATE_STOPPED) {
+                        if (messageInfo == null || messageInfo.getState() == MessageStateType.STOPPED) {
                             processingAllowed = false;
                         }
-                    } else if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
+                    } else if (messageInfo.getMessageType() == MessageType.CEM) {
                         processingAllowed = true;
                     }
                 }
@@ -276,19 +278,20 @@ public class SendOrderReceiver {
                     messageUploader.setDBConnection(dbDriverManager);
                     //configure the connection parameters
                     HttpConnectionParameter connectionParameter = new HttpConnectionParameter();
-                    connectionParameter.setConnectionTimeoutMillis(preferences.getInt(PreferencesAS2.HTTP_SEND_TIMEOUT));
-                    connectionParameter.setTrustAllRemoteServerCertificates(preferences.getBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES));
-                    connectionParameter.setStrictHostCheck(preferences.getBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK));
-                    connectionParameter.setHttpProtocolVersion(order.getReceiver().getHttpProtocolVersion());
-                    connectionParameter.setProxy(messageUploader.createProxyObjectFromPreferences());
-                    connectionParameter.setUseExpectContinue(true);
+                    connectionParameter.setConnectionTimeoutMillis(preferences.getInt(PreferencesAS2.HTTP_SEND_TIMEOUT))
+                            .setTrustAllRemoteServerCertificates(preferences.getBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES))
+                            .setStrictHostCheck(preferences.getBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK))
+                            .setHttpProtocolVersion(order.getReceiver().getHttpProtocolVersion())
+                            .setProxy(messageUploader.createProxyObjectFromPreferences())
+                            .setUseExpectContinue(true)
+                            .setUserdefinedHeaderMap(order.getUserdefinedHeaderMap());
                     Properties requestHeader = messageUploader.upload(connectionParameter,
                             order.getMessage(), order.getSender(), order.getReceiver());
                     //set error or finish state, remember that this send order could be
                     //also an MDN if async MDN is requested
                     if (order.getMessage().isMDN()) {
                         AS2MDNInfo mdnInfo = (AS2MDNInfo) order.getMessage().getAS2Info();
-                        if (mdnInfo.getState() == AS2Message.STATE_FINISHED) {
+                        if (mdnInfo.getState() == MessageStateType.FINISHED) {
                             AS2MessageInfo relatedMessageInfo = messageAccess.getLastMessageEntry(mdnInfo.getRelatedMessageId());
                             messageStoreHandler.movePayloadToInbox(relatedMessageInfo.getMessageType(), mdnInfo.getRelatedMessageId(),
                                     order.getSender(), order.getReceiver());
@@ -301,10 +304,9 @@ public class SendOrderReceiver {
                     } else {
                         //its a AS2 message that has been sent
                         AS2MessageInfo messageInfo = (AS2MessageInfo) order.getMessage().getAS2Info();
-                        messageAccess.setMessageSendDate(messageInfo);
                         messageAccess.updateFilenames(messageInfo);
-                        if (!messageInfo.requestsSyncMDN()) {
-                            long endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(preferences.getInt(PreferencesAS2.ASYNC_MDN_TIMEOUT));
+                        if (!messageInfo.isRequestsSyncMDN()) {
+                            long endTime = System.currentTimeMillis() + TimeUnit.MINUTES.toMillis(preferences.getInt(PreferencesAS2.MDN_WAIT_TIME));
                             DateFormat format = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT,
                                     DateFormat.MEDIUM);
                             logger.log(Level.INFO, rb.getResourceString("async.mdn.wait",
@@ -371,10 +373,10 @@ public class SendOrderReceiver {
                 if (!order.getMessage().isMDN()) {
                     //message upload failure
                     messageAccess.setMessageState(order.getMessage().getAS2Info().getMessageId(),
-                            AS2Message.STATE_STOPPED);
+                            MessageStateType.STOPPED);
                     //its important to set the state in the message info, too. An event exec is not performed
                     //for pending messages
-                    order.getMessage().getAS2Info().setState(AS2Message.STATE_STOPPED);
+                    order.getMessage().getAS2Info().setState(MessageStateType.STOPPED);
                     messageAccess.updateFilenames((AS2MessageInfo) order.getMessage().getAS2Info());
                     ProcessingEvent.enqueueEventIfRequired(dbDriverManager,
                             (AS2MessageInfo) order.getMessage().getAS2Info(), null);
@@ -383,14 +385,14 @@ public class SendOrderReceiver {
                 } else {
                     //MDN send failure, e.g. wrong URL for async MDN in message
                     messageAccess.setMessageState(((AS2MDNInfo) order.getMessage().getAS2Info()).getRelatedMessageId(),
-                            AS2Message.STATE_STOPPED);
+                            MessageStateType.STOPPED);
                 }
                 clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
             } catch (Exception ee) {
                 ee.printStackTrace();
                 logger.log(Level.SEVERE, "SendOrderReceiver.processUploadError(): " + ee.getMessage(),
                         order.getMessage().getAS2Info());
-                messageAccess.setMessageState(order.getMessage().getAS2Info().getMessageId(), AS2Message.STATE_STOPPED);
+                messageAccess.setMessageState(order.getMessage().getAS2Info().getMessageId(), MessageStateType.STOPPED);
             }
         }
     }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_de.java 50    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleAS2MessageParser_de.java 57    23/05/25 11:10 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 57 $
  */
 public class ResourceBundleAS2MessageParser_de extends MecResourceBundle {
 
@@ -24,7 +24,11 @@ public class ResourceBundleAS2MessageParser_de extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {        
+    private static final Object[][] CONTENTS = {       
+        {"inbound.connection.transferinfo", "Es wurden {0} empfangen in {1} [{2}].\"" },
+        {"inbound.connection.tls", "Eingehende TLS Verbindung von [{0}] auf Port {1} [{2}, {3}]" },
+        {"inbound.connection.raw", "Eingehende Verbindung von [{0}] auf Port {1}" },
+        {"inbound.connection.syncmdn", "Synchrone MDN wurde auf dem Rückkanal Ihrer ausgehenden Verbindung empfangen"},
         {"mdn.answerto", "Die eingegangene Empfangsbestätigung (MDN) mit der Nachrichtennummer \"{0}\" ist die Antwort auf die ausgegangene AS2 Nachricht \"{1}\"."},
         {"mdn.state", "Status der eingegangenen Empfangsbestätigung (MDN) ist [{0}]."},
         {"mdn.details", "Details der eingegangenen Empfangsbestätigung (MDN) von {0}: \"{1}\""},
@@ -48,9 +52,9 @@ public class ResourceBundleAS2MessageParser_de extends MecResourceBundle {
         {"mdn.signature.ok", "Digitale Signatur der eingegangenen MDN wurde erfolgreich überprüft."},
         {"message.signature.failure", "Überprüfung der digitalen Signatur der eingegangenen AS2 Nachricht schlug fehl - {0}"},
         {"mdn.signature.failure", "Überprüfung der digitalen Signatur der eingegangenen MDN schlug fehl - {0}"},
-        {"message.signature.using.alias", "Benutze das Zertifikat \"{0}\" zum Überprüfen der digitalen Signatur der eingegangenen AS2 Nachricht."},
-        {"mdn.signature.using.alias", "Benutze das Zertifikat \"{0}\" zum Überprüfen der digitalen Signatur der eingegangenen MDN."},
-        {"decryption.done.alias", "Die Daten der eingegangenen AS2 Nachricht wurden mit Hilfe des Schlüssels \"{0}\" entschlüsselt, der Verschlüsselungsalgorithmus war \"{1}\", der Schlüsselverschlüsselungsalgorithmus war \"{2}\"."},
+        {"message.signature.using.alias", "Benutze das Zertifikat \"{0}\" des entfernten Partners \"{1}\" zum Überprüfen der digitalen Signatur der eingegangenen AS2 Nachricht."},
+        {"mdn.signature.using.alias", "Benutze das Zertifikat \"{0}\" des entfernten Partners \"{1}\" zum Überprüfen der digitalen Signatur der eingegangenen MDN."},
+        {"decryption.done.alias", "Die Daten der eingegangenen AS2 Nachricht wurden mit Hilfe des Schlüssels \"{0}\" der lokalen Station \"{3}\" entschlüsselt, der Verschlüsselungsalgorithmus war \"{1}\", der Schlüsselverschlüsselungsalgorithmus war \"{2}\"."},
         {"mdn.unexpected.messageid", "Die eingegangene Empfangsbestätigung (MDN) referenziert eine AS2 Nachricht der Referenznummer \"{0}\", die nicht existert."},
         {"mdn.unexpected.messageid", "Die eingegangene Empfangsbestätigung (MDN) referenziert die AS2 Nachricht der Referenznummer \"{0}\", die keine MDN erwartet."},
         {"data.compressed.expanded", "Die komprimierten Nutzdaten der eingegangenen AS2 Nachricht wurden von {0} auf {1} expandiert."},

@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_fr.java 10    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_fr.java 14    31/03/26 17:12 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.security.CertificateFormatType;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,7 +15,7 @@ import de.mendelson.util.security.cert.KeystoreCertificate;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 10 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleExportCertificate_fr extends MecResourceBundle{
 
@@ -26,7 +27,7 @@ public class ResourceBundleExportCertificate_fr extends MecResourceBundle{
   }
 
   /**List of messages in the specific language*/
-  static final Object[][] CONTENTS = {
+  private static final Object[][] CONTENTS = {
         
     {"button.ok", "Valider" },
     {"button.cancel", "Annuler" },
@@ -42,10 +43,11 @@ public class ResourceBundleExportCertificate_fr extends MecResourceBundle{
     {"certificate.export.error.message", "L''export du certificat suivant a échoué:\n{0}" },
     {"certificate.export.success.title", "Succès" },
     {"certificate.export.success.message", "Le certificat a été exporté avec succès a\n\"{0}\"" }, 
-    {KeystoreCertificate.CERTIFICATE_FORMAT_PEM, "Format texte (PEM. *.cer)" },
-    {KeystoreCertificate.CERTIFICATE_FORMAT_DER, "Format binaire (DER, *.cer)" },
-    {KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7, "Avec chaîne de confiance (PKCS#7, *.p7b)" },  
-    {KeystoreCertificate.CERTIFICATE_FORMAT_SSH2, "Format SSH2 (clé publique, *.pub)"},
+    {CertificateFormatType.PEM.toString(), "Format texte (PEM. *.cer)" },
+    {CertificateFormatType.PEM_CHAIN.toString(), "Format texte (+chaîne certification) (PEM. *.cer)" },
+    {CertificateFormatType.DER.toString(), "Format binaire (DER, *.cer)" },
+    {CertificateFormatType.PKCS7.toString(), "Avec chaîne de confiance (PKCS#7, *.p7b)" },  
+    {CertificateFormatType.SSH2.toString(), "Format SSH2 (clé publique, *.pub)"},
   };		
   
 }

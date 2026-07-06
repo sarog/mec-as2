@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 14    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 16    5/06/25 15:04 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.DateChooserUI;
@@ -8,6 +8,7 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.log.search.Logline;
 import de.mendelson.util.clientserver.log.search.ServerSideLogfileFilter;
 import de.mendelson.util.clientserver.log.search.ServerSideLogfileFilterImplAS2;
@@ -48,7 +49,7 @@ import javax.swing.SwingUtilities;
  * Dialog to search on the server side in the log files
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 16 $
  */
 public class JDialogSearchLogfile extends JDialog {
 
@@ -201,7 +202,7 @@ public class JDialogSearchLogfile extends JDialog {
                                     response.getException().getClass().getSimpleName(),
                                     response.getException().getMessage(),}));
                     } else {
-                        List<Logline> resultList = response.getSearchResults();
+                        List<Logline> resultList = response.getResultList();
                         for (Logline line : resultList) {
                             try {
                                 long timestamp = Long.valueOf(line.getValue(Logline.KEY_MILLISECS));
@@ -237,9 +238,7 @@ public class JDialogSearchLogfile extends JDialog {
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
     /**

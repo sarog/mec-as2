@@ -1,0 +1,35 @@
+$Header:$
+Este ficheiro contém o modelo para o envio de uma notificação,
+se o pós-processamento de uma mensagem falhar
+As seguintes variáveis são substituídas:
+${PRODUCTNAME}: O nome do produto
+${HOST}: O anfitrião no qual o servidor está a ser executado
+${EVENT_TYPE}: O tipo de evento (após a receção, após o envio (erro/sucesso))
+${PROCESS_TYPE}: O tipo de processo (encaminhamento para parceiro, linha de comando...)
+${MESSAGEID}: O número da mensagem correspondente
+${MENSAGEM_DE_ERRO}: A mensagem de erro
+${SENDER}: O canal de notícias
+${RECEIVER}: O destinatário da mensagem
+
+
+
+
+[SUBJECT]
+Problema de pós-processamento (${SENDER} para ${RECEIVER}) [${MESSAGEID}]
+
+
+[BODY]
+Ocorreu um problema ao processar uma mensagem no seu ${PRODUCTNAME}@${HOST}.
+O estado da transação não é afetado. No entanto, como o seu pós-processamento não funcionou corretamente
+o seu pós-processamento pode ter sido interrompido. Por favor, dê uma olhada na
+transação no sistema.
+
+Tipo de evento: ${EVENT_TYPE}
+Tipo de processo: ${PROCESS_TYPE}
+Número da mensagem: ${MESSAGEID}
+Remetente: ${SENDER}
+Destinatário: ${RECEIVER}
+
+
+${ERROR_MESSAGE}
+

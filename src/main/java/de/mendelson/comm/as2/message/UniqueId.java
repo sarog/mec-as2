@@ -1,11 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/message/UniqueId.java 12    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/UniqueId.java 14    21/10/25 9:13 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.server.ServerInstance;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.concurrent.atomic.AtomicLong;
 
 /*
@@ -19,13 +18,16 @@ import java.util.concurrent.atomic.AtomicLong;
  * Class that ensures that a requested number is unique in the VM
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class UniqueId {
 
-    private final static AtomicLong CURRENT_MESSAGE_ID = new AtomicLong(0);
-    private final static AtomicLong CURRENT_ID = new AtomicLong(System.currentTimeMillis());
-    private final static DateFormat DATE_FORMAT = new SimpleDateFormat("yyyyMMddHHmm");
+    private static final AtomicLong CURRENT_MESSAGE_ID = new AtomicLong(0);
+    private static final AtomicLong CURRENT_ID = new AtomicLong(System.currentTimeMillis());
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyyMMddHHmm");
+
+    private UniqueId() {
+    }
 
     /**
      * Creates a new message id for the AS2 messages
@@ -61,7 +63,7 @@ public class UniqueId {
     public static String createId() {
         long id = CURRENT_ID.getAndAdd(1);
         StringBuilder idBuffer = new StringBuilder();
-        idBuffer.append(DATE_FORMAT.format(new Date()))
+        idBuffer.append(LocalDateTime.now().format(DATE_FORMAT))
                 .append("-")
                 .append(id);
         return (idBuffer.toString());

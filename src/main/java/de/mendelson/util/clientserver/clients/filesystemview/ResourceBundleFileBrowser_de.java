@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/clients/filesystemview/ResourceBundleFileBrowser_de.java 6     6/11/23 11:38 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/clients/filesystemview/ResourceBundleFileBrowser_de.java 7     9/12/24 15:50 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleFileBrowser_de extends MecResourceBundle {
 

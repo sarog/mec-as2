@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_de.java 13    2/11/23 15:52 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_de.java 16    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem;
 import de.mendelson.comm.as2.cem.messages.TrustResponse;
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public class ResourceBundleCEM_de extends MecResourceBundle{
     
@@ -37,14 +37,14 @@ public class ResourceBundleCEM_de extends MecResourceBundle{
         {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.already.imported", "Das übermittelte CEM Zertifikat existiert bereits in dem System [TLS] (Alias {0}), der Import wurde übersprungen."},
         {CEMReceiptController.KEYSTORE_TYPE_ENC_SIGN +".cert.imported.success", "Das übermittelte CEM Zertifikat wurde erfolgreich in das System importiert [enc/sign] (Alias {0})."},
         {CEMReceiptController.KEYSTORE_TYPE_SSL +".cert.imported.success", "Das übermittelte CEM Zertifikat wurde erfolgreich in das System importiert [TLS] (Alias {0})."},
-        {"category." + CEMEntry.CATEGORY_CRYPT, "Verschlüsselung" },
-        {"category." + CEMEntry.CATEGORY_SIGN, "Signatur" },
-        {"category." + CEMEntry.CATEGORY_TLS, "SSL" },
-        {"state." + CEMEntry.STATUS_ACCEPTED_INT, "Akzeptiert von {0}" },
-        {"state." + CEMEntry.STATUS_PENDING_INT, "Noch keine Antwort von {0}" },
-        {"state." + CEMEntry.STATUS_REJECTED_INT, "Abgelehnt von {0}" },
-        {"state." + CEMEntry.STATUS_CANCELED_INT, "Vorgang abgebrochen" },
-        {"state." + CEMEntry.STATUS_PROCESSING_ERROR_INT, "Verarbeitungsfehler" },
+        {"category." + CEMEntry.Category.CRYPT.toInt(), "Verschlüsselung" },
+        {"category." + CEMEntry.Category.SIGN.toInt(), "Signatur" },
+        {"category." + CEMEntry.Category.TLS.toInt(), "TLS" },
+        {"state." + CEMEntry.Status.ACCEPTED.toInt(), "Akzeptiert von {0}" },
+        {"state." + CEMEntry.Status.PENDING.toInt(), "Noch keine Antwort von {0}" },
+        {"state." + CEMEntry.Status.REJECTED.toInt(), "Abgelehnt von {0}" },
+        {"state." + CEMEntry.Status.CANCELED.toInt(), "Vorgang abgebrochen" },
+        {"state." + CEMEntry.Status.PROCESSING_ERROR.toInt(), "Verarbeitungsfehler" },
         {"cemtype.response", "Die CEM Nachricht ist vom Typ \"Certificate response\"" },
         {"cemtype.request", "Die CEM Nachricht ist vom Typ \"Certificate request\"" },
         {"cem.response.relatedrequest.found", "Die CEM Nachricht bezieht sich auf die Anfrage \"{0}\"" },

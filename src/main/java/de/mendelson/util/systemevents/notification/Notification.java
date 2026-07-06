@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/notification/Notification.java 32    3/11/23 9:57 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/notification/Notification.java 38    9/03/26 10:55 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -6,6 +6,7 @@ import de.mendelson.util.systemevents.SystemEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.net.SocketTimeoutException;
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -34,19 +35,16 @@ import javax.mail.internet.MimeMessage;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 38 $
  */
 public abstract class Notification {
 
-    private final String MODULE_NAME;
-    private final MecResourceBundle rb;
-    
-    private long smtpTimeout = TimeUnit.SECONDS.toMillis(15);
-    private long smtpConnectionTimeout = TimeUnit.SECONDS.toMillis(15);
+    private static final String MODULE_NAME;
+    private static final MecResourceBundle rb;
 
-    public Notification() {
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleNotification.class.getName());
         } //load up  resourcebundle
         catch (MissingResourceException e) {
@@ -54,18 +52,23 @@ public abstract class Notification {
         }
         MODULE_NAME = rb.getResourceString("module.name");
     }
+    private long smtpTimeout = TimeUnit.SECONDS.toMillis(15);
+    private long smtpConnectionTimeout = TimeUnit.SECONDS.toMillis(15);
 
-    /**Sets the SMTP timeout values from outside
-     * 
+    protected Notification() {
+    }
+
+    /**
+     * Sets the SMTP timeout values from outside
+     *
      * @param smtpConnectionTimeout
-     * @param smtpTimeout 
+     * @param smtpTimeout
      */
-    public void setTimeout( long smtpConnectionTimeout, long smtpTimeout){
+    public void setTimeout(long smtpConnectionTimeout, long smtpTimeout) {
         this.smtpConnectionTimeout = smtpConnectionTimeout;
         this.smtpTimeout = smtpTimeout;
     }
-    
-    
+
     /**
      * Sends a test notification
      *
@@ -105,13 +108,13 @@ public abstract class Notification {
             properties.setProperty("mail.smtp.ssl.protocols", "SSLv3 TLSv1 TLSv1.1 TLSv1.2 TLSv1.3");
         }
         Session session = null;
-        if (notificationData.usesSMTPAuthCredentials()) {
+        if (notificationData.isUsesSMTPAuthCredentials()) {
             properties.setProperty("mail.smtp.auth", "true");
             properties.setProperty("mail.debug.auth", "true");
             session = Session.getInstance(properties,
                     new SendMailAuthenticator(notificationData.getSMTPUser(),
                             String.valueOf(notificationData.getSMTPPass())));
-        } else if (notificationData.usesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
+        } else if (notificationData.isUsesSMTPAuthOAuth2() && notificationData.getOAuth2Config() != null) {
             properties.setProperty("mail.smtp.auth.mechanisms", "XOAUTH2");
             properties.setProperty("mail.smtp.auth", "true");
             properties.setProperty("mail.debug.auth", "true");
@@ -130,6 +133,7 @@ public abstract class Notification {
 
     /**
      *
+     * This will send the mail using UTF-8 encoding - this might be necessary most languages
      * @param productName
      * @param event
      * @param notificationData
@@ -143,134 +147,107 @@ public abstract class Notification {
             NotificationData notificationData, boolean displayTrace) throws Exception {
 
         Session session = this.getSessionInstance(notificationData);
-        ByteArrayOutputStream traceOut = new ByteArrayOutputStream();
-        if (displayTrace) {
-            PrintStream debugPrintStream = new PrintStream(traceOut);
-            session.setDebugOut(debugPrintStream);
-            session.setDebug(true);
-        }
-        // construct the message
-        MimeMessage msg = new MimeMessage(session);
-        msg.setFrom(new InternetAddress(notificationData.getReplyTo()));
-        msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(notificationData.getNotificationMail(), false));
-        String subject = event.getSubject();
-        if (subject == null) {
-            subject = "";
-        }
-        //add the server identification to the subject before performing the notification
-        if (!subject.startsWith(this.getNotificationSubjectServerIdentification())) {
-            subject = this.getNotificationSubjectServerIdentification() + " " + subject;
-        }
-        msg.setSubject(subject);
-        String bodyText = event.getBody();
-        String footer = this.getNotificationFooter();
-        if (footer != null && !footer.trim().isEmpty()) {
-            bodyText = bodyText
-                    + System.lineSeparator()
-                    + System.lineSeparator()
-                    + System.lineSeparator()
-                    + "--"
-                    + System.lineSeparator()
-                    + footer;
-        }
-        msg.setText(bodyText);
-        msg.setSentDate(new Date());
-        msg.setHeader("X-Mailer", productName);
-        // send the message
-        Transport transport = null;
-        try {
-            transport = session.getTransport("smtp");
-            if (notificationData.getOAuth2Config() != null) {
-                transport.connect(notificationData.getOAuth2Config().getUserName(),
-                        notificationData.getOAuth2Config().getAccessTokenStr());
-                transport.sendMessage(msg, msg.getAllRecipients());
-            } else {
-                transport.send(msg);
+        try (ByteArrayOutputStream traceOut = new ByteArrayOutputStream()) {
+            if (displayTrace) {
+                PrintStream debugPrintStream = new PrintStream(traceOut);
+                session.setDebugOut(debugPrintStream);
+                session.setDebug(true);
             }
-        } catch (Throwable e) {
-            if (e instanceof SendFailedException) {
-                SendFailedException sendFailedException = (SendFailedException) e;
-                Address[] failedAddresses = sendFailedException.getInvalidAddresses();
-                StringBuilder errorMessage = new StringBuilder();
-                if (failedAddresses != null) {
-                    errorMessage.append("The following mail addresses are invalid:").append("\n");
-                    for (Address address : failedAddresses) {
-                        errorMessage.append(address.toString()).append("\n");
+            // construct the message
+            MimeMessage msg = new MimeMessage(session);
+            msg.setFrom(new InternetAddress(notificationData.getReplyTo()));
+            msg.setRecipients(Message.RecipientType.TO, InternetAddress.parse(notificationData.getNotificationMail(), false));
+            String subject = event.getSubject();
+            if (subject == null) {
+                subject = "";
+            }
+            //add the server identification to the subject before performing the notification
+            if (!subject.startsWith(this.getNotificationSubjectServerIdentification())) {
+                subject = this.getNotificationSubjectServerIdentification() + " " + subject;
+            }
+            msg.setSubject(subject, StandardCharsets.UTF_8.name());
+            String bodyText = event.getBody();
+            String footer = this.getNotificationFooter();
+            if (footer != null && !footer.trim().isEmpty()) {
+                bodyText = bodyText
+                        + System.lineSeparator()
+                        + System.lineSeparator()
+                        + System.lineSeparator()
+                        + "--"
+                        + System.lineSeparator()
+                        + footer;
+            }
+            msg.setText(bodyText, StandardCharsets.UTF_8.name());
+            msg.setSentDate(new Date());
+            msg.setHeader("X-Mailer", productName);
+            // send the message
+            Transport transport = null;
+            try {
+                transport = session.getTransport("smtp");
+                if (notificationData.getOAuth2Config() != null) {
+                    transport.connect(notificationData.getOAuth2Config().getUserName(),
+                            notificationData.getOAuth2Config().getAccessTokenStr());
+                    transport.sendMessage(msg, msg.getAllRecipients());
+                } else {
+                    transport.send(msg);
+                }
+            } catch (Throwable e) {
+                if (e instanceof SendFailedException) {
+                    SendFailedException sendFailedException = (SendFailedException) e;
+                    Address[] failedAddresses = sendFailedException.getInvalidAddresses();
+                    StringBuilder errorMessage = new StringBuilder();
+                    if (failedAddresses != null) {
+                        errorMessage.append("The following mail addresses are invalid:").append("\n");
+                        for (Address address : failedAddresses) {
+                            errorMessage.append(address.toString()).append("\n");
+                        }
+                    }
+                    Address[] validUnsentAddresses = sendFailedException.getValidUnsentAddresses();
+                    if (validUnsentAddresses != null) {
+                        errorMessage.append("No mail has been sent to the following valid addresses:").append("\n");
+                        for (Address address : validUnsentAddresses) {
+                            errorMessage.append(address.toString()).append("\n");
+                        }
+                    }
+                    StringBuilder errorLog = new StringBuilder();
+                    errorLog.append("[");
+                    errorLog.append(sendFailedException.getClass().getSimpleName());
+                    errorLog.append("] ");
+                    errorLog.append(sendFailedException.getMessage()).append("\n");
+                    errorLog.append(errorMessage.toString());
+                    String errorLogStr = MODULE_NAME + " " + errorLog.toString().replace("\n", "\n" + MODULE_NAME);
+                    Exception detailledException = new Exception(errorLogStr, e);
+                    throw (detailledException);
+                } else {
+                    StringBuilder errorLog = new StringBuilder();
+                    errorLog.append(this.getTestMessageDebugStr());
+                    errorLog.append(traceOut.toString());
+                    errorLog.append("\n[");
+                    errorLog.append(e.getClass().getSimpleName());
+                    errorLog.append("] ");
+                    errorLog.append(e.getMessage());
+                    if (e.getCause() != null) {
+                        errorLog.append(" - caused by [" + e.getCause().getClass().getName() + "] ");
+                        errorLog.append(e.getCause().getMessage());
+                        if (e.getCause() instanceof SocketTimeoutException) {
+                            errorLog.append("\nThere listens a server on the SMTP host \"" + notificationData.getMailServer()
+                                    + ":" + notificationData.getMailServerPort() + "\" but this seems either not to be a mail server "
+                                    + "or it does not answer to any request.");
+                        }
+                    }
+                    String errorLogStr = MODULE_NAME + " " + errorLog.toString().replace("\n", "\n" + MODULE_NAME + " ");
+                    Exception detailledException = new Exception(errorLogStr, e);
+                    throw (detailledException);
+                }
+            } finally {
+                if (transport != null) {
+                    try {
+                        transport.close();
+                    } finally {
                     }
                 }
-                Address[] validUnsentAddresses = sendFailedException.getValidUnsentAddresses();
-                if (validUnsentAddresses != null) {
-                    errorMessage.append("No mail has been sent to the following valid addresses:").append("\n");
-                    for (Address address : validUnsentAddresses) {
-                        errorMessage.append(address.toString()).append("\n");
-                    }
-                }
-                StringBuilder errorLog = new StringBuilder();
-                errorLog.append("[");
-                errorLog.append(sendFailedException.getClass().getSimpleName());
-                errorLog.append("] ");
-                errorLog.append(sendFailedException.getMessage()).append("\n");
-                errorLog.append(errorMessage.toString());
-                String errorLogStr = MODULE_NAME + " " + this.replace(errorLog.toString(), "\n", "\n" + MODULE_NAME);
-                Exception detailledException = new Exception(errorLogStr, e);
-                throw (detailledException);
-            } else {
-                StringBuilder errorLog = new StringBuilder();
-                errorLog.append(this.getTestMessageDebugStr());
-                errorLog.append(traceOut.toString());
-                errorLog.append("\n[");
-                errorLog.append(e.getClass().getSimpleName());
-                errorLog.append("] ");
-                errorLog.append(e.getMessage());
-                if (e.getCause() != null) {
-                    errorLog.append(" - caused by [" + e.getCause().getClass().getName() + "] ");
-                    errorLog.append(e.getCause().getMessage());
-                    if (e.getCause() instanceof SocketTimeoutException) {
-                        errorLog.append("\nThere listens a server on the SMTP host \"" + notificationData.getMailServer()
-                                + ":" + notificationData.getMailServerPort() + "\" but this seems either not to be a mail server "
-                                + "or it does not answer to any request.");
-                    }
-                }
-                String errorLogStr = MODULE_NAME + " " + this.replace(errorLog.toString(), "\n", "\n" + MODULE_NAME + " ");
-                Exception detailledException = new Exception(errorLogStr, e);
-                throw (detailledException);
             }
-        } finally {
-            if (transport != null) {
-                try {
-                    transport.close();
-                } finally {
-                }
-            }
-            if (traceOut != null) {
-                traceOut.close();
-            }
-        }
-        return (traceOut.toString());
-    }
-
-    /**
-     * Replaces the string tag by the string replacement in the sourceString
-     *
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
-     */
-    private String replace(String source, String tag, String replacement) {
-        if (source == null) {
-            return null;
-        }
-        StringBuilder buffer = new StringBuilder();
-        while (true) {
-            int index = source.indexOf(tag);
-            if (index == -1) {
-                buffer.append(source);
-                return (buffer.toString());
-            }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
-            source = source.substring(index + tag.length());
+            return (traceOut.toString());
         }
     }
 

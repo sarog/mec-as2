@@ -1,12 +1,14 @@
-//$Header: /as2/de/mendelson/util/uinotification/UINotification.java 29    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/uinotification/UINotification.java 39    8/04/26 13:35 Heller $
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.ColorUtil;
+import de.mendelson.util.ImageUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
@@ -20,6 +22,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 import javax.swing.JOptionPane;
@@ -37,83 +40,115 @@ import javax.swing.UIManager;
  * Main UI Notification
  *
  * @author S.Heller
- * @version $Revision: 29 $
+ * @version $Revision: 39 $
  */
 public class UINotification implements INotificationHandler {
 
-    protected final static MendelsonMultiResolutionImage IMAGE_SUCCESS
+    protected static final MendelsonMultiResolutionImage IMAGE_SUCCESS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_ok.svg",
-                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
-    protected final static MendelsonMultiResolutionImage IMAGE_ERROR
+                    NotificationPanel.IMAGESIZE_ICON);
+    protected static final MendelsonMultiResolutionImage IMAGE_ERROR
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_error.svg",
-                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
-    protected final static MendelsonMultiResolutionImage IMAGE_WARNING
+                    NotificationPanel.IMAGESIZE_ICON);
+    protected static final MendelsonMultiResolutionImage IMAGE_WARNING
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_warning.svg",
-                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
-    protected final static MendelsonMultiResolutionImage IMAGE_INFORMATION
+                    NotificationPanel.IMAGESIZE_ICON);
+    protected static final MendelsonMultiResolutionImage IMAGE_INFORMATION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/uinotification/notification_information.svg",
-                    NotificationPanel.IMAGESIZE_ICON, NotificationPanel.IMAGESIZE_ICON * 2);
+                    NotificationPanel.IMAGESIZE_ICON);
 
-    public static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT;
-    public static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK;
-    public static final Color DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT;
-    public static final Color DEFAULT_COLOR_BACKGROUND_WARNING_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_WARNING_DARK;
-    public static final Color DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT;
-    public static final Color DEFAULT_COLOR_BACKGROUND_ERROR_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_ERROR_DARK;
-    public static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT = NotificationPanel.DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT;
-    public static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK = NotificationPanel.DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK;
-    public static final Color DEFAULT_COLOR_FOREGROUND_DETAILS = NotificationPanel.DEFAULT_COLOR_FOREGROUND_DETAILS;
-    public static final Color DEFAULT_COLOR_FOREGROUND_TITLE = NotificationPanel.DEFAULT_COLOR_FOREGROUND_TITLE;
+    public static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS
+            = NotificationPanel.DEFAULT_COLOR_BACKGROUND_SUCCESS;
+    public static final Color DEFAULT_COLOR_ACCENT_SUCCESS
+            = NotificationPanel.DEFAULT_COLOR_ACCENT_SUCCESS;
+    public static final Color DEFAULT_COLOR_BACKGROUND_WARNING
+            = NotificationPanel.DEFAULT_COLOR_BACKGROUND_WARNING;
+    public static final Color DEFAULT_COLOR_ACCENT_WARNING
+            = NotificationPanel.DEFAULT_COLOR_ACCENT_WARNING;
+    public static final Color DEFAULT_COLOR_BACKGROUND_ERROR
+            = NotificationPanel.DEFAULT_COLOR_BACKGROUND_ERROR;
+    public static final Color DEFAULT_COLOR_ACCENT_ERROR
+            = NotificationPanel.DEFAULT_COLOR_ACCENT_ERROR;
+    public static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION
+            = NotificationPanel.DEFAULT_COLOR_BACKGROUND_INFORMATION;
+    public static final Color DEFAULT_COLOR_ACCENT_INFORMATION
+            = NotificationPanel.DEFAULT_COLOR_ACCENT_INFORMATION;
+    public static final Color DEFAULT_COLOR_FOREGROUND_DETAILS
+            = NotificationPanel.DEFAULT_COLOR_FOREGROUND_DETAILS;
+    public static final Color DEFAULT_COLOR_FOREGROUND_TITLE
+            = NotificationPanel.DEFAULT_COLOR_FOREGROUND_TITLE;
 
     public static final int START_POS_LEFT_LOWER = 1;
     public static final int START_POS_RIGHT_LOWER = 2;
     public static final int START_POS_LEFT_UPPER = 3;
     public static final int START_POS_RIGHT_UPPER = 4;
 
-    public static final int TYPE_SUCCESS = 1;
-    public static final int TYPE_WARNING = 2;
-    public static final int TYPE_ERROR = 3;
-    public static final int TYPE_INFORMATION = 4;
+    public enum Type {
+        SUCCESS(1),
+        WARNING(2),
+        ERROR(3),
+        INFORMATION(4);
+
+        private final int id;
+
+        Type(int id) {
+            this.id = id;
+        }
+        public int toInt() {
+            return this.id;
+        }
+        
+        public static Type of(int id) {
+            for (Type type : Type.values()) {
+                if (type.id == id) {
+                    return type;
+                }
+            }
+            throw new IllegalArgumentException("Unknown UINotification.Type " + id);
+        }
+    }
 
     public static final int INTERACTION_TYPE_INTERNAL_STACKED_FRAMES = 1;
     public static final int INTERACTION_TYPE_MESSAGE_DIALOGS = 2;
 
-    private Color backgroundSuccessLight = DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT;
-    private Color backgroundSuccessDark = DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK;
-    private Color backgroundWarningLight = DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT;
-    private Color backgroundWarningDark = DEFAULT_COLOR_BACKGROUND_WARNING_DARK;
-    private Color backgroundErrorLight = DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT;
-    private Color backgroundErrorDark = DEFAULT_COLOR_BACKGROUND_ERROR_DARK;
-    private Color backgroundInformationLight = DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT;
-    private Color backgroundInformationDark = DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK;
+    private Color backgroundColorSuccess = DEFAULT_COLOR_BACKGROUND_SUCCESS;
+    private Color accentColorSuccess = DEFAULT_COLOR_ACCENT_SUCCESS;
+    private Color backgroundColorWarning = DEFAULT_COLOR_BACKGROUND_WARNING;
+    private Color accentColorWarning = DEFAULT_COLOR_ACCENT_WARNING;
+    private Color backgroundColorError = DEFAULT_COLOR_BACKGROUND_ERROR;
+    private Color accentColorError = DEFAULT_COLOR_ACCENT_ERROR;
+    private Color backgroundColorInformation = DEFAULT_COLOR_BACKGROUND_INFORMATION;
+    private Color accentColorInformation = DEFAULT_COLOR_ACCENT_INFORMATION;
 
     private Color foregroundDetails = DEFAULT_COLOR_FOREGROUND_DETAILS;
     private Color foregroundTitle = DEFAULT_COLOR_FOREGROUND_TITLE;
 
+    private Color borderColor = null;
+
     private Color crossColor = Color.GRAY;
     private Color crossColorMouseOver = Color.WHITE;
-    
-    protected final static String UIMANAGER_KEY_FOREGROUND = "controlText";
-    protected final static String UIMANAGER_KEY_BACKGROUND = "controlHighlight";
-    protected final static String UIMANAGER_KEY_CROSS = "controlText";
-    protected final static String UIMANAGER_KEY_CROSS_MOUSEOVER = "controlHighlight";
+
+    protected static final String UIMANAGER_KEY_FOREGROUND = "ToolTip.foreground";
+    protected static final String UIMANAGER_KEY_BACKGROUND = "ToolTip.background";
+    protected static final String UIMANAGER_KEY_CROSS = "ToolTip.foreground";
+    protected static final String UIMANAGER_KEY_CROSS_MOUSEOVER = "ToolTip.background";
 
     /**
      * How long is a single notification frame visible?
      */
-    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS = 4500;
+    public static final long DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS = 4500;
     /**
      * Fade out time
      */
-    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEOUT_IN_MS = 1000;
+    public static final long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEOUT_IN_MS = 1000;
     /**
      * Fade in time
      */
-    public final static long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEIN_IN_MS = 200;
+    public static final long DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEIN_IN_MS = 200;
     /**
      * At which opacity should each notification frame disappear?
      */
-    public final static float VISIBLE_OPACITY_THRESHOLD = 0.3f;
+    public static final float VISIBLE_OPACITY_THRESHOLD = 0.3f;
 
     private JFrame anchorFrame = null;
     /**
@@ -138,10 +173,13 @@ public class UINotification implements INotificationHandler {
     private final List<NotificationWindow> notificationList
             = Collections.synchronizedList(new ArrayList<NotificationWindow>());
 
+    private static final ConcurrentHashMap<String, MendelsonMultiResolutionImage> crossImageCache
+            = new ConcurrentHashMap<String, MendelsonMultiResolutionImage>();
+
     /**
      * Resourcebundle to localize the GUI
      */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -238,10 +276,11 @@ public class UINotification implements INotificationHandler {
      * colors defined in the UI manager and also sets the dark mode colors if
      * requested
      */
-    public UINotification setAllColorsDefaultFromUIManager(boolean darkMode) {
-        this.setForegroundColorsDefaultFromUIManager(darkMode);
-        this.setBackgroundColorsDefaultFromUIManager(darkMode);
-        this.setCrossColorsDefaultFromUIManager(darkMode);
+    public UINotification setAllColorsDefaultFromUIManager() {
+        this.setForegroundColorsDefaultFromUIManager();
+        this.setBackgroundColorsDefaultFromUIManager();
+        this.setCrossColorsDefaultFromUIManager();
+        this.setBorderColorDefaultFromUIManager();
         return (this);
     }
 
@@ -249,12 +288,23 @@ public class UINotification implements INotificationHandler {
      * Redefines the used cross colors for the panels - takes the default colors
      * defined in the UI manager and also sets the dark mode colors if requested
      */
-    public UINotification setCrossColorsDefaultFromUIManager(boolean darkMode) {
-        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS) != null) {
-            this.crossColor = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS);
+    public UINotification setBorderColorDefaultFromUIManager() {
+        if (UIManager.getColor("InternalFrame.borderColor") != null) {
+            this.borderColor = UIManager.getColor("InternalFrame.borderColor");
         }
-        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS_MOUSEOVER) != null) {
-            this.crossColorMouseOver = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_CROSS_MOUSEOVER);
+        return (this);
+    }
+
+    /**
+     * Redefines the used cross colors for the panels - takes the default colors
+     * defined in the UI manager and also sets the dark mode colors if requested
+     */
+    public UINotification setCrossColorsDefaultFromUIManager() {
+        if (UIManager.getColor(UIMANAGER_KEY_CROSS) != null) {
+            this.crossColor = UIManager.getColor(UIMANAGER_KEY_CROSS);
+        }
+        if (UIManager.getColor(UIMANAGER_KEY_CROSS_MOUSEOVER) != null) {
+            this.crossColorMouseOver = UIManager.getColor(UIMANAGER_KEY_CROSS_MOUSEOVER);
         }
         return (this);
     }
@@ -270,26 +320,48 @@ public class UINotification implements INotificationHandler {
     }
 
     /**
+     * Enables a border and sets its color
+     */
+    public UINotification setBorderColor(Color borderColor) {
+        this.borderColor = borderColor;
+        return (this);
+    }
+
+    /**
      * Redefines the used background colors for the panels - takes the default
      * colors defined in the UI manager and also sets the dark mode colors if
      * requested
      */
-    public UINotification setBackgroundColorsDefaultFromUIManager(boolean darkMode) {
-        this.backgroundSuccessDark = new Color(0, 104, 55);
-        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND) != null) {
-            this.backgroundSuccessLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
-            this.backgroundWarningLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
-            this.backgroundErrorLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
-            this.backgroundInformationLight = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_BACKGROUND);
+    public UINotification setBackgroundColorsDefaultFromUIManager() {
+        if (UIManager.getColor(UIMANAGER_KEY_BACKGROUND) != null) {
+            this.backgroundColorSuccess = UIManager.getColor(UIMANAGER_KEY_BACKGROUND);
+            this.backgroundColorWarning = UIManager.getColor(UIMANAGER_KEY_BACKGROUND);
+            this.backgroundColorError = UIManager.getColor(UIMANAGER_KEY_BACKGROUND);
+            this.backgroundColorInformation = UIManager.getColor(UIMANAGER_KEY_BACKGROUND);
         }
-        this.backgroundWarningDark = new Color(255, 176, 59);
-        this.backgroundErrorDark = new Color(193, 39, 45);
-        this.backgroundInformationDark = new Color(0, 113, 188);
-        if (darkMode) {
-            this.backgroundSuccessDark = ColorUtil.darkenColor(this.backgroundSuccessDark, 0.2f);
-            this.backgroundInformationDark = ColorUtil.darkenColor(this.backgroundInformationDark, 0.2f);
-            this.backgroundWarningDark = ColorUtil.darkenColor(this.backgroundWarningDark, 0.2f);
-            this.backgroundErrorDark = ColorUtil.darkenColor(this.backgroundErrorDark, 0.2f);
+        //green
+        if (UIManager.getColor("Objects.Green") != null) {
+            this.accentColorSuccess = UIManager.getColor("Objects.Green");
+        } else {
+            this.accentColorSuccess = new Color(0, 104, 55);
+        }
+        //yellow
+        if (UIManager.getColor("Objects.Yellow") != null) {
+            this.accentColorWarning = UIManager.getColor("Objects.Yellow");
+        } else {
+            this.accentColorWarning = new Color(255, 176, 59);
+        }
+        //red status
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            this.accentColorError = UIManager.getColor("Objects.RedStatus");
+        } else {
+            this.accentColorError = new Color(193, 39, 45);
+        }
+        //blue
+        if (UIManager.getColor("Objects.Blue") != null) {
+            this.accentColorInformation = UIManager.getColor("Objects.Blue");
+        } else {
+            this.accentColorInformation = new Color(0, 113, 188);
         }
         return (this);
     }
@@ -299,10 +371,10 @@ public class UINotification implements INotificationHandler {
      * colors defined in the UI manager and also sets the dark mode colors if
      * requested
      */
-    public UINotification setForegroundColorsDefaultFromUIManager(boolean darkMode) {
-        if (UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_FOREGROUND) != null) {
-            this.foregroundTitle = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_FOREGROUND);
-            this.foregroundDetails = UIManager.getLookAndFeelDefaults().getColor(UIMANAGER_KEY_FOREGROUND);
+    public UINotification setForegroundColorsDefaultFromUIManager() {
+        if (UIManager.getColor(UIMANAGER_KEY_FOREGROUND) != null) {
+            this.foregroundTitle = UIManager.getColor(UIMANAGER_KEY_FOREGROUND);
+            this.foregroundDetails = UIManager.getColor(UIMANAGER_KEY_FOREGROUND);
         }
         return (this);
     }
@@ -311,22 +383,22 @@ public class UINotification implements INotificationHandler {
      * Redefines the used background colors for the panels
      */
     public UINotification setBackgroundColors(
-            Color backgroundSuccessLight,
-            Color backgroundSuccessDark,
-            Color backgroundWarningLight,
-            Color backgroundWarningDark,
-            Color backgroundErrorLight,
-            Color backgroundErrorDark,
-            Color backgroundInformationLight,
-            Color backgroundInformationDark) {
-        this.backgroundSuccessLight = backgroundSuccessLight;
-        this.backgroundSuccessDark = backgroundSuccessDark;
-        this.backgroundInformationLight = backgroundInformationLight;
-        this.backgroundInformationDark = backgroundInformationDark;
-        this.backgroundWarningLight = backgroundWarningLight;
-        this.backgroundWarningDark = backgroundWarningDark;
-        this.backgroundErrorLight = backgroundErrorLight;
-        this.backgroundErrorDark = backgroundErrorDark;
+            Color backgroundColorSuccess,
+            Color accentColorSuccess,
+            Color backgroundColorWarning,
+            Color accentColorWarning,
+            Color backgroundColorError,
+            Color accentColorError,
+            Color backgroundColorInformation,
+            Color accentColorInformation) {
+        this.backgroundColorSuccess = backgroundColorSuccess;
+        this.accentColorSuccess = accentColorSuccess;
+        this.backgroundColorInformation = backgroundColorInformation;
+        this.accentColorInformation = accentColorInformation;
+        this.backgroundColorWarning = backgroundColorWarning;
+        this.accentColorWarning = accentColorWarning;
+        this.backgroundColorError = backgroundColorError;
+        this.accentColorError = accentColorError;
         return (this);
     }
 
@@ -387,11 +459,11 @@ public class UINotification implements INotificationHandler {
      *
      * @param image The image to display. If this is null a default image for
      * the notification type is displayed (warning, error, ok)
-     * @param NOTIFICATION_TYPE One of the notification types that are defined
+     * @param type One of the notification types that are defined
      * in this class. The background color of the notification depends on the
-     * type (green/yellow/red..). One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR,
-     * UINotification.TYPE_INFORMATION
+     * type (green/yellow/red..). One of UINotification.Type.OK,
+     * UINotification.Type.WARNING, UINotification.Type.ERROR,
+     * UINotification.Type.INFORMATION
      * @param notificationDetails The text that is displayed. It is folded
      * automatically
      * @param notificationTitle The title of the notification - not folded -
@@ -403,14 +475,14 @@ public class UINotification implements INotificationHandler {
      * UINotification().instance().setAnchor( JFrame frame )
      */
     public void addNotification(MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE,
+            UINotification.Type type,
             String notificationTitle,
             String notificationDetails) {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
                 try {
-                    _addNotification(image, NOTIFICATION_TYPE, notificationTitle, notificationDetails);
+                    _addNotification(image, type, notificationTitle, notificationDetails);
                 } catch (IllegalArgumentException e) {
                     e.printStackTrace();
                 }
@@ -425,11 +497,11 @@ public class UINotification implements INotificationHandler {
      *
      * @param image The image to display. If this is null a default image for
      * the notification type is displayed (warning, error, ok)
-     * @param NOTIFICATION_TYPE One of the notification types that are defined
+     * @param type One of the notification types that are defined
      * in this class. The background color of the notification depends on the
-     * type (green/yellow/red..). One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR,
-     * UINotification.TYPE_INFORMATION
+     * type (green/yellow/red..). One of UINotification.Type.OK,
+     * UINotification.Type.WARNING, UINotification.Type.ERROR,
+     * UINotification.Type.INFORMATION
      * @param notificationDetails The text that is displayed. It is folded
      * automatically
      * @param notificationTitle The title of the notification - not folded -
@@ -441,7 +513,7 @@ public class UINotification implements INotificationHandler {
      * UINotification().instance().setAnchor( JFrame frame )
      */
     private void _addNotification(MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE,
+            UINotification.Type type,
             String notificationTitle,
             String notificationDetails) throws IllegalArgumentException {
         //check if the notifcation system has been already initialized
@@ -452,13 +524,13 @@ public class UINotification implements INotificationHandler {
         }
         //display notification title that depends on the type of the notification if none is set
         if (notificationTitle == null) {
-            if (NOTIFICATION_TYPE == UINotification.TYPE_SUCCESS) {
+            if (type == Type.SUCCESS) {
                 notificationTitle = rb.getResourceString("title.ok");
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_ERROR) {
+            } else if (type == Type.ERROR) {
                 notificationTitle = rb.getResourceString("title.error");
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_WARNING) {
+            } else if (type == Type.WARNING) {
                 notificationTitle = rb.getResourceString("title.warning");
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_INFORMATION) {
+            } else if (type == Type.INFORMATION) {
                 notificationTitle = rb.getResourceString("title.information");
             } else {
                 notificationTitle = "--";
@@ -468,7 +540,7 @@ public class UINotification implements INotificationHandler {
             NotificationWindow notificationWindow = new NotificationWindow(
                     this.anchorFrame,
                     image,
-                    NOTIFICATION_TYPE,
+                    type,
                     notificationTitle, notificationDetails,
                     new Rectangle(0, 0, this.notificationWidth, this.notificationHeight),
                     this,
@@ -477,17 +549,18 @@ public class UINotification implements INotificationHandler {
                     this.notificationDisplayTimeFadeout
             )
                     .setBackgroundColors(
-                            this.backgroundSuccessLight,
-                            this.backgroundSuccessDark,
-                            this.backgroundWarningLight,
-                            this.backgroundWarningDark,
-                            this.backgroundErrorLight,
-                            this.backgroundErrorDark,
-                            this.backgroundInformationLight,
-                            this.backgroundInformationDark
+                            this.backgroundColorSuccess,
+                            this.accentColorSuccess,
+                            this.backgroundColorWarning,
+                            this.accentColorWarning,
+                            this.backgroundColorError,
+                            this.accentColorError,
+                            this.backgroundColorInformation,
+                            this.accentColorInformation
                     )
                     .setForegroundColors(this.foregroundTitle, this.foregroundDetails)
-                    .setCrossColors(this.crossColor, this.crossColorMouseOver);
+                    .setCrossColors(this.crossColor, this.crossColorMouseOver)
+                    .setBorderColor(this.borderColor);
             synchronized (this.notificationList) {
                 this.notificationList.add(0, notificationWindow);
                 this.notificationPositionsHaveChanged();
@@ -495,12 +568,12 @@ public class UINotification implements INotificationHandler {
             notificationWindow.setVisible(true);
         } else {
             int optionPaneMessageType = JOptionPane.INFORMATION_MESSAGE;
-            if (NOTIFICATION_TYPE == UINotification.TYPE_ERROR) {
+            if (type == Type.ERROR) {
                 optionPaneMessageType = JOptionPane.ERROR_MESSAGE;
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_WARNING) {
+            } else if (type == Type.WARNING) {
                 optionPaneMessageType = JOptionPane.WARNING_MESSAGE;
             }
-            image = UINotification.getMultiresolutionImage(image, NOTIFICATION_TYPE);
+            image = UINotification.getMultiresolutionImage(image, type);
             notificationDetails = this.foldString(notificationDetails, "\n", 80);
             JOptionPane.showMessageDialog(this.anchorFrame,
                     notificationDetails,
@@ -516,7 +589,7 @@ public class UINotification implements INotificationHandler {
     public void addNotification(Throwable e) {
         this.addNotification(
                 null,
-                UINotification.TYPE_ERROR,
+                Type.ERROR,
                 e.getClass().getSimpleName(),
                 "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
     }
@@ -637,15 +710,16 @@ public class UINotification implements INotificationHandler {
         this.interactionType = INTERACTION_TYPE;
     }
 
-    public static MendelsonMultiResolutionImage getMultiresolutionImage(MendelsonMultiResolutionImage image, final int NOTIFICATION_TYPE) {
+    public static MendelsonMultiResolutionImage getMultiresolutionImage(MendelsonMultiResolutionImage image, 
+            UINotification.Type notificationType) {
         //no image passed - take default image
         if (image == null) {
             image = UINotification.IMAGE_SUCCESS;
-            if (NOTIFICATION_TYPE == UINotification.TYPE_WARNING) {
+            if (notificationType == UINotification.Type.WARNING) {
                 image = UINotification.IMAGE_WARNING;
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_ERROR) {
+            } else if (notificationType == UINotification.Type.ERROR) {
                 image = UINotification.IMAGE_ERROR;
-            } else if (NOTIFICATION_TYPE == UINotification.TYPE_INFORMATION) {
+            } else if (notificationType == UINotification.Type.INFORMATION) {
                 image = UINotification.IMAGE_INFORMATION;
             }
         }
@@ -679,34 +753,51 @@ public class UINotification implements INotificationHandler {
         return (result.toString());
     }
 
-    /**Generates the "notification close" cross image in a requested color
-     * 
+    /**
+     * Generates the "notification close" cross image in a requested color
+     *
      * @param size both height and width, its a square
      * @param color The paint color for the cross
-     * @return 
+     * @return
      */
-    protected static ImageIcon generateCrossImage(int size, Color color) {
-        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g = (Graphics2D) image.createGraphics();
-        RenderingHints renderingHints = new RenderingHints(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_BICUBIC));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
-                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
-                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
-                RenderingHints.VALUE_STROKE_NORMALIZE));
-        g.setRenderingHints(renderingHints);
-        g.setColor(color);
-        g.setStroke(new BasicStroke(2));
-        g.drawLine(0, 0, size - 1, size - 1);
-        g.drawLine(0, size - 1, size - 1, 0);
-        g.dispose();
-        return (new ImageIcon(image));
+    protected static ImageIcon generateCrossImage(int baseSize, Color color) {
+        String colorStr = ImageUtil.toHex(color);
+        if (!crossImageCache.containsKey(colorStr)) {
+            //add new cross image of the requested color to the cache
+            List<Image> imageList = new ArrayList<Image>();
+            for (int size = baseSize; size < baseSize * 2; size++) {
+                BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D g = (Graphics2D) image.createGraphics();
+                RenderingHints renderingHints = new RenderingHints(RenderingHints.KEY_RENDERING,
+                        RenderingHints.VALUE_RENDER_QUALITY);
+                renderingHints.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                        RenderingHints.VALUE_INTERPOLATION_BICUBIC));
+                renderingHints.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
+                        RenderingHints.VALUE_ANTIALIAS_ON));
+                renderingHints.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                        RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
+                renderingHints.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
+                        RenderingHints.VALUE_COLOR_RENDER_QUALITY));
+                renderingHints.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
+                        RenderingHints.VALUE_STROKE_NORMALIZE));
+                g.setRenderingHints(renderingHints);
+                g.setColor(color);
+                int strokeSize = 2;
+                g.setStroke(new BasicStroke(strokeSize));
+                int offset = 1;
+                g.drawLine(0, 0, size - offset, size - offset);
+                g.drawLine(0, size - offset, size - offset, 0);
+                g.dispose();
+                imageList.add(image);
+            }
+            Image[] resolutionVariants = new Image[imageList.size()];
+            for (int i = 0; i < imageList.size(); i++) {
+                resolutionVariants[i] = imageList.get(i);
+            }
+            MendelsonMultiResolutionImage multiResolutionImage = new MendelsonMultiResolutionImage(resolutionVariants);
+            crossImageCache.put(colorStr, multiResolutionImage);
+        }
+        return (new ImageIcon(crossImageCache.get(colorStr).toMinResolution(baseSize)));
     }
 
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 10    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 14    16/02/26 14:07 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -10,12 +10,11 @@ import de.mendelson.util.MecResourceBundle;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
 
@@ -29,7 +28,7 @@ public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"tag", "Test de connexion sur {0}"},
         {"timeout.set", "Réglage du délai d''attente sur {0}ms"},
         {"test.start.ssl", "Démarrer la vérification de la connexion sur {0} à l''aide de la connexion TLS. "
@@ -59,10 +58,10 @@ public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
         {"test.connection.proxy.auth", "La connexion utilise le proxy {0} avec authentification (Utilisateur \"{1}\")"},
         {"test.connection.proxy.noauth", "La connexion utilise le proxy {0} sans authentification"},
         {"result.exception", "L''erreur suivante s''est produite pendant le test :{0}."},
-        {"info.protocols", "Le client permet la négociation via les protocoles TLS suivants: {0}" },
-        {"info.securityprovider", "Fournisseur de sécurité TLS utilisé: {0}" },
-        {"sni.extension.set", "L''extension TLS SNI (nom de l''hôte) a été fixée à \"{0}\"" },
-        {"local.station", "Station locale" },
+        {"info.protocols", "Le client permet la négociation via les protocoles TLS suivants: {0}"},
+        {"info.securityprovider", "Fournisseur de sécurité TLS utilisé: {0}"},
+        {"sni.extension.set", "L''extension TLS SNI (nom de l''hôte) a été fixée à \"{0}\""},
+        {"local.station", "Station locale"}
     };
 
 }

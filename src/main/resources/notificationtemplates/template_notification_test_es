@@ -1,0 +1,25 @@
+$Header:$
+Este archivo contiene la plantilla de notificación para probar la configuración del correo electrónico.
+Se pueden utilizar las siguientes variables, que se sustituyen en consecuencia:
+${PRODUCTNAME}: Nombre del producto
+${HOST}: Host en el que se ejecuta el servidor
+${USER}: Usuario bajo el que se está ejecutando el servidor
+${MAILHOST}: Nombre de host SMTP
+${MAILPORT}: puerto del servidor SMTP
+${CONNECTIONSECURITY}: Seguridad de la conexión (NONE/STARTSSL/SSL)
+${AUTHORIZATION}: Usuario/contraseña, OAUTH2 o NINGUNO
+
+
+
+[SUBJECT]
+Mensaje de comprobación de la configuración
+
+
+[BODY]
+Este mensaje fue iniciado por el usuario ${USER} en el host ${HOST}. La recepción de este mensaje garantiza que la configuración en ${PRODUCTNAME} para la notificación por correo electrónico es correcta.
+
+Configuración de este intento con éxito:
+
+Servidor de correo SMTP: ${MAILHOST}:${MAILPORT}
+Seguridad de conexión: ${CONNECTIONSECURITY}
+Autorización: ${AUTHORIZATION}

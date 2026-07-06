@@ -1,4 +1,4 @@
- //$Header: /as2/de/mendelson/util/IOFileFilterRegexpMatch.java 5     2/11/23 14:02 Heller $
+ //$Header: /as4/de/mendelson/util/IOFileFilterRegexpMatch.java 7     9/03/26 10:55 Heller $
 package de.mendelson.util;
 
 import java.nio.file.DirectoryStream;
@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
  * are positive and negative patterns possible (matching/nonmatching).
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class IOFileFilterRegexpMatch implements DirectoryStream.Filter {
 
@@ -61,9 +61,9 @@ public class IOFileFilterRegexpMatch implements DirectoryStream.Filter {
      * Adds a passed pattern to a passed list
      */
     private void addPattern(List<Pattern> patternList, String pattern) {
-        pattern = this.replace(pattern, ".", "\\.");
-        pattern = this.replace(pattern, "*", ".*");
-        pattern = this.replace(pattern, "?", ".");
+        pattern = pattern.replace(".", "\\.");
+        pattern = pattern.replace("*", ".*");
+        pattern = pattern.replace("?", ".");
         Pattern compiledPattern = Pattern.compile(pattern);
         patternList.add(compiledPattern);
     }
@@ -94,44 +94,4 @@ public class IOFileFilterRegexpMatch implements DirectoryStream.Filter {
         return (accepted);
     }
 
-    /**
-     * Replaces the string tag by the string replacement in the sourceString
-     *
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
-     */
-    private String replace(String source, String tag, String replacement) {
-        if (source == null) {
-            return null;
-        }
-        StringBuilder buffer = new StringBuilder();
-        while (true) {
-            int index = source.indexOf(tag);
-            if (index == -1) {
-                buffer.append(source);
-                return (buffer.toString());
-            }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
-            source = source.substring(index + tag.length());
-        }
-    }
-
-//    public static final void main(String[] args) {
-//        IOFileFilterRegexpMatch fileFilter = new IOFileFilterRegexpMatch();
-//        fileFilter.addNonMatchingPattern("*.txt");
-//        fileFilter.addNonMatchingPattern("*.log");        
-//        File dir = new File("c:/temp");
-//        Path dirPath = dir.toPath();
-//        try {
-//            DirectoryStream<Path> stream = Files.newDirectoryStream(dirPath, fileFilter);
-//            for (Path entry : stream) {
-//                System.out.println(entry.getFileName());
-//            }
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
 }

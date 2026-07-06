@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails.java 22    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails.java 24    21/10/25 15:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 24 $
  */
 public class ResourceBundleMessageDetails extends MecResourceBundle{
     
@@ -42,6 +42,8 @@ public class ResourceBundleMessageDetails extends MecResourceBundle{
         {"transactionstate.error.decryption-failed", "<HTML>The message receiver was unable to decrypt the AS2 message. Looks like the message sender used the wrong certificate to encrypt?</HTML>" },
         {"transactionstate.error.connectionrefused", "<HTML>Your system tried to connect the partner system but was unable to reach it or your partner system did not answer with an acknowledgement in the defined time</HTML>" },
         {"transactionstate.error.connectionrefused.details", "<HTML>This might be an infrastructure problem, your partners system is not running or you entered the wrong receipt URL for this partner? It is also possible that your system transmitted the message successfully and your partner did not answer with an acknowledgement in the defined time. Perhaps you defined the time frame for the answer too short?</HTML>" },
+        {"transactionstate.error.messagecreation", "<HTML>A problem occured generating an outbound AS2 message</HTML>" },
+        {"transactionstate.error.messagecreation.details", "<HTML>The system was not able to generate the required message structure due to a problem on your side. This is not related to your partner system, no connection has been established.</HTML>" },
         {"transactionstate.pending", "This transaction is in pending state." },
         {"transactionstate.error.asyncmdnsend", "<HTML>A message with an async MDN request has been received and has been processed successfully but your system was not able to send back the async MDN or it was not accepted by the partner system</HTML>" },
         {"transactionstate.error.asyncmdnsend.details", "<HTML>The AS2 message sender transmits the URL where to send back the MDN - either this system is not reachable (infrastructure problem or the partner system is down?) or the partner system did not accept the async MDN and answered with a HTTP 400.</HTML>" },
@@ -65,6 +67,7 @@ public class ResourceBundleMessageDetails extends MecResourceBundle{
         {"header.signature", "Signature" },
         {"header.senderhost", "Sender" },
         {"header.useragent", "AS2 server" },
+        {"mdn.nopayload", "This is an MDN - there does no payload exist"},
     };
     
 }

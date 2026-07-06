@@ -1,0 +1,17 @@
+$Header:$
+Ce fichier contient le modèle de notification pour informer un partenaire spécifique du dépassement d'un quota de messages défini.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+${PRODUCTNAME} : nom du produit
+${HOST} : Hôte du serveur AS2
+${PARTENAIRE} : nom du partenaire pour lequel le quota de réception a été dépassé
+${QUOTA} : Le nombre de messages de réception autorisés (quota)
+
+
+
+
+[SUBJECT]
+Quota de réception dépassé pour ${PARTNER}
+
+
+[BODY]
+Le nombre de messages reçus par le partenaire ${PARTENAIRE} a dépassé ${QUOTA}. Du côté du serveur, cela n'a pas d'effet, les éventuelles activités devraient être exécutées manuellement.

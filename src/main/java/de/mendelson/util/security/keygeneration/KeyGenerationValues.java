@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 14    2/11/23 14:03 Heller $
+//$Header: /as4/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 17    21/07/25 11:03 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.util.ArrayList;
@@ -18,16 +18,44 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 /**
  * Stores key values for the generation process
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 17 $
  */
 public class KeyGenerationValues {
 
     public static final String KEYALGORITHM_DSA = KeyGenerator.KEYALGORITHM_DSA;
     public static final String KEYALGORITHM_RSA = KeyGenerator.KEYALGORITHM_RSA;
     public static final String KEYALGORITHM_ECDSA = KeyGenerator.KEYALGORITHM_ECDSA;
-    public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = "SHA256WithRSA";
-    public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA = "SHA512WithRSA";
-    public static final String SIGNATUREALGORITHM_SHA1_WITH_RSA = "SHA1WithRSA";
+    public static final String KEYALGORITHM_EDDSA = KeyGenerator.KEYALGORITHM_EDDSA;
+    public static final String KEYALGORITHM_DILITHIUM = KeyGenerator.KEYALGORITHM_DILITHIUM;
+    public static final String KEYALGORITHM_SPHINCSPLUS = KeyGenerator.KEYALGORITHM_SPHINCSPLUS;
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA;
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA = KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA;
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS = KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS;
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA_RSASSA_PSS = KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA_RSASSA_PSS;
+    public static final String SIGNATUREALGORITHM_SHA1_WITH_RSA = KeyGenerator.SIGNATUREALGORITHM_SHA1_WITH_RSA;
+    public static final String SIGNATUREALGORITHM_MD5_WITH_RSA = KeyGenerator.SIGNATUREALGORITHM_MD5_WITH_RSA;
+    public static final String SIGNATUREALGORITHM_SHA256_WITH_ECDSA = KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA;
+    public static final String SIGNATUREALGORITHM_SHA384_WITH_ECDSA = KeyGenerator.SIGNATUREALGORITHM_SHA384_WITH_ECDSA;
+    public static final String SIGNATUREALGORITHM_SHA512_WITH_ECDSA = KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_ECDSA;
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA = KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA;
+    public static final String SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA = KeyGenerator.SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA;
+    public static final String SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA = KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA;
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA = KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA;
+    public static final String SIGNATUREALGORITHM_SHA3_512_WITH_RSA = KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA;
+    public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS = KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS;
+    public static final String SIGNATUREALGORITHM_SHA3_512_WITH_RSA_RSASSA_PSS = KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA_RSASSA_PSS;
+    public static final String SIGNATUREALGORITHM_SHA2_128F = KeyGenerator.SIGNATUREALGORITHM_SHA2_128F;
+    public static final String SIGNATUREALGORITHM_SHA2_128S = KeyGenerator.SIGNATUREALGORITHM_SHA2_128S;
+    public static final String SIGNATUREALGORITHM_SHA2_192F = KeyGenerator.SIGNATUREALGORITHM_SHA2_192F;
+    public static final String SIGNATUREALGORITHM_SHA2_192S = KeyGenerator.SIGNATUREALGORITHM_SHA2_192S;
+    public static final String SIGNATUREALGORITHM_SHA2_256F = KeyGenerator.SIGNATUREALGORITHM_SHA2_256F;
+    public static final String SIGNATUREALGORITHM_SHA2_256S = KeyGenerator.SIGNATUREALGORITHM_SHA2_256S;
+    public static final String SIGNATUREALGORITHM_ED25519 = KeyGenerator.SIGNATUREALGORITHM_ED25519;
+    public static final String CURVE_NAME_ED25519 = KeyGenerator.CURVE_NAME_ED25519;
+    public static final String CURVE_NAME_X25519 = KeyGenerator.CURVE_NAME_X25519;
+    public static final String CURVE_NAME_X448 = KeyGenerator.CURVE_NAME_X448;
+    public static final String CURVE_NAME_ED448 = KeyGenerator.CURVE_NAME_ED448;
+    public static final String CURVE_NAME_SECP256R1 = KeyGenerator.CURVE_NAME_SECP256R1;
 
     private String keyAlgorithm = KEYALGORITHM_RSA;
     private int keySize = 2048;
@@ -43,7 +71,7 @@ public class KeyGenerationValues {
     private KeyUsage keyExtension = null;
     private ExtendedKeyUsage extendedKeyExtension = null;
     private final List<GeneralName> subjectAlternativeNames = new ArrayList<GeneralName>();
-    private String ecNamedCurve = null;
+    private String namedCurve = null;
     private boolean generateSKI = false;
 
     /**
@@ -244,15 +272,15 @@ public class KeyGenerationValues {
     /**
      * @return the ecNamedCurve
      */
-    public String getECNamedCurve() {
-        return ecNamedCurve;
+    public String getNamedCurve() {
+        return namedCurve;
     }
 
     /**
-     * @param ecNamedCurve the ecNamedCurve to set
+     * @param namedCurve the ecNamedCurve to set
      */
-    public void setECNamedCurve(String ecNamedCurve) {
-        this.ecNamedCurve = ecNamedCurve;
+    public void setNamedCurve(String namedCurve) {
+        this.namedCurve = namedCurve;
     }
 
     /**

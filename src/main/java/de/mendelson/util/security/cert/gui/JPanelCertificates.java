@@ -1,28 +1,38 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JPanelCertificates.java 68    3/11/23 10:16 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JPanelCertificates.java 97    8/04/26 15:28 Heller $
 package de.mendelson.util.security.cert.gui;
 
-import de.mendelson.util.ColorUtil;
+import de.mendelson.util.IStatusBar;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.AllowModificationCallback;
 import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.modulelock.ModuleLock;
+import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateInUseChecker;
 import de.mendelson.util.security.cert.CertificateInUseInfo;
 import de.mendelson.util.security.cert.CertificateInUseInfo.SingleCertificateInUseInfo;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.CertificateValiditySettings;
 import de.mendelson.util.security.cert.KeyCopyHandler;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import de.mendelson.util.security.cert.ResourceBundleCertificateValidity;
+import de.mendelson.util.security.cert.TableCellRendererTrustType;
 import de.mendelson.util.security.cert.TableModelCertificates;
+import de.mendelson.util.security.cert.TrustType;
+import de.mendelson.util.security.cert.clientserver.CRLVerificationRequest;
+import de.mendelson.util.security.cert.clientserver.CRLVerificationResponse;
 import de.mendelson.util.security.cert.clientserver.RefreshKeystoreCertificates;
+import de.mendelson.util.security.crl.CRLRevocationInformation;
 import de.mendelson.util.tables.JTableColumnResizer;
 import de.mendelson.util.tables.PersistentTableRowSorter;
 import de.mendelson.util.tables.TableCellRendererDate;
+import de.mendelson.util.tables.TableUtil;
 import de.mendelson.util.uinotification.UINotification;
 import java.awt.Color;
-import java.security.cert.CertPath;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.security.cert.PKIXCertPathBuilderResult;
 import java.security.cert.TrustAnchor;
-import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +40,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.Set;
+import java.util.StringJoiner;
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
@@ -41,11 +54,14 @@ import javax.swing.JPanel;
 import javax.swing.ListSelectionModel;
 import javax.swing.RowSorter;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.event.PopupMenuEvent;
 import javax.swing.event.PopupMenuListener;
 import javax.swing.table.TableModel;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -58,11 +74,11 @@ import javax.swing.table.TableModel;
  * Panel to configure the Certificates
  *
  * @author S.Heller
- * @version $Revision: 68 $
+ * @version $Revision: 97 $
  */
 public class JPanelCertificates extends JPanel implements ListSelectionListener, PopupMenuListener {
 
-    private final static int IMAGE_HEIGTH = 18;
+    private static final int IMAGE_HEIGTH = 18;
 
     private final Logger logger;
     private JButton editButton = null;
@@ -70,7 +86,19 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
     private JMenuItem itemEdit = null;
     private JMenuItem itemDelete = null;
     private CertificateManager manager = null;
-    private final MecResourceBundle rb;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbCertificateValidity;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCertificates.class.getName());
+            rbCertificateValidity = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCertificateValidity.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     public static final ImageIcon ICON_CERTIFICATE_ROOT
             = new ImageIcon(TableModelCertificates.IMAGE_ROOT_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGTH));
     public static final ImageIcon ICON_CERTIFICATE_UNTRUSTED
@@ -83,17 +111,20 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
      * Image size for the popup menus
      */
     private int imageSizePopup = JDialogCertificates.IMAGE_SIZE_POPUP;
-    private Color colorOk = Color.green.darker().darker();
-    private Color colorWarning = Color.red.darker();
+    private final Color colorOk;
+    private final Color colorWarning;
     /**
      * Allows to set an external label to display the trust anchor information
      * in
      */
     private JLabel jLabelTrustAnchorValueAlternate = null;
     private JLabel jLabelWarnings = null;
-    private final String moduleName;
+    private final ModuleLock.Module module;
 
     private final GUIClient guiClient;
+    private Consumer<String> clientsideOutputConsumer = null;
+    protected static final int MANAGER_TYPE_TLS = TableModelCertificates.TYPE_TLS;
+    protected static final int MANAGER_TYPE_ENCSIGN = TableModelCertificates.TYPE_ENCSIGN;
 
     /**
      * Creates new form JPanelPartnerConfig
@@ -103,36 +134,66 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
      * for persistent settings this String should help
      */
     public JPanelCertificates(Logger logger, ListSelectionListener additionalListener,
-            GUIClient guiClient, String moduleName) {
-        if (moduleName == null) {
-            moduleName = "";
-        }
-        this.moduleName = moduleName;
+            GUIClient guiClient, ModuleLock.Module module, Color colorOk, Color colorWarning,
+            final int MANAGER_TYPE) {
+        this.colorOk = colorOk;
+        this.colorWarning = colorWarning;
+        this.module = module;
         this.logger = logger;
         this.guiClient = guiClient;
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCertificates.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         initComponents();
+        this.jTable.setModel(new TableModelCertificates(MANAGER_TYPE));
         //add row sorter
         RowSorter<TableModel> sorter = new PersistentTableRowSorter<TableModel>(this.jTable.getModel(),
-                this.getClass().getName() + "_" + this.moduleName);
+                this.getClass().getName() + "_" + this.module);
         this.jTable.setRowHeight(TableModelCertificates.ROW_HEIGHT);
         this.jTable.setRowSorter(sorter);
         this.jTable.getTableHeader().setReorderingAllowed(false);
-        this.jTable.getColumnModel().getColumn(0).setMaxWidth(TableModelCertificates.ROW_HEIGHT + this.jTable.getRowMargin() * 2);
-        this.jTable.getColumnModel().getColumn(1).setMaxWidth(TableModelCertificates.ROW_HEIGHT + this.jTable.getRowMargin() * 2);
+        this.jTable.getColumnModel().getColumn(0).setMaxWidth(TableModelCertificates.ROW_HEIGHT
+                + this.jTable.getRowMargin() * 2);
+        this.jTable.getColumnModel().getColumn(1).setMaxWidth(TableModelCertificates.ROW_HEIGHT
+                + this.jTable.getRowMargin() * 2);
         this.jTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         this.jTable.getSelectionModel().addListSelectionListener(additionalListener);
         this.jTable.getSelectionModel().addListSelectionListener(this);
-        this.jTable.setDefaultRenderer(Date.class, new TableCellRendererDate(DateFormat.getDateInstance(DateFormat.SHORT)));
+        this.jTable.setDefaultRenderer(Date.class, new TableCellRendererDate(
+                DateFormat.getDateInstance(DateFormat.SHORT)));
+        this.jTable.setDefaultRenderer(TrustType.class, new TableCellRendererTrustType());
         this.jPopupMenu.setInvoker(this.jScrollPaneTable);
         this.jPopupMenu.addPopupMenuListener(this);
         this.setMultiresolutionIcons();
+        MouseListener mouseListenerTrustChain = new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent event) {
+                int selectedRow = jTreeTrustChain.getRowForLocation(event.getX(), event.getY());
+                TreePath selectedPath = jTreeTrustChain.getPathForLocation(event.getX(), event.getY());
+
+                if (selectedRow != -1) {
+                    if (event.getClickCount() == 2) {
+                        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) selectedPath
+                                .getLastPathComponent();
+                        if (selectedNode != null) {
+                            Object userObject = selectedNode.getUserObject();
+                            if (userObject != null && userObject instanceof KeystoreCertificate) {
+                                KeystoreCertificate certificate = (KeystoreCertificate) userObject;
+                                setSelectionByAlias(certificate.getAlias());
+                            }
+                        }
+                    } else if (event.getClickCount() == 1) {
+                        DefaultMutableTreeNode selectedNode = (DefaultMutableTreeNode) selectedPath
+                                .getLastPathComponent();
+                        if (selectedNode != null) {
+                            Object userObject = selectedNode.getUserObject();
+                            if (userObject != null && userObject instanceof KeystoreCertificate) {
+                                KeystoreCertificate certificate = (KeystoreCertificate) userObject;
+                                displayInfoText(certificate);
+                            }
+                        }
+                    }
+                }
+            }
+        };
+        this.jTreeTrustChain.addMouseListener(mouseListenerTrustChain);
     }
 
     /**
@@ -140,15 +201,48 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
      */
     private void setMultiresolutionIcons() {
         this.jMenuItemPopupDeleteEntry.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_DELETE_MULTIRESOLUTION.toMinResolution(this.imageSizePopup)));
+                new ImageIcon(JDialogCertificates.IMAGE_DELETE_MULTIRESOLUTION
+                        .toMinResolution(this.imageSizePopup)));
         this.jMenuItemPopupExport.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(this.imageSizePopup)));
+                new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION
+                        .toMinResolution(this.imageSizePopup)));
         this.jMenuItemPopupRenameAlias.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_EDIT_MULTIRESOLUTION.toMinResolution(this.imageSizePopup)));
+                new ImageIcon(JDialogCertificates.IMAGE_EDIT_MULTIRESOLUTION
+                        .toMinResolution(this.imageSizePopup)));
         this.jMenuItemPopupReference.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_REFERENCE.toMinResolution(this.imageSizePopup)));
+                new ImageIcon(JDialogCertificates.IMAGE_REFERENCE
+                        .toMinResolution(this.imageSizePopup)));
         this.jMenuItemPopupKeyCopy.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_KEYCOPY.toMinResolution(this.imageSizePopup)));
+                new ImageIcon(JDialogCertificates.IMAGE_KEYCOPY
+                        .toMinResolution(this.imageSizePopup)));
+    }
+
+    private void displayInfoText(KeystoreCertificate certificate) {
+        SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
+            @Override
+            protected Void doInBackground() {
+                String infoText = certificate.getInfo();
+                String extensionText = certificate.getInfoExtension();
+                String fullInfoText
+                        = "Alias: " + certificate.getAlias()
+                        + "\n\n"
+                        + infoText
+                        + "\n\n"
+                        + extensionText;
+                publish(fullInfoText);
+                return null;
+            }
+
+            @Override
+            protected void process(List<String> chunks) {
+                for (String request : chunks) {
+                    jEditorPaneInfo.setText(request);
+                    //scroll up to first line
+                    jEditorPaneInfo.setCaretPosition(0);
+                }
+            }
+        };
+        worker.execute();
     }
 
     /**
@@ -183,17 +277,17 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         }
         if (!expiredButUsedList.isEmpty()) {
             UINotification.instance().addNotification(JDialogCertificates.IMAGE_CERTIFICATE,
-                    UINotification.TYPE_WARNING,
-                    this.rb.getResourceString("warning.deleteallexpired.expired.but.used.title"),
-                    this.rb.getResourceString("warning.deleteallexpired.expired.but.used.text",
+                    UINotification.Type.WARNING,
+                    rb.getResourceString("warning.deleteallexpired.expired.but.used.title"),
+                    rb.getResourceString("warning.deleteallexpired.expired.but.used.text",
                             String.valueOf(expiredButUsedList.size()))
             );
         }
         if (!expiredList.isEmpty()) {
             JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
             int requestValue = JOptionPane.showConfirmDialog(parent,
-                    this.rb.getResourceString("warning.deleteallexpired.text", String.valueOf(expiredList.size())),
-                    this.rb.getResourceString("warning.deleteallexpired.title"),
+                    rb.getResourceString("warning.deleteallexpired.text", String.valueOf(expiredList.size())),
+                    rb.getResourceString("warning.deleteallexpired.title"),
                     JOptionPane.YES_NO_OPTION,
                     JOptionPane.QUESTION_MESSAGE);
             if (requestValue == JOptionPane.YES_OPTION) {
@@ -207,18 +301,18 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
                 try {
                     this.refreshData();
                     UINotification.instance().addNotification(JDialogCertificates.IMAGE_CERTIFICATE,
-                            UINotification.TYPE_SUCCESS,
-                            this.rb.getResourceString("success.deleteallexpired.title"),
-                            this.rb.getResourceString("success.deleteallexpired.text", String.valueOf(expiredList.size())));
+                            UINotification.Type.SUCCESS,
+                            rb.getResourceString("success.deleteallexpired.title"),
+                            rb.getResourceString("success.deleteallexpired.text", String.valueOf(expiredList.size())));
                 } catch (Throwable e) {
                     UINotification.instance().addNotification(e);
                 }
             }
         } else {
             UINotification.instance().addNotification(JDialogCertificates.IMAGE_CERTIFICATE,
-                    UINotification.TYPE_ERROR,
-                    this.rb.getResourceString("warning.deleteallexpired.noneavailable.title"),
-                    this.rb.getResourceString("warning.deleteallexpired.noneavailable.text"));
+                    UINotification.Type.ERROR,
+                    rb.getResourceString("warning.deleteallexpired.noneavailable.title"),
+                    rb.getResourceString("warning.deleteallexpired.noneavailable.text"));
         }
     }
 
@@ -233,11 +327,6 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         this.jLabelTrustAnchorValue.setVisible(false);
         this.jLabelTrustAnchorValueAlternate = jLabelTrustAnchorValueAlternate;
         this.jLabelWarnings = jLabelWarnings;
-        //adjust the warning and ok colors to keep contrast to the passed label
-        if (this.jLabelWarnings != null) {
-            this.colorOk = ColorUtil.getBestContrastColorAroundForeground(this.jLabelWarnings.getBackground(), colorOk);
-            this.colorWarning = ColorUtil.getBestContrastColorAroundForeground(this.jLabelWarnings.getBackground(), colorWarning);
-        }
     }
 
     /**
@@ -261,25 +350,18 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
                 return (false);
             }
         }
-        boolean readWrite = true;
-        readWrite = readWrite && this.manager.canWrite();
-        if (!readWrite) {
-            UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
-                    this.rb.getResourceString("keystore.readonly.title"),
-                    this.rb.getResourceString("keystore.readonly.message"));
-        }
-        return (readWrite);
+        return (this.manager.canWrite());
     }
 
-    public void addKeystore(CertificateManager manager) {
+    public void addCertificateManager(CertificateManager manager) {
         this.manager = manager;
-        if (this.moduleName.equals(ModuleLock.MODULE_ENCSIGN_KEYSTORE)) {
-            this.jMenuItemPopupKeyCopy.setText(this.rb.getResourceString("button.keycopy",
-                    this.rb.getResourceString("button.keycopy.tls")));
+        ((TableModelCertificates) this.jTable.getModel()).setCertificateManager(manager);
+        if (this.module==ModuleLock.Module.ENCSIGN_KEYSTORE) {
+            this.jMenuItemPopupKeyCopy.setText(rb.getResourceString("button.keycopy",
+                    rb.getResourceString("button.keycopy.tls")));
         } else {
-            this.jMenuItemPopupKeyCopy.setText(this.rb.getResourceString("button.keycopy",
-                    this.rb.getResourceString("button.keycopy.signencrypt")));
+            this.jMenuItemPopupKeyCopy.setText(rb.getResourceString("button.keycopy",
+                    rb.getResourceString("button.keycopy.signencrypt")));
         }
         this.refreshData();
         JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
@@ -306,13 +388,29 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
     }
 
     protected void setSelectionByAlias(String selectedAlias) {
-        if (selectedAlias != null) {
-            for (int i = 0; i < ((TableModelCertificates) this.jTable.getModel()).getRowCount(); i++) {
-                KeystoreCertificate certificate = ((TableModelCertificates) this.jTable.getModel()).getParameter(i);
-                if (certificate.getAlias().equals(selectedAlias)) {
-                    this.jTable.getSelectionModel().setSelectionInterval(i, i);
-                    break;
-                }
+        TableModelCertificates model = (TableModelCertificates) this.jTable.getModel();
+        int rowCount = model.getRowCount();
+        if (selectedAlias == null && rowCount > 0) {
+            this.jTable.setSelectionInterval(0, 0);
+            selectedAlias = model.getParameter(0).getAlias();
+        }
+        int selectedRow = this.jTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            KeystoreCertificate currentCert = model.getParameter(selectedRow);
+            if (selectedAlias.equals(currentCert.getAlias())) {
+                this.displayInfoText(currentCert);
+                jTreeTrustChain.buildTree(this.manager, currentCert.getAlias());
+                return;
+            }
+        }
+        for (int i = 0; i < rowCount; i++) {
+            KeystoreCertificate cert = model.getParameter(i);
+            if (selectedAlias.equals(cert.getAlias())) {
+                jTable.getSelectionModel().setSelectionInterval(i, i);
+                TableUtil.scrollTableRowToVisible(jTable, i);
+                this.displayInfoText(cert);
+                jTreeTrustChain.buildTree(this.manager, cert.getAlias());
+                break;
             }
         }
     }
@@ -348,20 +446,7 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
             selectedAlias = (((TableModelCertificates) this.jTable.getModel()).getParameter(selectedRow)).getAlias();
         }
         List<KeystoreCertificate> managersKeystoreCertificateList = this.manager.getKeyStoreCertificateList();
-        if (this.jCheckBoxShowCACertificates.isSelected()) {
-            //show all certificates
-            ((TableModelCertificates) this.jTable.getModel()).setNewData(managersKeystoreCertificateList);
-        } else {
-            List<KeystoreCertificate> keystoreCertList = new ArrayList<KeystoreCertificate>();
-            List<KeystoreCertificate> keystoreCertListAll = managersKeystoreCertificateList;
-            //do not show the CA certificates
-            for (KeystoreCertificate cert : keystoreCertListAll) {
-                if (!cert.isCACertificate()) {
-                    keystoreCertList.add(cert);
-                }
-            }
-            ((TableModelCertificates) this.jTable.getModel()).setNewData(keystoreCertList);
-        }
+        ((TableModelCertificates) this.jTable.getModel()).setNewData(managersKeystoreCertificateList);
         for (int i = 0, rowCount = this.jTable.getRowCount(); i < rowCount; i++) {
             KeystoreCertificate cert = ((TableModelCertificates) this.jTable.getModel()).getParameter(i);
             if (cert.getAlias().equals(selectedAlias)) {
@@ -457,13 +542,10 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
     public synchronized void valueChanged(ListSelectionEvent listSelectionEvent) {
         int selectedRow = this.jTable.getSelectedRow();
         if (selectedRow >= 0) {
-            final KeystoreCertificate certificate = ((TableModelCertificates) this.jTable.getModel()).getParameter(selectedRow);
-            String infoText = certificate.getInfo();
-            String extensionText = certificate.getInfoExtension();
-            this.jEditorPaneInfo.setText(infoText);
-            this.jTextAreaInfoExtension.setText(extensionText);
-            List<KeystoreCertificate> trustChain = JPanelCertificates.this.computeTrustChain(certificate.getAlias());
-            this.jTreeTrustChain.buildTree(trustChain);
+            final KeystoreCertificate certificate
+                    = ((TableModelCertificates) this.jTable.getModel()).getParameter(selectedRow);
+            this.displayInfoText(certificate);
+            this.jTreeTrustChain.buildTree(this.manager, certificate.getAlias());
             this.displayTrustAnchor();
             this.displayWarnings(certificate);
         }
@@ -479,139 +561,48 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         }
         this.jLabelWarnings.setText("");
         this.jLabelWarnings.setForeground(this.colorOk);
-        boolean problem = false;
-        for (String fingerprint : KeystoreCertificate.TEST_KEYS_FINGERPRINTS_SHA1) {
-            if (fingerprint.equalsIgnoreCase(certificate.getFingerPrintSHA1())) {
-                this.jLabelWarnings.setForeground(colorWarning);
-                this.jLabelWarnings.setText(this.rb.getResourceString("warning.testkey"));
-                problem = true;
-                break;
-            }
-        }
-        if (!problem) {
-            try {
-                certificate.getX509Certificate().checkValidity();
-                if (certificate.getIsKeyPair()) {
-                    this.jLabelWarnings.setText(this.rb.getResourceString("label.key.valid"));
-                } else {
-                    this.jLabelWarnings.setText(this.rb.getResourceString("label.cert.valid"));
-                }
-            } catch (Exception e) {
-                //there is a problem...turn label color to red
-                this.jLabelWarnings.setForeground(this.colorWarning);
-                if (certificate.getIsKeyPair()) {
-                    this.jLabelWarnings.setText(this.rb.getResourceString("label.key.invalid"));
-                } else {
-                    this.jLabelWarnings.setText(this.rb.getResourceString("label.cert.invalid"));
-                }
-            }
-        }
-    }
+        int validityCheckBitField = CertificateValiditySettings.CHECK_MENDELSON_PUBLIC_CERT
+                | CertificateValiditySettings.CHECK_VALIDITY_DATE
+                | CertificateValiditySettings.CHECK_CRL;
+        int statusBitField = certificate.getValidityValue(
+                CertificateValiditySettings.OPERATION_ANY,
+                validityCheckBitField);
 
-    /**
-     * Compute the whole trust chain for pkcs#7 export
-     */
-    private List<KeystoreCertificate> computeTrustChain(String alias) {
-        KeystoreCertificate certificate = this.manager.getKeystoreCertificate(alias);
-        PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(this.manager.getKeystore(),
-                this.manager.getX509CertificateList());
-        List<KeystoreCertificate> list = new ArrayList<KeystoreCertificate>();
-        //self signed?
-        if (result == null) {
-            //it's a self signed certificate: return it without any CA/intermediate certs
-            list.add(certificate);
-        } else {
-            //trusted cert
-            CertPath certPath = result.getCertPath();
-            for (Object cert : certPath.getCertificates()) {
-                X509Certificate workingCert = (X509Certificate) cert;
-                for (KeystoreCertificate availableKeystoreCert : this.manager.getKeyStoreCertificateList()) {
-                    if (workingCert.equals(availableKeystoreCert.getX509Certificate())) {
-                        list.add(0, availableKeystoreCert);
-                    }
-                }
-            }
-            X509Certificate anchorCertificateX509 = null;
-            boolean trustChainComplete = false;
-            if (list.isEmpty()) {
-                anchorCertificateX509 = result.getTrustAnchor().getTrustedCert();
-                KeystoreCertificate anchorKeystoreCertificate = new KeystoreCertificate();
-                anchorKeystoreCertificate.setCertificate(anchorCertificateX509, null);
-                list.add(anchorKeystoreCertificate);
-                trustChainComplete = true;
+        if (statusBitField == CertificateValiditySettings.STATE_OK) {
+            if (certificate.getIsKeyPair()) {
+                this.jLabelWarnings.setText(rb.getResourceString("label.key.valid"));
             } else {
-                anchorCertificateX509 = list.get(0).getX509Certificate();
+                this.jLabelWarnings.setText(rb.getResourceString("label.cert.valid"));
             }
-            while (!trustChainComplete) {
-                KeystoreCertificate keyCertAnchor = null;
-                //find out the keystore cert of the anchor
-                for (KeystoreCertificate keyCert : this.manager.getKeyStoreCertificateList()) {
-                    if (keyCert.getX509Certificate().equals(anchorCertificateX509)) {
-                        keyCertAnchor = keyCert;
-                        break;
-                    }
-                }
-                if (keyCertAnchor != null) {
-                    //check if the anchor has another anchor as intermediates certificate may have the attribute "CA:true", too
-                    result = keyCertAnchor.getPKIXCertPathBuilderResult(this.manager.getKeystore(), this.manager.getX509CertificateList());
-                    if (result != null) {
-                        anchorCertificateX509 = result.getTrustAnchor().getTrustedCert();
-                        if (!keyCertAnchor.getX509Certificate().equals(anchorCertificateX509)) {
-                            for (KeystoreCertificate availableKeystoreCert : this.manager.getKeyStoreCertificateList()) {
-                                if (anchorCertificateX509.equals(availableKeystoreCert.getX509Certificate())) {
-                                    list.add(0, availableKeystoreCert);
-                                }
-                            }
-                        } else {
-                            trustChainComplete = true;
-                        }
-                    } else {
-                        trustChainComplete = true;
-                    }
-                } else {
-                    trustChainComplete = true;
+        } else {
+            //there is a problem...turn label color to red
+            this.jLabelWarnings.setForeground(this.colorWarning);
+            StringJoiner reasonJoiner = new StringJoiner(", ", "[", "]");
+            if ((statusBitField & CertificateValiditySettings.STATE_MENDELSON_PUBLIC_CERT) != 0) {
+                reasonJoiner.add(
+                        rbCertificateValidity.getResourceString(
+                                "state." + CertificateValiditySettings.STATE_MENDELSON_PUBLIC_CERT));
+            }
+            if ((statusBitField & CertificateValiditySettings.STATE_DATE_INVALID) != 0) {
+                reasonJoiner.add(
+                        rbCertificateValidity.getResourceString(
+                                "state." + CertificateValiditySettings.STATE_DATE_INVALID));
+            }
+            for (int crlStatus : CertificateValiditySettings.CRL_PROBLEM_STATES) {
+                if ((statusBitField & crlStatus) != 0) {
+                    reasonJoiner.add(
+                            rbCertificateValidity.getResourceString(
+                                    "state." + crlStatus));
                 }
             }
-            //if a certificate is imported two times into the keystore it will occure two or more times in a row in this list and
-            //this will confuse the cert path display
-            // - the following code will remove the certificates if they are two times in a row in the list
-            KeystoreCertificate selectedCertificate = null;
-            for (KeystoreCertificate cert : list) {
-                if (cert.getAlias().equals(alias) && cert.getFingerPrintSHA1().equals(list.get(list.size() - 1).getFingerPrintSHA1())) {
-                    selectedCertificate = cert;
-                }
-            }
-            KeystoreCertificate lastCheckedCert = null;
-            boolean repeatLoop = true;
-            while (repeatLoop && list.size() > 1) {
-                int deleteIndex = -1;
-                for (int i = 0; i < list.size(); i++) {
-                    KeystoreCertificate singleCert = list.get(i);
-                    if (lastCheckedCert == null) {
-                        lastCheckedCert = singleCert;
-                    } else {
-                        if (lastCheckedCert.getFingerPrintSHA1().equals(singleCert.getFingerPrintSHA1())) {
-                            deleteIndex = i;
-                            lastCheckedCert = null;
-                            break;
-                        }
-                        lastCheckedCert = singleCert;
-                    }
-                }
-                if (deleteIndex != -1) {
-                    list.remove(deleteIndex);
-                } else {
-                    repeatLoop = false;
-                }
-            }
-            //ensure that the selectedCertificate is always the last one in the path - it might be the same cert with an other
-            //alias, too after this delete algorithm
-            if (selectedCertificate != null) {
-                list.remove(list.size() - 1);
-                list.add(selectedCertificate);
+            if (certificate.getIsKeyPair()) {
+                this.jLabelWarnings.setText(rb.getResourceString("label.key.invalid",
+                        reasonJoiner.toString()));
+            } else {
+                this.jLabelWarnings.setText(rb.getResourceString("label.cert.invalid",
+                        reasonJoiner.toString()));
             }
         }
-        return (list);
     }
 
     protected void displayTrustAnchor() {
@@ -623,16 +614,21 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         if (selectedRow >= 0) {
             try {
                 KeystoreCertificate certificate = ((TableModelCertificates) this.jTable.getModel()).getParameter(selectedRow);
-                if (certificate.isRootCertificate()) {
-                    usedDisplayLabel.setIcon(ICON_CERTIFICATE_ROOT);
-                    usedDisplayLabel.setText("Root certificate");
-                } else if (certificate.isSelfSigned()) {
+                if (certificate.isSelfSigned()) {
                     //figure out the icon used to render the cert entry in the table
                     usedDisplayLabel.setIcon(((TableModelCertificates) this.jTable.getModel())
                             .getUnmodifiedIconForCertificate(certificate, IMAGE_HEIGTH));
-                    usedDisplayLabel.setText("Self signed");
+                    if (certificate.isRootCertificate()) {
+                        usedDisplayLabel.setText("Root key");
+                    } else {
+                        usedDisplayLabel.setText("Self signed");
+                    }
+                } else if (certificate.isRootCertificate()) {
+                    usedDisplayLabel.setIcon(ICON_CERTIFICATE_ROOT);
+                    usedDisplayLabel.setText("Root certificate");
                 } else {
-                    PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(this.manager.getKeystore(), this.manager.getX509CertificateList());
+                    Set<TrustAnchor> trustAnchors = KeyStoreUtil.getTrustAnchors(this.manager.getKeystore());
+                    PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(trustAnchors, this.manager.getX509CertificateList());
                     if (result == null) {
                         usedDisplayLabel.setIcon(ICON_CERTIFICATE_UNTRUSTED);
                         usedDisplayLabel.setText("Untrusted");
@@ -642,7 +638,8 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
                             usedDisplayLabel.setIcon(ICON_CERTIFICATE_UNTRUSTED);
                             usedDisplayLabel.setText("Untrusted");
                         } else {
-                            List<KeystoreCertificate> trustPath = this.computeTrustChain(certificate.getAlias());
+                            List<KeystoreCertificate> trustPath
+                                    = this.jTreeTrustChain.computeTrustChain(this.manager, certificate.getAlias());
                             //found a root in the cert path
                             usedDisplayLabel.setIcon(ICON_CERTIFICATE_ROOT);
                             usedDisplayLabel.setText(trustPath.get(0).getAlias());
@@ -703,15 +700,15 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         }
         if (inUse) {
             UINotification.instance().addNotification(JDialogCertificates.IMAGE_DELETE_MULTIRESOLUTION,
-                    UINotification.TYPE_WARNING,
-                    this.rb.getResourceString("title.cert.in.use"),
-                    this.rb.getResourceString("cert.delete.impossible"));
+                    UINotification.Type.WARNING,
+                    rb.getResourceString("title.cert.in.use"),
+                    rb.getResourceString("cert.delete.impossible"));
             return;
         }
         //ask the user if the cert should be really deleted, all data is lost
         int requestValue = JOptionPane.showConfirmDialog(
-                this, this.rb.getResourceString("dialog.cert.delete.message", selectedCertificate.getAlias()),
-                this.rb.getResourceString("dialog.cert.delete.title"),
+                this, rb.getResourceString("dialog.cert.delete.message", selectedCertificate.getAlias()),
+                rb.getResourceString("dialog.cert.delete.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
             return;
@@ -735,9 +732,14 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
             try {
                 //it is possible that the selected certificate does not exist on the server so far - means it
                 //is required to save the changes here and reload the keystore data from the server
-                this.manager.saveKeystore();
-                this.manager.loadKeystoreFromServer();
-                this.refreshData();
+                if (this.manager.hasChangedSinceSnapshot()) {
+                    this.manager.saveKeystore();
+                    this.manager.loadKeystoreFromServer();
+                    this.refreshData();
+                    //signal the server that there are changes in the keystore
+                    RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+                    this.guiClient.sendAsync(signal);
+                }
                 JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
                 JDialogExportCertificate dialog = new JDialogExportCertificate(parent,
                         this.guiClient.getBaseClient(), this.manager,
@@ -773,14 +775,16 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         try {
             //it is possible that the selected key does not exist on the server so far - means it
             //is required to save the changes here and reload the keystore data from the server
-            this.manager.saveKeystore();
-            this.manager.loadKeystoreFromServer();
-            this.refreshData();
-            //signal the server that there are changes in the keystore
-            RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
-            this.guiClient.sendAsync(signal);
+            if (this.manager.hasChangedSinceSnapshot()) {
+                this.manager.saveKeystore();
+                this.manager.loadKeystoreFromServer();
+                this.refreshData();
+                //signal the server that there are changes in the keystore
+                RefreshKeystoreCertificates signal = new RefreshKeystoreCertificates();
+                this.guiClient.sendAsync(signal);
+            }
             JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-            JDialogExportKeyPKCS12 dialog = new JDialogExportKeyPKCS12(parent,
+            JDialogExportPrivateKey dialog = new JDialogExportPrivateKey(parent,
                     this.guiClient.getBaseClient(),
                     this.logger, this.manager,
                     preselectionAlias);
@@ -859,6 +863,56 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
     }
 
     /**
+     * Verifies the selected certificate
+     */
+    protected void checkRevocationLists(IStatusBar statusBar) {
+        final String uniqueId = this.getClass().getName() + ".checkRevocationLists." + System.currentTimeMillis();
+        if (statusBar != null) {
+            statusBar.startProgressIndeterminate(rb.getResourceString("menu.tools.verifyall"), uniqueId);
+        }
+        SwingWorker<Void, String> worker = new SwingWorker<Void, String>() {
+            @Override
+            protected Void doInBackground() {
+                try {
+                    CRLVerificationRequest request = new CRLVerificationRequest(
+                            CRLVerificationRequest.PROCESS_VERIFY_ALL,
+                            module.toDisplayStr());
+                    CRLVerificationResponse response
+                            = (CRLVerificationResponse) guiClient.getBaseClient().sendSync(request);
+                    if (response != null && response.getException() != null) {
+                        throw response.getException();
+                    }
+                    //If the response is not already processed on server side but returned to the client
+                    //and the program has set a consumer to deal with this this is passed to the consumer
+                    if (response != null && response.isDisplayOnClientside() && clientsideOutputConsumer != null) {
+                        StringBuilder builder = new StringBuilder();
+                        for (CRLRevocationInformation information : response.getInformationList()) {
+                            builder.append(information.getLogLine()).append("\n");
+                        }
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                clientsideOutputConsumer.accept(builder.toString());
+                            }
+                        });
+                    }
+                } catch (Throwable e) {
+                    UINotification.instance().addNotification(e);
+                }
+                return null;
+            }
+
+            @Override
+            protected void done() {
+                if (statusBar != null) {
+                    statusBar.stopProgressIfExists(uniqueId);
+                }
+            }
+        };
+        worker.execute();
+    }
+
+    /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
      * regenerated by the Form Editor.
@@ -877,14 +931,12 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         jSplitPane = new javax.swing.JSplitPane();
         jScrollPaneTable = new javax.swing.JScrollPane();
         jTable = new de.mendelson.util.tables.JTableSortable();
-        jTabbedPaneInfo = new javax.swing.JTabbedPane();
-        jScrollPaneInfo = new javax.swing.JScrollPane();
-        jEditorPaneInfo = new javax.swing.JEditorPane();
-        jScrollPaneInfoExtension = new javax.swing.JScrollPane();
-        jTextAreaInfoExtension = new javax.swing.JTextArea();
+        jPanelCertificateInfo = new javax.swing.JPanel();
+        jSplitPaneInfo = new javax.swing.JSplitPane();
         jScrollPaneTrustchain = new javax.swing.JScrollPane();
         jTreeTrustChain = new de.mendelson.util.security.cert.gui.JTreeTrustChain();
-        jCheckBoxShowCACertificates = new javax.swing.JCheckBox();
+        jScrollPaneCertificateOverviewInfo = new javax.swing.JScrollPane();
+        jEditorPaneInfo = new javax.swing.JEditorPane();
         jLabelTrustAnchor = new javax.swing.JLabel();
         jLabelTrustAnchorValue = new javax.swing.JLabel();
 
@@ -936,10 +988,9 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
 
         setLayout(new java.awt.GridBagLayout());
 
-        jSplitPane.setDividerLocation(200);
+        jSplitPane.setDividerLocation(400);
         jSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
-        jTable.setModel(new TableModelCertificates());
         jTable.setDoubleBuffered(true);
         jTable.setShowHorizontalLines(false);
         jTable.setShowVerticalLines(false);
@@ -950,79 +1001,76 @@ public class JPanelCertificates extends JPanel implements ListSelectionListener,
         });
         jScrollPaneTable.setViewportView(jTable);
 
-        jSplitPane.setLeftComponent(jScrollPaneTable);
+        jSplitPane.setTopComponent(jScrollPaneTable);
 
-        jEditorPaneInfo.setEditable(false);
-        jEditorPaneInfo.setDoubleBuffered(true);
-        jScrollPaneInfo.setViewportView(jEditorPaneInfo);
+        jPanelCertificateInfo.setLayout(new java.awt.GridBagLayout());
 
-        jTabbedPaneInfo.addTab(this.rb.getResourceString( "tab.info.basic" ), jScrollPaneInfo);
-
-        jTextAreaInfoExtension.setEditable(false);
-        jTextAreaInfoExtension.setFont(new java.awt.Font("Arial", 0, 12)); // NOI18N
-        jTextAreaInfoExtension.setLineWrap(true);
-        jTextAreaInfoExtension.setWrapStyleWord(true);
-        jTextAreaInfoExtension.setDoubleBuffered(true);
-        jScrollPaneInfoExtension.setViewportView(jTextAreaInfoExtension);
-
-        jTabbedPaneInfo.addTab(this.rb.getResourceString( "tab.info.extension" ), jScrollPaneInfoExtension);
+        jSplitPaneInfo.setDividerLocation(650);
 
         jTreeTrustChain.setDoubleBuffered(true);
         jScrollPaneTrustchain.setViewportView(jTreeTrustChain);
 
-        jTabbedPaneInfo.addTab(this.rb.getResourceString( "tab.info.trustchain" ), jScrollPaneTrustchain);
+        jSplitPaneInfo.setRightComponent(jScrollPaneTrustchain);
 
-        jSplitPane.setRightComponent(jTabbedPaneInfo);
+        jEditorPaneInfo.setEditable(false);
+        jEditorPaneInfo.setBorder(javax.swing.BorderFactory.createEmptyBorder(5, 5, 5, 5));
+        jEditorPaneInfo.setFont(new java.awt.Font("Dialog", 0, 11)); // NOI18N
+        jEditorPaneInfo.setDoubleBuffered(true);
+        jScrollPaneCertificateOverviewInfo.setViewportView(jEditorPaneInfo);
+
+        jSplitPaneInfo.setTopComponent(jScrollPaneCertificateOverviewInfo);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        jPanelCertificateInfo.add(jSplitPaneInfo, gridBagConstraints);
+
+        jSplitPane.setBottomComponent(jPanelCertificateInfo);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
         add(jSplitPane, gridBagConstraints);
 
-        jCheckBoxShowCACertificates.setText(this.rb.getResourceString( "display.ca.certs"));
-        jCheckBoxShowCACertificates.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxShowCACertificatesActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
-        add(jCheckBoxShowCACertificates, gridBagConstraints);
-
         jLabelTrustAnchor.setText(this.rb.getResourceString( "label.trustanchor"));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         add(jLabelTrustAnchor, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jLabelTrustAnchorValue, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 
-private void jCheckBoxShowCACertificatesActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxShowCACertificatesActionPerformed
-    this.refreshData();
-}//GEN-LAST:event_jCheckBoxShowCACertificatesActionPerformed
-
 private void jTableMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jTableMouseClicked
+    //left mouse
     if (evt.isPopupTrigger() || evt.isMetaDown()) {
         if (this.jTable.getSelectedRowCount() == 0) {
             return;
         }
         this.jPopupMenu.show(evt.getComponent(), evt.getX(),
                 evt.getY());
+    } else {
+        //right mouse
+        int selectedRow = this.jTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            KeystoreCertificate certificate = (((TableModelCertificates) this.jTable.getModel())
+                    .getParameter(selectedRow));
+            this.setSelectionByAlias(certificate.getAlias());
+        }
     }
+
 }//GEN-LAST:event_jTableMouseClicked
 
 private void jMenuItemPopupDeleteEntryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemPopupDeleteEntryActionPerformed
@@ -1055,7 +1103,6 @@ private void jMenuItemPopupExportActionPerformed(java.awt.event.ActionEvent evt)
     }//GEN-LAST:event_jMenuItemPopupKeyCopyActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JCheckBox jCheckBoxShowCACertificates;
     private javax.swing.JEditorPane jEditorPaneInfo;
     private javax.swing.JLabel jLabelTrustAnchor;
     private javax.swing.JLabel jLabelTrustAnchorValue;
@@ -1064,16 +1111,15 @@ private void jMenuItemPopupExportActionPerformed(java.awt.event.ActionEvent evt)
     private javax.swing.JMenuItem jMenuItemPopupKeyCopy;
     private javax.swing.JMenuItem jMenuItemPopupReference;
     private javax.swing.JMenuItem jMenuItemPopupRenameAlias;
+    private javax.swing.JPanel jPanelCertificateInfo;
     private javax.swing.JPopupMenu jPopupMenu;
-    private javax.swing.JScrollPane jScrollPaneInfo;
-    private javax.swing.JScrollPane jScrollPaneInfoExtension;
+    private javax.swing.JScrollPane jScrollPaneCertificateOverviewInfo;
     private javax.swing.JScrollPane jScrollPaneTable;
     private javax.swing.JScrollPane jScrollPaneTrustchain;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JSplitPane jSplitPane;
-    private javax.swing.JTabbedPane jTabbedPaneInfo;
+    private javax.swing.JSplitPane jSplitPaneInfo;
     private de.mendelson.util.tables.JTableSortable jTable;
-    private javax.swing.JTextArea jTextAreaInfoExtension;
     private de.mendelson.util.security.cert.gui.JTreeTrustChain jTreeTrustChain;
     // End of variables declaration//GEN-END:variables
 
@@ -1140,5 +1186,15 @@ private void jMenuItemPopupExportActionPerformed(java.awt.event.ActionEvent evt)
      */
     public void setKeyCopyHandler(KeyCopyHandler keyCopyHandler) {
         this.keyCopyHandler = keyCopyHandler;
+    }
+
+    /**
+     * Allows to set a consumer for clientside output. Some client-server
+     * message come back with log information from the server for some products.
+     * Once this consumer is set it will deal with the client side output -
+     * product related
+     */
+    public void setClientsideOutputConsumer(Consumer<String> clientsideOutputConsumer) {
+        this.clientsideOutputConsumer = clientsideOutputConsumer;
     }
 }

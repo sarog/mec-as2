@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/XPathHelper.java 31    2/11/23 15:53 Heller $
+//$Header: /converteride/de/mendelson/util/XPathHelper.java 37    29/01/26 17:29 Heller $
 package de.mendelson.util;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -9,7 +11,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.logging.Logger;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.jaxen.SimpleNamespaceContext;
@@ -18,6 +20,7 @@ import org.jaxen.XPathSyntaxException;
 import org.jaxen.dom.DOMXPath;
 import org.jaxen.dom.NamespaceNode;
 import org.w3c.dom.Document;
+import org.xml.sax.EntityResolver;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -36,11 +39,10 @@ import org.xml.sax.SAXParseException;
  * parameters of XPATH pathes, get values of nodes ...
  *
  * @author S.Heller
- * @version $Revision: 31 $
+ * @version $Revision: 37 $
  */
 public class XPathHelper {
 
-    private final Logger logger = Logger.getAnonymousLogger();
     /**
      * Document to look into
      */
@@ -51,6 +53,17 @@ public class XPathHelper {
     private SimpleNamespaceContext namespaceContext = null;
     //Stores all defined namespaces to look up the alias by providing the URI. Its [URI,ALIAS]
     private final Map<String, String> namespaceLookupMap = new ConcurrentHashMap<String, String>();
+    //Cache for compiled XPath expressions
+    private final Map<String, XPath> XPATH_CACHE = new ConcurrentHashMap<String, XPath>();
+    //Build the factory just once, this is an expensive operation
+    private static final DocumentBuilderFactory DOCUMENT_BUILDER_FACTORY = DocumentBuilderFactory.newInstance();
+
+    static {
+        DOCUMENT_BUILDER_FACTORY.setNamespaceAware(true);
+        DOCUMENT_BUILDER_FACTORY.setXIncludeAware(false);
+        DOCUMENT_BUILDER_FACTORY.setExpandEntityReferences(false);
+        preventXXEAttack(DOCUMENT_BUILDER_FACTORY);
+    }
 
     /**
      * Parses the passed filename document and creates a DOM document
@@ -58,14 +71,8 @@ public class XPathHelper {
      * @param filename Name of the xml file to parse
      */
     public XPathHelper(String filename) throws Exception {
-        InputStream inStream = null;
-        try {
-            inStream = Files.newInputStream(Paths.get(filename));
+        try (InputStream inStream = Files.newInputStream(Paths.get(filename))) {
             this.parse(new InputSource(inStream));
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
         }
     }
 
@@ -82,11 +89,16 @@ public class XPathHelper {
     }
 
     private void parse(InputSource source) throws Exception {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true);
-        factory.setIgnoringComments(true);
-        factory.setValidating(false);
-        DocumentBuilder builder = factory.newDocumentBuilder();
+        DocumentBuilder builder = DOCUMENT_BUILDER_FACTORY.newDocumentBuilder();
+        //do never look in the filesystem or external for a file if there is something
+        //like xsi:noNamespaceSchemaLocation="formatdescription.xsd"
+        builder.setEntityResolver(new EntityResolver() {
+            @Override
+            public InputSource resolveEntity(String publicId, String systemId)
+                    throws SAXException, IOException {
+                return new InputSource(new StringReader(""));
+            }
+        });
         builder.setErrorHandler(new ErrorHandler() {
             @Override
             public void warning(SAXParseException exception) throws SAXException {
@@ -166,13 +178,14 @@ public class XPathHelper {
      * Gets the value of a node given by the node path, the node path has the
      * syntax /value/value where every path could have a repeat in [] like
      * /value/value/value[3]/value, without a repeat you are looking for the 1th
-     * element
+     * element. If the XPath does not match any node in the Document, getValue()
+     * returns an empty string ""
      *
      * @param nodePath Path to look for
      */
     public String getValue(String nodePath) throws Exception {
         try {
-            XPath xPath = new DOMXPath(nodePath);
+            XPath xPath = this.getCompiledXPath(nodePath);
             if (this.namespaceContext != null) {
                 xPath.setNamespaceContext(this.namespaceContext);
             }
@@ -192,7 +205,7 @@ public class XPathHelper {
     public boolean pathExists(String nodePath) throws Exception {
         XPath xPath = null;
         try {
-            xPath = new DOMXPath(nodePath);
+            xPath = this.getCompiledXPath(nodePath);
             if (this.namespaceContext != null) {
                 xPath.setNamespaceContext(this.namespaceContext);
             }
@@ -245,7 +258,7 @@ public class XPathHelper {
     public List getNodes(String nodePath) throws Exception {
         XPath xPath = null;
         try {
-            xPath = new DOMXPath(nodePath);
+            xPath = this.getCompiledXPath(nodePath);
             if (this.namespaceContext != null) {
                 xPath.setNamespaceContext(this.namespaceContext);
             }
@@ -282,19 +295,59 @@ public class XPathHelper {
         return (nsMap);
     }
 
-    public static void main(String[] args) {
-//        try {
-//            XPathHelper helper = new XPathHelper("c:/temp/test.xml");
-//            //helper.addNamespace( "x", "com.cisag.app.sales.obj.SalesOrder" );
-//            long start = System.currentTimeMillis();
-//            System.out.println("nodesOld=" + helper.getNodeCount("/List/RECADV/SG16/SG22/DTM"));
-//            System.out.println(System.currentTimeMillis() - start + "ms");
-//            start = System.currentTimeMillis();
-//            System.out.println("existsOld=" + helper.pathExists("/List/RECADV/SG16/SG22/DTM1"));
-//            System.out.println(System.currentTimeMillis() - start + "ms");
-//        } catch (Exception e) {
-//            System.out.println(e.getMessage());
-//        }
-
+    private static void preventXXEAttack(DocumentBuilderFactory builderFactory) {
+        builderFactory.setCoalescing(true);
+        builderFactory.setValidating(false);
+        builderFactory.setIgnoringComments(false);
+        builderFactory.setIgnoringElementContentWhitespace(false);
+        try {
+            builderFactory.setAttribute(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (Exception e) {
+        }
+        try {
+            // Disable external DTDs
+            builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (Exception e) {
+        }
+        // per Timothy Morgans 2014 paper: "XML Schema, DTD, and Entity Attacks"
+        builderFactory.setXIncludeAware(false);
+        builderFactory.setExpandEntityReferences(false);
     }
+
+    /**
+     * Internal method to compile an XPath object or get it from the cache
+     */
+    private XPath getCompiledXPath(String nodePath) throws Exception {
+        XPath xPath = XPATH_CACHE.get(nodePath);
+        if (xPath == null) {
+            try {
+                xPath = new DOMXPath(nodePath);
+                XPATH_CACHE.put(nodePath, xPath);
+            } catch (XPathSyntaxException e) {
+                throw new Exception(e.getMultilineMessage());
+            }
+        }
+        return xPath;
+    }
+
 }

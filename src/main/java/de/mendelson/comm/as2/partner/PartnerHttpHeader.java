@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerHttpHeader.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerHttpHeader.java 7     12/03/26 15:37 Heller $
 package de.mendelson.comm.as2.partner;
 
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,21 +10,46 @@ import java.io.Serializable;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Stores all information about a single user defined http header of a partner
+ *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
-public class PartnerHttpHeader implements Serializable{
+public class PartnerHttpHeader implements Serializable, Comparable<PartnerHttpHeader> {
 
     private static final long serialVersionUID = 1L;
     private String key = "";
     private String value = "";
 
+    public PartnerHttpHeader() {
+        super();
+    }
 
-    /**Overwrite the equal method of object
-     *@param anObject object ot compare
+    public PartnerHttpHeader(String key, String value) {
+        super();
+        this.key = key;
+        this.value = value;
+    }
+
+    /**
+     * Make the header comparable, allows Collections.sort()
+     * @param other
+     * @return 
+     */
+    @Override
+    public int compareTo(PartnerHttpHeader other) {
+        if (other == null) {
+            return 1;
+        }
+        String otherKey = other.getKey() == null ? "" : other.getKey();
+        return this.key.compareToIgnoreCase(otherKey);
+    }
+
+    /**
+     * Overwrite the equal method of object
+     *
+     * @param anObject object to compare
      */
     @Override
     public boolean equals(Object anObject) {
@@ -56,7 +82,7 @@ public class PartnerHttpHeader implements Serializable{
      * @param key the key to set
      */
     public void setKey(String key) {
-        if( key == null ){
+        if (key == null) {
             key = "";
         }
         this.key = key;
@@ -66,19 +92,17 @@ public class PartnerHttpHeader implements Serializable{
      * @return the value, non-null
      */
     public String getValue() {
-        return value;
+        return this.value;
     }
 
     /**
      * @param value the value to set
      */
     public void setValue(String value) {
-        if( value == null ){
+        if (value == null) {
             value = "";
         }
         this.value = value;
     }
 
-
-    
 }

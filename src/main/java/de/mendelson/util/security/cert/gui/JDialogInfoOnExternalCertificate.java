@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 23    2/11/23 14:03 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 27    14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.ColorUtil;
@@ -25,6 +25,7 @@ import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.KeyStroke;
+import javax.swing.UIManager;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /*
@@ -39,7 +40,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * or a passed object
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 27 $
  */
 public class JDialogInfoOnExternalCertificate extends JDialog {
 
@@ -48,7 +49,16 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     /**
      * ResourceBundle to localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleInfoOnExternalCertificate.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private boolean certificateIsOk = true;
     private boolean importPressed = false;
     private List<String> infoTextList = new ArrayList<String>();
@@ -56,15 +66,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     private final CertificateManager certificateManager;
     private final List<X509Certificate> certList = new ArrayList<X509Certificate>();
 
-    /**
-     * Creates new form JDialogPartnerConfig
-     *
-     */
-    @Deprecated (since="2019")
-    public JDialogInfoOnExternalCertificate(JFrame parent, File certFile, CertificateManager certificateManager) {
-        this( parent, certFile.toPath(), certificateManager);
-    }
-    
+
     /**
      * Creates new form JDialogPartnerConfig
      *
@@ -72,23 +74,15 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     public JDialogInfoOnExternalCertificate(JFrame parent, Path certFile, CertificateManager certificateManager) {
         super(parent, true);
         this.certificateManager = certificateManager;
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleInfoOnExternalCertificate.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         initComponents();
-        colorOk = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorOk);
-        colorWarning = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorWarning);
+        this.setupColors();
         this.setMultiresolutionIcons();
         this.getRootPane().setDefaultButton(this.jButtonImport);
         this.infoTextList = this.loadCertsFromFileAndGetInfo(certFile, this.certList);
         if (this.infoTextList.size() == 1) {
-            this.setTitle(this.rb.getResourceString("title.single"));
+            this.setTitle(rb.getResourceString("title.single"));
         } else {
-            this.setTitle(this.rb.getResourceString("title.multiple"));
+            this.setTitle(rb.getResourceString("title.multiple"));
         }
         this.displayCertificateInformationAndSetButtonState(this.certList);
         //hide dialog on esc
@@ -101,7 +95,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         KeyStroke stroke = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
         this.getRootPane().registerKeyboardAction(actionListenerESC, stroke, JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
-    
+
     /**
      * Creates new form JDialogPartnerConfig
      *
@@ -110,36 +104,46 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         super(parent, true);
         this.certificateManager = certificateManager;
         this.certList.addAll(certs);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleInfoOnExternalCertificate.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         initComponents();
-        colorOk = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorOk);
-        colorWarning = ColorUtil.getBestContrastColorAroundForeground(this.jLabelAliasExistsIndicator.getBackground(), colorWarning);
+        this.setupColors();
         this.setMultiresolutionIcons();
         this.getRootPane().setDefaultButton(this.jButtonImport);
         this.infoTextList = this.getInfo(certs);
         if (this.infoTextList.size() == 1) {
-            this.setTitle(this.rb.getResourceString("title.single"));
+            this.setTitle(rb.getResourceString("title.single"));
         } else {
-            this.setTitle(this.rb.getResourceString("title.multiple"));
+            this.setTitle(rb.getResourceString("title.multiple"));
         }
         this.displayCertificateInformationAndSetButtonState(certs);
     }
-    
+
     private void setMultiresolutionIcons() {
-        this.jLabelIcon.setIcon(new ImageIcon(TableModelCertificates.IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(32)));
+        this.jLabelIcon.setIcon(new ImageIcon(TableModelCertificates.IMAGE_CERTIFICATE_MULTIRESOLUTION.toMinResolution(
+                JDialogCertificates.IMAGE_SIZE_DIALOG)));
     }
-    
-    
+
+    /**
+     * Modifies the used colors for best contrast
+     */
+    private void setupColors() {
+        if (UIManager.getColor("Objects.Green") != null) {
+            this.colorOk = UIManager.getColor("Objects.Green");
+        } else {
+            this.colorOk = ColorUtil.getBestContrastColorAroundForeground(
+                    this.jLabelAliasExistsIndicator.getBackground(), this.colorOk);
+        }
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            this.colorWarning = UIManager.getColor("Objects.RedStatus");
+        } else {
+            this.colorWarning = ColorUtil.getBestContrastColorAroundForeground(
+                    this.jLabelAliasExistsIndicator.getBackground(), this.colorWarning);
+        }
+    }
+
     private void displayCertificateInformationAndSetButtonState(List<X509Certificate> certList) {
         this.jTextAreaInfo.setText(this.infoTextList.get(this.getCertificateIndex()));
         if (this.infoTextList.size() > 1) {
-            this.jLabelIcon.setText(this.rb.getResourceString("certinfo.index",
+            this.jLabelIcon.setText(rb.getResourceString("certinfo.index",
                     new Object[]{String.valueOf(this.getCertificateIndex() + 1),
                         String.valueOf(this.infoTextList.size())}));
         }
@@ -151,15 +155,15 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
             String foundAlias = this.certificateManager.getAliasByFingerprint(fingerprintSHA1);
             if (foundAlias != null) {
                 this.jLabelAliasExistsIndicator.setForeground(this.colorWarning);
-                this.jLabelAliasExistsIndicator.setText(this.rb.getResourceString("certificate.exists", foundAlias));
+                this.jLabelAliasExistsIndicator.setText(rb.getResourceString("certificate.exists", foundAlias));
                 certificateAlreadyImported = true;
             } else {
                 this.jLabelAliasExistsIndicator.setForeground(this.colorOk);
-                this.jLabelAliasExistsIndicator.setText(this.rb.getResourceString("certificate.doesnot.exist"));
+                this.jLabelAliasExistsIndicator.setText(rb.getResourceString("certificate.doesnot.exist"));
             }
         } else {
             this.jLabelAliasExistsIndicator.setForeground(this.colorWarning);
-            this.jLabelAliasExistsIndicator.setText(this.rb.getResourceString("no.certificate"));
+            this.jLabelAliasExistsIndicator.setText(rb.getResourceString("no.certificate"));
         }
         this.jButtonImport.setEnabled(this.certificateIsOk && !certificateAlreadyImported);
         this.jButtonIndexUp.setVisible(this.infoTextList.size() > 1);
@@ -183,17 +187,17 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
 
     private List<String> loadCertsFromFileAndGetInfo(Path certFile, List<X509Certificate> certListToFill) {
         List<String> infoList = null;
-        InputStream inStream = null;
         try {
-            inStream = Files.newInputStream(certFile);
-            KeyStoreUtil util = new KeyStoreUtil();
-            List<X509Certificate> certList = util.readCertificates(inStream, 
-                    BouncyCastleProvider.PROVIDER_NAME);
-            certListToFill.addAll(certList);
-            infoList = this.getInfo(certList);
+            List<X509Certificate> newCertList;
+            try (InputStream inStream = Files.newInputStream(certFile)) {
+                newCertList = KeyStoreUtil.readCertificates(inStream,
+                        BouncyCastleProvider.PROVIDER_NAME);
+            }
+            certListToFill.addAll(newCertList);
+            infoList = this.getInfo(newCertList);
             //add file info to info text
             StringBuilder fileInfoText = new StringBuilder();
-            fileInfoText.append(this.rb.getResourceString("certinfo.certfile", certFile.toAbsolutePath().toString()));
+            fileInfoText.append(rb.getResourceString("certinfo.certfile", certFile.toAbsolutePath().toString()));
             fileInfoText.append("\n---\n");
             for (int i = 0; i < infoList.size(); i++) {
                 infoList.set(i, fileInfoText.toString() + infoList.get(i));
@@ -206,14 +210,6 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
                 infoList = new ArrayList<String>();
             }
             infoList.add(e.getMessage());
-        } finally {
-            try {
-                if (inStream != null) {
-                    inStream.close();
-                }
-            } catch (Exception e) {
-                //nop
-            }
         }
         return (infoList);
     }
@@ -409,7 +405,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
         //reinitialize some settings if this dialog is just revisibled
         if (flag) {
             this.importPressed = false;
-            if( !this.certList.isEmpty()){
+            if (!this.certList.isEmpty()) {
                 this.displayCertificateInformationAndSetButtonState(this.certList);
             }
         }

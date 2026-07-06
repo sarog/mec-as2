@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ServerInfo.java 7     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/ServerInfo.java 9     13/03/26 10:09 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.IOException;
@@ -15,13 +15,17 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
-public class ServerInfo extends ClientServerMessage implements Serializable {
+public final class ServerInfo extends ClientServerMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String productname = null;
 
+    public ServerInfo(){
+        super();
+    }
+    
     /**
      * @return the productname
      */

@@ -1,25 +1,26 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 42    2/11/23 15:53 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 48    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageStateType;
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
+import de.mendelson.comm.as2.send.MessageHttpUploader;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.text.DateFormat;
+import java.util.Date;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,7 +36,7 @@ import java.util.logging.Logger;
  * Controls the timed deletion of as2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 42 $
+ * @version $Revision: 48 $
  */
 public class MDNReceiptController {
 
@@ -45,8 +46,6 @@ public class MDNReceiptController {
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final PreferencesAS2 preferences;
     private final MDNCheckThread checkThread;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-        new NamedThreadFactory("mdn-receipt-control"));
     /**
      * server for client-server communication
      */
@@ -70,10 +69,10 @@ public class MDNReceiptController {
     }
 
     /**
-     * Starts the embedded task that guards the log
+     * Starts the embedded task that guards the MDNs
      */
     public void startMDNCheck() {
-        this.scheduledExecutor.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.checkThread, 30, 30, TimeUnit.SECONDS);
     }
 
     public class MDNCheckThread implements Runnable {
@@ -86,30 +85,44 @@ public class MDNReceiptController {
                 this.messageAccess = new MessageAccessDB(dbDriverManager);
             } catch (Exception e) {
                 logger.severe("MDNCheckThread: " + e.getMessage());
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
             }
         }
 
         @Override
         public void run() {
             try {
-                long olderThan = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(preferences.getInt(PreferencesAS2.ASYNC_MDN_TIMEOUT));
+                long olderThan = System.currentTimeMillis() - TimeUnit.MINUTES.toMillis(preferences.getInt(PreferencesAS2.MDN_WAIT_TIME));
                 List<AS2MessageInfo> overviewList = this.messageAccess.getMessagesSendOlderThan(olderThan);
                 if (overviewList != null) {
                     for (AS2MessageInfo messageInfo : overviewList) {
                         try {
-                            logger.log(Level.SEVERE, rb.getResourceString("expired"), messageInfo);
+                            String receiverAS2Id = messageInfo.getReceiverId();
+                            String senderAS2Id = messageInfo.getSenderId();
+                            String messageId = messageInfo.getMessageId();
+                            Date initDate = messageInfo.getInitDate();                            
+                            DateFormat formatter = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+                            String initDateFormatted = formatter.format( initDate );
+                            logger.log(Level.SEVERE, rb.getResourceString("expired",
+                                    new Object[]{
+                                        messageId,
+                                        senderAS2Id,
+                                        receiverAS2Id,
+                                        initDateFormatted
+                                    }), messageInfo);
+                            MessageHttpUploader.shutdownConnection(messageInfo.getMessageId());
                             //a message id may have more then one entry if the sender implemented a resend mechanism
-                            messageAccess.setMessageState(messageInfo.getMessageId(), AS2Message.STATE_PENDING, AS2Message.STATE_STOPPED);
-                            messageInfo.setState(AS2Message.STATE_STOPPED);
+                            messageAccess.setMessageState(messageInfo.getMessageId(), 
+                                    MessageStateType.PENDING, MessageStateType.STOPPED);
+                            messageInfo.setState(MessageStateType.STOPPED);
                             ProcessingEvent.enqueueEventIfRequired(dbDriverManager, messageInfo, null);
-                            //write status file
+                            //write status file if this is defined in the settings
                             MessageStoreHandler handler = new MessageStoreHandler(dbDriverManager);
                             handler.writeOutboundStatusFile(messageInfo);
                         } catch (Exception e) {
                             //this thread MUST not stop on any error!
                             logger.severe(Thread.currentThread().getName() + ": " + e.getMessage());
-                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.PROCESSING_ANY);
                         }
                     }
                     if (!overviewList.isEmpty()) {
@@ -117,7 +130,7 @@ public class MDNReceiptController {
                     }
                 }
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.PROCESSING_ANY);
             }
         }
     }

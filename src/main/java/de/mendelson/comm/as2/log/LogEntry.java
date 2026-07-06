@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/log/LogEntry.java 12    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/log/LogEntry.java 14    9/03/26 13:40 Heller $
 package de.mendelson.comm.as2.log;
 
 import com.fasterxml.jackson.databind.node.ArrayNode;
@@ -6,6 +6,9 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.io.Serializable;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 import java.util.logging.Level;
 
@@ -20,7 +23,7 @@ import java.util.logging.Level;
  * Enwrapps a single db log entry in an object
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class LogEntry implements Serializable {
 
@@ -69,10 +72,7 @@ public class LogEntry implements Serializable {
      * @param level level in the XML hierarchie for the xml beautifying
      */
     public String toXML(int level) {
-        String offset = "";
-        for (int i = 0; i < level; i++) {
-            offset += "\t";
-        }
+        String offset = "\t".repeat(level);
         StringBuilder builder = new StringBuilder();
         builder.append(offset).append("<logentry level=\"").append(String.valueOf(this.level.intValue())).append("\"");
         builder.append(" time=\"").append(this.getMillis()).append("\">");
@@ -92,9 +92,10 @@ public class LogEntry implements Serializable {
     
     /**Adds this entry to the passed parent JSON node*/
     public void addToJSON( ArrayNode parent){
-        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSS' UTC'");
+        DateTimeFormatter dateFormat = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'")
+                .withZone(ZoneOffset.UTC);
         ObjectNode node = parent.addObject();        
-        node.put( "timestamp", dateFormat.format(new Date(this.getMillis())));
+        node.put( "timestamp", dateFormat.format(Instant.ofEpochMilli(this.getMillis())));
         node.put( "unixtimestamp", this.getMillis());
         node.put( "level", String.valueOf(this.level.intValue()));
         node.put( "entry", this.message);

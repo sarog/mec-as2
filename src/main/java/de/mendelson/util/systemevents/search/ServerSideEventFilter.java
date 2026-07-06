@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/systemevents/search/ServerSideEventFilter.java 3     2/11/23 15:53 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/search/ServerSideEventFilter.java 4     15/04/26 12:44 Heller $
 package de.mendelson.util.systemevents.search;
 
+import de.mendelson.util.systemevents.SystemEvent;
 import java.io.Serializable;
 
 /*
@@ -14,7 +15,7 @@ import java.io.Serializable;
  * Filter the client could define to perform a server side system event search
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ServerSideEventFilter implements Serializable {
 
@@ -28,8 +29,8 @@ public class ServerSideEventFilter implements Serializable {
     private String subjectText = null;
     private String bodyText = null;
     private String eventid = null;
-    private int acceptCategory = -1;
-    private int acceptType = -1;
+    private SystemEvent.Category acceptCategory = SystemEvent.Category.FILTER_ACCEPT_ALL;
+    private SystemEvent.Type acceptType = SystemEvent.Type.FILTER_ACCEPT_ALL;
     private boolean acceptOriginSystem = false;
     private boolean acceptOriginUser = false;
     private boolean acceptOriginTransaction = false;
@@ -139,28 +140,28 @@ public class ServerSideEventFilter implements Serializable {
     /**
      * @return the acceptCategory
      */
-    public int getAcceptCategory() {
+    public SystemEvent.Category getAcceptCategory() {
         return acceptCategory;
     }
 
     /**
      * @param acceptCategory the acceptCategory to set
      */
-    public void setAcceptCategory(int acceptCategory) {
+    public void setAcceptCategory(SystemEvent.Category acceptCategory) {
         this.acceptCategory = acceptCategory;
     }
 
     /**
      * @return the acceptType
      */
-    public int getAcceptType() {
+    public SystemEvent.Type getAcceptType() {
         return acceptType;
     }
 
     /**
      * @param acceptType the acceptType to set
      */
-    public void setAcceptType(int acceptType) {
+    public void setAcceptType(SystemEvent.Type acceptType) {
         this.acceptType = acceptType;
     }
 

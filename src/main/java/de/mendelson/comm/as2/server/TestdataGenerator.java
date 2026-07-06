@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/TestdataGenerator.java 3     24.09.19 16:05 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/TestdataGenerator.java 4     9/12/24 16:03 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.AS2Tools;
@@ -16,7 +16,7 @@ import java.nio.file.Path;
 /**
  * Generates a test file that could be sent to a partner for testing purpose
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class TestdataGenerator {
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/ResourceBundleSystemEventManager_fr.java 6     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEventManager_fr.java 10    20/02/26 16:54 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -10,12 +10,11 @@ import de.mendelson.util.MecResourceBundle;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleSystemEventManager_fr extends MecResourceBundle {
 
@@ -29,17 +28,22 @@ public class ResourceBundleSystemEventManager_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
+        {"module.name", "[GESTIONNAIRE ÉVÉNEMENTS SYSTÈME]"},
         {"label.body.clientip", "Adresse IP: {0}"},
         {"label.body.processid", "Numéro de processus: {0}"},
         {"label.body.clientos", "Système d''exploitation: {0}"},
         {"label.body.clientversion", "Version du client: {0}"},
         {"label.body.details", "Détails: {0}"},
+        {"label.body.sessionid", "Session id: [{0}]"},
         {"label.subject.login.success", "Connexion de l''utilisateur réussie [{0}]"},
         {"label.subject.login.failed", "Échec de la connexion de l''utilisateur [{0}]"},
         {"label.subject.logoff", "Déconnexion de l''utilisateur [{0}]"},
-        {"label.error.clientserver", "Problème dans la connexion client-serveur" },
-        {"label.body.tlsprotocol", "Protocole TLS: {0}" },
-        {"label.body.tlsciphersuite", "Chiffre TLS: {0}" },        
+        {"label.error.clientserver", "Problème dans la connexion client-serveur"},
+        {"label.body.tlsprotocol", "Protocole TLS: {0}"},
+        {"label.body.tlsciphersuite", "Chiffre TLS: {0}"},
+        {"error.createdir.subject", "Génération de répertoire"},
+        {"error.createdir.body", "Un problème survenait lors de la création d''un répertoire: {0}\nProblème: {1}"},
+        {"error.in.systemevent.registration", "Un problème système n''a pas pu être enregistré dans le gestionnaire d''événements système: {0}" },
     };
 }

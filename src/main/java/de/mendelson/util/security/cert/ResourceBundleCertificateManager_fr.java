@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleCertificateManager_fr.java 15    2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/ResourceBundleCertificateManager_fr.java 17    9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.security.BCCryptoHelper;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleCertificateManager_fr extends MecResourceBundle {
     
@@ -26,8 +26,8 @@ public class ResourceBundleCertificateManager_fr extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
-        {"keystore.reloaded", "Les clefs privées et les certificats ont été rechargés."},
+    private static final Object[][] CONTENTS = {
+        {"keystore.reloaded", "({0}) Les clefs privées et les certificats ont été rechargés."},
         {"alias.notfound", "Le porte-clef ne contient aucun certificat sous l''alias \"{0}\"."},
         {"alias.hasno.privatekey", "Le porte-clef ne contient aucune clef privée sous l''alias \"{0}\"."},
         {"alias.hasno.key", "Le porte-clef ne contient aucun objet sous l''alias \"{0}\"."},

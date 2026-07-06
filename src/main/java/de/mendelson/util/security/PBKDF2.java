@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/util/security/PBKDF2.java 2     24/08/22 12:56 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/PBKDF2.java 5     14/04/26 9:05 Heller $
 package de.mendelson.util.security;
 
 import java.math.BigInteger;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.spec.InvalidKeySpecException;
+import java.util.Arrays;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.PBEKeySpec;
 /*
@@ -20,34 +21,37 @@ import javax.crypto.spec.PBEKeySpec;
  * hashes are stored using the PBKDF2 algorithm
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 5 $
  */
 public class PBKDF2 {
 
+    private static final int KEY_LENGTH = 128;
+    private static final String ALGORITHM = "PBKDF2WithHmacSHA1";
+    
     private static final String DELIMITER = "#";
     /**
      * Increase this value in the future if the computers are faster
      */
-    private static final int GENERATION_ITERATIONS = 100000;
+    private static final int GENERATION_ITERATIONS = 75000;
 
+    private PBKDF2(){        
+    }
+    
     /**
      * Validates a passed raw password against a stored has
      *
-     * @param originalPassword The raw password
+     * @param transmittedPassword The password that is transmitted - it should be checked if this matches
      */
-    public static boolean validatePassword(String originalPassword, String storedPassword) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        String[] parts = storedPassword.split(DELIMITER);
-        int iterations = Integer.parseInt(parts[0]);
-        byte[] salt = hexToByteArray(parts[1]);
-        byte[] hash = hexToByteArray(parts[2]);
-        PBEKeySpec spec = new PBEKeySpec(originalPassword.toCharArray(), salt, iterations, hash.length * 8);
-        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-        byte[] testHash = keyFactory.generateSecret(spec).getEncoded();
-        int diff = hash.length ^ testHash.length;
-        for (int i = 0; i < hash.length && i < testHash.length; i++) {
-            diff |= hash[i] ^ testHash[i];
-        }
-        return (diff == 0);
+    public static boolean validatePassword(String transmittedPassword, String storedPassword) throws NoSuchAlgorithmException, InvalidKeySpecException {
+        String[] storedParts = storedPassword.split(DELIMITER);
+        int iterations = Integer.parseInt(storedParts[0]);
+        byte[] storedSalt = hexToByteArray(storedParts[1]);
+        byte[] storedHash = hexToByteArray(storedParts[2]);
+        PBEKeySpec spec = new PBEKeySpec(transmittedPassword.toCharArray(), storedSalt, iterations, storedHash.length * 8);
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+        byte[] transmittedHash = keyFactory.generateSecret(spec).getEncoded();
+        boolean match = Arrays.equals(storedHash, transmittedHash);
+        return( match );
     }
 
     private static byte[] hexToByteArray(String hexStr) throws NoSuchAlgorithmException {
@@ -71,9 +75,9 @@ public class PBKDF2 {
     public static String generateStrongPasswordHash(String password) throws NoSuchAlgorithmException, InvalidKeySpecException {
         char[] chars = password.toCharArray();
         byte[] salt = generateSalt().getBytes();
-        PBEKeySpec spec = new PBEKeySpec(chars, salt, GENERATION_ITERATIONS, 64 * 8);
-        SecretKeyFactory skf = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-        byte[] hash = skf.generateSecret(spec).getEncoded();
+        PBEKeySpec spec = new PBEKeySpec(chars, salt, GENERATION_ITERATIONS, KEY_LENGTH);
+        SecretKeyFactory keyFactory = SecretKeyFactory.getInstance(ALGORITHM);
+        byte[] hash = keyFactory.generateSecret(spec).getEncoded();
         return (GENERATION_ITERATIONS + DELIMITER + byteArrayToHex(salt) + DELIMITER + byteArrayToHex(hash));
     }
 
@@ -93,23 +97,6 @@ public class PBKDF2 {
         } else {
             return hex;
         }
-    }
-
-    public static void main(String[] args) throws NoSuchAlgorithmException, InvalidKeySpecException {
-        String originalPassword = "password";
-        String wrongPassword = "wrongpassword";
-        long time1 = System.currentTimeMillis();
-        String generatedSecuredPasswordHash = generateStrongPasswordHash(originalPassword);
-        System.out.println("Generated hash in " + (System.currentTimeMillis() - time1) + "ms");
-        System.out.println("Generated passwd hash: " + generatedSecuredPasswordHash);
-        time1 = System.currentTimeMillis();
-        boolean checkPasswdMatch = validatePassword(originalPassword, generatedSecuredPasswordHash);
-        System.out.println("Validated password in " + (System.currentTimeMillis() - time1) + "ms");
-        System.out.println("Entry " + originalPassword + " matched: " + checkPasswdMatch);
-        time1 = System.currentTimeMillis();
-        checkPasswdMatch = validatePassword(wrongPassword, generatedSecuredPasswordHash);
-        System.out.println("Validated password in " + (System.currentTimeMillis() - time1) + "ms");
-        System.out.println("Entry " + wrongPassword + " matched: " + checkPasswdMatch);
     }
 
 }

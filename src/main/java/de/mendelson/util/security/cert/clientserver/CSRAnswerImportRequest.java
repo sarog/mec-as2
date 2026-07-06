@@ -1,6 +1,7 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/CSRAnswerImportRequest.java 3     9/11/23 9:52 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/clientserver/CSRAnswerImportRequest.java 7     16/06/25 10:03 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 7 $
  */
 public class CSRAnswerImportRequest extends ClientServerMessage implements Serializable {
 
@@ -26,10 +27,10 @@ public class CSRAnswerImportRequest extends ClientServerMessage implements Seria
 
     public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplFile.KEYSTORE_USAGE_TLS;
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
-    private final int keystoreUsageSource;
-    private final String fingerprintSHA1;
-    private final boolean reNew;
-    private final byte[]csrAnswer;
+    private int keystoreUsageSource;
+    private String fingerprintSHA1;
+    private boolean reNew;
+    private byte[] csrAnswer;
 
     public CSRAnswerImportRequest(final int KEYSTORE_USAGE_SOURCE,
             String fingerprintSHA1, boolean reNew, byte[] csrAnswer) {
@@ -38,6 +39,16 @@ public class CSRAnswerImportRequest extends ClientServerMessage implements Seria
         this.reNew = reNew;
         this.csrAnswer = csrAnswer;
     }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */   
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CSRAnswerImportRequest() {        
+        super();
+    }
+    
 
     @Override
     public String toString() {
@@ -52,10 +63,11 @@ public class CSRAnswerImportRequest extends ClientServerMessage implements Seria
     }
 
     /**
-     * @return the keystoreType, one of ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS 
-     * or ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN
+     * @return the keystoreType, one of
+     * ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS or
+     * ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN
      */
-    public int getKeystoreUsage() {
+    public int getKeystoreUsageSource() {
         return keystoreUsageSource;
     }
 
@@ -77,6 +89,34 @@ public class CSRAnswerImportRequest extends ClientServerMessage implements Seria
      * @return the csrAnswer
      */
     public byte[] getCSRAnswer() {
-        return csrAnswer;
+        return this.csrAnswer;
+    }
+
+    /**
+     * @param fingerprintSHA1 the fingerprintSHA1 to set
+     */
+    public void setFingerprintSHA1(String fingerprintSHA1) {
+        this.fingerprintSHA1 = fingerprintSHA1;
+    }
+
+    /**
+     * @param reNew the reNew to set
+     */
+    public void setReNew(boolean reNew) {
+        this.reNew = reNew;
+    }
+
+    /**
+     * @param csrAnswer the csrAnswer to set
+     */
+    public void setCSRAnswer(byte[] csrAnswer) {
+        this.csrAnswer = csrAnswer;
+    }
+
+    /**
+     * @param keystoreUsageSource the keystoreUsageSource to set
+     */
+    public void setKeystoreUsageSource(int keystoreUsageSource) {
+        this.keystoreUsageSource = keystoreUsageSource;
     }
 }

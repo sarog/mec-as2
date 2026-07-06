@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/signature/ResourceBundleSignatureAS2_de.java 4     6/11/23 11:38 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/ResourceBundleSignatureAS2_de.java 5     16/08/24 8:23 Heller $
 package de.mendelson.util.security.signature;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ResourceBundleSignatureAS2_de extends MecResourceBundle {
 
@@ -46,6 +46,7 @@ public class ResourceBundleSignatureAS2_de extends MecResourceBundle {
         {"signature." + SignatureConstantsAS2.SIGNATURE_SHA3_256_RSASSA_PSS, "SHA3-256 (RSASSA-PSS)" },
         {"signature." + SignatureConstantsAS2.SIGNATURE_SHA3_384_RSASSA_PSS, "SHA3-384 (RSASSA-PSS)" },
         {"signature." + SignatureConstantsAS2.SIGNATURE_SHA3_512_RSASSA_PSS, "SHA3-512 (RSASSA-PSS)" },
-        
+        {"signature." + SignatureConstantsAS2.SIGNATURE_DILITHIUM, "DILITHIUM" },
+        {"signature." + SignatureConstantsAS2.SIGNATURE_SPHINCS_PLUS, "SPHINCS+" },        
     };
 }

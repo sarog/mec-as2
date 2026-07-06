@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/cem/messages/TrustResponse.java 9     15.09.10 16:54 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/messages/TrustResponse.java 10    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem.messages;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -17,16 +17,17 @@ import java.util.List;
  */
 /**
  * Represents a trust response structure
+ *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class TrustResponse extends CEMStructure {
 
-    private final static int STATUS_PENDING_INT = CEMEntry.STATUS_PENDING_INT;
-    private final static int STATUS_REJECTED_INT = CEMEntry.STATUS_REJECTED_INT;
-    private final static int STATUS_ACCEPTED_INT = CEMEntry.STATUS_ACCEPTED_INT;
-    private final static int STATUS_EXPIRED_INT = CEMEntry.STATUS_EXPIRED_INT;
-    private final static int STATUS_REVOKED_INT = CEMEntry.STATUS_REVOKED_INT;
+    private static final int STATUS_PENDING_INT = CEMEntry.Status.PENDING.toInt();
+    private static final int STATUS_REJECTED_INT = CEMEntry.Status.REJECTED.toInt();
+    private static final int STATUS_ACCEPTED_INT = CEMEntry.Status.ACCEPTED.toInt();
+    private static final int STATUS_EXPIRED_INT = CEMEntry.Status.EXPIRED.toInt();
+    private static final int STATUS_REVOKED_INT = CEMEntry.Status.REVOKED.toInt();
     public static final String STATUS_ACCEPTED_STR = EDIINTCertificateExchangeResponse.STATUS_ACCEPTED_STR;
     public static final String STATUS_REJECTED_STR = EDIINTCertificateExchangeResponse.STATUS_REJECTED_STR;
     private int state = STATUS_ACCEPTED_INT;
@@ -36,7 +37,9 @@ public class TrustResponse extends CEMStructure {
     public TrustResponse() {
     }
 
-    /**Returns the int representation of the passed state string*/
+    /**
+     * Returns the int representation of the passed state string
+     */
     public static final int convertState(String state) {
         if (state.equals(STATUS_ACCEPTED_STR)) {
             return (STATUS_ACCEPTED_INT);
@@ -47,7 +50,9 @@ public class TrustResponse extends CEMStructure {
         }
     }
 
-    /**Returns the str representation of the passed int string*/
+    /**
+     * Returns the str representation of the passed int string
+     */
     public static final String convertState(int state) {
         if (state == STATUS_ACCEPTED_INT) {
             return (STATUS_ACCEPTED_STR);
@@ -58,25 +63,27 @@ public class TrustResponse extends CEMStructure {
         }
     }
 
-    /**parses the trust requests from an inbound request and returns them*/
+    /**
+     * parses the trust requests from an inbound request and returns them
+     */
     public static List<TrustResponse> parse(byte[] data) throws Exception {
         List<TrustResponse> responseList = new ArrayList<TrustResponse>();
-        ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-        XPathHelper helper = new XPathHelper(inStream);
-        helper.addNamespace("x", "urn:ietf:params:xml:ns:ediintcertificateexchange");
-        helper.addNamespace("ds", "http://www.w3.org/2000/09/xmldsig#");
-        int requestCount = helper.getNodeCount("//x:TrustResponse");
-        for (int i = 0; i < requestCount; i++) {
-            TrustResponse response = new TrustResponse();
-            String anchor = "//x:TrustResponse[" + (i + 1) + "]";
-            response.setState(helper.getValue(anchor + "/x:CertStatus"));
-            if( helper.getNodeCount(anchor + "/x:ReasonForRejection") > 0 ){
-                response.setReasonForRejection( helper.getValue(anchor + "/x:ReasonForRejection"));
+        try (ByteArrayInputStream inStream = new ByteArrayInputStream(data)) {
+            XPathHelper helper = new XPathHelper(inStream);
+            helper.addNamespace("x", "urn:ietf:params:xml:ns:ediintcertificateexchange");
+            helper.addNamespace("ds", "http://www.w3.org/2000/09/xmldsig#");
+            int requestCount = helper.getNodeCount("//x:TrustResponse");
+            for (int i = 0; i < requestCount; i++) {
+                TrustResponse response = new TrustResponse();
+                String anchor = "//x:TrustResponse[" + (i + 1) + "]";
+                response.setState(helper.getValue(anchor + "/x:CertStatus"));
+                if (helper.getNodeCount(anchor + "/x:ReasonForRejection") > 0) {
+                    response.setReasonForRejection(helper.getValue(anchor + "/x:ReasonForRejection"));
+                }
+                response.setCertificateReference(CertificateReference.parse(data, anchor));
+                responseList.add(response);
             }
-            response.setCertificateReference(CertificateReference.parse(data, anchor));
-            responseList.add(response);
         }
-        inStream.close();
         return (responseList);
     }
 
@@ -100,7 +107,7 @@ public class TrustResponse extends CEMStructure {
         StringBuilder builder = new StringBuilder();
         builder.append("\t<TrustResponse>\n");
         builder.append("\t\t<CertStatus>").append(convertState(this.state)).append("</CertStatus>\n");
-        if( this.state == STATUS_REJECTED_INT && this.reasonForRejection != null ){
+        if (this.state == STATUS_REJECTED_INT && this.reasonForRejection != null) {
             builder.append("\t\t<ReasonForRejection>").append(this.toCDATA(this.reasonForRejection)).append("</ReasonForRejection>\n");
         }
         builder.append(this.getCertificateReference().toXML());

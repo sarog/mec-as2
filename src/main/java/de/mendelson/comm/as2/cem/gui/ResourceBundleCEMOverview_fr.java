@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleCEMOverview_fr.java 7     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleCEMOverview_fr.java 9     21/10/25 10:50 Heller $
 package de.mendelson.comm.as2.cem.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleCEMOverview_fr extends MecResourceBundle{
     
@@ -38,7 +38,7 @@ public class ResourceBundleCEMOverview_fr extends MecResourceBundle{
         {"header.requestdate", "Demandé au" },
         {"header.initiator", "De" },
         {"header.receiver", "À" },
-        {"label.certificate", "Certificat:"},
+        {"label.certificate", "Certificat"},
         {"header.alias", "Certificat"},
         {"header.activity", "Activité du système" },
         {"activity.waitingforprocessing", "En attente de traitement" },

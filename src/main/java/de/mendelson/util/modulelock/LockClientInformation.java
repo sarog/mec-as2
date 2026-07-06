@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/modulelock/LockClientInformation.java 5     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/modulelock/LockClientInformation.java 7     11/06/25 13:17 Heller $
 package de.mendelson.util.modulelock;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 import java.util.Objects;
 
@@ -17,15 +18,15 @@ import java.util.Objects;
  * lock
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class LockClientInformation implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private String username;
-    private final String clientIP;
-    private final String uniqueid;
-    private String pid;
+    private String username = null;
+    private String clientIP = null;
+    private String uniqueid = null;
+    private String pid = null;
 
     public LockClientInformation(String username, String clientIP, String uniqueid, String pid) {
         this.username = username;
@@ -35,15 +36,26 @@ public class LockClientInformation implements Serializable {
     }
 
     /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public LockClientInformation() {
+        super();
+    }
+    
+    /**
      * @return the username
      */
     public String getUsername() {
         return username;
     }
 
-    /**
-     * @param username the username to set
+     /**
+     * This is a dummy method for the deserialization process. Do not use
+     * in logic.
      */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
     public void setUsername(String username) {
         this.username = username;
     }
@@ -74,7 +86,7 @@ public class LockClientInformation implements Serializable {
         }
         if (anObject != null && anObject instanceof LockClientInformation) {
             LockClientInformation entry = (LockClientInformation) anObject;
-            return (this.uniqueid.equals(entry.uniqueid));
+            return (this.getUniqueid().equals(entry.getUniqueid()));
         }
         return (false);
     }
@@ -82,7 +94,7 @@ public class LockClientInformation implements Serializable {
     @Override
     public int hashCode() {
         int hash = 3;
-        hash = 61 * hash + Objects.hashCode(this.uniqueid);
+        hash = 61 * hash + Objects.hashCode(this.getUniqueid());
         return hash;
     }
     
@@ -93,11 +105,31 @@ public class LockClientInformation implements Serializable {
         return pid;
     }
 
-    /**Sets the client side process id
-     * @param pid the pid to set
+     /**
+     * This is a dummy method for the deserialization process. Do not use
+     * in logic.
      */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
     public void setPid(String pid) {
         this.pid = pid;
+    }
+
+     /**
+     * This is a dummy method for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    protected void setUniqueid(String uniqueid) {
+        this.uniqueid = uniqueid;
+    }
+
+    /**
+     * This is a dummy method for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setClientIP(String clientIP) {
+        this.clientIP = clientIP;
     }
 
 }

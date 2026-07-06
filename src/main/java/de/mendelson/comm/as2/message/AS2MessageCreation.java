@@ -1,19 +1,22 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 73    2/11/23 14:02 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/message/AS2MessageCreation.java 95    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.BCCryptoHelper;
+import de.mendelson.util.security.BouncyCastlePQCProviderSingleton;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -67,13 +70,14 @@ import org.bouncycastle.operator.jcajce.JcaAlgorithmParametersConverter;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 73 $
+ * @version $Revision: 95 $
  */
 public class AS2MessageCreation {
 
     private Logger logger = null;
-    private final static MecResourceBundle rb;
-    private final static MecResourceBundle rbMessage;
+    private static final int SIZE_20MB = 20 * 1024 * 1024;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbMessage;
 
     static {
         try {
@@ -90,6 +94,7 @@ public class AS2MessageCreation {
     private final CertificateManager signatureCertManager;
     private final CertificateManager encryptionCertManager;
     private IDBDriverManager dbDriverManager = null;
+    private final PreferencesAS2 preferences = new PreferencesAS2();
 
     public AS2MessageCreation(CertificateManager signatureCertManager, CertificateManager encryptionCertManager) {
         this.signatureCertManager = signatureCertManager;
@@ -174,23 +179,20 @@ public class AS2MessageCreation {
         //2822 headers, since these are sometimes altered or reordered by
         //Mail Transport Agents (MTAs).
         String digestOIDSHA1 = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA1);
-        String mic = cryptoHelper.calculateMIC(new ByteArrayInputStream(message.getPayload(0).getData()), digestOIDSHA1);
+        String mic;
+        try (InputStream micIn = new ByteArrayInputStream(message.getPayload(0).getData())) {
+            mic = cryptoHelper.calculateMIC(micIn, digestOIDSHA1);
+        }
         info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA1);
         //add compression
-        if (receiver.getCompressionType() == AS2Message.COMPRESSION_ZLIB) {
-            info.setCompressionType(AS2Message.COMPRESSION_ZLIB);
+        if (receiver.getCompressionType() == MessageCompressionType.ZLIB) {
+            info.setCompressionType(MessageCompressionType.ZLIB);
             int uncompressedSize = message.getDecryptedRawDataSize();
-            InputStream dataStream = null;
             int compressedSize = -1;
-            MimeBodyPart bodyPart = null;
-            try {
-                dataStream = message.getDecryptedRawDataInputStream();
+            MimeBodyPart bodyPart;
+            try (InputStream dataStream = message.getDecryptedRawDataInputStream()) {
                 bodyPart = this.compressPayload(receiver, dataStream, receiver.getContentType());
                 compressedSize = bodyPart.getSize();
-            } finally {
-                if (dataStream != null) {
-                    dataStream.close();
-                }
             }
             //sometimes size() is unable to determine the size of the compressed body part and will return -1. Dont log the
             //compression ratio in this case.
@@ -208,11 +210,10 @@ public class AS2MessageCreation {
                 }
             }
             //write compressed data into the message array
-            ByteArrayOutputStream bodyOutStream = new ByteArrayOutputStream();
-            bodyPart.writeTo(bodyOutStream);
-            bodyOutStream.flush();
-            bodyOutStream.close();
-            message.setDecryptedRawData(bodyOutStream.toByteArray());
+            try (ByteArrayOutputStream bodyOutStream = new ByteArrayOutputStream()) {
+                bodyPart.writeTo(bodyOutStream);
+                message.setDecryptedRawData(bodyOutStream.toByteArray());
+            }
         }
         //no encryption
         if (info.getEncryptionType() == AS2Message.ENCRYPTION_NONE) {
@@ -248,14 +249,16 @@ public class AS2MessageCreation {
                     this.logger.log(Level.INFO, rb.getResourceString("message.signed",
                             new Object[]{
                                 signAlias,
-                                rbMessage.getResourceString("signature." + receiver.getSignType())
+                                rbMessage.getResourceString("signature." + receiver.getSignType()),
+                                sender.getName()
                             }), info);
                 } else {
                     String signAlias = this.signatureCertManager.getAliasByFingerprint(sender.getSignFingerprintSHA1());
                     this.logger.log(Level.INFO, rb.getResourceString("message.signed",
                             new Object[]{
                                 signAlias,
-                                rbMessage.getResourceString("signature." + receiver.getSignType())
+                                rbMessage.getResourceString("signature." + receiver.getSignType()),
+                                sender.getName()
                             }), info);
                 }
             }
@@ -281,27 +284,27 @@ public class AS2MessageCreation {
             messagePart.saveChanges();
         }
         //store signed or unsigned data
-        ByteArrayOutputStream signedOut = new ByteArrayOutputStream();
-        //normally the content type header is folded (which is correct but some products are not able to parse this properly)
-        //Now take the content-type, unfold it and write it
-        Enumeration headerLines = messagePart.getMatchingHeaderLines(new String[]{"Content-Type"});
-        LineOutputStream los = new LineOutputStream(signedOut);
-        while (headerLines.hasMoreElements()) {
-            //requires java mail API >= 1.4
-            String nextHeaderLine = MimeUtility.unfold((String) headerLines.nextElement());
-            //write the line only if the as2 message is encrypted. If the as2 message is unencrypted this header is added later
-            //in the class MessageHttpUploader
-            if (info.getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
-                los.writeln(nextHeaderLine);
+        try (ByteArrayOutputStream signedOut = new ByteArrayOutputStream()) {
+            //normally the content type header is folded (which is correct but some products are not able to parse this properly)
+            //Now take the content-type, unfold it and write it
+            Enumeration headerLines = messagePart.getMatchingHeaderLines(new String[]{"Content-Type"});
+            try (LineOutputStream lineOutStream = new LineOutputStream(signedOut)) {
+                while (headerLines.hasMoreElements()) {
+                    //requires java mail API >= 1.4
+                    String nextHeaderLine = MimeUtility.unfold((String) headerLines.nextElement());
+                    //write the line only if the as2 message is encrypted. If the as2 message is unencrypted this header is added later
+                    //in the class MessageHttpUploader
+                    if (info.getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
+                        lineOutStream.writeln(nextHeaderLine);
+                    }
+                    //store the content line in the as2 message object, this value is required later in MessageHttpUploader
+                    message.setContentType(nextHeaderLine.substring(nextHeaderLine.indexOf(':') + 1));
+                }
             }
-            //store the content line in the as2 message object, this value is required later in MessageHttpUploader
-            message.setContentType(nextHeaderLine.substring(nextHeaderLine.indexOf(':') + 1));
+            messagePart.writeTo(signedOut,
+                    new String[]{"Message-ID", "Mime-Version", "Content-Type"});
+            message.setDecryptedRawData(signedOut.toByteArray());
         }
-        messagePart.writeTo(signedOut,
-                new String[]{"Message-ID", "Mime-Version", "Content-Type"});
-        signedOut.flush();
-        signedOut.close();
-        message.setDecryptedRawData(signedOut.toByteArray());
     }
 
     /**
@@ -339,7 +342,7 @@ public class AS2MessageCreation {
         for (int i = 0; i < originalFilenames.length; i++) {
             originalFilenames[i] = payloadFiles[i].getFileName().toString().replace(' ', '_');
         }
-        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, null,
+        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, MessageType.AS2, null,
                 receiver.getSubject(), payloadContentTypes));
     }
 
@@ -360,7 +363,7 @@ public class AS2MessageCreation {
     public AS2Message createMessage(Partner sender, Partner receiver,
             Path[] payloadFiles, String[] originalFilenames,
             String[] payloadContentTypes) throws Exception {
-        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, null,
+        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, MessageType.AS2, null,
                 receiver.getSubject(), payloadContentTypes));
     }
 
@@ -383,7 +386,7 @@ public class AS2MessageCreation {
     public AS2Message createMessage(Partner sender, Partner receiver,
             Path[] payloadFiles, String[] originalFilenames, String userdefinedId,
             String subject, String[] payloadContentTypes) throws Exception {
-        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, AS2Message.MESSAGETYPE_AS2, userdefinedId, subject,
+        return (this.createMessage(sender, receiver, payloadFiles, originalFilenames, MessageType.AS2, userdefinedId, subject,
                 payloadContentTypes));
     }
 
@@ -391,14 +394,15 @@ public class AS2MessageCreation {
      * Builds up a new message from the passed payload files - the original
      * filenames are taken from the passed payload files
      *
-     * @param messageType one of the message types defined in the class
+     * @param messageTypeInt one of the message types defined in the class
      * AS2Message
      * @deprecated Use the same method with Path[] parameter instead
      */
     @Deprecated(since = "2020")
     public AS2Message createMessage(Partner sender, Partner receiver,
-            File[] payloadFiles, int messageType, String subject) throws Exception {
-        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), messageType, subject));
+            File[] payloadFiles, int messageTypeInt, String subject) throws Exception {
+        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), 
+                MessageType.of(messageTypeInt), subject));
     }
 
     /**
@@ -409,7 +413,7 @@ public class AS2MessageCreation {
      * AS2Message
      */
     public AS2Message createMessage(Partner sender, Partner receiver,
-            Path[] payloadFiles, int messageType, String subject) throws Exception {
+            Path[] payloadFiles, MessageType messageType, String subject) throws Exception {
         String[] originalFilenames = new String[payloadFiles.length];
         for (int i = 0; i < originalFilenames.length; i++) {
             originalFilenames[i] = payloadFiles[i].getFileName().toString().replace(' ', '_');
@@ -421,15 +425,16 @@ public class AS2MessageCreation {
     /**
      * Builds up a new message from the passed message parts
      *
-     * @param messageType one of the message types defined in the class
+     * @param messageTypeInt one of the message types defined in the class
      * AS2Message
      * @deprecated Use the same method with Path[] parameter instead
      */
     @Deprecated(since = "2020")
     public AS2Message createMessage(Partner sender, Partner receiver,
             File[] payloadFiles, String[] originalFilenames,
-            int messageType, String userdefinedId, String subject) throws Exception {
-        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, messageType, userdefinedId,
+            int messageTypeInt, String userdefinedId, String subject) throws Exception {
+        return (this.createMessage(sender, receiver, this.fileToPath(payloadFiles), originalFilenames, 
+                MessageType.of(messageTypeInt), userdefinedId,
                 subject, null));
     }
 
@@ -445,7 +450,7 @@ public class AS2MessageCreation {
      */
     public AS2Message createMessage(Partner sender, Partner receiver,
             Path[] payloadFiles, String[] originalFilenames,
-            int messageType, String userdefinedId, String subject, String[] payloadContentTypes) throws Exception {
+            MessageType messageType, String userdefinedId, String subject, String[] payloadContentTypes) throws Exception {
         if (payloadFiles == null || payloadFiles.length == 0) {
             throw new IllegalArgumentException("AS2MessageCreation.createMessage(): No payload files");
         }
@@ -479,23 +484,16 @@ public class AS2MessageCreation {
         AS2Payload[] payloads = new AS2Payload[payloadFiles.length];
         for (int i = 0; i < payloadFiles.length; i++) {
             Path payloadFile = payloadFiles[i];
-            InputStream inStream = null;
-            try {
-                inStream = Files.newInputStream(payloadFile);
-                ByteArrayOutputStream payloadOut = new ByteArrayOutputStream();
-                inStream.transferTo(payloadOut);
-                payloadOut.flush();
-                payloadOut.close();
+            try (InputStream inStream = Files.newInputStream(payloadFile)) {
                 //add payload
                 AS2Payload payload = new AS2Payload();
-                payload.setData(payloadOut.toByteArray());
                 payload.setOriginalFilename(originalFilenames[i]);
                 payload.setContentType(payloadContentTypes[i]);
-                payloads[i] = payload;
-            } finally {
-                if( inStream != null ){
-                    inStream.close();
+                try (ByteArrayOutputStream payloadOut = new ByteArrayOutputStream()) {
+                    inStream.transferTo(payloadOut);
+                    payload.setData(payloadOut.toByteArray());
                 }
+                payloads[i] = payload;
             }
         }
         return (this.createMessage(sender, receiver, payloads, messageType, null, userdefinedId, subject));
@@ -507,7 +505,7 @@ public class AS2MessageCreation {
      * @param messageType one of the message types defined in the class
      * AS2Message
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, AS2Payload[] payloads, int messageType) throws Exception {
+    public AS2Message createMessage(Partner sender, Partner receiver, AS2Payload[] payloads, MessageType messageType) throws Exception {
         return (this.createMessage(sender, receiver, payloads, messageType, null, null, receiver.getSubject()));
     }
 
@@ -517,7 +515,7 @@ public class AS2MessageCreation {
      * @param messageType one of the message types defined in the class
      * AS2Message
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, AS2Payload[] payloads, int messageType,
+    public AS2Message createMessage(Partner sender, Partner receiver, AS2Payload[] payloads, MessageType messageType,
             String messageId) throws Exception {
         return (this.createMessage(sender, receiver, payloads, messageType, messageId, null, receiver.getSubject()));
     }
@@ -528,7 +526,7 @@ public class AS2MessageCreation {
      * @param messageType one of the message types defined in the class
      * AS2Message
      */
-    public AS2Message createMessage(Partner sender, Partner receiver, AS2Payload[] payloads, int messageType,
+    public AS2Message createMessage(Partner sender, Partner receiver, AS2Payload[] payloads, MessageType messageType,
             String messageId, String userdefinedId, String subject) throws Exception {
         if (messageId == null) {
             messageId = UniqueId.createMessageId(sender.getAS2Identification(), receiver.getAS2Identification());
@@ -540,7 +538,7 @@ public class AS2MessageCreation {
         info.setReceiverId(receiver.getAS2Identification());
         info.setSenderEMail(sender.getEmail());
         info.setMessageId(messageId);
-        info.setDirection(AS2MessageInfo.DIRECTION_OUT);
+        info.setDirection(MessageDirectionType.OUT);
         info.setSignType(receiver.getSignType());
         info.setEncryptionType(receiver.getEncryptionType());
         info.setRequestsSyncMDN(receiver.isSyncMDN());
@@ -569,167 +567,187 @@ public class AS2MessageCreation {
         }
         //create message object to return
         AS2Message message = new AS2Message(info);
-        //stores all the available body parts that have been prepared
-        List<MimeBodyPart> contentPartList = new ArrayList<MimeBodyPart>();
-        for (AS2Payload as2Payload : payloads) {
-            //add payload
-            message.addPayload(as2Payload);
+        try {
+            //stores all the available body parts that have been prepared
+            List<MimeBodyPart> contentPartList = new ArrayList<MimeBodyPart>();
+            for (AS2Payload as2Payload : payloads) {
+                //add payload
+                message.addPayload(as2Payload);
+                if (this.dbDriverManager != null) {
+                    MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
+                    messageAccess.initializeOrUpdateMessage(info);
+                }
+                //no MIME message: single payload, unsigned, no CEM
+                if (info.getSignType() == AS2Message.SIGNATURE_NONE && payloads.length == 1
+                        && info.getMessageType() != MessageType.CEM) {
+                    return (this.createMessageNoMIME(message, receiver));
+                }
+                //MIME message
+                MimeBodyPart bodyPart = new MimeBodyPart();
+                String contentType = null;
+                if (as2Payload.getContentType() == null) {
+                    contentType = receiver.getContentType();
+                } else {
+                    contentType = as2Payload.getContentType();
+                }
+                bodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(as2Payload.getData(), contentType)));
+                bodyPart.addHeader("Content-Type", contentType);
+                if (as2Payload.getContentId() != null) {
+                    bodyPart.addHeader("Content-ID", as2Payload.getContentId());
+                }
+                if (receiver.getContentTransferEncoding() == MessageContentTransferEncodingType.BASE64) {
+                    bodyPart.addHeader("Content-Transfer-Encoding", "base64");
+                } else {
+                    bodyPart.addHeader("Content-Transfer-Encoding", "binary");
+                }
+                //prepare filename to not violate the MIME header rules
+                if (as2Payload.getOriginalFilename() == null) {
+                    as2Payload.setOriginalFilename(Paths.get(as2Payload.getPayloadFilename()).getFileName().toString());
+                }
+                String newFilename = as2Payload.getOriginalFilename().replace(' ', '_');
+                newFilename = newFilename.replace('@', '_');
+                newFilename = newFilename.replace(':', '_');
+                newFilename = newFilename.replace(';', '_');
+                newFilename = newFilename.replace('(', '_');
+                newFilename = newFilename.replace(')', '_');
+                //RFC 822 mail headers must contain only US-ASCII characters. Headers that contain non US-ASCII 
+                //characters must be encoded so that they contain only US-ASCII characters. Basically, 
+                //this process involves using either BASE64 or QP to encode certain characters. 
+                //RFC 2047 describes this in detail. 
+                //test if an encoding is required
+                boolean filenameEncodingRequired = !MimeUtility.encodeText(newFilename).equals(newFilename)
+                        || newFilename.contains("=");
+                if (!filenameEncodingRequired) {
+                    bodyPart.addHeader("Content-Disposition", "attachment; filename=" + newFilename);
+                } else {
+                    bodyPart.addHeader("Content-Disposition", "attachment; filename=\""
+                            + MimeUtility.encodeText(newFilename,
+                                    StandardCharsets.UTF_8.displayName(), "B")
+                            + "\"");
+                }
+                contentPartList.add(bodyPart);
+            }
+            Part contentPart = null;
+            //sigle attachment? No CEM? Every CEM is in a multipart/related container
+            if (contentPartList.size() == 1 && info.getMessageType() != MessageType.CEM) {
+                contentPart = contentPartList.get(0);
+            } else {
+                //build up a new MimeMultipart container for the multiple attachments, content-type
+                //is "multipart/related"
+                MimeMultipart multipartRelated = null;
+                //CEM messages are always in a multipart container (even the response which contains only a single
+                //payload) with the subtype "application/ediint-cert-exchange+xml".
+                if (info.getMessageType() == MessageType.CEM) {
+                    multipartRelated = new MimeMultipart("related; type=\"application/ediint-cert-exchange+xml\"");
+                } else {
+                    multipartRelated = new MimeMultipart("related");
+                }
+                for (MimeBodyPart bodyPart : contentPartList) {
+                    multipartRelated.addBodyPart(bodyPart);
+                }
+                contentPart = new MimeBodyPart();
+                contentPart.setContent(multipartRelated);
+                contentPart.setHeader("Content-Type", multipartRelated.getContentType());
+            }
+            //should the content be compressed and enwrapped or just enwrapped?
+            if (receiver.getCompressionType() == MessageCompressionType.ZLIB) {
+                info.setCompressionType(MessageCompressionType.ZLIB);
+                int uncompressedSize = contentPart.getSize();
+                contentPart = this.compressPayload(receiver, contentPart);
+                int compressedSize = contentPart.getSize();
+                //sometimes size() is unable to determine the size of the compressed body part and will return -1. Dont log the
+                //compression ratio in this case.
+                if (uncompressedSize == -1 || compressedSize == -1) {
+                    if (this.logger != null) {
+                        this.logger.log(Level.INFO, rb.getResourceString("message.compressed.unknownratio"), info);
+                    }
+                } else {
+                    if (this.logger != null) {
+                        this.logger.log(Level.INFO, rb.getResourceString("message.compressed",
+                                new Object[]{
+                                    AS2Tools.getDataSizeDisplay(uncompressedSize),
+                                    AS2Tools.getDataSizeDisplay(compressedSize)
+                                }), info);
+                    }
+                }
+            }
+            //compute content mic. If the sign digest is md5 use it else use sha-1/sha-2
+            String digestOID;
+            if (info.getSignType() == AS2Message.SIGNATURE_MD5) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_MD5);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA256 || info.getSignType() == AS2Message.SIGNATURE_SHA256_RSASSA_PSS) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA256);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA384 || info.getSignType() == AS2Message.SIGNATURE_SHA384_RSASSA_PSS) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA384);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA512 || info.getSignType() == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA512);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_224 || info.getSignType() == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_224);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_256 || info.getSignType() == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_256);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_384 || info.getSignType() == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_384);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_512 || info.getSignType() == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_512);
+            } else {
+                //For unsigned messages or unknown signing algorithm take sha-1
+                digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA1);
+            }
+            //for multiple payloads in a single transmission that works the same way:
+            //RFC 6362 (multiple payloads)
+            //2.3.  MIC Calculation
+            //MIC calculation in an EDIINT message with multiple attachments is
+            //performed in the same manner as for a single EDI payload.  The only
+            //difference is calculating the message integrity check (MIC) over the
+            //whole multipart/related body rather than a single EDI payload.
+            String mic = cryptoHelper.calculateMIC(contentPart, digestOID);
+            if (info.getSignType() == AS2Message.SIGNATURE_MD5) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_MD5);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA256 || info.getSignType() == AS2Message.SIGNATURE_SHA256_RSASSA_PSS) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA256);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA384 || info.getSignType() == AS2Message.SIGNATURE_SHA384_RSASSA_PSS) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA384);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA512 || info.getSignType() == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA512);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_224 || info.getSignType() == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_224);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_256 || info.getSignType() == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_256);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_384 || info.getSignType() == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_384);
+            } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_512 || info.getSignType() == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_512);
+            } else {
+                info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA1);
+            }
+            this.enwrappInMessageAndSign(message, contentPart, sender, receiver);
+            //encryption requested for the receiver?
+            if (info.getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
+                String cryptAlias = this.encryptionCertManager.getAliasByFingerprint(receiver.getCryptFingerprintSHA1());
+                this.encryptDataToMessage(message, cryptAlias, info.getEncryptionType(), receiver);
+            } else {
+                message.setRawData(message.getDecryptedRawData());
+                if (this.logger != null) {
+                    this.logger.log(Level.INFO, rb.getResourceString("message.notencrypted"), info);
+                }
+            }
+        } catch (Exception e) {
+            //there is a problem creating the message. If there was a database connection there might be an entry in
+            //the database now for this message. This should be in the state pending - set it to stopped if an error
+            //happened during message creation
             if (this.dbDriverManager != null) {
                 MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
-                messageAccess.initializeOrUpdateMessage(info);
-            }
-            //no MIME message: single payload, unsigned, no CEM
-            if (info.getSignType() == AS2Message.SIGNATURE_NONE && payloads.length == 1
-                    && info.getMessageType() != AS2Message.MESSAGETYPE_CEM) {
-                return (this.createMessageNoMIME(message, receiver));
-            }
-            //MIME message
-            MimeBodyPart bodyPart = new MimeBodyPart();
-            String contentType = null;
-            if (as2Payload.getContentType() == null) {
-                contentType = receiver.getContentType();
-            } else {
-                contentType = as2Payload.getContentType();
-            }
-            bodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(as2Payload.getData(), contentType)));
-            bodyPart.addHeader("Content-Type", contentType);
-            if (as2Payload.getContentId() != null) {
-                bodyPart.addHeader("Content-ID", as2Payload.getContentId());
-            }
-            if (receiver.getContentTransferEncoding() == AS2Message.CONTENT_TRANSFER_ENCODING_BASE64) {
-                bodyPart.addHeader("Content-Transfer-Encoding", "base64");
-            } else {
-                bodyPart.addHeader("Content-Transfer-Encoding", "binary");
-            }
-            //prepare filename to not violate the MIME header rules
-            if (as2Payload.getOriginalFilename() == null) {
-                as2Payload.setOriginalFilename(Paths.get(as2Payload.getPayloadFilename()).getFileName().toString());
-            }
-            String newFilename = as2Payload.getOriginalFilename().replace(' ', '_');
-            newFilename = newFilename.replace('@', '_');
-            newFilename = newFilename.replace(':', '_');
-            newFilename = newFilename.replace(';', '_');
-            newFilename = newFilename.replace('(', '_');
-            newFilename = newFilename.replace(')', '_');
-            //RFC 822 mail headers must contain only US-ASCII characters. Headers that contain non US-ASCII 
-            //characters must be encoded so that they contain only US-ASCII characters. Basically, 
-            //this process involves using either BASE64 or QP to encode certain characters. 
-            //RFC 2047 describes this in detail. 
-            //test if an encoding is required
-            boolean filenameEncodingRequired = !MimeUtility.encodeText(newFilename).equals(newFilename);
-            if (!filenameEncodingRequired) {
-                bodyPart.addHeader("Content-Disposition", "attachment; filename=" + newFilename);
-            } else {
-                bodyPart.addHeader("Content-Disposition", "attachment; filename=\""
-                        + MimeUtility.encodeText(newFilename,
-                                StandardCharsets.UTF_8.displayName(), "B")
-                        + "\"");
-            }
-            contentPartList.add(bodyPart);
-        }
-        Part contentPart = null;
-        //sigle attachment? No CEM? Every CEM is in a multipart/related container
-        if (contentPartList.size() == 1 && info.getMessageType() != AS2Message.MESSAGETYPE_CEM) {
-            contentPart = contentPartList.get(0);
-        } else {
-            //build up a new MimeMultipart container for the multiple attachments, content-type
-            //is "multipart/related"
-            MimeMultipart multipartRelated = null;
-            //CEM messages are always in a multipart container (even the response which contains only a single
-            //payload) with the subtype "application/ediint-cert-exchange+xml".
-            if (info.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
-                multipartRelated = new MimeMultipart("related; type=\"application/ediint-cert-exchange+xml\"");
-            } else {
-                multipartRelated = new MimeMultipart("related");
-            }
-            for (MimeBodyPart bodyPart : contentPartList) {
-                multipartRelated.addBodyPart(bodyPart);
-            }
-            contentPart = new MimeBodyPart();
-            contentPart.setContent(multipartRelated);
-            contentPart.setHeader("Content-Type", multipartRelated.getContentType());
-        }
-        //should the content be compressed and enwrapped or just enwrapped?
-        if (receiver.getCompressionType() == AS2Message.COMPRESSION_ZLIB) {
-            info.setCompressionType(AS2Message.COMPRESSION_ZLIB);
-            int uncompressedSize = contentPart.getSize();
-            contentPart = this.compressPayload(receiver, contentPart);
-            int compressedSize = contentPart.getSize();
-            //sometimes size() is unable to determine the size of the compressed body part and will return -1. Dont log the
-            //compression ratio in this case.
-            if (uncompressedSize == -1 || compressedSize == -1) {
+                messageAccess.setMessageState(info.getMessageId(), 
+                        MessageStateType.PENDING, MessageStateType.STOPPED);
                 if (this.logger != null) {
-                    this.logger.log(Level.INFO, rb.getResourceString("message.compressed.unknownratio"), info);
-                }
-            } else {
-                if (this.logger != null) {
-                    this.logger.log(Level.INFO, rb.getResourceString("message.compressed",
+                    this.logger.log(Level.INFO, rb.getResourceString("message.creation.error",
                             new Object[]{
-                                AS2Tools.getDataSizeDisplay(uncompressedSize),
-                                AS2Tools.getDataSizeDisplay(compressedSize)
-                            }), info);
+                                info.getMessageId(),
+                                "[" + e.getClass().getSimpleName() + "]: " + e.getMessage(),}),
+                            info);
                 }
             }
-        }
-        //compute content mic. If the sign digest is md5 use it else use sha-1/sha-2
-        String digestOID = null;
-        if (info.getSignType() == AS2Message.SIGNATURE_MD5) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_MD5);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA256 || info.getSignType() == AS2Message.SIGNATURE_SHA256_RSASSA_PSS) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA256);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA384 || info.getSignType() == AS2Message.SIGNATURE_SHA384_RSASSA_PSS) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA384);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA512 || info.getSignType() == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA512);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_224 || info.getSignType() == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_224);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_256 || info.getSignType() == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_256);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_384 || info.getSignType() == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_384);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_512 || info.getSignType() == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA3_512);
-        } else {
-            //For unsigned messages or unknown signing algorithm take sha-1
-            digestOID = cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_SHA1);
-        }
-        //for multiple payloads in a single transmission that works the same way:
-        //RFC 6362 (multiple payloads)
-        //2.3.  MIC Calculation
-        //MIC calculation in an EDIINT message with multiple attachments is
-        //performed in the same manner as for a single EDI payload.  The only
-        //difference is calculating the message integrity check (MIC) over the
-        //whole multipart/related body rather than a single EDI payload.
-        String mic = cryptoHelper.calculateMIC(contentPart, digestOID);
-        if (info.getSignType() == AS2Message.SIGNATURE_MD5) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_MD5);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA256 || info.getSignType() == AS2Message.SIGNATURE_SHA256_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA256);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA384 || info.getSignType() == AS2Message.SIGNATURE_SHA384_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA384);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA512 || info.getSignType() == AS2Message.SIGNATURE_SHA512_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA512);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_224 || info.getSignType() == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_224);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_256 || info.getSignType() == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_256);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_384 || info.getSignType() == AS2Message.SIGNATURE_SHA3_384_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_384);
-        } else if (info.getSignType() == AS2Message.SIGNATURE_SHA3_512 || info.getSignType() == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA3_512);
-        } else {
-            info.setReceivedContentMIC(mic + ", " + BCCryptoHelper.ALGORITHM_SHA1);
-        }
-        this.enwrappInMessageAndSign(message, contentPart, sender, receiver);
-        //encryption requested for the receiver?
-        if (info.getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
-            String cryptAlias = this.encryptionCertManager.getAliasByFingerprint(receiver.getCryptFingerprintSHA1());
-            this.encryptDataToMessage(message, cryptAlias, info.getEncryptionType(), receiver);
-        } else {
-            message.setRawData(message.getDecryptedRawData());
-            if (this.logger != null) {
-                this.logger.log(Level.INFO, rb.getResourceString("message.notencrypted"), info);
-            }
+            throw e;
         }
         return (message);
     }
@@ -743,132 +761,148 @@ public class AS2MessageCreation {
         X509Certificate certificate = this.encryptionCertManager.getX509Certificate(receiverCryptAlias);
         //define key transport scheme
         AlgorithmIdentifier keyTransportScheme = null;
-        if (encryptionType == AS2Message.ENCRYPTION_AES_128_RSAES_AOEP) {
+        if (encryptionType == AS2Message.ENCRYPTION_AES_128_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_128_CBC_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_128_GCM_RSAES_AOEP) {
             //generate algorithm identifier for RSA-OAEP pkcs#1 v2.1 with SHA-256
             JcaAlgorithmParametersConverter paramsConverter = new JcaAlgorithmParametersConverter();
             OAEPParameterSpec oaepSpec = new OAEPParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), PSource.PSpecified.DEFAULT);
             keyTransportScheme = paramsConverter.getAlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP, oaepSpec);
-        } else if (encryptionType == AS2Message.ENCRYPTION_AES_192_RSAES_AOEP) {
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_192_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_192_CBC_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_192_GCM_RSAES_AOEP) {
             //generate algorithm identifier for RSA-OAEP pkcs#1 v2.1 with SHA-256
             JcaAlgorithmParametersConverter paramsConverter = new JcaAlgorithmParametersConverter();
             OAEPParameterSpec oaepSpec = new OAEPParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), PSource.PSpecified.DEFAULT);
             keyTransportScheme = paramsConverter.getAlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP, oaepSpec);
-        } else if (encryptionType == AS2Message.ENCRYPTION_AES_256_RSAES_AOEP) {
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_256_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_256_CBC_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_256_GCM_RSAES_AOEP) {
             //generate algorithm identifier for RSA-OAEP pkcs#1 v2.1 with SHA-256
             JcaAlgorithmParametersConverter paramsConverter = new JcaAlgorithmParametersConverter();
             OAEPParameterSpec oaepSpec = new OAEPParameterSpec("SHA-256", "MGF1", new MGF1ParameterSpec("SHA-256"), PSource.PSpecified.DEFAULT);
             keyTransportScheme = paramsConverter.getAlgorithmIdentifier(PKCSObjectIdentifiers.id_RSAES_OAEP, oaepSpec);
         }
         CMSEnvelopedDataStreamGenerator dataGenerator = cryptoHelper.generateCMSEnvelopedDataStreamGenerator(certificate, keyTransportScheme);
+        DeferredFileOutputStream.Builder streamBuilder = DeferredFileOutputStream.builder();
+        //if the data is less then 20MB perform the operaion in memory else stream to disk
+        streamBuilder.setThreshold(SIZE_20MB)
+                .setPrefix("as2encryptdata_")
+                .setSuffix(".mem")
+                .setDirectory(AS2Tools.getDailyTempDir());
+        JceCMSContentEncryptorBuilder encryptorBuilder = null;
+        if (encryptionType == AS2Message.ENCRYPTION_3DES) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_DES) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_CBC, 56);
+        } else if (encryptionType == AS2Message.ENCRYPTION_RC2_40) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 40);
+        } else if (encryptionType == AS2Message.ENCRYPTION_RC2_64) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 64);
+        } else if (encryptionType == AS2Message.ENCRYPTION_RC2_128) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 128);
+        } else if (encryptionType == AS2Message.ENCRYPTION_RC2_196) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 196);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_128) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_192) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_256) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_RC4_40) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(
+                    new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 40);
+        } else if (encryptionType == AS2Message.ENCRYPTION_RC4_56) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(
+                    new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 56);
+        } else if (encryptionType == AS2Message.ENCRYPTION_RC4_128) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(
+                    new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 128);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_128_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_128_CBC_RSAES_AOEP) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_192_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_192_CBC_RSAES_AOEP) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_256_RSAES_AOEP
+                || encryptionType == AS2Message.ENCRYPTION_AES_256_CBC_RSAES_AOEP) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_128_GCM
+                || encryptionType == AS2Message.ENCRYPTION_AES_128_GCM_RSAES_AOEP) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_192_GCM
+                || encryptionType == AS2Message.ENCRYPTION_AES_192_GCM_RSAES_AOEP) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_GCM);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_256_GCM
+                || encryptionType == AS2Message.ENCRYPTION_AES_256_GCM_RSAES_AOEP) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_GCM);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_128_CCM) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CCM);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_192_CCM) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CCM);
+        } else if (encryptionType == AS2Message.ENCRYPTION_AES_256_CCM) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CCM);
+        } else if (encryptionType == AS2Message.ENCRYPTION_CHACHA20_POLY1305) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(PKCSObjectIdentifiers.id_alg_AEADChaCha20Poly1305);
+        } else if (encryptionType == AS2Message.ENCRYPTION_CAMELLIA_128_CBC) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.CAMELLIA128_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_CAMELLIA_192_CBC) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.CAMELLIA192_CBC);
+        } else if (encryptionType == AS2Message.ENCRYPTION_CAMELLIA_256_CBC) {
+            encryptorBuilder = new JceCMSContentEncryptorBuilder(CMSAlgorithm.CAMELLIA256_CBC);
+        }
+        if (encryptorBuilder == null) {
+            throw new Exception("Internal failure: Unsupported encryption type "
+                    + encryptionType + " during the encryption process (encryptDataToMessage)");
+        }
+        //try-with resource is not possible here - the DeferredFileOutputStream must be closed before
+        //a writeTo works
         DeferredFileOutputStream encryptedOutput = null;
-        OutputStream out = null;
-        try {            
-            DeferredFileOutputStream.Builder streamBuilder =  DeferredFileOutputStream.builder();
-            //if the data is less then 20MB perform the operaion in memory else stream to disk
-            streamBuilder.setThreshold(20 * 1024 * 1024);
-            streamBuilder.setPrefix("as2encryptdata_");
-            streamBuilder.setSuffix(".mem");
-            streamBuilder.setDirectory(Paths.get(AS2Tools.getDailyTempDir()).toFile());
+        try {
             encryptedOutput = streamBuilder.get();
-            if (encryptionType == AS2Message.ENCRYPTION_3DES) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_DES) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_CBC, 56)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_RC2_40) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 40)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_RC2_64) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 64)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_RC2_128) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 128)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_RC2_196) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.RC2_CBC, 196)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_AES_128) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_AES_192) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CBC)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_AES_256) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_RC4_40) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(
-                        new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 40)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_RC4_56) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(
-                        new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 56)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_RC4_128) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(
-                        new ASN1ObjectIdentifier(cryptoHelper.convertAlgorithmNameToOID(BCCryptoHelper.ALGORITHM_RC4)), 128)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_AES_128_RSAES_AOEP) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_AES_192_RSAES_AOEP) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES192_CBC)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            } else if (encryptionType == AS2Message.ENCRYPTION_AES_256_RSAES_AOEP) {
-                out = dataGenerator.open(encryptedOutput, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC)
-                        .setProvider(BouncyCastleProvider.PROVIDER_NAME).build());
-            }
-            if (out == null) {
-                throw new Exception("Internal failure: Unsupported encryption type " + encryptionType + " during the encryption process (encryptDataToMessage)");
-            }
-            InputStream in = null;
-            try {
-                in = message.getDecryptedRawDataInputStream();
-                in.transferTo(out);
-            } finally {
-                if (in != null) {
-                    in.close();
+            try (OutputStream out = dataGenerator.open(encryptedOutput,
+                    encryptorBuilder.setProvider(BouncyCastleProvider.PROVIDER_NAME).build())) {
+                try (InputStream in = message.getDecryptedRawDataInputStream()) {
+                    in.transferTo(out);
                 }
             }
         } finally {
-            if (out != null) {
-                out.close();
-            }
             if (encryptedOutput != null) {
                 encryptedOutput.close();
             }
         }
-        //size of the data was < than the threshold
-        if (encryptedOutput.isInMemory()) {
-            message.setRawData(encryptedOutput.getData());
-        } else {
-            //data has been written to a temp file: reread and return
-            ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-            encryptedOutput.writeTo(memOut);
-            memOut.flush();
-            memOut.close();
-            //finally delete the temp file
-            try {
-                Files.delete(encryptedOutput.getFile().toPath());
-            } catch (Exception e) {
-                SystemEvent event = new SystemEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_FILE_DELETE);
-                event.setSubject(event.typeToTextLocalized());
-                event.setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
-                SystemEventManagerImplAS2.instance().newEvent(event);
+        if (encryptedOutput != null) {
+            //size of the data was < than the threshold
+            if (encryptedOutput.isInMemory()) {
+                message.setRawData(encryptedOutput.getData());
+            } else {
+                //data has been written to a temp file: reread and return
+                try (ByteArrayOutputStream memOut = new ByteArrayOutputStream()) {
+                    encryptedOutput.writeTo(memOut);
+                    message.setRawData(memOut.toByteArray());
+                }
+                //finally delete the temp file
+                try {
+                    Files.delete(encryptedOutput.getPath());
+                } catch (IOException e) {
+                    SystemEvent event = new SystemEvent(
+                            SystemEvent.Severity.WARNING,
+                            SystemEvent.Origin.SYSTEM,
+                            SystemEvent.Type.FILE_DELETE);
+                    event.setSubject(event.typeToTextLocalized())
+                            .setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                    SystemEventManagerImplAS2.instance().newEvent(event);
+                }
             }
-            message.setRawData(memOut.toByteArray());
-        }
-        if (this.logger != null) {
-            String cryptAlias = this.encryptionCertManager.getAliasByFingerprint(receiver.getCryptFingerprintSHA1());
-            this.logger.log(Level.INFO, rb.getResourceString("message.encrypted",
-                    new Object[]{
-                        cryptAlias,
-                        rbMessage.getResourceString("encryption." + receiver.getEncryptionType())
-                    }), info);
+            if (this.logger != null) {
+                String cryptAlias = this.encryptionCertManager.getAliasByFingerprint(receiver.getCryptFingerprintSHA1());
+                this.logger.log(Level.INFO, rb.getResourceString("message.encrypted",
+                        new Object[]{
+                            cryptAlias,
+                            rbMessage.getResourceString("encryption." + receiver.getEncryptionType()),
+                            receiver.getName()
+                        }), info);
+            }
         }
     }
 
@@ -879,13 +913,13 @@ public class AS2MessageCreation {
         MimeBodyPart bodyPart = new MimeBodyPart();
         bodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(dataStream, contentType)));
         bodyPart.addHeader("Content-Type", contentType);
-        if (receiver.getContentTransferEncoding() == AS2Message.CONTENT_TRANSFER_ENCODING_BASE64) {
+        if (receiver.getContentTransferEncoding() == MessageContentTransferEncodingType.BASE64) {
             bodyPart.addHeader("Content-Transfer-Encoding", "base64");
         } else {
             bodyPart.addHeader("Content-Transfer-Encoding", "binary");
         }
         SMIMECompressedGenerator generator = new SMIMECompressedGenerator();
-        if (receiver.getContentTransferEncoding() == AS2Message.CONTENT_TRANSFER_ENCODING_BASE64) {
+        if (receiver.getContentTransferEncoding() == MessageContentTransferEncodingType.BASE64) {
             generator.setContentTransferEncoding("base64");
         } else {
             generator.setContentTransferEncoding("binary");
@@ -898,7 +932,7 @@ public class AS2MessageCreation {
      */
     private MimeBodyPart compressPayload(Partner receiver, Part contentPart) throws SMIMEException {
         SMIMECompressedGenerator generator = new SMIMECompressedGenerator();
-        if (receiver.getContentTransferEncoding() == AS2Message.CONTENT_TRANSFER_ENCODING_BASE64) {
+        if (receiver.getContentTransferEncoding() == MessageContentTransferEncodingType.BASE64) {
             generator.setContentTransferEncoding("base64");
         } else {
             generator.setContentTransferEncoding("binary");
@@ -922,7 +956,8 @@ public class AS2MessageCreation {
         } else if (part instanceof MimeMessage) {
             signedPart = this.signContent(info, (MimeMessage) part, sender, receiver);
         } else {
-            throw new IllegalArgumentException("signContentPart: unable to sign a " + part.getClass().getName() + ".");
+            throw new IllegalArgumentException("signContentPart: unable to sign a "
+                    + part.getClass().getName() + ".");
         }
         return (signedPart);
     }
@@ -975,6 +1010,10 @@ public class AS2MessageCreation {
             digest = BCCryptoHelper.ALGORITHM_SHA3_384_RSASSA_PSS;
         } else if (signType == AS2Message.SIGNATURE_SHA3_512_RSASSA_PSS) {
             digest = BCCryptoHelper.ALGORITHM_SHA3_512_RSASSA_PSS;
+        } else if (signType == AS2Message.SIGNATURE_SPHINCS_PLUS) {
+            digest = BCCryptoHelper.ALGORITHM_SPHINCS_PLUS;
+        } else if (signType == AS2Message.SIGNATURE_DILITHIUM) {
+            digest = BCCryptoHelper.ALGORITHM_DILITHIUM;
         } else {
             throw new Exception("Internal failure: Unsupported sign type " + signType);
         }
@@ -985,11 +1024,11 @@ public class AS2MessageCreation {
      * Signs the passed data and returns it
      */
     private MimeMultipart signContent(AS2MessageInfo info, MimeMessage message, Partner sender, Partner receiver) throws Exception {
-        if( sender == null ){
-            throw new Exception( "AS2MessageCreation.signContent: Sender is not set for the signature process");
+        if (sender == null) {
+            throw new Exception("AS2MessageCreation.signContent: Sender is not set for the signature process");
         }
-        if( receiver == null ){
-            throw new Exception( "AS2MessageCreation.signContent: Receiver is not set for the signature process");
+        if (receiver == null) {
+            throw new Exception("AS2MessageCreation.signContent: Receiver is not set for the signature process");
         }
         String signKeyFingerprintSHA1;
         if (receiver.isOverwriteLocalStationSecurity() && receiver.getSignOverwriteLocalstationFingerprintSHA1() != null) {
@@ -1021,14 +1060,15 @@ public class AS2MessageCreation {
     }
 
     /**
-     * Signs the passed message and returns it
+     * Signs the passed message and returns it. This is the generation of the
+     * S/MIME multipart message
      */
     private MimeMultipart signContent(AS2MessageInfo info, MimeBodyPart body, Partner sender, Partner receiver) throws Exception {
-        if( sender == null ){
-            throw new Exception( "AS2MessageCreation.signContent: Sender is not set for the signature process");
+        if (sender == null) {
+            throw new Exception("AS2MessageCreation.signContent: Sender is not set for the signature process");
         }
-        if( receiver == null ){
-            throw new Exception( "AS2MessageCreation.signContent: Receiver is not set for the signature process");
+        if (receiver == null) {
+            throw new Exception("AS2MessageCreation.signContent: Receiver is not set for the signature process");
         }
         String signKeyFingerprintSHA1;
         if (receiver.isOverwriteLocalStationSecurity() && receiver.getSignOverwriteLocalstationFingerprintSHA1() != null) {
@@ -1050,12 +1090,16 @@ public class AS2MessageCreation {
         String digest = this.getDigestForInternalSignType(receiver.getSignType());
         BCCryptoHelper helper = new BCCryptoHelper();
         boolean useAlgorithmIdentifierProtectionAttribute = receiver.getUseAlgorithmIdentifierProtectionAttribute();
-        if (this.logger != null && !useAlgorithmIdentifierProtectionAttribute) {
+        if (this.logger != null && !useAlgorithmIdentifierProtectionAttribute && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
             this.logger.log(Level.WARNING, rb.getResourceString("signature.no.aipa"), info);
+        }
+        String providerName = AS2Server.CRYPTO_PROVIDER.getProviderEncSign().getProvider().getName();
+        if (digest.equals(BCCryptoHelper.ALGORITHM_SPHINCS_PLUS) || digest.equals(BCCryptoHelper.ALGORITHM_DILITHIUM)) {
+            providerName = BouncyCastlePQCProviderSingleton.instance().getName();
         }
         MimeMultipart signedMultipart = helper.sign(body, chain, senderKey, digest,
                 useAlgorithmIdentifierProtectionAttribute,
-                AS2Server.CRYPTO_PROVIDER.getProviderEncSign().getProvider().getName());
+                providerName);
         return (signedMultipart);
     }
 

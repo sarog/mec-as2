@@ -1,13 +1,16 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelLog.java 7     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelLog.java 20    17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.balloontip.BalloonToolTip;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
+import javax.swing.SwingConstants;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -20,22 +23,26 @@ import javax.swing.ImageIcon;
  * Panel to define special log events
  *
  * @author S.Heller
- * @version: $Revision: 7 $
+ * @version: $Revision: 20 $
  */
-public class PreferencesPanelLog extends PreferencesPanel {
+public final class PreferencesPanelLog extends PreferencesPanel {
 
-    private final static MendelsonMultiResolutionImage ICON_LOG
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/log.svg", 
-                    JDialogPreferences.IMAGE_HEIGHT, JDialogPreferences.IMAGE_HEIGHT*2);
-    
-    /**
-     * Localize the GUI
-     */
-    private MecResourceBundle rb = null;
+    private static final MendelsonMultiResolutionImage IMAGE_LOG
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/log.svg",
+                    JDialogPreferences.IMAGE_HEIGHT);
 
-    /**
-     * GUI prefs
-     */
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundlePreferences.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
+
     private final PreferencesClient preferences;
     private String preferencesStrAtLoadTime = "";
 
@@ -43,14 +50,6 @@ public class PreferencesPanelLog extends PreferencesPanel {
      * Creates new form PreferencesPanelDirectories
      */
     public PreferencesPanelLog(BaseClient baseClient) {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundlePreferences.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.preferences = new PreferencesClient(baseClient);
         this.initComponents();
     }
@@ -60,28 +59,35 @@ public class PreferencesPanelLog extends PreferencesPanel {
      */
     @Override
     public void loadPreferences() {
-        this.jCheckBoxLogAutoMessageDelete.setSelected(this.preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE_LOG));
-        this.jCheckBoxLogPollProcess.setSelected(this.preferences.getBoolean(PreferencesAS2.LOG_POLL_PROCESS));
+        this.switchLogAutoMessageDelete.setSelected(this.preferences.getBoolean(PreferencesAS2.AUTO_MSG_DELETE_LOG));
+        this.switchLogMessageProcessing.setSelected(this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING));
+        this.switchHTTPRequestLog.setSelected(this.preferences.getBoolean(PreferencesAS2.EMBEDDED_HTTP_SERVER_REQUESTLOG));
+        this.switchLogPollProcess.setSelected(this.preferences.getBoolean(PreferencesAS2.LOG_POLL_PROCESS));
         this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
-    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
-    private String captureSettingsToStr(){
+    /**
+     * Helper method to find out if there are changes in the GUI before storing
+     * them to the server
+     */
+    private String captureSettingsToStr() {
         StringBuilder builder = new StringBuilder();
-        builder.append( PreferencesAS2.AUTO_MSG_DELETE_LOG ).append("=")
-                .append( this.jCheckBoxLogAutoMessageDelete.isSelected()).append(";");
-        builder.append( PreferencesAS2.LOG_POLL_PROCESS ).append("=")
-                .append( this.jCheckBoxLogPollProcess.isSelected()).append(";");        
-        return( builder.toString() );
+        builder.append(PreferencesAS2.AUTO_MSG_DELETE_LOG).append("=")
+                .append(this.switchLogAutoMessageDelete.isSelected()).append(";");
+        builder.append(PreferencesAS2.LOG_POLL_PROCESS).append("=")
+                .append(this.switchLogPollProcess.isSelected()).append(";");
+        builder.append(PreferencesAS2.EMBEDDED_HTTP_SERVER_REQUESTLOG).append("=")
+                .append(this.switchHTTPRequestLog.isSelected()).append(";");
+        builder.append(PreferencesAS2.EXTENDED_LOG_PROCESSING).append("=")
+                .append(this.switchLogMessageProcessing.isSelected()).append(";");
+        return (builder.toString());
     }
-    
-    
+
     @Override
     public boolean preferencesAreModified() {
-        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+        return (!this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()));
     }
-    
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -93,35 +99,119 @@ public class PreferencesPanelLog extends PreferencesPanel {
 
         jPanelMargin = new javax.swing.JPanel();
         jPanelSpace = new javax.swing.JPanel();
-        jCheckBoxLogAutoMessageDelete = new javax.swing.JCheckBox();
-        jCheckBoxLogPollProcess = new javax.swing.JCheckBox();
+        switchLogAutoMessageDelete = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        switchHTTPRequestLog = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        switchLogPollProcess = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        jPanelSpace559 = new javax.swing.JPanel();
+        jPanelUIHelpLabelLogHTTPRequests = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelSpace7743 = new javax.swing.JPanel();
+        jPanelUIHelpLabelLogPollProcess = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelLogAutoMessageDelete = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelLogMessageProcessing = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        switchLogMessageProcessing = new de.mendelson.util.toggleswitch.ToggleSwitch();
 
         setLayout(new java.awt.GridBagLayout());
 
         jPanelMargin.setLayout(new java.awt.GridBagLayout());
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridheight = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         jPanelMargin.add(jPanelSpace, gridBagConstraints);
 
-        jCheckBoxLogAutoMessageDelete.setText(this.rb.getResourceString( "label.deletemsglog"));
+        switchLogAutoMessageDelete.setDisplayStatusText(true);
+        switchLogAutoMessageDelete.setHorizontalTextPosition(SwingConstants.LEFT);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(20, 5, 5, 5);
-        jPanelMargin.add(jCheckBoxLogAutoMessageDelete, gridBagConstraints);
-
-        jCheckBoxLogPollProcess.setText(this.rb.getResourceString( "label.logpollprocess" ));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 6;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelMargin.add(jCheckBoxLogPollProcess, gridBagConstraints);
+        jPanelMargin.add(switchLogAutoMessageDelete, gridBagConstraints);
+
+        switchHTTPRequestLog.setDisplayStatusText(true);
+        switchHTTPRequestLog.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(switchHTTPRequestLog, gridBagConstraints);
+
+        switchLogPollProcess.setDisplayStatusText(true);
+        switchLogPollProcess.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(switchLogPollProcess, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(jPanelSpace559, gridBagConstraints);
+
+        jPanelUIHelpLabelLogHTTPRequests.setToolTipText(this.rb.getResourceString( "label.loghttprequests.help" ));
+        jPanelUIHelpLabelLogHTTPRequests.setText(this.rb.getResourceString( "label.loghttprequests" ));
+        jPanelUIHelpLabelLogHTTPRequests.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_CENTER
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 8;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(jPanelUIHelpLabelLogHTTPRequests, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.gridheight = 5;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.insets = new java.awt.Insets(5, 30, 5, 5);
+        jPanelMargin.add(jPanelSpace7743, gridBagConstraints);
+
+        jPanelUIHelpLabelLogPollProcess.setToolTipText(this.rb.getResourceString( "label.logpollprocess.help" ));
+        jPanelUIHelpLabelLogPollProcess.setText(this.rb.getResourceString( "label.logpollprocess" ));
+        jPanelUIHelpLabelLogPollProcess.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_TOP
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 7;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(jPanelUIHelpLabelLogPollProcess, gridBagConstraints);
+
+        jPanelUIHelpLabelLogAutoMessageDelete.setToolTipText(this.rb.getResourceString( "label.deletemsglog.help"));
+        jPanelUIHelpLabelLogAutoMessageDelete.setText(this.rb.getResourceString( "label.deletemsglog"));
+        jPanelUIHelpLabelLogAutoMessageDelete.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_TOP
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(jPanelUIHelpLabelLogAutoMessageDelete, gridBagConstraints);
+
+        jPanelUIHelpLabelLogMessageProcessing.setToolTipText(this.rb.getResourceString( "label.logmessageprocessing.help"));
+        jPanelUIHelpLabelLogMessageProcessing.setText(this.rb.getResourceString( "label.logmessageprocessing"));
+        jPanelUIHelpLabelLogMessageProcessing.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_TOP
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(jPanelUIHelpLabelLogMessageProcessing, gridBagConstraints);
+
+        switchLogMessageProcessing.setDisplayStatusText(true);
+        switchLogMessageProcessing.setHorizontalTextPosition(SwingConstants.LEFT);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(switchLogMessageProcessing, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -133,22 +223,38 @@ public class PreferencesPanelLog extends PreferencesPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JCheckBox jCheckBoxLogAutoMessageDelete;
-    private javax.swing.JCheckBox jCheckBoxLogPollProcess;
     private javax.swing.JPanel jPanelMargin;
     private javax.swing.JPanel jPanelSpace;
+    private javax.swing.JPanel jPanelSpace559;
+    private javax.swing.JPanel jPanelSpace7743;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelLogAutoMessageDelete;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelLogHTTPRequests;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelLogMessageProcessing;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelLogPollProcess;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchHTTPRequestLog;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchLogAutoMessageDelete;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchLogMessageProcessing;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchLogPollProcess;
     // End of variables declaration//GEN-END:variables
 
     @Override
     public void savePreferences() {
-        this.preferences.putBoolean(PreferencesAS2.LOG_POLL_PROCESS, this.jCheckBoxLogPollProcess.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.AUTO_MSG_DELETE_LOG, this.jCheckBoxLogAutoMessageDelete.isSelected());
+        try {
+            this.preferences.putBoolean(PreferencesAS2.LOG_POLL_PROCESS, this.switchLogPollProcess.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.AUTO_MSG_DELETE_LOG, this.switchLogAutoMessageDelete.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.EMBEDDED_HTTP_SERVER_REQUESTLOG,
+                    this.switchHTTPRequestLog.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING,
+                    this.switchLogMessageProcessing.isSelected());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
     }
 
     @Override
     public ImageIcon getIcon() {
-        return (new ImageIcon( ICON_LOG ));
-                
+        return (new ImageIcon(IMAGE_LOG));
+
     }
 
     @Override

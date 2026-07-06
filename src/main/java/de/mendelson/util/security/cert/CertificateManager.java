@@ -1,27 +1,40 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/CertificateManager.java 68    9/01/24 11:23 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/CertificateManager.java 88    14/01/26 14:05 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.security.Base64;
+import de.mendelson.util.security.KeyStoreUtil;
+import de.mendelson.util.uinotification.UINotification;
 import java.math.BigInteger;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
+import java.security.cert.CertPathBuilder;
+import java.security.cert.CertPathBuilderException;
+import java.security.cert.CertStore;
 import java.security.cert.Certificate;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.PKIXCertPathBuilderResult;
+import java.security.cert.TrustAnchor;
+import java.security.cert.X509CertSelector;
 import java.util.logging.Logger;
 import java.security.cert.X509Certificate;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Set;
 import javax.naming.ldap.LdapName;
 import javax.naming.ldap.Rdn;
 import javax.security.auth.x500.X500Principal;
@@ -34,31 +47,82 @@ import javax.security.auth.x500.X500Principal;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Helper class to store
+ * Manager that handles the keystore certificates
  *
  * @author S.Heller
- * @version $Revision: 68 $
+ * @version $Revision: 88 $
  */
 public class CertificateManager {
 
-    private Logger logger = null;
+    private Logger logger;
     private final List<KeystoreCertificate> keyStoreCertificateList
             = Collections.synchronizedList(new ArrayList<KeystoreCertificate>());
     private final Map<String, KeystoreCertificate> fingerprintCertificateMap
-            = new ConcurrentHashMap<String, KeystoreCertificate>();
+            = Collections.synchronizedMap(new HashMap<String, KeystoreCertificate>());
     private final Map<String, KeystoreCertificate> aliasCertificateMap
-            = new ConcurrentHashMap<String, KeystoreCertificate>();
-    private final MecResourceBundle rb;
-    private KeystoreStorage storage = null;
+            = Collections.synchronizedMap(new HashMap<String, KeystoreCertificate>());
+    private static final MecResourceBundle rb;
 
-    public CertificateManager(Logger logger) {
-        this.logger = logger;
-        //load resource bundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleCertificateManager.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
+    private KeystoreStorage storage = null;
+    private final Map<String, String> snapshotFingerprintAliasMap = Collections.synchronizedMap(new HashMap<String, String>());
+    private Instant snapshotTimestamp = null;
+
+    public CertificateManager(Logger logger) {
+        this.logger = logger;
+    }
+        
+    /**
+     * Stores the current certificate state snapshot for later comparison.
+     */
+    public void markSnapshot() {
+        synchronized (this.keyStoreCertificateList) {
+            this.snapshotFingerprintAliasMap.clear();
+            for (KeystoreCertificate cert : this.keyStoreCertificateList) {
+                this.snapshotFingerprintAliasMap.put(cert.getFingerPrintSHA1(), cert.getAlias());
+            }
+            this.snapshotTimestamp = Instant.now();
+        }
+    }
+
+    /**
+     * Checks if the keystore content has changed since the last snapshot.
+     *
+     * @return true if there were additions, deletions or alias changes since
+     * last snapshot
+     */
+    public boolean hasChangedSinceSnapshot() {
+        if (this.snapshotTimestamp == null) {
+            return true;
+        }
+        synchronized (this.keyStoreCertificateList) {
+            Map<String, String> current = new HashMap<String, String>();
+            for (KeystoreCertificate cert : this.keyStoreCertificateList) {
+                current.put(cert.getFingerPrintSHA1(), cert.getAlias());
+            }
+            //added or changed entries
+            for (Map.Entry<String, String> entry : current.entrySet()) {
+                String fingerprint = entry.getKey();
+                String alias = entry.getValue();
+                String oldAlias = this.snapshotFingerprintAliasMap.get(fingerprint);
+                if (oldAlias == null || !oldAlias.equals(alias)) {
+                    return true;
+                }
+            }
+            //removed entries
+            for (String oldFingerprint : this.snapshotFingerprintAliasMap.keySet()) {
+                if (!current.containsKey(oldFingerprint)) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
@@ -102,9 +166,12 @@ public class CertificateManager {
      * Returns the X509 certificate assigned to the passed alias
      */
     public X509Certificate getX509Certificate(String alias) throws Exception {
-        KeystoreCertificate certificate = this.aliasCertificateMap.get(alias);
+        KeystoreCertificate certificate;
+        synchronized (this.aliasCertificateMap) {
+            certificate = this.aliasCertificateMap.get(alias);
+        }
         if (certificate == null) {
-            throw new Exception(this.rb.getResourceString("alias.notfound", alias));
+            throw new Exception(rb.getResourceString("alias.notfound", alias));
         }
         return (certificate.getX509Certificate());
     }
@@ -127,15 +194,19 @@ public class CertificateManager {
      * not contain a private key an exception is thrown
      */
     public PrivateKey getPrivateKey(String alias) throws Exception {
-        KeystoreCertificate entry = this.aliasCertificateMap.get(alias);
-        if (entry == null) {
-            throw new Exception(this.rb.getResourceString("alias.notfound", alias));
+        KeystoreCertificate entry;
+        synchronized (this.aliasCertificateMap) {
+            entry = this.aliasCertificateMap.get(alias);
         }
-        PrivateKey privateKey = (PrivateKey) entry.getKey();
+        if (entry == null) {
+            throw new Exception(rb.getResourceString("alias.notfound", alias));
+        }
+        PrivateKey privateKey = (PrivateKey) entry.getPrivateKey();
         if (privateKey == null) {
-            throw new Exception(this.rb.getResourceString("alias.hasno.privatekey", alias));
+            throw new Exception(rb.getResourceString("alias.hasno.privatekey", alias));
         }
         return (privateKey);
+
     }
 
     /**
@@ -158,7 +229,7 @@ public class CertificateManager {
             synchronized (this.keyStoreCertificateList) {
                 for (KeystoreCertificate keystoreCertificate : this.keyStoreCertificateList) {
                     if (keystoreCertificate.getIsKeyPair()) {
-                        String foundKeyEncoded = Base64.encode(keystoreCertificate.getX509Certificate().getPublicKey().getEncoded());
+                        String foundKeyEncoded = Base64.encode(keystoreCertificate.getPublicKeyEncoded());
                         if (foundKeyEncoded.equals(lookupKeyEncoded)) {
                             return (this.getPrivateKey(keystoreCertificate.getAlias()));
                         }
@@ -200,7 +271,7 @@ public class CertificateManager {
         //the keystore
         KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintStrSHA1);
         if (certificate == null) {
-            throw new Exception(this.rb.getResourceString("certificate.not.found.fingerprint",
+            throw new Exception(rb.getResourceString("certificate.not.found.fingerprint",
                     fingerprintStrSHA1));
         }
         return (this.getPrivateKey(certificate.getAlias()));
@@ -212,20 +283,23 @@ public class CertificateManager {
      */
     public PublicKey getPublicKeyByFingerprintSHA1(String fingerprintStrSHA1) throws Exception {
         KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintStrSHA1);
-        return (this.getPublicKey(certificate.getAlias()));
+        return (certificate.getPublicKey());
     }
 
     /**
      * Returns the public key or the private key for an alias.
      */
     public Key getKey(String alias) throws Exception {
-        KeystoreCertificate certificate = this.aliasCertificateMap.get(alias);
-        if (certificate == null) {
-            throw new Exception(this.rb.getResourceString("alias.notfound", alias));
+        KeystoreCertificate certificate = null;
+        synchronized (this.aliasCertificateMap) {
+            certificate = this.aliasCertificateMap.get(alias);
         }
-        Key key = certificate.getKey();
+        if (certificate == null) {
+            throw new Exception(rb.getResourceString("alias.notfound", alias));
+        }
+        Key key = certificate.getPrivateKey();
         if (key == null) {
-            throw new Exception(this.rb.getResourceString("alias.hasno.key", alias));
+            throw new Exception(rb.getResourceString("alias.hasno.key", alias));
         } else {
             return (key);
         }
@@ -248,7 +322,7 @@ public class CertificateManager {
      */
     public void replaceAllEntriesAndSave(List<KeystoreCertificate> newList) throws Exception {
         List<KeystoreCertificate> oldList = new ArrayList<KeystoreCertificate>();
-        synchronized( this.keyStoreCertificateList){
+        synchronized (this.keyStoreCertificateList) {
             oldList.addAll(this.keyStoreCertificateList);
         }
         this.storage.replaceAllEntriesAndSave(oldList, newList);
@@ -281,7 +355,7 @@ public class CertificateManager {
         try {
             this.storage.loadKeystoreFromServer();
         } catch (Throwable e) {
-            //just ignore this, not all implementations allow this function
+            UINotification.instance().addNotification(e);
         }
         this.rereadKeystoreCertificates();
     }
@@ -291,29 +365,71 @@ public class CertificateManager {
      * it reads and analyzes all certificates/keys from the underlaying keystore
      */
     public void rereadKeystoreCertificates() throws Exception {
-        synchronized (this.keyStoreCertificateList) {
-            Map<String, Certificate> newCertificateMap = this.storage.loadCertificatesFromKeystore();
-            this.keyStoreCertificateList.clear();
-            for (String alias : newCertificateMap.keySet()) {
-                KeystoreCertificate certificate = new KeystoreCertificate();
-                certificate.setAlias(alias);
-                X509Certificate foundCertificate = (X509Certificate) newCertificateMap.get(alias);
-                certificate.setCertificate(foundCertificate, this.storage.getCertificateChain(alias));
-                try {
-                    boolean isKeyPair = this.getKeystore().isKeyEntry(alias);
-                    certificate.setIsKeyPair(isKeyPair);
-                    if (isKeyPair) {
-                        certificate.setKey(this.storage.getKey(alias));
-                    }
-                } catch (Exception e) {
-                    //no problem, thats what we wanted to know
-                    certificate.setIsKeyPair(false);
+        Map<String, Certificate> newCertificateMap = this.storage.loadCertificatesFromKeystore();
+        //in older versions it was somehow possible to add key entries and certificate entries
+        //with the same fingerprint - this is filtered here
+        Map<String, KeystoreCertificate> uniqueFingerprintEntryMap = new HashMap<String, KeystoreCertificate>();
+        for (String alias : newCertificateMap.keySet()) {
+            KeystoreCertificate keystoreCertificate = new KeystoreCertificate();
+            keystoreCertificate.setAlias(alias);
+            X509Certificate foundCertificate = (X509Certificate) newCertificateMap.get(alias);
+            keystoreCertificate.setCertificate(foundCertificate, this.storage.getCertificateChain(alias));
+            try {
+                boolean isKeyPair = this.getKeystore().isKeyEntry(alias);
+                keystoreCertificate.setIsKeyPair(isKeyPair);
+                if (isKeyPair) {
+                    keystoreCertificate.setPrivateKey(this.storage.getKey(alias));
+                }
+            } catch (Throwable e) {
+                //no problem, thats what we wanted to know
+                keystoreCertificate.setIsKeyPair(false);
+                if (this.logger != null) {
+                    this.logger.warning(e.getMessage());
+                }
+            }
+            if (uniqueFingerprintEntryMap.containsKey(keystoreCertificate.getFingerPrintSHA1())) {
+                KeystoreCertificate existingKeystoreCertificate
+                        = uniqueFingerprintEntryMap.get(keystoreCertificate.getFingerPrintSHA1());
+                if (keystoreCertificate.getIsKeyPair()) {
+                    //always add a key entry if an entry with the same fingerprint does already exist
+                    uniqueFingerprintEntryMap.put(keystoreCertificate.getFingerPrintSHA1(), keystoreCertificate);
                     if (this.logger != null) {
-                        this.logger.warning(e.getMessage());
+                        this.logger.warning("CertificateManager: Skipped the entry " + existingKeystoreCertificate.getAlias()
+                                + " -> a key with the same fingerprint exists");
+                    }
+                } else {
+                    if (this.logger != null) {
+                        this.logger.warning("CertificateManager: Skipped the entry " + keystoreCertificate.getAlias()
+                                + " -> a key with the same fingerprint exists");
                     }
                 }
-                this.keyStoreCertificateList.add(certificate);
+            } else {
+                uniqueFingerprintEntryMap.put(keystoreCertificate.getFingerPrintSHA1(), keystoreCertificate);
+            }            
+        }
+        //add metadata to the keystore certificates if this is available
+        for (KeystoreCertificate keystoreCertificate : uniqueFingerprintEntryMap.values()) {
+            Optional<KeystoreCertificate> downloadedMeta = this.storage.getDownloadedEntriesMetadata(keystoreCertificate.getFingerPrintSHA1());
+            if( downloadedMeta.isPresent()){
+                keystoreCertificate.setCRLStateValidUntil(downloadedMeta.get().getCRLStateValidUntil());
+                keystoreCertificate.setLastCRLState(downloadedMeta.get().getLastCRLState());
             }
+        }
+        synchronized (this.keyStoreCertificateList) {
+            this.keyStoreCertificateList.clear();
+            for (KeystoreCertificate keystoreCertificate : uniqueFingerprintEntryMap.values()) {
+                this.keyStoreCertificateList.add(keystoreCertificate);
+            }
+            this.recomputeInternalCaches();
+        }
+    }
+
+    /**
+     * Recomputes the internal caches from the already existing list of
+     * certificates
+     */
+    private void recomputeInternalCaches() {
+        synchronized (this.keyStoreCertificateList) {
             synchronized (this.fingerprintCertificateMap) {
                 this.fingerprintCertificateMap.clear();
                 for (KeystoreCertificate certificate : this.keyStoreCertificateList) {
@@ -355,11 +471,19 @@ public class CertificateManager {
         try {
             this.rereadKeystoreCertificates();
             if (this.logger != null) {
-                this.logger.fine(this.rb.getResourceString("keystore.reloaded"));
+                String usageStr;
+                if (this.storage.getKeystoreUsage() == KeystoreStorageImplFile.KEYSTORE_USAGE_TLS) {
+                    usageStr = "TLS";
+                } else if (this.storage.getKeystoreUsage() == KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN) {
+                    usageStr = "Enc/Sign";
+                } else {
+                    usageStr = "Unknown";
+                }
+                this.logger.fine(rb.getResourceString("keystore.reloaded", usageStr));
             }
         } catch (Exception e) {
             if (this.logger != null) {
-                this.logger.warning(this.rb.getResourceString("keystore.read.failure",
+                this.logger.warning(rb.getResourceString("keystore.read.failure",
                         new Object[]{e.getMessage()}));
             }
         }
@@ -369,7 +493,7 @@ public class CertificateManager {
      * Wrapper function for the underlaying keystore storage implementation
      */
     public boolean canWrite() {
-        return (true);
+        return (!this.storage.isReadOnly());
     }
 
     /**
@@ -382,7 +506,7 @@ public class CertificateManager {
             this.rereadKeystoreCertificates();
         } catch (Exception e) {
             if (this.logger != null) {
-                this.logger.warning(this.rb.getResourceString("keystore.read.failure",
+                this.logger.warning(rb.getResourceString("keystore.read.failure",
                         new Object[]{e.getMessage()}));
             }
         }
@@ -401,8 +525,10 @@ public class CertificateManager {
      * returns null if the alias does not exist
      */
     public KeystoreCertificate getKeystoreCertificate(String alias) {
-        KeystoreCertificate certificate = this.aliasCertificateMap.get(alias);
-        return (certificate);
+        synchronized (this.aliasCertificateMap) {
+            KeystoreCertificate certificate = this.aliasCertificateMap.get(alias);
+            return (certificate);
+        }
     }
 
     public KeystoreCertificate getKeystoreCertificateBySubjectDNNonNull(String subjectDN, String additionalInfo) throws Exception {
@@ -422,7 +548,7 @@ public class CertificateManager {
                 }
             }
             if (foundCert == null) {
-                throw new Exception(this.rb.getResourceString("certificate.not.found.subjectdn.withinfo",
+                throw new Exception(rb.getResourceString("certificate.not.found.subjectdn.withinfo",
                         new Object[]{subjectDN, additionalInfo}));
             } else {
                 return (foundCert);
@@ -433,7 +559,7 @@ public class CertificateManager {
     public KeystoreCertificate getKeystoreCertificateBySubjectKeyIdentifierNonNull(byte[] skiBytes, String additionalInfo) throws Exception {
         KeystoreCertificate foundCert = this.getKeystoreCertificateBySubjectKeyIdentifier(skiBytes);
         if (foundCert == null) {
-            throw new Exception(this.rb.getResourceString("certificate.not.found.ski.withinfo",
+            throw new Exception(rb.getResourceString("certificate.not.found.ski.withinfo",
                     new Object[]{KeystoreCertificate.byteArrayToHexStr(skiBytes), additionalInfo}));
         } else {
             return (foundCert);
@@ -442,7 +568,7 @@ public class CertificateManager {
     }
 
     public KeystoreCertificate getKeystoreCertificateBySubjectKeyIdentifier(byte[] skiBytes) {
-        String skiHex = KeystoreCertificate.byteArrayToHexStr(skiBytes);
+        String skiAsHexStr = KeystoreCertificate.byteArrayToHexStr(skiBytes);
         //it could happen that a cert and a key with the same fingerprint are in the keystore.
         //Always return the key in this case.
         KeystoreCertificate foundCert = null;
@@ -450,7 +576,7 @@ public class CertificateManager {
             for (KeystoreCertificate cert : this.keyStoreCertificateList) {
                 List<String> certificateSKIList = cert.getSubjectKeyIdentifier();
                 for (String foundSKI : certificateSKIList) {
-                    if (foundSKI.equals(skiHex)) {
+                    if (foundSKI.equals(skiAsHexStr)) {
                         //no entry found so far: always store the found one
                         if (foundCert == null) {
                             foundCert = cert;
@@ -472,8 +598,8 @@ public class CertificateManager {
      * exist
      */
     public KeystoreCertificate getKeystoreCertificateByIssuerDNAndSerial(String issuerDN, String serialDEC) {
-        if( issuerDN == null || serialDEC == null ){
-            return( null );
+        if (issuerDN == null || serialDEC == null) {
+            return (null);
         }
         return (this.getKeystoreCertificateByIssuerAndSerial(new X500Principal(issuerDN), serialDEC));
     }
@@ -483,25 +609,63 @@ public class CertificateManager {
      * exist
      */
     public KeystoreCertificate getKeystoreCertificateByIssuerAndSerial(X500Principal issuer, String serialDEC) {
-        //it could happen that a cert and a key with the same fingerprint are in the keystore.
-        //Always return the key in this case.
         KeystoreCertificate foundCert = null;
-        synchronized (this.keyStoreCertificateList) {
-            for (KeystoreCertificate cert : this.keyStoreCertificateList) {
-                if (cert.getSerialNumberDEC().equals(serialDEC) && cert.getX509Certificate().getIssuerX500Principal().equals(issuer)) {
-                    //no entry found so far: always store the found one
-                    if (foundCert == null) {
-                        foundCert = cert;
-                    } else {
-                        //entry already found: overwrite it only if the found entry is a key
-                        if (cert.getIsKeyPair()) {
-                            foundCert = cert;
+        try {
+            String searchIssuerRFC2253 = buildFilteredDN(issuer);
+            synchronized (this.keyStoreCertificateList) {
+                for (KeystoreCertificate cert : this.keyStoreCertificateList) {
+                    if (cert.getSerialNumberDEC().equals(serialDEC)) {
+                        try {
+                            String compareIssuerRFC2253 = buildFilteredDN(cert.getX509Certificate()
+                                    .getIssuerX500Principal());
+                            if (compareIssuerRFC2253.equalsIgnoreCase(searchIssuerRFC2253)) {
+                                //no entry found so far: always store the found one 
+                                if (foundCert == null) {
+                                    foundCert = cert;
+                                } else {
+                                    //entry already found: overwrite it only if the newly found entry is a key 
+                                    if (cert.getIsKeyPair()) {
+                                        foundCert = cert;
+                                    }
+                                }
+                            }
+                        } catch (Throwable e) {
                         }
                     }
                 }
             }
+        } catch (Exception e) {
         }
-        return (foundCert);
+        return foundCert;
+    }
+
+    /**
+     * creates a String of a passed principal that contains just
+     * CN=xxx,O=xxx,OU=xxx,C=xxx,ST=xxx,L=xxx if they exist. This is useful to
+     * compare the principals even if one has additional parameter like email
+     * etc
+     *
+     * @param principal
+     * @return
+     * @throws Exception
+     */
+    private static String buildFilteredDN(X500Principal principal) throws Exception {
+        LdapName ldapName = new LdapName(principal.getName(X500Principal.RFC2253));
+        String[] orderedAttributes = {"CN", "O", "OU", "C", "ST", "L"};
+        Map<String, String> attributeMap = new HashMap<String, String>();
+        for (Rdn rdn : ldapName.getRdns()) {
+            String type = rdn.getType().toUpperCase();
+            if (Arrays.asList(orderedAttributes).contains(type)) {
+                attributeMap.put(type, rdn.getValue().toString());
+            }
+        }
+        List<String> partList = new ArrayList<String>();
+        for (String attribute : orderedAttributes) {
+            if (attributeMap.containsKey(attribute)) {
+                partList.add(attribute + "=" + attributeMap.get(attribute));
+            }
+        }
+        return String.join(",", partList);
     }
 
     /**
@@ -511,7 +675,7 @@ public class CertificateManager {
     public KeystoreCertificate getKeystoreCertificateByFingerprintSHA1NonNull(String fingerprintSHA1, String additionalInfo) throws Exception {
         KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintSHA1);
         if (certificate == null) {
-            throw new Exception(this.rb.getResourceString("certificate.not.found.fingerprint.withinfo",
+            throw new Exception(rb.getResourceString("certificate.not.found.fingerprint.withinfo",
                     new Object[]{fingerprintSHA1, additionalInfo}));
         } else {
             return (certificate);
@@ -525,7 +689,7 @@ public class CertificateManager {
     public KeystoreCertificate getKeystoreCertificateByFingerprintSHA1NonNull(String fingerprintSHA1) throws Exception {
         KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintSHA1);
         if (certificate == null) {
-            throw new Exception(this.rb.getResourceString("certificate.not.found.fingerprint", fingerprintSHA1));
+            throw new Exception(rb.getResourceString("certificate.not.found.fingerprint", fingerprintSHA1));
         } else {
             return (certificate);
         }
@@ -538,7 +702,7 @@ public class CertificateManager {
     public KeystoreCertificate getKeystoreCertificateByFingerprintSHA1NonNull(byte[] fingerprintSHA1) throws Exception {
         KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintSHA1);
         if (certificate == null) {
-            throw new Exception(this.rb.getResourceString("certificate.not.found.fingerprint",
+            throw new Exception(rb.getResourceString("certificate.not.found.fingerprint",
                     KeystoreCertificate.fingerprintBytesToStr(fingerprintSHA1)));
         } else {
             return (certificate);
@@ -552,7 +716,7 @@ public class CertificateManager {
     public KeystoreCertificate getKeystoreCertificateByFingerprintSHA1NonNull(byte[] fingerprintSHA1, String additionalInfo) throws Exception {
         KeystoreCertificate certificate = this.getKeystoreCertificateByFingerprintSHA1(fingerprintSHA1);
         if (certificate == null) {
-            throw new Exception(this.rb.getResourceString("certificate.not.found.fingerprint.withinfo",
+            throw new Exception(rb.getResourceString("certificate.not.found.fingerprint.withinfo",
                     new Object[]{KeystoreCertificate.fingerprintBytesToStr(fingerprintSHA1), additionalInfo}));
         } else {
             return (certificate);
@@ -590,20 +754,22 @@ public class CertificateManager {
      * Tries to find a certificate with the related issuer/serial and throws an
      * exception if it does not exist in the certificate manager
      *
-     * @param issuer
+     * @param issuerStrEscaped This is the issuer as string - in this format
+     * commas are escaped, e.g. "O=GoDaddy.com\, Inc."
      * @param serial
-     * @param additionalInfo
+     * @param additionalInfo Additional info str if the certificate has not been
+     * found
      * @return
      * @throws Exception
      */
-    public KeystoreCertificate getKeystoreCertificateByIssuerSerialNonNull(String issuer, BigInteger serial,
+    public KeystoreCertificate getKeystoreCertificateByIssuerSerialNonNull(String issuerStrEscaped, BigInteger serial,
             String additionalInfo) throws Exception {
         KeystoreCertificate foundCert = null;
         synchronized (this.keyStoreCertificateList) {
             for (KeystoreCertificate cert : this.keyStoreCertificateList) {
                 String foundIssuerDN = cert.getIssuerDN();
                 BigInteger foundSerial = cert.getX509Certificate().getSerialNumber();
-                if (this.issuerIsEqual(issuer, foundIssuerDN) && foundSerial.equals(serial)) {
+                if (foundSerial.equals(serial) && this.issuerIsEqual(issuerStrEscaped, foundIssuerDN)) {
                     //no entry found so far: always store the found one
                     if (foundCert == null) {
                         foundCert = cert;
@@ -618,8 +784,10 @@ public class CertificateManager {
         }
         if (foundCert == null) {
             String serialHex = serial.toString(16);
-            throw new Exception(this.rb.getResourceString("certificate.not.found.issuerserial.withinfo",
-                    new Object[]{issuer, serial.toString() + " (dec), " + serialHex + " (hex)", additionalInfo}));
+            throw new Exception(rb.getResourceString("certificate.not.found.issuerserial.withinfo",
+                    new Object[]{issuerStrEscaped,
+                        serial.toString() + " (dec), " + serialHex + " (hex)",
+                        additionalInfo}));
         } else {
             return (foundCert);
         }
@@ -633,8 +801,10 @@ public class CertificateManager {
             return (null);
         }
         String fingerprintSHA1Str = KeystoreCertificate.byteArrayToHexStr(fingerprintSHA1);
-        KeystoreCertificate foundCert = this.fingerprintCertificateMap.get(fingerprintSHA1Str);
-        return (foundCert);
+        synchronized (this.fingerprintCertificateMap) {
+            KeystoreCertificate foundCert = this.fingerprintCertificateMap.get(fingerprintSHA1Str);
+            return (foundCert);
+        }
     }
 
     /**
@@ -645,17 +815,19 @@ public class CertificateManager {
         if (fingerprintSHA1 == null || fingerprintSHA1.trim().isEmpty() || !fingerprintSHA1.contains(":")) {
             return (null);
         }
-        KeystoreCertificate foundCert = this.fingerprintCertificateMap.get(fingerprintSHA1);
-        return (foundCert);
+        synchronized (this.fingerprintCertificateMap) {
+            KeystoreCertificate foundCert = this.fingerprintCertificateMap.get(fingerprintSHA1);
+            return (foundCert);
+        }
     }
 
     /**
      * Returns a list of certificates, sorted by their name
      */
     public List<KeystoreCertificate> getKeyStoreCertificateList() {
-        List<KeystoreCertificate> newList = new ArrayList<KeystoreCertificate>();
+        List<KeystoreCertificate> newList;
         synchronized (this.keyStoreCertificateList) {
-            newList.addAll(this.keyStoreCertificateList);
+            newList = new ArrayList<KeystoreCertificate>(this.keyStoreCertificateList);
         }
         Collections.sort(newList);
         return (newList);
@@ -683,7 +855,7 @@ public class CertificateManager {
     public Map<X500Principal, List<X509Certificate>> getIssuerCertificateMap() throws Exception {
         Map<X500Principal, List<X509Certificate>> map = new HashMap<X500Principal, List<X509Certificate>>();
         synchronized (this.keyStoreCertificateList) {
-            List<KeystoreCertificate> certList = this.getKeyStoreCertificateList();
+            List<KeystoreCertificate> certList = keyStoreCertificateList;
             for (KeystoreCertificate keystoreCertificate : certList) {
                 X509Certificate foundCert = (X509Certificate) keystoreCertificate.getX509Certificate();
                 if (foundCert != null) {
@@ -703,7 +875,25 @@ public class CertificateManager {
             return map;
         }
     }
-
+       
+    /**
+     * Returns a map with subject as key and the available certs as value
+     */
+    public Map<X500Principal, X509Certificate> getSubjectCertificateMap() throws Exception {
+        Map<X500Principal, X509Certificate> map = new HashMap<X500Principal, X509Certificate>();
+        synchronized (this.keyStoreCertificateList) {
+            for (KeystoreCertificate keystoreCertificate : keyStoreCertificateList) {
+                X509Certificate foundCertX509 = (X509Certificate) keystoreCertificate.getX509Certificate();
+                if (foundCertX509 != null) {
+                    X500Principal subject = foundCertX509.getSubjectX500Principal();                    
+                    map.put(subject, foundCertX509);
+                }
+            }
+            return map;
+        }
+    }
+    
+    
     /**
      * Adds a new Key entry and saves the underlaying keystore
      */
@@ -738,21 +928,30 @@ public class CertificateManager {
     /**
      * Compute the whole trust chain of a given alias and returns it as list
      */
-    public List<X509Certificate> computeTrustChain(String alias) {
-        KeystoreCertificate certificate = this.getKeystoreCertificate(alias);
-        PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(this.getKeystore(), this.getX509CertificateList());
-        List<X509Certificate> list = new ArrayList<X509Certificate>();
+    public List<X509Certificate> computeTrustChain(String alias) throws Exception {
+        KeystoreCertificate keystoreCertificate = this.getKeystoreCertificate(alias);
+        return (this.computeTrustChain(keystoreCertificate));
+    }
+
+    /**
+     * Compute the whole trust chain of a given alias and returns it as list
+     */
+    public List<X509Certificate> computeTrustChain(KeystoreCertificate keystoreCertificate) throws Exception {
+        Set<TrustAnchor> trustAnchors = KeyStoreUtil.getTrustAnchors(this.getKeystore());
+        List<X509Certificate> certificateList = this.getX509CertificateList();
+        PKIXCertPathBuilderResult result = keystoreCertificate.getPKIXCertPathBuilderResult(trustAnchors, certificateList);
+        List<X509Certificate> pathList = new ArrayList<X509Certificate>();
         //self signed?
         if (result == null) {
             //it's a self signed certificate: return it without any CA/intermediate certs
-            list.add(certificate.getX509Certificate());
+            pathList.add(keystoreCertificate.getX509Certificate());
         } else {
             //trusted cert
             CertPath path = result.getCertPath();
             for (Object cert : path.getCertificates()) {
-                list.add(0, (X509Certificate) cert);
+                pathList.add(0, (X509Certificate) cert);
             }
-            X509Certificate anchorCertX509 = list.get(0);
+            X509Certificate anchorCertX509 = pathList.get(0);
             boolean trustChainComplete = false;
             while (!trustChainComplete) {
                 KeystoreCertificate keyCertAnchor = null;
@@ -765,10 +964,14 @@ public class CertificateManager {
                 }
                 if (keyCertAnchor != null) {
                     //check if the anchor has another anchor as intermediates certificate may have the attribute "CA:true", too
-                    result = keyCertAnchor.getPKIXCertPathBuilderResult(this.getKeystore(), this.getX509CertificateList());
-                    anchorCertX509 = result.getTrustAnchor().getTrustedCert();
-                    if (!keyCertAnchor.getX509Certificate().equals(anchorCertX509)) {
-                        list.add(0, anchorCertX509);
+                    result = keyCertAnchor.getPKIXCertPathBuilderResult(trustAnchors, this.getX509CertificateList());
+                    if (result != null) {
+                        anchorCertX509 = result.getTrustAnchor().getTrustedCert();
+                        if (!keyCertAnchor.getX509Certificate().equals(anchorCertX509)) {
+                            pathList.add(0, anchorCertX509);
+                        } else {
+                            trustChainComplete = true;
+                        }
                     } else {
                         trustChainComplete = true;
                     }
@@ -777,18 +980,94 @@ public class CertificateManager {
                 }
             }
         }
-        return (list);
+        return (pathList);
     }
 
+    /**
+     * Extracts the root certificate for a given certificate from a list of
+     * certificates
+     *
+     * @param certToCheck
+     * @param candidateRoots
+     * @return
+     * @throws Exception
+     */
+    public static X509Certificate findRootCertificateInListOrNull(X509Certificate certToCheck,
+            List<X509Certificate> candidateRoots) throws Exception {
+        Set<TrustAnchor> trustAnchors = new HashSet<TrustAnchor>();
+        for (X509Certificate possibleRoot : candidateRoots) {
+            if (isRootCertificate(possibleRoot)) {
+                trustAnchors.add(new TrustAnchor(possibleRoot, null));
+            }
+        }
+        if (trustAnchors.isEmpty()) {
+            return null;
+        }
+        CertStore certStore = CertStore.getInstance(
+                "Collection",
+                new CollectionCertStoreParameters(candidateRoots)
+        );
+        PKIXBuilderParameters params = new PKIXBuilderParameters(trustAnchors, new X509CertSelector());
+        params.addCertStore(certStore);
+        params.setRevocationEnabled(false);
+        //Selector for the certificate we want to validate
+        X509CertSelector selector = new X509CertSelector();
+        selector.setCertificate(certToCheck);
+        params.setTargetCertConstraints(selector);
+        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX");
+        try {
+            PKIXCertPathBuilderResult result
+                    = (PKIXCertPathBuilderResult) builder.build(params);
+            //Extract the root certificate
+            X509Certificate rootCert = result.getTrustAnchor().getTrustedCert();
+            // Check if the root is really from the list
+            for (X509Certificate candidate : candidateRoots) {
+                if (candidate.equals(rootCert)) {
+                    return candidate;
+                }
+            }
+        } catch (CertPathBuilderException ex) {
+            // no chain to any of the candidate roots
+            return null;
+        }
+        return null;
+    }
+
+    /**
+     * Checks if the passed certificate is a root certificate. There are two
+     * conditions to meet:<br>
+     * 1. Self-signed (Signature has been created with the own public key)<br>
+     * 2. Its a CA certificate (basicConstraints >= 0)
+     *
+     * @param cert
+     * @return
+     */
+    public static boolean isRootCertificate(X509Certificate cert) {
+        if (cert == null) {
+            return false;
+        }
+        //ca?
+        if (cert.getBasicConstraints() < 0) {
+            return false;
+        }
+        //self signed?
+        try {
+            cert.verify(cert.getPublicKey());
+        } catch (Exception e) {
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Just loads the certificates with their alias from the storage - this does
+     * not recompute the internal caches
+     *
+     * @return
+     * @throws Exception
+     */
     public Map<String, Certificate> loadCertificatesFromStorage() throws Exception {
         return (this.storage.loadCertificatesFromKeystore());
     }
-    
-    
 
-//    public static final void main(String[] args) {
-//        String dn1 = "CN=mend, OU=mendelson-e-commerce GmbH, O=mendelson-e-commerce GmbH, L=Berlin, ST=Berlin, C=DE, EMAILADDRESS=rosettanet@mendelson.de";
-//        String dn2 = "E=rosettanet@mendelson.de,C=DE,ST=Berlin,L=Berlin,O=mendelson-e-commerce GmbH,OU=mendelson-e-commerce GmbH,CN=mend";
-//        System.out.println(CertificateManager.issuerDNIsEqual(dn1, dn2));
-//    }
 }

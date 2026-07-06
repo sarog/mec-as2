@@ -1,6 +1,7 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/TextClient.java 27    23/01/24 11:09 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/TextClient.java 35    23/03/26 8:03 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.IProductVersion;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -23,20 +24,26 @@ import java.util.logging.Level;
  * and brand names are trademarks of their respective owners.
  */
 /**
- * Sends a command to the OFTP2 server
+ * Text Client to connect to a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 35 $
  */
-public class TextClient extends BaseTextClient implements ClientsideMessageProcessor {
+public class TextClient extends BaseTextClient implements ClientsideMessageProcessor, AutoCloseable {
 
     private String user = null;
     private char[] password = null;
     private ConnectThread connectionThread = null;
     private String clientId = "undefined";
+    private static final ExecutorService CONNECT_EXECUTOR = Executors.newCachedThreadPool(
+            new NamedThreadFactory("textclient_connect"));
 
-    public TextClient() {
-        super();
+    /**
+     *
+     * @param CLIENT_TYPE Client Type as defined in the BaseClient
+     */
+    public TextClient(ClientType clientType, IProductVersion productVersion) {
+        super(clientType, productVersion);
         super.addMessageProcessor(this);
     }
 
@@ -51,10 +58,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
         this.password = password;
         this.clientId = clientId;
         this.connectionThread = new ConnectThread(host, clientServerCommPort, timeout);
-        ExecutorService executor = Executors.newSingleThreadExecutor(
-                new NamedThreadFactory(connectionThreadNamePrefix + "clientserver-connect-login"));
-        executor.submit(this.connectionThread);
-        executor.shutdown();
+        CONNECT_EXECUTOR.submit(this.connectionThread);
         this.connectionThread.getDoneSignal().await(timeout, TimeUnit.MILLISECONDS);
         if (this.connectionThread.getState() == ConnectThread.STATE_FAILURE) {
             throw (this.connectionThread.getException());
@@ -70,13 +74,13 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      */
     @Override
     public boolean processMessageFromServer(ClientServerMessage message) {
-        if (message instanceof ServerInfo) {
+        if (message instanceof LoginRequest) {
+            this.loginRequestedFromServer();
+        } else if (message instanceof ServerInfo) {
             if (this.getBaseClient().getDisplayServerLogMessages()) {
                 ServerInfo serverInfo = (ServerInfo) message;
                 this.getLogger().log(Level.CONFIG, "Remote server identified as " + serverInfo.getProductname());
             }
-        } else if (message instanceof LoginRequest) {
-            this.loginRequestedFromServer();
         }
         return (true);
     }
@@ -153,7 +157,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 27 $";
+        String revision = "$Revision: 35 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -168,6 +172,16 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
 
     @Override
     public void processSyncResponseFromServer(ClientServerResponse response) {
+    }
+
+    /**
+     * Makes this class AutoCloseable: automatically logout and disconnect the
+     * text client
+     */
+    @Override
+    public void close() throws Exception {
+        this.logout();
+        this.disconnect();
     }
 
     private class ConnectThread implements Runnable {

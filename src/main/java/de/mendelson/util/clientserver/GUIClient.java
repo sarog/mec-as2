@@ -1,6 +1,7 @@
-//$Header: /mec_as4/de/mendelson/util/clientserver/GUIClient.java 40    10/01/24 9:51 Heller $
+//$Header: /mec_as4/de/mendelson/util/clientserver/GUIClient.java 51    14/04/26 9:04 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.IProductVersion;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.connectionprogress.JDialogConnectionProgress;
@@ -20,8 +21,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -40,26 +40,46 @@ import javax.swing.SwingUtilities;
  * GUI Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 51 $
  */
 public abstract class GUIClient extends JFrame implements ClientSessionHandlerCallback {
 
     private final BaseClient client;
-    private final MecResourceBundle rb;
-    private final List<ClientsideMessageProcessor> messageProcessorList = Collections.synchronizedList(new ArrayList<ClientsideMessageProcessor>());
-    private String serverProductName = null;
+    private static final MecResourceBundle rb;
 
-    public GUIClient() {
-        //load resource bundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleGUIClient.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle "
                     + e.getClassName() + " not found.");
         }
-        this.client = new BaseClient(this);
+    }
+    //The underlaying queue is a DelayedWorkQueue - this is optimized for scheduled
+    //execution but submit does also work. The queue is unlimited
+    private static final ScheduledThreadPoolExecutor UI_EXECUTOR 
+            = new ScheduledThreadPoolExecutor(4, new NamedThreadFactory("ui-client-schedules"));
+
+    private final List<ClientsideMessageProcessor> messageProcessorList = Collections.synchronizedList(new ArrayList<ClientsideMessageProcessor>());
+    private String serverProductName = null;
+
+    protected GUIClient(IProductVersion productVersion) {
+        this.client = new BaseClient(this, ClientType.RICH_CLIENT, productVersion);
         this.client.setLogger(this.getLogger());
+    }
+
+    /**
+     * The executor is a scheduled thread pool but its also possible to execute single tasks here
+     * as it is inherited from ThreadPool
+     * @param runnable 
+     */
+    public static void submit( Runnable runnable) {
+        UI_EXECUTOR.submit(runnable);
+    }
+    
+    public static void scheduleWithFixedDelay( Runnable runnable, int startDelay, int repeatDelay, TimeUnit timeUnit) {
+        UI_EXECUTOR.scheduleWithFixedDelay(runnable, startDelay, repeatDelay, timeUnit );
     }
 
     public void addMessageProcessor(ClientsideMessageProcessor processor) {
@@ -90,10 +110,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
             throw new RuntimeException("GUIClient.connect: No logger set.");
         }
         ProgressRun progress = new ProgressRun(address);
-        ExecutorService executor = Executors.newSingleThreadExecutor(
-                new NamedThreadFactory("clientserver-guiclient-connect"));
-        executor.submit(progress);
-        executor.shutdown();
+        UI_EXECUTOR.submit(progress);
         boolean connected = false;
         try {
             connected = this.client.connect(address, timeout);
@@ -101,10 +118,10 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
             progress.stopRunning();
         }
         if (!connected) {
-            this.log(Level.WARNING, this.rb.getResourceString("connectionrefused.message", address));
+            this.log(Level.WARNING, rb.getResourceString("connectionrefused.message", address));
             JOptionPane.showMessageDialog(GUIClient.this,
-                    GUIClient.this.rb.getResourceString("connectionrefused.message", address),
-                    GUIClient.this.rb.getResourceString("connectionrefused.title"), JOptionPane.ERROR_MESSAGE);
+                    GUIClient.rb.getResourceString("connectionrefused.message", address),
+                    GUIClient.rb.getResourceString("connectionrefused.title"), JOptionPane.ERROR_MESSAGE);
             System.exit(1);
         }
     }
@@ -141,7 +158,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
             User returnedLoginUser = loginStateMessage.getUser();
             //login successful: pass a user to the base client
             this.getBaseClient().setUser(returnedLoginUser);
-            this.log(Level.CONFIG, this.rb.getResourceString("login.success", returnedLoginUser.getName()));
+            this.log(Level.CONFIG, rb.getResourceString("login.success", returnedLoginUser.getName()));
         }
     }
 
@@ -172,7 +189,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
                 if (this.getLogger() == null) {
                     throw new RuntimeException("GUIClient.loginFailureServerRequestsPassword: No logger set.");
                 }
-                this.log(Level.INFO, this.rb.getResourceString("password.required", user));
+                this.log(Level.INFO, rb.getResourceString("password.required", user));
                 return (this.performLogin(loginUser));
             } else if (state.getState() == LoginState.STATE_AUTHENTICATION_SUCCESS) {
                 //everything is fine: just return the state for further login processing
@@ -182,12 +199,12 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
                     throw new RuntimeException("GUIClient.loginFailure: No logger set.");
                 }
                 User returnedLoginUser = state.getUser();
-                this.log(Level.WARNING, this.rb.getResourceString("login.failure", returnedLoginUser.getName()));
+                this.log(Level.WARNING, rb.getResourceString("login.failure", returnedLoginUser.getName()));
                 return (this.performLogin(returnedLoginUser.getName()));
             } else if (state.getState() == LoginState.STATE_INCOMPATIBLE_CLIENT) {
                 JOptionPane.showMessageDialog(GUIClient.this,
-                        this.rb.getResourceString("login.failed.client.incompatible.message"),
-                        this.rb.getResourceString("login.failed.client.incompatible.title"), JOptionPane.ERROR_MESSAGE);
+                        rb.getResourceString("login.failed.client.incompatible.message"),
+                        rb.getResourceString("login.failed.client.incompatible.title"), JOptionPane.ERROR_MESSAGE);
                 System.exit(1);
             }
         } else {
@@ -228,7 +245,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
         if (this.getLogger() == null) {
             throw new RuntimeException("GUIClient.connected: No logger set.");
         }
-        this.log(Level.INFO, this.rb.getResourceString("connection.success",
+        this.log(Level.INFO, rb.getResourceString("connection.success",
                 socketAddress.toString()));
     }
 
@@ -237,7 +254,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
         if (this.getLogger() == null) {
             throw new RuntimeException("GUIClient.loggedOut: No logger set.");
         }
-        this.log(Level.INFO, this.rb.getResourceString("logout.from.server"));
+        this.log(Level.INFO, rb.getResourceString("logout.from.server"));
     }
 
     @Override
@@ -245,7 +262,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
         if (this.getLogger() == null) {
             throw new RuntimeException("GUIClient.diconnected: No logger set.");
         }
-        this.log(Level.WARNING, this.rb.getResourceString("connection.closed"));
+        this.log(Level.WARNING, rb.getResourceString("connection.closed"));
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
@@ -262,7 +279,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
     @Override
     public void messageReceivedFromServer(ClientServerMessage message) {
         //there is no user defined processing for sync responses
-        if (message._isSyncRequest() && message instanceof ClientServerResponse) {
+        if (message.isSyncRequest() && message instanceof ClientServerResponse) {
             synchronized (this.messageProcessorList) {
                 //let the message process by all registered client side processors            
                 for (ClientsideMessageProcessor processor : this.messageProcessorList) {
@@ -288,7 +305,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
                 }
             }
             if (!(message instanceof ServerSideNotification) && !processed) {
-                this.log(Level.WARNING, this.rb.getResourceString("client.received.unprocessed.message",
+                this.log(Level.WARNING, rb.getResourceString("client.received.unprocessed.message",
                         message.getClass().getName()));
             }
         }
@@ -299,7 +316,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
         if (this.getLogger() == null) {
             throw new RuntimeException("GUIClient.error: No logger set.");
         }
-        this.log(Level.SEVERE, this.rb.getResourceString("error", message));
+        this.log(Level.SEVERE, rb.getResourceString("error.client", message));
     }
 
     /**

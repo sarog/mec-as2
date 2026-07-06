@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/HTTPAuthentication.java 8     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/HTTPAuthentication.java 10    19/05/25 10:00 Heller $
 package de.mendelson.comm.as2.partner;
 
 import java.io.Serializable;
@@ -16,7 +16,7 @@ import org.w3c.dom.NodeList;
 /**
  * Object that stores the information for a HTTP authentication used by a partner
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class HTTPAuthentication implements Serializable {
 
@@ -29,6 +29,16 @@ public class HTTPAuthentication implements Serializable {
     public HTTPAuthentication() {
     }
 
+    /**copy constructor
+     * 
+     * @param authentication 
+     */
+    public HTTPAuthentication( HTTPAuthentication authentication ){
+        this.user = authentication.user;
+        this.password = authentication.password;
+        this.enabled = authentication.enabled;
+    }
+    
     public String getUser() {
         return user;
     }
@@ -66,10 +76,7 @@ public class HTTPAuthentication implements Serializable {
      */
     public String toXML(int level, String type) {
         StringBuilder builder = new StringBuilder();
-        String offset = "";
-        for (int i = 0; i < level; i++) {
-            offset += "\t";
-        }
+        String offset = "\t".repeat(level);
         builder.append(offset).append("<httpauthentication type=\"").append(type).append("\">\n");
         builder.append(offset).append("\t<enabled>").append(String.valueOf(this.enabled)).append("</enabled>\n");
         if (this.user != null && !this.user.isEmpty()) {

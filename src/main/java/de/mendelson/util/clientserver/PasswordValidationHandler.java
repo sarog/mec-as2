@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/PasswordValidationHandler.java 8     23/01/24 10:17 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/PasswordValidationHandler.java 9     11/02/25 13:39 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.LoginState;
@@ -17,7 +17,7 @@ import java.util.logging.Logger;
  * Handler that cares for the user permissions and password validation
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class PasswordValidationHandler {
 
@@ -25,7 +25,6 @@ public class PasswordValidationHandler {
     public static final int STATE_FAILURE = LoginState.STATE_AUTHENTICATION_FAILURE;
     public static final int STATE_SUCCESS = LoginState.STATE_AUTHENTICATION_SUCCESS;
     public static final int STATE_INCOMPATIBLE_CLIENT = LoginState.STATE_INCOMPATIBLE_CLIENT;
-    private Logger logger = Logger.getAnonymousLogger();
     private final String[] validClientIds;
 
 
@@ -34,9 +33,6 @@ public class PasswordValidationHandler {
     }
 
     public void setLogger(Logger logger) {
-        if (logger != null) {
-            this.logger = logger;
-        }
     }
 
     /**

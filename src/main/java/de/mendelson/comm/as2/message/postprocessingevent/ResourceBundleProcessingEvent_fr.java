@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent_fr.java 4     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent_fr.java 7     31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleProcessingEvent_fr extends MecResourceBundle{
     
@@ -26,12 +26,13 @@ public class ResourceBundleProcessingEvent_fr extends MecResourceBundle{
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
         {"event.enqueued", "L''événement de post-traitement défini a été demandé ({0}) et sera exécuté en quelques secondes." },
-        {"processtype." + ProcessingEvent.PROCESS_EXECUTE_SHELL, "Exécuter une commande shell" },
-        {"processtype." + ProcessingEvent.PROCESS_MOVE_TO_DIR, "Déplacer le message vers le répertoire" },
-        {"processtype." + ProcessingEvent.PROCESS_MOVE_TO_PARTNER, "Transmettre le message au partenaire" },
-        {"eventtype." + ProcessingEvent.TYPE_RECEIPT_SUCCESS, "Réception" },
-        {"eventtype." + ProcessingEvent.TYPE_SEND_FAILURE, "Expédition (incorrect)" },
-        {"eventtype." + ProcessingEvent.TYPE_SEND_SUCCESS, "Expédition (tout droit)" },
+        {"processtype." + ProcessingEventType.EXECUTE_SHELL.toInt(), "Exécuter une commande shell" },
+        {"processtype." + ProcessingEventType.MOVE_TO_DIR.toInt(), "Déplacer le message vers le répertoire" },
+        {"processtype." + ProcessingEventType.MOVE_TO_PARTNER.toInt(), "Transmettre le message au partenaire" },
+        {"eventtype." + ProcessingEventTriggerType.RECEIPT_SUCCESS.toInt(), "Réception" },
+        {"eventtype." + ProcessingEventTriggerType.SEND_FAILURE.toInt(), "Expédition (incorrect)" },
+        {"eventtype." + ProcessingEventTriggerType.SEND_SUCCESS.toInt(), "Expédition (tout droit)" },
+         {"event.skipped.cem", "L''événement de post-traitement défini a été ignoré, il s''agit d''un CEM." },
     };
     
 }

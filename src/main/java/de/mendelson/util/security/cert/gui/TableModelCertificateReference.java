@@ -1,14 +1,11 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/TableModelCertificateReference.java 3     2/11/23 15:53 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/TableModelCertificateReference.java 9     14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui;
 
-import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.security.cert.CertificateInUseInfo;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
 
@@ -24,49 +21,42 @@ import javax.swing.table.AbstractTableModel;
  * Model to display all files that are open and save/close them
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 9 $
  */
 public class TableModelCertificateReference extends AbstractTableModel {
 
-    protected final static int ROW_HEIGHT = 24;
-    protected final static int IMAGE_HEIGHT = ROW_HEIGHT - 3;
-    
-    public final static MendelsonMultiResolutionImage IMAGE_PARTNER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/singlepartner.svg", 16, IMAGE_HEIGHT*2);
-    public final static MendelsonMultiResolutionImage IMAGE_PARTNER_GATEWAY
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/singlepartner_gateway.svg", 16, IMAGE_HEIGHT*2);
-    public final static MendelsonMultiResolutionImage IMAGE_PARTNER_ROUTED
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/singlepartner_routed.svg", 16, IMAGE_HEIGHT*2);    
-    public final static MendelsonMultiResolutionImage IMAGE_PARTNER_LOCALSTATION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/localstation.svg", 16, IMAGE_HEIGHT*2);    
-    public final static MendelsonMultiResolutionImage IMAGE_PARTNER_LOCALSTATION_VIRTUAL
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/localidentity.svg", 16, IMAGE_HEIGHT*2);    
-    
+    protected static final int ROW_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE + 3;
+    protected static final int IMAGE_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE;
+
+    public static final MendelsonMultiResolutionImage IMAGE_PARTNER
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/singlepartner.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_PARTNER_GATEWAY
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/singlepartner_gateway.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_PARTNER_ROUTED
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/singlepartner_routed.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_PARTNER_LOCALSTATION
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/localstation.svg",
+                    IMAGE_HEIGHT);
+    public static final MendelsonMultiResolutionImage IMAGE_PARTNER_LOCALSTATION_VIRTUAL
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/localidentity.svg",
+                    IMAGE_HEIGHT);
+
     private final List<CertificateInUseInfo.SingleCertificateInUseInfo> useList = Collections.synchronizedList(new ArrayList<CertificateInUseInfo.SingleCertificateInUseInfo>());
 
-    private final MecResourceBundle rb;
-
-    /**
-     * Load resources
-     */
     public TableModelCertificateReference() {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCertificateReference.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
     }
 
     public void passNewData(List<CertificateInUseInfo.SingleCertificateInUseInfo> useInfoList) {
-        synchronized (this.useList) {            
+        synchronized (this.useList) {
             this.useList.clear();
             this.useList.addAll(useInfoList);
         }
         ((AbstractTableModel) this).fireTableDataChanged();
     }
-    
+
     /**
      * Number of rows to display
      */
@@ -94,25 +84,25 @@ public class TableModelCertificateReference extends AbstractTableModel {
         synchronized (this.useList) {
             info = this.useList.get(row);
         }
-        if (col == 0) {            
-            int type = info.getType();
-            if( type == CertificateInUseInfo.PARTNER_REMOTE ){
-                return( new ImageIcon(IMAGE_PARTNER.toMinResolution(IMAGE_HEIGHT)));
-            }else if( type == CertificateInUseInfo.PARTNER_GATEWAY ){
-                return( new ImageIcon(IMAGE_PARTNER_GATEWAY.toMinResolution(IMAGE_HEIGHT)));
-            }else if( type == CertificateInUseInfo.PARTNER_ROUTED ){
-                return( new ImageIcon(IMAGE_PARTNER_ROUTED.toMinResolution(IMAGE_HEIGHT)));
-            }else if( type == CertificateInUseInfo.PARTNER_LOCALSTATION ){
-                return( new ImageIcon(IMAGE_PARTNER_LOCALSTATION.toMinResolution(IMAGE_HEIGHT)));
-            }else if( type == CertificateInUseInfo.PARTNER_LOCALSTATION_VIRTUAL ){
-                return( new ImageIcon(IMAGE_PARTNER_LOCALSTATION_VIRTUAL.toMinResolution(IMAGE_HEIGHT)));
+        if (col == 0) {
+            CertificateInUseInfo.UsedByPartner type = info.getUsedBy();
+            if (type == CertificateInUseInfo.UsedByPartner.REMOTE) {
+                return (new ImageIcon(IMAGE_PARTNER.toMinResolution(IMAGE_HEIGHT)));
+            } else if (type == CertificateInUseInfo.UsedByPartner.GATEWAY) {
+                return (new ImageIcon(IMAGE_PARTNER_GATEWAY.toMinResolution(IMAGE_HEIGHT)));
+            } else if (type == CertificateInUseInfo.UsedByPartner.ROUTED) {
+                return (new ImageIcon(IMAGE_PARTNER_ROUTED.toMinResolution(IMAGE_HEIGHT)));
+            } else if (type == CertificateInUseInfo.UsedByPartner.LOCALSTATION) {
+                return (new ImageIcon(IMAGE_PARTNER_LOCALSTATION.toMinResolution(IMAGE_HEIGHT)));
+            } else if (type == CertificateInUseInfo.UsedByPartner.LOCALSTATION_VIRTUAL) {
+                return (new ImageIcon(IMAGE_PARTNER_LOCALSTATION_VIRTUAL.toMinResolution(IMAGE_HEIGHT)));
             }
-            return( null );
+            return (null);
         }
         if (col == 1) {
             return (info.getPartnerName());
         }
-            return (info.getDetails());
+        return (info.getDetails());
     }
 
     /**
@@ -122,8 +112,8 @@ public class TableModelCertificateReference extends AbstractTableModel {
      */
     @Override
     public String getColumnName(int col) {
-        return( new String[]{
-            "", "", ""            
+        return (new String[]{
+            "", "", ""
         }[col]);
     }
 
@@ -137,8 +127,7 @@ public class TableModelCertificateReference extends AbstractTableModel {
         return (new Class[]{
             ImageIcon.class,
             String.class,
-            String.class,
-        }[col]);
+            String.class,}[col]);
     }
 
     /**
@@ -146,7 +135,7 @@ public class TableModelCertificateReference extends AbstractTableModel {
      */
     @Override
     public boolean isCellEditable(int row, int col) {
-        return( false );
+        return (false);
     }
-    
+
 }

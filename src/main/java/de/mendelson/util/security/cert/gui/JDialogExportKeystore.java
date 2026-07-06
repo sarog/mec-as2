@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeystore.java 3     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeystore.java 6     8/04/26 13:35 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -29,7 +29,7 @@ import javax.swing.JFrame;
  * Export a private key into a keystore with a selectable password
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class JDialogExportKeystore extends JDialog {
 
@@ -40,16 +40,16 @@ public class JDialogExportKeystore extends JDialog {
     private final CertificateManager manager;
     private final Logger logger;
     private final BaseClient baseClient;
-    private final JFrame parent;
+    private final JFrame frameParent;
 
     /**
      * Creates new form JDialogPartnerConfig
      *
      * @param manager Manager that handles the certificates
      */
-    public JDialogExportKeystore(JFrame parent, BaseClient baseClient, Logger logger, CertificateManager manager) throws Exception {
-        super(parent, true);
-        this.parent = parent;
+    public JDialogExportKeystore(JFrame frameParent, BaseClient baseClient, Logger logger, CertificateManager manager) throws Exception {
+        super(frameParent, true);
+        this.frameParent = frameParent;
         this.baseClient = baseClient;
         //load resource bundle
         try {
@@ -64,12 +64,12 @@ public class JDialogExportKeystore extends JDialog {
         initComponents();
         PasswordOverlay.addTo(this.jPasswordFieldPassphrase, this.rb.getResourceString("label.keypass.hint"));
         TextOverlay.addTo(this.jTextFieldExportKeystoreFile, this.rb.getResourceString("label.exportdir.hint"));
-        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(32)));
+        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EXPORT_MULTIRESOLUTION.toMinResolution(
+                JDialogCertificates.IMAGE_SIZE_DIALOG)));
         this.manager = manager;
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setButtonState();
     }
-
 
     /**
      * Sets the ok and cancel buttons of this GUI
@@ -86,7 +86,7 @@ public class JDialogExportKeystore extends JDialog {
         try {
             String serverSideTargetPath = this.jTextFieldExportKeystoreFile.getText();
             char[] serverSideTargetPass = this.jPasswordFieldPassphrase.getPassword();
-            int sourceKeystoreUsage = this.manager.getStorageUsage();            
+            int sourceKeystoreUsage = this.manager.getStorageUsage();
             ExportRequestKeystore request
                     = new ExportRequestKeystore(
                             sourceKeystoreUsage,
@@ -97,12 +97,12 @@ public class JDialogExportKeystore extends JDialog {
                 throw response.getException();
             }
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_SUCCESS,
+                    UINotification.Type.SUCCESS,
                     this.rb.getResourceString("keystore.export.success.title"),
                     this.rb.getResourceString("keystore.exported.to.file",
-                    new Object[]{
-                        response.getSaveFileOnServer()
-                    })
+                            new Object[]{
+                                response.getSaveFileOnServer()
+                            })
             );
             this.logger.fine(this.rb.getResourceString("keystore.exported.to.file",
                     new Object[]{
@@ -110,16 +110,15 @@ public class JDialogExportKeystore extends JDialog {
                     }));
         } catch (Throwable e) {
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     this.rb.getResourceString("keystore.export.error.title"),
                     this.rb.getResourceString("keystore.export.error.message", e.getMessage()));
         }
     }
 
-    
     private void browseExportDirectory() {
         String existingPath = this.jTextFieldExportKeystoreFile.getText();
-        RemoteFileBrowser browser = new RemoteFileBrowser(this.parent, this.baseClient,
+        RemoteFileBrowser browser = new RemoteFileBrowser(this.frameParent, this.baseClient,
                 this.rb.getResourceString("filechooser.key.export"));
         browser.setDirectoriesOnly(true);
         browser.setSelectedFile(existingPath);
@@ -128,7 +127,7 @@ public class JDialogExportKeystore extends JDialog {
         if (selectedPath != null) {
             this.jTextFieldExportKeystoreFile.setText(selectedPath);
         }
-        this.setButtonState();        
+        this.setButtonState();
     }
 
     /**

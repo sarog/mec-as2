@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ServerHelloMessage.java 4     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ServerHelloMessage.java 5     4/06/25 11:45 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -17,7 +17,7 @@ import java.io.Serializable;
  * Message that is sent from the server to the client once the client logged in
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ServerHelloMessage extends ClientServerMessage implements Serializable{
 
@@ -28,9 +28,14 @@ public class ServerHelloMessage extends ClientServerMessage implements Serializa
     public static final int LEVEL_WARNING = 3;
     public static final int LEVEL_SEVERE = 4;
         
-    private final String message;    
+    private String message;    
     private int level = LEVEL_DEBUG;
     
+    /**Empty constructor, only used for deserialization process, do not use in logic*/
+    public ServerHelloMessage() {
+        this.message = "";
+    }
+        
     /**Creates a server hello message with the level LEVEL_DEBUG*/
     public ServerHelloMessage(String message) {
         this.message = message;

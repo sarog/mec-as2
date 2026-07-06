@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 43    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ConfigurationCheckController.java 54    14/01/26 16:29 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -7,20 +7,28 @@ import de.mendelson.comm.as2.message.MessageAccessDB;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.send.DirPollManager;
+import de.mendelson.comm.as2.timing.TimingScheduledThreadPool;
 import de.mendelson.util.AS2Tools;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
 import de.mendelson.util.security.cert.CertificateManager;
+import de.mendelson.util.security.cert.CertificateValiditySettings;
 import de.mendelson.util.security.cert.KeystoreCertificate;
-
+import de.mendelson.util.security.crl.CRLRevocationInformation;
+import de.mendelson.util.security.crl.CRLRevocationState;
+import de.mendelson.util.security.crl.CRLVerification;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.security.cert.X509Certificate;
 import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import javax.security.auth.x500.X500Principal;
+import oshi.SystemInfo;
+import oshi.software.os.OSProcess;
+import oshi.software.os.OperatingSystem;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -33,7 +41,7 @@ import java.util.concurrent.TimeUnit;
  * Checks several issues of the configuration
  *
  * @author S.Heller
- * @version $Revision: 43 $
+ * @version $Revision: 54 $
  */
 public class ConfigurationCheckController {
 
@@ -41,10 +49,7 @@ public class ConfigurationCheckController {
     private final CertificateManager managerTLS;
     private final ConfigurationCheckThread checkThread;
     private final PreferencesAS2 preferences;
-    private final HTTPServerConfigInfo httpServerConfigInfo;
     private final DirPollManager pollManager;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-            new NamedThreadFactory("configuration-check"));
     private final IDBDriverManager dbDriverManager;
 
     public ConfigurationCheckController(CertificateManager managerEncSign,
@@ -52,7 +57,6 @@ public class ConfigurationCheckController {
             IDBDriverManager dbDriverManager) {
         this.managerEncSign = managerEncSign;
         this.managerTLS = managerTLS;
-        this.httpServerConfigInfo = httpServerConfigInfo;
         this.pollManager = pollManager;
         this.dbDriverManager = dbDriverManager;
         this.preferences = new PreferencesAS2(this.dbDriverManager);
@@ -77,10 +81,34 @@ public class ConfigurationCheckController {
     }
 
     /**
+     * Runs the checks that are client related
+     *
+     * @param newIssueList
+     */
+    public List<ConfigurationIssue> runClientRelatedTests(
+            String clientProcessId, String serverProcessId) {
+        List<ConfigurationIssue> clientIssueList = new ArrayList<ConfigurationIssue>();
+        this.checkClientAndServerRunInOneProcess(clientIssueList, clientProcessId, serverProcessId);
+        return (clientIssueList);
+    }
+
+    /**
+     * Checks if client and server run in one process as this is not recommended
+     * in production
+     */
+    private void checkClientAndServerRunInOneProcess(List<ConfigurationIssue> clientIssueList,
+            String clientProcessId, String serverProcessId) {
+        if (clientProcessId.equals(serverProcessId)) {
+            ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CLIENT_SERVER_IN_ONE_PROCESS);
+            clientIssueList.add(issue);
+        }
+    }
+
+    /**
      * Starts the embedded task that guards the log
      */
     public void start() {
-        this.scheduledExecutor.scheduleWithFixedDelay(this.checkThread, 1, 30, TimeUnit.SECONDS);
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.checkThread, 1, 30, TimeUnit.SECONDS);
     }
 
     public class ConfigurationCheckThread implements Runnable {
@@ -161,11 +189,15 @@ public class ConfigurationCheckController {
          */
         public void runModifyableChecks(List<ConfigurationIssue> newIssueList) {
             this.checkCertificatesExpired(newIssueList);
+            if (preferences.getBoolean(PreferencesAS2.CHECK_REVOCATION_LISTS)) {
+                this.checkCRL(newIssueList);
+            }
             this.checkKeystore(newIssueList);
             this.checkAutoDelete(newIssueList);
             this.checkOutboundConnectionsAllowed(newIssueList);
             this.checkAllPartnersCertificatesAvailable(newIssueList);
             this.checkDirPollAmount(newIssueList);
+            this.checkHandles(newIssueList);
         }
 
         /**
@@ -236,6 +268,58 @@ public class ConfigurationCheckController {
             }
         }
 
+        /**
+         * Performs a CRL check on the used certificates
+         *
+         * @param newIssueList
+         */
+        private void checkCRL(List<ConfigurationIssue> newIssueList) {
+            try {
+                List<KeystoreCertificate> encSignList = managerEncSign.getKeyStoreCertificateList();
+                Map<X500Principal, X509Certificate> certMapEncSign = managerEncSign.getSubjectCertificateMap();
+                CRLVerification verification = new CRLVerification();
+                for (KeystoreCertificate testCertificate : encSignList) {
+                    X509Certificate issuerCertificate = certMapEncSign.get(testCertificate.getIssuerX500Principal());
+                    CRLRevocationInformation information = verification.checkCertificate(testCertificate, issuerCertificate);
+                    if (information.getRevocationState().getState() != CRLRevocationState.STATE_OK) {
+                        ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN);
+                        issue.setDetails(testCertificate.getAlias());
+                        issue.setHintParameter(new Object[]{
+                            information.getRevocationState().getDetails(),
+                            testCertificate.getAlias(),
+                            testCertificate.getIssuerDN(),
+                            testCertificate.getFingerPrintSHA1()
+                        });
+                        newIssueList.add(issue);
+                    }
+                }
+            } catch (Throwable e) {
+                SystemEventManagerImplAS2.instance().systemFailure(e);
+            }
+            try {
+                List<KeystoreCertificate> tlsList = managerTLS.getKeyStoreCertificateList();
+                Map<X500Principal, X509Certificate> certMapEncSign = managerTLS.getSubjectCertificateMap();
+                CRLVerification verification = new CRLVerification();
+                for (KeystoreCertificate testCertificate : tlsList) {
+                    X509Certificate issuerCertificate = certMapEncSign.get(testCertificate.getIssuerX500Principal());
+                    CRLRevocationInformation information = verification.checkCertificate(testCertificate, issuerCertificate);
+                    if (information.getRevocationState().getState() != CRLRevocationState.STATE_OK) {
+                        ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS);
+                        issue.setDetails(testCertificate.getAlias());
+                        issue.setHintParameter(new Object[]{
+                            information.getRevocationState().getDetails(),
+                            testCertificate.getAlias(),
+                            testCertificate.getIssuerDN(),
+                            testCertificate.getFingerPrintSHA1()
+                        });
+                        newIssueList.add(issue);
+                    }
+                }
+            } catch (Throwable e) {
+                SystemEventManagerImplAS2.instance().systemFailure(e);
+            }
+        }
+
         private void checkDataModel32bit(List<ConfigurationIssue> newIssueList) {
             String dataModel = "";
             try {
@@ -263,7 +347,7 @@ public class ConfigurationCheckController {
         /**
          * Finds out some issues that could occur in the underlaying keystores
          */
-        private void checkKeystore(List<ConfigurationIssue> newIssueList) {            
+        private void checkKeystore(List<ConfigurationIssue> newIssueList) {
             List<KeystoreCertificate> tlsList = managerTLS.getKeyStoreCertificateList();
             StringBuilder aliasList = new StringBuilder();
             int keyCount = 0;
@@ -288,13 +372,14 @@ public class ConfigurationCheckController {
             }
             if (keyCount > 0) {
                 KeystoreCertificate usedTLSKey = keystoreKeysList.get(0);
-                String foundFingerprint = usedTLSKey.getFingerPrintSHA1();
-                for (String testFingerprint : KeystoreCertificate.TEST_KEYS_FINGERPRINTS_SHA1) {
-                    if (foundFingerprint.equalsIgnoreCase(testFingerprint)) {
-                        ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS);
-                        issue.setDetails(usedTLSKey.getAlias());
-                        newIssueList.add(issue);
-                    }
+                int validityCheckBitField = CertificateValiditySettings.CHECK_MENDELSON_PUBLIC_CERT;
+                int checkStatusBitField = usedTLSKey.getValidityValue(
+                        CertificateValiditySettings.OPERATION_ANY,
+                        validityCheckBitField);
+                if ((checkStatusBitField & CertificateValiditySettings.STATE_MENDELSON_PUBLIC_CERT) != 0) {
+                    ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS);
+                    issue.setDetails(usedTLSKey.getAlias());
+                    newIssueList.add(issue);
                 }
             }
         }
@@ -323,7 +408,7 @@ public class ConfigurationCheckController {
         private void checkHeapMemory(List<ConfigurationIssue> newIssueList) {
             long maxMemory = Runtime.getRuntime().maxMemory();
             long oneGB = 1073741824L;
-            if (maxMemory < 4 * oneGB) {
+            if (maxMemory < 8 * oneGB) {
                 ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.LOW_MAX_HEAP_MEMORY);
                 issue.setDetails(AS2Tools.getDataSizeDisplay(maxMemory));
                 newIssueList.add(issue);
@@ -346,6 +431,37 @@ public class ConfigurationCheckController {
                     issue.setHintParameter(new Object[]{serverUser});
                     newIssueList.add(issue);
                 }
+            }
+        }
+
+        /**
+         * Checks if the user has reserved enough file handles. This seems to be
+         * a common problem under Linux that the default number of handles is
+         * just 1024 - which is a bottleneck for production server processing
+         */
+        private void checkHandles(List<ConfigurationIssue> newIssueList) {
+            try {
+                SystemInfo info = new SystemInfo();
+                OperatingSystem os = info.getOperatingSystem();
+                OSProcess process = os.getProcess(os.getProcessId());
+                //soft open file limit are the handles the process itself can reach. This could be changed
+                //by the process up to the hard open file limit which could just set by root.
+                //As java does not change this the soft open file limit is the max number of files the process
+                //could open. Under Linux this could be displayed using ulimit -n
+                long softOpenFileLimit = process.getSoftOpenFileLimit();
+                long currentOpenFiles = process.getOpenFiles();
+                long requiredOpenFileLimit = 10000;
+
+                if (softOpenFileLimit < requiredOpenFileLimit) {
+                    ConfigurationIssue issue = new ConfigurationIssue(ConfigurationIssue.NOT_ENOUGH_HANDLES);
+                    issue.setDetails(String.valueOf(softOpenFileLimit));
+                    issue.setHintParameter(new Object[]{
+                        String.valueOf(softOpenFileLimit),
+                        String.valueOf(currentOpenFiles),
+                        String.valueOf(requiredOpenFileLimit),});
+                    newIssueList.add(issue);
+                }
+            } catch (Throwable e) {
             }
         }
 

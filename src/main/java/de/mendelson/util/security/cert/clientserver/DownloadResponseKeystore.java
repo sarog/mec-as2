@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/security/cert/clientserver/DownloadResponseKeystore.java 5     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/DownloadResponseKeystore.java 8     11/06/25 13:17 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.io.IOException;
@@ -21,18 +22,28 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class DownloadResponseKeystore extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private final List<KeystoreCertificate> certList = new ArrayList<KeystoreCertificate>();    
+    private List<KeystoreCertificate> certList = new ArrayList<KeystoreCertificate>();    
+    private boolean readonlyOnServer = false;
 
     public DownloadResponseKeystore(DownloadRequestKeystore request) {
         super( request );
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public DownloadResponseKeystore() {
+        super();
+    }
+    
     public void addCertificateList( List<KeystoreCertificate> list ){
         this.certList.addAll(list);
     }
@@ -50,6 +61,20 @@ public class DownloadResponseKeystore extends ClientServerResponse implements Se
     /**Prevent an overwrite of the readObject method for de-serialization*/
     private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
         inStream.defaultReadObject();
+    }
+
+    /**
+     * @return the readonlyOnServer
+     */
+    public boolean isReadonlyOnServer() {
+        return readonlyOnServer;
+    }
+
+    /**
+     * @param readonlyOnServer the readonlyOnServer to set
+     */
+    public void setReadonlyOnServer(boolean readonlyOnServer) {
+        this.readonlyOnServer = readonlyOnServer;
     }
 
 }

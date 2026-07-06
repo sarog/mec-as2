@@ -1,5 +1,6 @@
-///$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogIssuesList.java 7     2/11/23 14:02 Heller $
+///$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogIssuesList.java 12    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.configurationcheck.gui;
+
 import de.mendelson.comm.as2.client.ModuleStarter;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckRequest;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckResponse;
@@ -7,9 +8,7 @@ import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
 import de.mendelson.comm.as2.configurationcheck.ResourceBundleConfigurationIssue;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
-
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
+import java.awt.Font;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
 import java.awt.Point;
@@ -19,7 +18,10 @@ import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,6 +29,9 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -34,41 +39,48 @@ import javax.swing.JFrame;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
-
 /**
  * List of functions, useful for auto complete
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 12 $
  */
-public class JDialogIssuesList extends JDialog implements FocusListener, MouseMotionListener {
+public class JDialogIssuesList extends JDialog implements FocusListener, MouseMotionListener, MouseListener {
 
+    private final int FONT_SIZE = 13;
     private final KeyEventDispatcherIssuesList keyEventDispatcher = new KeyEventDispatcherIssuesList();
     private final BaseClient baseClient;
     private final Point origin;
-    private final MecResourceBundle rb;
-    private final ModuleStarter moduleStarter;
-    private final List<ConfigurationIssue> issues = Collections.synchronizedList(new ArrayList<ConfigurationIssue>());
-    private final JFrame parent;
-    private final ComponentListener componentListenerParent;
+    private final static MecResourceBundle rb;
 
-    public JDialogIssuesList(JFrame parent, BaseClient baseClient, Point origin, ModuleStarter moduleStarter) {
-        super(parent, false);
-        this.parent = parent;
-        this.moduleStarter = moduleStarter;
-        //load resource bundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleConfigurationIssue.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private final ModuleStarter moduleStarter;
+    private final List<ConfigurationIssue> issues = Collections.synchronizedList(new ArrayList<ConfigurationIssue>());
+    private final JFrame frameParent;
+    private final ComponentListener componentListenerParent;
+
+    public JDialogIssuesList(JFrame frameParent, BaseClient baseClient, Point origin, ModuleStarter moduleStarter) {
+        super(frameParent, false);
+        this.frameParent = frameParent;
+        this.moduleStarter = moduleStarter;
         this.baseClient = baseClient;
         this.origin = origin;
         initComponents();
+        if (UIManager.getColor("ToolTip.background") != null) {
+            this.jList.setBackground(UIManager.getColor("ToolTip.background"));
+        }
+        if (UIManager.getColor("ToolTip.foreground") != null) {
+            this.jList.setForeground(UIManager.getColor("ToolTip.foreground"));
+        }
         this.jList.addFocusListener(this);
-        this.jList.setFont( this.jList.getFont().deriveFont((float)12));
+        this.jList.setFont(this.jList.getFont().deriveFont((float) FONT_SIZE));
         this.addFocusListener(this);
         this.jScrollPaneList.addFocusListener(this);
         this.populateList();
@@ -92,9 +104,7 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
             public void componentHidden(ComponentEvent e) {
                 JDialogIssuesList.this.setVisible(false);
             }
-        };        
-        //on any parent frame move, hide etc this should vanish
-        this.parent.addComponentListener(this.componentListenerParent);
+        };                
     }
 
     public int getRowHeight() {
@@ -123,33 +133,30 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
                 longestEntry = foundEntry;
             }
         }
-        int width = this.computeStringWidth(longestEntry)
+        int width = this.computeStringWidth(this.jList.getFont(), longestEntry)
                 + this.getInsets().left
                 + this.getInsets().right + 30;
         int height = entryCount * this.getRowHeight() + 5;
         this.setBounds(this.origin.x, this.origin.y - height, width, height);
     }
 
-    /**
-     * Compute the width of the content up to the actual cursor position not
-     * been found on the OS
-     */
-    private int computeStringWidth(String text) {
-        Graphics2D g2d = (Graphics2D) this.jList.getGraphics().create();
-        FontMetrics metrics = g2d.getFontMetrics(this.jList.getFont());        
-        int width = (int) Math.ceil(metrics.getStringBounds(text, g2d).getWidth());
-        g2d.dispose();
+    private int computeStringWidth(Font font, String text) {
+        AffineTransform affinetransform = new AffineTransform();
+        FontRenderContext fontRenderContext = new FontRenderContext(affinetransform, true, true);
+        int width = (int) (font.getStringBounds(text, fontRenderContext).getWidth());
         return (width);
     }
 
     private void populateList() {
         if (this.baseClient != null) {
-            ConfigurationCheckResponse response = (ConfigurationCheckResponse) this.baseClient.sendSync(new ConfigurationCheckRequest());
+            ConfigurationCheckRequest checkRequest = new ConfigurationCheckRequest();
+            checkRequest.setPerformClientRelatedTests(true);
+            ConfigurationCheckResponse response = (ConfigurationCheckResponse) baseClient.sendSync(checkRequest);
             List<String> listData = new ArrayList<String>();
             List<ConfigurationIssue> responseIssues = response.getIssues();
             for (ConfigurationIssue issue : responseIssues) {
                 StringBuilder entry = new StringBuilder();
-                entry.append(this.rb.getResourceString(String.valueOf(issue.getIssueId())));
+                entry.append(rb.getResourceString(String.valueOf(issue.getIssueId())));
                 if (issue.getDetails() != null) {
                     entry.append(" (").append(issue.getDetails()).append(")");
                 }
@@ -168,10 +175,13 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
         if (flag) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().addKeyEventDispatcher(this.keyEventDispatcher);
             this.jList.addMouseMotionListener(this);
+            this.jList.addMouseListener(this);
+            this.frameParent.addComponentListener(this.componentListenerParent);
         } else {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().removeKeyEventDispatcher(this.keyEventDispatcher);
             this.jList.removeMouseMotionListener(this);
-            this.parent.removeComponentListener(this.componentListenerParent);
+            this.jList.addMouseListener(this);
+            this.frameParent.removeComponentListener(this.componentListenerParent);
         }
         super.setVisible(flag);
     }
@@ -198,10 +208,42 @@ public class JDialogIssuesList extends JDialog implements FocusListener, MouseMo
         }
         if (issueList != null) {
             JDialogConfigurationIssueDetails dialog
-                    = new JDialogConfigurationIssueDetails(this.parent, this.moduleStarter, issueList,
+                    = new JDialogConfigurationIssueDetails(this.frameParent, this.moduleStarter, issueList,
                             index);
             dialog.setVisible(true);
         }
+    }
+
+    /**
+     * Makes this a mouseListener
+     */
+    @Override
+    public void mouseExited(MouseEvent e) {
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                try {
+                    Thread.sleep(500);
+                } catch (Exception e) {
+                }
+                setVisible(false);
+            }
+        });
+    }
+
+    @Override
+    public void mouseClicked(MouseEvent e) {
+    }
+
+    @Override
+    public void mousePressed(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseReleased(MouseEvent e) {
+    }
+
+    @Override
+    public void mouseEntered(MouseEvent e) {
     }
 
     private class KeyEventDispatcherIssuesList implements KeyEventDispatcher {

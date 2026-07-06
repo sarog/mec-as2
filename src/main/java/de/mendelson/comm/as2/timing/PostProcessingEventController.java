@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 19    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 22    31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -10,14 +10,13 @@ import de.mendelson.comm.as2.message.postprocessingevent.IProcessingExecution;
 import de.mendelson.comm.as2.message.postprocessingevent.PostprocessingException;
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventAccessDB;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventType;
 import de.mendelson.comm.as2.partner.Partner;
-import de.mendelson.comm.as2.partner.PartnerEventInformation;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
-import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.util.concurrent.Executors;
@@ -37,26 +36,20 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 22 $
  */
 public class PostProcessingEventController {
 
-    /**
-     * Logger to log information to
-     */
-    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private EventExecutionThread executeThread;
-    private ClientServer clientserver = null;
     private final CertificateManager certificateManagerEncSign;
     private final MessageAccessDB messageAccess;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("postprocessing"));
     private final IDBDriverManager dbDriverManager;
 
-    public PostProcessingEventController(ClientServer clientserver, 
+    public PostProcessingEventController(ClientServer clientserver,
             CertificateManager certificateManagerEncSign,
             IDBDriverManager dbDriverManager) throws Exception {
-        this.clientserver = clientserver;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.messageAccess = new MessageAccessDB(dbDriverManager);
         this.dbDriverManager = dbDriverManager;
@@ -83,22 +76,22 @@ public class PostProcessingEventController {
 
         @Override
         public void run() {
-            Connection runtimeConnectionNoAutoCommit = null;
-            try {
-                runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+            try (Connection runtimeConnectionNoAutoCommit = dbDriverManager
+                    .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
                 runtimeConnectionNoAutoCommit.setAutoCommit(false);
                 boolean entryFound = true;
                 while (entryFound) {
                     entryFound = false;
-                    ProcessingEvent event = this.processingEventAccess.getNextEventToExecuteAsTransaction(runtimeConnectionNoAutoCommit);
+                    ProcessingEvent event = this.processingEventAccess.getNextEventToExecuteAsTransaction(
+                            runtimeConnectionNoAutoCommit);
                     IProcessingExecution processExecution = null;
-                    if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_EXECUTE_SHELL) {
+                    if (event != null && event.getProcessType() == ProcessingEventType.EXECUTE_SHELL) {
                         processExecution = new ExecuteShellCommand(this.dbDriverManager);
                         entryFound = true;
-                    } else if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_MOVE_TO_DIR) {
+                    } else if (event != null && event.getProcessType() == ProcessingEventType.MOVE_TO_DIR) {
                         processExecution = new ExecuteMoveToDir(this.dbDriverManager);
                         entryFound = true;
-                    } else if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_MOVE_TO_PARTNER) {
+                    } else if (event != null && event.getProcessType() == ProcessingEventType.MOVE_TO_PARTNER) {
                         processExecution = new ExecuteMoveToPartner(this.dbDriverManager,
                                 PostProcessingEventController.this.certificateManagerEncSign);
                         entryFound = true;
@@ -110,7 +103,7 @@ public class PostProcessingEventController {
                             String errorMessage = "[" + e.getClass().getSimpleName() + "] " + e.getMessage();
                             AS2MessageInfo messageInfo = messageAccess.getLastMessageEntry(event.getMessageId());
                             Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-                            logger.log(Level.WARNING, errorMessage, messageInfo);                            
+                            logger.log(Level.WARNING, errorMessage, messageInfo);
                             Partner sender = null;
                             Partner receiver = null;
                             if (e instanceof PostprocessingException) {
@@ -119,20 +112,12 @@ public class PostProcessingEventController {
                             }
                             SystemEventManagerImplAS2.instance().newEventPostprocessingError(errorMessage,
                                     event.getMessageId(), sender, receiver,
-                                    event.getProcessType(), event.getEventType());
+                                    event.getProcessType(), event.getTriggerType());
                         }
                     }
                 }
             } catch (Throwable e) {
                 SystemEventManagerImplAS2.instance().systemFailure(e);
-            } finally {
-                if (runtimeConnectionNoAutoCommit != null) {
-                    try {
-                        runtimeConnectionNoAutoCommit.close();
-                    } catch (Exception e) {
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
-                }
             }
         }
     }

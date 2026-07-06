@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewProcessorServer.java 22    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewProcessorServer.java 26    4/06/25 11:45 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import java.io.File;
@@ -32,7 +32,7 @@ import javax.swing.filechooser.FileSystemView;
  * Processes file system view requests
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 26 $
  */
 public class FileSystemViewProcessorServer {
 
@@ -160,7 +160,7 @@ public class FileSystemViewProcessorServer {
                     fileObject.setHidden(this.isHidden(child));
                     boolean isSymbolicLink = Files.isSymbolicLink(child);
                     if (isSymbolicLink) {
-                        fileObject.setIsSymbolikLink(true);
+                        fileObject.setSymbolicLink(true);
                         try {
                             Path symbolicLinkTarget = Files.readSymbolicLink(child);
                             fileObject.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
@@ -170,7 +170,7 @@ public class FileSystemViewProcessorServer {
                     }
                     childList.add(fileObject);
                 } else {
-                    if (filter.displayFile(child)) {
+                    if (filter.displayFile(child.toAbsolutePath().toString())) {
                         Icon icon = this.getSystemIcon(child.toUri());
                         FileObjectFile fileObject = new FileObjectFile(child.toUri(), icon);
                         fileObject.setHidden(this.isHidden(child));
@@ -178,7 +178,7 @@ public class FileSystemViewProcessorServer {
                         fileObject.setReadOnly(!Files.isWritable(child));
                         boolean isSymbolicLink = Files.isSymbolicLink(child);
                         if (isSymbolicLink) {
-                            fileObject.setIsSymbolikLink(true);
+                            fileObject.setSymbolicLink(true);
                             try {
                                 Path symbolicLinkTarget = Files.readSymbolicLink(child);
                                 fileObject.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
@@ -214,7 +214,7 @@ public class FileSystemViewProcessorServer {
                             fileObjectDir.setHidden(this.isHidden(pathFile));
                             boolean isSymbolicLink = Files.isSymbolicLink(pathFile);
                             if (isSymbolicLink) {
-                                fileObjectDir.setIsSymbolikLink(true);
+                                fileObjectDir.setSymbolicLink(true);
                                 try {
                                     Path symbolicLinkTarget = Files.readSymbolicLink(pathFile);
                                     fileObjectDir.setSymbolicLinkTarget(symbolicLinkTarget.toAbsolutePath().toString());
@@ -253,7 +253,6 @@ public class FileSystemViewProcessorServer {
                     String requestedPath = request.getRequestFilePath();
                     pathStr = Paths.get(requestedPath).normalize().toAbsolutePath().toString();
                 } catch (Throwable e) {
-                    //this.logger.warning("FileSystemViewProcessorServer [GET_PATH_STR]: Unable to get path: " + e.getMessage());
                 } finally {
                     response.setParameterString(pathStr);
                 }
@@ -285,21 +284,15 @@ public class FileSystemViewProcessorServer {
     /**
      * Non blocking file directory list with a user defined filter
      */
-    private List<Path> listFilesNIO(Path dir, DirectoryStream.Filter fileFilter) throws Exception {
+    private List<Path> listFilesNIO(Path dir, DirectoryStream.Filter<Path> fileFilter) throws Exception {        
         List<Path> result = new ArrayList<Path>();
         //do not follow symbolic links - if the user requests this just return an empty list
         if (Files.isSymbolicLink(dir)) {
             return (result);
-        }
-        DirectoryStream<Path> stream = null;
-        try {
-            stream = Files.newDirectoryStream(dir, fileFilter);
+        }        
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, fileFilter)) {
             for (Path entry : stream) {
                 result.add(entry);
-            }
-        } finally {
-            if (stream != null) {
-                stream.close();
             }
         }
         return result;

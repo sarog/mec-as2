@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/ResourceBundleGUIClient_de.java 14    6/11/23 11:38 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleGUIClient_de.java 17    4/04/25 9:43 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleGUIClient_de extends MecResourceBundle {
 
@@ -27,7 +27,7 @@ public class ResourceBundleGUIClient_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         //dialog
         {"password.required", "Fehler beim Login, es wird ein Passwort für den Benutzer {0} benötigt."},
         {"connectionrefused.message", "{0}: Keine Verbindung möglich. Bitte stellen Sie sicher, dass der Server läuft."},
@@ -40,7 +40,7 @@ public class ResourceBundleGUIClient_de extends MecResourceBundle {
         {"connection.closed.title", "Lokaler Verbindungsabbruch"},
         {"connection.closed.message", "Die lokale Client-Server Verbindung wurde vom Server getrennt"},
         {"client.received.unprocessed.message", "Der Server hat eine Nachricht geschickt, die vom Client nicht verarbeitet wurde: {0}"},
-        {"error", "Problem: {0}"},
+        {"error.client", "Bei der Client-Server-Verbindung von diesem Client zum Server ist ein Problem aufgetreten: {0}"},
         {"login.failed.client.incompatible.message", "Der Server meldet, dass dieser Client nicht die richtige Version hat.\nBitte verwenden Sie den zum Server passenden Client."},
         {"login.failed.client.incompatible.title", "Login wurde zurückgewiesen"},
     };

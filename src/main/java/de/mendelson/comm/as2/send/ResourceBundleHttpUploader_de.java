@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpUploader_de.java 32    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpUploader_de.java 41    18/06/25 12:21 Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 41 $
  */
 public class ResourceBundleHttpUploader_de extends MecResourceBundle{
     
@@ -17,9 +17,12 @@ public class ResourceBundleHttpUploader_de extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
-        {"returncode.ok", "Nachricht erfolgreich versandt (HTTP {0}); {1} übertragen in {2} [{3} KB/s]." },
-        {"returncode.accepted", "Nachricht erfolgreich versandt (HTTP {0}); {1} übertragen in {2} [{3} KB/s]." },
+    private static final Object[][] CONTENTS = {
+        {"connected.to", "Verbunden mit {0}, warte auf eine MDN und halte Verbindung offen bis {1}" },
+        {"connection.shut.down", "Die ausgehende Verbindung zu {0} wurde geschlossen, sie war offen für {1}s" },
+        {"returncode.ok", "Nachricht erfolgreich versandt (HTTP {0}); {1} gesendet in {2} [{3}]." },
+        {"returncode.accepted", "Nachricht erfolgreich versandt (HTTP {0}); {1} übertragen in {2} [{3}]." },
+        {"connection.tls.info", "Ausgehende TLS Verbindung hergestellt [{0}, {1}]" },
         {"sending.msg.sync", "Sende AS2 Nachricht an {0}, erwarte synchrone MDN zur Empfangsbestätigung." },
         {"sending.cem.sync", "Sende CEM Nachricht an {0}, erwarte synchrone MDN zur Empfangsbestätigung." },
         {"sending.msg.async", "Sende AS2 Nachricht an {0}, erwarte asynchrone MDN zur Empfangsbestätigung auf {1}." },
@@ -41,6 +44,10 @@ public class ResourceBundleHttpUploader_de extends MecResourceBundle{
         {"trust.all.server.certificates", "Die ausgehende TLS-Verbindung wird allen Zertifikaten des entfernten Servers vertrauen, wenn das Stamm- und das Zwischenzertifikat verfügbar sind." },
         {"strict.hostname.check", "Bei der ausgehenden TLS Verbindung wird eine strenge Prüfung des Hostnamens bezüglich des Serverzertifikats durchgeführt." },
         {"strict.hostname.check.skipped.selfsigned", "TLS: Die strenge Prüfung des Hostnamens wurde übersprungen - der entfernte Server verwendet ein self signed Zertifikat." },
+        {"httpheader.replaced", "Der Wert des HTTP Headers \"{0}\" wurde durch den benutzerdefinierten Wert \"{1}\" ersetzt" },
+        {"httpheader.deleted", "Der HTTP Header \"{0}\" wurde wegen der benutzerdefinierten HTTP Header Einstellungen gelöscht" },
+        {"httpheader.set", "Der HTTP Header \"{0}\" wurde auf den benutzerdefinierten Wert \"{1}\" gesetzt" },
+        {"httpheader.added.basicauth", "Der HTTP Header für die Basic Authentication wurde dem Sendeauftrag hinzugefügt" },
     };
     
 }

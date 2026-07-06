@@ -1,0 +1,24 @@
+$Header:$
+Ten plik zawiera szablon powiadomienia o dodaniu certyfikatu SSL z powodu CEM
+Można użyć następujących zmiennych, które są odpowiednio zastępowane:
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host serwera AS2
+${CERTIFICATETECHDETAILS}: szczegóły techniczne certyfikatu
+${PARTNER}: Inicjator wymiany
+
+
+
+
+[SUBJECT]
+Certyfikat SSL/TLS został dodany (CEM)
+
+
+[BODY]
+W wyniku żądania certyfikatu (CEM) przez partnera "${PARTNER}" do systemu został dodany certyfikat SSL/TLS.
+
+Zajrzyj do systemu, aby zobaczyć szczegóły procesu. Jeśli nie ufasz tym zmianom
+tym zmianom, należy je zresetować i skontaktować się z partnerem.
+
+Informacje techniczne dotyczące certyfikatu:
+
+${CERTIFICATETECHDETAILS}

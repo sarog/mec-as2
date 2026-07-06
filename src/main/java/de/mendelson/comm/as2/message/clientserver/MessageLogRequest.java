@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageLogRequest.java 4     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageLogRequest.java 6     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -17,7 +18,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class MessageLogRequest extends ClientServerMessage implements Serializable {
 
@@ -29,6 +30,13 @@ public class MessageLogRequest extends ClientServerMessage implements Serializab
         this.messageId = messageId;
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public MessageLogRequest() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Message log request");

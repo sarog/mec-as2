@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_fr.java 11    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_fr.java 19    8/12/25 16:39 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 19 $
  */
 public class ResourceBundlePreferencesAS2_fr extends MecResourceBundle {
 
@@ -28,7 +28,8 @@ public class ResourceBundlePreferencesAS2_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
+        {PreferencesAS2.EXTENDED_LOG_PROCESSING, "Afficher le journal des traitements supplémentaires"},
         {"module.name", "[PARAMÈTRES]" }, 
         {"TRUE", "allumé" },
         {"FALSE", "désactivé" },
@@ -37,7 +38,7 @@ public class ResourceBundlePreferencesAS2_fr extends MecResourceBundle {
         {"notification.setting.updated", "Les paramètres de notification ont été modifiés." },
         {"setting.reset", "Le paramètre serveur [{0}] a été réinitialisé à sa valeur par défaut." },
         //preferences localized
-        {PreferencesAS2.ASYNC_MDN_TIMEOUT, "Délai d''attente pour MDN asynchrone en min"},
+        {PreferencesAS2.MDN_WAIT_TIME, "Délai d''attente pour MDN asynchrone en min"},
         {PreferencesAS2.AUTH_PROXY_PASS, "Données d''accès au proxy HTTP (mot de passe)"},
         {PreferencesAS2.AUTH_PROXY_USE, "Utiliser les données d'accès du proxy HTTP"},
         {PreferencesAS2.AUTH_PROXY_USER, "Données d''accès proxy HTTP (utilisateur)"},
@@ -75,5 +76,8 @@ public class ResourceBundlePreferencesAS2_fr extends MecResourceBundle {
         {PreferencesAS2.HTTPS_LISTEN_PORT, "Port d''entrée HTTPS"},
         {PreferencesAS2.HTTP_LISTEN_PORT, "Port d''entrée HTTP"},
         {PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG, "L''affichage : Remplacer la sécurité de la station locale"},        
+        {PreferencesAS2.EMBEDDED_HTTP_SERVER_REQUESTLOG, "Journal des requêtes du serveur HTTP intégré"},
+        {PreferencesAS2.CHECK_REVOCATION_LISTS, "Vérifier les listes de révocation des certificats"},
+        {PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES, "Importation automatique de certificats TLS de partenaires modifiés"}, 
     };
 }

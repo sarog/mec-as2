@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_de.java 12    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_de.java 20    8/12/25 16:39 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
 
@@ -28,7 +28,7 @@ public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"module.name", "[EINSTELLUNGEN]" }, 
         {"TRUE", "eingeschaltet" },
         {"FALSE", "ausgeschaltet" },
@@ -37,7 +37,7 @@ public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
         {"notification.setting.updated", "Die Benachrichtigungseinstellungen wurden verändert." },
         {"setting.reset", "Die Servereinstellung [{0}] wurde auf den Standardwert zurückgesetzt." },
         //preferences localized
-        {PreferencesAS2.ASYNC_MDN_TIMEOUT, "Timeout für async MDN in min"},
+        {PreferencesAS2.MDN_WAIT_TIME, "Timeout für async MDN in min"},
         {PreferencesAS2.AUTH_PROXY_PASS, "HTTP Proxy Zugangsdaten (Passwort)"},
         {PreferencesAS2.AUTH_PROXY_USE, "Verwende HTTP Proxy Zugangsdaten"},
         {PreferencesAS2.AUTH_PROXY_USER, "HTTP Proxy Zugangsdaten (Benutzer)"},
@@ -60,6 +60,7 @@ public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
         {PreferencesAS2.LANGUAGE, "Client Sprache"},
         {PreferencesAS2.LAST_UPDATE_CHECK, "Letze Prüfung auf neue Version (unix time)"},
         {PreferencesAS2.LOG_POLL_PROCESS, "Poll Prozess im Protokoll documentieren"},
+        {PreferencesAS2.EXTENDED_LOG_PROCESSING, "Display additional processing log"},
         {PreferencesAS2.MAX_CONNECTION_RETRY_COUNT, "Anzahl der Verbindungsversuche"},
         {PreferencesAS2.MAX_OUTBOUND_CONNECTIONS, "Max Menge gleichzeitig ausgehender Verbindungen"},
         {PreferencesAS2.MAX_INBOUND_CONNECTIONS, "Max Menge gleichzeitig eingehender Verbindungen"},  
@@ -75,5 +76,8 @@ public class ResourceBundlePreferencesAS2_de extends MecResourceBundle {
         {PreferencesAS2.HTTPS_LISTEN_PORT, "HTTPS Eingangsport"},
         {PreferencesAS2.HTTP_LISTEN_PORT, "HTTP Eingangsport"},   
         {PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG, "Anzeige: Überschreiben der Sicherheit der lokalen Station"},        
+        {PreferencesAS2.EMBEDDED_HTTP_SERVER_REQUESTLOG, "Requestlog des integrierten HTTP Servers"},
+        {PreferencesAS2.CHECK_REVOCATION_LISTS, "Sperrlisten von Zertifikaten prüfen"}, 
+        {PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES, "Automatischer Import veränderter Partner TLS Zertifikate"}, 
     };
 }

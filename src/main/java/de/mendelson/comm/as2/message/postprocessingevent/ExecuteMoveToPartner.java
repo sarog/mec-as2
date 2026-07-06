@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 12    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 18    31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
-import de.mendelson.comm.as2.message.MDNAccessDB;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.sendorder.SendOrderSender;
@@ -33,13 +33,12 @@ import java.util.logging.Logger;
  * defined remote partner
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 18 $
  */
-public class ExecuteMoveToPartner implements IProcessingExecution {
+public final class ExecuteMoveToPartner implements IProcessingExecution {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final MessageAccessDB messageAccess;
-    private final MDNAccessDB mdnAccess;
     private final PartnerAccessDB partnerAccess;
     private final CertificateManager certificateManagerEncSign;
 
@@ -54,7 +53,6 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
         this.dbDriverManager = dbDriverManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.messageAccess = new MessageAccessDB(dbDriverManager);
-        this.mdnAccess = new MDNAccessDB(dbDriverManager);
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
         //Load resourcebundle
         try {
@@ -77,8 +75,8 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
         if (messageInfo == null) {
             throw new Exception(this.rb.getResourceString("messageid.nolonger.exist", event.getMessageId()));
         } else {
-            if (event.getEventType() == ProcessingEvent.TYPE_SEND_FAILURE
-                    || event.getEventType() == ProcessingEvent.TYPE_SEND_SUCCESS) {
+            if (event.getTriggerType() == ProcessingEventTriggerType.SEND_FAILURE
+                    || event.getTriggerType() == ProcessingEventTriggerType.SEND_SUCCESS) {
                 this.executeMoveToPartnerOnSend(event, messageInfo);
             } else {
                 this.executeMoveToPartnerOnReceipt(event, messageInfo);
@@ -92,14 +90,14 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
      */
     private void executeMoveToPartnerOnSend(ProcessingEvent event, AS2MessageInfo messageInfo) throws Exception {
         //do not execute anything for CEM messages
-        if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
+        if (messageInfo.getMessageType() == MessageType.CEM) {
             return;
         }
-        Partner messageSender = this.partnerAccess.getPartner(messageInfo.getSenderId());
-        Partner messageReceiver = this.partnerAccess.getPartner(messageInfo.getReceiverId());
+        Partner messageSender = this.partnerAccess.getPartnerByAS2Id(messageInfo.getSenderId());
+        Partner messageReceiver = this.partnerAccess.getPartnerByAS2Id(messageInfo.getReceiverId());
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String targetPartnerAS2Id = event.getParameter().get(0);
-        Partner targetPartner = this.partnerAccess.getPartner(targetPartnerAS2Id);
+        Partner targetPartner = this.partnerAccess.getPartnerByAS2Id(targetPartnerAS2Id);
         if (targetPartner == null) {
             throw new PostprocessingException(this.rb.getResourceString("targetpartner.does.not.exist", targetPartnerAS2Id),
                     messageSender, messageReceiver);
@@ -132,7 +130,7 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
                     SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager);
                     orderSender.send(this.certificateManagerEncSign, messageSender,
                             targetPartner, sendFiles, originalFilenames, null,
-                            targetPartner.getSubject(), payloadContentTypes);
+                            targetPartner.getSubject(), payloadContentTypes, null);
                     this.logger.log(Level.INFO, this.rb.getResourceString("executing.movetopartner.success",
                             targetPartner.toString()), messageInfo);
                 } catch (Exception e) {
@@ -151,14 +149,14 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
      */
     private void executeMoveToPartnerOnReceipt(ProcessingEvent event, AS2MessageInfo messageInfo) throws Exception {
         //do not execute a command for CEM messages
-        if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
+        if (messageInfo.getMessageType() == MessageType.CEM) {
             return;
         }
-        Partner messageSender = this.partnerAccess.getPartner(messageInfo.getSenderId());
-        Partner messageReceiver = this.partnerAccess.getPartner(messageInfo.getReceiverId());
+        Partner messageSender = this.partnerAccess.getPartnerByAS2Id(messageInfo.getSenderId());
+        Partner messageReceiver = this.partnerAccess.getPartnerByAS2Id(messageInfo.getReceiverId());
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String targetPartnerAS2Id = event.getParameter().get(0);
-        Partner targetPartner = this.partnerAccess.getPartner(targetPartnerAS2Id);
+        Partner targetPartner = this.partnerAccess.getPartnerByAS2Id(targetPartnerAS2Id);
         if (targetPartner == null) {
             throw new PostprocessingException(
                     this.rb.getResourceString("targetpartner.does.not.exist", targetPartnerAS2Id),
@@ -189,7 +187,7 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
                     SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager);
                     orderSender.send(this.certificateManagerEncSign, messageReceiver,
                             targetPartner, sendFiles, originalFilenames, null,
-                            targetPartner.getSubject(), payloadContentTypes);
+                            targetPartner.getSubject(), payloadContentTypes, null);
                     this.logger.log(Level.INFO, this.rb.getResourceString("executing.movetopartner.success",
                             targetPartner.toString()), messageInfo);
                 } catch (Exception e) {

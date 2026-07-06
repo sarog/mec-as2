@@ -1,7 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 12    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 22    31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.partner;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventTriggerType;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventType;
 import de.mendelson.comm.as2.partner.gui.event.PartnerEventResource;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.io.IOException;
@@ -9,6 +12,7 @@ import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -24,36 +28,63 @@ import org.w3c.dom.NodeList;
  * Stores event information of a partner
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 22 $
  */
 public class PartnerEventInformation implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    public static final int PROCESS_EXECUTE_SHELL = ProcessingEvent.PROCESS_EXECUTE_SHELL;
-    public static final int PROCESS_MOVE_TO_PARTNER = ProcessingEvent.PROCESS_MOVE_TO_PARTNER;
-    public static final int PROCESS_MOVE_TO_DIR = ProcessingEvent.PROCESS_MOVE_TO_DIR;
+    private boolean useOnReceipt = false;
+    private boolean useOnSendError = false;
+    private boolean useOnSendSuccess = false;
+    private ProcessingEventType processOnReceipt = ProcessingEventType.EXECUTE_SHELL;
+    private ProcessingEventType processOnSendError = ProcessingEventType.EXECUTE_SHELL;
+    private ProcessingEventType processOnSendSuccess = ProcessingEventType.EXECUTE_SHELL;
 
-    public static final int TYPE_ON_RECEIPT = ProcessingEvent.TYPE_RECEIPT_SUCCESS;
-    public static final int TYPE_ON_SENDERROR = ProcessingEvent.TYPE_SEND_FAILURE;
-    public static final int TYPE_ON_SENDSUCCESS = ProcessingEvent.TYPE_SEND_SUCCESS;
-
-    private boolean useonreceipt = false;
-    private boolean useonsenderror = false;
-    private boolean useonsendsuccess = false;
-    private int processOnReceipt = PROCESS_EXECUTE_SHELL;
-    private int processOnSenderror = PROCESS_EXECUTE_SHELL;
-    private int processOnSendsuccess = PROCESS_EXECUTE_SHELL;
-
-    private final List<String> parameteronreceipt = new ArrayList<String>();
-    private final List<String> parameteronsenderror = new ArrayList<String>();
-    private final List<String> parameteronsendsuccess = new ArrayList<String>();
+    private List<String> parameterOnReceipt = new ArrayList<String>();
+    private List<String> parameterOnSendError = new ArrayList<String>();
+    private List<String> parameterOnSendSuccess = new ArrayList<String>();
 
     /**
      * Creates an empty entry
      */
     public PartnerEventInformation() {
+    }
 
+    /**
+     * @return the useOnSendError
+     */
+    public boolean isUseOnSendError() {
+        return useOnSendError;
+    }
+
+    /**
+     * @param useOnSendError the useOnSendError to set
+     */
+    public void setUseOnSendError(boolean useOnSendError) {
+        this.useOnSendError = useOnSendError;
+    }
+
+    /**
+     * @return the useOnSendSuccess
+     */
+    public boolean isUseOnSendSuccess() {
+        return useOnSendSuccess;
+    }
+
+    /**
+     * @param useOnSendSuccess the useOnSendSuccess to set
+     */
+    public void setUseOnSendSuccess(boolean useOnSendSuccess) {
+        this.useOnSendSuccess = useOnSendSuccess;
+    }
+
+    /**
+     * @param parameterOnSendSuccess the parameterOnSendSuccess to set
+     */
+    public void setParameterOnSendSuccess(List<String> parameterOnSendSuccess) {
+        this.parameterOnSendSuccess.clear();
+        this.parameterOnSendSuccess.addAll(parameterOnSendSuccess);
     }
 
     /**
@@ -62,11 +93,11 @@ public class PartnerEventInformation implements Serializable {
      * @param PROCESS_TYPE
      * @return
      */
-    public static MendelsonMultiResolutionImage getImageForProcess(int PROCESS_TYPE) {
-        if (PROCESS_TYPE == PROCESS_MOVE_TO_DIR) {
+    public static MendelsonMultiResolutionImage getImageForProcess(ProcessingEventType eventType) {
+        if (eventType == ProcessingEventType.MOVE_TO_DIR) {
             return (PartnerEventResource.IMAGE_PROCESS_MOVE_TO_DIR);
         }
-        if (PROCESS_TYPE == PROCESS_MOVE_TO_PARTNER) {
+        if (eventType == ProcessingEventType.MOVE_TO_PARTNER) {
             return (PartnerEventResource.IMAGE_PROCESS_MOVE_TO_PARTNER);
         }
         return (PartnerEventResource.IMAGE_PROCESS_EXECUTE_SHELL);
@@ -78,35 +109,32 @@ public class PartnerEventInformation implements Serializable {
      * @param level level in the XML hierarchy for the xml beautifying
      */
     public String toXML(int level) {
-        String offset = "";
-        for (int i = 0; i < level; i++) {
-            offset += "\t";
-        }
+        String offset = "\t".repeat(level);
         StringBuilder builder = new StringBuilder();
-        builder.append(offset).append("<events>\n");
-        builder.append(offset).append("\t<useonreceipt>").append(String.valueOf(this.useonreceipt)).append("</useonreceipt>\n");
-        builder.append(offset).append("\t<typeonreceipt>").append(String.valueOf(this.processOnReceipt)).append("</typeonreceipt>\n");        
+        builder.append(offset).append("<events>\n")
+                .append(offset).append("\t<useonreceipt>").append(String.valueOf(this.isUseOnReceipt())).append("</useonreceipt>\n")
+                .append(offset).append("\t<typeonreceipt>").append(String.valueOf(this.processOnReceipt)).append("</typeonreceipt>\n");
         if (this.hasParameterOnReceipt()) {
             builder.append(offset).append("\t<onreceiptvalues>\n");
-            for (String value : this.parameteronreceipt) {
+            for (String value : this.getParameterOnReceipt()) {
                 builder.append(offset).append("\t\t<value>").append(this.toCDATA(value)).append("</value>\n");
-            }            
+            }
             builder.append(offset).append("\t</onreceiptvalues>\n");
-        }        
-        builder.append(offset).append("\t<useonsenderror>").append(String.valueOf(this.useonsenderror)).append("</useonsenderror>\n");
-        builder.append(offset).append("\t<typeonsenderror>").append(String.valueOf(this.processOnSenderror)).append("</typeonsenderror>\n");
+        }
+        builder.append(offset).append("\t<useonsenderror>").append(String.valueOf(this.isUseOnSendError())).append("</useonsenderror>\n")
+                .append(offset).append("\t<typeonsenderror>").append(String.valueOf(this.processOnSendError)).append("</typeonsenderror>\n");
         if (this.hasParameterOnSenderror()) {
             builder.append(offset).append("\t<onsenderrorvalues>\n");
-            for (String value : this.parameteronsenderror) {
+            for (String value : this.parameterOnSendError) {
                 builder.append(offset).append("\t\t<value>").append(this.toCDATA(value)).append("</value>\n");
             }
             builder.append(offset).append("\t</onsenderrorvalues>\n");
         }
-        builder.append(offset).append("\t<useonsendsuccess>").append(String.valueOf(this.useonsendsuccess)).append("</useonsendsuccess>\n");
-        builder.append(offset).append("\t<typeonsendsuccess>").append(String.valueOf(this.processOnSendsuccess)).append("</typeonsendsuccess>\n");
+        builder.append(offset).append("\t<useonsendsuccess>").append(String.valueOf(this.isUseOnSendSuccess())).append("</useonsendsuccess>\n")
+                .append(offset).append("\t<typeonsendsuccess>").append(String.valueOf(this.processOnSendSuccess)).append("</typeonsendsuccess>\n");
         if (this.hasParameterOnSendsuccess()) {
             builder.append(offset).append("\t<onsendsuccessvalues>\n");
-            for (String value : this.parameteronsendsuccess) {
+            for (String value : this.parameterOnSendSuccess) {
                 builder.append(offset).append("\t\t<value>").append(this.toCDATA(value)).append("</value>\n");
             }
             builder.append(offset).append("\t</onsendsuccessvalues>\n");
@@ -131,38 +159,38 @@ public class PartnerEventInformation implements Serializable {
                 String key = property.getTagName();
                 String value = property.getTextContent();
                 if (key.equals("useonreceipt")) {
-                    eventInfo.setUseOnReceipt(Boolean.valueOf(value).booleanValue());
+                    eventInfo.setUseOnReceipt(Boolean.parseBoolean(value));
                 }
                 if (key.equals("useonsenderror")) {
-                    eventInfo.setUseOnSenderror(Boolean.valueOf(value).booleanValue());
+                    eventInfo.setUseOnSendError(Boolean.parseBoolean(value));
                 }
                 if (key.equals("useonsendsuccess")) {
-                    eventInfo.setUseOnSendsuccess(Boolean.valueOf(value).booleanValue());
+                    eventInfo.setUseOnSendSuccess(Boolean.parseBoolean(value));
                 }
                 if (key.equals("typeonreceipt")) {
-                    eventInfo.setProcessOnReceipt(Integer.valueOf(value).intValue());
+                    eventInfo.setProcessOnReceipt(ProcessingEventType.of(Integer.parseInt(value)));
                 }
                 if (key.equals("typeonsenderror")) {
-                    eventInfo.setProcessOnSenderror(Integer.valueOf(value).intValue());
+                    eventInfo.setProcessOnSendError(ProcessingEventType.of(Integer.parseInt(value)));
                 }
                 if (key.equals("typeonsendsuccess")) {
-                    eventInfo.setProcessOnSendsuccess(Integer.valueOf(value).intValue());
+                    eventInfo.setProcessOnSendSuccess(ProcessingEventType.of(Integer.parseInt(value)));
                 }
                 if (key.equals("onreceiptvalues")) {
-                    collectXMLValues(eventInfo.parameteronreceipt, property);
+                    collectXMLValues(eventInfo.getParameterOnReceipt(), property);
                 }
                 if (key.equals("onsenderrorvalues")) {
-                    collectXMLValues(eventInfo.parameteronsenderror, property);
+                    collectXMLValues(eventInfo.getParameterOnSendError(), property);
                 }
                 if (key.equals("onsendsuccessvalues")) {
-                    collectXMLValues(eventInfo.parameteronsendsuccess, property);
+                    collectXMLValues(eventInfo.getParameterOnSendSuccess(), property);
                 }
             }
         }
     }
 
     private static void collectXMLValues(List<String> list, Element element) {
-        list.clear();        
+        list.clear();
         NodeList propertiesNodeList = element.getChildNodes();
         for (int i = 0; i < propertiesNodeList.getLength(); i++) {
             if (propertiesNodeList.item(i).getNodeType() == Node.ELEMENT_NODE) {
@@ -170,7 +198,7 @@ public class PartnerEventInformation implements Serializable {
                 String valueTag = valueElement.getTagName();
                 if (valueTag.equals("value")) {
                     String propertyValue = "";
-                    if( valueElement.getTextContent() != null ){
+                    if (valueElement.getTextContent() != null) {
                         propertyValue = valueElement.getTextContent();
                     }
                     list.add(propertyValue);
@@ -191,12 +219,12 @@ public class PartnerEventInformation implements Serializable {
         }
         if (anObject != null && anObject instanceof PartnerEventInformation) {
             PartnerEventInformation entry = (PartnerEventInformation) anObject;
-            return (entry.getProcessOnReceipt() == this.getProcessOnReceipt()
-                    && entry.getProcessOnSenderror() == this.getProcessOnSenderror()
-                    && entry.getProcessOnSendsuccess() == this.getProcessOnSendsuccess()
+            return (entry.processOnReceipt == this.processOnReceipt
+                    && entry.processOnSendError == this.processOnSendError
+                    && entry.processOnSendSuccess == this.processOnSendSuccess
                     && this.parameterAreEqual(entry.getParameterOnReceipt(), this.getParameterOnReceipt())
-                    && this.parameterAreEqual(entry.getParameterOnSenderror(), this.getParameterOnSenderror())
-                    && this.parameterAreEqual(entry.getParameterOnSendsuccess(), this.getParameterOnSendsuccess()));
+                    && this.parameterAreEqual(entry.parameterOnSendError, this.parameterOnSendError)
+                    && this.parameterAreEqual(entry.parameterOnSendSuccess, this.parameterOnSendSuccess));
 
         }
         return (false);
@@ -204,12 +232,12 @@ public class PartnerEventInformation implements Serializable {
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 83 * hash + (this.useOnReceipt() ? 1 : 0);
-        hash = 83 * hash + (this.useOnSendsuccess() ? 1 : 0);
-        hash = 83 * hash + this.getProcessOnReceipt();
-        hash = 83 * hash + this.getProcessOnSenderror();
-        hash = 83 * hash + this.getProcessOnSendsuccess();
+        int hash = 7;
+        hash = 37 * hash + Objects.hashCode(this.processOnReceipt);
+        hash = 37 * hash + Objects.hashCode(this.processOnSendError);
+        hash = 37 * hash + Objects.hashCode(this.processOnSendSuccess);
+        hash = 37 * hash + Objects.hashCode(this.parameterOnSendError);
+        hash = 37 * hash + Objects.hashCode(this.parameterOnSendSuccess);
         return hash;
     }
 
@@ -225,268 +253,219 @@ public class PartnerEventInformation implements Serializable {
         return (builderA.toString().equals(builderB.toString()));
     }
 
-    /**
-     * @return the useonreceipt
-     */
-    public boolean useOnReceipt() {
-        return useonreceipt;
-    }
-
-    public void setUse(final int EVENT_TYPE, boolean flag) {
-        if (EVENT_TYPE == TYPE_ON_RECEIPT) {
+    @JsonIgnore
+    public void setUse(ProcessingEventTriggerType triggerType, boolean flag) {
+        if (triggerType == ProcessingEventTriggerType.RECEIPT_SUCCESS) {
             this.setUseOnReceipt(flag);
-        } else if (EVENT_TYPE == TYPE_ON_SENDERROR) {
-            this.setUseOnSenderror(flag);
-        } else if (EVENT_TYPE == TYPE_ON_SENDSUCCESS) {
-            this.setUseOnSendsuccess(flag);
+        } else if (triggerType == ProcessingEventTriggerType.SEND_FAILURE) {
+            this.setUseOnSendError(flag);
+        } else if (triggerType == ProcessingEventTriggerType.SEND_SUCCESS) {
+            this.setUseOnSendSuccess(flag);
         }
     }
 
-    /**
-     * @param useonreceipt the useonreceipt to set
-     */
-    public void setUseOnReceipt(boolean useonreceipt) {
-        this.useonreceipt = useonreceipt;
-    }
-
-    /**
-     * @return the useonsenderror
-     */
-    public boolean useOnSenderror() {
-        return useonsenderror;
-    }
-
-    /**
-     * @param useonsenderror the useonsenderror to set
-     */
-    public void setUseOnSenderror(boolean useonsenderror) {
-        this.useonsenderror = useonsenderror;
-    }
-
-    /**
-     * @return the useonsendsuccess
-     */
-    public boolean useOnSendsuccess() {
-        return useonsendsuccess;
-    }
-
-    /**
-     * @param useonsendsuccess the useonsendsuccess to set
-     */
-    public void setUseOnSendsuccess(boolean useonsendsuccess) {
-        this.useonsendsuccess = useonsendsuccess;
-    }
-
-    public void setProcess(final int EVENT_TYPE, final int PROCESS_TYPE) {
-        if (EVENT_TYPE == TYPE_ON_RECEIPT) {
-            this.setProcessOnReceipt(PROCESS_TYPE);
-        } else if (EVENT_TYPE == TYPE_ON_SENDERROR) {
-            this.setProcessOnSenderror(PROCESS_TYPE);
-        } else if (EVENT_TYPE == TYPE_ON_SENDSUCCESS) {
-            this.setProcessOnSendsuccess(PROCESS_TYPE);
+    @JsonIgnore
+    public void setProcess(ProcessingEventTriggerType triggerType, ProcessingEventType processType) {
+        if (triggerType == ProcessingEventTriggerType.RECEIPT_SUCCESS) {
+            this.setProcessOnReceipt(processType);
+        } else if (triggerType == ProcessingEventTriggerType.SEND_FAILURE) {
+            this.setProcessOnSendError(processType);
+        } else if (triggerType == ProcessingEventTriggerType.SEND_SUCCESS) {
+            this.setProcessOnSendSuccess(processType);
         }
     }
 
-    public int getProcess(final int EVENT_TYPE) {
-        if (EVENT_TYPE == TYPE_ON_RECEIPT) {
-            return (this.getProcessOnReceipt());
-        } else if (EVENT_TYPE == TYPE_ON_SENDERROR) {
-            return (this.getProcessOnSenderror());
-        } else if (EVENT_TYPE == TYPE_ON_SENDSUCCESS) {
-            return (this.getProcessOnSendsuccess());
+    @JsonIgnore
+    public ProcessingEventType getProcess(ProcessingEventTriggerType eventTriggerType) {
+        if (eventTriggerType == ProcessingEventTriggerType.RECEIPT_SUCCESS) {
+            return (this.processOnReceipt);
+        } else if (eventTriggerType == ProcessingEventTriggerType.SEND_FAILURE) {
+            return (this.processOnSendError);
+        } else if (eventTriggerType == ProcessingEventTriggerType.SEND_SUCCESS) {
+            return (this.processOnSendSuccess);
         } else {
-            throw new IllegalArgumentException("PartnerEventInformation.getProcess(): Undefined event type " + EVENT_TYPE);
+            throw new IllegalArgumentException("PartnerEventInformation.getProcess(): Undefined event type " + eventTriggerType);
         }
     }
-    
+
     /**
      * @return the typeonreceipt
      */
-    private int getProcessOnReceipt() {
+    public ProcessingEventType getProcessOnReceipt() {
         return processOnReceipt;
     }
 
     /**
      * @param processonreceipt the typeonreceipt to set
      */
-    private void setProcessOnReceipt(int processonreceipt) {
+    public void setProcessOnReceipt(ProcessingEventType processonreceipt) {
         this.processOnReceipt = processonreceipt;
     }
 
     /**
      * @return the typeonsenderror
      */
-    private int getProcessOnSenderror() {
-        return processOnSenderror;
+    public ProcessingEventType getProcessOnSendError() {
+        return processOnSendError;
     }
 
     /**
      * @param processonsenderror the typeonsenderror to set
      */
-    private void setProcessOnSenderror(int processonsenderror) {
-        this.processOnSenderror = processonsenderror;
+    public void setProcessOnSendError(ProcessingEventType processonsenderror) {
+        this.processOnSendError = processonsenderror;
     }
 
     /**
      * @return the typeonsendsuccess
      */
-    private int getProcessOnSendsuccess() {
-        return processOnSendsuccess;
+    public ProcessingEventType getProcessOnSendSuccess() {
+        return processOnSendSuccess;
     }
 
     /**
      * @param processonsendsuccess the typeonsendsuccess to set
      */
-    private void setProcessOnSendsuccess(int processonsendsuccess) {
-        this.processOnSendsuccess = processonsendsuccess;
+    public void setProcessOnSendSuccess(ProcessingEventType processonsendsuccess) {
+        this.processOnSendSuccess = processonsendsuccess;
     }
 
-    public List<String> getParameter(final int EVENT_TYPE) {
-        if (EVENT_TYPE == TYPE_ON_RECEIPT) {
+    @JsonIgnore
+    public List<String> getParameter(ProcessingEventTriggerType triggerType) {
+        if (triggerType == ProcessingEventTriggerType.RECEIPT_SUCCESS) {
             return (this.getParameterOnReceipt());
-        } else if (EVENT_TYPE == TYPE_ON_SENDERROR) {
-            return (this.getParameterOnSenderror());
-        } else if (EVENT_TYPE == TYPE_ON_SENDSUCCESS) {
-            return (this.getParameterOnSendsuccess());
+        } else if (triggerType == ProcessingEventTriggerType.SEND_FAILURE) {
+            return (this.getParameterOnSendError());
+        } else if (triggerType == ProcessingEventTriggerType.SEND_SUCCESS) {
+            return (this.getParameterOnSendSuccess());
         } else {
-            throw new IllegalArgumentException("PartnerEventInformation.getParameter(): Undefined event type " + EVENT_TYPE);
+            throw new IllegalArgumentException("PartnerEventInformation.getParameter(): Undefined event type " + triggerType);
         }
     }
 
     /**
      * @return the parameteronreceipt
      */
-    private List<String> getParameterOnReceipt() {
-        return parameteronreceipt;
+    public List<String> getParameterOnReceipt() {
+        List<String> tempList = new ArrayList<String>(this.parameterOnReceipt);
+        return tempList;
     }
 
-    public void setParameter(final int EVENT_TYPE, List<String> parameter) {
-        if (EVENT_TYPE == TYPE_ON_RECEIPT) {
+    @JsonIgnore
+    public void setParameter(ProcessingEventTriggerType triggerType, List<String> parameter) {
+        if (triggerType == ProcessingEventTriggerType.RECEIPT_SUCCESS) {
             this.setParameterOnReceipt(parameter);
-        } else if (EVENT_TYPE == TYPE_ON_SENDERROR) {
-            this.setParameterOnSenderror(parameter);
-        } else if (EVENT_TYPE == TYPE_ON_SENDSUCCESS) {
-            this.setParameterOnSendsuccess(parameter);
+        } else if (triggerType == ProcessingEventTriggerType.SEND_FAILURE) {
+            this.setParameterOnSendError(parameter);
+        } else if (triggerType == ProcessingEventTriggerType.SEND_SUCCESS) {
+            this.setParameterOnSendSuccess(parameter);
         }
     }
 
-    public void setParameter(final int EVENT_TYPE, String parameter) {
-        if (EVENT_TYPE == TYPE_ON_RECEIPT) {
-            this.setParameterOnReceipt(parameter);
-        } else if (EVENT_TYPE == TYPE_ON_SENDERROR) {
-            this.setParameterOnSenderror(parameter);
-        } else if (EVENT_TYPE == TYPE_ON_SENDSUCCESS) {
-            this.setParameterOnSendsuccess(parameter);
-        }
-    }
-    
-    /**
-     * @param parameteronreceipt the parameteronreceipt to set
-     */
-    public void setParameterOnReceipt(List<String> parameteronreceipt) {
-        this.parameteronreceipt.clear();
-        this.parameteronreceipt.addAll(parameteronreceipt);
+    @JsonIgnore
+    public void setParameter(ProcessingEventTriggerType triggerType, String parameter) {
+        this.setParameter(triggerType, List.<String>of(parameter));
     }
 
     /**
      * @param parameteronreceipt the parameteronreceipt to set
      */
-    public void setParameterOnReceipt(String parameteronreceipt) {
-        this.parameteronreceipt.clear();
-        this.parameteronreceipt.add(parameteronreceipt);
+    public void setParameterOnReceipt(List<String> parameteronreceipt) {
+        this.parameterOnReceipt.clear();
+        this.parameterOnReceipt.addAll(parameteronreceipt);
     }
 
     /**
      * @return the parameteronsenderror
      */
-    private List<String> getParameterOnSenderror() {
-        return parameteronsenderror;
+    public List<String> getParameterOnSendError() {
+        List<String> tempList = new ArrayList<String>(this.parameterOnSendError);
+        return tempList;
     }
 
     /**
      * @param parameteronsenderror the parameteronsenderror to set
      */
-    private void setParameterOnSenderror(List<String> parameteronsenderror) {
-        this.parameteronsenderror.clear();
-        this.parameteronsenderror.addAll(parameteronsenderror);
-    }
-
-    private void setParameterOnSenderror(String parameteronsenderror) {
-        this.parameteronsenderror.clear();
-        this.parameteronsenderror.add(parameteronsenderror);
+    public void setParameterOnSendError(List<String> parameteronsenderror) {
+        this.parameterOnSendError.clear();
+        this.parameterOnSendError.addAll(parameteronsenderror);
     }
 
     /**
      * @return the parameteronsendsuccess
      */
-    private List<String> getParameterOnSendsuccess() {
-        return parameteronsendsuccess;
+    public List<String> getParameterOnSendSuccess() {
+        List<String> tempList = new ArrayList<String>(this.parameterOnSendSuccess);
+        return tempList;
+    }
+
+    public boolean hasParameterOnSendsuccess() {
+        if (this.parameterOnSendSuccess.isEmpty()) {
+            return (false);
+        }
+        for (String parameter : this.parameterOnSendSuccess) {
+            if (parameter != null && !parameter.trim().isEmpty()) {
+                return (true);
+            }
+        }
+        return (false);
+    }
+
+    public boolean hasParameterOnSenderror() {
+        if (this.parameterOnSendError.isEmpty()) {
+            return (false);
+        }
+        for (String parameter : this.parameterOnSendError) {
+            if (parameter != null && !parameter.trim().isEmpty()) {
+                return (true);
+            }
+        }
+        return (false);
+    }
+
+    public boolean hasParameterOnReceipt() {
+        if (this.getParameterOnReceipt().isEmpty()) {
+            return (false);
+        }
+        for (String parameter : this.getParameterOnReceipt()) {
+            if (parameter != null && !parameter.trim().isEmpty()) {
+                return (true);
+            }
+        }
+        return (false);
+    }
+
+    public boolean hasParameter(ProcessingEventTriggerType triggerType) {
+        if (triggerType == ProcessingEventTriggerType.RECEIPT_SUCCESS) {
+            return (this.hasParameterOnReceipt());
+        } else if (triggerType == ProcessingEventTriggerType.SEND_FAILURE) {
+            return (this.hasParameterOnSenderror());
+        } else if (triggerType == ProcessingEventTriggerType.SEND_SUCCESS) {
+            return (this.hasParameterOnSendsuccess());
+        } else {
+            throw new IllegalArgumentException("PartnerEventInformation.hasParameter(): Undefined event type " + triggerType);
+        }
     }
 
     /**
-     * @param parameteronsendsuccess the parameteronsendsuccess to set
+     * Prevent an overwrite of the readObject method for de-serialization
      */
-    private void setParameterOnSendsuccess(List<String> parameteronsendsuccess) {
-        this.parameteronsendsuccess.clear();
-        this.parameteronsendsuccess.addAll(parameteronsendsuccess);
-    }
-
-    private void setParameterOnSendsuccess(String parameteronsendsuccess) {
-        this.parameteronsendsuccess.clear();
-        this.parameteronsendsuccess.add(parameteronsendsuccess);
-    }
-
-    private boolean hasParameterOnSendsuccess() {
-        if (this.parameteronsendsuccess.isEmpty()) {
-            return (false);
-        }
-        for (String parameter : this.parameteronsendsuccess) {
-            if (parameter != null && !parameter.trim().isEmpty()) {
-                return (true);
-            }
-        }
-        return (false);
-    }
-
-    private boolean hasParameterOnSenderror() {
-        if (this.parameteronsenderror.isEmpty()) {
-            return (false);
-        }
-        for (String parameter : this.parameteronsenderror) {
-            if (parameter != null && !parameter.trim().isEmpty()) {
-                return (true);
-            }
-        }
-        return (false);
-    }
-
-    private boolean hasParameterOnReceipt() {
-        if (this.parameteronreceipt.isEmpty()) {
-            return (false);
-        }
-        for (String parameter : this.parameteronreceipt) {
-            if (parameter != null && !parameter.trim().isEmpty()) {
-                return (true);
-            }
-        }
-        return (false);
-    }
-    
-    public boolean hasParameter( final int EVENT_TYPE){
-        if (EVENT_TYPE == TYPE_ON_RECEIPT) {
-            return (this.hasParameterOnReceipt());
-        } else if (EVENT_TYPE == TYPE_ON_SENDERROR) {
-            return (this.hasParameterOnSenderror());
-        } else if (EVENT_TYPE == TYPE_ON_SENDSUCCESS) {
-            return (this.hasParameterOnSendsuccess());
-        } else {
-            throw new IllegalArgumentException("PartnerEventInformation.hasParameter(): Undefined event type " + EVENT_TYPE);
-        }
-    }
-    
-    /**Prevent an overwrite of the readObject method for de-serialization*/
-    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException {
         inStream.defaultReadObject();
     }
-    
+
+    /**
+     * @return the useOnReceipt
+     */
+    public boolean isUseOnReceipt() {
+        return useOnReceipt;
+    }
+
+    /**
+     * @param useOnReceipt the useOnReceipt to set
+     */
+    public void setUseOnReceipt(boolean useOnReceipt) {
+        this.useOnReceipt = useOnReceipt;
+    }
+
 }

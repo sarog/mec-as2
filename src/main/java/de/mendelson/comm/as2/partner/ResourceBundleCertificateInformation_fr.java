@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation_fr.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/ResourceBundleCertificateInformation_fr.java 6     9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleCertificateInformation_fr extends MecResourceBundle {
 

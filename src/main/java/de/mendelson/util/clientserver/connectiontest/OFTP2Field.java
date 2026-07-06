@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/OFTP2Field.java 2     2/11/23 14:03 Heller $
+//$Header: /mec_as4/de/mendelson/util/clientserver/connectiontest/OFTP2Field.java 8     14/04/26 9:04 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.math.BigInteger;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Date;
 
@@ -16,50 +18,70 @@ import java.util.Date;
  */
 /**
  * A field in a command structure
+ *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 8 $
  */
-public abstract class OFTP2Field {
+public abstract sealed class OFTP2Field 
+        permits OFTP2FieldAN {
 
     public static final int TYPE_AN = 1;
     public static final int TYPE_N = 2;
-    public static int TYPE_TXT = 3;
+    public static final int TYPE_TXT = 3;
     public static final int TYPE_BIN = 4;
     private String name;
     private int maxLength = 0;
     private String description = "";
-    /**Initializesd to blanks if no default is given*/
+    /**
+     * Initialized to blanks if no default is given
+     */
     private byte[] defaultValue = null;
-    /**If the length of this field is given by another fields content, this is stored here*/
+    /**
+     * If the length of this field is given by another fields content, this is
+     * stored here
+     */
     private OFTP2Field lengthGivenByField = null;
+    //DateTimeFormatter is thread safe
+    private static final DateTimeFormatter FORMAT_DATE_FIELD = DateTimeFormatter.ofPattern("yyyyMMdd");
+    //DateTimeFormatter is thread safe
+    private static final DateTimeFormatter FORMAT_TIME_FIELD = DateTimeFormatter.ofPattern("HHmmss");
 
-    public OFTP2Field(String name, int maxLength, String description) {
+    protected OFTP2Field(String name, int maxLength, String description) {
         this.initialize(name, maxLength, description, null);
     }
 
-    public OFTP2Field(String name, int maxLength, String description, String defaultValue) {
+    protected OFTP2Field(String name, int maxLength, String description, String defaultValue) {
         byte[] defaultValueBytes = defaultValue.getBytes();
         this.initialize(name, maxLength, description, defaultValueBytes);
     }
 
-    public OFTP2Field(String name, int maxLength, String description, byte[] defaultValue) {
+    protected OFTP2Field(String name, int maxLength, String description, byte[] defaultValue) {
         this.initialize(name, maxLength, description, defaultValue);
     }
 
-    /**Formats a given date in the format CCYYMMDD*/
-    public static String toDateStr( Date date ){
-        DateFormat format = new SimpleDateFormat("yyyyMMdd");
-        return( format.format( date ));
+    /**
+     * Formats a given date in the format CCYYMMDD
+     */
+    public static String toDateStr(Date date) {
+        LocalDateTime localDateTime = Instant.ofEpochMilli(date.getTime())
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        return (localDateTime.format(FORMAT_DATE_FIELD));
     }
 
-    /**Formats a given date in the format HHmmssXXXX*/
-    public static String toTimeStr( Date date, String counterStr ){
-        DateFormat format = new SimpleDateFormat("HHmmss");
-        return( format.format( date ) + counterStr);
+    /**
+     * Formats a given date in the format HHmmssXXXX
+     */
+    public static String toTimeStr(Date date, String counterStr) {
+        LocalDateTime localDateTime = Instant.ofEpochMilli(date.getTime())
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        return (localDateTime.format(FORMAT_TIME_FIELD) + counterStr);
     }
 
-    /**Performs a padding, depenging on the field type. 000 for N, 0x20 for AN
-     * 
+    /**
+     * Performs a padding, depenging on the field type. 000 for N, 0x20 for AN
+     *
      * @return
      */
     public byte[] performPadding(byte[] value) {
@@ -68,14 +90,14 @@ public abstract class OFTP2Field {
             return (value);
         }
         //drop leading 0 bytes for BIN fields
-        if( value != null && this.getType() == OFTP2Field.TYPE_BIN){
-            BigInteger bigInt = new BigInteger( value );
+        if (value != null && this.getType() == OFTP2Field.TYPE_BIN) {
+            BigInteger bigInt = new BigInteger(value);
             value = bigInt.toByteArray();
         }
         if (value != null && this.getMaxLength() < value.length) {
             throw new IllegalArgumentException("Field default > defined field maxLength");
         }
-        byte[] newValue = new byte[this.getMaxLength()];        
+        byte[] newValue = new byte[this.getMaxLength()];
         if (this.getType() == TYPE_BIN) {
             //binary: left padding with 0H bytes
             Arrays.fill(newValue, (byte) 0x00);
@@ -83,7 +105,7 @@ public abstract class OFTP2Field {
                 int offset = this.getMaxLength() - value.length;
                 System.arraycopy(value, 0, newValue, offset, value.length);
             }
-        }else if (this.getType() != TYPE_N) {
+        } else if (this.getType() != TYPE_N) {
             //numeric: right fill up with blanks, up to maxlength
             Arrays.fill(newValue, (byte) 0x20);
             if (value != null) {
@@ -97,10 +119,12 @@ public abstract class OFTP2Field {
                 System.arraycopy(value, 0, newValue, offset, value.length);
             }
         }
-        return( newValue );
+        return (newValue);
     }
 
-    /**initializes the field*/
+    /**
+     * initializes the field
+     */
     private void initialize(String name, int maxLength, String description, byte[] defaultValue) {
         this.description = description;
         this.setName(name);
@@ -119,7 +143,7 @@ public abstract class OFTP2Field {
             String value = new String(referedFieldsDefaultValue);
             int lengthByContent = 0;
             try {
-                lengthByContent = Integer.valueOf(value.trim());
+                lengthByContent = Integer.parseInt(value.trim());
             } catch (NumberFormatException e) {
                 //nop
             }
@@ -185,7 +209,9 @@ public abstract class OFTP2Field {
         this.defaultValue = defaultValue;
     }
 
-    /**Will return null if no other fields content defines this fields length
+    /**
+     * Will return null if no other fields content defines this fields length
+     *
      * @return the lengthGivenByField
      */
     public OFTP2Field getLengthGivenByField() {

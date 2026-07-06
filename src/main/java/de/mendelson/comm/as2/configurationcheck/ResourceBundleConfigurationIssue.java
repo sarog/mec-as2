@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 26    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue.java 33    21/02/25 16:04 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 33 $
  */
 public class ResourceBundleConfigurationIssue extends MecResourceBundle {
 
@@ -27,7 +27,7 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         //preferences localized
         {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN), "Certificate expired (enc/sign)"},
         {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN),
@@ -76,11 +76,13 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
         {"hint." + String.valueOf(ConfigurationIssue.FEW_CPU_CORES),
             "<HTML>For better throughput it is necessary that different tasks in the system are performed in parallel.<br>"
             + "Therefore it is necessary to reserve a corresponding number of CPU cores for the process.</HTML>"},
-        {String.valueOf(ConfigurationIssue.LOW_MAX_HEAP_MEMORY), "Setup min 4GB heap memory for the server process"},
+        {String.valueOf(ConfigurationIssue.LOW_MAX_HEAP_MEMORY), "Setup min 8GB heap memory for the server process"},
         {"hint." + String.valueOf(ConfigurationIssue.LOW_MAX_HEAP_MEMORY),
             "<HTML>This program is written in Java.<br>"
-            + "Regardless of the physical configuration of your computer, you must reserve a corresponding amount of memory for the server process.<br>"
-            + "In your case, you have reserved too little memory. Please refer to the Help (Installation section) for information on how to reserve memory for a particular startup method.</HTML>"},
+            + "Regardless of the physical equipment of your computer, you must reserve an appropriate amount of memory for the server process. In your case, you have reserved too little memory.<br>"
+            + "Please have a look at the help (section Installation) - there you can see how to reserve the corresponding memory for which start method.<br><br>"
+            + "In any case, please ensure that you do not reserve more memory for the server process than your system has main memory. "
+            + "Otherwise the software will become almost unusable because the system is constantly swapping memory to the hard disk.</HTML>"},
         {String.valueOf(ConfigurationIssue.NO_OUTBOUND_CONNECTIONS_ALLOWED), "Outbound connections is set to 0 - system will NOT send"},
         {"hint." + String.valueOf(ConfigurationIssue.NO_OUTBOUND_CONNECTIONS_ALLOWED),
             "<HTML>You have made configuration changes so that no outgoing connections are currently possible.<br>"
@@ -112,7 +114,7 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "If you need a trusted key, please contact mendelson support.</HTML>"},
         {String.valueOf(ConfigurationIssue.JVM_32_BIT), "Using a 32bit Java VM is not recommended for production use as the max heap memory is limited there to 1.3GB"},
         {"hint." + String.valueOf(ConfigurationIssue.JVM_32_BIT),
-            "<HTML>Java 32bit processes cannot reserve enough memory to keep the system stable in productive operation. Please use a 64bit JVM.</HTML>"},        
+            "<HTML>Java 32bit processes cannot reserve enough memory to keep the system stable in productive operation. Please use a 64bit JVM.</HTML>"},
         {String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT), "Windows service started using a local system account"},
         {"hint." + String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT),
             "<HTML>You have set up the mendelson AS2 server as Windows service and start it from a local system account (\"{0}\").<br>"
@@ -127,6 +129,47 @@ public class ResourceBundleConfigurationIssue extends MecResourceBundle {
             + "Please decrease this value by increasing the monitoring intervals of the respective partner directories and "
             + "also disable outbound directory monitoring for partners where this is not required.<br><br>"
             + "For a huge amount of partners it is recommended to disable all directory monitoring processes and create the send orders "
-            + "from your backend using the commands <i>AS2Send.exe</i> or <i>as2send.sh</i> on demand.</HTML>"},        
+            + "from your backend using the commands <i>AS2Send.exe</i> or <i>as2send.sh</i> on demand.</HTML>"},
+        {String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN), "Certificate revocation problem (enc/sign)"},
+        {"hint." + String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN),
+            "<HTML>Trusted certificates contain a link to a revocation list that can be used to declare "
+            + "this certificate invalid. For example, if the certificate has been compromised.<br>"
+            + "There was a problem checking the revocation list of the following enc/sign certificate or the certificate has "
+            + "been revoked:<br><strong>{0}</strong><br><br>"
+            + "Additional information on the certificate<br><br>"
+            + "Alias: {1}<br>"
+            + "Issuer: {2}<br>"
+            + "Fingerprint (SHA-1): {3}<br>"
+            + "<br>"
+            + "<br>Please remember that you could disable the automatically CRL check in the server settings."
+            + "</HTML>"},
+        {String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS), "Certificate revocation problem (TLS)"},
+        {"hint." + String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS),
+            "<HTML>Trusted certificates contain a link to a revocation list that can be used to declare "
+            + "this certificate invalid. For example, if the certificate has been compromised.<br>"
+            + "There was a problem checking the revocation list of the following TLS certificate or the certificate has "
+            + "been revoked:<br><strong>{0}</strong><br><br>"
+            + "Additional information on the certificate<br><br>"
+            + "Alias: {1}<br>"
+            + "Issuer: {2}<br>"
+            + "Fingerprint (SHA-1): {3}<br>"
+            + "<br>"
+            + "<br>Please remember that you could disable the automatically CRL check in the server settings."
+            + "</HTML>"},
+        {String.valueOf(ConfigurationIssue.CLIENT_SERVER_IN_ONE_PROCESS), "Client and server run in one process"},
+        {"hint." + String.valueOf(ConfigurationIssue.CLIENT_SERVER_IN_ONE_PROCESS),
+            "<HTML>You have started the client and server of the product in one process. It is not recommended "
+            + "to do this in production. As the resources are statically assigned to the programs, you will "
+            + "have fewer resources for server and client operation in this case.<br><br>"
+            + "Please start the server process first and then connect with the client separately."
+            + "</HTML>"},
+        {String.valueOf(ConfigurationIssue.NOT_ENOUGH_HANDLES), "Not enough handles for server process"},
+        {"hint." + String.valueOf(ConfigurationIssue.NOT_ENOUGH_HANDLES),
+            "<HTML>You can limit the number of open ports and files per user in your operating system.<br>" 
+            + "Your current process user may only use {0} handles, which is too few for the process to run in "
+            + "server operation. The server process currently uses {1} handles.<br>"
+            + "Under Linux, you can view this value with \"ulimit -n\".<br><br>"
+            + "Please extend the maximum value of available handles for this process to at least {2}."
+            + "</HTML>"},
     };
 }

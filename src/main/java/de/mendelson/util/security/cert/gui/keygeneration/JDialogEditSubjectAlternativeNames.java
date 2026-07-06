@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/JDialogEditSubjectAlternativeNames.java 5     2/11/23 14:03 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/keygeneration/JDialogEditSubjectAlternativeNames.java 8     14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,7 +26,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * Dialog that is shown if multiple files should be closed
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class JDialogEditSubjectAlternativeNames extends JDialog implements ListSelectionListener {
 
@@ -35,18 +35,18 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
      * ResourceBundle to localize the output
      */
     private MecResourceBundle rb = null;
-    private final JFrame parent;
+    private final JFrame frameParent;
     private final List<GeneralName> namesList;
 
-    private final static MendelsonMultiResolutionImage ICON_ADD
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/add.svg", 24, 48);
-    private final static MendelsonMultiResolutionImage ICON_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/delete.svg", 24, 48);
+    private static final MendelsonMultiResolutionImage ICON_ADD
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/add.svg", 24);
+    private static final MendelsonMultiResolutionImage ICON_DELETE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/delete.svg", 24);
 
-    public JDialogEditSubjectAlternativeNames(JFrame parent, List<GeneralName> namesList) {
-        super(parent, true);
+    public JDialogEditSubjectAlternativeNames(JFrame frameParent, List<GeneralName> namesList) {
+        super(frameParent, true);
         this.namesList = namesList;
-        this.parent = parent;
+        this.frameParent = frameParent;
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleDialogSubjectAlternativeNames.class.getName());
@@ -58,7 +58,7 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
         initComponents();
         this.setMultiresolutionIcons();
         this.jLabelInfo.setText("<HTML>" + this.rb.getResourceString("info") + "</HTML>");
-        ((TableModelSubjectAlternativeNames) this.jTable.getModel()).passNewData(this.parent, namesList);
+        ((TableModelSubjectAlternativeNames) this.jTable.getModel()).passNewData(this.frameParent, namesList);
         this.jTable.getTableHeader().setReorderingAllowed(false);
         this.jTable.getSelectionModel().addListSelectionListener(this);
         TableColumn columnType = this.jTable.getColumn(this.jTable.getColumnName(0));
@@ -70,8 +70,6 @@ public class JDialogEditSubjectAlternativeNames extends JDialog implements ListS
         allValues.add(TagNo.RFC822_NAME);
         allValues.add(TagNo.URI);
         //The following values are in the API but seem not to work during the generation process:
-        //allValues.add( TableModelSubjectAlternativeNames.TagNo.X400);    
-        //allValues.add( TableModelSubjectAlternativeNames.TagNo.EDI_PARTY_NAME);
         columnType.setCellEditor(new TableCellEditorSubjectAlternativeNames(allValues));
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setButtonState();

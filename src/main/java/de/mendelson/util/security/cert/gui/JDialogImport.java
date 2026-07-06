@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImport.java 6     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/gui/JDialogImport.java 8     9/12/25 17:06 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,20 +20,30 @@ import javax.swing.JFrame;
  * Dialog to preselect what to import - a key or a certificate and how
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class JDialogImport extends JDialog {
 
-    protected final static int SELECTION_CANCEL = 0;
-    protected final static int SELECTION_IMPORT_CERTIFICATE = 1;
-    protected final static int SELECTION_IMPORT_KEY = 2;
+    protected static final int SELECTION_CANCEL = 0;
+    protected static final int SELECTION_IMPORT_CERTIFICATE = 1;
+    protected static final int SELECTION_IMPORT_KEY_KEYSTORE = 2;
+    protected static final int SELECTION_IMPORT_KEY_PEM = 3;
     private int selection = SELECTION_CANCEL;
 
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private final MecResourceBundle rb;
-    private final MecResourceBundle rbCertificates;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbCertificates;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleImport.class.getName());
+            rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCertificates.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Creates new form JDialogPartnerConfig
@@ -41,17 +51,7 @@ public class JDialogImport extends JDialog {
      */
     public JDialogImport(JFrame parent) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleImport.class.getName());
-            this.rbCertificates = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCertificates.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         this.setMultiresolutionIcons();
         this.getRootPane().setDefaultButton(this.jButtonOk);
@@ -62,11 +62,17 @@ public class JDialogImport extends JDialog {
      */
     private void setMultiresolutionIcons() {
         this.jLabelIcon.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(32)));
+                new ImageIcon(JDialogCertificates.IMAGE_IMPORT_MULTIRESOLUTION.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_DIALOG)));
         this.jLabelImageCert.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_CERTIFICATE.toMinResolution(24)));
+                new ImageIcon(JDialogCertificates.IMAGE_CERTIFICATE.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
         this.jLabelImageKey.setIcon(
-                new ImageIcon(JDialogCertificates.IMAGE_KEY.toMinResolution(24)));
+                new ImageIcon(JDialogCertificates.IMAGE_KEY.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
+        this.jLabelImageKeyPEM.setIcon(
+                new ImageIcon(JDialogCertificates.IMAGE_KEY.toMinResolution(
+                        JDialogCertificates.IMAGE_SIZE_TOOLBAR)));
     }
 
     /**
@@ -79,9 +85,12 @@ public class JDialogImport extends JDialog {
     private void computeSelection() {
         if (this.jRadioButtonImportCertificate.isSelected()) {
             this.selection = SELECTION_IMPORT_CERTIFICATE;
-        }        
+        }
         if (this.jRadioButtonImportKeyFromKeystore.isSelected()) {
-            this.selection = SELECTION_IMPORT_KEY;
+            this.selection = SELECTION_IMPORT_KEY_KEYSTORE;
+        }
+        if (this.jRadioButtonImportKeyFromPEM.isSelected()) {
+            this.selection = SELECTION_IMPORT_KEY_PEM;
         }
     }
 
@@ -106,6 +115,11 @@ public class JDialogImport extends JDialog {
         jLabelImportCertificate = new javax.swing.JLabel();
         jLabelImportKeyFromKeystore = new javax.swing.JLabel();
         jPanel1 = new javax.swing.JPanel();
+        jRadioButtonImportKeyFromPEM = new javax.swing.JRadioButton();
+        jLabelImageKeyPEM = new javax.swing.JLabel();
+        jLabelImportKeyFromPEM = new javax.swing.JLabel();
+        jPanel2 = new javax.swing.JPanel();
+        jPanel4 = new javax.swing.JPanel();
         jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
         jButtonCancel = new javax.swing.JButton();
@@ -125,12 +139,12 @@ public class JDialogImport extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelEdit.add(jLabelIcon, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 4;
-        gridBagConstraints.gridy = 7;
+        gridBagConstraints.gridx = 5;
+        gridBagConstraints.gridy = 11;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEdit.add(jPanel3, gridBagConstraints);
 
         buttonGroupImport.add(jRadioButtonImportCertificate);
@@ -212,11 +226,58 @@ public class JDialogImport extends JDialog {
         jPanelEdit.add(jLabelImportKeyFromKeystore, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+        jPanelEdit.add(jPanel1, gridBagConstraints);
+
+        buttonGroupImport.add(jRadioButtonImportKeyFromPEM);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
+        jPanelEdit.add(jRadioButtonImportKeyFromPEM, gridBagConstraints);
+
+        jLabelImageKeyPEM.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/missing_image24x24.gif"))); // NOI18N
+        jLabelImageKeyPEM.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabelImageKeyPEMMouseClicked(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 6;
+        jPanelEdit.add(jLabelImageKeyPEM, gridBagConstraints);
+
+        jLabelImportKeyFromPEM.setFont(new java.awt.Font("Dialog", 0, 12)); // NOI18N
+        jLabelImportKeyFromPEM.setText(this.rbCertificates.getResourceString( "label.key.import.pem"));
+        jLabelImportKeyFromPEM.addMouseListener(new java.awt.event.MouseAdapter() {
+            public void mouseClicked(java.awt.event.MouseEvent evt) {
+                jLabelImportKeyFromPEMMouseClicked(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 6;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelEdit.add(jLabelImportKeyFromPEM, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(2, 2, 2, 2);
+        jPanelEdit.add(jPanel2, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 15, 5);
-        jPanelEdit.add(jPanel1, gridBagConstraints);
+        jPanelEdit.add(jPanel4, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -255,7 +316,7 @@ public class JDialogImport extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(565, 278));
+        setSize(new java.awt.Dimension(573, 338));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -284,6 +345,14 @@ public class JDialogImport extends JDialog {
         this.jRadioButtonImportKeyFromKeystore.setSelected(true);
     }//GEN-LAST:event_jLabelImportKeyFromKeystoreMouseClicked
 
+    private void jLabelImageKeyPEMMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelImageKeyPEMMouseClicked
+        this.jRadioButtonImportKeyFromPEM.setSelected(true);
+    }//GEN-LAST:event_jLabelImageKeyPEMMouseClicked
+
+    private void jLabelImportKeyFromPEMMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jLabelImportKeyFromPEMMouseClicked
+        this.jRadioButtonImportKeyFromPEM.setSelected(true);
+    }//GEN-LAST:event_jLabelImportKeyFromPEMMouseClicked
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.ButtonGroup buttonGroupImport;
@@ -292,15 +361,20 @@ public class JDialogImport extends JDialog {
     private javax.swing.JLabel jLabelIcon;
     private javax.swing.JLabel jLabelImageCert;
     private javax.swing.JLabel jLabelImageKey;
+    private javax.swing.JLabel jLabelImageKeyPEM;
     private javax.swing.JLabel jLabelImportCertificate;
     private javax.swing.JLabel jLabelImportKeyFromKeystore;
+    private javax.swing.JLabel jLabelImportKeyFromPEM;
     private javax.swing.JLabel jLabelWhatToImport;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
     private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelEdit;
     private javax.swing.JRadioButton jRadioButtonImportCertificate;
     private javax.swing.JRadioButton jRadioButtonImportKeyFromKeystore;
+    private javax.swing.JRadioButton jRadioButtonImportKeyFromPEM;
     // End of variables declaration//GEN-END:variables
 
 }

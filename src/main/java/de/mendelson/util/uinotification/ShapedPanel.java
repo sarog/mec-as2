@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/util/uinotification/ShapedPanel.java 1     10/05/22 12:57 Heller $
+//$Header: /mec_as4/de/mendelson/util/uinotification/ShapedPanel.java 3     14/04/26 9:05 Heller $
 package de.mendelson.util.uinotification;
 
 import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.geom.RoundRectangle2D;
 import javax.swing.JPanel;
 
 /*
@@ -18,7 +19,7 @@ import javax.swing.JPanel;
  * Panel that contains the notification information
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 3 $
  */
 public class ShapedPanel extends JPanel {
 
@@ -26,7 +27,23 @@ public class ShapedPanel extends JPanel {
     protected static final int TYPE_ROUNDED_EDGES_RIGHT = 2;
     protected static final int TYPE_NO_ROUNDED_EDGES = 3;
     private int type = TYPE_ROUNDED_EDGES_LEFT;
-    
+
+    private static final RenderingHints RENDERING_HINTS = new RenderingHints(RenderingHints.KEY_RENDERING,
+            RenderingHints.VALUE_RENDER_QUALITY);
+
+    static {
+        RENDERING_HINTS.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
+        RENDERING_HINTS.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON));
+        RENDERING_HINTS.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
+        RENDERING_HINTS.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
+        RENDERING_HINTS.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_NORMALIZE));
+    }
+
     /**
      * Creates new form ShapedPanel
      */
@@ -34,42 +51,35 @@ public class ShapedPanel extends JPanel {
         initComponents();
     }
 
-    /**Set the shape type, one of TYPE_ROUND_LEFT or TYPE_ROUND_RIGHT*/
-    public void setType( int type ){
+    /**
+     * Set the shape type, one of TYPE_ROUND_LEFT or TYPE_ROUND_RIGHT
+     */
+    public void setType(int type) {
         this.type = type;
     }
-    
+
     @Override
-    protected void paintComponent(Graphics g) {        
+    protected void paintComponent(Graphics g) {
         Graphics2D g2d = (Graphics2D) g.create();
-        RenderingHints renderingHints = new RenderingHints(RenderingHints.KEY_RENDERING,
-                RenderingHints.VALUE_RENDER_QUALITY);
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
-                RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
-                RenderingHints.VALUE_ANTIALIAS_ON));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
-                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
-                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
-        renderingHints.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
-                RenderingHints.VALUE_STROKE_NORMALIZE));
-        g2d.setRenderingHints(renderingHints);
+        g2d.setRenderingHints(RENDERING_HINTS);
         Color backgroundColor = getBackground();
         g2d.setColor(backgroundColor);
-        int arc = 10;
+        int arc = (int) NotificationWindow.ARC;
         int width = getWidth();
         int height = getHeight();
-        if( type != TYPE_NO_ROUNDED_EDGES){
-            g2d.fillRoundRect( 0, 0, width, height, arc, arc );
+        RoundRectangle2D.Float shape;
+        if (type != TYPE_NO_ROUNDED_EDGES) {
+            shape = new RoundRectangle2D.Float(0, 0,
+                    width, height, arc, arc);
+            g2d.fill(shape);
         }
-        if( this.type == TYPE_ROUNDED_EDGES_LEFT ){
-            int offsetX = width/3;
-            g2d.fillRect( offsetX, 0, width-offsetX, height);
-        }else if( this.type == TYPE_ROUNDED_EDGES_RIGHT ){
-            g2d.fillRect( 0, 0, width/3, height);
-        }else{
-            g2d.fillRect( 0, 0, width, height);
+        if (this.type == TYPE_ROUNDED_EDGES_LEFT) {
+            int offsetX = (int) ((float) width / 3f);
+            g2d.fillRect(offsetX, 0, width - offsetX, height);
+        } else if (this.type == TYPE_ROUNDED_EDGES_RIGHT) {
+            g2d.fillRect(0, 0, (int) ((float) width / 3f), height);
+        } else {
+            g2d.fillRect(0, 0, width, height);
         }
         g2d.dispose();
     }

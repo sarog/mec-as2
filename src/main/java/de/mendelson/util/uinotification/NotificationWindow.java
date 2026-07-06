@@ -1,13 +1,16 @@
-//$Header: /as2/de/mendelson/util/uinotification/NotificationWindow.java 23    2/11/23 14:03 Heller $package de.mendelson.util.uinotification;
+//$Header: /as2/de/mendelson/util/uinotification/NotificationWindow.java 27    8/04/26 13:31 Heller $package de.mendelson.util.uinotification;
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.NamedThreadFactory;
+import java.awt.BasicStroke;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dialog;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Point;
@@ -39,18 +42,18 @@ import javax.swing.event.MouseInputListener;
  * Single notification panel
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 27 $
  */
 public class NotificationWindow extends JWindow implements MouseInputListener {
 
     /**
      * At which opacity should the frame disappear/appear?
      */
-    private final static float VISIBLE_OPACITY_THRESHOLD = UINotification.VISIBLE_OPACITY_THRESHOLD;
+    private static final float VISIBLE_OPACITY_THRESHOLD = UINotification.VISIBLE_OPACITY_THRESHOLD;
     /**
      * The wait time per step of the internal fade out thread
      */
-    private final long THREAD_WAIT_TIME_STEPS_IN_MS = 25;
+    private static final long THREAD_WAIT_TIME_STEPS_IN_MS = 25;
 
     private final Runnable fadeout;
     private final INotificationHandler notificationHandler;
@@ -68,11 +71,18 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
     private Color crossColorMouseOver = Color.WHITE;
 
     /**
+     * Paint a border if this color is set - else do not paint a border
+     */
+    private Color borderColor = null;
+
+    protected static final float ARC = 10.0f;
+
+    /**
      * @param anchorFrame Root frame for the notification position
      * @param image Image to display - there is a default if this is null which
      * depends on the notification type
-     * @param NOTIFICATION_TYPE One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR
+     * @param notificationType One of UINotification.TYPE.OK,
+     * UINotification.TYPE.WARNING, UINotification.TYPE.ERROR
      * @param notificationTitle The title of the notification - not folded -
      * means you have to ensure a short title. If this is null, the type OK,
      * WARNING, ERROR is displayed in the localized language of the current
@@ -84,7 +94,7 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
      */
     public NotificationWindow(JFrame anchorFrame,
             MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE, String notificationTitle,
+            UINotification.Type notificationType, String notificationTitle,
             String notificationDetails, Rectangle bounds,
             INotificationHandler notificationHandler,
             long notificationDisplayTimeFadeIn,
@@ -107,9 +117,9 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
                 @Override
                 public void componentResized(ComponentEvent e) {
                     RoundRectangle2D.Float shape = new RoundRectangle2D.Float(0, 0,
-                            (int) getWidth(),
-                            (int) getHeight(),
-                            10f, 10f);
+                            (float) getWidth(),
+                            (float) getHeight(),
+                            ARC, ARC);
                     setShape(shape);
                     invalidate();
                     validate();
@@ -121,7 +131,7 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
         }
         this.setBounds(bounds);
         this.notificationHandler = notificationHandler;
-        this.notificationPanel = new NotificationPanel(image, NOTIFICATION_TYPE,
+        this.notificationPanel = new NotificationPanel(image, notificationType,
                 notificationTitle, notificationDetails, bounds, this.graphicSupportsShapedWindows);
         this.notificationTypePanel = this.notificationPanel.getNotificationTypePanel();
         this.textPanel = this.notificationPanel.getTextPanel();
@@ -149,7 +159,8 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
                         Color backgroundColor = NotificationWindow.this.notificationTypePanel.getBackground();
                         NotificationWindow.this.closeCrossPanel.setBackground(backgroundColor);
                         Color bestCrossContrastColor = ColorUtil.getBestContrastColorAroundForeground(backgroundColor, crossColorMouseOver);
-                        ImageIcon crossIcon = UINotification.generateCrossImage(NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
+                        ImageIcon crossIcon = UINotification.generateCrossImage(
+                                NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
                         NotificationWindow.this.closeCrossLabel.setIcon(crossIcon);
                     }
                 });
@@ -163,7 +174,8 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
                         Color backgroundColor = NotificationWindow.this.textPanel.getBackground();
                         NotificationWindow.this.closeCrossPanel.setBackground(backgroundColor);
                         Color bestCrossContrastColor = ColorUtil.getBestContrastColorAroundForeground(backgroundColor, crossColor);
-                        ImageIcon crossIcon = UINotification.generateCrossImage(NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
+                        ImageIcon crossIcon = UINotification.generateCrossImage(
+                                NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
                         NotificationWindow.this.closeCrossLabel.setIcon(crossIcon);
                     }
                 });
@@ -193,7 +205,8 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
                         Color backgroundColor = NotificationWindow.this.notificationTypePanel.getBackground();
                         NotificationWindow.this.closeCrossPanel.setBackground(backgroundColor);
                         Color bestCrossContrastColor = ColorUtil.getBestContrastColorAroundForeground(backgroundColor, crossColorMouseOver);
-                        ImageIcon crossIcon = UINotification.generateCrossImage(NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
+                        ImageIcon crossIcon = UINotification.generateCrossImage(
+                                NotificationPanel.IMAGESIZE_CLOSECROSS, bestCrossContrastColor);
                         NotificationWindow.this.closeCrossLabel.setIcon(crossIcon);
                     }
                 });
@@ -293,23 +306,31 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
      * Redefines the used background colors for the panels
      */
     public NotificationWindow setBackgroundColors(
-            Color backgroundSuccessLight,
-            Color backgroundSuccessDark,
-            Color backgroundWarningLight,
-            Color backgroundWarningDark,
-            Color backgroundErrorLight,
-            Color backgroundErrorDark,
-            Color backgroundInformationLight,
-            Color backgroundInformationDark) {
+            Color backgroundColorSuccess,
+            Color accentColorSuccess,
+            Color backgroundColorWarning,
+            Color accentColorWarning,
+            Color backgroundColorError,
+            Color accentColorError,
+            Color backgroundColorInformation,
+            Color accentColorInformation) {
         this.notificationPanel.setBackgroundColors(
-                backgroundSuccessLight,
-                backgroundSuccessDark,
-                backgroundWarningLight,
-                backgroundWarningDark,
-                backgroundErrorLight,
-                backgroundErrorDark,
-                backgroundInformationLight,
-                backgroundInformationDark);
+                backgroundColorSuccess,
+                accentColorSuccess,
+                backgroundColorWarning,
+                accentColorWarning,
+                backgroundColorError,
+                accentColorError,
+                backgroundColorInformation,
+                accentColorInformation);
+        return (this);
+    }
+
+    /**
+     * Redefines the used background colors for the panels
+     */
+    public NotificationWindow setBorderColor(Color borderColor) {
+        this.borderColor = borderColor;
         return (this);
     }
 
@@ -448,4 +469,26 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
         this.deliverMouseEventToUnderlayingComponent(e);
     }
 
+    @Override
+    public void paint(Graphics g) {
+        super.paint(g);
+        if (this.borderColor != null) {
+            Graphics2D graphics = (Graphics2D) g;
+            graphics.setColor(this.borderColor);
+            graphics.setStroke(new BasicStroke(1f));
+            RoundRectangle2D.Float shape;
+            if (graphicSupportsShapedWindows) {
+                shape = new RoundRectangle2D.Float(0, 0,
+                        (float) getWidth() - 1f,
+                        (float) getHeight() - 1f,
+                        ARC - 2f, ARC - 2f);
+            } else {
+                shape = new RoundRectangle2D.Float(0, 0,
+                        (float) getWidth() - 1f,
+                        (float) getHeight() - 1f,
+                        0, 0);
+            }
+            graphics.draw(shape);
+        }
+    }
 }

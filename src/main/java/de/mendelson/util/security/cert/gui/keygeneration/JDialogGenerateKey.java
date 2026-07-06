@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/JDialogGenerateKey.java 40    14/12/23 15:56 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/keygeneration/JDialogGenerateKey.java 51    14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -44,24 +44,35 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
  * Dialog to work with certificates
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 51 $
  */
 public class JDialogGenerateKey extends JDialog {
-
 
     private static final String KEY_SIZE_1024 = "1024";
     private static final String KEY_SIZE_2048 = "2048";
     private static final String KEY_SIZE_4096 = "4096";
 
-    private final static MendelsonMultiResolutionImage IMAGE_EDIT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/keygeneration/edit.svg", 16);
-    private final static MendelsonMultiResolutionImage IMAGE_KEY
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/key.svg", 32);
+    private static final MendelsonMultiResolutionImage IMAGE_EDIT
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/security/cert/gui/keygeneration/edit.svg", 20);
+    private static final MendelsonMultiResolutionImage IMAGE_KEY
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/security/cert/key.svg", 32);
 
     /**
      * ResourceBundle to localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleGenerateKey.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private KeyGenerationValues values = new KeyGenerationValues();
     private final String alias = "myalias";
     private final List<GeneralName> namesList = new ArrayList<GeneralName>();
@@ -72,42 +83,22 @@ public class JDialogGenerateKey extends JDialog {
      */
     public JDialogGenerateKey(JFrame parent) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleGenerateKey.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
-        this.jComboBoxSignature.setRenderer(new ListCellRendererSignature(this.jComboBoxSignature));
-        this.jComboBoxSize.setRenderer(new ListCellRendererKeyLength(this.jComboBoxSize));
+        this.jComboBoxKeySignature.setRenderer(new ListCellRendererSignature(this.jComboBoxKeySignature));
+        this.jComboBoxKeySize.setRenderer(new ListCellRendererKeyLength(this.jComboBoxKeySize));
         this.setMultiresolutionIcons();
         //populate combo boxes
         this.jComboBoxKeyType.removeAllItems();
         this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_DSA);
         this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_RSA);
         this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_ECDSA);
+        this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_EDDSA);
+        this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_DILITHIUM);
+        this.jComboBoxKeyType.addItem(KeyGenerator.KEYALGORITHM_SPHINCSPLUS);
         this.jComboBoxKeyType.setSelectedItem(KeyGenerator.KEYALGORITHM_RSA);
+        jComboBoxCurve.addItem("----");
         this.displayValues();
-        Enumeration enumeration = ECNamedCurveTable.getNames();
-        List<String> curveNames = new ArrayList<String>();
-        while (enumeration.hasMoreElements()) {
-            String curveName = enumeration.nextElement().toString();
-            if (!curveName.isEmpty()) {
-                curveName = curveName.substring(0, 1).toUpperCase() + curveName.substring(1);
-                curveNames.add(curveName);
-            }
-        }
-        curveNames.add(KeyGenerator.CURVE_NAME_ED25519);
-        Collections.sort(curveNames);
-        this.jComboBoxECCurve.removeAllItems();
-        for (String curveName : curveNames) {
-            this.jComboBoxECCurve.addItem(curveName);
-        }
-        this.jComboBoxECCurve.setSelectedItem("Prime256v1");
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setViewMode();
         this.addWindowListener(
@@ -130,66 +121,151 @@ public class JDialogGenerateKey extends JDialog {
 
     private void setKeyRelatedValuesToCombobox() {
         String keyType = (String) this.jComboBoxKeyType.getSelectedItem();
-        KeyLengthDisplay keySizePreselection = (KeyLengthDisplay) this.jComboBoxSize.getSelectedItem();
-        SignatureDisplayValue signatureAlgorithmPreselection = null;
-        if (this.jComboBoxSignature.getSelectedItem() != null) {
-            signatureAlgorithmPreselection = (SignatureDisplayValue) this.jComboBoxSignature.getSelectedItem();
-        }
+        KeyLengthDisplay keySizePreselection = (KeyLengthDisplay) this.jComboBoxKeySize.getSelectedItem();
+        SignatureDisplayValue signatureAlgorithmPreselection
+                = (SignatureDisplayValue) this.jComboBoxKeySignature.getSelectedItem();
         if (keyType == null) {
             return;
         }
-        this.jComboBoxSignature.removeAllItems();
+        this.jComboBoxKeySignature.removeAllItems();
         if (keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
             // 10/2019: a key size of 512 will result in an invalid key size error
             // - this is the same as an asymmetric key size of 15360 bit which seems
             // not to be supported now
-            // this.jComboBoxSize.addItem(KEY_SIZE_512);
-            this.jComboBoxSignature.removeAllItems();
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA384_WITH_ECDSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_ECDSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA));
-            this.jPanelUIHelpLabelECCurve.setEnabled(true);
-            this.jComboBoxECCurve.setEnabled(true);
-            this.jComboBoxSize.setEnabled(false);
-            this.jPanelUIHelpLabelKeySize.setEnabled(false);
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    jComboBoxKeySignature.removeAllItems();
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA384_WITH_ECDSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_ECDSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_ECDSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_384_WITH_ECDSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_ECDSA));
+                    jPanelUIHelpLabelECCurve.setEnabled(true);                    
+                    jComboBoxKeySize.setEnabled(false);
+                    jPanelUIHelpLabelKeySize.setEnabled(false);
+                    jComboBoxKeySize.setSelectedItem(keySizePreselection);
+                    jComboBoxKeySignature.setSelectedItem(signatureAlgorithmPreselection);
+                    if (jComboBoxKeySignature.getSelectedItem() == null) {
+                        jComboBoxKeySignature.setSelectedItem(
+                                new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA));
+                    }
+                    Enumeration enumeration = ECNamedCurveTable.getNames();
+                    List<String> curveNames = new ArrayList<String>();
+                    while (enumeration.hasMoreElements()) {
+                        String curveName = enumeration.nextElement().toString();
+                        if (!curveName.isEmpty()) {
+                            curveName = curveName.substring(0, 1).toUpperCase() + curveName.substring(1);
+                            curveNames.add(curveName);
+                        }
+                    }
+                    Collections.sort(curveNames);
+                    jComboBoxCurve.setEnabled(true);
+                    jComboBoxCurve.removeAllItems();
+                    for (String curveName : curveNames) {
+                        jComboBoxCurve.addItem(curveName);
+                    }
+                    jComboBoxCurve.setSelectedItem("Prime256v1");
+                }
+            });
+        } else if (keyType.equals(KeyGenerator.KEYALGORITHM_EDDSA)) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    jComboBoxKeySignature.removeAllItems();
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_ED25519));
+                    jPanelUIHelpLabelECCurve.setEnabled(true);                    
+                    jComboBoxKeySize.setEnabled(false);
+                    jPanelUIHelpLabelKeySize.setEnabled(false);
+                    jComboBoxKeySize.setSelectedItem(keySizePreselection);
+                    jComboBoxKeySignature.setSelectedItem(signatureAlgorithmPreselection);
+                    if (jComboBoxKeySignature.getSelectedItem() == null) {
+                        jComboBoxKeySignature.setSelectedItem(
+                                new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA));
+                    }
+                    jComboBoxCurve.setEnabled(true);
+                    jComboBoxCurve.removeAllItems();
+                    jComboBoxCurve.addItem(KeyGenerator.CURVE_NAME_ED25519);
+                    jComboBoxCurve.addItem(KeyGenerator.CURVE_NAME_X25519);
+                    jComboBoxCurve.setSelectedItem(KeyGenerator.CURVE_NAME_X25519);
+                }
+            });
+        } else if (keyType.equals(KeyGenerator.KEYALGORITHM_DILITHIUM)) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    jComboBoxKeySignature.setEnabled(false);
+                    jPanelUIHelpLabelECCurve.setEnabled(false);
+                    jPanelUIHelpLabelKeySignature.setEnabled(false);
+                    jComboBoxCurve.setEnabled(false);
+                    jComboBoxKeySize.setEnabled(false);
+                    jPanelUIHelpLabelKeySize.setEnabled(false);
+                }
+            });
+        } else if (keyType.equals(KeyGenerator.KEYALGORITHM_SPHINCSPLUS)) {
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    jComboBoxKeySignature.removeAllItems();
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA2_128S));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA2_128F));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA2_192S));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA2_192F));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA2_256S));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA2_256F));
+                    jComboBoxKeySignature.setEnabled(true);
+                    jPanelUIHelpLabelECCurve.setEnabled(false);
+                    jPanelUIHelpLabelKeySignature.setEnabled(true);
+                    jComboBoxCurve.setEnabled(false);
+                    jComboBoxKeySize.setEnabled(false);
+                    jPanelUIHelpLabelKeySize.setEnabled(false);
+                    jComboBoxKeySignature.setSelectedItem(signatureAlgorithmPreselection);
+                    if (jComboBoxKeySignature.getSelectedItem() == null) {
+                        jComboBoxKeySignature.setSelectedItem(
+                                new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA2_128F));
+                    }
+                }
+            });
         } else {
-            this.jComboBoxSize.removeAllItems();
-            this.jComboBoxSize.addItem(new KeyLengthDisplay(KEY_SIZE_1024));
-            this.jComboBoxSize.addItem(new KeyLengthDisplay(KEY_SIZE_2048));
-            this.jComboBoxSize.addItem(new KeyLengthDisplay(KEY_SIZE_4096));
-            this.jComboBoxSignature.removeAllItems();
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_MD5_WITH_RSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA1_WITH_RSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA_RSASSA_PSS));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA));
-            this.jComboBoxSignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA_RSASSA_PSS));
-            this.jPanelUIHelpLabelECCurve.setEnabled(false);
-            this.jComboBoxECCurve.setEnabled(false);
-            this.jComboBoxSize.setEnabled(true);
-            this.jPanelUIHelpLabelKeySize.setEnabled(true);
+            SwingUtilities.invokeLater(new Runnable() {
+                @Override
+                public void run() {
+                    jComboBoxKeySize.removeAllItems();
+                    jComboBoxKeySize.addItem(new KeyLengthDisplay(KEY_SIZE_1024));
+                    jComboBoxKeySize.addItem(new KeyLengthDisplay(KEY_SIZE_2048));
+                    jComboBoxKeySize.addItem(new KeyLengthDisplay(KEY_SIZE_4096));
+                    jComboBoxKeySignature.removeAllItems();
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_MD5_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA1_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA512_WITH_RSA_RSASSA_PSS));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA));
+                    jComboBoxKeySignature.addItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA3_512_WITH_RSA_RSASSA_PSS));
+                    jPanelUIHelpLabelECCurve.setEnabled(false);
+                    jComboBoxCurve.setEnabled(false);
+                    jComboBoxKeySize.setEnabled(true);
+                    jPanelUIHelpLabelKeySize.setEnabled(true);
+                    jComboBoxKeySize.setSelectedItem(keySizePreselection);
+                    if (jComboBoxKeySize.getSelectedItem() == null) {
+                        jComboBoxKeySize.setSelectedItem(new KeyLengthDisplay(KEY_SIZE_2048));
+                    }
+                    jComboBoxKeySignature.setSelectedItem(signatureAlgorithmPreselection);
+                    if (jComboBoxKeySignature.getSelectedItem() == null) {
+                        jComboBoxKeySignature.setSelectedItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA));
+                    }
+                }
+            });
         }
-        this.jComboBoxSize.setSelectedItem(keySizePreselection);
-        if (this.jComboBoxSize.getSelectedItem() == null) {
-            if (!keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
-                this.jComboBoxSize.setSelectedItem(new KeyLengthDisplay(KEY_SIZE_2048));
-            }
-        }
-        this.jComboBoxSignature.setSelectedItem(signatureAlgorithmPreselection);
-        if (this.jComboBoxSignature.getSelectedItem() == null) {
-            if (keyType.equals(KeyGenerator.KEYALGORITHM_ECDSA)) {
-                this.jComboBoxSignature.setSelectedItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_ECDSA));
-            } else {
-                this.jComboBoxSignature.setSelectedItem(new SignatureDisplayValue(KeyGenerator.SIGNATUREALGORITHM_SHA256_WITH_RSA));
-            }
-        }
+
     }
 
     /**
@@ -200,22 +276,26 @@ public class JDialogGenerateKey extends JDialog {
         this.values.setCommonName(this.jTextFieldCommonName.getText().trim());
         this.values.setCountryCode(this.jTextFieldCountryCode.getText().trim());
         this.values.setEmailAddress(this.jTextFieldMailAddress.getText().trim());
-        if (!this.jComboBoxECCurve.isEnabled()) {
-            KeyLengthDisplay display = (KeyLengthDisplay) this.jComboBoxSize.getSelectedItem();
-            this.values.setKeySize(Integer.valueOf(display.getWrappedValue()));
+        if (!this.jComboBoxCurve.isEnabled()) {
+            KeyLengthDisplay display = (KeyLengthDisplay) this.jComboBoxKeySize.getSelectedItem();
+            this.values.setKeySize(Integer.parseInt(display.getWrappedValue()));
         } else {
             this.values.setKeySize(-1);
         }
         this.values.setKeyAlgorithm(this.jComboBoxKeyType.getSelectedItem().toString());
-        this.values.setKeyValidInDays(Integer.valueOf(this.jTextFieldValidity.getText().trim()));
+        this.values.setKeyValidInDays(Integer.parseInt(this.jTextFieldValidity.getText().trim()));
         this.values.setLocalityName(this.jTextFieldLocality.getText().trim());
         this.values.setOrganisationName(this.jTextFieldOrganisationName.getText().trim());
         this.values.setOrganisationUnit(this.jTextFieldOrganisationUnit.getText().trim());
-        SignatureDisplayValue selectedsignature = (SignatureDisplayValue) this.jComboBoxSignature.getSelectedItem();
-        this.values.setSignatureAlgorithm(selectedsignature.getSignatureAlgorithm());
+        SignatureDisplayValue selectedsignature = (SignatureDisplayValue) this.jComboBoxKeySignature.getSelectedItem();
+        if (selectedsignature != null) {
+            this.values.setSignatureAlgorithm(selectedsignature.getSignatureAlgorithm());
+        } else {
+            this.values.setSignatureAlgorithm(null);
+        }
         this.values.setStateName(this.jTextFieldState.getText().trim());
-        if (this.jComboBoxECCurve.isEnabled()) {
-            this.values.setECNamedCurve(this.jComboBoxECCurve.getSelectedItem().toString());
+        if (this.jComboBoxCurve.isEnabled()) {
+            this.values.setNamedCurve(this.jComboBoxCurve.getSelectedItem().toString());
         }
         if (this.jCheckBoxExtensionSignEncrypt.isSelected() || this.jCheckBoxExtensionTLS.isSelected()) {
             this.values.setKeyExtension(new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyEncipherment));
@@ -227,7 +307,7 @@ public class JDialogGenerateKey extends JDialog {
             };
             this.values.setExtendedKeyExtension(new ExtendedKeyUsage(extKeyUsage));
         }
-        if( this.jCheckBoxExtensionSKI.isSelected()){
+        if (this.jCheckBoxExtensionSKI.isSelected()) {
             this.values.setGenerateSKI(true);
         }
         //Subject Alternative Name (German: Alternativer Antragstellername)
@@ -245,19 +325,13 @@ public class JDialogGenerateKey extends JDialog {
         this.jTextFieldOrganisationUnit.setText(this.getValues().getOrganisationUnit());
         this.jTextFieldState.setText(this.getValues().getStateName());
         this.jTextFieldValidity.setText(String.valueOf(this.getValues().getKeyValidInDays()));
-        this.jComboBoxSize.setSelectedItem(String.valueOf(this.getValues().getKeySize()));
+        this.jComboBoxKeySize.setSelectedItem(String.valueOf(this.getValues().getKeySize()));
         this.jComboBoxKeyType.setSelectedItem(this.getValues().getKeyAlgorithm());
-        this.jComboBoxSignature.setSelectedItem(this.getValues().getSignatureAlgorithm());
+        this.jComboBoxKeySignature.setSelectedItem(this.getValues().getSignatureAlgorithm());
     }
 
     public String getAlias() {
         return (this.alias);
-    }
-
-    /**
-     * Sets the ok and cancel buttons of this GUI
-     */
-    private void setButtonState() {
     }
 
     /**
@@ -279,7 +353,7 @@ public class JDialogGenerateKey extends JDialog {
             if (warning.length() > 0) {
                 warning.append("\n\n");
             }
-            warning.append(this.rb.getResourceString("warning.nonexisting.domain", domain));
+            warning.append(rb.getResourceString("warning.nonexisting.domain", domain));
         }
         //get the mail domain        
         int atIndex = mail.indexOf("@");
@@ -287,14 +361,14 @@ public class JDialogGenerateKey extends JDialog {
             if (warning.length() > 0) {
                 warning.append("\n\n");
             }
-            warning.append(this.rb.getResourceString("warning.invalid.mail", mail));
+            warning.append(rb.getResourceString("warning.invalid.mail", mail));
         } else {
             String mailDomain = mail.substring(atIndex + 1);
             if (!domain.endsWith(mailDomain)) {
                 if (warning.length() > 0) {
                     warning.append("\n\n");
                 }
-                warning.append(this.rb.getResourceString("warning.mail.in.domain", domain));
+                warning.append(rb.getResourceString("warning.mail.in.domain", domain));
             }
         }
         if (warning.length() > 0) {
@@ -306,29 +380,35 @@ public class JDialogGenerateKey extends JDialog {
 
     private boolean askUserToIgnoreSettingProblem(String warning) {
         String[] options = new String[]{
-            this.rb.getResourceString("button.reedit"),
-            this.rb.getResourceString("button.ignore"),};
+            rb.getResourceString("button.reedit"),
+            rb.getResourceString("button.ignore"),};
         int requestValue = JOptionPane.showOptionDialog(this,
                 warning,
-                this.rb.getResourceString("warning.title"), JOptionPane.YES_NO_OPTION,
+                rb.getResourceString("warning.title"), JOptionPane.YES_NO_OPTION,
                 JOptionPane.WARNING_MESSAGE, null,
                 options, options[0]);
         return (requestValue == 1);
     }
 
-    private synchronized void setViewMode() {
-        this.jTextFieldValidity.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jTextFieldValidity.setEditable(this.jToggleButtonExpert.isSelected());
-        this.jComboBoxKeyType.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jComboBoxSignature.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jComboBoxSize.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jCheckBoxExtensionTLS.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jCheckBoxExtensionSignEncrypt.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jCheckBoxExtensionSKI.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jLabelPurpose.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jLabelSubjectAlternativeNames.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jTextFieldSubjectAlternativeNames.setEnabled(this.jToggleButtonExpert.isSelected());
-        this.jButtonSubjectAlternativeNames.setEnabled(this.jToggleButtonExpert.isSelected());        
+    private void setViewMode() {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                jTextFieldValidity.setEnabled(jToggleButtonExpert.isSelected());
+                jTextFieldValidity.setEditable(jToggleButtonExpert.isSelected());
+                jComboBoxKeyType.setEnabled(jToggleButtonExpert.isSelected());
+                jComboBoxKeySignature.setEnabled(jToggleButtonExpert.isSelected());
+                jComboBoxKeySize.setEnabled(jToggleButtonExpert.isSelected());
+                jCheckBoxExtensionTLS.setEnabled(jToggleButtonExpert.isSelected());
+                jCheckBoxExtensionSignEncrypt.setEnabled(jToggleButtonExpert.isSelected());
+                jCheckBoxExtensionSKI.setEnabled(jToggleButtonExpert.isSelected());
+                jLabelPurpose.setEnabled(jToggleButtonExpert.isSelected());
+                jLabelSubjectAlternativeNames.setEnabled(jToggleButtonExpert.isSelected());
+                jTextFieldSubjectAlternativeNames.setEnabled(jToggleButtonExpert.isSelected());
+                jButtonSubjectAlternativeNames.setEnabled(jToggleButtonExpert.isSelected());
+                setKeyRelatedValuesToCombobox();
+            }
+        });
     }
 
     private void editSubjectAlternativeNames() {
@@ -377,8 +457,8 @@ public class JDialogGenerateKey extends JDialog {
         jPanelEditInner = new javax.swing.JPanel();
         jLabelIcon = new javax.swing.JLabel();
         jLabelOrganisationUnit = new javax.swing.JLabel();
-        jComboBoxSize = new javax.swing.JComboBox<>();
-        jComboBoxSignature = new javax.swing.JComboBox<>();
+        jComboBoxKeySize = new javax.swing.JComboBox<>();
+        jComboBoxKeySignature = new javax.swing.JComboBox<>();
         jComboBoxKeyType = new javax.swing.JComboBox<>();
         jTextFieldValidity = new javax.swing.JTextField();
         jTextFieldMailAddress = new javax.swing.JTextField();
@@ -406,12 +486,12 @@ public class JDialogGenerateKey extends JDialog {
         jButtonSubjectAlternativeNames = new javax.swing.JButton();
         jLabelSubjectAlternativeNames = new javax.swing.JLabel();
         jPanelUIHelpLabelKeyType = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
-        jPanelUIHelpLabelSignature = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelKeySignature = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelKeySize = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelCommonName = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelMailaddress = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelValidity = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
-        jComboBoxECCurve = new javax.swing.JComboBox<>();
+        jComboBoxCurve = new javax.swing.JComboBox<>();
         jPanelUIHelpLabelECCurve = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelSKI = new javax.swing.JPanel();
         jCheckBoxExtensionSKI = new javax.swing.JCheckBox();
@@ -445,25 +525,25 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEditInner.add(jLabelOrganisationUnit, gridBagConstraints);
 
-        jComboBoxSize.setMinimumSize(new java.awt.Dimension(170, 24));
-        jComboBoxSize.setPreferredSize(new java.awt.Dimension(170, 24));
+        jComboBoxKeySize.setMinimumSize(new java.awt.Dimension(170, 24));
+        jComboBoxKeySize.setPreferredSize(new java.awt.Dimension(170, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.gridwidth = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jComboBoxSize, gridBagConstraints);
+        jPanelEditInner.add(jComboBoxKeySize, gridBagConstraints);
 
-        jComboBoxSignature.setMinimumSize(new java.awt.Dimension(170, 24));
-        jComboBoxSignature.setPreferredSize(new java.awt.Dimension(170, 24));
+        jComboBoxKeySignature.setMinimumSize(new java.awt.Dimension(170, 24));
+        jComboBoxKeySignature.setPreferredSize(new java.awt.Dimension(170, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jComboBoxSignature, gridBagConstraints);
+        jPanelEditInner.add(jComboBoxKeySignature, gridBagConstraints);
 
         jComboBoxKeyType.setMinimumSize(new java.awt.Dimension(170, 24));
         jComboBoxKeyType.setPreferredSize(new java.awt.Dimension(170, 24));
@@ -481,6 +561,7 @@ public class JDialogGenerateKey extends JDialog {
         jPanelEditInner.add(jComboBoxKeyType, gridBagConstraints);
 
         jTextFieldValidity.setMaximumSize(new java.awt.Dimension(50, 22));
+        jTextFieldValidity.setMinimumSize(new java.awt.Dimension(50, 22));
         jTextFieldValidity.setPreferredSize(new java.awt.Dimension(50, 22));
         jTextFieldValidity.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
@@ -736,7 +817,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelSAN.add(jTextFieldSubjectAlternativeNames, gridBagConstraints);
 
-        jButtonSubjectAlternativeNames.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/missing_image16x16.gif"))); // NOI18N
+        jButtonSubjectAlternativeNames.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/security/cert/gui/keygeneration/missing_image24x24.gif"))); // NOI18N
         jButtonSubjectAlternativeNames.setMargin(new java.awt.Insets(2, 5, 2, 5));
         jButtonSubjectAlternativeNames.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -775,16 +856,16 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
         jPanelEditInner.add(jPanelUIHelpLabelKeyType, gridBagConstraints);
 
-        jPanelUIHelpLabelSignature.setToolTipText(this.rb.getResourceString( "label.signature.help"));
-        jPanelUIHelpLabelSignature.setText(this.rb.getResourceString( "label.signature"));
-        jPanelUIHelpLabelSignature.setTooltipWidth(300);
+        jPanelUIHelpLabelKeySignature.setToolTipText(this.rb.getResourceString( "label.signature.help"));
+        jPanelUIHelpLabelKeySignature.setText(this.rb.getResourceString( "label.signature"));
+        jPanelUIHelpLabelKeySignature.setTooltipWidth(300);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
-        jPanelEditInner.add(jPanelUIHelpLabelSignature, gridBagConstraints);
+        jPanelEditInner.add(jPanelUIHelpLabelKeySignature, gridBagConstraints);
 
         jPanelUIHelpLabelKeySize.setToolTipText(this.rb.getResourceString( "label.size.help"));
         jPanelUIHelpLabelKeySize.setText(this.rb.getResourceString( "label.size"));
@@ -830,14 +911,14 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(0, 0, 0, 5);
         jPanelEditInner.add(jPanelUIHelpLabelValidity, gridBagConstraints);
 
-        jComboBoxECCurve.setMinimumSize(new java.awt.Dimension(180, 24));
-        jComboBoxECCurve.setPreferredSize(new java.awt.Dimension(180, 24));
+        jComboBoxCurve.setMinimumSize(new java.awt.Dimension(180, 24));
+        jComboBoxCurve.setPreferredSize(new java.awt.Dimension(180, 24));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 10;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        jPanelEditInner.add(jComboBoxECCurve, gridBagConstraints);
+        jPanelEditInner.add(jComboBoxCurve, gridBagConstraints);
 
         jPanelUIHelpLabelECCurve.setToolTipText(this.rb.getResourceString( "label.namedeccurve.help"));
         jPanelUIHelpLabelECCurve.setText(this.rb.getResourceString( "label.namedeccurve"));
@@ -955,7 +1036,7 @@ public class JDialogGenerateKey extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         getContentPane().add(jToolBar, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(661, 768));
+        setSize(new java.awt.Dimension(634, 778));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -1033,10 +1114,10 @@ public class JDialogGenerateKey extends JDialog {
     private javax.swing.JCheckBox jCheckBoxExtensionSKI;
     private javax.swing.JCheckBox jCheckBoxExtensionSignEncrypt;
     private javax.swing.JCheckBox jCheckBoxExtensionTLS;
-    private javax.swing.JComboBox<String> jComboBoxECCurve;
+    private javax.swing.JComboBox<String> jComboBoxCurve;
+    private javax.swing.JComboBox<SignatureDisplayValue> jComboBoxKeySignature;
+    private javax.swing.JComboBox<KeyLengthDisplay> jComboBoxKeySize;
     private javax.swing.JComboBox<String> jComboBoxKeyType;
-    private javax.swing.JComboBox<SignatureDisplayValue> jComboBoxSignature;
-    private javax.swing.JComboBox<KeyLengthDisplay> jComboBoxSize;
     private javax.swing.JLabel jLabelCommonNameHint;
     private javax.swing.JLabel jLabelCountryCode;
     private javax.swing.JLabel jLabelCountryCodeHint;
@@ -1059,10 +1140,10 @@ public class JDialogGenerateKey extends JDialog {
     private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelpExtensionSKI;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelCommonName;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelECCurve;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelKeySignature;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelKeySize;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelKeyType;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelMailaddress;
-    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelSignature;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelValidity;
     private javax.swing.JTextField jTextFieldCommonName;
     private javax.swing.JTextField jTextFieldCountryCode;
@@ -1090,13 +1171,13 @@ public class JDialogGenerateKey extends JDialog {
         /**
          * Icons, multi resolution
          */
-        public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_STRONG
+        public static final MendelsonMultiResolutionImage IMAGE_SIGNATURE_STRONG
                 = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_strong.svg",
                         ListCellRendererSignature.IMAGE_HEIGHT);
-        public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_WEAK
+        public static final MendelsonMultiResolutionImage IMAGE_SIGNATURE_WEAK
                 = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_weak.svg",
                         ListCellRendererSignature.IMAGE_HEIGHT);
-        public final static MendelsonMultiResolutionImage IMAGE_SIGNATURE_BROKEN
+        public static final MendelsonMultiResolutionImage IMAGE_SIGNATURE_BROKEN
                 = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/signature/signature_broken.svg",
                         ListCellRendererSignature.IMAGE_HEIGHT);
 
@@ -1126,7 +1207,7 @@ public class JDialogGenerateKey extends JDialog {
 
         @Override
         public String toString() {
-            return( KeyGenerator.signatureAlgorithmToDisplay(this.signatureAlgorithm));
+            return (KeyGenerator.signatureAlgorithmToDisplay(this.signatureAlgorithm));
         }
 
         @Override

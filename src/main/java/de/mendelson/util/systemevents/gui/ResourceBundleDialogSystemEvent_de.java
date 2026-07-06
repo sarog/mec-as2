@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_de.java 12    6/11/23 11:38 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent_de.java 15    9/12/24 15:51 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class ResourceBundleDialogSystemEvent_de extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleDialogSystemEvent_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Ansicht der Systemereignisse"},
         {"label.user", "Besitzer"},
         {"label.host", "Host"},
@@ -45,10 +45,10 @@ public class ResourceBundleDialogSystemEvent_de extends MecResourceBundle {
         {"label.enddate", "Ende" },
         {"no.data", "Es gibt kein Systemereignis, das mit der aktuellen Datums-/Typenauswahl übereinstimmt." }, 
         {"label.freetext", "Suchtext" },
-        {"label.freetext.hint", "Vollständige Ereignisnummer oder Textsuche in Text und Betreff" },
+        {"label.freetext.hint", "Ereignisnummer oder Textsuche" },
         {"category.all", "-- Alle --" },
         {"label.close", "Schliessen" },
         {"label.search", "Ereignissuche" },
-        {"label.resetfilter", "Filter zurücksetzen" },
+        {"label.resetfilter", "Zurücksetzen" },
     };
 }

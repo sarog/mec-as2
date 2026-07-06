@@ -1,10 +1,10 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 9     14/12/23 15:42 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/TableCellRendererCertificates.java 13    19/08/25 11:21 Heller $
 package de.mendelson.util.security.cert;
 
+import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import java.awt.Component;
 import java.awt.Color;
 import java.awt.Rectangle;
-import java.security.PrivateKey;
 import javax.swing.ImageIcon;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -14,12 +14,16 @@ import javax.swing.table.TableCellRenderer;
  * Renders a certificate in a JTable column
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class TableCellRendererCertificates extends DefaultTableCellRenderer implements TableCellRenderer {
 
-    public static final int ROW_HEIGHT = TableModelCertificates.ROW_HEIGHT;
-    protected static final int IMAGE_HEIGHT = TableModelCertificates.IMAGE_HEIGHT;
+    public static final int ROW_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE + 3;
+    protected static final int IMAGE_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE;
+
+    private static final ImageIcon ICON_KEY 
+            = new ImageIcon(
+                    TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT));
     
     /**
      * Stores the certificates
@@ -87,7 +91,8 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
             if (this.type == TYPE_ISSUER_SERIAL) {
                 String[] issuerSerial = (String[]) value;
                 if (issuerSerial.length == 2) {
-                    KeystoreCertificate certificate = this.manager.getKeystoreCertificateByIssuerDNAndSerial(issuerSerial[0], issuerSerial[1]);
+                    KeystoreCertificate certificate = this.manager.getKeystoreCertificateByIssuerDNAndSerial(
+                            issuerSerial[0], issuerSerial[1]);
                     if (certificate != null) {
                         alias = certificate.getAlias();
                     }
@@ -97,8 +102,7 @@ public class TableCellRendererCertificates extends DefaultTableCellRenderer impl
             alias = ((KeystoreCertificate) value).getAlias();
         }
         try {
-            PrivateKey key = this.manager.getPrivateKey(alias);
-            this.setIcon(new ImageIcon(TableModelCertificates.IMAGE_KEY_MULTIRESOLUTION.toMinResolution(IMAGE_HEIGHT)));
+            this.setIcon(ICON_KEY);
         } catch (Exception e) {
             KeystoreCertificate cert = this.manager.getKeystoreCertificate(alias);
             if (cert != null) {

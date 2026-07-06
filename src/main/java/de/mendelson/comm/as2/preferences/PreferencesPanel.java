@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 8     17/02/23 15:48 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanel.java 9     17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import javax.swing.ImageIcon;
@@ -15,9 +15,17 @@ import javax.swing.JPanel;
  * Abstract class for all preferences panels
  *
  * @author S.Heller
- * @version: $Revision: 8 $
+ * @version: $Revision: 9 $
  */
-public abstract class PreferencesPanel extends JPanel {
+public abstract sealed class PreferencesPanel extends JPanel 
+        permits PreferencesPanelConnectivity,
+        PreferencesPanelDirectories,
+        PreferencesPanelInterface,
+        PreferencesPanelLog,
+        PreferencesPanelMDN,
+        PreferencesPanelNotification,
+        PreferencesPanelProxy,
+        PreferencesPanelSystemMaintenance{
 
     private String activatedPlugins = null;
 

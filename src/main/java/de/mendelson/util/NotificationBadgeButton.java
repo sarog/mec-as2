@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/NotificationBadgeButton.java 6     2/11/23 15:53 Heller $
+//$Header: /mec_as4/de/mendelson/util/NotificationBadgeButton.java 9     14/04/26 9:04 Heller $
 package de.mendelson.util;
 
 import java.awt.Color;
@@ -19,6 +19,7 @@ import javax.swing.JComponent;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicButtonUI;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -30,15 +31,15 @@ import javax.swing.plaf.basic.BasicButtonUI;
  * Button that contains a notification badge to count something
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class NotificationBadgeButton extends JButton {
 
     private BufferedImage bufferedImageNotificationBadge = null;
-    private Color backgroundColor = Color.RED;
+    private Color circleColor = Color.RED;
     private Color foregroundColor = Color.WHITE;
 
-    private final static RenderingHints RENDERING_HINTS_BEST_QUALITY
+    private static final RenderingHints RENDERING_HINTS_BEST_QUALITY
             = new RenderingHints(RenderingHints.KEY_RENDERING,
                     RenderingHints.VALUE_RENDER_QUALITY);
 
@@ -61,38 +62,59 @@ public class NotificationBadgeButton extends JButton {
         super();
         this.setUI(new NotificationBadgeButtonUI());
         this.setOpaque(false);
-        this.setForeground(foregroundColor);        
+        this.setForeground(this.foregroundColor);
         this.setHorizontalTextPosition(SwingConstants.CENTER);
     }
 
-    /**Sets fore- and background color of the notification badge
-     * 
-     * @param backgroundColor
-     * @param foregroundColor 
+    /**
+     * Sets fore- and background color of the notification badge
+     *
+     * @param circleColor
+     * @param foregroundColor
      */
-    public void setNotificationBadgeColors( Color backgroundColor, Color foregroundColor){
-        this.backgroundColor = backgroundColor;
+    public void setNotificationBadgeColors(Color circleColor, Color foregroundColor) {
+        this.circleColor = circleColor;
         this.foregroundColor = foregroundColor;
         this.setForeground(foregroundColor);
     }
-    
-    
+
     @Override
     public void setIcon(Icon icon) {
+        this.setIcon(icon, false);
+    }
+
+    /**
+     * Sets an icon for the wrench. 
+     * 
+     *
+     * @param icon
+     * @param adjustColor Indicates if the system should automatically adjust the contrast
+     */
+    public void setIcon(Icon icon, boolean adjustColor) {
         super.setIcon(icon);
-        this.bufferedImageNotificationBadge = this.generateImageFromIcon((ImageIcon) icon);
-        int gap = (int)(icon.getIconHeight()/1.6f);
+        this.bufferedImageNotificationBadge = this.generateImageFromIcon((ImageIcon) icon, adjustColor);
+        int gap = (int) (icon.getIconHeight() / 1.6f);
         this.setBorder(new EmptyBorder(0, 0, 0, gap));
     }
 
-    private BufferedImage generateImageFromIcon(ImageIcon icon) {
-        if (this.getIcon() != null) {
+    private BufferedImage generateImageFromIcon(ImageIcon icon, boolean adjustColor) {
+        if (this.getIcon() != null) {                        
             BufferedImage image = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
             Graphics2D g2d = image.createGraphics();
             g2d.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
             g2d.drawImage(icon.getImage(), 0, 0, null);
             g2d.dispose();
-            return( image );
+            if (adjustColor) {
+                //find the highest possible contrast
+                int luminanceBackground = ColorUtil.calculateLuminance( this.getBackground() );
+                //darker or lighten 300%
+                if( luminanceBackground < 128){                    
+                    ImageUtil.adjustBrightness(image, 3.0f);
+                }else{
+                    ImageUtil.adjustBrightness(image, -3.0f);
+                }
+            }
+            return (image);
         } else {
             return (null);
         }
@@ -105,14 +127,14 @@ public class NotificationBadgeButton extends JButton {
             if (bufferedImageNotificationBadge != null && getText() != null && !getText().trim().isEmpty()) {
                 Graphics2D g2d = (Graphics2D) g.create();
                 g2d.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
-                double maxBadgeCircleSize = Math.max(iconRectangle.getWidth()*0.7f, 
-                        iconRectangle.getHeight()*0.7f);
-                double x = Math.min(iconRectangle.getX() + iconRectangle.getWidth()/2f, 
-                        component.getWidth()-maxBadgeCircleSize);
-                double y = Math.max(iconRectangle.getY() -maxBadgeCircleSize*0.2f, 0);
+                double maxBadgeCircleSize = Math.max(iconRectangle.getWidth() * 0.7f,
+                        iconRectangle.getHeight() * 0.7f);
+                double x = Math.min(iconRectangle.getX() + iconRectangle.getWidth() / 2f,
+                        component.getWidth() - maxBadgeCircleSize);
+                double y = Math.max(iconRectangle.getY() - maxBadgeCircleSize * 0.2f, 0);
                 Area area = new Area(iconRectangle);
-                area.subtract(new Area(new Ellipse2D.Double(x-1, y,maxBadgeCircleSize+1,maxBadgeCircleSize+1 )));
-                g2d.drawImage(bufferedImageNotificationBadge, null,iconRectangle.x, iconRectangle.y);
+                area.subtract(new Area(new Ellipse2D.Double(x - 1, y, maxBadgeCircleSize + 1, maxBadgeCircleSize + 1)));
+                g2d.drawImage(bufferedImageNotificationBadge, null, iconRectangle.x, iconRectangle.y);
                 this.displayNotificationText(g2d, x, y, maxBadgeCircleSize, getText());
                 g2d.dispose();
             } else {
@@ -120,31 +142,30 @@ public class NotificationBadgeButton extends JButton {
                 super.paintIcon(g, component, iconRectangle);
             }
         }
-        
-        private void displayNotificationText( Graphics2D g2d, double x, double y, double size, String notificationText){
-            g2d.setFont(getFont().deriveFont((float)size*0.8f));
+
+        private void displayNotificationText(Graphics2D g2d, double x, double y, double size, String notificationText) {
+            g2d.setFont(getFont().deriveFont((float) size * 0.8f));
             FontMetrics fontMetrics = g2d.getFontMetrics();
             String displayText = notificationText;
-            if(notificationText.length()>2){
+            if (notificationText.length() > 2) {
                 displayText = "99+";
             }
             Rectangle2D textRectangle = fontMetrics.getStringBounds(displayText, g2d);
-            double gap = (displayText.length()-1)*size*0.05f;
-            double width = Math.max( textRectangle.getWidth(), size);           
-            g2d.setColor(backgroundColor);
+            double gap = (displayText.length() - 1) * size * 0.05f;
+            double width = Math.max(textRectangle.getWidth(), size);
+            g2d.setColor(circleColor);
             g2d.translate(x, y);
-            g2d.fill(new RoundRectangle2D.Double(0, 0, width+gap*2, size, size, size));
-            double textLocationX = ((width-textRectangle.getWidth())/2f);
-            double textLocationY = ((size-textRectangle.getHeight())/2f);
-            g2d.setColor( getForeground());
-            g2d.drawString(displayText, (int)(textLocationX+gap), (int)(textLocationY+fontMetrics.getAscent()));
+            g2d.fill(new RoundRectangle2D.Double(0, 0, width + gap * 2, size, size, size));
+            double textLocationX = ((width - textRectangle.getWidth()) / 2f);
+            double textLocationY = ((size - textRectangle.getHeight()) / 2f);
+            g2d.setColor(foregroundColor);
+            g2d.drawString(displayText, (int) (textLocationX + gap), (int) (textLocationY + fontMetrics.getAscent()));
         }
 
         @Override
         protected void paintText(Graphics g, JComponent c, Rectangle textRect, String text) {
             //this is done in displayNotificationText
         }
-        
 
     }
 

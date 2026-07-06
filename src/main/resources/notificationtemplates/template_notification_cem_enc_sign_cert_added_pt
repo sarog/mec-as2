@@ -1,0 +1,24 @@
+$Header:$
+Este ficheiro contém o modelo de notificação para a notificação da adição de um certificado SSL devido a uma MCE
+Podem ser utilizadas as seguintes variáveis, que são substituídas em conformidade:
+${PRODUCTNAME}: Nome do produto
+${HOST}: Anfitrião do servidor AS2
+${CERTIFICATETECHDETAILS}: Dados técnicos do certificado
+${PARTNER}: Nome do parceiro do iniciador da MCE
+
+
+
+
+[SUBJECT]
+Foi adicionado um certificado de encriptação/assinatura (CEM)
+
+
+[BODY]
+Como resultado de um pedido de troca de certificados (CEM) pelo seu parceiro "${PARTNER}", foi adicionado ao sistema um novo certificado de encriptação/assinatura.
+
+Consulte o sistema para ver os pormenores do processo. Se não confiar nestas alterações
+estas alterações, reinicie-as e contacte o seu parceiro.
+
+Informações técnicas sobre o certificado:
+
+${CERTIFICATETECHDETAILS}

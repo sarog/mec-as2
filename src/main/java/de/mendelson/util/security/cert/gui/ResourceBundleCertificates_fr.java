@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 31    2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_fr.java 44    5/02/26 15:42 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 31 $
+ * @version $Revision: 44 $
  */
 public class ResourceBundleCertificates_fr extends MecResourceBundle {
 
@@ -28,8 +28,7 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
-        {"display.ca.certs", "Afficher les certificats CA"},
+    private static final Object[][] CONTENTS = {
         {"button.delete", "Suppression clef/certificat"},
         {"button.delete.all.expired", "Supprimer toutes les clés/certificats expirés" },
         {"button.edit", "Renommer l''alias"},
@@ -46,19 +45,22 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"menu.export", "Export"},
         {"menu.tools", "Tools"},
         {"menu.tools.generatekey", "Générer une nouvelle clé (Self signed)"},
-        {"menu.tools.generatecsr", "Confiance au certificat: Générer la CSR (en CA)"},
-        {"menu.tools.generatecsr.renew", "Renouveler le certificat: Générer la CSR (en CA)"},
-        {"menu.tools.importcsr", "Confiance au certificat: Réponse de CAs en matière de CSR d''importation"},
-        {"menu.tools.importcsr.renew", "Renouveler le certificat: Réponse de CAs en matière de CSR d''importation"},
-        {"label.selectcsrfile", "Veuillez sélectionner le fichier pour enregistrer la CSR"},
+        {"menu.tools.generatecsr", "Confiance au certificat: Générer d''authentification de certificat (en CA)"},
+        {"menu.tools.generatecsr.renew", "Renouveler le certificat: Générer d''authentification de certificat (en CA)"},
+        {"menu.tools.importcsr", "Confiance au certificat: Réponse de CAs en matière d''authentification de certificat d''importation"},
+        {"menu.tools.importcsr.renew", "Renouveler le certificat: Réponse de CAs en matière d''authentification de certificat d''importation"},
+        {"menu.tools.verifyall", "Vérifier les listes de révocation de tous les certificats (CRL)" },
+        {"menu.tools.crmf", "Génération de demande CRMF (BDEW)"},
+        {"label.selectcsrfile", "Veuillez sélectionner le fichier pour enregistrer d''authentification de certificat"},
         {"label.cert.import", "Importer certificat (de votre partenaire commercial)"},
         {"label.cert.export", "Exporter certificat (pour votre partenaire commercial)"},
         {"label.key.import", "Importer votre propre clef privée (PKCS#12, JKS)"},
-        {"label.key.export.pkcs12", "Exporter votre propre clef privée (PKCS#12) (pour sauvegarde seulement!)"},
+        {"label.key.import.pem", "Importer votre propre clef privée (PEM)" },  
+        {"label.key.export.pkcs12", "Exporter votre propre clef privée (PKCS#12, PEM) (pour sauvegarde seulement!)"},
         {"label.keystore.export", "Exporter tout en tant que keystore (pour sauvegarde seulement!)" },
         {"label.keystore", "Emplacement"},
         {"title.signencrypt", "Certificats et clefs (encryption, signature)"},
-        {"title.ssl", "Certificats et clefs (TLS)"},
+        {"title.tls", "Certificats et clefs (TLS)"},
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"filechooser.certificate.import", "Merci de sélectionner le fichier certificat pour l''import"},
@@ -68,7 +70,7 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"certificate.import.error.message", "Une erreur a eu lieu lors du processus d''import.\n{0}"},
         {"certificate.import.error.title", "Erreur"},
         {"certificate.import.alias", "Alias de certificat à utiliser:"},
-        {"keystore.readonly.message", "Le porte-clef est en lecture seule.\nToute opération d'écriture de certificat (modifier/éditer) n'est pas possible dans cet état."},
+        {"keystore.readonly.message", "Protégé en écriture. Modifications impossibles."},
         {"keystore.readonly.title", "Porte-clef r/o"},
         {"modifications.notalllowed.message", "Modifications ne sont pas possibles"},
         {"generatekey.error.message", "{0}"},
@@ -81,12 +83,11 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"title.cert.in.use", "Le certificat est en cours d'utilisation"},
         {"cert.delete.impossible", "L''entrée ne peut pas être supprimée, elle est utilisée.\nVeuillez utiliser \"Afficher l''utilisation\" pour plus d''informations"},
         {"module.locked", "Cette gestion des certificats est verrouillé par un autre client, vous n'êtes pas autorisé à valider vos modifications!"},
-        {"label.trustanchor", "Trust anchor:" },
-        {"warning.testkey", "Touche de test mendelson accessible au public - ne l''utilisez pas en mode productif!" },        
+        {"label.trustanchor", "Trust anchor" },
         {"label.key.valid", "Cette clé est invalide" },
-        {"label.key.invalid", "Cette clé est valide" },
+        {"label.key.invalid", "Cette clé est invalid {0}" },
         {"label.cert.valid", "Ce certificat est valid" },
-        {"label.cert.invalid", "Ce certificat est invalid" },
+        {"label.cert.invalid", "Ce certificat est invalid {0}" },
         {"warning.deleteallexpired.text", "Voulez-vous vraiment supprimer les entrées expirées et inutilisées {0}?" },
         {"warning.deleteallexpired.title", "Supprimer toutes les clés/certificats expirés et non utilisés" },
         {"warning.deleteallexpired.noneavailable.title", "Aucun disponible" },
@@ -102,5 +103,6 @@ public class ResourceBundleCertificates_fr extends MecResourceBundle {
         {"keycopy.target.ro.title", "Cible en lecture seule" },
         {"keycopy.target.ro.text", "Échec de l''opération - Le fichier clé de la cible est en lecture seule." },
         {"keycopy.success.text", "L''entrée [{0}] a été copiée avec succès" },
+        {"certificates.save", "Enregistrer certificats" },
     };
 }

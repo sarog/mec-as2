@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_de.java 20    6/11/23 11:38 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_de.java 23    18/07/25 15:53 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 23 $
  */
 public class ResourceBundleGenerateKey_de extends MecResourceBundle {
 
@@ -29,14 +29,21 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Schlüsselerstellung"},
         {"button.ok", "Ok"},
         {"button.cancel", "Abbruch"},
         {"label.keytype", "Schlüsseltyp"},
         {"label.keytype.help", "<HTML><strong>Schlüsseltyp</strong><br><br>"
             + "Dies ist der Algorithmus zum Erstellen des Schlüssels. Für die daraus resultierenden Schlüssel gibt es je nach Algorithmus vor- und Nachteile.<br>"
-            + "Wir würden Ihnen Stand 2022 einen RSA Schlüssel mit der Schlüssellänge 2048 oder 4096 bit empfehlen."
+            + "Wir würden Ihnen Stand 2023 einen RSA Schlüssel mit der Schlüssellänge 2048 oder 4096 bit empfehlen.<br>"            
+            + "Es gibt folgende Typen:<br>"
+            + "<ul>"
+            + "<li>DSA: Älterer Algorithmus, kaum noch verwendet</li>"
+            + "<li>RSA: Klassischer Standard, weit verbreitet</li>"
+            + "<li>ECDSA: Effiziente Signatur, elliptische Kurven</li>"
+            + "<li>EDDSA: Modern und schnell, Edwards Kurven</li>"
+            + "</ul>"
             + "</HTML>"
         },
         {"label.signature", "Signatur"},
@@ -46,7 +53,15 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
             + "Signaturfähigkeiten des Schlüssels zu tun - Sie können also zum Beispiel mit einem SHA-1 signierten "
             + "Schlüssel auch SHA-2 Signaturen erstellen "
             + "oder anders herum.<br>"
-            + "Wir würden Ihnen Stand 2022 einen SHA-2 signierten Schlüssel empfehlen."
+            + "Wir würden Ihnen Stand 2024 einen SHA-2 signierten Schlüssel empfehlen.<br><br>"
+            + "<strong>Kurzer Überblick: SHA-1, SHA-2, SHA-3 und RSASSA-PSS</strong><br><br>"
+            + "<strong>SHA-1</strong>: Ein älterer Hash-Algorithmus, der heutzutage als unsicher gilt.<br>"
+            + "<strong>SHA-2</strong>: Eine modernere und sicherere Version von SHA, die in verschiedenen Varianten wie SHA-256 und SHA-512 existiert.<br>"
+            + "<strong>SHA-3</strong>: Der neueste Hash-Algorithmus, der auf einer anderen Struktur basiert als SHA-1 und SHA-2 und noch "
+            + "sicherer gegen Angriffe ist.<br>"
+            + "<strong>RSASSA-PSS (Probabilistic Signature Scheme)</strong>: Dies ist eine Erweiterung von RSA. "
+            + "Damit werden die SHA-Hash-Funktion mit dem PSS-Signaturverfahren kombiniert, was zusätzliche "
+            + "Sicherheit bietet."
             + "</HTML>"
         },
         {"label.size", "Schlüssellänge"},
@@ -55,7 +70,7 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
             + "grösserer Schlüssellänge sicherer als kryptographische Operationen mit Schlüsseln kleinerer Schlüssellänge. "
             + "Der Nachteil grosser Schlüssellängen ist jedoch, dass kryptographische Operationen signifikant länger dauern, "
             + "was die Datenverarbeitung je nach Rechenleistung signifikant verlangsamen kann.<br>"
-            + "Wir würden Ihnen Stand 2022 einen Schlüssel der Länge 2048 oder 4096 bit empfehlen."
+            + "Wir würden Ihnen Stand 2023 einen Schlüssel der Länge 2048 oder 4096 bit empfehlen."
             + "</HTML>"
         },
         {"label.commonname", "Common Name"},
@@ -114,7 +129,7 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
         {"view.basic", "Standard Ansicht"},
         {"label.namedeccurve", "Kurve"},
         {"label.namedeccurve.help", "<HTML><strong>Kurve</strong><br><br>"
-            + "Hiermit wählen Sie den Namen der EC Kurve aus, der für die Generation des Schlüssels verwendet werden soll. "
+            + "Hiermit wählen Sie den Namen der elliptischen Kurve aus, der für die Generation des Schlüssels verwendet werden soll. "
             + "Die gewünschte Schlüssellänge ist in der Regel Teil des Namens der Kurve, so hat zum Beispiel der Schlüssel der Kurve "
             + "\"BrainpoolP256r1\" eine Länge von 256bit. Die Stand 2022 am meisten verwendete Kurve (ca 75% aller EC Zertifikate im Internet verwenden sie) ist NIST P-256, die Sie hier unter dem "
             + "Namen \"Prime256v1\" finden. Sie ist Stand 2022 die Standardkurve von OpenSSL."

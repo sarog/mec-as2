@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/Logline.java 7     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/log/search/Logline.java 13    13/06/25 12:35 Heller $
 package de.mendelson.util.clientserver.log.search;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.log.LogFormatter;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -21,10 +23,10 @@ import org.apache.lucene.util.BytesRef;
  * and brand names are trademarks of their respective owners.
  */
 /**
- * Stores the information about an event
+ * Abstract class for a search log line
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 13 $
  */
 public abstract class Logline implements Serializable, Comparable<Logline> {
 
@@ -52,20 +54,27 @@ public abstract class Logline implements Serializable, Comparable<Logline> {
      * Stores all standard values of the log line, also implementation specific
      * data
      */
-    private final Map<String, String> map = new HashMap<String, String>();
+    private Map<String, String> map = new HashMap<String, String>();
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    protected Logline(){        
+    }
+    
+    
     /**
      * Pre parsed data - creates a log line from the data found in a lucene
      * result
-     */
-    public Logline(Map<String, String> map) {
+     */    
+    protected Logline(Map<String, String> map) {
         this.map.putAll(map);
     }
 
     /**
      * Creates a new logline - mainly from a splitted line found in the log file
      */
-    public Logline(String[] header, String logMessage) {
+    protected Logline(String[] header, String logMessage) {
         this.putValue(KEY_LOGMESSAGE, logMessage);
         for (int i = 0; i < header.length; i++) {
             int indexEqualSign = header[i].indexOf("=");
@@ -80,6 +89,7 @@ public abstract class Logline implements Serializable, Comparable<Logline> {
     /**
      * Add a value to the logline. Uses implementation specific keys
      */
+    @JsonIgnore
     public String putValue(final String KEY, String value) {
         return (this.map.put(KEY, value));
     }
@@ -91,8 +101,9 @@ public abstract class Logline implements Serializable, Comparable<Logline> {
      * @param KEY
      * @return
      */
+    @JsonIgnore
     public String getValue(final String KEY) {
-        return (this.map.get(KEY));
+        return (this.getMap().get(KEY));
     }
 
     /**
@@ -110,6 +121,7 @@ public abstract class Logline implements Serializable, Comparable<Logline> {
      *
      * @return
      */
+    @JsonIgnore
     public Document generateLuceneDocument() {
         Document luceneDocument = new Document();
         if (this.getValue(KEY_LOGMESSAGE) != null) {
@@ -157,6 +169,21 @@ public abstract class Logline implements Serializable, Comparable<Logline> {
         } else {
             return (ownMS.compareTo(otherMS));
         }
+    }
+
+    /**This is a dummy method for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public Map<String, String> getMap() {
+        return map;
+    }
+
+   /**This is a dummy method for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setMap(Map<String, String> map) {
+        this.map.clear();
+        this.map.putAll(map);
     }
 
 }

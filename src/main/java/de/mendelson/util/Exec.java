@@ -1,9 +1,10 @@
-//$Header: /hpcxml/de/mendelson/util/Exec.java 14    1/09/23 13:10 Heller $
+//$Header: /as4/de/mendelson/util/Exec.java 17    8/10/25 13:48 Heller $
 package de.mendelson.util;
 
-import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
 
 /*
@@ -13,35 +14,40 @@ import java.io.PrintStream;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Executes a native command
+ *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 17 $
  */
 public class Exec {
 
-    /**Indicates if the exec should stop the calling thread to wait for
-     * a return*/
+    /**
+     * Indicates if the exec should stop the calling thread to wait for a return
+     */
     private boolean waitFor = false;
 
-    /** Creates new Exec
+    /**
+     * Creates new Exec
      */
     public Exec() {
     }
 
-    /**Indicates if the exec should stop the calling thread to wait for
-     * a return*/
+    /**
+     * Indicates if the exec should stop the calling thread to wait for a return
+     */
     public void setWaitFor(boolean waitFor) {
         this.waitFor = waitFor;
     }
 
-    /**Starts a native command and writes the output to the
-     * passed printstreams
+    /**
+     * Starts a native command and writes the output to the passed printstreams
+     *
      * @param command command line to execute on the system
-     * @param out PrintStream to write normal output to, System.out if parameter is null
+     * @param out PrintStream to write normal output to, System.out if parameter
+     * is null
      * @param err PrintStream to write error to, System.err if parameter is null
-     *@return Returnvalue of the call if waitfor is set, else 0
+     * @return Returnvalue of the call if waitfor is set, else 0
      */
     public int start(String command, PrintStream out, PrintStream err)
             throws IOException, InterruptedException {
@@ -55,77 +61,61 @@ public class Exec {
         ExecArgumentParser parser = new ExecArgumentParser();
         String[] arguments = parser.parse(command);
         Process process = Runtime.getRuntime().exec(arguments);
-        // copy input and error to the output stream
+        //copy input and error to the output stream
         StreamPumper inputPumper = new StreamPumper(process.getInputStream(), out);
         StreamPumper errorPumper = new StreamPumper(process.getErrorStream(), err);
-        // starts pumping away the generated output/error
+        //starts pumping away the generated output/error
         inputPumper.start();
         errorPumper.start();
         if (this.waitFor) {
-            //No idea what why this close of the process output stream should be useful but 
-            //without this line the whole process hangs under Linux - looks like an 
-            //implementation problem of the Linux JVM
+            //Close the streams else the process will hang
             process.getOutputStream().close();
             returnValue = process.waitFor();
+            //wait for pumpers to finish reading output
+            inputPumper.join();
+            errorPumper.join();
             process.destroy();
         }
         return (returnValue);
     }
 
-    /**Starts a native command and writes the output to stdout and stderr
+    /**
+     * Starts a native command and writes the output to stdout and stderr
+     *
      * @param command command line to execute on the system
      */
     public int start(String command) throws IOException, InterruptedException {
         return (this.start(command, null, null));
     }
 
-    /**Thread that reads contiguously the output/input stream data from the 
-     *native thread and redirects it to a print stream*/
+    /**
+     * Thread that reads contiguously the output/input stream data from the
+     * native thread and redirects it to a print stream
+     */
     public static class StreamPumper extends Thread {
 
-        /**Reader to read the data from*/
-        private final BufferedInputStream inStream;
-        private boolean endOfStream = false;
-        private final int SLEEP_TIME = 3;
-        private final int BUFFER_SIZE = 2048;
-        /**Stream to write the pumped info into*/
-        private PrintStream outputStream = null;
+        private final BufferedReader reader;
+        private final PrintStream outputStream;
 
-        /**Create a pumper*/
-        public StreamPumper(InputStream is, PrintStream outputStream) {
+        public StreamPumper(InputStream in, PrintStream outputStream) {
+            this.reader = new BufferedReader(new InputStreamReader(in));
             this.outputStream = outputStream;
-            this.inStream = new BufferedInputStream(is);
         }
 
-        /**Explicit pump of the stream*/
-        private void pumpStream() throws IOException {
-            byte[] buf = new byte[BUFFER_SIZE];
-            int read = 0;
-            if (!endOfStream) {
-                read = this.inStream.read(buf);
-                if (read > 0) {
-                    outputStream.write(buf, 0, read);
-                }else if (read == -1) {
-                    endOfStream = true;
-                }
-            }
-        }
-
-        /**Start method of the thread*/
         @Override
         public void run() {
+            String line;
             try {
-                try {
-                    while (!endOfStream) {
-                        pumpStream();
-                        sleep(SLEEP_TIME);
-                    }
-                } catch (InterruptedException ie) {
-                //nop
+                while ((line = reader.readLine()) != null) {
+                    outputStream.println(line);
+                    outputStream.flush();
                 }
-                inStream.close();
-            } catch (Exception ioe) {
-            //nop, ignore this
+            } catch (IOException e) {
+            } finally {
+                try {
+                    reader.close();
+                } catch (IOException ignored) {
+                }
             }
         }
     }

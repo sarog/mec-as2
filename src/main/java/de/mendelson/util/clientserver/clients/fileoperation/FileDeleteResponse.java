@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/fileoperation/FileDeleteResponse.java 3     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/clients/fileoperation/FileDeleteResponse.java 5     11/06/25 13:16 Heller $
 package de.mendelson.util.clientserver.clients.fileoperation;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 /*
@@ -14,7 +15,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class FileDeleteResponse extends ClientServerResponse implements Serializable {
 
@@ -25,6 +26,16 @@ public class FileDeleteResponse extends ClientServerResponse implements Serializ
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public FileDeleteResponse() {
+        super();
+    }
+    
+    
     @Override
     public String toString() {
         return ("File delete response");

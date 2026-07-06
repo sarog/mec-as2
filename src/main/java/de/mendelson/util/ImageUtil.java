@@ -1,19 +1,26 @@
-//$Header: /as2/de/mendelson/util/ImageUtil.java 14    2/11/23 14:02 Heller $
+//$Header: /converteride/de/mendelson/util/ImageUtil.java 20    16/03/26 12:55 Heller $
 package de.mendelson.util;
 
 import java.awt.AlphaComposite;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
 import java.awt.GraphicsEnvironment;
 import java.awt.Image;
 import java.awt.RenderingHints;
+import java.awt.Transparency;
+import java.awt.image.AbstractMultiResolutionImage;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ConvolveOp;
+import java.awt.image.ImageObserver;
 import java.awt.image.Kernel;
+import java.awt.image.MultiResolutionImage;
+import java.awt.image.RescaleOp;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.GrayFilter;
 import javax.swing.Icon;
@@ -31,9 +38,28 @@ import javax.swing.ImageIcon;
  * Class that contains routines for the image processing
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 20 $
  */
 public class ImageUtil {
+
+    private static final RenderingHints RENDERING_HINTS_BEST_QUALITY
+            = new RenderingHints(RenderingHints.KEY_RENDERING,
+                    RenderingHints.VALUE_RENDER_QUALITY);
+
+    static {
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_RENDERING,
+                RenderingHints.VALUE_RENDER_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_INTERPOLATION,
+                RenderingHints.VALUE_INTERPOLATION_BICUBIC));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_ANTIALIASING,
+                RenderingHints.VALUE_ANTIALIAS_ON));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_ALPHA_INTERPOLATION,
+                RenderingHints.VALUE_ALPHA_INTERPOLATION_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_COLOR_RENDERING,
+                RenderingHints.VALUE_COLOR_RENDER_QUALITY));
+        RENDERING_HINTS_BEST_QUALITY.add(new RenderingHints(RenderingHints.KEY_STROKE_CONTROL,
+                RenderingHints.VALUE_STROKE_NORMALIZE));
+    }
 
     /**
      * Its just a utility class..
@@ -42,14 +68,15 @@ public class ImageUtil {
     }
 
     /**
-     * Replaces a single color in the passed image and returns the new one
+     * Replaces a single color in the passed image and returns the new one.
+     * Color is RGBA - but this method will ignore transparency during replace.
      *
      * @param background original image to set new rgb values in
      * @param colorOld The old color to replace
      * @param colorNew Replacing color
      */
     public static ImageIcon replaceColor(ImageIcon background, Color colorOld, Color colorNew) {
-        int oldColorRGB = colorOld.getRGB();
+        int oldColorRGB = colorOld.getRGB() & 0x00FFFFFF;
         int newColorRGB = colorNew.getRGB();
         BufferedImage image = new BufferedImage(
                 background.getIconWidth(),
@@ -59,14 +86,15 @@ public class ImageUtil {
         g.drawImage(background.getImage(), 0, 0, null);
         for (int x = 0; x < background.getIconWidth(); x++) {
             for (int y = 0; y < background.getIconHeight(); y++) {
-                if (image.getRGB(x, y) == oldColorRGB) {
+                if ((image.getRGB(x, y) & 0x00FFFFFF) == oldColorRGB) {
                     image.setRGB(x, y, newColorRGB);
                 }
             }
         }
+        g.dispose();
         return (new ImageIcon(image));
     }
-   
+
     /**
      * Replaces a single color in the passed image and returns the new one
      *
@@ -117,6 +145,59 @@ public class ImageUtil {
     }
 
     /**
+     * Mixes two Multi-Resolution images into a square icon of a specific size.
+     * This should not pixel up for HDMI monitors
+     *
+     * * @param background The background MultiResolutionImage
+     * @param foregroundImage The foreground MultiResolutionImage(painted on
+     * top, bottom-right aligned)
+     * @param pixelSize The logical size in pixels (16 for a 16x16 icon). These
+     * pixel have always a square format
+     */
+    public static Icon mixImages(MultiResolutionImage backgroundImage,
+            MultiResolutionImage foregroundImage, int pixelSize) {
+        return new Icon() {
+            @Override
+            public void paintIcon(Component component, Graphics graphics, int x, int y) {
+                Graphics2D graphics2D = (Graphics2D) graphics.create();
+                try {
+                    graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                    graphics2D.setRenderingHint(RenderingHints.KEY_STROKE_CONTROL, RenderingHints.VALUE_STROKE_PURE);
+                    //Get the current scale factor, this will be for example 1.5 for 150%
+                    double currentScaleFactor = graphics2D.getTransform().getScaleX();
+                    int variantSize = (int) Math.round(pixelSize * currentScaleFactor);
+                    Image backgroundVariantImage = backgroundImage.getResolutionVariant(variantSize, variantSize);
+                    graphics2D.drawImage(backgroundVariantImage, x, y, pixelSize, pixelSize, null);
+                    Image foregroundVariantImage = foregroundImage.getResolutionVariant(variantSize, variantSize);
+                    //Generate an offset of foreground and background image are not of same size
+                    double nativeForegroundWidth = foregroundVariantImage.getWidth(null);
+                    double nativeForegroundHeight = foregroundVariantImage.getHeight(null);
+                    int logicalForegroundWidth = (int) Math.round(nativeForegroundWidth / currentScaleFactor);
+                    int logicalForegroundHeight = (int) Math.round(nativeForegroundHeight / currentScaleFactor);
+                    //Compute offset, its bottom right
+                    int offsetX = Math.max(0, pixelSize - logicalForegroundWidth);
+                    int offsetY = Math.max(0, pixelSize - logicalForegroundHeight);
+                    graphics2D.drawImage(foregroundVariantImage, x + offsetX, y + offsetY,
+                            logicalForegroundWidth, logicalForegroundHeight, null);
+                } finally {
+                    graphics2D.dispose();
+                }
+            }
+
+            @Override
+            public int getIconWidth() {
+                return pixelSize;
+            }
+
+            @Override
+            public int getIconHeight() {
+                return pixelSize;
+            }
+        };
+    }
+
+    /**
      * Mixes two images, the foreground image is painted onto the background
      * image
      *
@@ -130,7 +211,7 @@ public class ImageUtil {
                 backgroundIconWidth,
                 backgroundIconHeight,
                 BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = (Graphics2D)image.getGraphics();
+        Graphics2D g2d = (Graphics2D) image.getGraphics();
         g2d.drawImage(background.getImage(), 0, 0, null);
         int foregroundOffsetX = backgroundIconWidth - foreground.getIconWidth();
         if (foregroundOffsetX < 0) {
@@ -148,13 +229,34 @@ public class ImageUtil {
      * Turns the passed icon into a transparent image, this is used to mark a
      * hidden element
      */
-    public static ImageIcon transparentImage(ImageIcon icon) {
-        BufferedImage image = new BufferedImage(
-                icon.getIconWidth(),
-                icon.getIconHeight(),
-                BufferedImage.TYPE_INT_ARGB);
-        image = setOpacity(image, 0.5f);
-        return (new ImageIcon(image));
+    public static ImageIcon transparentImage(MendelsonMultiResolutionImage image) {
+        if (image == null) {
+            return null;
+        }
+        List<Image> sourceVariants = image.getResolutionVariants();
+        List<Image> transparentVariants = new ArrayList<Image>();
+        AlphaComposite compositeTransparent = AlphaComposite.getInstance(AlphaComposite.SRC_OVER, 0.5f);
+        for (Image variantImage : sourceVariants) {
+            int width = variantImage.getWidth(null);
+            int height = variantImage.getHeight(null);
+            if (width > 0 && height > 0) {
+                BufferedImage transparentVariantImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+                Graphics2D graphics2D = transparentVariantImage.createGraphics();
+                try {
+                    graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    graphics2D.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                    graphics2D.setComposite(compositeTransparent);
+                    graphics2D.drawImage(variantImage, 0, 0, null);
+                } finally {
+                    graphics2D.dispose();
+                }
+                transparentVariants.add(transparentVariantImage);
+            }
+        }
+        MendelsonMultiResolutionImage resultMultiImage = new MendelsonMultiResolutionImage(
+                transparentVariants.toArray(new Image[0])
+        );
+        return new ImageIcon(resultMultiImage);
     }
 
     /**
@@ -279,22 +381,86 @@ public class ImageUtil {
         return (disabledImage);
     }
 
+    /**
+     * Converts an icon to an image icon by also computing the scaling of the
+     * monitor
+     */
     public static ImageIcon iconToImageIcon(Icon icon) {
         if (icon instanceof ImageIcon) {
             return (ImageIcon) icon;
-        } else {
-            int w = icon.getIconWidth();
-            int h = icon.getIconHeight();
-            GraphicsEnvironment ge
-                    = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            GraphicsDevice gd = ge.getDefaultScreenDevice();
-            GraphicsConfiguration gc = gd.getDefaultConfiguration();
-            BufferedImage image = gc.createCompatibleImage(w, h);
-            Graphics2D g = image.createGraphics();
-            icon.paintIcon(null, g, 0, 0);
-            g.dispose();
-            return (new ImageIcon(image));
         }
+        int width = icon.getIconWidth();
+        int height = icon.getIconHeight();
+        Image multiResolutionImage = new AbstractMultiResolutionImage() {
+            @Override
+            public Image getResolutionVariant(double destImageWidth, double destImageHeight) {
+                int width = (int) Math.round(destImageWidth);
+                int height = (int) Math.round(destImageHeight);
+                GraphicsConfiguration gc = GraphicsEnvironment.getLocalGraphicsEnvironment()
+                        .getDefaultScreenDevice().getDefaultConfiguration();
+                BufferedImage bufferedImage = gc.createCompatibleImage(width, height, Transparency.TRANSLUCENT);
+                Graphics2D g2d = bufferedImage.createGraphics();
+                double scaleX = destImageWidth / width;
+                double scaleY = destImageHeight / height;
+                g2d.scale(scaleX, scaleY);
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2d.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR);
+                icon.paintIcon(null, g2d, 0, 0);
+                g2d.dispose();
+                return (bufferedImage);
+            }
+
+            @Override
+            public List<Image> getResolutionVariants() {
+                return Collections.singletonList(getResolutionVariant(width, height));
+            }
+
+            @Override
+            protected Image getBaseImage() {
+                //Base variant has 100%
+                return getResolutionVariant(width, height);
+            }
+
+            @Override
+            public int getWidth(ImageObserver observer) {
+                return width;
+            }
+
+            @Override
+            public int getHeight(ImageObserver observer) {
+                return height;
+            }
+        };
+        return new ImageIcon(multiResolutionImage);
+    }
+
+    /**
+     *
+     * @param image The image to adjust
+     * @param brightness A brightness value of 0.9 will darken the image by 10%,
+     * a value of 1.1 will lighten the image by 10%. A value of 1 will keep the
+     * brightness.
+     */
+    public static void adjustBrightness(BufferedImage image, float brightness) {
+        RescaleOp rescaleOp = new RescaleOp(brightness, 0, null);
+        rescaleOp.filter(image, image);
+    }
+
+    /**
+     *
+     * @param image The image to adjust
+     * @param brightness A brightness value of 0.9 will darken the image by 10%,
+     * a value of 1.1 will lighten the image by 10%. A value of 1 will keep the
+     * brightness.
+     */
+    public static ImageIcon adjustBrightness(ImageIcon icon, float brightness) {
+        BufferedImage image = new BufferedImage(icon.getIconWidth(), icon.getIconHeight(), BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g2d = image.createGraphics();
+        g2d.setRenderingHints(RENDERING_HINTS_BEST_QUALITY);
+        g2d.drawImage(icon.getImage(), 0, 0, null);
+        g2d.dispose();
+        adjustBrightness(image, brightness);
+        return (new ImageIcon(image));
     }
 
 }

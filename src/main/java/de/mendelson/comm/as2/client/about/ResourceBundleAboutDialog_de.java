@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/about/ResourceBundleAboutDialog_de.java 3     29.03.06 15:58 Heller $ 
+//$Header: /mec_as2/de/mendelson/comm/as2/client/about/ResourceBundleAboutDialog_de.java 4     20/03/25 14:45 Heller $ 
 package de.mendelson.comm.as2.client.about;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,16 +12,16 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleAboutDialog_de extends MecResourceBundle{
 
   public Object[][] getContents() {
-    return contents;
+    return CONTENTS;
   }
 
   /**List of messages in the specific language*/
-  static final Object[][] contents = {
+  private static final Object[][] CONTENTS = {
         
     {"title", "Über" },  
     {"builddate", "Versionsdatum: {0}" }, 

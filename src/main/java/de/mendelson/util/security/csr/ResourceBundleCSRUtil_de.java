@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/csr/ResourceBundleCSRUtil_de.java 7     6/11/23 11:38 Heller $
+//$Header: /oftp2/de/mendelson/util/security/csr/ResourceBundleCSRUtil_de.java 9     9/12/24 15:51 Heller $
 package de.mendelson.util.security.csr;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleCSRUtil_de extends MecResourceBundle{
     
@@ -24,13 +24,15 @@ public class ResourceBundleCSRUtil_de extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {                
-        {"verification.failed", "Operation fehlgeschlagen - Die Überprüfung des erstellten Certificate Sign Requests (CSR) ist fehlgeschlagen." },
-        {"no.certificates.in.reply", "Operation fehlgeschlagen - Der Schlüssel konnte nicht gepatcht werden, es wurden in der CA Antwort keine Zertifikate gefunden." },
-        {"missing.cert.in.trustchain", "Operation fehlgeschlagen - Es fehlen für diese Operation Zertifikate im System.\nBitte importieren Sie zunächst das Zertifikat mit den Eckdaten (issuer)\n{0}." },
-        {"response.chain.incomplete", "Operation fehlgeschlagen - Der Trust Chain der CSR Antwort ist unvollständig." },
-        {"response.verification.failed", "Operation fehlgeschlagen - Der Trust Chain der CSR Antwort konnte nicht verifiziert werden: {0}" },
-        {"response.public.key.does.not.match", "Operation fehlgeschlagen - Diese Antwort der CA passt nicht zu diesem Schlüssel." },
+    private static final Object[][] CONTENTS = {                
+        {"verification.failed", "Die Überprüfung des erstellten Certificate Sign Requests (CSR) ist fehlgeschlagen." },
+        {"no.certificates.in.reply", "Der Schlüssel konnte nicht gepatcht werden, es wurden in der CA Antwort keine Zertifikate gefunden." },
+        {"missing.cert.in.trustchain", "Es fehlen für diese Operation die Zertifikate der Beglaubigungskette im System (Root und Intermediate Zertifikat).\n"
+            + "Sie erhalten diese Zertifikate von Ihrer CA.\n"
+            + "Bitte importieren Sie zunächst das Zertifikat mit den Eckdaten (issuer)\n{0}." },
+        {"response.chain.incomplete", "Der Trust Chain der CSR Antwort ist unvollständig." },
+        {"response.verification.failed", "Der Trust Chain der CSR Antwort konnte nicht verifiziert werden: {0}" },
+        {"response.public.key.does.not.match", "Diese Antwort der CA passt nicht zu diesem Schlüssel." },
     };
 
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 12    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/JTreeRemoteStructure.java 14    5/06/25 9:36 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.MecResourceBundle;
@@ -8,6 +8,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
@@ -24,14 +25,24 @@ import javax.swing.tree.TreePath;
  * Tree to display remote file structure
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class JTreeRemoteStructure extends JTree {
 
     private final DefaultMutableTreeNode root;
     private final Map<FileObject, DefaultMutableTreeNode> map = new ConcurrentHashMap<FileObject, DefaultMutableTreeNode>();
     private boolean directoriesOnly = false;
-    private final MecResourceBundle rb;
+    private static final MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleFileBrowser.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Holds a new partner ID for every created partner that is always negativ
@@ -42,20 +53,13 @@ public class JTreeRemoteStructure extends JTree {
      */
     public JTreeRemoteStructure() {
         super(new DefaultMutableTreeNode());
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleFileBrowser.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.setRootVisible(false);
         this.root = (DefaultMutableTreeNode) this.getModel().getRoot();
         TreeCellRendererFileBrowser treeCellRenderer = new TreeCellRendererFileBrowser();
         this.setCellRenderer(treeCellRenderer);
         int iconHeight = treeCellRenderer.getDefaultLeafIconHeight();
         this.setRowHeight(Math.max(this.getRowHeight(), iconHeight + 5));
+        this.root.add(new DefaultMutableTreeNode(rb.getResourceString("wait")));
     }
 
     public void addRoots(List<FileObjectRoot> roots) {
@@ -66,7 +70,7 @@ public class JTreeRemoteStructure extends JTree {
             this.root.add(node);
             this.map.put(remoteRoot, node);
             //add a dummy node below - indicates that the roow has not been expanded so far
-            node.add(new DefaultMutableTreeNode(this.rb.getResourceString("wait")));
+            node.add(new DefaultMutableTreeNode(rb.getResourceString("wait")));
         }
         ((DefaultTreeModel) this.getModel()).nodeStructureChanged(this.root);
         this.expand(this.root);
@@ -75,16 +79,21 @@ public class JTreeRemoteStructure extends JTree {
     /**
      * Expands a node
      */
-    private void expand(DefaultMutableTreeNode node) {
-        TreePath treePath = null;
-        synchronized (node) {
-            treePath = new TreePath(node.getPath());
-            this.expandPath(treePath);
-        }
-        this.fireTreeExpanded(treePath);
+    private void expand(final DefaultMutableTreeNode node) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                TreePath treePath;
+                synchronized (node) {
+                    treePath = new TreePath(node.getPath());
+                    expandPath(treePath);
+                }
+                fireTreeExpanded(treePath);
+            }
+        });
     }
 
-    public boolean isExplored(DefaultMutableTreeNode node) {
+    public boolean isExplored(final DefaultMutableTreeNode node) {
         synchronized (node) {
             if (node.getChildCount() == 1) {
                 DefaultMutableTreeNode firstChild = (DefaultMutableTreeNode) node.getFirstChild();
@@ -115,7 +124,7 @@ public class JTreeRemoteStructure extends JTree {
                 parentNode.add(node);
                 this.map.put(child, node);
                 if (child instanceof FileObjectDir) {
-                    node.add(new DefaultMutableTreeNode(this.rb.getResourceString("wait")));
+                    node.add(new DefaultMutableTreeNode(rb.getResourceString("wait")));
                 }
             }
         }
@@ -129,7 +138,7 @@ public class JTreeRemoteStructure extends JTree {
      */
     public void setSelectedNode(FileObject selection) {
         DefaultMutableTreeNode selectionNode = null;
-            selectionNode = this.map.get(selection);
+        selectionNode = this.map.get(selection);
         if (selectionNode != null) {
             TreePath selectionPath = new TreePath(selectionNode.getPath());
             this.scrollPathToVisible(selectionPath);

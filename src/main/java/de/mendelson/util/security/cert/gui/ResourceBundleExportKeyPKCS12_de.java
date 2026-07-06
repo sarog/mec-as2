@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_de.java 12    6/11/23 11:38 Heller $ 
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeyPKCS12_de.java 2     9/12/24 15:51 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 2 $
  */
 public class ResourceBundleExportKeyPKCS12_de extends MecResourceBundle {
 

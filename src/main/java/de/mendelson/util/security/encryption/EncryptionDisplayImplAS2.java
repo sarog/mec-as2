@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/EncryptionDisplayImplAS2.java 9     4/02/26 13:23 Heller $
 package de.mendelson.util.security.encryption;
 
 import de.mendelson.util.MecResourceBundle;
@@ -11,28 +11,33 @@ import javax.swing.ImageIcon;
  * Container superclass for the encryption rendering
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 9 $
  */
-public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
-    
+public class EncryptionDisplayImplAS2 extends EncryptionDisplay {
+
     /**
      * Icons, multi resolution
      */
-    public final static MendelsonMultiResolutionImage IMAGE_ENCRYPTION_STRONG
+    public static final MendelsonMultiResolutionImage IMAGE_ENCRYPTION_STRONG
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_strong.svg",
                     ListCellRendererEncryption.IMAGE_HEIGHT);
-    public final static MendelsonMultiResolutionImage IMAGE_ENCRYPTION_WEAK
+    public static final MendelsonMultiResolutionImage IMAGE_ENCRYPTION_WEAK
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_weak.svg",
                     ListCellRendererEncryption.IMAGE_HEIGHT);
-    public final static MendelsonMultiResolutionImage IMAGE_ENCRYPTION_BROKEN
+    public static final MendelsonMultiResolutionImage IMAGE_ENCRYPTION_BROKEN
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/encryption/encryption_broken.svg",
                     ListCellRendererEncryption.IMAGE_HEIGHT);
-    
-    private final MecResourceBundle rb;
-    
-    
-    public EncryptionDisplayImplAS2( Integer wrappedValue ){
-        super(wrappedValue );
+
+    private static final ImageIcon ICON_ENCRYPTION_STRONG = new ImageIcon(IMAGE_ENCRYPTION_STRONG
+            .toMinResolution(ListCellRendererEncryption.IMAGE_HEIGHT));
+    private static final ImageIcon ICON_ENCRYPTION_WEAK = new ImageIcon(IMAGE_ENCRYPTION_WEAK
+            .toMinResolution(ListCellRendererEncryption.IMAGE_HEIGHT));
+    private static final ImageIcon ICON_ENCRYPTION_BROKEN = new ImageIcon(IMAGE_ENCRYPTION_BROKEN
+            .toMinResolution(ListCellRendererEncryption.IMAGE_HEIGHT));
+
+    private static final MecResourceBundle rb;
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleEncryptionAS2.class.getName());
@@ -41,17 +46,21 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
         }
     }
 
+    public EncryptionDisplayImplAS2(Integer wrappedValue) {
+        super(wrappedValue);
+    }
+
     @Override
-    public ImageIcon getIcon() {   
-        Integer encryptionInt = (Integer)this.getWrappedValue();
-        return( this.getRenderImage(encryptionInt.intValue()));
+    public ImageIcon getIcon() {
+        Integer encryptionInt = (Integer) this.getWrappedValue();
+        return (this.getRenderImage(encryptionInt.intValue()));
     }
 
     @Override
     public String getText() {
-        return( this.rb.getResourceString("encryption." + this.getWrappedValue().toString()));
+        return (rb.getResourceString("encryption." + this.getWrappedValue().toString()));
     }
-    
+
     /**
      * Computes the render image by the given encryption constant
      *
@@ -59,7 +68,7 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
      */
     private ImageIcon getRenderImage(int encryption) {
         if (encryption == EncryptionConstantsAS2.ENCRYPTION_NONE) {
-            return (new ImageIcon(IMAGE_ENCRYPTION_BROKEN.toMinResolution(ListCellRendererEncryption.IMAGE_HEIGHT)));
+            return (ICON_ENCRYPTION_BROKEN);
         } else if (encryption == EncryptionConstantsAS2.ENCRYPTION_RC2_128
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_RC2_196
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_RC2_40
@@ -70,13 +79,11 @@ public class EncryptionDisplayImplAS2 extends EncryptionDisplay{
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_RC4_56
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_RC4_UNKNOWN
                 || encryption == EncryptionConstantsAS2.ENCRYPTION_DES
-                ) {
-            return (new ImageIcon(IMAGE_ENCRYPTION_WEAK.toMinResolution(ListCellRendererEncryption.IMAGE_HEIGHT)));
+                || encryption == EncryptionConstantsAS2.ENCRYPTION_3DES) {
+            return (ICON_ENCRYPTION_WEAK);
         } else {
-            return (new ImageIcon(IMAGE_ENCRYPTION_STRONG.toMinResolution(ListCellRendererEncryption.IMAGE_HEIGHT)));
+            return (ICON_ENCRYPTION_STRONG);
         }
     }
-    
-    
-    
+
 }

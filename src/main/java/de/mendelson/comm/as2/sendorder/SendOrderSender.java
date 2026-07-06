@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 28    2/11/23 15:53 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/sendorder/SendOrderSender.java 32    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -13,6 +13,7 @@ import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -29,24 +30,26 @@ import java.util.logging.Logger;
  * Sender class that enqueues send orders
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 32 $
  */
 public class SendOrderSender {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    private final MecResourceBundle rb;
-    private final SendOrderAccessDB sendOrderAccess;
-    private final IDBDriverManager dbDriverManager;
+    private static final  MecResourceBundle rb;
 
-    public SendOrderSender(IDBDriverManager dbDriverManager) {
-        //Load default resourcebundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleSendOrderSender.class.getName());
         } //load up resourcebundle
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private final SendOrderAccessDB sendOrderAccess;
+    private final IDBDriverManager dbDriverManager;
+
+    public SendOrderSender(IDBDriverManager dbDriverManager) {
         this.dbDriverManager = dbDriverManager;
         this.sendOrderAccess = new SendOrderAccessDB(dbDriverManager);
     }
@@ -56,14 +59,14 @@ public class SendOrderSender {
      */
     public AS2Message send(CertificateManager certificateManager, Partner sender,
             Partner receiver, Path[] files, String[] originalFilenames, String userdefinedId,
-            String subject, String[] payloadContentTypes) {
+            String subject, String[] payloadContentTypes, Map<String, String> userdefinedHeaderMap) {
         try {
             long startProcessTime = System.currentTimeMillis();
             AS2MessageCreation messageCreation = new AS2MessageCreation(certificateManager, certificateManager);
             messageCreation.setLogger(this.logger);
             messageCreation.setServerResources(this.dbDriverManager);
             AS2Message message = messageCreation.createMessage(sender, receiver,
-                    files, originalFilenames, userdefinedId, subject, payloadContentTypes);
+                        files, originalFilenames, userdefinedId, subject, payloadContentTypes);                
             StringBuilder filenames = new StringBuilder();
             for (Path file : files) {
                 if (filenames.length() > 0) {
@@ -81,12 +84,13 @@ public class SendOrderSender {
                                 (userdefinedId == null ? "--" : userdefinedId)
                             }),
                     message.getAS2Info());
-            SendOrder order = new SendOrder();
-            order.setReceiver(receiver);
-            order.setMessage(message);
-            order.setSender(sender);
-            order.setUserdefinedId(userdefinedId);
-            this.send(order);
+            SendOrder sendOrder = new SendOrder()
+                    .setReceiver(receiver)
+                    .setMessage(message)
+                    .setSender(sender)
+                    .setUserdefinedId(userdefinedId)
+                    .setUserdefinedHeaderMap(userdefinedHeaderMap);
+            this.send(sendOrder);
             return (message);
         } catch (Throwable e) {
             logger.severe(rb.getResourceString("sendoder.sendfailed",
@@ -95,8 +99,7 @@ public class SendOrderSender {
                         e.getMessage()
                     }
             ));
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
-            e.printStackTrace();
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.PROCESSING_ANY);
         }
         return (null);
     }
@@ -127,9 +130,10 @@ public class SendOrderSender {
      * @return NULL in the case of an error
      */
     public AS2Message send(CertificateManager certificateManager, Partner sender,
-            Partner receiver, Path file, String userdefinedId, String subject, String[] payloadContentTypes) {
+            Partner receiver, Path file, String userdefinedId, String subject, String[] payloadContentTypes,
+            Map<String, String> userdefinedHeaderMap) {
         return (this.send(certificateManager, sender, receiver, new Path[]{file}, null, userdefinedId,
-                subject, payloadContentTypes));
+                subject, payloadContentTypes, userdefinedHeaderMap));
     }
 
     /**

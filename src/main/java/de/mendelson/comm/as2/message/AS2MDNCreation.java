@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 50    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2MDNCreation.java 59    26/03/26 9:37 Heller $
 package de.mendelson.comm.as2.message;
 
 import com.sun.mail.util.LineOutputStream;
@@ -9,6 +9,7 @@ import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.BCCryptoHelper;
+import de.mendelson.util.security.cert.KeystoreCertificate;
 import java.io.ByteArrayOutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -44,13 +45,14 @@ import javax.mail.util.ByteArrayDataSource;
  * Packs a message with all necessary headers and attachments
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 59 $
  */
 public class AS2MDNCreation {
 
     private Logger logger = null;
     private final static MecResourceBundle rb;
-    static{
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleAS2MessagePacker.class.getName());
@@ -59,7 +61,7 @@ public class AS2MDNCreation {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
-    
+
     private final CertificateManager certificateManager;
 
     public AS2MDNCreation(CertificateManager certificateManager) {
@@ -113,17 +115,19 @@ public class AS2MDNCreation {
      */
     public AS2Message createMDNProcessed(AS2MessageInfo releatedMessageInfo, Partner mdnSender, Partner mdnReceiver) throws Exception {
         return (this.createMDNProcessed(releatedMessageInfo, mdnSender, mdnReceiver,
-                MDNText.get(MDNText.RECEIVED, releatedMessageInfo.getMessageType())));
+                MDNText.get(MDNStateType.PROCESSED, releatedMessageInfo.getMessageType())));
     }
 
     /**
      * Creates an mdn that could be returned to the sender and indicates that
      * everything is ok
      */
-    public AS2Message createMDNProcessed(AS2MessageInfo releatedMessageInfo, Partner mdnSender, Partner mdnReceiver, String detailText) throws Exception {
+    public AS2Message createMDNProcessed(AS2MessageInfo releatedMessageInfo, 
+            Partner mdnSender, Partner mdnReceiver, String mdnText) throws Exception {
         AS2Message mdn = this.createMDN(releatedMessageInfo, mdnSender, mdnSender.getAS2Identification(),
-                mdnReceiver, mdnReceiver.getAS2Identification(), "processed", detailText);
-        mdn.getAS2Info().setState(AS2Message.STATE_FINISHED);
+                mdnReceiver, mdnReceiver.getAS2Identification(), "processed", mdnText);
+        mdn.getAS2Info().setState(MessageStateType.FINISHED);
+        mdn.getAS2Info().setDirection(MessageDirectionType.OUT);
         return (mdn);
     }
 
@@ -139,14 +143,15 @@ public class AS2MDNCreation {
         AS2MessageInfo messageInfoOfException = (AS2MessageInfo) exception.getAS2Message().getAS2Info();
         AS2Message mdn = this.createMDN(messageInfoOfException, as2MessageReceiver, as2MessageReceiverId,
                 as2MessageSender, as2MessageSenderId, "processed/error: " + exception.getErrorType(),
-                MDNText.get(MDNText.ERROR, messageInfoOfException.getMessageType()) + exception.getMessage());
+                MDNText.get(MDNStateType.ERROR, messageInfoOfException.getMessageType()) + exception.getMessage());
         if (this.logger != null) {
             this.logger.log(Level.SEVERE, rb.getResourceString("mdn.details",
                     new Object[]{
                         exception.getMessage()
                     }), messageInfoOfException);
         }
-        mdn.getAS2Info().setState(AS2Message.STATE_STOPPED);
+        mdn.getAS2Info().setState(MessageStateType.STOPPED);
+        mdn.getAS2Info().setDirection(MessageDirectionType.OUT);
         return (mdn);
     }
 
@@ -157,15 +162,15 @@ public class AS2MDNCreation {
      *
      * @param dispositionState State that will be written into the disposition
      * header
-     * @param receiver might be null
-     * @param sender might be null
+     * @param remotePartner might be null
+     * @param localStation might be null
      */
-    private AS2Message createMDN(AS2MessageInfo relatedMessageInfo, Partner sender,
-            String senderAS2Id, Partner receiver, String receiverAS2Id, String dispositionState,
-            String additionalText) throws Exception {
+    private AS2Message createMDN(AS2MessageInfo relatedMessageInfo, Partner localStation,
+            String localstationAS2Id, Partner remotePartner, String remotePartnerAS2Id, String dispositionState,
+            String mdnText) throws Exception {
         AS2Message message = new AS2Message(new AS2MDNInfo());
         AS2MDNInfo mdnInfo = (AS2MDNInfo) message.getAS2Info();
-        mdnInfo.setMessageId(UniqueId.createMessageId(senderAS2Id, receiverAS2Id));
+        mdnInfo.setMessageId(UniqueId.createMessageId(localstationAS2Id, remotePartnerAS2Id));
         mdnInfo.setDispositionState(dispositionState);
         if (this.logger != null) {
             this.logger.log(Level.FINE, rb.getResourceString("mdn.creation.start",
@@ -174,61 +179,62 @@ public class AS2MDNCreation {
                     }),
                     relatedMessageInfo);
         }
-        mdnInfo.setSenderId(senderAS2Id);
-        mdnInfo.setReceiverId(receiverAS2Id);
+        mdnInfo.setSenderId(localstationAS2Id);
+        mdnInfo.setReceiverId(remotePartnerAS2Id);
         mdnInfo.setRelatedMessageId(relatedMessageInfo.getMessageId());
+        mdnInfo.setRemoteMDNText(mdnText);
         try {
             mdnInfo.setSenderHost(InetAddress.getLocalHost().getCanonicalHostName());
         } catch (UnknownHostException e) {
             //nop
         }
-        String contentTransferEncoding = "7bit";
-        //String contentTransferEncoding = "base64";
+        //Other possible value is "base64"
+        String contentTransferEncoding = "7bit";        
         MimeMultipart multiPart = new MimeMultipart();
-        multiPart.addBodyPart(this.createMDNNotesBody(additionalText, contentTransferEncoding));
+        multiPart.addBodyPart(this.createMDNNotesBody(mdnText, contentTransferEncoding));
         multiPart.addBodyPart(this.createMDNDispositionBody(relatedMessageInfo, dispositionState, contentTransferEncoding));
         multiPart.setSubType("report; report-type=disposition-notification");
         MimeMessage messagePart = new MimeMessage(Session.getInstance(System.getProperties(), null));
         messagePart.setContent(multiPart, MimeUtility.unfold(multiPart.getContentType()));
         messagePart.saveChanges();
-        ByteArrayOutputStream memOutUnsigned = new ByteArrayOutputStream();
-        //normally the content type header is folded (which is correct but some products are not able to parse this properly)
-        //Now take the content-type, unfold it and write it
-        Enumeration hdrLines = messagePart.getMatchingHeaderLines(new String[]{"Content-Type"});
-        LineOutputStream los = new LineOutputStream(memOutUnsigned);
-        while (hdrLines.hasMoreElements()) {
-            //requires java mail API >= 1.4
-            String nextHeaderLine = MimeUtility.unfold((String) hdrLines.nextElement());
-            los.writeln(nextHeaderLine);
-        }
-        messagePart.writeTo(memOutUnsigned,
-                new String[]{"Message-ID", "Mime-Version", "Content-Type"});
-        memOutUnsigned.flush();
-        memOutUnsigned.close();
-        message.setDecryptedRawData(memOutUnsigned.toByteArray());
-        //check if authentification of sender is ok, then sign if possible
-        if (sender != null && receiver != null) {
-            MimeMessage signedMessage = this.signMDN(messagePart, sender, receiver, message, relatedMessageInfo);
-            message.setContentType(MimeUtility.unfold(signedMessage.getContentType()));
-            ByteArrayOutputStream memOutSigned = new ByteArrayOutputStream();
-            signedMessage.writeTo(memOutSigned,
+        try (ByteArrayOutputStream memOutUnsigned = new ByteArrayOutputStream()) {
+            //normally the content type header is folded (which is correct but some products are not able to parse this properly)
+            //Now take the content-type, unfold it and write it
+            Enumeration<String> hdrLines = messagePart.getMatchingHeaderLines(new String[]{"Content-Type"});
+            try (LineOutputStream los = new LineOutputStream(memOutUnsigned)) {
+                while (hdrLines.hasMoreElements()) {
+                    //requires java mail API >= 1.4
+                    String nextHeaderLine = MimeUtility.unfold((String) hdrLines.nextElement());
+                    los.writeln(nextHeaderLine);
+                }
+            }
+            messagePart.writeTo(memOutUnsigned,
                     new String[]{"Message-ID", "Mime-Version", "Content-Type"});
-            memOutSigned.flush();
-            memOutSigned.close();
-            message.setRawData(memOutSigned.toByteArray());
-        } //there occured an authentification error: the system was unable to authentificate the sender,
+            message.setDecryptedRawData(memOutUnsigned.toByteArray());
+        }
+        //check if authentification of sender is ok, then sign if possible. So not sign if the
+        //message receiver existed in the system but was no local station
+        if (localStation != null && remotePartner != null && localStation.isLocalStation()) {
+            MimeMessage signedMessage = this.signMDN(messagePart, localStation, remotePartner, message, relatedMessageInfo);
+            message.setContentType(MimeUtility.unfold(signedMessage.getContentType()));
+            try (ByteArrayOutputStream memOutSigned = new ByteArrayOutputStream()) {
+                signedMessage.writeTo(memOutSigned,
+                        new String[]{"Message-ID", "Mime-Version", "Content-Type"});
+                message.setRawData(memOutSigned.toByteArray());
+            }
+        } 
+        //there was a partner authentification/identification error: the system was unable to authentificate the sender,
         //do not sign MDN
         else {
-            ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-            messagePart.writeTo(memOut,
-                    new String[]{"Message-ID", "Mime-Version", "Content-Type"});
-            memOut.flush();
-            memOut.close();
-            message.getAS2Info().setSignType(AS2Message.SIGNATURE_NONE);
-            message.setContentType(MimeUtility.unfold(messagePart.getContentType()));
-            message.setRawData(memOut.toByteArray());
+            try (ByteArrayOutputStream memOut = new ByteArrayOutputStream()) {
+                messagePart.writeTo(memOut,
+                        new String[]{"Message-ID", "Mime-Version", "Content-Type"});
+                message.getAS2Info().setSignType(AS2Message.SIGNATURE_NONE);
+                message.setContentType(MimeUtility.unfold(messagePart.getContentType()));
+                message.setRawData(memOut.toByteArray());
+            }
         }
-        if (dispositionState.indexOf("error") >= 0) {
+        if (dispositionState.contains("error")) {
             if (this.logger != null) {
                 this.logger.log(Level.SEVERE, rb.getResourceString("mdn.created",
                         new Object[]{
@@ -264,16 +270,16 @@ public class AS2MDNCreation {
     private MimeBodyPart createMDNDispositionBody(AS2MessageInfo relatedMessageInfo, String dispositionState,
             String contentTransferEncoding) throws MessagingException {
         MimeBodyPart body = new MimeBodyPart();
-        StringBuilder buffer = new StringBuilder();
-        buffer.append("Reporting-UA: ").append(AS2ServerVersion.getProductName()).append("\r\n");
-        buffer.append("Original-Recipient: rfc822; ").append(relatedMessageInfo.getReceiverId()).append("\r\n");
-        buffer.append("Final-Recipient: rfc822; ").append(relatedMessageInfo.getReceiverId()).append("\r\n");
-        buffer.append("Original-Message-ID: <").append(relatedMessageInfo.getMessageId()).append(">\r\n");
-        buffer.append("Disposition: automatic-action/MDN-sent-automatically; ").append(dispositionState).append("\r\n");
+        StringBuilder builder = new StringBuilder();
+        builder.append("Reporting-UA: ").append(AS2ServerVersion.getProductName()).append("\r\n");
+        builder.append("Original-Recipient: rfc822; ").append(relatedMessageInfo.getReceiverId()).append("\r\n");
+        builder.append("Final-Recipient: rfc822; ").append(relatedMessageInfo.getReceiverId()).append("\r\n");
+        builder.append("Original-Message-ID: <").append(relatedMessageInfo.getMessageId()).append(">\r\n");
+        builder.append("Disposition: automatic-action/MDN-sent-automatically; ").append(dispositionState).append("\r\n");
         if (relatedMessageInfo.getReceivedContentMIC() != null) {
-            buffer.append("Received-Content-MIC: ").append(relatedMessageInfo.getReceivedContentMIC()).append("\r\n");
+            builder.append("Received-Content-MIC: ").append(relatedMessageInfo.getReceivedContentMIC()).append("\r\n");
         }
-        body.setDataHandler(new DataHandler(new ByteArrayDataSource(buffer.toString().getBytes(),
+        body.setDataHandler(new DataHandler(new ByteArrayDataSource(builder.toString().getBytes(),
                 "message/disposition-notification")));
         body.setHeader("Content-Transfer-Encoding", contentTransferEncoding);
         return (body);
@@ -285,11 +291,11 @@ public class AS2MDNCreation {
      *
      * @param remotePartner might be null if the receiver is unidentified
      */
-    private MimeMessage signMDN(MimeMessage mimeMessage, Partner localPartner, Partner remotePartner, 
+    private MimeMessage signMDN(MimeMessage mimeMessage, Partner localPartner, Partner remotePartner,
             AS2Message as2Message, AS2MessageInfo relatedMessageInfo) throws Exception {
         if (relatedMessageInfo.getDispositionNotificationOptions().signMDN()) {
             int preferredDigestDispositionNotification = relatedMessageInfo.getDispositionNotificationOptions().getPreferredSignatureAlgorithm();
-            int relatedMessageDigest = relatedMessageInfo.getSignType();            
+            int relatedMessageDigest = relatedMessageInfo.getSignType();
             //The preferred sign digest from the disposition notification option does not contain the signature scheme. Means if the sender used
             //a special signature scheme this should be used for the MDN signature, too - even if it is impossible to signal this
             //by the dispositoin notification option.
@@ -344,7 +350,7 @@ public class AS2MDNCreation {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA3_384;
             } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_512) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA3_512;
-            }else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
+            } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_224_RSASSA_PSS) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA3_224_RSASSA_PSS;
             } else if (preferredDigestDispositionNotification == AS2Message.SIGNATURE_SHA3_256_RSASSA_PSS) {
                 digestStr = BCCryptoHelper.ALGORITHM_SHA3_256_RSASSA_PSS;
@@ -363,18 +369,27 @@ public class AS2MDNCreation {
                 return (mimeMessage);
             }
             String signFingerprintSHA1;
-            if( remotePartner != null && remotePartner.isOverwriteLocalStationSecurity() 
-                    && remotePartner.getSignOverwriteLocalstationFingerprintSHA1() != null ){
+            if (remotePartner != null && remotePartner.isOverwriteLocalStationSecurity()
+                    && remotePartner.getSignOverwriteLocalstationFingerprintSHA1() != null) {
                 signFingerprintSHA1 = remotePartner.getSignOverwriteLocalstationFingerprintSHA1();
-            }else{
+            } else {
                 signFingerprintSHA1 = localPartner.getSignFingerprintSHA1();
             }
-            if( signFingerprintSHA1 == null ){
-                throw new Exception( "AS2MDNCreation.signMDN: No private key defined to sign outbound MDN");
+            if (signFingerprintSHA1 == null) {
+                throw new Exception("AS2MDNCreation.signMDN: No private key defined to sign outbound MDN");
+            }
+            KeystoreCertificate signCertificate = this.certificateManager.getKeystoreCertificateByFingerprintSHA1(signFingerprintSHA1);
+            if( signCertificate == null ){
+                throw new Exception("AS2MDNCreation.signMDN: A signing key with the SHA1 fingerprint "
+                + signFingerprintSHA1 + " does not exist in the system");
+            }
+            if( !signCertificate.getIsKeyPair()){
+                throw new Exception("AS2MDNCreation.signMDN: A signing key with the SHA1 fingerprint "
+                + signFingerprintSHA1 + " does not exist in the system - there is only a certificate with this fingerprint");
             }            
-            PrivateKey senderKey = this.certificateManager.getPrivateKeyByFingerprintSHA1(signFingerprintSHA1);            
-            String senderSignAlias = this.certificateManager.getAliasByFingerprint(signFingerprintSHA1);
-            Certificate[] chain = this.certificateManager.getCertificateChain(senderSignAlias);
+            PrivateKey senderKey = (PrivateKey)signCertificate.getPrivateKey();
+            String senderSignAlias = signCertificate.getAlias();
+            Certificate[] trustChain = signCertificate.getCertificateChain();
             BCCryptoHelper helper = new BCCryptoHelper();
             boolean useAlgorithmIdentifierProtectionAttribute = true;
             if (remotePartner != null) {
@@ -385,14 +400,15 @@ public class AS2MDNCreation {
                                 as2Message.getAS2Info().getMessageId(),}), as2Message.getAS2Info());
                 }
             }
-            MimeMessage signedMimeMessage = helper.signToMessage(mimeMessage, chain, senderKey, digestStr.toUpperCase(),
+            MimeMessage signedMimeMessage = helper.signToMessage(mimeMessage, trustChain, senderKey, digestStr.toUpperCase(),
                     useAlgorithmIdentifierProtectionAttribute,
                     AS2Server.CRYPTO_PROVIDER.getProviderEncSign().getProvider().getName());
             if (this.logger != null) {
                 this.logger.log(Level.INFO, rb.getResourceString("mdn.signed",
                         new Object[]{
                             digestStr.toUpperCase(),
-                            senderSignAlias
+                            senderSignAlias,
+                            localPartner.getName()
                         }), as2Message.getAS2Info());
             }
             return (signedMimeMessage);

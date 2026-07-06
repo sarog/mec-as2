@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 9     5/12/23 8:58 Heller $
+//$Header: /mec_as4/de/mendelson/util/systemevents/gui/JPanelDisplaySingleSystemEvent.java 13    14/04/26 9:05 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -8,7 +8,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 
 /*
@@ -22,32 +21,35 @@ import javax.swing.JPanel;
  * Panel that takes a single system event and displays it
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class JPanelDisplaySingleSystemEvent extends JPanel {
 
-    private final MecResourceBundle rb;
-    private final DateFormat detailedDateTimeFormat = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+    public static final int IMAGE_SIZE = 24;
 
-    /**
-     * Creates new form JPanelDisplaySingleSystemEvent
-     */
-    public JPanelDisplaySingleSystemEvent() {
-        //Load resourcebundle
+    private static final MecResourceBundle rb;
+
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleDialogSystemEvent.class.getName());
         } //load up  resourcebundle        
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+
+    /**
+     * Creates new form JPanelDisplaySingleSystemEvent
+     */
+    public JPanelDisplaySingleSystemEvent() {
         initComponents();
         //setup localized event label
-        this.jLabelEventOwner.setText(this.rb.getResourceString("label.user"));
-        this.jLabelEventOriginHost.setText(this.rb.getResourceString("label.host"));
-        this.jLabelEventId.setText(this.rb.getResourceString("label.id"));
-        this.jLabelEventDate.setText(this.rb.getResourceString("label.date"));
-        this.jLabelEventType.setText(this.rb.getResourceString("label.type"));
+        this.jLabelEventOwner.setText(rb.getResourceString("label.user"));
+        this.jLabelEventOriginHost.setText(rb.getResourceString("label.host"));
+        this.jLabelEventId.setText(rb.getResourceString("label.id"));
+        this.jLabelEventDate.setText(rb.getResourceString("label.date"));
+        this.jLabelEventType.setText(rb.getResourceString("label.type"));
     }
 
     /**
@@ -69,17 +71,19 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
     public void displayEvent(SystemEvent event) {
         this.jTextFieldSubjectContent.setText(event.getSubject());
         this.jEditorPaneEventBody.setText(event.getBody());
-        this.jLabelOrigin.setIcon(event.getOriginIconMultiResolution(24));
-        this.jLabelSeverity.setIcon(event.getSeverityIconMultiResolution(24));
-        this.jLabelCategory.setIcon(event.getCategoryIconMultiResolution(24));
+        this.jLabelOrigin.setIcon(event.getOriginIconMultiResolution(IMAGE_SIZE));
+        this.jLabelSeverity.setIcon(event.getSeverityIconMultiResolution(IMAGE_SIZE));
+        this.jLabelCategory.setIcon(event.getCategoryIconMultiResolution(IMAGE_SIZE));
         if (event.getUser().equals(SystemEvent.USER_SERVER_PROCESS)) {
-            this.jLabelEventOwnerContent.setText(this.rb.getResourceString("user.server.process"));
+            this.jLabelEventOwnerContent.setText(rb.getResourceString("user.server.process"));
         } else {
             this.jLabelEventOwnerContent.setText(event.getUser());
         }
         this.jTextFieldOriginHostContent.setText(event.getProcessOriginHost());
         this.jTextFieldEventIdContent.setText(event.getId());
-        this.jLabelEventDateContent.setText(this.detailedDateTimeFormat.format(new Date(event.getTimestamp())));
+        DateFormat detailedDateTimeFormat
+                = SimpleDateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.MEDIUM);
+        this.jLabelEventDateContent.setText(detailedDateTimeFormat.format(new Date(event.getTimestamp())));
         this.jLabelEventTypeContent.setText("[" + event.categoryToTextLocalized() + "] "
                 + event.typeToTextLocalized());
     }
@@ -125,7 +129,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 10);
         add(jScrollPaneBody, gridBagConstraints);
 
         jTextFieldSubjectContent.setEditable(false);
@@ -137,20 +141,26 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(10, 10, 5, 10);
         add(jTextFieldSubjectContent, gridBagConstraints);
+
+        jLabelSeverity.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(15, 5, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(15, 10, 5, 5);
         add(jLabelSeverity, gridBagConstraints);
+
+        jLabelOrigin.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(15, 0, 5, 5);
         add(jLabelOrigin, gridBagConstraints);
+
+        jLabelCategory.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/systemevents/gui/missing_image24x24.gif"))); // NOI18N
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 1;
@@ -178,7 +188,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         jPanelAdditionalInfo.add(jLabelEventOriginHost, gridBagConstraints);
 
         jLabelEventOwnerContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelEventOwnerContent.setText("<content>");
+        jLabelEventOwnerContent.setText("--");
         jLabelEventOwnerContent.setPreferredSize(new java.awt.Dimension(140, 14));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
@@ -206,7 +216,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         jPanelAdditionalInfo.add(jLabelEventDate, gridBagConstraints);
 
         jLabelEventDateContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelEventDateContent.setText("<content>");
+        jLabelEventDateContent.setText("--");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 3;
@@ -225,7 +235,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         jPanelAdditionalInfo.add(jLabelEventType, gridBagConstraints);
 
         jLabelEventTypeContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jLabelEventTypeContent.setText("<content>");
+        jLabelEventTypeContent.setText("--");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 2;
         gridBagConstraints.gridy = 2;
@@ -236,7 +246,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
 
         jTextFieldOriginHostContent.setEditable(false);
         jTextFieldOriginHostContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jTextFieldOriginHostContent.setText("<content>");
+        jTextFieldOriginHostContent.setText("--");
         jTextFieldOriginHostContent.setBorder(null);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 7;
@@ -249,7 +259,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
 
         jTextFieldEventIdContent.setEditable(false);
         jTextFieldEventIdContent.setFont(new java.awt.Font("Tahoma", 1, 11)); // NOI18N
-        jTextFieldEventIdContent.setText("<content>");
+        jTextFieldEventIdContent.setText("--");
         jTextFieldEventIdContent.setBorder(null);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 7;
@@ -266,7 +276,7 @@ public class JPanelDisplaySingleSystemEvent extends JPanel {
         gridBagConstraints.gridwidth = 12;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(0, 2, 0, 0);
+        gridBagConstraints.insets = new java.awt.Insets(0, 5, 0, 0);
         add(jPanelAdditionalInfo, gridBagConstraints);
     }// </editor-fold>//GEN-END:initComponents
 

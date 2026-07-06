@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ConsoleProgressBar.java 4     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/util/ConsoleProgressBar.java 5     11/02/25 13:39 Heller $
 package de.mendelson.util;
 
 import java.text.DecimalFormat;
@@ -14,7 +14,7 @@ import java.text.DecimalFormatSymbols;
 /**
  * Progress bar to display on the console
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ConsoleProgressBar {
 
@@ -26,6 +26,9 @@ public class ConsoleProgressBar {
         format.setDecimalFormatSymbols(symbols);
     }
 
+    private ConsoleProgressBar(){        
+    }
+    
     /**
      * Allows to display subpercents: A progress betrween startPercent and endPercent
      * which runs from 0..100%

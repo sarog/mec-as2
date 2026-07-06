@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 6     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 9     23/05/25 9:57 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -18,23 +18,35 @@ import java.util.Properties;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class IncomingMessageRequest extends ClientServerMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String contentType = null;
     private String remoteHost = null;
+    private String remoteAddress = null;
     private Properties header = new Properties();
     private String messageDataFilename = null;
     private boolean usesTLS = false;
+    private int localPort = -1;
+    private String tlsProtocol = null;
+    private String cipherSuite = null;
+    private long receiptStartTime = 0;
+    private long receiptEndTime = 0;
+    private long transferredBytes = 0;
+    
+    /**Indicates if this is a sync MDN. In this case there is no additional connection information as this came in on the back channel
+     * of the outbound connection
+     */
+    private boolean isSyncMDN = false;
 
     public IncomingMessageRequest() {
     }
 
     @Override
     public String toString() {
-        return ("Incoming message response");
+        return ("Incoming message request");
     }
 
     public void addHeader(String key, String value) {
@@ -99,6 +111,122 @@ public class IncomingMessageRequest extends ClientServerMessage implements Seria
     /**Prevent an overwrite of the readObject method for de-serialization*/
     private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
         inStream.defaultReadObject();
+    }
+
+    /**
+     * @return the localPort
+     */
+    public int getLocalPort() {
+        return localPort;
+    }
+
+    /**
+     * @param localPort the localPort to set
+     */
+    public void setLocalPort(int localPort) {
+        this.localPort = localPort;
+    }
+
+    /**
+     * @return the tlsProtocol
+     */
+    public String getTLSProtocol() {
+        return tlsProtocol;
+    }
+
+    /**
+     * @param tlsProtocol the tlsProtocol to set
+     */
+    public void setTLSProtocol(String tlsProtocol) {
+        this.tlsProtocol = tlsProtocol;
+    }
+
+    /**
+     * @return the cipherSuite
+     */
+    public String getCipherSuite() {
+        return cipherSuite;
+    }
+
+    /**
+     * @param cipherSuite the cipherSuite to set
+     */
+    public void setCipherSuite(String cipherSuite) {
+        this.cipherSuite = cipherSuite;
+    }
+
+    /**
+     * @return the remoteAddress
+     */
+    public String getRemoteAddress() {
+        return remoteAddress;
+    }
+
+    /**
+     * @param remoteAddress the remoteAddress to set
+     */
+    public void setRemoteAddress(String remoteAddress) {
+        this.remoteAddress = remoteAddress;
+    }
+
+    /**
+     * Indicates if this is a sync MDN. In this case there is no additional connection information as this came in on the back channel
+     * of the outbound connection
+     * @return the isSyncMDN
+     */
+    public boolean isSyncMDN() {
+        return isSyncMDN;
+    }
+
+    /**
+     * Indicates if this is a sync MDN. In this case there is no additional connection information as this came in on the back channel
+     * of the outbound connection
+     * @param isSyncMDN the isSyncMDN to set
+     */
+    public void setSyncMDN(boolean isSyncMDN) {
+        this.isSyncMDN = isSyncMDN;
+    }
+
+    /**
+     * @return the receiptStartTime
+     */
+    public long getReceiptStartTime() {
+        return receiptStartTime;
+    }
+
+    /**
+     * @param receiptStartTime the receiptStartTime to set
+     */
+    public void setReceiptStartTime(long receiptStartTime) {
+        this.receiptStartTime = receiptStartTime;
+    }
+
+    /**
+     * @return the receiptEndTime
+     */
+    public long getReceiptEndTime() {
+        return receiptEndTime;
+    }
+
+    /**
+     * @param receiptEndTime the receiptEndTime to set
+     */
+    public void setReceiptEndTime(long receiptEndTime) {
+        this.receiptEndTime = receiptEndTime;
+    }
+
+    /**
+     * @return the receivedBytes
+     */
+    public long getTransferredBytes() {
+        return transferredBytes;
+    }
+
+    /**
+     * @param receivedBytes the receivedBytes to set
+     */
+    public void setTransferredBytes(long transferredBytes) {
+        this.transferredBytes = transferredBytes;
     }
     
 }

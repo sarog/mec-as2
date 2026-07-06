@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/wizard/category/JDialogCategorySelection.java 9     27.11.19 10:47 Heller $
+//$Header: /oftp2/de/mendelson/util/wizard/category/JDialogCategorySelection.java 12    13/03/26 11:12 Heller $
 package de.mendelson.util.wizard.category;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,14 +26,20 @@ import javax.swing.KeyStroke;
  * Main class for the category selection wizard
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
-public class JDialogCategorySelection extends JDialog implements CategorySelectionListener {
+public final class JDialogCategorySelection extends JDialog implements CategorySelectionListener {
 
-    /**
-     * Localize the GUI
-     */
-    private MecResourceBundle rb = null;
+    private static final MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCategorySelection.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Synchronized structure that contains action listeners to be informed if a
@@ -47,15 +53,7 @@ public class JDialogCategorySelection extends JDialog implements CategorySelecti
      * Creates new form JDialogCategorySelection
      */
     public JDialogCategorySelection(JFrame parent) {
-        super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCategorySelection.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
+        super(parent, true);        
         initComponents();
         this.getRootPane().setDefaultButton(this.jButtonOk);     
         this.actionListenerESC = new ActionListener() {
@@ -199,28 +197,6 @@ public class JDialogCategorySelection extends JDialog implements CategorySelecti
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-//    public static void main(String args[]) {
-//        JDialogCategorySelection dialog
-//                = new JDialogCategorySelection(new javax.swing.JFrame());
-//        Category category = new Category();
-//        category.setTitle("Test Test");
-//        for (int i = 0; i < 10; i++) {
-//            Subcategory sub = new Subcategory();
-//            sub.setActionCommand(category.getTitle() + "_" + sub.getTitle());
-//            sub.setTitle("TestSub" + i);
-//            sub.setDescription("This is description #" + i);
-//            category.addSubcategory(sub);
-//        }
-//        dialog.addCategory(category);
-//        Category category2 = new Category();
-//        category2.setTitle("Test2 Test2");
-//        dialog.addCategory(category2);
-//        dialog.setVisible(true);
-//        System.exit(0);
-//    }
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

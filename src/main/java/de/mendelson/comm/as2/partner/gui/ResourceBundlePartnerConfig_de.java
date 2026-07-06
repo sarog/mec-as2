@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig_de.java 17    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/ResourceBundlePartnerConfig_de.java 20    3/12/25 11:08 Heller $
 package de.mendelson.comm.as2.partner.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 20 $
  */
 public class ResourceBundlePartnerConfig_de extends MecResourceBundle{
     
@@ -24,7 +24,7 @@ public class ResourceBundlePartnerConfig_de extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Partnerkonfiguration" },
         {"button.ok", "Ok" },
         {"button.cancel", "Abbrechen" },
@@ -53,7 +53,10 @@ public class ResourceBundlePartnerConfig_de extends MecResourceBundle{
         {"event.partner.added.subject", "Der Partner {0} wurde durch den Benutzer der Partnerverwaltung hinzugefügt" },
         {"event.partner.added.body", "Daten des neuen Partners:\n\n{0}" },
         {"event.partner.modified.subject", "Der Partner {0} wurde durch den Benutzer modifiziert" },
-        {"event.partner.modified.body", "Bisherige Daten des Partners:\n\n{0}\n\nNeue Daten des Partner:\n\n{1}" },        
+        {"event.partner.modified.body", "Bisherige Daten des Partners:\n\n{0}\n\nNeue Daten des Partner:\n\n{1}" },  
+        {"text.configurationproblem", "<HTML>Es gibt Fehler in der Partnerkonfiguration - bitte beseitigen Sie sie vor dem Speichern.</HTML>" },
+        {"button.filter", "Filter" },
+        {"label.filterdisplay", "{0}/{1} Partner angezeigt"},
     };
     
 }

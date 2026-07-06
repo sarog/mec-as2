@@ -1,18 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 30    2/11/23 15:52 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/PartnerSystemAccessDB.java 37    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.partner;
 
-import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -27,14 +24,10 @@ import java.util.logging.Logger;
  * system, it will be displayed in the partner panel
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 37 $
  */
 public class PartnerSystemAccessDB {
 
-    /**
-     * Logger to log information to
-     */
-    private static final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final PartnerAccessDB partnerAccess;
     private final IDBDriverManager dbDriverManager;
 
@@ -53,73 +46,37 @@ public class PartnerSystemAccessDB {
      */
     public List<PartnerSystem> getAllPartnerSystems() {
         List<PartnerSystem> list = new ArrayList<PartnerSystem>();
-        List<Partner> allPartnerList = this.partnerAccess.getAllPartner(PartnerAccessDB.DATA_COMPLETENESS_FULL);
-        Connection configConnectionAutoCommit = null;
-        try {
-            configConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            PreparedStatement statement = null;
-            ResultSet result = null;
-            try {
-                statement = configConnectionAutoCommit.prepareStatement("SELECT * FROM partnersystem");
-                result = statement.executeQuery();
-                while (result.next()) {
-                    int partnerId = result.getInt("partnerid");
-                    Partner relatedPartner = null;
-                    //this is really slow...
-                    for (Partner partner : allPartnerList) {
-                        if (partner.getDBId() == partnerId) {
-                            relatedPartner = partner;
-                            break;
+        List<Partner> allPartnerList = this.partnerAccess.getAllPartner();
+        try(Connection configConnectionAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)){
+            try (PreparedStatement statement = configConnectionAutoCommit.prepareStatement("SELECT * FROM partnersystem")) {
+                try (ResultSet result = statement.executeQuery()) {
+                    while (result.next()) {
+                        int partnerId = result.getInt("partnerid");
+                        Partner relatedPartner = null;
+                        //this is really slow...
+                        for (Partner partner : allPartnerList) {
+                            if (partner.getDBId() == partnerId) {
+                                relatedPartner = partner;
+                                break;
+                            }
+                        }
+                        if (relatedPartner != null) {
+                            PartnerSystem system = new PartnerSystem();
+                            system.setPartner(relatedPartner);
+                            system.setAS2Version(result.getString("as2version"));
+                            system.setProductName(result.getString("productname"));
+                            system.setCEM(result.getInt("cem") == 1);
+                            system.setCompression(result.getInt("msgcompression") == 1);
+                            system.setMa(result.getInt("ma") == 1);
+                            list.add(system);
                         }
                     }
-                    if (relatedPartner != null) {
-                        PartnerSystem system = new PartnerSystem();
-                        system.setPartner(relatedPartner);
-                        system.setAS2Version(result.getString("as2version"));
-                        system.setProductName(result.getString("productname"));
-                        system.setCEM(result.getInt("cem") == 1);
-                        system.setCompression(result.getInt("msgcompression") == 1);
-                        system.setMa(result.getInt("ma") == 1);
-                        list.add(system);
-                    }
-                }
-                return (list);
-            } catch (SQLException e) {
-                logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-                return (null);
-            } catch (Exception e) {
-                logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                return (null);
-            } finally {
-                if (result != null) {
-                    try {
-                        result.close();
-                    } catch (Exception e) {
-                        logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
-                }
-                if (statement != null) {
-                    try {
-                        statement.close();
-                    } catch (Exception e) {
-                        logger.severe("PartnerSystemAccessDB.getAllPartnerSystems: " + e.getMessage());
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
                 }
             }
+            return (list);
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (configConnectionAutoCommit != null) {
-                try {
-                    configConnectionAutoCommit.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (null);
     }
@@ -128,61 +85,25 @@ public class PartnerSystemAccessDB {
      * Returns information about the system of a single partner
      */
     public PartnerSystem getPartnerSystem(Partner partner) {
-        Connection configConnectionAutoCommit = null;
-        try {
-            configConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            PreparedStatement statement = null;
-            ResultSet result = null;
-            try {
-                statement = configConnectionAutoCommit.prepareStatement("SELECT * FROM partnersystem WHERE partnerid=?");
+        try(Connection configConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)){
+            try (PreparedStatement statement = configConnectionAutoCommit.prepareStatement(
+                    "SELECT * FROM partnersystem WHERE partnerid=?")) {
                 statement.setInt(1, partner.getDBId());
-                result = statement.executeQuery();
-                if (result.next()) {
-                    PartnerSystem system = new PartnerSystem();
-                    system.setPartner(partner);
-                    system.setAS2Version(result.getString("as2version"));
-                    system.setProductName(result.getString("productname"));
-                    system.setCEM(result.getInt("cem") == 1);
-                    system.setCompression(result.getInt("msgcompression") == 1);
-                    system.setMa(result.getInt("ma") == 1);
-                    return (system);
-                }
-            } catch (SQLException e) {
-                logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY, statement);
-                return (null);
-            } catch (Exception e) {
-                logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                return (null);
-            } finally {
-                if (result != null) {
-                    try {
-                        result.close();
-                    } catch (Exception e) {
-                        logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
-                }
-                if (statement != null) {
-                    try {
-                        statement.close();
-                    } catch (Exception e) {
-                        logger.severe("PartnerSystemAccessDB.getPartnerSystem: " + e.getMessage());
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                try (ResultSet result = statement.executeQuery()) {
+                    if (result.next()) {
+                        PartnerSystem system = new PartnerSystem();
+                        system.setPartner(partner);
+                        system.setAS2Version(result.getString("as2version"));
+                        system.setProductName(result.getString("productname"));
+                        system.setCEM(result.getInt("cem") == 1);
+                        system.setCompression(result.getInt("msgcompression") == 1);
+                        system.setMa(result.getInt("ma") == 1);
+                        return (system);
                     }
                 }
             }
         } catch (Exception e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (configConnectionAutoCommit != null) {
-                try {
-                    configConnectionAutoCommit.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (null);
     }
@@ -193,10 +114,8 @@ public class PartnerSystemAccessDB {
      * insert
      */
     private int updatePartnerSystem(PartnerSystem system, Connection configConnectionNoAutoCommit) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            statement = configConnectionNoAutoCommit.prepareStatement(
-                    "UPDATE partnersystem SET as2version=?,productname=?,msgcompression=?,ma=?,cem=? WHERE partnerid=?");
+        try (PreparedStatement statement = configConnectionNoAutoCommit.prepareStatement(
+                "UPDATE partnersystem SET as2version=?,productname=?,msgcompression=?,ma=?,cem=? WHERE partnerid=?")) {
             statement.setString(1, system.getAS2Version());
             statement.setString(2, system.getProductName());
             statement.setInt(3, system.supportsCompression() ? 1 : 0);
@@ -204,14 +123,6 @@ public class PartnerSystemAccessDB {
             statement.setInt(5, system.supportsCEM() ? 1 : 0);
             statement.setInt(6, system.getPartner().getDBId());
             return (statement.executeUpdate());
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
         }
     }
 
@@ -219,19 +130,10 @@ public class PartnerSystemAccessDB {
      * Deletes a single partner system from the database
      */
     protected void deletePartnerSystem(Partner partner, Connection configConnectionNoAutoCommit) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            statement = configConnectionNoAutoCommit.prepareStatement("DELETE FROM partnersystem WHERE partnerid=?");
+        try (PreparedStatement statement = configConnectionNoAutoCommit.prepareStatement(
+                "DELETE FROM partnersystem WHERE partnerid=?")) {
             statement.setInt(1, partner.getDBId());
             statement.executeUpdate();
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
         }
     }
 
@@ -241,50 +143,28 @@ public class PartnerSystemAccessDB {
      * update was successful - if not an insert will happen
      */
     public void insertOrUpdatePartnerSystem(PartnerSystem partnerSystem) {
-        //a new connection to the database is required because the partner storage contains several tables and all this has to be transactional
-        Connection configConnectionNoAutoCommit = null;
-        Statement transactionStatement = null;
         String transactionName = "PartnerSystem_insert_update";
-        try {
-            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+        try (Connection configConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
             configConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = configConnectionNoAutoCommit.createStatement();
-            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            //start transaction - these tables have to be locked first to forbit any write operation
-            this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
-                    new String[]{
-                        "partnersystem",});
-            int updatedRows = this.updatePartnerSystem(partnerSystem, configConnectionNoAutoCommit);
-            if (updatedRows == 0) {
-                this.insertPartnerSystem(partnerSystem, configConnectionNoAutoCommit);
-            }
-            //all ok - finish transaction and release all locks
-            this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-        } catch (Exception e) {
-            try {
-                //an error occured - rollback transaction and release all table locks
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Exception ex) {
-                SystemEventManagerImplAS2.instance().systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-            }
-            e.printStackTrace();
-            logger.severe("PartnerSystemAccessDB.insertOrUpdatePartnerSystem: " + e.getMessage());
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (transactionStatement != null) {
+            try (Statement transactionStatement = configConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
+                        new String[]{
+                            "partnersystem",});
                 try {
-                    transactionStatement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    int updatedRows = this.updatePartnerSystem(partnerSystem, configConnectionNoAutoCommit);
+                    if (updatedRows == 0) {
+                        this.insertPartnerSystem(partnerSystem, configConnectionNoAutoCommit);
+                    }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-            if (configConnectionNoAutoCommit != null) {
-                try {
-                    configConnectionNoAutoCommit.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
+        } catch (Throwable e) {
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
 
     }
@@ -293,10 +173,8 @@ public class PartnerSystemAccessDB {
      * Inserts a new partner system into the database
      */
     private void insertPartnerSystem(PartnerSystem partnerSystem, Connection configConnectionNoAutoCommit) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            statement = configConnectionNoAutoCommit.prepareStatement(
-                    "INSERT INTO partnersystem(partnerid,as2version,productname,msgcompression,ma,cem)VALUES(?,?,?,?,?,?)");
+        try (PreparedStatement statement = configConnectionNoAutoCommit.prepareStatement(
+                "INSERT INTO partnersystem(partnerid,as2version,productname,msgcompression,ma,cem)VALUES(?,?,?,?,?,?)")) {
             statement.setInt(1, partnerSystem.getPartner().getDBId());
             statement.setString(2, partnerSystem.getAS2Version());
             statement.setString(3, partnerSystem.getProductName());
@@ -304,14 +182,6 @@ public class PartnerSystemAccessDB {
             statement.setInt(5, partnerSystem.supportsMA() ? 1 : 0);
             statement.setInt(6, partnerSystem.supportsCEM() ? 1 : 0);
             statement.executeUpdate();
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e);
-                }
-            }
         }
     }
 }

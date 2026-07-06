@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/gui/UIEventCategory.java 9     12/12/23 12:04 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/gui/UIEventCategory.java 14    15/04/26 13:02 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 
 /*
@@ -22,7 +23,7 @@ import java.util.ResourceBundle;
  * Selectable event category in the UI
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 14 $
  */
 public class UIEventCategory implements Comparable<UIEventCategory> {
 
@@ -71,9 +72,12 @@ public class UIEventCategory implements Comparable<UIEventCategory> {
     public static final MendelsonMultiResolutionImage IMAGE_CATEGORY_XML_INTERFACE
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/util/systemevents/gui/xml_root.svg", 16, 64);
+    public static final MendelsonMultiResolutionImage IMAGE_CATEGORY_REST_INTERFACE
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/systemevents/gui/rest.svg", 16, 64);
     
-    private final int category;
-    private final static MecResourceBundle rbSystemEvent;
+    private final SystemEvent.Category category;
+    private static final MecResourceBundle rbSystemEvent;
 
     static {
         //Load resourcebundle
@@ -86,33 +90,34 @@ public class UIEventCategory implements Comparable<UIEventCategory> {
         }
     }
 
-    public UIEventCategory(int category) {
+    public UIEventCategory(SystemEvent.Category category) {
         this.category = category;
     }
 
     public static List<UIEventCategory> getAllSorted() {
         List<UIEventCategory> categoryList = new ArrayList<UIEventCategory>();
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_SERVER_COMPONENTS));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_CONFIGURATION));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_CONNECTIVITY));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_CERTIFICATE));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_DATABASE));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_NOTIFICATION));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_PROCESSING));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_QUOTA));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_TRANSACTION));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_FILE_OPERATION));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_OTHER));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_LICENSE));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_CLIENT_OPERATION));
-        categoryList.add(new UIEventCategory(SystemEvent.CATEGORY_XML_INTERFACE));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.SERVER_COMPONENTS));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.CONFIGURATION));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.CONNECTIVITY));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.CERTIFICATE));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.DATABASE));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.NOTIFICATION));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.PROCESSING));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.QUOTA));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.TRANSACTION));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.FILE_OPERATION));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.OTHER));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.LICENSE));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.CLIENT_OPERATION));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.XML_INTERFACE));
+        categoryList.add(new UIEventCategory(SystemEvent.Category.REST_INTERFACE));
         Collections.sort(categoryList);
         return (categoryList);
     }
 
     @Override
     public String toString() {
-        return (rbSystemEvent.getResourceString("category." + this.category));
+        return (rbSystemEvent.getResourceString("category." + this.category.toInt()));
     }
 
     @Override
@@ -129,17 +134,18 @@ public class UIEventCategory implements Comparable<UIEventCategory> {
 
     @Override
     public int hashCode() {
-        int hash = 3;
-        hash = 19 * hash + this.category;
+        int hash = 7;
+        hash = 59 * hash + Objects.hashCode(this.category);
         return hash;
     }
+
 
     @Override
     public int compareTo(UIEventCategory otherCategory) {
         return (this.toString().compareTo(otherCategory.toString()));
     }
 
-    public int getCategoryValue() {
+    public SystemEvent.Category getCategoryValue() {
         return (this.category);
     }
 
@@ -147,35 +153,37 @@ public class UIEventCategory implements Comparable<UIEventCategory> {
         return (getImageByCategory(this.category));
     }
 
-    public static MendelsonMultiResolutionImage getImageByCategory(int category) {
-        if (category == SystemEvent.CATEGORY_CERTIFICATE) {
+    public static MendelsonMultiResolutionImage getImageByCategory(SystemEvent.Category category) {
+        if (category == SystemEvent.Category.CERTIFICATE) {
             return (IMAGE_CATEGORY_CERTIFICATE);
-        } else if (category == SystemEvent.CATEGORY_DATABASE) {
+        } else if (category == SystemEvent.Category.DATABASE) {
             return (IMAGE_CATEGORY_DATABASE);
-        } else if (category == SystemEvent.CATEGORY_NOTIFICATION) {
+        } else if (category == SystemEvent.Category.NOTIFICATION) {
             return (IMAGE_CATEGORY_NOTIFICATION);
-        } else if (category == SystemEvent.CATEGORY_CONFIGURATION) {
+        } else if (category == SystemEvent.Category.CONFIGURATION) {
             return (IMAGE_CATEGORY_CONFIGURATION);
-        }else if (category == SystemEvent.CATEGORY_TRANSACTION) {
+        }else if (category == SystemEvent.Category.TRANSACTION) {
             return (IMAGE_CATEGORY_TRANSACTION);
-        }else if (category == SystemEvent.CATEGORY_SERVER_COMPONENTS) {
+        }else if (category == SystemEvent.Category.SERVER_COMPONENTS) {
             return (IMAGE_CATEGORY_SERVER);
-        }else if (category == SystemEvent.CATEGORY_CONNECTIVITY) {
+        }else if (category == SystemEvent.Category.CONNECTIVITY) {
             return (IMAGE_CATEGORY_CONNECTIVITY);
-        }else if (category == SystemEvent.CATEGORY_PROCESSING) {
+        }else if (category == SystemEvent.Category.PROCESSING) {
             return (IMAGE_CATEGORY_PROCESSING);
-        }else if (category == SystemEvent.CATEGORY_LICENSE) {
+        }else if (category == SystemEvent.Category.LICENSE) {
             return (IMAGE_CATEGORY_LICENSE);
-        }else if (category == SystemEvent.CATEGORY_FILE_OPERATION) {
+        }else if (category == SystemEvent.Category.FILE_OPERATION) {
             return (IMAGE_CATEGORY_FILEOPERATION);
-        }else if (category == SystemEvent.CATEGORY_CLIENT_OPERATION) {
+        }else if (category == SystemEvent.Category.CLIENT_OPERATION) {
             return (IMAGE_CATEGORY_CLIENT);
-        }else if (category == SystemEvent.CATEGORY_QUOTA) {
+        }else if (category == SystemEvent.Category.QUOTA) {
             return (IMAGE_CATEGORY_QUOTA);
-        }else if (category == SystemEvent.CATEGORY_OTHER) {
+        }else if (category == SystemEvent.Category.OTHER) {
             return (IMAGE_CATEGORY_OTHER);
-        }else if (category == SystemEvent.CATEGORY_XML_INTERFACE) {
+        }else if (category == SystemEvent.Category.XML_INTERFACE) {
             return (IMAGE_CATEGORY_XML_INTERFACE);
+        }else if (category == SystemEvent.Category.REST_INTERFACE) {
+            return (IMAGE_CATEGORY_REST_INTERFACE);
         }
         return (IMAGE_CATEGORY_FALLBACK);
     }

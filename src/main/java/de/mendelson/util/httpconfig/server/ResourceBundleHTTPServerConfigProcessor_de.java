@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_de.java 17    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/ResourceBundleHTTPServerConfigProcessor_de.java 18    9/12/24 16:03 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleHTTPServerConfigProcessor_de extends MecResourceBundle {
 

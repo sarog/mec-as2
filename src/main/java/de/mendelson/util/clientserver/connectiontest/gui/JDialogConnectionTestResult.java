@@ -1,10 +1,12 @@
 package de.mendelson.util.clientserver.connectiontest.gui;
 
+import de.mendelson.util.ButtonUtil;
 import de.mendelson.util.ColorUtil;
 import de.mendelson.util.clientserver.connectiontest.ConnectionTestResult;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.LogFormatter;
 import de.mendelson.util.log.LoggingHandlerLogEntryArray;
@@ -33,6 +35,7 @@ import javax.swing.JDialog;
 import javax.swing.JFrame;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -45,124 +48,133 @@ import javax.swing.SwingUtilities;
  * Dialog to display the test result of a connection test
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 48 $
  */
 public class JDialogConnectionTestResult extends JDialog {
 
-    public static final int CONNECTION_TEST_OFTP2 = ConnectionTest.CONNECTION_TEST_OFTP2;
-    public static final int CONNECTION_TEST_AS2 = ConnectionTest.CONNECTION_TEST_AS2;
-    public static final int CONNECTION_TEST_AS4 = ConnectionTest.CONNECTION_TEST_AS4;
-
     private final ConnectionTestResult result;
-    private MecResourceBundle rb = null;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbCerts;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleDialogConnectionTestResult.class.getName());
+            rbCerts = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCertificates.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private final CertificateManager certManagerSSL;
-    private final MecResourceBundle rbCerts;
 
     private static final MendelsonMultiResolutionImage IMAGE_CONNECTIONTEST
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/testconnection.svg", 16);
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/clientserver/connectiontest/gui/testconnection.svg", 18);
     private static final MendelsonMultiResolutionImage IMAGE_IMPORT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/import.svg", 24);
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/clientserver/connectiontest/gui/import.svg", 24);
     private static final MendelsonMultiResolutionImage IMAGE_LOCALSTATION
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/localstation.svg", 24);
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/clientserver/connectiontest/gui/localstation.svg", 24);
     private static final MendelsonMultiResolutionImage IMAGE_REMOTE_PARTNER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/singlepartner.svg", 24);
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/clientserver/connectiontest/gui/singlepartner.svg", 24);
     private static final MendelsonMultiResolutionImage IMAGE_GATEWAY_PARTNER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/clientserver/connectiontest/gui/singlepartner_gateway.svg", 24);
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/util/clientserver/connectiontest/gui/singlepartner_gateway.svg", 24);
 
-    private final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
-    private final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
+    private static final String TEXT_SECURE_LOCK = "<html>&#128274;</html>";
+    private static final String TEXT_INSECURE_LOCK = "<html>&#128275;</html>";
 
     /**
      * Creates new form JDialogTestResult
      */
     public JDialogConnectionTestResult(JFrame parent,
-            final int CONNECTION_TYPE_TEST,
+            ConnectionTest.Type connectionTypeTest,
             List<LoggingHandlerLogEntryArray.LogEntry> logEntries,
             ConnectionTestResult result,
             CertificateManager certManagerEncSign,
-            CertificateManager certManagerSSL) {
+            CertificateManager certManagerSSL, DisplayMode displayMode) {
         super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleDialogConnectionTestResult.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
-        try {
-            this.rbCerts = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCertificates.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         initComponents();
         this.result = result;
         this.setMultiresolutionIcons();
+        ButtonUtil.reformatButtonText(this.jButtonImportCertificates);
         this.initializePartnerPanel();
         Color errorColor = Color.red.darker();
         Color okColor = Color.green.darker().darker();
-        Color labelBackground = this.jLabelConnectionState.getBackground();
-        errorColor = ColorUtil.getBestContrastColorAroundForeground(labelBackground, errorColor);
-        okColor = ColorUtil.getBestContrastColorAroundForeground(labelBackground, okColor);
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            errorColor = UIManager.getColor("Objects.RedStatus");
+        } else {
+            Color labelBackground = this.jLabelConnectionState.getBackground();
+            errorColor = ColorUtil.getBestContrastColorAroundForeground(labelBackground, errorColor);
+        }
+        if (UIManager.getColor("Objects.Green") != null) {
+            okColor = UIManager.getColor("Objects.Green");
+        } else {
+            Color labelBackground = this.jLabelConnectionState.getBackground();
+            okColor = ColorUtil.getBestContrastColorAroundForeground(labelBackground, okColor);
+        }
         this.jLabelRemoteOFTPService.setVisible(false);
         this.jLabelOFTPServiceState.setVisible(false);
-        if (CONNECTION_TYPE_TEST == CONNECTION_TEST_OFTP2) {
+        if (connectionTypeTest == ConnectionTest.Type.OFTP2) {
             this.jLabelRemoteOFTPService.setVisible(true);
             this.jLabelOFTPServiceState.setVisible(true);
         }
         this.certManagerSSL = certManagerSSL;
-        this.setTitle(this.rb.getResourceString("title"));
-        if (result.wasSSLTest()) {
-            this.jLabelHeader.setText(this.rb.getResourceString("header.ssl", result.getTestedRemoteAddress()));
+        this.setTitle(rb.getResourceString("title"));
+        if (result.isWasSSLTest()) {
+            this.jLabelHeader.setText(rb.getResourceString("header.ssl", result.getTestedRemoteAddress()));
             this.jLabelPartnerLock.setText(TEXT_SECURE_LOCK);
         } else {
-            this.jLabelHeader.setText(this.rb.getResourceString("header.plain", result.getTestedRemoteAddress()));
+            this.jLabelHeader.setText(rb.getResourceString("header.plain", result.getTestedRemoteAddress()));
             this.jLabelPartnerLock.setText(TEXT_INSECURE_LOCK);
         }
         if (result.isConnectionIsPossible()) {
             this.jLabelConnectionState.setForeground(okColor);
-            this.jLabelConnectionState.setText(this.rb.getResourceString("OK"));
+            this.jLabelConnectionState.setText(rb.getResourceString("OK"));
         } else {
             this.jLabelConnectionState.setForeground(errorColor);
-            this.jLabelConnectionState.setText(this.rb.getResourceString("FAILED"));
+            this.jLabelConnectionState.setText(rb.getResourceString("FAILED"));
         }
-        if (!result.wasSSLTest()) {
+        if (!result.isWasSSLTest()) {
             this.jButtonImportCertificates.setEnabled(false);
             this.jLabelRemoteCertificatesAvailableLocal.setEnabled(false);
             this.jLabelCertificateState.setEnabled(false);
-            this.jLabelCertificateState.setText(this.rb.getResourceString("no.certificate.plain"));
+            this.jLabelCertificateState.setText(rb.getResourceString("no.certificate.plain"));
         } else {
             if (result.getFoundCertificates() == null || result.getFoundCertificates().length == 0) {
                 this.jLabelCertificateState.setForeground(errorColor);
-                this.jLabelCertificateState.setText(this.rb.getResourceString("FAILED"));
+                this.jLabelCertificateState.setText(rb.getResourceString("FAILED"));
                 this.jButtonImportCertificates.setEnabled(false);
             } else if (result.getFoundCertificates() != null && result.getFoundCertificates().length > 0
                     && this.remoteCertificatesAreAvailable(certManagerSSL, result.getFoundCertificates())) {
                 this.jLabelCertificateState.setForeground(okColor);
-                this.jLabelCertificateState.setText(this.rb.getResourceString("AVAILABLE"));
+                this.jLabelCertificateState.setText(rb.getResourceString("AVAILABLE"));
                 this.jButtonImportCertificates.setEnabled(true);
             } else {
                 this.jLabelCertificateState.setForeground(errorColor);
-                this.jLabelCertificateState.setText(this.rb.getResourceString("NOT_AVAILABLE"));
+                this.jLabelCertificateState.setText(rb.getResourceString("NOT_AVAILABLE"));
                 this.jButtonImportCertificates.setEnabled(true);
             }
         }
         if (result.isOftpServiceFound()) {
             this.jLabelOFTPServiceState.setForeground(okColor);
-            this.jLabelOFTPServiceState.setText(this.rb.getResourceString("OK"));
+            this.jLabelOFTPServiceState.setText(rb.getResourceString("OK"));
         } else {
             this.jLabelOFTPServiceState.setForeground(errorColor);
-            this.jLabelOFTPServiceState.setText(this.rb.getResourceString("FAILED"));
+            this.jLabelOFTPServiceState.setText(rb.getResourceString("FAILED"));
         }
         //display the log if there is any
         Logger testLogger = Logger.getAnonymousLogger();
         testLogger.setUseParentHandlers(false);
         JTextPaneLoggingHandler handler = new JTextPaneLoggingHandler(this.jTextPaneLog,
-                new LogFormatter(LogFormatter.FORMAT_CONSOLE_COLORED));
+                new LogFormatter(LogFormatter.FORMAT_CONSOLE_COLORED), displayMode);
         testLogger.setLevel(Level.ALL);
         testLogger.addHandler(handler);
-        testLogger.log(Level.FINE,
-                this.rb.getResourceString("description." + CONNECTION_TYPE_TEST,
+        testLogger.log(Level.INFO,
+                rb.getResourceString("description." + connectionTypeTest.toInt(),
                         new Object[]{
                             result.getTestedRemoteAddress().getHostString(),
                             String.valueOf(result.getTestedRemoteAddress().getPort())
@@ -173,11 +185,11 @@ public class JDialogConnectionTestResult extends JDialog {
             testLogger.log(logEntry.getLevel(), logEntry.getMessage());
         }
         //log some technical information - the ciphers
-        if (result.wasSSLTest()) {
+        if (result.isWasSSLTest()) {
             String cipher = result.getUsedCipherSuite();
             //SSL_NULL_WITH_NULL_NULL is the inital cipher - if it is still the selected then a successful handshake did not happen
             if (cipher != null && !cipher.equals("SSL_NULL_WITH_NULL_NULL")) {
-                testLogger.log(Level.FINEST, this.rb.getResourceString("used.cipher", cipher));
+                testLogger.log(Level.FINEST, rb.getResourceString("used.cipher", cipher));
             }
         }
         //hide dialog on esc
@@ -197,7 +209,7 @@ public class JDialogConnectionTestResult extends JDialog {
         //Its possible to not display the partner panel
         if (this.result.getSenderName() != null) {
             this.jLabelPartnerSenderImage.setIcon(new ImageIcon(IMAGE_LOCALSTATION.toMinResolution(28)));
-            if (this.result.getPartnerRole() == ConnectionTest.PARTNER_ROLE_GATEWAY_PARTNER) {
+            if (this.result.getPartnerRole() == ConnectionTest.PartnerRole.GATEWAY_PARTNER) {
                 this.jLabelPartnerReceiverImage.setIcon(new ImageIcon(IMAGE_GATEWAY_PARTNER.toMinResolution(28)));
             } else {
                 this.jLabelPartnerReceiverImage.setIcon(new ImageIcon(IMAGE_REMOTE_PARTNER.toMinResolution(28)));
@@ -209,40 +221,42 @@ public class JDialogConnectionTestResult extends JDialog {
         if (this.result.getSenderName() == null) {
             this.jPanelPartnerDisplay.setVisible(false);
         } else {
-            String senderName 
-                    = this.calculateMaxPartnerName(this.result.getSenderName(), 
-                            this.jLabelPartnerSenderName.getFontMetrics(this.jLabelPartnerSenderName.getFont()), 
-                            (int)this.jPanelPartnerSender.getPreferredSize().getWidth());
-            String receiverName 
-                    = this.calculateMaxPartnerName(this.result.getReceiverName(), 
-                            this.jLabelPartnerReceiverName.getFontMetrics(this.jLabelPartnerReceiverName.getFont()), 
-                            (int)this.jPanelPartnerReceiver.getPreferredSize().getWidth());            
+            String senderName
+                    = this.calculateMaxPartnerName(this.result.getSenderName(),
+                            this.jLabelPartnerSenderName.getFontMetrics(this.jLabelPartnerSenderName.getFont()),
+                            (int) this.jPanelPartnerSender.getPreferredSize().getWidth());
+            String receiverName
+                    = this.calculateMaxPartnerName(this.result.getReceiverName(),
+                            this.jLabelPartnerReceiverName.getFontMetrics(this.jLabelPartnerReceiverName.getFont()),
+                            (int) this.jPanelPartnerReceiver.getPreferredSize().getWidth());
             this.jLabelPartnerSenderName.setText(senderName);
             this.jLabelPartnerReceiverName.setText(receiverName);
         }
     }
 
-    /**Calculates the String that should be displayed as partner name in the dialog. If the width is too long
-     * it is shortened
+    /**
+     * Calculates the String that should be displayed as partner name in the
+     * dialog. If the width is too long it is shortened
+     *
      * @param partnerName
      * @param fontMetrics
      * @param panelWidth
-     * @return 
+     * @return
      */
-    private String calculateMaxPartnerName(String partnerName, FontMetrics fontMetrics, int panelWidth) {  
+    private String calculateMaxPartnerName(String partnerName, FontMetrics fontMetrics, int panelWidth) {
         int textWidth = fontMetrics.stringWidth(partnerName);
         if (textWidth > panelWidth * 0.75) {
             String newName = "";
-            for (int i = 0; i < partnerName.length(); i++) {                
-                textWidth = fontMetrics.stringWidth(newName+"[..]");
+            for (int i = 0; i < partnerName.length(); i++) {
+                textWidth = fontMetrics.stringWidth(newName + "[..]");
                 if (textWidth > panelWidth * 0.75) {
                     break;
                 }
                 newName += partnerName.charAt(i);
             }
-            return( newName+"[..]");
-        }else{
-            return( partnerName );
+            return (newName + "[..]");
+        } else {
+            return (partnerName);
         }
     }
 
@@ -275,22 +289,21 @@ public class JDialogConnectionTestResult extends JDialog {
         //user pressed cancel: bail out
         while (infoDialog.importPressed()) {
             int selectedCertificateIndex = infoDialog.getCertificateIndex();
-            KeyStoreUtil util = new KeyStoreUtil();
             X509Certificate importCertificate = certList.get(selectedCertificateIndex);
             try {
-                String alias = util.importX509Certificate(this.certManagerSSL.getKeystore(), importCertificate);
+                String alias = KeyStoreUtil.importX509Certificate(this.certManagerSSL.getKeystore(), importCertificate);
                 this.certManagerSSL.saveKeystore();
                 this.certManagerSSL.rereadKeystoreCertificates();
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_SUCCESS,
-                        this.rbCerts.getResourceString("certificate.import.success.title"),
-                        this.rbCerts.getResourceString("certificate.import.success.message", alias));
+                        UINotification.Type.SUCCESS,
+                        rbCerts.getResourceString("certificate.import.success.title"),
+                        rbCerts.getResourceString("certificate.import.success.message", alias));
             } catch (Throwable e) {
                 e.printStackTrace();
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_ERROR,
-                        this.rbCerts.getResourceString("certificate.import.error.title"),
-                        this.rbCerts.getResourceString("certificate.import.error.message", e.getMessage()));
+                        UINotification.Type.ERROR,
+                        rbCerts.getResourceString("certificate.import.error.title"),
+                        rbCerts.getResourceString("certificate.import.error.message", e.getMessage()));
             }
             if (certList.size() > 1) {
                 infoDialog.setVisible(true);
@@ -340,7 +353,7 @@ public class JDialogConnectionTestResult extends JDialog {
         getContentPane().setLayout(new java.awt.GridBagLayout());
 
         jSplitPane.setBorder(null);
-        jSplitPane.setDividerLocation(270);
+        jSplitPane.setDividerLocation(299);
         jSplitPane.setOrientation(javax.swing.JSplitPane.VERTICAL_SPLIT);
 
         jPanelOverview.setLayout(new java.awt.GridBagLayout());
@@ -422,9 +435,10 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 10;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelOverview.add(jPanelSpace, gridBagConstraints);
 
         jButtonImportCertificates.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/clientserver/connectiontest/gui/missing_image24x24.gif"))); // NOI18N
@@ -572,7 +586,7 @@ public class JDialogConnectionTestResult extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(964, 712));
+        setSize(new java.awt.Dimension(990, 785));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

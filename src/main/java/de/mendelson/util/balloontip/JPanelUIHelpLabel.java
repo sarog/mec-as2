@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/balloontip/JPanelUIHelpLabel.java 10    1/12/23 11:15 Heller $
+//$Header: /mec_as4/de/mendelson/util/balloontip/JPanelUIHelpLabel.java 16    14/04/26 9:04 Heller $
 package de.mendelson.util.balloontip;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,13 +17,13 @@ import javax.swing.JPanel;
  * display a help text
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 16 $
  */
 public class JPanelUIHelpLabel extends JPanel {
         
-    public final static int TRIANGLE_ALIGNMENT_CENTER = BalloonToolTip.TRIANGLE_ALIGNMENT_CENTER;
-    public final static int TRIANGLE_ALIGNMENT_TOP = BalloonToolTip.TRIANGLE_ALIGNMENT_TOP;
-    public final static int TRIANGLE_ALIGNMENT_BOTTOM = BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM;
+    public static final int TRIANGLE_ALIGNMENT_CENTER = BalloonToolTip.TRIANGLE_ALIGNMENT_CENTER;
+    public static final int TRIANGLE_ALIGNMENT_TOP = BalloonToolTip.TRIANGLE_ALIGNMENT_TOP;
+    public static final int TRIANGLE_ALIGNMENT_BOTTOM = BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM;
     
     /**This variable might not be necessary but is required for the 
      * integrated property editor of Netbeans
@@ -151,26 +151,42 @@ public class JPanelUIHelpLabel extends JPanel {
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
-        jPanelUIHelp = new de.mendelson.util.balloontip.JPanelUIHelp();
+        jPanelLabelSpacer = new javax.swing.JPanel();
         jLabel = new javax.swing.JLabel();
+        jPanelUIHelp = new de.mendelson.util.balloontip.JPanelUIHelp();
         jPanelSpacer = new javax.swing.JPanel();
 
         setLayout(new java.awt.GridBagLayout());
 
-        jPanelUIHelp.setMinimumSize(new java.awt.Dimension(20, 20));
-        jPanelUIHelp.setPreferredSize(new java.awt.Dimension(20, 20));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
-        add(jPanelUIHelp, gridBagConstraints);
+        jPanelLabelSpacer.setLayout(new java.awt.GridBagLayout());
 
         jLabel.setText("Label");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
-        add(jLabel, gridBagConstraints);
+        jPanelLabelSpacer.add(jLabel, gridBagConstraints);
+
+        jPanelUIHelp.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_TOP);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 1;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        jPanelLabelSpacer.add(jPanelUIHelp, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(0, 0, 2, 0);
+        add(jPanelLabelSpacer, gridBagConstraints);
 
         javax.swing.GroupLayout jPanelSpacerLayout = new javax.swing.GroupLayout(jPanelSpacer);
         jPanelSpacer.setLayout(jPanelSpacerLayout);
@@ -184,9 +200,9 @@ public class JPanelUIHelpLabel extends JPanel {
         );
 
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
@@ -196,6 +212,7 @@ public class JPanelUIHelpLabel extends JPanel {
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JLabel jLabel;
+    private javax.swing.JPanel jPanelLabelSpacer;
     private javax.swing.JPanel jPanelSpacer;
     private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelp;
     // End of variables declaration//GEN-END:variables

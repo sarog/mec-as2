@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/user/UserAccess.java 10    23/01/24 10:18 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/UserAccess.java 14    5/06/25 9:36 Heller $
 package de.mendelson.util.clientserver.user;
 
 import java.io.BufferedReader;
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * Contains several utilities for the user access
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 14 $
  */
 public class UserAccess {
 
@@ -49,20 +49,14 @@ public class UserAccess {
         user.setName(userName);
         user.setPasswdCrypted(User.cryptPassword(password));
         for (int i = 0; i < 3; i++) {
-            user.setPermission(i, "");
+            user.setPermissionOfIndex(i, "");
         }
-        RandomAccessFile file = null;
-        try {
-            file = new RandomAccessFile(this.passwdFile.toFile(), "rw");
+        try (RandomAccessFile file = new RandomAccessFile(this.passwdFile.toFile(), "rw")) {
             file.seek(Files.size(this.passwdFile));
-            String newLine = User.serialize(user);
+            String userLine = User.serialize(user);
             file.writeBytes("\n");
-            file.writeBytes(newLine);
+            file.writeBytes(userLine);
             file.writeBytes("\n");
-        } finally {
-            if (file != null) {
-                file.close();
-            }
         }
         return (user);
     }
@@ -96,13 +90,12 @@ public class UserAccess {
     private void readAllUserToCache() throws Exception {
         synchronized (this.userMap) {
             this.userMap.clear();
-            BufferedReader bufferedReader = null;
-            try {
-                bufferedReader = Files.newBufferedReader(this.passwdFile, StandardCharsets.UTF_8);
+            try (BufferedReader bufferedReader 
+                    = Files.newBufferedReader(this.passwdFile, StandardCharsets.UTF_8)) {
                 String line = "";
                 while (line != null) {
                     line = bufferedReader.readLine();
-                    if (line != null) {
+                    if (line != null && line.trim().length() > 0) {
                         if (line.startsWith("#")) {
                             continue;
                         }
@@ -111,16 +104,7 @@ public class UserAccess {
                     }
                 }
                 this.lastUserReadTime = System.currentTimeMillis();
-            } finally {
-                if (bufferedReader != null) {
-                    try {
-                        bufferedReader.close();
-                    } catch (Exception e) {
-                        //nop
-                    }
-                }                
             }
         }
     }
-
 }

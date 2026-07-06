@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2StatusBar_de.java 8     2/11/23 15:52 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2StatusBar_de.java 9     9/12/24 16:02 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleAS2StatusBar_de extends MecResourceBundle {
 

@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/user/User.java 9     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/user/User.java 13    11/06/25 13:17 Heller $
 package de.mendelson.util.clientserver.user;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.security.PBKDF2;
 import java.io.Serializable;
 import java.util.HashMap;
@@ -18,12 +20,12 @@ import java.util.Map;
  * A single user for the client server system
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 13 $
  */
 public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final Map<Integer, String> permissions = new HashMap<Integer, String>();
+    private Map<Integer, String> permissions = new HashMap<Integer, String>();
     private String name = null;
     private String passwdCrypted = null;
     private PermissionDescription permissionDescription = new DefaultPermissionDescription();
@@ -46,7 +48,7 @@ public class User implements Serializable {
         builder.append(user.getPasswdCrypted());
         for (int i = 0; i < 10; i++) {
             builder.append(":");
-            builder.append(user.getPermission(i));
+            builder.append(user.getPermissionOfIndex(i));
         }
         return (builder.toString());
     }
@@ -68,7 +70,7 @@ public class User implements Serializable {
             }
             int permissionOffset = 3;
             for (int i = permissionOffset; i < token.length; i++) {
-                user.setPermission(i - permissionOffset, token[i]);
+                user.setPermissionOfIndex(i - permissionOffset, token[i]);
             }
             return (user);
         } catch (Throwable e) {
@@ -84,15 +86,17 @@ public class User implements Serializable {
     /**
      * Will always return a NONE null value
      */
-    public String getPermission(Integer index) {
-        if (this.permissions.containsKey(index)) {
-            return (this.permissions.get(index));
+    @JsonIgnore
+    public String getPermissionOfIndex(Integer index) {
+        if (this.getPermissions().containsKey(index)) {
+            return (this.getPermissions().get(index));
         }
         return ("");
     }
 
-    public void setPermission(int index, String permission) {
-        this.permissions.put(Integer.valueOf(index), permission);
+    @JsonIgnore
+    public void setPermissionOfIndex(int index, String permission) {
+        this.getPermissions().put(Integer.valueOf(index), permission);
     }
 
     public String getName() {
@@ -109,10 +113,10 @@ public class User implements Serializable {
         buffer.append(this.name != null ? this.name : "[null]");
         buffer.append(" (");
         boolean first = true;
-        Iterator<Integer> iterator = this.permissions.keySet().iterator();
+        Iterator<Integer> iterator = this.getPermissions().keySet().iterator();
         while (iterator.hasNext()) {
             Integer index = iterator.next();
-            String entry = this.permissions.get(index);
+            String entry = this.getPermissions().get(index);
             if (entry != null && !entry.isEmpty()) {
                 if (!first) {
                     buffer.append(",");
@@ -142,5 +146,20 @@ public class User implements Serializable {
      */
     public void setPasswdCrypted(String passwdCrypted) {
         this.passwdCrypted = passwdCrypted;
+    }
+
+    /**This is a dummy method for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public Map<Integer, String> getPermissions() {
+        return permissions;
+    }
+
+   /**This is a dummy method for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setPermissions(Map<Integer, String> permissions) {
+        this.permissions.clear();
+        this.permissions.putAll(permissions);
     }
 }

@@ -1,6 +1,7 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/AnonymousTextClient.java 3     28.10.21 11:46 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/AnonymousTextClient.java 11    23/03/26 8:03 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.IProductVersion;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 
@@ -15,12 +16,12 @@ import de.mendelson.util.clientserver.messages.ClientServerResponse;
  * Text Client implementation that sends anonymous messages (no login required).
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 11 $
  */
-public class AnonymousTextClient extends BaseTextClient {
+public class AnonymousTextClient extends BaseTextClient implements AutoCloseable{
 
-    public AnonymousTextClient() throws Exception {
-        super();
+    public AnonymousTextClient( ClientType clientType, IProductVersion productVersion) {
+        super(clientType, productVersion);
         super.addMessageProcessor(new ClientsideMessageProcessor() {
 
             @Override
@@ -46,4 +47,23 @@ public class AnonymousTextClient extends BaseTextClient {
     public void disconnected() {
         super.disconnect();
     }
+
+    /**Makes this an auto closeable client*/
+    @Override
+    public void close() throws Exception {
+        super.disconnect();
+    }
+    
+    /**A sync request failed
+     * 
+     * @param request The sync request that was not successful if it was a request, might be null
+     * @param response The sync request that was not successful if it was a response, might be null
+     * @param throwable The exception that occurred
+     */
+    @Override
+    public void syncRequestFailed(ClientServerMessage request, ClientServerMessage response, Throwable throwable){    
+        super.syncRequestFailed(request, response, throwable);
+        throw new RuntimeException(throwable);
+    }
+    
 }

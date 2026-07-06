@@ -1,0 +1,27 @@
+$Header:$
+Este archivo contiene la plantilla de notificación para el aviso en caso de problema del sistema
+Se pueden utilizar las siguientes variables, que se sustituyen en consecuencia:
+${PRODUCTNAME}: Nombre del producto
+${HOST}: Host del servidor AS2
+${CATEGORY}: Categoría de error
+${MESSAGE}: Mensaje de error
+${DETAILS}: Más información sobre el problema
+
+
+
+
+[SUBJECT]
+Problema del sistema
+
+
+[BODY]
+Se ha producido un problema en el servidor AS2. Por regla general, los problemas notificados con este correo no son críticos para el estado del sistema AS2. Si la transacción correspondiente tiene el estado "verde", se ha completado sin errores.
+Por favor, compruebe de todas formas el servidor para ver qué ha ocurrido allí.
+
+Categoría: ${CATEGORY}
+Mensaje: ${MESSAGE}
+
+
+
+Más información sobre el problema:
+${DETAILS}

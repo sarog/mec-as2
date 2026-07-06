@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/api/message/CommandRequest.java 4     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/api/message/CommandRequest.java 7     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.api.message;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class CommandRequest extends ClientServerMessage implements Serializable{
 
@@ -26,6 +27,13 @@ public class CommandRequest extends ClientServerMessage implements Serializable{
         this.uploadHash = uploadHash;
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CommandRequest() {
+        super();
+    }
+    
     @Override
     public String toString(){
         return( "New command request" );
@@ -41,5 +49,12 @@ public class CommandRequest extends ClientServerMessage implements Serializable{
     /**Prevent an overwrite of the readObject method for deserialization*/
     private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
         inStream.defaultReadObject();
+    }
+
+    /**
+     * @param uploadHash the uploadHash to set
+     */
+    public void setUploadHash(String uploadHash) {
+        this.uploadHash = uploadHash;
     }
 }

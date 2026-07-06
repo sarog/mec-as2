@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager_de.java 22    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleDirPollManager_de.java 23    9/12/24 16:03 Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 23 $
  */
 public class ResourceBundleDirPollManager_de extends MecResourceBundle{
     

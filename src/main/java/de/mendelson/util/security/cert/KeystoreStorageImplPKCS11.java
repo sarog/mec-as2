@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplPKCS11.java 13    9/11/23 9:52 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplPKCS11.java 16    14/01/26 14:05 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -12,6 +12,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /*
@@ -25,7 +26,7 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a HSM via PKCS#11
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
 
@@ -35,7 +36,6 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
 
     private KeyStore keystore = null;
     private final char[] userPin;
-    private final KeyStoreUtil keystoreUtil = new KeyStoreUtil();
     private final MecResourceBundle rb;
     private int keystoreUsage = KEYSTORE_USAGE_ENC_SIGN;
     private final CryptoProvider.ProviderContainer providerContainer;
@@ -62,12 +62,17 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
         this.keystoreUsage = KEYSTORE_USAGE;
         BCCryptoHelper cryptoHelper = new BCCryptoHelper();
         this.keystore = cryptoHelper.createKeyStoreInstance(BCCryptoHelper.KEYSTORE_PKCS11, this.providerContainer.getProvider());
-        this.keystoreUtil.loadKeyStorePKCS11(this.keystore, this.userPin);
+        KeyStoreUtil.loadKeyStorePKCS11(this.keystore, this.userPin);
     }
 
     @Override
     public void loadKeystoreFromServer() throws Exception {
         throw new IllegalAccessException("KeystoreStorageImplPKCS11: loadKeystoreFromServer() is not available for this implementation of storage.");
+    }
+    
+    @Override
+    public Optional<KeystoreCertificate> getDownloadedEntriesMetadata(String fingerprintSHA1){
+        return( Optional.empty() );
     }
 
     @Override
@@ -76,7 +81,7 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
             //internal error, should not happen
             throw new Exception(this.rb.getResourceString("error.save.notloaded"));
         }
-        this.keystoreUtil.saveKeyStorePKCS11(this.keystore, this.userPin);
+        KeyStoreUtil.saveKeyStorePKCS11(this.keystore, this.userPin);
     }
 
     @Override
@@ -105,7 +110,7 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
                         //is there a rename?
                         if (!oldEntry.getAlias().equals(newEntry.getAlias())) {
                             synchronized (this.keystore) {
-                                this.keystoreUtil.renameEntry(
+                                KeyStoreUtil.renameEntry(
                                         this.keystore,
                                         oldEntry.getAlias(),
                                         newEntry.getAlias(),
@@ -159,8 +164,7 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
 
     @Override
     public void renameEntry(String oldAlias, String newAlias, char[] keypairPass) throws Exception {
-        KeyStoreUtil keystoreUtility = new KeyStoreUtil();
-        keystoreUtility.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
+        KeyStoreUtil.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
     }
 
     @Override
@@ -185,8 +189,8 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
     @Override
     public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {
         //recreate keystore object
-        this.keystoreUtil.loadKeyStorePKCS11(this.keystore, this.userPin);
-        Map<String, Certificate> certificateMap = this.keystoreUtil.getCertificatesFromKeystore(this.keystore);
+        KeyStoreUtil.loadKeyStorePKCS11(this.keystore, this.userPin);
+        Map<String, Certificate> certificateMap = KeyStoreUtil.getCertificatesFromKeystore(this.keystore);
         return (certificateMap);
     }
 
@@ -203,5 +207,10 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
     @Override
     public int getKeystoreUsage() {
         return (this.keystoreUsage);
+    }
+    
+    @Override
+    public boolean isReadOnly() {
+        return( false );
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleDialogSendCEM_de.java 7     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/gui/ResourceBundleDialogSendCEM_de.java 9     21/10/25 10:50 Heller $
 package de.mendelson.comm.as2.cem.gui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleDialogSendCEM_de extends MecResourceBundle{
     
@@ -28,10 +28,10 @@ public class ResourceBundleDialogSendCEM_de extends MecResourceBundle{
         {"title", "Zertifikate mit Partnern austauschen (CEM)" },
         {"button.ok", "Ok" },
         {"button.cancel", "Abbrechen" },
-        {"label.initiator", "Lokale Station:" },
-        {"label.receiver", "Empfänger:" },
-        {"label.certificate", "Zertifikat:"},
-        {"label.activationdate", "Aktivierungsdatum:"},
+        {"label.initiator", "Lokale Station" },
+        {"label.receiver", "Empfänger" },
+        {"label.certificate", "Zertifikat"},
+        {"label.activationdate", "Aktivierungsdatum"},
         {"cem.request.failed", "Die CEM Anfrage konnte nicht durchgeführt werden:\n{0}" },
         {"cem.request.success", "Die CEM Anfrage wurde erfolgreich ausgeführt." },
         {"cem.request.title", "Zertifikataustausch über CEM" },

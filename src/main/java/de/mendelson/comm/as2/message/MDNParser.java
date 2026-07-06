@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MDNParser.java 34    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MDNParser.java 37    23/03/26 12:56 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -32,7 +32,7 @@ import javax.mail.util.ByteArrayDataSource;
  * Parses MDNs, this is NOT thread safe!
  *
  * @author S.Heller
- * @version $Revision: 34 $
+ * @version $Revision: 37 $
  */
 public class MDNParser {
 
@@ -43,7 +43,8 @@ public class MDNParser {
     private final Properties dispositionProperties = new Properties();
     private String dispositionState = null;
     private final static MecResourceBundle rb;
-    static{
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleMDNParser.class.getName());
@@ -52,7 +53,7 @@ public class MDNParser {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
-    
+
     /**
      * contains the parsed MIC is it has been transfered
      */
@@ -63,7 +64,7 @@ public class MDNParser {
      */
     private String relatedMessageId = null;
 
-    public MDNParser() {        
+    public MDNParser() {
     }
 
     /**
@@ -81,9 +82,7 @@ public class MDNParser {
         if (contentType.startsWith("application/pkcs7-mime")) {
             return;
         }
-        ByteArrayInputStream inStream = new ByteArrayInputStream(data);
         MimeMultipart multipart = new MimeMultipart(new ByteArrayDataSource(data, contentType));
-        inStream.close();
         MimeMessage messagePart = new MimeMessage(Session.getInstance(System.getProperties(), null));
         messagePart.setContent(multipart, multipart.getContentType());
         messagePart.saveChanges();
@@ -95,7 +94,7 @@ public class MDNParser {
         //If the parse process comes to this point it must be a new MDN
         AS2MDNInfo info = new AS2MDNInfo();
         message.setAS2Info(info);
-        info.setDirection(AS2MessageInfo.DIRECTION_IN);
+        info.setDirection(MessageDirectionType.IN);
         try {
             this.extractMessageDispositionDetailsFromMDN(reportPart);
         } catch (Exception e) {
@@ -134,13 +133,13 @@ public class MDNParser {
         }
         Object content = body.getContent();
         if (content instanceof InputStream) {
-            InputStream inStream = (InputStream) body.getContent();
-            ByteArrayOutputStream rawDataStreamMem = new ByteArrayOutputStream();
-            inStream.transferTo(rawDataStreamMem);
-            rawDataStreamMem.flush();
-            rawDataStreamMem.close();            
-            byte[] rawData = rawDataStreamMem.toByteArray();
-            inStream.close();
+            byte[] rawData;
+            try (InputStream inStream = (InputStream) body.getContent()) {
+                try (ByteArrayOutputStream rawDataStreamMem = new ByteArrayOutputStream()) {
+                    inStream.transferTo(rawDataStreamMem);
+                    rawData = rawDataStreamMem.toByteArray();
+                }
+            }
             return (this.decodeBodypartContentTransferEncoding(rawData, contentTransferEncoding));
         } else if (content instanceof String) {
             //in the case of casting the content transfer encoding processing is performed by the API
@@ -161,13 +160,15 @@ public class MDNParser {
         if (contentTransferEncoding == null) {
             return (encodedData);
         }
-        ByteArrayInputStream bais = new ByteArrayInputStream(encodedData);
-        InputStream b64is = MimeUtility.decode(bais, contentTransferEncoding);
-        byte[] tmp = new byte[encodedData.length];
-        int n = b64is.read(tmp);
-        byte[] res = new byte[n];
-        System.arraycopy(tmp, 0, res, 0, n);
-        return res;
+        try (ByteArrayInputStream inStream = new ByteArrayInputStream(encodedData)) {
+            try (InputStream b64InStream = MimeUtility.decode(inStream, contentTransferEncoding)) {
+                byte[] tmp = new byte[encodedData.length];
+                int n = b64InStream.read(tmp);
+                byte[] res = new byte[n];
+                System.arraycopy(tmp, 0, res, 0, n);
+                return res;
+            }
+        }
     }
 
     /**
@@ -185,24 +186,25 @@ public class MDNParser {
                     if (body.getContentType().toLowerCase().startsWith("text/plain")) {
                         this.mdnDetails = new String(bodypartData).trim();
                     } else if (body.getContentType().toLowerCase().startsWith("message/disposition-notification")) {
-                        InputStream inStream = new ByteArrayInputStream(bodypartData);
-                        BufferedReader reader = new BufferedReader(new InputStreamReader(inStream));
-                        String line = "";
-                        while (line != null) {
-                            line = reader.readLine();
-                            if (line != null) {
-                                int index = line.indexOf(':');
-                                if (index > 0) {
-                                    String key = line.substring(0, index).toLowerCase();
-                                    String value = line.substring(index + 1).trim();
-                                    this.dispositionProperties.setProperty(key, value);
-                                    if (key.equals("disposition")) {
-                                        this.computeDispositionState(value);
+                        try (InputStream inStream = new ByteArrayInputStream(bodypartData)) {
+                            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream))) {
+                                String line = "";
+                                while (line != null) {
+                                    line = reader.readLine();
+                                    if (line != null) {
+                                        int index = line.indexOf(':');
+                                        if (index > 0) {
+                                            String key = line.substring(0, index).toLowerCase();
+                                            String value = line.substring(index + 1).trim();
+                                            this.dispositionProperties.setProperty(key, value);
+                                            if (key.equals("disposition")) {
+                                                this.computeDispositionState(value);
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
-                        inStream.close();
                     }
                 }
             } catch (MessagingException structureException) {

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/user/AddUser.java 2     3/11/23 9:57 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/user/AddUser.java 3     25/02/25 10:27 Heller $
 package de.mendelson.util.clientserver.user;
 
 import java.util.logging.Logger;
@@ -13,7 +13,7 @@ import java.util.logging.Logger;
 /**
  * Add a single user to the password file
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class AddUser {
 
@@ -33,17 +33,17 @@ public class AddUser {
         String passwd = null;
         int optind;
         for (optind = 0; optind < args.length; optind++) {
-            if (args[optind].toLowerCase().equals("-name")) {
+            if (args[optind].equalsIgnoreCase("-name")) {
                 name = args[++optind];
-            } else if (args[optind].toLowerCase().equals("-passwd")) {
+            } else if (args[optind].equalsIgnoreCase("-passwd")) {
                 passwd = args[++optind];
-            } else if (args[optind].toLowerCase().equals("-?")) {
+            } else if (args[optind].equalsIgnoreCase("-?")) {
                 AddUser.printUsage();
                 System.exit(1);
-            } else if (args[optind].toLowerCase().equals("-h")) {
+            } else if (args[optind].equalsIgnoreCase("-h")) {
                 AddUser.printUsage();
                 System.exit(1);
-            } else if (args[optind].toLowerCase().equals("-help")) {
+            } else if (args[optind].equalsIgnoreCase("-help")) {
                 AddUser.printUsage();
                 System.exit(1);
             }

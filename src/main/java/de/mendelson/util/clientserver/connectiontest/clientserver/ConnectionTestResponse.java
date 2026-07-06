@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestResponse.java 5     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/connectiontest/clientserver/ConnectionTestResponse.java 7     11/06/25 13:17 Heller $
 package de.mendelson.util.clientserver.connectiontest.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.connectiontest.ConnectionTestResult;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.log.LoggingHandlerLogEntryArray;
@@ -19,16 +20,25 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ConnectionTestResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private ConnectionTestResult result = null;
-    private final List<LoggingHandlerLogEntryArray.LogEntry> logEntries = new ArrayList<LoggingHandlerLogEntryArray.LogEntry>();
+    private List<LoggingHandlerLogEntryArray.LogEntry> logEntries = new ArrayList<LoggingHandlerLogEntryArray.LogEntry>();
 
     public ConnectionTestResponse(ConnectionTestRequest request) {
         super(request);
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ConnectionTestResponse() {
+        super();
     }
 
     /**

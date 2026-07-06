@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/store/MessageStoreHandler.java 94    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/store/MessageStoreHandler.java 110   23/03/26 13:41 Heller $
 package de.mendelson.comm.as2.message.store;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -7,6 +7,8 @@ import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageStateType;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -14,8 +16,8 @@ import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
-import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -25,9 +27,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -47,34 +48,36 @@ import java.util.logging.Logger;
  * Stores messages in specified directories
  *
  * @author S.Heller
- * @version $Revision: 94 $
+ * @version $Revision: 110 $
  */
 public class MessageStoreHandler {
 
-    /**
-     * products preferences
-     */
     private final PreferencesAS2 preferences;
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-    /**
-     * localize the output
-     */
-    private final MecResourceBundle rb;
-    private final String CRLF = new String(new byte[]{0x0d, 0x0a});
-    private final IDBDriverManager dbDriverManager;
-    private final static DateFormat DATE_FORMAT_RAW_INCOMING_FILE = new SimpleDateFormat("yyyyMMddHHmmssSSS");
+    private static final MecResourceBundle rb;
+    private static final String FILESYSTEM_SEPARATOR = FileSystems.getDefault().getSeparator();
 
-    public MessageStoreHandler(IDBDriverManager dbDriverManager) {
-        this.dbDriverManager = dbDriverManager;
-        this.preferences = new PreferencesAS2(dbDriverManager);
-        //Load resourcebundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleMessageStoreHandler.class.getName());
         } //load up  resourcebundle
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private static final String CRLF = new String(new byte[]{0x0d, 0x0a});
+    private final IDBDriverManager dbDriverManager;
+    //DateTimeFormatter is thread safe
+    private static final DateTimeFormatter DATE_FORMAT_RAW_INCOMING_FILE = DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS");
+    //DateTimeFormatter is thread safe
+    private static final DateTimeFormatter DATE_FORMAT_ERROR_MESSAGE = DateTimeFormatter.ofPattern("yyyyMMdd");
+    //DateTimeFormatter is thread safe
+    private static final DateTimeFormatter DATE_FORMAT_SENT_MESSAGE = DateTimeFormatter.ofPattern("yyyyMMdd");
+
+    public MessageStoreHandler(IDBDriverManager dbDriverManager) {
+        this.dbDriverManager = dbDriverManager;
+        this.preferences = new PreferencesAS2(dbDriverManager);
     }
 
     /**
@@ -90,20 +93,15 @@ public class MessageStoreHandler {
             try {
                 Files.createDirectories(inRawDir);
             } catch (Exception e) {
-                SystemEvent event = new SystemEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_MKDIR);
-                event.setSubject(event.typeToTextLocalized());
-                event.setBody(this.rb.getResourceString("dir.createerror",
+                this.logger.warning(rb.getResourceString("dir.createerror",
                         inRawDir.toAbsolutePath().toString()));
-                SystemEventManagerImplAS2.instance().newEvent(event);
-                this.logger.warning(this.rb.getResourceString("dir.createerror",
-                        inRawDir.toAbsolutePath().toString()));
+                SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                        inRawDir.toAbsolutePath().toString());
             }
         }
         StringBuilder rawFilename = new StringBuilder();
-        rawFilename.append(DATE_FORMAT_RAW_INCOMING_FILE.format(new Date())).append("_");
+        rawFilename.append(LocalDateTime.now().format(
+                DATE_FORMAT_RAW_INCOMING_FILE)).append("_");
         if (remoteHost != null) {
             rawFilename.append(remoteHost);
         } else {
@@ -120,23 +118,22 @@ public class MessageStoreHandler {
                 StandardOpenOption.WRITE);
         //write header
         Path headerFile = Paths.get(rawDataFile.toAbsolutePath().toString() + ".header");
-        OutputStream outStreamHeader = null;
-        try {
-            //ensure the underlaying filesystem provider synchronizes the data with the filesystem
-            outStreamHeader = Files.newOutputStream(headerFile,
-                    StandardOpenOption.SYNC,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
-            Enumeration enumeration = header.keys();
-            while (enumeration.hasMoreElements()) {
-                String key = (String) enumeration.nextElement();
-                outStreamHeader.write((key + " = " + header.getProperty(key) + CRLF).getBytes());
-            }
-        } finally {
-            if (outStreamHeader != null) {
-                outStreamHeader.close();
-            }
+        StringBuilder headerStrBuilder = new StringBuilder();
+        Enumeration<?> enumeration = header.keys();
+        while (enumeration.hasMoreElements()) {
+            String key = (String) enumeration.nextElement();
+            headerStrBuilder.append(key)
+                    .append(" = ")
+                    .append(header.getProperty(key))
+                    .append(CRLF);
+        }
+        //ensure the underlaying filesystem provider synchronizes the data with the filesystem
+        try (OutputStream outStreamHeader = new BufferedOutputStream(Files.newOutputStream(headerFile,
+                StandardOpenOption.SYNC,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE))) {
+            outStreamHeader.write(headerStrBuilder.toString().getBytes());
         }
         filenames[0] = rawDataFile.toAbsolutePath().toString();
         filenames[1] = headerFile.toAbsolutePath().toString();
@@ -149,18 +146,20 @@ public class MessageStoreHandler {
      *
      * @param messageType could be a normal EDI message or a CEM
      */
-    public void movePayloadToInbox(int messageType, String messageId, Partner localstation, Partner senderstation) throws Exception {
+    public void movePayloadToInbox(MessageType messageType, String messageId,
+            Partner localstation, Partner senderstation) throws Exception {
         StringBuilder inBoxDirPath = new StringBuilder();
-        inBoxDirPath.append(localstation.getMessagePath(
-                Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString(), FileSystems.getDefault().getSeparator()));
-        inBoxDirPath.append(FileSystems.getDefault().getSeparator());
-        if (messageType == AS2Message.MESSAGETYPE_AS2) {
+        inBoxDirPath.append(localstation.computeMessagePath(
+                Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString(),
+                FILESYSTEM_SEPARATOR));
+        inBoxDirPath.append(FILESYSTEM_SEPARATOR);
+        if (messageType == MessageType.AS2) {
             inBoxDirPath.append("inbox");
-        } else if (messageType == AS2Message.MESSAGETYPE_CEM) {
+        } else if (messageType == MessageType.CEM) {
             inBoxDirPath.append("certificates");
         }
         if (this.preferences.getBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR)) {
-            inBoxDirPath.append(FileSystems.getDefault().getSeparator());
+            inBoxDirPath.append(FILESYSTEM_SEPARATOR);
             inBoxDirPath.append(AS2Tools.convertToValidFilename(senderstation.getName()));
         }
         //store incoming message
@@ -170,16 +169,10 @@ public class MessageStoreHandler {
             try {
                 Files.createDirectories(inboxDir);
             } catch (Exception e) {
-                SystemEvent event = new SystemEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_MKDIR);
-                event.setSubject(event.typeToTextLocalized());
-                event.setBody(this.rb.getResourceString("dir.createerror",
+                this.logger.warning(rb.getResourceString("dir.createerror",
                         inboxDir.toAbsolutePath().toString()));
-                SystemEventManagerImplAS2.instance().newEvent(event);
-                this.logger.warning(this.rb.getResourceString("dir.createerror",
-                        inboxDir.toAbsolutePath().toString()));
+                SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                        inboxDir.toAbsolutePath().toString());
             }
         }
         //load message overview from database
@@ -196,11 +189,13 @@ public class MessageStoreHandler {
                 Path inFile = Paths.get(payloadFilename);
                 long payloadSize = Files.size(inFile);
                 //is it defined to keep the original filename for messages from this sender?
-                if (senderstation.getKeepOriginalFilenameOnReceipt() && payloadList.get(i).getOriginalFilename() != null && !payloadList.get(i).getOriginalFilename().isEmpty()) {
+                if (senderstation.getKeepOriginalFilenameOnReceipt()
+                        && payloadList.get(i).getOriginalFilename() != null
+                        && !payloadList.get(i).getOriginalFilename().isEmpty()) {
                     payloadFilename = payloadList.get(i).getOriginalFilename();
                 }
                 //is it a CEM? Take the content id as filename and add an extension
-                if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM && payloadList.get(i).getContentId() != null) {
+                if (messageInfo.getMessageType() == MessageType.CEM && payloadList.get(i).getContentId() != null) {
                     payloadFilename = payloadFilename + "_" + AS2Tools.convertToValidFilename(payloadList.get(i).getContentId());
                     if (payloadList.get(i).getContentType() != null) {
                         if (payloadList.get(i).getContentType().toLowerCase().contains("ediint-cert-exchange+xml")) {
@@ -211,14 +206,14 @@ public class MessageStoreHandler {
                     }
                 }
                 StringBuilder outFilename = new StringBuilder();
-                outFilename.append(inboxDir.toAbsolutePath().toString());
-                outFilename.append(FileSystems.getDefault().getSeparator());
-                outFilename.append(Paths.get(payloadFilename).getFileName().toString());
+                outFilename.append(inboxDir.toAbsolutePath().toString())
+                        .append(FILESYSTEM_SEPARATOR)
+                        .append(Paths.get(payloadFilename).getFileName().toString());
                 Path outFile = Paths.get(outFilename.toString());
                 Files.move(inFile, outFile, StandardCopyOption.ATOMIC_MOVE,
                         StandardCopyOption.REPLACE_EXISTING);
                 payloadList.get(i).setPayloadFilename(outFilename.toString());
-                this.logger.log(Level.FINE, this.rb.getResourceString("comm.success",
+                this.logger.log(Level.FINE, rb.getResourceString("comm.success",
                         new Object[]{
                             String.valueOf(i + 1),
                             outFilename.toString(),
@@ -237,12 +232,13 @@ public class MessageStoreHandler {
     public void storeParsedIncomingMessage(AS2Message message, Partner localstation) throws Exception {
         //do not store signals payload in pending dir
         if (!message.getAS2Info().isMDN()) {
+            //store incoming message
             StringBuilder inBoxDirPath = new StringBuilder();
-            inBoxDirPath.append(localstation.getMessagePath(
+            inBoxDirPath.append(localstation.computeMessagePath(
                     Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString(),
-                    FileSystems.getDefault().getSeparator()));
-            inBoxDirPath.append(FileSystems.getDefault().getSeparator());
-            inBoxDirPath.append("inbox");
+                    FILESYSTEM_SEPARATOR))
+                    .append(FILESYSTEM_SEPARATOR)
+                    .append("inbox");
             //store incoming message
             Path inboxDir = Paths.get(inBoxDirPath.toString());
             //ensure the directory exists
@@ -250,41 +246,29 @@ public class MessageStoreHandler {
                 try {
                     Files.createDirectories(inboxDir);
                 } catch (Exception e) {
-                    SystemEvent event = new SystemEvent(
-                            SystemEvent.SEVERITY_WARNING,
-                            SystemEvent.ORIGIN_SYSTEM,
-                            SystemEvent.TYPE_MKDIR);
-                    event.setSubject(event.typeToTextLocalized());
-                    event.setBody(this.rb.getResourceString("dir.createerror",
+                    this.logger.warning(rb.getResourceString("dir.createerror",
                             inboxDir.toAbsolutePath().toString()));
-                    SystemEventManagerImplAS2.instance().newEvent(event);
-                    this.logger.warning(this.rb.getResourceString("dir.createerror",
-                            inboxDir.toAbsolutePath().toString()));
+                    SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                            inboxDir.toAbsolutePath().toString());
                 }
             }
             //store the payload to the pending directory. It resists there as long as no positive MDN comes in
-            Path pendingDir = Paths.get(inboxDir.toAbsolutePath().toString() + FileSystems.getDefault().getSeparator() + "pending");
+            Path pendingDir = Paths.get(inboxDir.toAbsolutePath().toString(), "pending");
             if (!Files.exists(pendingDir)) {
                 try {
                     Files.createDirectories(pendingDir);
                 } catch (Exception e) {
-                    SystemEvent event = new SystemEvent(
-                            SystemEvent.SEVERITY_WARNING,
-                            SystemEvent.ORIGIN_SYSTEM,
-                            SystemEvent.TYPE_MKDIR);
-                    event.setSubject(event.typeToTextLocalized());
-                    event.setBody(this.rb.getResourceString("dir.createerror",
+                    this.logger.warning(rb.getResourceString("dir.createerror",
                             pendingDir.toAbsolutePath().toString()));
-                    SystemEventManagerImplAS2.instance().newEvent(event);
-                    this.logger.warning(this.rb.getResourceString("dir.createerror",
-                            pendingDir.toAbsolutePath().toString()));
+                    SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                            pendingDir.toAbsolutePath().toString());
                 }
             }
             for (int i = 0; i < message.getPayloadCount(); i++) {
                 AS2Payload payload = message.getPayload(i);
                 StringBuilder pendingFilename = new StringBuilder();
                 pendingFilename.append(pendingDir.toAbsolutePath());
-                pendingFilename.append(FileSystems.getDefault().getSeparator());
+                pendingFilename.append(FILESYSTEM_SEPARATOR);
                 pendingFilename.append(AS2Tools.convertToValidFilename(message.getAS2Info().getMessageId()));
                 if (message.getPayloadCount() > 1) {
                     pendingFilename.append("_").append(String.valueOf(i));
@@ -296,24 +280,14 @@ public class MessageStoreHandler {
             MessageAccessDB messageAccess = new MessageAccessDB(this.dbDriverManager);
             messageAccess.insertPayloads(message.getAS2Info().getMessageId(), message.getPayloads());
             Path decryptedRawFile = Paths.get(message.getAS2Info().getRawFilename() + ".decrypted");
-            OutputStream outStream = null;
-            InputStream inStream = null;
-            try {
-                //ensure the underlaying filesystem provider synchronizes the data with the filesystem
-                outStream = Files.newOutputStream(decryptedRawFile,
-                        StandardOpenOption.SYNC,
-                        StandardOpenOption.CREATE,
-                        StandardOpenOption.TRUNCATE_EXISTING,
-                        StandardOpenOption.WRITE);
-                inStream = message.getDecryptedRawDataInputStream();
-                inStream.transferTo(outStream);
-            } finally {
-                if (outStream != null) {
-                    outStream.flush();
-                    outStream.close();
-                }
-                if (inStream != null) {
-                    inStream.close();
+            //ensure the underlaying filesystem provider synchronizes the data with the filesystem
+            try (OutputStream outStream = new BufferedOutputStream(Files.newOutputStream(decryptedRawFile,
+                    StandardOpenOption.SYNC,
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING,
+                    StandardOpenOption.WRITE))) {
+                try (InputStream inStream = message.getDecryptedRawDataInputStream()) {
+                    inStream.transferTo(outStream);
                 }
             }
             ((AS2MessageInfo) message.getAS2Info()).setRawFilenameDecrypted(decryptedRawFile.toAbsolutePath().toString());
@@ -325,13 +299,17 @@ public class MessageStoreHandler {
      * message
      */
     public void storeSentErrorMessage(AS2Message message, Partner localstation, Partner receiver) throws Exception {
-        DateFormat format = new SimpleDateFormat("yyyyMMdd");
         StringBuilder errorDirName = new StringBuilder();
-        errorDirName.append(Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString());
-        errorDirName.append(FileSystems.getDefault().getSeparator());
-        errorDirName.append(AS2Tools.convertToValidFilename(receiver.getName())).append(FileSystems.getDefault().getSeparator()).append("error");
-        errorDirName.append(FileSystems.getDefault().getSeparator()).append(AS2Tools.convertToValidFilename(localstation.getName()));
-        errorDirName.append(FileSystems.getDefault().getSeparator()).append(format.format(new Date()));
+        errorDirName.append(Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString())
+                .append(FILESYSTEM_SEPARATOR)
+                .append(AS2Tools.convertToValidFilename(receiver.getName()))
+                .append(FILESYSTEM_SEPARATOR)
+                .append("error")
+                .append(FILESYSTEM_SEPARATOR)
+                .append(AS2Tools.convertToValidFilename(localstation.getName()))
+                .append(FILESYSTEM_SEPARATOR)
+                .append(
+                        LocalDateTime.now().format(DATE_FORMAT_ERROR_MESSAGE));
         //store sent message
         Path errorDir = Paths.get(errorDirName.toString());
         //ensure the directory exists
@@ -339,16 +317,10 @@ public class MessageStoreHandler {
             try {
                 Files.createDirectories(errorDir);
             } catch (Exception e) {
-                SystemEvent event = new SystemEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_MKDIR);
-                event.setSubject(event.typeToTextLocalized());
-                event.setBody(this.rb.getResourceString("dir.createerror",
+                this.logger.warning(rb.getResourceString("dir.createerror",
                         errorDir.toAbsolutePath().toString()));
-                SystemEventManagerImplAS2.instance().newEvent(event);
-                this.logger.warning(this.rb.getResourceString("dir.createerror",
-                        errorDir.toAbsolutePath().toString()));
+                SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                        errorDir.toAbsolutePath().toString());
             }
         }
         //write out the payload(s)
@@ -356,7 +328,7 @@ public class MessageStoreHandler {
             Path payloadFile = Files.createTempFile(errorDir, "AS2Message", ".as2");
             message.getPayload(i).writeTo(payloadFile);
             message.getPayload(i).setPayloadFilename(payloadFile.toAbsolutePath().toString());
-            this.logger.log(Level.SEVERE, this.rb.getResourceString("message.error.stored",
+            this.logger.log(Level.SEVERE, rb.getResourceString("message.error.stored",
                     new Object[]{
                         payloadFile.toAbsolutePath().toString()
                     }), message.getAS2Info());
@@ -368,21 +340,15 @@ public class MessageStoreHandler {
             try {
                 Files.createDirectories(errorRawDir);
             } catch (Exception e) {
-                SystemEvent event = new SystemEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_MKDIR);
-                event.setSubject(event.typeToTextLocalized());
-                event.setBody(this.rb.getResourceString("dir.createerror",
+                this.logger.warning(rb.getResourceString("dir.createerror",
                         errorRawDir.toAbsolutePath().toString()));
-                SystemEventManagerImplAS2.instance().newEvent(event);
-                this.logger.warning(this.rb.getResourceString("dir.createerror",
-                        errorRawDir.toAbsolutePath().toString()));
+                SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                        errorDir.toAbsolutePath().toString());
             }
         }
         Path errorRawFile = Files.createTempFile(errorRawDir, "error", ".raw");
         message.writeRawDecryptedTo(errorRawFile);
-        this.logger.log(Level.SEVERE, this.rb.getResourceString("message.error.raw.stored",
+        this.logger.log(Level.SEVERE, rb.getResourceString("message.error.raw.stored",
                 new Object[]{
                     errorRawFile.toAbsolutePath().toString()
                 }), message.getAS2Info());
@@ -397,10 +363,9 @@ public class MessageStoreHandler {
     }
 
     /**
-     * Stores an outgoing message in a sent directory
+     * Stores an outgoing message or MDN in a sent directory
      */
-    public void storeSentMessage(AS2Message message, Partner localstation, Partner receiver, Properties header) throws Exception {
-        DateFormat format = new SimpleDateFormat("yyyyMMdd");
+    public void storeSentMessageOrMDN(AS2Message message, Partner localstation, Partner receiver, Properties header) throws Exception {
         String receiverName = "unidentified";
         if (receiver != null) {
             receiverName = AS2Tools.convertToValidFilename(receiver.getName());
@@ -413,24 +378,18 @@ public class MessageStoreHandler {
         Path sentDir = Paths.get(
                 Paths.get(this.preferences.get(PreferencesAS2.DIR_MSG)).toAbsolutePath().toString(),
                 receiverName,
-                "sent",                
+                "sent",
                 localStationName,
-                format.format(new Date()));
+                LocalDateTime.now().format(DATE_FORMAT_SENT_MESSAGE));
         //ensure the directory exists
         if (!Files.exists(sentDir)) {
             try {
                 Files.createDirectories(sentDir);
             } catch (Exception e) {
-                SystemEvent event = new SystemEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_MKDIR);
-                event.setSubject(event.typeToTextLocalized());
-                event.setBody(this.rb.getResourceString("dir.createerror",
+                this.logger.warning(rb.getResourceString("dir.createerror",
                         sentDir.toAbsolutePath().toString()));
-                SystemEventManagerImplAS2.instance().newEvent(event);
-                this.logger.warning(this.rb.getResourceString("dir.createerror",
-                        sentDir.toAbsolutePath().toString()));
+                SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                        sentDir.toAbsolutePath().toString());
             }
         }
         AS2Info as2Info = message.getAS2Info();
@@ -438,56 +397,43 @@ public class MessageStoreHandler {
         if (as2Info.isMDN()) {
             requestType = "_MDN";
         }
-        StringBuilder rawFilename = new StringBuilder();
-        rawFilename.append(sentDir.toAbsolutePath().toString());
-        rawFilename.append(FileSystems.getDefault().getSeparator());
-        rawFilename.append(AS2Tools.convertToValidFilename(as2Info.getMessageId()));
-        rawFilename.append(requestType);
-        rawFilename.append(".as2");
-        Path headerFile = Paths.get(rawFilename.toString() + ".header");
-        OutputStream outStream = null;
-        try {
-            //ensure the underlaying filesystem provider synchronizes the data with the filesystem
-            outStream = Files.newOutputStream(headerFile,
-                    StandardOpenOption.SYNC,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
-            Enumeration enumeration = header.keys();
-            while (enumeration.hasMoreElements()) {
-                String key = (String) enumeration.nextElement();
-                outStream.write((key + " = " + header.getProperty(key) + CRLF).getBytes());
-            }
-        } finally {
-            if (outStream != null) {
-                outStream.close();
-                outStream.flush();
-            }
+        StringBuilder rawFilenameBuilder = new StringBuilder();
+        rawFilenameBuilder.append(sentDir.toAbsolutePath().toString())
+                .append(FILESYSTEM_SEPARATOR)
+                .append(AS2Tools.convertToValidFilename(as2Info.getMessageId()))
+                .append(requestType)
+                .append(".as2");
+        Path headerFile = Paths.get(rawFilenameBuilder.toString() + ".header");
+        StringBuilder headerStrBuilder = new StringBuilder();
+        Enumeration<?> keyEnumeration = header.keys();
+        while (keyEnumeration.hasMoreElements()) {
+            String key = (String) keyEnumeration.nextElement();
+            headerStrBuilder.append(key)
+                    .append(" = ")
+                    .append(header.getProperty(key))
+                    .append(CRLF);
+        }
+        //ensure the underlaying filesystem provider synchronizes the data with the filesystem
+        try (OutputStream outStream = new BufferedOutputStream(Files.newOutputStream(headerFile,
+                StandardOpenOption.SYNC,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE))) {
+            outStream.write(headerStrBuilder.toString().getBytes());
         }
         as2Info.setHeaderFilename(headerFile.toAbsolutePath().toString());
-        Path rawFile = Paths.get(rawFilename.toString());
-        InputStream inStream = null;
-        outStream = null;
-        try {
+        Path rawFile = Paths.get(rawFilenameBuilder.toString());
+        try (InputStream rawDataInStream = message.getDecryptedRawDataInputStream()) {
             //ensure the underlaying filesystem provider synchronizes the data with the filesystem
-            outStream = Files.newOutputStream(rawFile,
+            try (OutputStream outFileStream = new BufferedOutputStream(Files.newOutputStream(rawFile,
                     StandardOpenOption.SYNC,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
-            inStream = message.getDecryptedRawDataInputStream();
-            inStream.transferTo(outStream);
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
-            if (outStream != null) {
-                outStream.flush();
-                outStream.close();
+                    StandardOpenOption.WRITE))) {
+                rawDataInStream.transferTo(outFileStream);
             }
         }
-        outStream = null;
-        Path rawFileDecrypted = Paths.get(rawFilename.toString() + ".decrypted");
+        Path rawFileDecrypted = Paths.get(rawFilenameBuilder.toString() + ".decrypted");
         InputStream contentSourceStream = null;
         try {
             if (as2Info.isMDN()) {
@@ -496,24 +442,21 @@ public class MessageStoreHandler {
                 contentSourceStream = message.getDecryptedRawDataInputStream();
             }
             //ensure the underlaying filesystem provider synchronizes the data with the filesystem
-            outStream = Files.newOutputStream(rawFileDecrypted,
+            try (OutputStream outStream = new BufferedOutputStream(Files.newOutputStream(rawFileDecrypted,
                     StandardOpenOption.SYNC,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
-            contentSourceStream.transferTo(outStream);
+                    StandardOpenOption.WRITE))) {
+                contentSourceStream.transferTo(outStream);
+            }
         } finally {
             if (contentSourceStream != null) {
                 contentSourceStream.close();
             }
-            if (outStream != null) {
-                outStream.flush();
-                outStream.close();
-            }
         }
         for (int i = 0; i < message.getPayloadCount(); i++) {
             StringBuilder payloadFilename = new StringBuilder();
-            payloadFilename.append(sentDir.toAbsolutePath().toString()).append(FileSystems.getDefault().getSeparator());
+            payloadFilename.append(sentDir.toAbsolutePath().toString()).append(FILESYSTEM_SEPARATOR);
             String originalFilename = message.getPayload(i).getOriginalFilename();
             if (originalFilename == null) {
                 originalFilename = "unknown";
@@ -550,8 +493,8 @@ public class MessageStoreHandler {
             return;
         }
         PartnerAccessDB partnerAccessDB = new PartnerAccessDB(this.dbDriverManager);
-        Partner sender = partnerAccessDB.getPartner(messageInfo.getSenderId());
-        Partner receiver = partnerAccessDB.getPartner(messageInfo.getReceiverId());
+        Partner sender = partnerAccessDB.getPartnerByAS2Id(messageInfo.getSenderId());
+        Partner receiver = partnerAccessDB.getPartnerByAS2Id(messageInfo.getReceiverId());
         MessageAccessDB access = new MessageAccessDB(this.dbDriverManager);
         List<AS2Payload> payload = access.getPayload(messageInfo.getMessageId());
         //deal with the status directory
@@ -561,13 +504,15 @@ public class MessageStoreHandler {
             try {
                 Files.createDirectories(statusDir);
             } catch (Exception e) {
-                this.logger.warning(this.rb.getResourceString("dir.createerror",
+                this.logger.warning(rb.getResourceString("dir.createerror",
                         statusDir.toAbsolutePath().toString()));
+                SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                        statusDir.toAbsolutePath().toString());
             }
         }
         StringBuilder rawFilename = new StringBuilder();
         rawFilename.append(statusDir.toAbsolutePath().toString());
-        rawFilename.append(FileSystems.getDefault().getSeparator());
+        rawFilename.append(FILESYSTEM_SEPARATOR);
         for (int i = 0; i < payload.size(); i++) {
             rawFilename.append(payload.get(i).getOriginalFilename());
             rawFilename.append("_");
@@ -575,14 +520,12 @@ public class MessageStoreHandler {
         rawFilename.append(AS2Tools.convertToValidFilename(messageInfo.getMessageId()));
         rawFilename.append(".sent.state");
         Path statusFile = Paths.get(rawFilename.toString());
-        OutputStream outStream = null;
-        try {
-            //ensure the underlaying filesystem provider synchronizes the data with the filesystem
-            outStream = Files.newOutputStream(statusFile,
-                    StandardOpenOption.SYNC,
-                    StandardOpenOption.CREATE,
-                    StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
+        //ensure the underlaying filesystem provider synchronizes the data with the filesystem
+        try (OutputStream outStream = new BufferedOutputStream(Files.newOutputStream(statusFile,
+                StandardOpenOption.SYNC,
+                StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING,
+                StandardOpenOption.WRITE))) {
             outStream.write("product=".getBytes());
             outStream.write(AS2ServerVersion.getProductName().getBytes());
             outStream.write(" ".getBytes());
@@ -612,17 +555,13 @@ public class MessageStoreHandler {
             outStream.write(receiver.getAS2Identification().getBytes());
             outStream.write("\n".getBytes());
             outStream.write("state=".getBytes());
-            if (messageInfo.getState() == AS2Message.STATE_FINISHED) {
+            if (messageInfo.getState() == MessageStateType.FINISHED) {
                 outStream.write("OK".getBytes());
             } else {
                 outStream.write("ERROR".getBytes());
             }
-        } finally {
-            if (outStream != null) {
-                outStream.close();
-            }
         }
-        this.logger.log(Level.FINE, this.rb.getResourceString("outboundstatus.written",
+        this.logger.log(Level.FINE, rb.getResourceString("outboundstatus.written",
                 new Object[]{
                     statusFile.toAbsolutePath().toString()
                 }), messageInfo);

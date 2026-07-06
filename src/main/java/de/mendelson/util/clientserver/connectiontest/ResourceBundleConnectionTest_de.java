@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 14    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_de.java 18    16/02/26 14:07 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleConnectionTest_de extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleConnectionTest_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"tag", "Verbindungstest zu {0}"},
         {"timeout.set", "Setze Timeout auf {0}ms"},
         {"test.start.ssl", "Starte Verbindungsprüfung zu {0}, TLS. Bitte beachten Sie, dass dieser Test jedem Serverzertifikat vertraut - auch wenn dieser Test erfolgreich verläuft, bedeutet dies also nicht, dass Ihr TLS Keystore korrekt konfiguriert ist."},
@@ -61,7 +61,7 @@ public class ResourceBundleConnectionTest_de extends MecResourceBundle {
         {"info.protocols", "Der Client lässt eine Verhandlung über folgende TLS Protokolle zu: {0}" },
         {"info.securityprovider", "Verwendeter TLS Security Provider: {0}" },
         {"sni.extension.set", "Der Hostname für die TLS SNI Erweiterung wurde auf \"{0}\" gesetzt" },
-        {"local.station", "Lokale Station" },
+        {"local.station", "Lokale Station" }
     };
 
 }

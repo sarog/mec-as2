@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/keydata/KeydataAccessDB.java 16    23/11/23 10:22 Heller $
+//$Header: /mec_as2/de/mendelson/util/security/keydata/KeydataAccessDB.java 28    15/04/26 12:44 Heller $
 package de.mendelson.util.security.keydata;
 
 import de.mendelson.util.MecResourceBundle;
@@ -29,33 +29,34 @@ import java.util.logging.Logger;
  * Database access wrapper for key/certificate information
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 28 $
  */
 public class KeydataAccessDB {
 
-    public static String REASON_IMPORT_INITIAL ="INITIAL";
-    public static String REASON_IMPORT_COMMAND_LINE_SETTINGS ="COMMAND_LINE_SETTINGS";
-    
-    
+    public static final String REASON_IMPORT_INITIAL = "INITIAL";
+    public static final String REASON_IMPORT_COMMAND_LINE_SETTINGS = "COMMAND_LINE_SETTINGS";
+
     private final IDBDriverManager dbDriverManager;
     private final SystemEventManager systemEventManager;
-    private final MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
-    
-    public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplDB.KEYSTORE_USAGE_TLS;
-    public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN;
-    public static String KEYSTORE_JKS = BCCryptoHelper.KEYSTORE_JKS;
-    public static String KEYSTORE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
-
-    public KeydataAccessDB(IDBDriverManager dbDriverManager, SystemEventManager systemEventManager) {
-        this.dbDriverManager = dbDriverManager;
-        this.systemEventManager = systemEventManager;
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleKeystoreStorage.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+
+    public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplDB.KEYSTORE_USAGE_TLS;
+    public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplDB.KEYSTORE_USAGE_ENC_SIGN;
+    public static final String KEYSTORE_JKS = BCCryptoHelper.KEYSTORE_JKS;
+    public static final String KEYSTORE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
+
+    public KeydataAccessDB(IDBDriverManager dbDriverManager, SystemEventManager systemEventManager) {
+        this.dbDriverManager = dbDriverManager;
+        this.systemEventManager = systemEventManager;
     }
 
     public static int keystoreTypeStrToInt(String keystoreType) {
@@ -82,37 +83,19 @@ public class KeydataAccessDB {
      * Returns the timestamp in ms the keydata entry has been modified last
      */
     public long getLastChanged(int purpose) {
-        Connection configConnectionAutoCommit = null;
-        try {
-            configConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            PreparedStatement statement = null;
-            ResultSet result = null;
-            try {
-                statement = configConnectionAutoCommit.prepareStatement("SELECT lastchanged FROM keydata WHERE purpose=?");
+        try (Connection configConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
+            try (PreparedStatement statement = configConnectionAutoCommit.prepareStatement(
+                    "SELECT lastchanged FROM keydata WHERE purpose=?")) {
                 statement.setInt(1, purpose);
-                result = statement.executeQuery();
-                if (result.next()) {
-                    long timestamp = result.getLong("lastchanged");
-                    return (timestamp);
-                }
-            } finally {
-                if (result != null) {
-                    result.close();
-                }
-                if (statement != null) {
-                    statement.close();
+                try (ResultSet result = statement.executeQuery()) {
+                    if (result.next()) {
+                        long timestamp = result.getLong("lastchanged");
+                        return (timestamp);
+                    }
                 }
             }
         } catch (Throwable e) {
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (configConnectionAutoCommit != null) {
-                try {
-                    configConnectionAutoCommit.close();
-                } catch (Exception e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (0);
     }
@@ -120,64 +103,62 @@ public class KeydataAccessDB {
     /**
      * Returns the key storage of the requested purpose
      */
-    public byte[] getKeydata(int purpose) {
-        Connection configConnectionAutoCommit = null;
-        try {
-            configConnectionAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
-            PreparedStatement selectStatement = null;
-            ResultSet result = null;
-            try {
-                selectStatement = configConnectionAutoCommit.prepareStatement("SELECT storagedata FROM keydata WHERE purpose=?");
-                selectStatement.setInt(1, purpose);
-                result = selectStatement.executeQuery();
-                if (result.next()) {
-                    byte[] keyData = this.dbDriverManager.readBytesStoredAsJavaObject(result, "storagedata");
-                    return (keyData);
-                }
-            } finally {
-                if (result != null) {
-                    result.close();
-                }
-                if (selectStatement != null) {
-                    selectStatement.close();
+    public KeystoreData getKeydata(int purpose) {
+        String transactionName = "Keydata_get";
+        KeystoreData keystoreData = null;
+        try (Connection configConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
+            configConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = configConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                this.dbDriverManager.setTableLockREAD(transactionStatement, new String[]{"keydata"});
+                try (PreparedStatement selectStatement = configConnectionNoAutoCommit.prepareStatement(
+                        "SELECT * FROM keydata WHERE purpose=?")) {
+                    selectStatement.setInt(1, purpose);
+                    try (ResultSet result = selectStatement.executeQuery()) {
+                        if (result.next()) {
+                            byte[] keyData = this.dbDriverManager.readBytesStoredAsJavaObject(result, "storagedata");
+                            String securityProvider = result.getString("securityprovider");
+                            int storageType = result.getInt("storagetype");
+                            keystoreData = new KeystoreData(securityProvider, storageType, keyData);
+                        }
+                    }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
         } catch (Throwable e) {
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (configConnectionAutoCommit != null) {
-                try {
-                    configConnectionAutoCommit.close();
-                } catch (Exception e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
-        return (null);
+        return (keystoreData);
     }
 
     /**
      * Writes to the log that there has been a keystore import into the system
-     * @param importReason One of REASON_IMPORT_INITIAL, REASON_IMPORT_COMMAND_LINE_SETTINGS
+     *
+     * @param importReason One of REASON_IMPORT_INITIAL,
+     * REASON_IMPORT_COMMAND_LINE_SETTINGS
      */
     public void logKeystoreImport(Logger logger, Path keystoreFile, int purpose,
             String importReason) {
-        String moveTitle = this.rb.getResourceString("moved.keystore.to.db.title",
+        String moveTitle = rb.getResourceString("moved.keystore.to.db.title",
                 purpose == KeystoreStorageImplDB.KEYSTORE_USAGE_TLS ? "TLS" : "ENC/SIGN");
         String reasonText = "";
-        if( importReason.equals( REASON_IMPORT_COMMAND_LINE_SETTINGS)){
-            reasonText = this.rb.getResourceString( "moved.keystore.reason.commandline");
-        }else if( importReason.equals(REASON_IMPORT_INITIAL)){
-            reasonText = this.rb.getResourceString( "moved.keystore.reason.initial");
+        if (importReason.equals(REASON_IMPORT_COMMAND_LINE_SETTINGS)) {
+            reasonText = rb.getResourceString("moved.keystore.reason.commandline");
+        } else if (importReason.equals(REASON_IMPORT_INITIAL)) {
+            reasonText = rb.getResourceString("moved.keystore.reason.initial");
         }
-        String moveText = this.rb.getResourceString("moved.keystore.to.db",
+        String moveText = rb.getResourceString("moved.keystore.to.db",
                 new Object[]{
                     keystoreFile.toAbsolutePath().toString(),
                     purpose == KeystoreStorageImplDB.KEYSTORE_USAGE_TLS ? "TLS" : "ENC/SIGN"
                 });
         logger.info(moveText);
-        SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO, SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_CERTIFICATE_IMPORT_KEYSTORE);
+        SystemEvent event = new SystemEvent(SystemEvent.Severity.INFO, SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.CERTIFICATE_IMPORT_KEYSTORE);
         event.setBody(moveText + "\n" + reasonText);
         event.setSubject(moveTitle);
         systemEventManager.newEvent(event);
@@ -186,82 +167,51 @@ public class KeydataAccessDB {
     /**
      * Inserts a new key store into the database if none exists so far
      */
-    public void insertKeydataFromFileIfItDoesNotExistInDB(Logger logger, Path keystoreFile, String storageType, int purpose) {
-        Connection configConnectionNoAutoCommit = null;
-        Statement transactionStatement = null;
+    public void insertKeydataFromFileIfItDoesNotExistInDB(Logger logger, Path keystoreFile,
+            String storageType, int purpose, String securityProvider) {
         String transactionName = "Keydata_insert";
-        try {
-            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+        try (Connection configConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
             configConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = configConnectionNoAutoCommit.createStatement();
-            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            //start transaction - these tables have to be locked first to forbit any write operation
-            this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
-                    new String[]{
-                        "keydata"});
-            PreparedStatement checkStatement = null;
-            ResultSet result = null;
-            boolean entryExists = true;
-            try {
-                String query = "SELECT COUNT(1) AS counter FROM keydata WHERE purpose=?";
-                checkStatement = configConnectionNoAutoCommit.prepareStatement(query);
-                checkStatement.setInt(1, purpose);
-                result = checkStatement.executeQuery();
-                if (result.next()) {
-                    entryExists = result.getInt("counter") > 0;
-                }
-            } finally {
-                if (result != null) {
-                    result.close();
-                }
-                if (checkStatement != null) {
-                    checkStatement.close();
-                }
-            }
-            if (!entryExists) {
-                byte[] keystoreData = Files.readAllBytes(keystoreFile);
-                PreparedStatement insertStatement = null;
-                try {
-                    insertStatement = configConnectionNoAutoCommit.prepareStatement(
-                            "INSERT INTO keydata(storagedata,storagetype,purpose,lastchanged)VALUES(?,?,?,?)");
-                    this.dbDriverManager.setBytesParameterAsJavaObject(insertStatement, 1, keystoreData);
-                    insertStatement.setInt(2, keystoreTypeStrToInt(storageType));
-                    insertStatement.setInt(3, purpose);
-                    insertStatement.setLong(4, System.currentTimeMillis());
-                    insertStatement.executeUpdate();
-                } finally {
-                    if (insertStatement != null) {
-                        insertStatement.close();
+            try (Statement transactionStatement = configConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                //start transaction - these tables have to be locked first to forbit any write operation
+                this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
+                        new String[]{
+                            "keydata"});
+                boolean entryExists = false;
+                try (PreparedStatement checkStatement = configConnectionNoAutoCommit.prepareStatement(
+                        "SELECT 1 FROM keydata WHERE purpose=?")) {
+                    checkStatement.setInt(1, purpose);
+                    try (ResultSet result = checkStatement.executeQuery()) {
+                        if (result.next()) {
+                            entryExists = true;
+                        }
                     }
+                    if (!entryExists) {
+                        byte[] keystoreData = Files.readAllBytes(keystoreFile);
+                        try (PreparedStatement insertStatement = configConnectionNoAutoCommit.prepareStatement(
+                                "INSERT INTO keydata(storagedata,storagetype,purpose,lastchanged,securityprovider)"
+                                + "VALUES(?,?,?,?,?)")) {
+                            this.dbDriverManager.setBytesParameterAsJavaObject(insertStatement, 1, keystoreData);
+                            insertStatement.setInt(2, keystoreTypeStrToInt(storageType));
+                            insertStatement.setInt(3, purpose);
+                            insertStatement.setLong(4, System.currentTimeMillis());
+                            insertStatement.setString(5, securityProvider);
+                            insertStatement.executeUpdate();
+                        }
+                    }
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                    if (!entryExists) {
+                        this.logKeystoreImport(logger, keystoreFile, purpose, REASON_IMPORT_INITIAL);
+                    }
+                } catch (Throwable e) {
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-            this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-            if (!entryExists) {
-                this.logKeystoreImport(logger, keystoreFile, purpose, REASON_IMPORT_INITIAL);
-            }
-        } catch (Exception e) {
-            try {
-                //an error occured - rollback transaction and release all table locks
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Exception ex) {
-                this.systemEventManager.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-            }
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
-            if (configConnectionNoAutoCommit != null) {
-                try {
-                    configConnectionNoAutoCommit.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
+        } catch (Throwable e) {
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -279,57 +229,36 @@ public class KeydataAccessDB {
      * purpose that is already in the system. Else the system data will left
      * untouched.
      */
-    public void updateKeydata(byte[] keystoreData, String keystoreType, int purpose) {
-        Connection configConnectionNoAutoCommit = null;
-        Statement transactionStatement = null;
+    public void updateKeydata(byte[] keystoreData, String keystoreType, int purpose, String securityProvider) {
         String transactionName = "update_Keydata";
-        try {
-            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+        try (Connection configConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
             configConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = configConnectionNoAutoCommit.createStatement();
-            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            //start transaction - these tables have to be locked first to forbit any write operation
-            this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
-                    new String[]{
-                        "keydata"});
-            PreparedStatement updateStatement = null;
-            try {
-                updateStatement = configConnectionNoAutoCommit.prepareStatement(
-                        "UPDATE keydata SET storagedata=?,storagetype=?,lastchanged=? WHERE purpose=?");
-                this.dbDriverManager.setBytesParameterAsJavaObject(updateStatement, 1, keystoreData);
-                updateStatement.setInt(2, keystoreTypeStrToInt(keystoreType));
-                updateStatement.setLong(3, System.currentTimeMillis());
-                updateStatement.setInt(4, purpose);
-                updateStatement.executeUpdate();
-            } finally {
-                if (updateStatement != null) {
-                    updateStatement.close();
+            try (Statement transactionStatement = configConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                //start transaction - these tables have to be locked first to forbit any write operation
+                this.dbDriverManager.setTableLockINSERTAndUPDATE(transactionStatement,
+                        new String[]{
+                            "keydata"});
+                try (PreparedStatement updateStatement = configConnectionNoAutoCommit.prepareStatement(
+                        "UPDATE keydata SET "
+                        + "storagedata=?,storagetype=?,lastchanged=?,securityprovider=? "
+                        + "WHERE purpose=?")) {
+                    this.dbDriverManager.setBytesParameterAsJavaObject(updateStatement, 1, keystoreData);
+                    updateStatement.setInt(2, keystoreTypeStrToInt(keystoreType));
+                    updateStatement.setLong(3, System.currentTimeMillis());
+                    updateStatement.setString(4, securityProvider);
+                    //condition
+                    updateStatement.setInt(5, purpose);
+                    updateStatement.executeUpdate();
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-            this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-        } catch (Exception e) {
-            try {
-                //an error occured - rollback transaction and release all table locks
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Exception ex) {
-                this.systemEventManager.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-            }
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
-            if (configConnectionNoAutoCommit != null) {
-                try {
-                    configConnectionNoAutoCommit.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
+        } catch (Throwable e) {
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 
@@ -337,54 +266,28 @@ public class KeydataAccessDB {
      * Deletes the keydata entry of a special purpose
      */
     public void deleteKeydata(int purpose) {
-        Connection configConnectionNoAutoCommit = null;
-        Statement transactionStatement = null;
         String transactionName = "delete_Keydata";
-        try {
-            configConnectionNoAutoCommit = this.dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG);
+        try (Connection configConnectionNoAutoCommit = this.dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_CONFIG)) {
             configConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = configConnectionNoAutoCommit.createStatement();
-            this.dbDriverManager.startTransaction(transactionStatement, transactionName);
-            //start transaction - these tables have to be locked first to forbit any write operation
-            this.dbDriverManager.setTableLockDELETE(transactionStatement,
-                    new String[]{
-                        "keydata"});
-            PreparedStatement deleteStatement = null;
-            try {
-                deleteStatement = configConnectionNoAutoCommit.prepareStatement(
-                        "DELETE FROM keydata WHERE purpose=?");
-                deleteStatement.setInt(1, purpose);
-                deleteStatement.executeUpdate();
-            } finally {
-                if (deleteStatement != null) {
-                    deleteStatement.close();
+            try (Statement transactionStatement = configConnectionNoAutoCommit.createStatement()) {
+                this.dbDriverManager.startTransaction(transactionStatement, transactionName);
+                //start transaction - these tables have to be locked first to forbit any write operation
+                this.dbDriverManager.setTableLockDELETE(transactionStatement,
+                        new String[]{
+                            "keydata"});
+                try (PreparedStatement deleteStatement = configConnectionNoAutoCommit.prepareStatement(
+                        "DELETE FROM keydata WHERE purpose=?")) {
+                    deleteStatement.setInt(1, purpose);
+                    deleteStatement.executeUpdate();
+                    this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
+                    this.dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-            this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
-        } catch (Exception e) {
-            try {
-                //an error occured - rollback transaction and release all table locks
-                this.dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Exception ex) {
-                this.systemEventManager.systemFailure(ex, SystemEvent.TYPE_DATABASE_ANY);
-            }
-            this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception e) {
-                    this.systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                }
-            }
-            if (configConnectionNoAutoCommit != null) {
-                try {
-                    configConnectionNoAutoCommit.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
+        } catch (Throwable e) {
+            this.systemEventManager.systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
-
 }

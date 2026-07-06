@@ -1,11 +1,14 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 14    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 21    7/04/26 17:05 Heller $
 package de.mendelson.comm.as2.configurationcheck.gui;
 
 import de.mendelson.comm.as2.client.ModuleStarter;
 import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
+import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.AS2Tools;
+import de.mendelson.util.ColorUtil;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.displaymode.DisplayMode;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.KeyEventDispatcher;
@@ -16,6 +19,7 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
+import javax.swing.UIManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -28,17 +32,27 @@ import javax.swing.JDialog;
  * This is a dialog that contains additional information about a single issue
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 21 $
  */
 public class JDialogConfigurationIssueDetails extends JDialog {
 
-    private final static MendelsonMultiResolutionImage IMAGE_WARNING_SIGN
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/configurationcheck/gui/warning_sign.svg", 38, 60);
+    private static final MendelsonMultiResolutionImage IMAGE_WARNING_SIGN
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/configurationcheck/gui/warning_sign.svg",
+                    38);
 
     private final ModuleStarter moduleStarter;
     private final List<ConfigurationIssue> issueList;
     private int currentIssueIndex;
-    private final MecResourceBundle rbIssueDetails;
+    private final static MecResourceBundle rbIssueDetails;
+
+    static {
+        try {
+            rbIssueDetails = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleConfigurationIssueDetails.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Creates new form JDialogConfigurationIssueDetails
@@ -47,18 +61,22 @@ public class JDialogConfigurationIssueDetails extends JDialog {
             int issueIndex) {
         super(parent, true);
         //load resource bundle
-        try {
-            this.rbIssueDetails = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleConfigurationIssueDetails.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+
         this.issueList = issueList;
         this.currentIssueIndex = issueIndex;
         this.moduleStarter = moduleStarter;
         initComponents();
         this.jLabelIcon.setIcon(new ImageIcon(IMAGE_WARNING_SIGN));
         this.jLabelIssueShortDescription.setForeground(Color.BLACK);
+        Color warningColor = Color.WHITE;
+        PreferencesAS2 preferences = new PreferencesAS2();
+        if (DisplayMode.of(preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT)) != DisplayMode.HICONTRAST) {
+            if (UIManager.getColor("Panel.background") != null) {
+                warningColor = UIManager.getColor("Panel.background");
+                warningColor = ColorUtil.lightenColor(warningColor, 0.9f);
+            }
+        }
+        this.jPanelShortDescription.setBackground(warningColor);
         this.displayCurrentIssue();
         this.getRootPane().setDefaultButton(this.jButtonClose);
         //bail out on ESC
@@ -78,13 +96,13 @@ public class JDialogConfigurationIssueDetails extends JDialog {
 
     private void displayCurrentIssue() {
         ConfigurationIssue selectedIssue = this.issueList.get(this.currentIssueIndex);
-        this.setTitle(this.rbIssueDetails.getResourceString("title",
+        this.setTitle(rbIssueDetails.getResourceString("title",
                 new Object[]{
                     String.valueOf(this.currentIssueIndex + 1),
                     String.valueOf(this.issueList.size())
                 }));
         String shortDescription = selectedIssue.getSubject();
-        if( selectedIssue.getDetails() != null && !selectedIssue.getDetails().trim().isEmpty()){
+        if (selectedIssue.getDetails() != null && !selectedIssue.getDetails().trim().isEmpty()) {
             shortDescription = shortDescription + " (" + selectedIssue.getDetails() + ")";
         }
         String longDescription = selectedIssue.getHintAsHTML();
@@ -99,40 +117,46 @@ public class JDialogConfigurationIssueDetails extends JDialog {
         this.jButtonJumpToIssue.setEnabled(selectedIssue.hasJumpTargetInUI());
         switch (selectedIssue.getIssueId()) {
             case ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
             case ConfigurationIssue.CERTIFICATE_EXPIRED_TLS:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
             case ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
             case ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
             case ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.keystore"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
                 break;
             case ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.config"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.config"));
                 break;
             case ConfigurationIssue.NO_OUTBOUND_CONNECTIONS_ALLOWED:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.config"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.config"));
                 break;
             case ConfigurationIssue.CERTIFICATE_MISSING_ENC_REMOTE_PARTNER:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.partner"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.partner"));
                 break;
             case ConfigurationIssue.CERTIFICATE_MISSING_SIGN_REMOTE_PARTNER:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.partner"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.partner"));
                 break;
             case ConfigurationIssue.KEY_MISSING_ENC_LOCAL_STATION:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.partner"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.partner"));
                 break;
             case ConfigurationIssue.KEY_MISSING_SIGN_LOCAL_STATION:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.partner"));
-                break;            
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.partner"));
+                break;
+            case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN:
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
+                break;
+            case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS:
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
+                break;
             default:
-                this.jButtonJumpToIssue.setText(this.rbIssueDetails.getResourceString("button.jumpto.generic"));
+                this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.generic"));
                 break;
         }
     }
@@ -145,16 +169,16 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                 this.moduleStarter.displayCertificateManagerEncSign(selectedIssue.getDetails());
                 break;
             case ConfigurationIssue.CERTIFICATE_EXPIRED_TLS:
-                this.moduleStarter.displayCertificateManagerSSL(selectedIssue.getDetails());
+                this.moduleStarter.displayCertificateManagerTLS(selectedIssue.getDetails());
                 break;
             case ConfigurationIssue.NO_KEY_IN_TLS_KEYSTORE:
-                this.moduleStarter.displayCertificateManagerSSL(null);
+                this.moduleStarter.displayCertificateManagerTLS(null);
                 break;
             case ConfigurationIssue.MULTIPLE_KEYS_IN_TLS_KEYSTORE:
-                this.moduleStarter.displayCertificateManagerSSL(null);
+                this.moduleStarter.displayCertificateManagerTLS(null);
                 break;
             case ConfigurationIssue.USE_OF_TEST_KEYS_IN_TLS:
-                this.moduleStarter.displayCertificateManagerSSL(selectedIssue.getDetails());
+                this.moduleStarter.displayCertificateManagerTLS(selectedIssue.getDetails());
                 break;
             case ConfigurationIssue.HUGE_AMOUNT_OF_TRANSACTIONS_NO_AUTO_DELETE:
                 this.moduleStarter.displayPreferences("tab.maintenance");
@@ -173,7 +197,13 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                 break;
             case ConfigurationIssue.KEY_MISSING_SIGN_LOCAL_STATION:
                 this.moduleStarter.displayPartnerManager(selectedIssue.getDetails());
-                break;             
+                break;
+            case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN:
+                this.moduleStarter.displayCertificateManagerEncSign(null);
+                break;
+            case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS:
+                this.moduleStarter.displayCertificateManagerTLS(null);
+                break;
         }
     }
 
@@ -347,7 +377,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(706, 429));
+        setSize(new java.awt.Dimension(706, 472));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

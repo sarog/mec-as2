@@ -1,0 +1,17 @@
+$Header:$
+Este archivo contiene la plantilla de notificación para el aviso de superación de una cuota de mensajes definida a un interlocutor específico
+Se pueden utilizar las siguientes variables, que se sustituyen en consecuencia:
+${PRODUCTNAME}: Nombre del producto
+${HOST}: Host del servidor AS2
+${PARTNER}: Nombre del interlocutor para el que se ha superado la cuota de envío.
+${QUOTA}: El número de mensajes de envío autorizados (cuota).
+
+
+
+
+[SUBJECT]
+Cuota de transmisión excedida para ${PARTNER}
+
+
+[BODY]
+El número de mensajes enviados al interlocutor ${PARTNER} ha superado ${QUOTA}. Esto no tiene ningún efecto en el lado del servidor; tendría que realizar cualquier actividad manualmente.

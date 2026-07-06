@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/clientserver/NotificationSetMessage.java 3     2/11/23 15:53 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/systemevents/notification/clientserver/NotificationSetMessage.java 5     26/06/2 $
 package de.mendelson.util.systemevents.notification.clientserver;
 
 import de.mendelson.util.systemevents.notification.NotificationData;
@@ -18,7 +18,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class NotificationSetMessage extends ClientServerMessage implements Serializable {
 

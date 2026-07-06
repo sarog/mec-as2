@@ -1,14 +1,16 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 28    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 37    4/02/26 16:07 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.FileEncodingDetection;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.ClientServerException;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadRequestFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadResponseFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClient;
 import de.mendelson.util.xmleditorkit.XMLEditorKit;
+import java.awt.Color;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -24,6 +26,7 @@ import java.util.ResourceBundle;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
+import javax.swing.UIManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -36,7 +39,7 @@ import javax.swing.JPanel;
  * Panel to display the content of a file
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 37 $
  */
 public class JPanelFileDisplay extends JPanel {
 
@@ -50,28 +53,58 @@ public class JPanelFileDisplay extends JPanel {
     /**
      * Resourcebundle to localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleFileDisplay.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private final BaseClient baseClient;
 
     /**
      * Creates new form JPanelFunctionGraph
      */
     public JPanelFileDisplay(BaseClient baseClient) {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleFileDisplay.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.baseClient = baseClient;
         this.initComponents();
         //this is just displayed if it is an image
         this.jPanelImage.setVisible(false);
         this.jScrollPaneImage.getVerticalScrollBar().setUnitIncrement(16);
-        this.jEditorPaneXML.setEditorKit(new XMLEditorKit());
+        XMLEditorKit editorKit = new XMLEditorKit();
+        if (UIManager.getColor("Objects.Green") != null) {
+            Color green = UIManager.getColor("Objects.Green");
+            editorKit.setForegroundColor(XMLEditorKit.TAGNAME_ATTRIBUTES, green);
+        }
+        if (UIManager.getColor("Objects.Blue") != null) {
+            Color blue = UIManager.getColor("Objects.Blue");
+            editorKit.setForegroundColor(XMLEditorKit.ATTRIBUTEVALUE_ATTRIBUTES, blue);
+        }
+        if (UIManager.getColor("EditorPane.foreground") != null) {
+            Color foregroundColor = UIManager.getColor("EditorPane.foreground");
+            editorKit.setForegroundColor(XMLEditorKit.PLAIN_ATTRIBUTES, foregroundColor);
+            editorKit.setForegroundColor(XMLEditorKit.ATTRIBUTENAME_ATTRIBUTES, foregroundColor);
+            editorKit.setForegroundColor(XMLEditorKit.BRACKET_ATTRIBUTES, foregroundColor);
+        }
+        this.jEditorPaneXML.setEditorKit(editorKit);
         this.jSplitPaneTextAndXML.setVisible(false);
+    }
+
+    /**
+     * Displays text in the panel
+     */
+    public void displayText(String text) {
+        this.jLabelImage.setIcon(null);
+        this.jPanelImage.setVisible(false);
+        this.jLabelEncoding.setVisible(false);
+        this.jScrollPaneTextEditor.setVisible(true);
+        this.jTextFieldFilename.setText("");
+        this.jEditorPaneRawText.setText(text);
+
     }
 
     /**
@@ -84,7 +117,7 @@ public class JPanelFileDisplay extends JPanel {
         this.jScrollPaneTextEditor.setVisible(true);
         if (filename == null) {
             this.jTextFieldFilename.setText("");
-            this.jEditorPaneRawText.setText(this.rb.getResourceString("no.file"));
+            this.jEditorPaneRawText.setText(rb.getResourceString("no.file"));
             return;
         }
         TransferClient transferClient = new TransferClient(this.baseClient);
@@ -95,42 +128,51 @@ public class JPanelFileDisplay extends JPanel {
             DownloadResponseFileLimited response = (DownloadResponseFileLimited) transferClient.download(request);
             this.jTextFieldFilename.setText(response.getFullFilename());
             if (response.isSizeExceeded()) {
-                this.jEditorPaneRawText.setText(this.rb.getResourceString("file.tolarge",
+                this.jEditorPaneRawText.setText(rb.getResourceString("file.tolarge",
                         new Object[]{filename}));
             } else {
-                byte[] data = response.getDataStream().readAllBytes();
-                if (this.isImage(new ByteArrayInputStream(data))) {
-                    ImageIcon icon = new ImageIcon(ImageIO.read(new ByteArrayInputStream(data)));
-                    this.jLabelImage.setIcon(icon);
-                    this.getToolkit().sync();
-                    this.jScrollPaneTextEditor.setVisible(false);
-                    this.jPanelImage.setVisible(true);
-                } else {
-                    if( detectEncoding ){
-                        this.displayRawTextDetectEncoding(data);
-                    }else{
-                        this.displayRawTextIgnoreEncoding(data);
-                    }
-                    try {
-                        this.jEditorPaneXML.read(new ByteArrayInputStream(data), data);
-                        //the XML data is parsable and could be displayed: move the raw text editor to the split pane
-                        this.jScrollPaneTextEditor.getParent().remove(this.jScrollPaneTextEditor);
-                        this.jSplitPaneTextAndXML.setTopComponent(this.jScrollPaneTextEditor);
-                        this.jSplitPaneTextAndXML.setVisible(true);
-                    } catch (Throwable e) {
-                        //its no parsable XML data: no action required
+                byte[] data = response.getData();
+                try (InputStream dataIn = new ByteArrayInputStream(data)) {
+                    if (this.isImage(dataIn)) {
+                        try (InputStream dataIn2 = new ByteArrayInputStream(data)) {
+                            ImageIcon icon = new ImageIcon(ImageIO.read(dataIn2));
+                            this.jLabelImage.setIcon(icon);
+                            this.getToolkit().sync();
+                            this.jScrollPaneTextEditor.setVisible(false);
+                            this.jPanelImage.setVisible(true);
+                        }
+                    } else {
+                        if (detectEncoding) {
+                            this.displayRawTextDetectEncoding(data);
+                        } else {
+                            this.displayRawTextIgnoreEncoding(data);
+                        }
+                        try {
+                            try (InputStream dataIn2 = new ByteArrayInputStream(data)) {
+                                this.jEditorPaneXML.read(dataIn2, data);
+                                //the XML data is parsable and could be displayed: move the raw text editor to the split pane
+                                this.jScrollPaneTextEditor.getParent().remove(this.jScrollPaneTextEditor);
+                                this.jSplitPaneTextAndXML.setTopComponent(this.jScrollPaneTextEditor);
+                                this.jSplitPaneTextAndXML.setVisible(true);
+                            }
+                        } catch (Throwable e) {
+                            //its no parsable XML data: no action required
+                        }
                     }
                 }
             }
         } catch (Throwable e) {
+            String errorMessage = e.getMessage();
             if (e instanceof FileNotFoundException) {
-                this.jEditorPaneRawText.setText(this.rb.getResourceString("file.notfound",
-                        filename));
-            } else {
-                this.jEditorPaneRawText.setText(e.getMessage());
+                errorMessage = rb.getResourceString("file.notfound", filename);
+            } else if (e instanceof ClientServerException) {
+                if (((ClientServerException) e).getOriginalClassName().equals(
+                        FileNotFoundException.class.getName())) {
+                    errorMessage = rb.getResourceString("file.notfound", filename);
+                }
             }
-            return;
-        } 
+            this.jEditorPaneRawText.setText(errorMessage);
+        }
     }
 
     /**
@@ -139,8 +181,6 @@ public class JPanelFileDisplay extends JPanel {
     private void displayRawTextDetectEncoding(byte[] data) throws Exception {
         Charset encoding = null;
         CharsetDecoder decoder = null;
-        InputStream inStream = null;
-        Reader reader = null;
         Path testFile = null;
         try {
             testFile = AS2Tools.createTempFile("encoding_testdata", ".txt");
@@ -150,15 +190,14 @@ public class JPanelFileDisplay extends JPanel {
             this.jLabelEncoding.setVisible(true);
             this.jLabelEncoding.setText("[" + encoding.displayName() + "]");
             decoder = encoding.newDecoder().reset();
-            inStream = new ByteArrayInputStream(data);
-            reader = new InputStreamReader(inStream, decoder);
-            this.jEditorPaneRawText.read(reader, null);
+            try (ByteArrayInputStream dataIn = new ByteArrayInputStream(data)) {
+                try (Reader reader = new InputStreamReader(dataIn, decoder)) {
+                    this.jEditorPaneRawText.read(reader, null);
+                }
+            }
         } catch (CharacterCodingException e) {
             //ignore
         } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
             if (testFile != null) {
                 try {
                     Files.delete(testFile);
@@ -174,27 +213,13 @@ public class JPanelFileDisplay extends JPanel {
      */
     private void displayRawTextIgnoreEncoding(byte[] data) throws Exception {
         Charset encoding = Charset.defaultCharset();
-        InputStream inStream = null;
-        Path testFile = null;
-        try {
-            this.jLabelEncoding.setVisible(true);
-            this.jLabelEncoding.setText("[" + encoding.displayName() + "]");
-            inStream = new ByteArrayInputStream(data);
+        this.jLabelEncoding.setVisible(true);
+        this.jLabelEncoding.setText("[" + encoding.displayName() + "]");
+        try (InputStream inStream = new ByteArrayInputStream(data)) {
             this.jEditorPaneRawText.read(inStream, null);
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
-            if (testFile != null) {
-                try {
-                    Files.delete(testFile);
-                } catch (Exception e) {
-                    //NOP
-                }
-            }
         }
     }
-    
+
     /**
      * Checks if the passed stream is an image
      *

@@ -1,9 +1,13 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObject.java 8     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObject.java 12    13/03/26 10:09 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 import java.net.URI;
 import java.nio.file.Paths;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -16,26 +20,46 @@ import java.nio.file.Paths;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 12 $
  */
-public abstract class FileObject implements Serializable, Comparable {
+@JsonTypeInfo(
+    use = JsonTypeInfo.Id.NAME,
+    include = JsonTypeInfo.As.PROPERTY,
+    property = "type"
+)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = FileObjectDir.class, name = "dir"),
+    @JsonSubTypes.Type(value = FileObjectRoot.class, name = "root"),
+    @JsonSubTypes.Type(value = FileObjectFile.class, name = "file")
+})
+public abstract sealed class FileObject implements Serializable, Comparable<Object> permits FileObjectDir,FileObjectRoot,FileObjectFile{
 
     private static final long serialVersionUID = 1L;
-    private final URI fileURI;
-    private final String absolutePathDisplayOnServerSide;
+    private URI fileURI;
+    private String absolutePathDisplayOnServerSide;
 
-    public FileObject(URI fileURI) {
+    protected FileObject(URI fileURI) {
         this.fileURI = fileURI;
         this.absolutePathDisplayOnServerSide = Paths.get(fileURI).toAbsolutePath().toString();
     }
-    
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    protected FileObject() {
+        super();
+        this.fileURI = null;
+        this.absolutePathDisplayOnServerSide = null;
+    }
+
     /**
      * @return the file
      */
     public URI getFileURI() {
         return this.fileURI;
     }
-
 
     @Override
     public int compareTo(Object otherObject) {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_fr.java 8     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleRenameEntry_fr.java 10    9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleRenameEntry_fr extends MecResourceBundle {
 
@@ -30,7 +30,7 @@ public class ResourceBundleRenameEntry_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"label.newalias", "Nouvel alias"},

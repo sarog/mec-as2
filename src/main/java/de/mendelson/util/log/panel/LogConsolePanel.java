@@ -1,12 +1,14 @@
-//$Header: /as2/de/mendelson/util/log/panel/LogConsolePanel.java 19    2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/log/panel/LogConsolePanel.java 27    7/04/26 16:29 Heller $
 package de.mendelson.util.log.panel;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.log.ANSI;
 import de.mendelson.util.log.JTextPaneLoggingHandler;
 import de.mendelson.util.log.JTextPaneOutputStream;
 import de.mendelson.util.log.LogFormatter;
+import java.awt.Font;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.ClipboardOwner;
@@ -32,7 +34,7 @@ import javax.swing.JPanel;
  * The frame system output/debug info is written to
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 27 $
  */
 public class LogConsolePanel extends JPanel implements ClipboardOwner {
 
@@ -44,14 +46,16 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
     public static final String COLOR_LIGHT_GRAY = ANSI.COLOR_SYSTEM_GREY_BRIGHT;
     public static final String COLOR_LIGHT_PURPLE = ANSI.COLOR_SYSTEM_PURPLE_BRIGHT;
     public static final String COLOR_DARK_BLUE = ANSI.COLOR_SYSTEM_BLUE;
-    public static final String COLOR_DARK_GRAY = ANSI.COLOR_SYSTEM_GREY;    
+    public static final String COLOR_DARK_GRAY = ANSI.COLOR_SYSTEM_GREY;
     public static final String COLOR_DARK_GREEN = ANSI.COLOR_SYSTEM_GREEN;
     public static final String COLOR_DARK_PURPLE = ANSI.COLOR_SYSTEM_PURPLE;
     public static final String COLOR_DARK_RED = ANSI.COLOR_SYSTEM_RED;
     public static final String COLOR_DARK_CYAN = ANSI.COLOR_SYSTEM_CYAN;
     public static final String COLOR_WHITE = ANSI.COLOR_SYSTEM_WHITE_BRIGHT;
     public static final String COLOR_DARK_YELLOW = ANSI.COLOR_SYSTEM_YELLOW;
-    public static final String COLOR_LIGHT_YELLOW = ANSI.COLOR_SYSTEM_YELLOW;
+    public static final String COLOR_LIGHT_YELLOW = ANSI.COLOR_SYSTEM_YELLOW_BRIGHT;
+
+    private static final int IMAGE_SIZE = 18;
 
     /**
      * PrintStream to write in, this is just a wrapper to the internal logger.
@@ -64,36 +68,45 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
     /**
      * ResourceBundle to localize this GUI
      */
-    private final MecResourceBundle rb;
-    private JTextPaneLoggingHandler handler;
+    private static final MecResourceBundle rb;
 
-    private static final MendelsonMultiResolutionImage IMAGE_DELESECT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/log/panel/deselect.svg", 18, 36);
-    private static final MendelsonMultiResolutionImage IMAGE_CLIPBOARD
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/log/panel/notes.svg", 18, 36);
-    
-    public LogConsolePanel(Logger logger, LogFormatter logFormatter) {
-        //load resource bundle
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleLogConsole.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private JTextPaneLoggingHandler handler;
+
+    private static final MendelsonMultiResolutionImage IMAGE_DELESECT
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/log/panel/deselect.svg", IMAGE_SIZE);
+    private static final MendelsonMultiResolutionImage IMAGE_CLIPBOARD
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/log/panel/notes.svg", IMAGE_SIZE);
+
+    /**
+     *
+     * @param logger
+     * @param logFormatter
+     * @param font
+     * @param displayMode LIGHT, DARK or HICONTRAST
+     */
+    public LogConsolePanel(Logger logger, LogFormatter logFormatter, Font font, DisplayMode displayMode) {
         this.initComponents();
         this.setMultiresolutionIcons();
-        this.initialize(logger, logFormatter);
+        this.initialize(logger, logFormatter, font, displayMode);
     }
 
-    public LogConsolePanel(Logger logger) {
-        this(logger, new LogFormatter(LogFormatter.FORMAT_CONSOLE));
+    public LogConsolePanel(Logger logger, DisplayMode displayMode) {
+        this(logger, new LogFormatter(LogFormatter.FORMAT_CONSOLE), new Font(Font.DIALOG, Font.PLAIN, 12), displayMode);
     }
 
     private void setMultiresolutionIcons() {
-        this.jMenuItemClear.setIcon(new ImageIcon(IMAGE_DELESECT.toMinResolution(18)));
-        this.jMenuItemCopyToClipBoard.setIcon(new ImageIcon(IMAGE_CLIPBOARD.toMinResolution(18)));
+        this.jMenuItemClear.setIcon(new ImageIcon(IMAGE_DELESECT.toMinResolution(IMAGE_SIZE)));
+        this.jMenuItemCopyToClipBoard.setIcon(new ImageIcon(IMAGE_CLIPBOARD.toMinResolution(IMAGE_SIZE)));
     }
-    
+
     /**
      * Enables/disables the display log
      */
@@ -116,30 +129,19 @@ public class LogConsolePanel extends JPanel implements ClipboardOwner {
         }
     }
 
-    private void initialize(Logger logger, LogFormatter logFormatter) {
+    /**
+     * @param displayMode LIGHT, DARK or HICONTRAST
+     */
+    private void initialize(Logger logger, LogFormatter logFormatter, Font font,
+            DisplayMode displayMode) {
         this.logger = logger;
         this.logger.setUseParentHandlers(false);
         OutputStream logStream = new JTextPaneOutputStream(this.jTextPane);
         this.out = new PrintStream(logStream);
-        this.handler = new JTextPaneLoggingHandler(this.jTextPane, logFormatter);
-        this.setDefaultColors(this.handler);
+        this.handler = new JTextPaneLoggingHandler(this.jTextPane, logFormatter, displayMode);
+        this.jTextPane.setFont(font);
         this.logger.addHandler(handler);
         this.jPopupMenu.setInvoker(this.jTextPane);
-    }
-
-    /**
-     * Sets some default colors for the logger levels. Overwrite these colors
-     * using the setColor method
-     *
-     */
-    public void setDefaultColors(JTextPaneLoggingHandler handler) {
-        handler.setColor(Level.SEVERE, COLOR_DARK_RED);
-        handler.setColor(Level.WARNING, COLOR_DARK_BLUE);
-        handler.setColor(Level.INFO, COLOR_BLACK);
-        handler.setColor(Level.CONFIG, COLOR_DARK_GREEN);
-        handler.setColor(Level.FINE, COLOR_LIGHT_GRAY);
-        handler.setColor(Level.FINER, COLOR_LIGHT_GRAY);
-        handler.setColor(Level.FINEST, COLOR_LIGHT_GRAY);
     }
 
     /**

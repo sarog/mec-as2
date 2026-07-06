@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 44    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMInitiator.java 49    23/03/26 12:54 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.cem.messages.EDIINTCertificateExchangeRequest;
@@ -10,9 +10,9 @@ import de.mendelson.comm.as2.message.AS2MessageCreation;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.message.UniqueId;
 import de.mendelson.comm.as2.partner.Partner;
-import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.partner.PartnerSystem;
 import de.mendelson.comm.as2.partner.PartnerSystemAccessDB;
 import de.mendelson.comm.as2.sendorder.SendOrder;
@@ -48,7 +48,7 @@ import java.util.logging.Logger;
  * Initiates a CEM request
  *
  * @author S.Heller
- * @version $Revision: 44 $
+ * @version $Revision: 49 $
  */
 public class CEMInitiator {
 
@@ -61,7 +61,6 @@ public class CEMInitiator {
      */
     private final CertificateManager certificateManagerEncSign;
     private final IDBDriverManager dbDriverManager;
-    private final PartnerAccessDB partnerAccess;
     private final MecResourceBundle rb;
 
     /**
@@ -78,7 +77,6 @@ public class CEMInitiator {
         }
         this.dbDriverManager = dbDriverManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.partnerAccess = new PartnerAccessDB(dbDriverManager);
     }
 
     /**
@@ -139,7 +137,7 @@ public class CEMInitiator {
         }
         trustRequest.setCertUsageSSL(sslUsage);
         if (sslUsage) {
-            logPurpose.append("SSL/TLS ");
+            logPurpose.append("TLS ");
         }
         trustRequest.setCertUsageSignature(signatureUsage);
         if (signatureUsage) {
@@ -167,11 +165,11 @@ public class CEMInitiator {
         payloads[1] = payloadCert;
         //send the message
         AS2MessageCreation creation = new AS2MessageCreation(this.certificateManagerEncSign, this.certificateManagerEncSign);
-        AS2Message message = creation.createMessage(initiator, receiver, payloads, AS2Message.MESSAGETYPE_CEM);
+        AS2Message message = creation.createMessage(initiator, receiver, payloads, MessageType.CEM);
         SendOrder order = new SendOrder();
-        order.setReceiver(receiver);
-        order.setMessage(message);
-        order.setSender(initiator);
+        order.setReceiver(receiver)
+                .setMessage(message)
+                .setSender(initiator);
         AS2MessageInfo messageInfo = (AS2MessageInfo) order.getMessage().getAS2Info();
         //enter the request to the CEM table in the db
         CEMAccessDB cemAccess = new CEMAccessDB(this.dbDriverManager);
@@ -192,26 +190,18 @@ public class CEMInitiator {
 
     private Path exportCertificate(KeystoreCertificate certificate, String certContentId)
             throws Exception {
-        KeyStoreUtil util = new KeyStoreUtil();
         String tempDir = System.getProperty("java.io.tmpdir");
-        byte[] exportData = util.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
+        byte[] exportData = KeyStoreUtil.exportX509CertificatePKCS7(this.certificateManagerEncSign.getKeystore(),
                 certificate.getAlias());
-        Path exportFile = Paths.get(tempDir, certContentId + ".p7c" );
-        Files.write(exportFile, exportData);        
+        Path exportFile = Paths.get(tempDir, certContentId + ".p7c");
+        Files.write(exportFile, exportData);
         return (exportFile);
     }
 
     private Path storeRequest(EDIINTCertificateExchangeRequest request) throws Exception {
         Path descriptionFile = AS2Tools.createTempFile("request", ".xml");
-        Writer writer = null;
-        try {
-            writer = Files.newBufferedWriter(descriptionFile, StandardCharsets.UTF_8);
+        try (Writer writer = Files.newBufferedWriter(descriptionFile, StandardCharsets.UTF_8)) {
             writer.write(request.toXML());
-        } finally {
-            if (writer != null) {
-                writer.flush();
-                writer.close();
-            }
         }
         return (descriptionFile);
     }

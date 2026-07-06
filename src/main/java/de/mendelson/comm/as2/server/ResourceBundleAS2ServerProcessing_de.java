@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_de.java 14    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/ResourceBundleAS2ServerProcessing_de.java 17    6/02/25 10:44 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleAS2ServerProcessing_de extends MecResourceBundle {
 
@@ -27,7 +27,7 @@ public class ResourceBundleAS2ServerProcessing_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"send.failed", "Versand fehlgeschlagen"},
         {"unable.to.process", "Fehler beim Verarbeiten auf dem Server: {0}"},
         {"server.shutdown", "Der Benutzer {0} fährt den Server herunter."},
@@ -40,5 +40,12 @@ public class ResourceBundleAS2ServerProcessing_de extends MecResourceBundle {
         {"message.resend.newtransaction", "Diese Transaktion ist ein erneuter Versand der Transaktion [{0}]." },
         {"message.resend.title", "Manueller Versand von Daten in neuer Transaktion" },       
         {"local.station", "Lokale Station" },
+        {"event.download.not.allowed.subject", "Download nicht erlaubt"},
+        {"event.download.not.allowed.body", "Ein Client versuchte einen Dateidownload - dies wurde jedoch verhindert."
+            + "\nDownload Anfrage Pfad: {0}"
+            + "\nErlaubte Verzeichnisse: {1}"
+            + "\nBenutzer: {2}"
+            + "\nHost: {3}"
+        },        
     };
 }

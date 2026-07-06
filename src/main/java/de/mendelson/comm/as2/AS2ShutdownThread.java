@@ -1,7 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/AS2ShutdownThread.java 17    2/11/23 14:02 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2ShutdownThread.java 19    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2;
 
-import de.mendelson.comm.as2.database.IDBServer;
+import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.comm.as2.server.ResourceBundleAS2Server;
+import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.database.IDBServer;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -9,20 +17,12 @@ import de.mendelson.comm.as2.database.IDBServer;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-import de.mendelson.comm.as2.server.AS2Server;
-import de.mendelson.comm.as2.server.ResourceBundleAS2Server;
-import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.systemevents.SystemEvent;
-import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
-import java.util.MissingResourceException;
-import java.util.ResourceBundle;
-
 /**
  * Thread that is executed if the VM will shut down (that means the server is
  * shut down)
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class AS2ShutdownThread extends Thread {
 
@@ -54,13 +54,13 @@ public class AS2ShutdownThread extends Thread {
             //nop
         }
         SystemEventManagerImplAS2.instance().newEvent(
-                SystemEvent.SEVERITY_INFO,
-                SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_MAIN_SERVER_SHUTDOWN,
+                SystemEvent.Severity.INFO,
+                SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.MAIN_SERVER_SHUTDOWN,
                 this.rb.getResourceString("server.shutdown", AS2ServerVersion.getProductName()),
                 "");
         System.out.println(this.rb.getResourceString("server.shutdown", AS2ServerVersion.getProductName()));
         //delete lock file
-        AS2Server.deleteLockFile();        
+        AS2Server.deleteLockFile();
     }
 }

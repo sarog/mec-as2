@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/fileoperation/FileRenameResponse.java 4     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/clients/fileoperation/FileRenameResponse.java 6     11/06/25 13:16 Heller $
 package de.mendelson.util.clientserver.clients.fileoperation;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 /*
@@ -14,7 +15,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class FileRenameResponse extends ClientServerResponse implements Serializable {
 
@@ -25,6 +26,15 @@ public class FileRenameResponse extends ClientServerResponse implements Serializ
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public FileRenameResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("File rename response");

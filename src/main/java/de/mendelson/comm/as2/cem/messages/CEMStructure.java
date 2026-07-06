@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/messages/CEMStructure.java 5     4.03.10 15:50 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/messages/CEMStructure.java 7     20/02/25 13:41 Heller $
 package de.mendelson.comm.as2.cem.messages;
 
 import java.text.DateFormat;
@@ -20,11 +20,11 @@ import java.util.concurrent.TimeUnit;
 /**
  * Superclass for all CEM structures
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public abstract class CEMStructure {
 
-    public CEMStructure() {
+    protected CEMStructure() {
     }
 
     /**Returns the structure as xml*/
@@ -71,12 +71,4 @@ public abstract class CEMStructure {
         return ("<![CDATA[" + data + "]]>");
     }
 
-    
-//    public static final void main(String[] args) {
-//        try {
-//            System.out.println(CEMStructure.parseXMLDate("2009-10-02T11:07:33+02:00"));
-//        } catch (Exception e) {
-//            e.printStackTrace();
-//        }
-//    }
 }

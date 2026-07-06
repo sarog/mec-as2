@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginState.java 23    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginState.java 28    13/03/26 10:09 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.ServerHelloMessage;
 import de.mendelson.util.clientserver.user.User;
 import java.io.Serializable;
@@ -18,9 +20,9 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 28 $
  */
-public class LoginState extends ClientServerResponse implements Serializable {
+public final class LoginState extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
     public static final int STATE_AUTHENTICATION_SUCCESS = 1;
@@ -41,15 +43,23 @@ public class LoginState extends ClientServerResponse implements Serializable {
         super(request);
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public LoginState() {
+        super();
+    }
+    
     public int getState() {
         return state;
     }
 
+    @JsonIgnore
     public String getPermission(Integer index) {
         if (this.user == null) {
             return ("");
         }
-        return (this.user.getPermission(index));
+        return (this.user.getPermissionOfIndex(index));
     }
 
     public void setState(int state) {

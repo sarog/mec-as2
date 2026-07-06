@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/clientserver/message/ConfigurationCheckResponse.java 4     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/ConfigurationCheckResponse.java 7     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -18,23 +19,32 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class ConfigurationCheckResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final List<ConfigurationIssue> issueList = new ArrayList<ConfigurationIssue>();
+    private List<ConfigurationIssue> issueList = new ArrayList<ConfigurationIssue>();
 
     public ConfigurationCheckResponse(ConfigurationCheckRequest request) {
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ConfigurationCheckResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Configuration check response");
     }
 
-    public void addIsse(ConfigurationIssue issue) {
+    public void addIssue(ConfigurationIssue issue) {
         this.issueList.add(issue);
     }
 

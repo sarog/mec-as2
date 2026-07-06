@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestProxy.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestProxy.java 6     9/04/26 8:08 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.io.Serializable;
@@ -21,7 +21,7 @@ import java.net.SocketAddress;
  * for the real connection should be used.
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ConnectionTestProxy implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -39,13 +39,13 @@ public class ConnectionTestProxy implements Serializable {
 
     
     /**Generates a proxy object*/
-    public Proxy asProxy( int testType ) {
+    public Proxy asProxy( ConnectionTest.Type testType ) {
         Type proxyType = null;
-        if( testType == ConnectionTest.CONNECTION_TEST_AS2){
+        if( testType == ConnectionTest.Type.AS2){
             proxyType = Proxy.Type.HTTP;
-        }else if( testType == ConnectionTest.CONNECTION_TEST_AS4){
+        }else if( testType == ConnectionTest.Type.AS4){
             proxyType = Proxy.Type.HTTP;
-        }else if( testType == ConnectionTest.CONNECTION_TEST_OFTP2){
+        }else if( testType == ConnectionTest.Type.OFTP2){
             proxyType = Proxy.Type.SOCKS;
         }        
         SocketAddress socketAddress = new InetSocketAddress(this.getAddress(), this.getPort());

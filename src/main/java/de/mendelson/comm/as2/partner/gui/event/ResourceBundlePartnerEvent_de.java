@@ -1,5 +1,6 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/ResourceBundlePartnerEvent_de.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/ResourceBundlePartnerEvent_de.java 7     31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventTriggerType;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -13,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundlePartnerEvent_de extends MecResourceBundle{
     
@@ -26,9 +27,9 @@ public class ResourceBundlePartnerEvent_de extends MecResourceBundle{
     
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
-        {"type." + PartnerEventInformation.TYPE_ON_RECEIPT, "nach Empfang"},
-        {"type." + PartnerEventInformation.TYPE_ON_SENDERROR, "nach Versand (Fehler)"},
-        {"type." + PartnerEventInformation.TYPE_ON_SENDSUCCESS, "nach Versand (Erfolg)"},
+        {"type." + ProcessingEventTriggerType.RECEIPT_SUCCESS.toInt(), "nach Empfang"},
+        {"type." + ProcessingEventTriggerType.SEND_FAILURE.toInt(), "nach Versand (Fehler)"},
+        {"type." + ProcessingEventTriggerType.SEND_SUCCESS.toInt(), "nach Versand (Erfolg)"},
         {"title.select.process", "Bitte wählen Sie einen neuen Prozess als Ereignis ({0})" },
         {"tab.newprocess", "Verfügbare Prozesse zur Nachbearbeitung" },
         {"process.executeshell", "Ausführung eines Shell Kommandos" },
@@ -44,9 +45,9 @@ public class ResourceBundlePartnerEvent_de extends MecResourceBundle{
         {"title.configuration.movetopartner", "Weiterleitung von Daten an einen Partner [Partner {0}, {1}]"},
         {"label.shell.info", "<HTML>Bitte richten Sie den Shell-Befehl ein, der in diesem Fall ausgeführt werden soll. Bitte denken Sie daran, dass dies betriebssystemspezifisch ist, es wird auf die Standard-Shell Ihres Betriebssystems umgeleitet.</HTML>"},
         {"label.shell.command", "Kommando ({0}): "},
-        {"shell.hint.replacement." + PartnerEventInformation.TYPE_ON_RECEIPT, "<HTML>Die folgenden Variablen werden in diesem Befehl durch Systemwerte ersetzt, bevor er ausgeführt wird:<br><i>$'{'filename}, $'{'subject},$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'originalfilename}</i></HTML>"},
-        {"shell.hint.replacement." + PartnerEventInformation.TYPE_ON_SENDERROR, "<HTML>Die folgenden Variablen werden in diesem Befehl durch Systemwerte ersetzt, bevor er ausgeführt wird:<br><i>$'{'filename}, $'{'fullstoragefilename}, $'{'log}, $'{'subject},$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'mdntext}, $'{'userdefinedid}</i></HTML>"},
-        {"shell.hint.replacement." + PartnerEventInformation.TYPE_ON_SENDSUCCESS, "<HTML>Die folgenden Variablen werden in diesem Befehl durch Systemwerte ersetzt, bevor er ausgeführt wird:<br><i>$'{'filename}, $'{'fullstoragefilename}, $'{'log}, $'{'subject},$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'mdntext}, $'{'userdefinedid}</i></HTML>"},
+        {"shell.hint.replacement." + ProcessingEventTriggerType.RECEIPT_SUCCESS.toInt(), "<HTML>Die folgenden Variablen werden in diesem Befehl durch Systemwerte ersetzt, bevor er ausgeführt wird:<br><i>$'{'filename}, $'{'subject},$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'originalfilename}</i></HTML>"},
+        {"shell.hint.replacement." + ProcessingEventTriggerType.SEND_FAILURE.toInt(), "<HTML>Die folgenden Variablen werden in diesem Befehl durch Systemwerte ersetzt, bevor er ausgeführt wird:<br><i>$'{'filename}, $'{'fullstoragefilename}, $'{'log}, $'{'subject},$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'mdntext}, $'{'userdefinedid}</i></HTML>"},
+        {"shell.hint.replacement." + ProcessingEventTriggerType.SEND_SUCCESS.toInt(), "<HTML>Die folgenden Variablen werden in diesem Befehl durch Systemwerte ersetzt, bevor er ausgeführt wird:<br><i>$'{'filename}, $'{'fullstoragefilename}, $'{'log}, $'{'subject},$'{'sender}, $'{'receiver}, $'{'messageid}, $'{'mdntext}, $'{'userdefinedid}</i></HTML>"},
         {"shell.hint.samples", "<HTML><strong>Beispiele</strong><br>Windows: <i>cmd /c move \"$'{'filename}\" \"c:\\zielverzeichnis\"</i><br>Linux: <i>mv \"$'{'filename}\" \"~/zielverzeichnis/\"</i></HTML>"},
         {"label.movetodir.info", "<HTML>Bitte richten Sie das serverseitige Verzeichnis ein, in das die Nachricht verschoben werden soll.</HTML>"},        
         {"label.movetodir.targetdir", "Zielverzeichnis ({0}): "},

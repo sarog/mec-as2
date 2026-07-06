@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/uinotification/NotificationPanel.java 20    12/04/23 10:59 Heller $
+//$Header: /as2/de/mendelson/util/uinotification/NotificationPanel.java 27    8/04/26 13:31 Heller $
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.MendelsonMultiResolutionImage;
@@ -20,26 +20,26 @@ import javax.swing.JPanel;
  * Panel that contains the notification information
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 27 $
  */
 public class NotificationPanel extends JPanel {
 
-    protected static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT = Color.WHITE;
-    protected static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK = new Color(0, 104, 55);
-    protected static final Color DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT = Color.WHITE;
-    protected static final Color DEFAULT_COLOR_BACKGROUND_WARNING_DARK = new Color(255, 176, 59);
-    protected static final Color DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT = Color.WHITE;
-    protected static final Color DEFAULT_COLOR_BACKGROUND_ERROR_DARK = new Color(193, 39, 45);
-    protected static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT = Color.WHITE;
-    protected static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK = new Color(0, 113, 188);
+    protected static final Color DEFAULT_COLOR_BACKGROUND_SUCCESS = Color.WHITE;
+    protected static final Color DEFAULT_COLOR_ACCENT_SUCCESS = new Color(0, 104, 55);
+    protected static final Color DEFAULT_COLOR_BACKGROUND_WARNING = Color.WHITE;
+    protected static final Color DEFAULT_COLOR_ACCENT_WARNING = new Color(255, 176, 59);
+    protected static final Color DEFAULT_COLOR_BACKGROUND_ERROR = Color.WHITE;
+    protected static final Color DEFAULT_COLOR_ACCENT_ERROR = new Color(193, 39, 45);
+    protected static final Color DEFAULT_COLOR_BACKGROUND_INFORMATION = Color.WHITE;
+    protected static final Color DEFAULT_COLOR_ACCENT_INFORMATION = new Color(0, 113, 188);
 
     protected static final Color DEFAULT_COLOR_FOREGROUND_TITLE = Color.GRAY;
     protected static final Color DEFAULT_COLOR_FOREGROUND_DETAILS = Color.GRAY;
 
-    private int notificationType = UINotification.TYPE_SUCCESS;
+    private UINotification.Type notificationType = UINotification.Type.SUCCESS;
 
-    protected final static int IMAGESIZE_CLOSECROSS = 13;
-    protected final static int IMAGESIZE_ICON = 34;
+    protected static final int IMAGESIZE_CLOSECROSS = 13;
+    protected static final int IMAGESIZE_ICON = 34;
 
     private MendelsonMultiResolutionImage image;
     /**
@@ -48,11 +48,11 @@ public class NotificationPanel extends JPanel {
      * the font to allow longer messages
      */
     private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_NO_SCALEDOWN = 80;
-    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1 
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1
             = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_NO_SCALEDOWN + 60;
-    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2 
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2
             = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_1 + 60;
-    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_3 
+    private final int MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_3
             = MAX_NOTIFICATION_DETAILS_TEXT_LENGTH_SCALEDOWN_2 + 100;
 
     /**
@@ -62,8 +62,8 @@ public class NotificationPanel extends JPanel {
 
     /**
      * @param image Image to display - there is a default if this is null
-     * @param NOTIFICATION_TYPE One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR
+     * @param notificationType One of UINotification.TYPE.OK,
+     * UINotification.TYPE.WARNING, UINotification.TYPE.ERROR
      * @param notificationTitle The title of the notification - not folded -
      * means you have to ensure a short title. If this is null, the type OK,
      * WARNING, ERROR is displayed in the localized language of the current
@@ -73,9 +73,9 @@ public class NotificationPanel extends JPanel {
      * exceeds the defined MAX_NOTIFICATION_DETAILS_LENGTH it is simply cut off
      */
     public NotificationPanel(MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE, String notificationTitle, String notificationDetails,
+            UINotification.Type notificationType, String notificationTitle, String notificationDetails,
             Rectangle bounds, boolean graphicSupportsShapedWindows) {
-        this.notificationType = NOTIFICATION_TYPE;
+        this.notificationType = notificationType;
         this.image = image;
         this.graphicSupportsShapedWindows = graphicSupportsShapedWindows;
         initComponents();
@@ -96,15 +96,14 @@ public class NotificationPanel extends JPanel {
             this.jPanelNotificationTypeBar.setType(ShapedPanel.TYPE_NO_ROUNDED_EDGES);
             this.jPanelCross.setType(ShapedPanel.TYPE_NO_ROUNDED_EDGES);
         }
-        this.setBackgroundColors(
-                DEFAULT_COLOR_BACKGROUND_SUCCESS_LIGHT,
-                DEFAULT_COLOR_BACKGROUND_SUCCESS_DARK,
-                DEFAULT_COLOR_BACKGROUND_WARNING_LIGHT,
-                DEFAULT_COLOR_BACKGROUND_WARNING_DARK,
-                DEFAULT_COLOR_BACKGROUND_ERROR_LIGHT,
-                DEFAULT_COLOR_BACKGROUND_ERROR_DARK,
-                DEFAULT_COLOR_BACKGROUND_INFORMATION_LIGHT,
-                DEFAULT_COLOR_BACKGROUND_INFORMATION_DARK);
+        this.setBackgroundColors(DEFAULT_COLOR_BACKGROUND_SUCCESS,
+                DEFAULT_COLOR_ACCENT_SUCCESS,
+                DEFAULT_COLOR_BACKGROUND_WARNING,
+                DEFAULT_COLOR_ACCENT_WARNING,
+                DEFAULT_COLOR_BACKGROUND_ERROR,
+                DEFAULT_COLOR_ACCENT_ERROR,
+                DEFAULT_COLOR_BACKGROUND_INFORMATION,
+                DEFAULT_COLOR_ACCENT_INFORMATION);
         this.jLabelNotificationTitle.setText(notificationTitle);
         if (notificationDetails != null) {
             int fontDecrement;
@@ -162,34 +161,34 @@ public class NotificationPanel extends JPanel {
      * Redefines the used background colors for the panels
      */
     public void setBackgroundColors(
-            Color backgroundSuccessLight,
-            Color backgroundSuccessDark,
-            Color backgroundWarningLight,
-            Color backgroundWarningDark,
-            Color backgroundErrorLight,
-            Color backgroundErrorDark,
-            Color backgroundInformationLight,
-            Color backgroundInformationDark) {
-        if (this.notificationType == UINotification.TYPE_SUCCESS) {
-            this.jPanelNotificationTypeBar.setBackground(backgroundSuccessDark);
-            this.jPanelIcon.setBackground(backgroundSuccessLight);
-            this.jPanelText.setBackground(backgroundSuccessLight);
-            this.jPanelCross.setBackground(backgroundSuccessLight);
-        } else if (this.notificationType == UINotification.TYPE_WARNING) {
-            this.jPanelNotificationTypeBar.setBackground(backgroundWarningDark);
-            this.jPanelIcon.setBackground(backgroundWarningLight);
-            this.jPanelText.setBackground(backgroundWarningLight);
-            this.jPanelCross.setBackground(backgroundWarningLight);
-        } else if (this.notificationType == UINotification.TYPE_ERROR) {
-            this.jPanelNotificationTypeBar.setBackground(backgroundErrorDark);
-            this.jPanelIcon.setBackground(backgroundErrorLight);
-            this.jPanelText.setBackground(backgroundErrorLight);
-            this.jPanelCross.setBackground(backgroundErrorLight);
-        } else if (this.notificationType == UINotification.TYPE_INFORMATION) {
-            this.jPanelNotificationTypeBar.setBackground(backgroundInformationDark);
-            this.jPanelIcon.setBackground(backgroundInformationLight);
-            this.jPanelText.setBackground(backgroundInformationLight);
-            this.jPanelCross.setBackground(backgroundInformationLight);
+            Color backgroundColorSuccess,
+            Color accentColorSuccess,
+            Color backgroundColorWarning,
+            Color accentColorWarning,
+            Color backgroundColorError,
+            Color accentColorError,
+            Color backgroundColorInformation,
+            Color accentColorInformation) {
+        if (this.notificationType == UINotification.Type.SUCCESS) {
+            this.jPanelNotificationTypeBar.setBackground(accentColorSuccess);
+            this.jPanelIcon.setBackground(backgroundColorSuccess);
+            this.jPanelText.setBackground(backgroundColorSuccess);
+            this.jPanelCross.setBackground(backgroundColorSuccess);
+        } else if (this.notificationType == UINotification.Type.WARNING) {
+            this.jPanelNotificationTypeBar.setBackground(accentColorWarning);
+            this.jPanelIcon.setBackground(backgroundColorWarning);
+            this.jPanelText.setBackground(backgroundColorWarning);
+            this.jPanelCross.setBackground(backgroundColorWarning);
+        } else if (this.notificationType == UINotification.Type.ERROR) {
+            this.jPanelNotificationTypeBar.setBackground(accentColorError);
+            this.jPanelIcon.setBackground(backgroundColorError);
+            this.jPanelText.setBackground(backgroundColorError);
+            this.jPanelCross.setBackground(backgroundColorError);
+        } else if (this.notificationType == UINotification.Type.INFORMATION) {
+            this.jPanelNotificationTypeBar.setBackground(accentColorInformation);
+            this.jPanelIcon.setBackground(backgroundColorInformation);
+            this.jPanelText.setBackground(backgroundColorInformation);
+            this.jPanelCross.setBackground(backgroundColorInformation);
         }
     }
 
@@ -231,6 +230,7 @@ public class NotificationPanel extends JPanel {
         jPanelCross = new de.mendelson.util.uinotification.ShapedPanel();
         jLabelCross = new javax.swing.JLabel();
         jPanelSpace5 = new javax.swing.JPanel();
+        jPanelSpace6 = new javax.swing.JPanel();
 
         setBackground(new java.awt.Color(222, 231, 251));
         setLayout(new java.awt.GridBagLayout());
@@ -272,7 +272,7 @@ public class NotificationPanel extends JPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         add(jPanelIcon, gridBagConstraints);
 
@@ -341,31 +341,46 @@ public class NotificationPanel extends JPanel {
         add(jPanelText, gridBagConstraints);
 
         jPanelCross.setFocusable(false);
-        jPanelCross.setMinimumSize(new java.awt.Dimension(30, 38));
-        jPanelCross.setPreferredSize(new java.awt.Dimension(30, 38));
+        jPanelCross.setMinimumSize(new java.awt.Dimension(34, 48));
+        jPanelCross.setPreferredSize(new java.awt.Dimension(34, 48));
         jPanelCross.setLayout(new java.awt.GridBagLayout());
 
         jLabelCross.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/util/uinotification/missing_image16x16.gif"))); // NOI18N
+        jLabelCross.setMaximumSize(new java.awt.Dimension(50, 50));
+        jLabelCross.setMinimumSize(new java.awt.Dimension(13, 13));
+        jLabelCross.setPreferredSize(new java.awt.Dimension(13, 13));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.gridheight = 2;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_END;
-        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 10);
+        gridBagConstraints.gridheight = 4;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(10, 0, 0, 0);
         jPanelCross.add(jLabelCross, gridBagConstraints);
+
+        jPanelSpace5.setOpaque(false);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 2;
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
-        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weightx = 0.5;
         gridBagConstraints.weighty = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelCross.add(jPanelSpace5, gridBagConstraints);
 
+        jPanelSpace6.setOpaque(false);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 4;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 0.5;
+        gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
+        jPanelCross.add(jPanelSpace6, gridBagConstraints);
+
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 0;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.weighty = 1.0;
         add(jPanelCross, gridBagConstraints);
@@ -385,6 +400,7 @@ public class NotificationPanel extends JPanel {
     private de.mendelson.util.uinotification.ShapedPanel jPanelNotificationTypeBar;
     private javax.swing.JPanel jPanelSpace4;
     private javax.swing.JPanel jPanelSpace5;
+    private javax.swing.JPanel jPanelSpace6;
     private javax.swing.JPanel jPanelText;
     // End of variables declaration//GEN-END:variables
 }

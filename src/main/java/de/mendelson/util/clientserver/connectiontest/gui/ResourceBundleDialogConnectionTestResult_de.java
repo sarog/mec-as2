@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_de.java 13    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_de.java 16    9/04/26 8:08 Heller $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 16 $
  */
 public class ResourceBundleDialogConnectionTestResult_de extends MecResourceBundle {
 
@@ -29,22 +30,22 @@ public class ResourceBundleDialogConnectionTestResult_de extends MecResourceBund
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Ergebnis des Verbindungstests"},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_OFTP2, 
+        {"description." +  ConnectionTest.Type.OFTP2.toInt(), 
             "Das System hat einen Verbindungstest zur Addresse {0}, Port {1} durchgeführt. "
             + "Das folgende Ergebnis zeigt, ob der Verbindungsaufbau erfolgreich war und ob an dieser "
             + "Addresse ein OFTP2 Server läuft. Wenn eine TLS Verbindung verwendet werden sollte und dies "
             + "erfolgreich möglich war, können Sie die Zertifikate Ihres Partners herunterladen und in Ihren "
             + "Keystore importieren."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS2, 
+        {"description." +  ConnectionTest.Type.AS2.toInt(), 
             "Das System hat einen Verbindungstest zur Addresse {0}, Port {1} durchgeführt. "
             + "Das folgende Ergebnis zeigt, ob der Verbindungsaufbau erfolgreich war und ob an dieser "
             + "Addresse ein HTTP Server läuft. Auch wenn der Test erfolgreich ist, ist nicht sichergestellt, "
             + "ob dies ein normaler HTTP Server oder ein AS2 Server ist. Wenn eine TLS Verbindung verwendet "
             + "werden sollte (HTTPS) und dies erfolgreich möglich war, können Sie die Zertifikate Ihres "
             + "Partners herunterladen und in Ihren Keystore importieren."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS4, 
+        {"description." +  ConnectionTest.Type.AS4.toInt(), 
             "Das System hat einen Verbindungstest zur Addresse {0}, Port {1} durchgeführt. "
             + "Das folgende Ergebnis zeigt, ob der Verbindungsaufbau erfolgreich war und ob an dieser "
             + "Addresse ein HTTP Server läuft. Auch wenn der Test erfolgreich ist, ist nicht sichergestellt, "
@@ -58,7 +59,7 @@ public class ResourceBundleDialogConnectionTestResult_de extends MecResourceBund
         {"header.ssl", "{0} [TLS Verbindung]"},
         {"header.plain", "{0} [Ungesicherte Verbindung]"},
         {"no.certificate.plain", "Nicht verfügbar (Ungesicherte Verbindung)"},
-        {"button.viewcert", "<HTML><div style=\"text-align:center\">Zertifikat(e) importieren</div></HTML>"},
+        {"button.viewcert", "<HTML>Zertifikat(e)&nbsp;importieren</HTML>"},
         {"button.close", "Schliessen"},
         {"label.connection.established", "Die einfache IP Verbindung wurde hergestellt"},
         {"label.certificates.available.local", "Die Partnerzertifikate (TLS) sind in Ihrem System verfügbar"},

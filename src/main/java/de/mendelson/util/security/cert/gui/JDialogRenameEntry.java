@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogRenameEntry.java 16    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogRenameEntry.java 19    8/04/26 13:35 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -25,7 +25,7 @@ import javax.swing.JFrame;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 19 $
  */
 public class JDialogRenameEntry extends JDialog {
 
@@ -58,7 +58,8 @@ public class JDialogRenameEntry extends JDialog {
         this.jTextFieldNewAlias.setText(oldAlias);
         this.jTextFieldNewAlias.requestFocusInWindow();
         this.jTextFieldNewAlias.selectAll();
-        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EDIT_MULTIRESOLUTION.toMinResolution(32)));
+        this.jLabelIcon.setIcon(new ImageIcon(JDialogCertificates.IMAGE_EDIT_MULTIRESOLUTION.toMinResolution(
+                JDialogCertificates.IMAGE_SIZE_DIALOG)));
         this.setButtonState();
     }
 
@@ -152,6 +153,7 @@ public class JDialogRenameEntry extends JDialog {
         gridBagConstraints.gridy = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEdit.add(jPanel3, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
@@ -213,7 +215,7 @@ public class JDialogRenameEntry extends JDialog {
             this.setVisible(false);
         } else {
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     this.rb.getResourceString("alias.exists.title"),
                     this.rb.getResourceString("alias.exists.message", newAliasTemp));
         }

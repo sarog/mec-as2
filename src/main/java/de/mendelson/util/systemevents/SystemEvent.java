@@ -1,11 +1,16 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/SystemEvent.java 61    12/12/23 12:04 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/SystemEvent.java 86    15/04/26 13:02 Heller $
 package de.mendelson.util.systemevents;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonValue;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.systemevents.gui.UIEventCategory;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Serializable;
@@ -16,15 +21,19 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.DateFormat;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Iterator;
 import java.util.Locale;
+import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.ResourceBundle;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import javax.swing.ImageIcon;
 
 
@@ -39,11 +48,13 @@ import javax.swing.ImageIcon;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 61 $
+ * @version $Revision: 86 $
  */
 public class SystemEvent implements Serializable {
 
     private static final long serialVersionUID = 1L;
+
+    private static final Map<String, String> NOTIFICATION_TEMPLATE_CACHE = new ConcurrentHashMap<String, String>();
 
     public static final MendelsonMultiResolutionImage ICON_SEVERITY_ERROR_MULTIRESOLUTION
             = MendelsonMultiResolutionImage.fromSVG(
@@ -64,169 +75,253 @@ public class SystemEvent implements Serializable {
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/util/systemevents/gui/origin_user.svg", 10, 64);
 
-    /**
-     * Its a system shutdown, restart etc
-     */
-    public static final int ORIGIN_SYSTEM = 1;
-    /**
-     * The user changed a certificate, changed configuration etc
-     */
-    public static final int ORIGIN_USER = 2;
-    /**
-     * Any transaction related event
-     */
-    public static final int ORIGIN_TRANSACTION = 3;
-    /**
-     * The user should be notified, e.g. a new certificate via certificate
-     * exchange. No problem, just a user information
-     */
-    public static final int SEVERITY_INFO = 1;
-    /**
-     * An warning occurred in the system. Non critical, e.g. a certificate will
-     * expire
-     */
-    public static final int SEVERITY_WARNING = 2;
-    /**
-     * An error occurred in the system, e.g. database problem, resource problems
-     * etc
-     */
-    public static final int SEVERITY_ERROR = 3;
+    private static final DateTimeFormatter HUMAN_READABLE_EVENT_DATE_FORMAT
+            = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.MEDIUM)
+                    .withLocale(Locale.getDefault());
 
-    /**
-     * System components
-     */
-    public static final int CATEGORY_SERVER_COMPONENTS = 100;
-    public static final int TYPE_SERVER_COMPONENTS_ANY = 199;
-    public static final int TYPE_MAIN_SERVER_SHUTDOWN = 100;
-    public static final int TYPE_MAIN_SERVER_STARTUP_BEGIN = 101;
-    public static final int TYPE_MAIN_SERVER_RUNNING = 102;
-    public static final int TYPE_DATABASE_SERVER_STARTUP_BEGIN = 103;
-    public static final int TYPE_DATABASE_SERVER_RUNNING = 104;
-    public static final int TYPE_DATABASE_SERVER_SHUTDOWN = 105;
-    public static final int TYPE_HTTP_SERVER_STARTUP_BEGIN = 106;
-    public static final int TYPE_HTTP_SERVER_RUNNING = 107;
-    public static final int TYPE_HTTP_SERVER_SHUTDOWN = 108;
-    public static final int TYPE_TRFC_SERVER_STARTUP_BEGIN = 109;
-    public static final int TYPE_TRFC_SERVER_RUNNING = 110;
-    public static final int TYPE_TRFC_SERVER_STATE = 111;
-    public static final int TYPE_TRFC_SERVER_SHUTDOWN = 112;
-    public static final int TYPE_SCHEDULER_SERVER_STARTUP_BEGIN = 113;
-    public static final int TYPE_SCHEDULER_SERVER_RUNNING = 114;
-    public static final int TYPE_SCHEDULER_SERVER_SHUTDOWN = 115;
-    public static final int TYPE_DIRECTORY_MONITORING_STATE_CHANGED = 116;
-    public static final int TYPE_PORT_LISTENER = 117;
+    public enum Origin {
+        /**
+         * Its a system shutdown, restart etc
+         */
+        SYSTEM(1),
+        /**
+         * The user changed a certificate, changed configuration etc
+         */
+        USER(2),
+        /**
+         * Any transaction related event
+         */
+        TRANSACTION(3);
 
-    /**
-     * Connectivity
-     */
-    public static final int CATEGORY_CONNECTIVITY = 200;
-    public static final int TYPE_CONNECTIVITY_ANY = 200;
-    public static final int TYPE_CONNECTIVITY_TEST = 201;
-    /**
-     * Transactions
-     */
-    public static final int CATEGORY_TRANSACTION = 300;
-    public static final int TYPE_TRANSACTION_ANY = 300;
-    public static final int TYPE_TRANSACTION_ERROR = 301;
-    public static final int TYPE_TRANSACTION_REJECTED_RESEND = 302;
-    public static final int TYPE_TRANSACTION_DUPLICATE_MESSAGE = 303;
-    public static final int TYPE_TRANSACTION_DELETE = 304;
-    public static final int TYPE_TRANSACTION_CANCEL = 305;
-    public static final int TYPE_TRANSACTION_RESEND = 306;
-    /**
-     * Certificates
-     */
-    public static final int CATEGORY_CERTIFICATE = 400;
-    public static final int TYPE_CERTIFICATE_ANY = 400;
-    public static final int TYPE_CERTIFICATE_ADD = 401;
-    public static final int TYPE_CERTIFICATE_MODIFY = 402;
-    public static final int TYPE_CERTIFICATE_DEL = 403;
-    public static final int TYPE_CERTIFICATE_EXCHANGE_ANY = 404;
-    public static final int TYPE_CERTIFICATE_EXPIRE = 405;
-    public static final int TYPE_CERTIFICATE_EXCHANGE_REQUEST_RECEIVED = 406;
-    public static final int TYPE_CERTIFICATE_IMPORT_KEYSTORE = 407;
-    /**
-     * Database
-     */
-    public static final int CATEGORY_DATABASE = 500;
-    public static final int TYPE_DATABASE_ANY = 500;
-    public static final int TYPE_DATABASE_CREATION = 501;
-    public static final int TYPE_DATABASE_UPDATE = 502;
-    public static final int TYPE_DATABASE_INITIALIZATION = 503;
-    /**
-     * Configuration
-     */
-    public static final int CATEGORY_CONFIGURATION = 700;
-    public static final int TYPE_SERVER_CONFIGURATION_ANY = 700;
-    public static final int TYPE_SERVER_CONFIGURATION_CHANGED = 701;
-    public static final int TYPE_SERVER_CONFIGURATION_CHECK = 702;
-    public static final int TYPE_PARTNER_MODIFY = 703;
-    public static final int TYPE_PARTNER_DEL = 704;
-    public static final int TYPE_PARTNER_ADD = 705;
-    /**
-     * Quota
-     */
-    public static final int CATEGORY_QUOTA = 800;
-    public static final int TYPE_QUOTA_ANY = 800;
-    public static final int TYPE_QUOTA_SEND_EXCEEDED = 801;
-    public static final int TYPE_QUOTA_RECEIVE_EXCEEDED = 802;
-    public static final int TYPE_QUOTA_SEND_RECEIVE_EXCEEDED = 803;
-    /**
-     * Notification
-     */
-    public static final int CATEGORY_NOTIFICATION = 900;
-    public static final int TYPE_NOTIFICATION_ANY = 900;
-    public static final int TYPE_NOTIFICATION_SEND_SUCCESS = 901;
-    public static final int TYPE_NOTIFICATION_SEND_FAILED = 902;
-    /**
-     * Processing
-     */
-    public static final int CATEGORY_PROCESSING = 1000;
-    public static final int TYPE_PROCESSING_ANY = 1000;
-    public static final int TYPE_PRE_PROCESSING = 1001;
-    public static final int TYPE_POST_PROCESSING = 1002;
-    /**
-     * License issues
-     */
-    public static final int CATEGORY_LICENSE = 1100;
-    public static final int TYPE_LICENSE_ANY = 1100;
-    public static final int TYPE_LICENSE_UPDATE = 1101;
-    public static final int TYPE_LICENSE_EXPIRE = 1102;
+        private final int id;
 
-    /**
-     * File operation
-     */
-    public static final int CATEGORY_FILE_OPERATION = 1200;
-    public static final int TYPE_FILE_OPERATION_ANY = 1200;
-    public static final int TYPE_FILE_DELETE = 1201;
-    public static final int TYPE_MKDIR = 1202;
-    public static final int TYPE_FILE_MOVE = 1203;
-    public static final int TYPE_FILE_COPY = 1204;
-    /**
-     * Client-Server related operation
-     */
-    public static final int CATEGORY_CLIENT_OPERATION = 1300;
-    public static final int TYPE_CLIENT_ANY = 1300;
-    public static final int TYPE_CLIENT_LOGIN_SUCCESS = 1301;
-    public static final int TYPE_CLIENT_LOGIN_FAILURE = 1302;
-    public static final int TYPE_CLIENT_LOGOFF = 1303;
-    /**
-     * XML interface
-     */
-    public static final int CATEGORY_XML_INTERFACE = 1400;
-    public static final int TYPE_XML_INTERFACE_ANY = 1400;
-    public static final int TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION = 1401;
-    public static final int TYPE_XML_INTERFACE_PARTNER_MODIFICATION = 1402;
-    /**
-     * Other
-     */
-    public static final int CATEGORY_OTHER = 100000;
-    public static final int TYPE_OTHER = 100000;
+        Origin(int id) {
+            this.id = id;
+        }
 
-    private final static String SERVER_SIDE_HOSTNAME;
+        @JsonValue
+        public int toInt() {
+            return this.id;
+        }
+
+        @JsonCreator
+        public static Origin of(int id) {
+            for (Origin origin : Origin.values()) {
+                if (origin.id == id) {
+                    return origin;
+                }
+            }
+            return (Origin.SYSTEM);
+        }
+    }
+
+    public enum Severity {
+        /**
+         * The user should be notified, e.g. a new certificate via certificate
+         * exchange. No problem, just a user information
+         */
+        INFO(1),
+        /**
+         * An warning occurred in the system. Non critical, e.g. a certificate
+         * will expire
+         */
+        WARNING(2),
+        /**
+         * An error occurred in the system, e.g. database problem, resource
+         * problems etc
+         */
+        ERROR(3);
+
+        private final int id;
+
+        Severity(int id) {
+            this.id = id;
+        }
+
+        @JsonValue
+        public int toInt() {
+            return this.id;
+        }
+
+        @JsonCreator
+        public static Severity of(int id) {
+            for (Severity severity : Severity.values()) {
+                if (severity.id == id) {
+                    return severity;
+                }
+            }
+            return (ERROR);
+        }
+    }
+
+    public enum Type {
+        //just for the filter
+        FILTER_ACCEPT_ALL(-1),
+        // Server components
+        SERVER_COMPONENTS_ANY(199),
+        MAIN_SERVER_SHUTDOWN(100),
+        MAIN_SERVER_STARTUP_BEGIN(101),
+        MAIN_SERVER_RUNNING(102),
+        DATABASE_SERVER_STARTUP_BEGIN(103),
+        DATABASE_SERVER_RUNNING(104),
+        DATABASE_SERVER_SHUTDOWN(105),
+        HTTP_SERVER_STARTUP_BEGIN(106),
+        HTTP_SERVER_RUNNING(107),
+        HTTP_SERVER_SHUTDOWN(108),
+        TRFC_SERVER_STARTUP_BEGIN(109),
+        TRFC_SERVER_RUNNING(110),
+        TRFC_SERVER_STATE(111),
+        TRFC_SERVER_SHUTDOWN(112),
+        SCHEDULER_SERVER_STARTUP_BEGIN(113),
+        SCHEDULER_SERVER_RUNNING(114),
+        SCHEDULER_SERVER_SHUTDOWN(115),
+        DIRECTORY_MONITORING_STATE_CHANGED(116),
+        PORT_LISTENER(117),
+        // Connectivity
+        CONNECTIVITY_ANY(200),
+        CONNECTIVITY_TEST(201),
+        // Transactions
+        TRANSACTION_ANY(300),
+        TRANSACTION_ERROR(301),
+        TRANSACTION_REJECTED_RESEND(302),
+        TRANSACTION_DUPLICATE_MESSAGE(303),
+        TRANSACTION_DELETE(304),
+        TRANSACTION_CANCEL(305),
+        TRANSACTION_RESEND(306),
+        // Certificates
+        CERTIFICATE_ANY(400),
+        CERTIFICATE_ADD(401),
+        CERTIFICATE_MODIFY(402),
+        CERTIFICATE_DEL(403),
+        CERTIFICATE_EXCHANGE_ANY(404),
+        CERTIFICATE_EXPIRE(405),
+        CERTIFICATE_EXCHANGE_REQUEST_RECEIVED(406),
+        CERTIFICATE_IMPORT_KEYSTORE(407),
+        // Database
+        DATABASE_ANY(500),
+        DATABASE_CREATION(501),
+        DATABASE_UPDATE(502),
+        DATABASE_INITIALIZATION(503),
+        DATABASE_ROLLBACK(504),
+        // Configuration
+        SERVER_CONFIGURATION_ANY(700),
+        SERVER_CONFIGURATION_CHANGED(701),
+        SERVER_CONFIGURATION_CHECK(702),
+        PARTNER_MODIFY(703),
+        PARTNER_DEL(704),
+        PARTNER_ADD(705),
+        // Quota
+        QUOTA_ANY(800),
+        QUOTA_SEND_EXCEEDED(801),
+        QUOTA_RECEIVE_EXCEEDED(802),
+        QUOTA_SEND_RECEIVE_EXCEEDED(803),
+        // Notification
+        NOTIFICATION_ANY(900),
+        NOTIFICATION_SEND_SUCCESS(901),
+        NOTIFICATION_SEND_FAILED(902),
+        // Processing
+        PROCESSING_ANY(1000),
+        PRE_PROCESSING(1001),
+        POST_PROCESSING(1002),
+        // License
+        LICENSE_ANY(1100),
+        LICENSE_UPDATE(1101),
+        LICENSE_EXPIRE(1102),
+        // File operation
+        FILE_OPERATION_ANY(1200),
+        FILE_DELETE(1201),
+        FILE_MKDIR(1202),
+        FILE_MOVE(1203),
+        FILE_COPY(1204),
+        // Client-Server
+        CLIENT_ANY(1300),
+        CLIENT_LOGIN_SUCCESS(1301),
+        CLIENT_LOGIN_FAILURE(1302),
+        CLIENT_LOGOFF(1303),
+        // XML interface
+        XML_INTERFACE_ANY(1400),
+        XML_INTERFACE_CERTIFICATE_MODIFICATION(1401),
+        XML_INTERFACE_PARTNER_MODIFICATION(1402),
+        // REST interface
+        REST_INTERFACE_ANY(1500),
+        REST_INTERFACE_CERTIFICATE_ADD(1501),
+        REST_INTERFACE_CERTIFICATE_MODIFICATION(1502),
+        REST_INTERFACE_CERTIFICATE_DEL(1503),
+        REST_INTERFACE_PARTNER_ADD(1504),
+        REST_INTERFACE_PARTNER_MODIFICATION(1505),
+        REST_INTERFACE_PARTNER_DEL(1506),
+        REST_INTERFACE_SENDORDER(1507),
+        REST_INTERFACE_TRANSACTION_DEL(1508),
+        // Other
+        OTHER(100000);
+
+        private final int id;
+
+        Type(int id) {
+            this.id = id;
+        }
+
+        @JsonValue
+        public int toInt() {
+            return this.id;
+        }
+
+        @JsonCreator
+        public static Type of(int id) {
+            for (Type type : Type.values()) {
+                if (type.id == id) {
+                    return type;
+                }
+            }
+            return (OTHER);
+        }
+    }
+
+    public enum Category {
+        //just for the filter
+        FILTER_ACCEPT_ALL(-1),
+        SERVER_COMPONENTS(100),
+        CONNECTIVITY(200),
+        TRANSACTION(300),
+        CERTIFICATE(400),
+        DATABASE(500),
+        CONFIGURATION(700),
+        QUOTA(800),
+        NOTIFICATION(900),
+        PROCESSING(1000),
+        LICENSE(1100),
+        FILE_OPERATION(1200),
+        CLIENT_OPERATION(1300),
+        XML_INTERFACE(1400),
+        REST_INTERFACE(1500),
+        OTHER(100000);
+
+        private final int id;
+
+        Category(int id) {
+            this.id = id;
+        }
+
+        @JsonValue
+        public int toInt() {
+            return this.id;
+        }
+
+        @JsonCreator
+        public static Category of(int id) {
+            for (Category category : Category.values()) {
+                if (category.id == id) {
+                    return category;
+                }
+            }
+            return OTHER;
+        }
+    }
+
+    private static final String SERVER_SIDE_HOSTNAME;
 
     static {
-        String detectedHostname = null;
+        String detectedHostname;
         try {
             detectedHostname = InetAddress.getLocalHost().getHostName();
         } catch (Throwable e) {
@@ -235,30 +330,27 @@ public class SystemEvent implements Serializable {
         SERVER_SIDE_HOSTNAME = detectedHostname;
     }
 
-    private final DateFormat HUMAN_READABLE_EVENT_DATE_FORMAT
-            = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-
-    private final static String SECTION_DESCRIPTION = "[Event description]";
-    private final static String SECTION_BODY = "[Details]";
-    private final static String SECTION_SUBJECT = "[Summary]";
+    private static final String SECTION_DESCRIPTION = "[Event description]";
+    private static final String SECTION_BODY = "[Details]";
+    private static final String SECTION_SUBJECT = "[Summary]";
 
     public static final String USER_SERVER_PROCESS = "<server_process>";
 
     private long timestamp = System.currentTimeMillis();
-    private int severity;
-    private int origin;
-    private int type;
-    private int category;
+    private SystemEvent.Severity severity;
+    private SystemEvent.Origin origin;
+    private SystemEvent.Type type;
+    private SystemEvent.Category category;
     private String subject = "";
     private String body = "";
     private String processOriginHost = SERVER_SIDE_HOSTNAME;
     private String user = USER_SERVER_PROCESS;
 
-    private final String NOTIFICATION_TEMPLATE_DIR = "notificationtemplates";
+    private static final String NOTIFICATION_TEMPLATE_DIR = "notificationtemplates";
 
     private String id;
-    private final static MecResourceBundle rb;
-    private final static MecResourceBundle rbFilenames;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbFilenames;
 
     static {
         try {
@@ -266,13 +358,12 @@ public class SystemEvent implements Serializable {
                     ResourceBundleSystemEvent.class.getName());
             rbFilenames = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleSystemEventFilenames.class.getName());
-        } //load up  resourcebundle        
-        catch (MissingResourceException e) {
+        } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
 
-    public SystemEvent(int severity, int origin, int type) {
+    public SystemEvent(SystemEvent.Severity severity, SystemEvent.Origin origin, SystemEvent.Type type) {
         this.severity = severity;
         this.origin = origin;
         this.type = type;
@@ -281,63 +372,87 @@ public class SystemEvent implements Serializable {
         this.category = this.computeCategoryForType(type);
     }
 
-    private int computeCategoryForType(int type) {
-        int computedCategory = (type / 100) * 100;
-        return (computedCategory);
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public SystemEvent() {
+        super();
+    }
+
+    private SystemEvent.Category computeCategoryForType(SystemEvent.Type type) {
+        int computedCategory = (type.toInt() / 100) * 100;
+        return (SystemEvent.Category.of(computedCategory));
+    }
+
+    /**
+     * Has a lookup at the cache if the template already exists, then its
+     * returned - if not it is loaded into the cache and then returned to be
+     * cached for the next lookup
+     *
+     * @param templateName
+     * @return
+     * @throws IOException
+     */
+    private String loadTemplate(String templateName) throws IOException {
+        String cached = NOTIFICATION_TEMPLATE_CACHE.get(templateName);
+        if (cached != null) {
+            return cached;
+        }
+        String templateFilename = this.getLocalizedTemplateFilename(templateName);
+        Path path = Paths.get(NOTIFICATION_TEMPLATE_DIR, templateFilename);
+        //prevent "Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);"
+        //because this will throw a MalformedInputException if the encoding does not match!
+        //The REPLACE action will replace the unreadable character with a "?"
+        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        try (InputStream inStream = Files.newInputStream(path)) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, decoder))) {
+                StringBuilder builder = new StringBuilder();
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    builder.append(line).append("\n");
+                }
+                String templateStr = builder.toString();
+                NOTIFICATION_TEMPLATE_CACHE.put(templateName, templateStr);
+                return templateStr;
+            }
+        }
     }
 
     /**
      * Reads the notification mail template file
      */
     public void readFromNotificationTemplate(String templateName, Properties replacement) throws Exception {
-        String templateFilename = this.getLocalizedTemplateFilename(templateName);
-        StringBuilder bodyBuffer = new StringBuilder();
+        String templateStr = this.loadTemplate(templateName);
+        StringBuilder bodyBuilder = new StringBuilder();
         boolean inSubject = false;
         boolean inBody = false;
-        BufferedReader templateReader = null;
-        InputStream inStream = null;
-        try {
-            //prevent Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);
-            //because this will throw a MalformedInputException if the encoding does not match!
-            //The REPLACE action will replace the unreadable character with a "?"
-            inStream = Files.newInputStream(Paths.get(NOTIFICATION_TEMPLATE_DIR, templateFilename));
-            CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
-            templateReader = new BufferedReader(new InputStreamReader(inStream, decoder));
-            String line = "";
-            while (line != null) {
-                line = templateReader.readLine();
-                if (line != null) {
-                    if (line.trim().equals("[SUBJECT]")) {
-                        inSubject = true;
-                        inBody = false;
-                        continue;
-                    } else if (line.trim().equals("[BODY]")) {
-                        inSubject = false;
-                        inBody = true;
-                        continue;
-                    }
-                    if (inSubject) {
-                        this.setSubject(this.replaceAllVars(line, replacement));
-                        inSubject = false;
-                    } else if (inBody) {
-                        if (bodyBuffer.length() > 0) {
-                            bodyBuffer.append("\n");
-                        }
-                        bodyBuffer.append(line);
-                    }
+        Iterator<String> lineIterator = templateStr.lines().iterator();
+        while (lineIterator.hasNext()) {
+            String line = lineIterator.next();
+            if (line.trim().equals("[SUBJECT]")) {
+                inSubject = true;
+                inBody = false;
+                continue;
+            } else if (line.trim().equals("[BODY]")) {
+                inSubject = false;
+                inBody = true;
+                continue;
+            }
+            if (inSubject) {
+                this.setSubject(this.replaceAllVars(line, replacement));
+                inSubject = false;
+            } else if (inBody) {
+                if (bodyBuilder.length() > 0) {
+                    bodyBuilder.append("\n");
                 }
-            }
-        } finally {
-            if (templateReader != null) {
-                templateReader.close();
-            }
-            if (inStream != null) {
-                inStream.close();
+                bodyBuilder.append(line);
             }
         }
-        this.setBody(this.replaceAllVars(bodyBuffer.toString(), replacement));
+        this.setBody(this.replaceAllVars(bodyBuilder.toString(), replacement));
     }
 
     /**
@@ -349,38 +464,15 @@ public class SystemEvent implements Serializable {
      * @return The replaced string
      */
     private String replaceAllVars(String source, Properties replacement) {
-        Iterator iterator = replacement.keySet().iterator();
-        while (iterator.hasNext()) {
-            String key = (String) iterator.next();
-            String value = replacement.getProperty(key);
-            source = this.replace(source, key, value);
+        if (source == null || replacement == null) {
+            return source;
         }
-        return (source);
-    }
-
-    /**
-     * Replaces the string tag by the string replacement in the sourceString
-     *
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
-     */
-    private String replace(String source, String tag, String replacement) {
-        if (source == null) {
-            return null;
+        for (Map.Entry<Object, Object> entry : replacement.entrySet()) {
+            String key = String.valueOf(entry.getKey());
+            String value = String.valueOf(entry.getValue());
+            source = source.replace(key, value);
         }
-        StringBuilder buffer = new StringBuilder();
-        while (true) {
-            int index = source.indexOf(tag);
-            if (index == -1) {
-                buffer.append(source);
-                return (buffer.toString());
-            }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
-            source = source.substring(index + tag.length());
-        }
+        return source;
     }
 
     /**
@@ -389,11 +481,11 @@ public class SystemEvent implements Serializable {
     private String getLocalizedTemplateFilename(String templateName) {
         String language = Locale.getDefault().getLanguage();
         //select language specific template
-        if (Files.exists(Paths.get(this.NOTIFICATION_TEMPLATE_DIR, templateName + "_" + language))) {
-            templateName = Paths.get(this.NOTIFICATION_TEMPLATE_DIR, templateName + "_" + language)
+        if (Files.exists(Paths.get(NOTIFICATION_TEMPLATE_DIR, templateName + "_" + language))) {
+            templateName = Paths.get(NOTIFICATION_TEMPLATE_DIR, templateName + "_" + language)
                     .getFileName().toString();
         } else {
-            templateName = Paths.get(this.NOTIFICATION_TEMPLATE_DIR, templateName)
+            templateName = Paths.get(NOTIFICATION_TEMPLATE_DIR, templateName)
                     .getFileName().toString();
         }
         return (templateName);
@@ -416,7 +508,7 @@ public class SystemEvent implements Serializable {
     /**
      * @return the type
      */
-    public int getType() {
+    public SystemEvent.Type getType() {
         return this.type;
     }
 
@@ -426,9 +518,10 @@ public class SystemEvent implements Serializable {
      *
      * @param type the type to set
      */
-    public void setType(int type) {
+    public SystemEvent setType(SystemEvent.Type type) {
         this.type = type;
         this.setCategory(this.computeCategoryForType(type));
+        return (this);
     }
 
     /**
@@ -441,8 +534,9 @@ public class SystemEvent implements Serializable {
     /**
      * @param subject the subject to set
      */
-    public void setSubject(String subject) {
+    public SystemEvent setSubject(String subject) {
         this.subject = subject;
+        return (this);
     }
 
     /**
@@ -455,12 +549,16 @@ public class SystemEvent implements Serializable {
     /**
      * @param body the body to set
      */
-    public void setBody(String body) {
+    public SystemEvent setBody(String body) {
         this.body = body;
+        return (this);
     }
 
+    @JsonIgnore
     public String getHumanReadableTimestamp() {
-        return (this.HUMAN_READABLE_EVENT_DATE_FORMAT.format(new Date(this.getTimestamp())));
+        return Instant.ofEpochMilli(this.timestamp)
+                .atZone(ZoneId.systemDefault())
+                .format(HUMAN_READABLE_EVENT_DATE_FORMAT);
     }
 
     /**
@@ -471,9 +569,7 @@ public class SystemEvent implements Serializable {
             Files.createDirectories(storageDir);
         }
         Path uniqueStorageFile = Files.createTempFile(storageDir, storageFilePrefix, storageFileSuffix);
-        BufferedWriter writer = null;
-        try {
-            writer = Files.newBufferedWriter(uniqueStorageFile, StandardCharsets.UTF_8);
+        try (BufferedWriter writer = Files.newBufferedWriter(uniqueStorageFile, StandardCharsets.UTF_8)) {
             writer.write(SECTION_DESCRIPTION);
             writer.newLine();
             writer.write("TimestampDescription=" + getHumanReadableTimestamp());
@@ -492,11 +588,11 @@ public class SystemEvent implements Serializable {
             writer.newLine();
             writer.write("Timestamp=" + this.getTimestamp());
             writer.newLine();
-            writer.write("Severity=" + this.getSeverity());
+            writer.write("Severity=" + this.severity.toInt());
             writer.newLine();
-            writer.write("Origin=" + this.getOrigin());
+            writer.write("Origin=" + this.origin.toInt());
             writer.newLine();
-            writer.write("Type=" + this.getType());
+            writer.write("Type=" + this.type.toInt());
             writer.newLine();
             writer.write("EventId=" + this.id);
             writer.newLine();
@@ -516,10 +612,6 @@ public class SystemEvent implements Serializable {
             }
             writer.newLine();
             writer.newLine();
-        } finally {
-            if (writer != null) {
-                writer.close();
-            }
         }
     }
 
@@ -528,74 +620,67 @@ public class SystemEvent implements Serializable {
      * stored using the store method
      */
     public static SystemEvent parse(Path eventFile) throws Exception {
-        SystemEvent event = new SystemEvent(SEVERITY_INFO, ORIGIN_SYSTEM, TYPE_OTHER);
-        BufferedReader reader = null;
-        InputStream inStream = null;
+        SystemEvent event = new SystemEvent(SystemEvent.Severity.INFO, SystemEvent.Origin.SYSTEM, SystemEvent.Type.OTHER);
         String section = "";
         StringBuilder body = new StringBuilder();
         StringBuilder subject = new StringBuilder();
         int sectionCount = 0;
-        try {
-            //prevent Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);
-            //because this will throw a MalformedInputException if the encoding does not match!
-            //The REPLACE action will replace the unreadable character with a "?"            
-            inStream = Files.newInputStream(eventFile);
-            CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
-                    .onMalformedInput(CodingErrorAction.REPLACE)
-                    .onUnmappableCharacter(CodingErrorAction.REPLACE);
-            reader = new BufferedReader(new InputStreamReader(inStream, decoder));
-            String line = reader.readLine();
-            while (line != null) {
-                if (line.trim().equals(SECTION_DESCRIPTION)) {
-                    section = SECTION_DESCRIPTION;
-                    sectionCount++;
-                } else if (line.trim().equals(SECTION_BODY)) {
-                    section = SECTION_BODY;
-                    sectionCount++;
-                } else if (line.trim().equals(SECTION_SUBJECT)) {
-                    section = SECTION_SUBJECT;
-                    sectionCount++;
-                } else {
-                    try {
-                        if (section.equals(SECTION_DESCRIPTION) && line.contains("=")) {
-                            String[] keyValue = line.split("=");
-                            if (keyValue[0].equalsIgnoreCase("user")) {
-                                event.setUser(keyValue[1]);
-                            } else if (keyValue[0].equalsIgnoreCase("timestamp")) {
-                                event.setTimestamp(Long.valueOf(keyValue[1]).longValue());
-                            } else if (keyValue[0].equalsIgnoreCase("severity")) {
-                                event.setSeverity(Integer.valueOf(keyValue[1]).intValue());
-                            } else if (keyValue[0].equalsIgnoreCase("origin")) {
-                                event.setOrigin(Integer.valueOf(keyValue[1]).intValue());
-                            } else if (keyValue[0].equalsIgnoreCase("type")) {
-                                event.setType(Integer.valueOf(keyValue[1]).intValue());
-                            } else if (keyValue[0].equalsIgnoreCase("processoriginhost")) {
-                                event.setProcessOriginHost(keyValue[1]);
-                            } else if (keyValue[0].equalsIgnoreCase("eventid")) {
-                                event.setId(keyValue[1]);
+        //prevent to use "Files.newBufferedReader(Paths.get(templateFilename), StandardCharsets.UTF_8);"
+        //because this will throw a MalformedInputException if the encoding does not match!
+        //The REPLACE action will replace the unreadable character with a "?"
+        CharsetDecoder decoder = StandardCharsets.UTF_8.newDecoder()
+                .onMalformedInput(CodingErrorAction.REPLACE)
+                .onUnmappableCharacter(CodingErrorAction.REPLACE);
+        try (InputStream inStream = Files.newInputStream(eventFile)) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(inStream, decoder))) {
+                String line = reader.readLine();
+                while (line != null) {
+                    if (line.trim().equals(SECTION_DESCRIPTION)) {
+                        section = SECTION_DESCRIPTION;
+                        sectionCount++;
+                    } else if (line.trim().equals(SECTION_BODY)) {
+                        section = SECTION_BODY;
+                        sectionCount++;
+                    } else if (line.trim().equals(SECTION_SUBJECT)) {
+                        section = SECTION_SUBJECT;
+                        sectionCount++;
+                    } else {
+                        try {
+                            if (section.equals(SECTION_DESCRIPTION) && line.contains("=")) {
+                                String[] keyValue = line.split("=");
+                                if (keyValue[0].equalsIgnoreCase("user")) {
+                                    event.setUser(keyValue[1]);
+                                } else if (keyValue[0].equalsIgnoreCase("timestamp")) {
+                                    event.setTimestamp(Long.parseLong(keyValue[1]));
+                                } else if (keyValue[0].equalsIgnoreCase("severity")) {
+                                    event.setSeverity(SystemEvent.Severity.of(Integer.parseInt(keyValue[1])));
+                                } else if (keyValue[0].equalsIgnoreCase("origin")) {
+                                    event.setOrigin(SystemEvent.Origin.of(Integer.parseInt(keyValue[1])));
+                                } else if (keyValue[0].equalsIgnoreCase("type")) {
+                                    event.setType(SystemEvent.Type.of(Integer.parseInt(keyValue[1])));
+                                } else if (keyValue[0].equalsIgnoreCase("processoriginhost")) {
+                                    event.setProcessOriginHost(keyValue[1]);
+                                } else if (keyValue[0].equalsIgnoreCase("eventid")) {
+                                    event.setId(keyValue[1]);
+                                }
+                            } else if (section.equals(SECTION_BODY)) {
+                                body.append(line).append("\n");
+                            } else if (section.equals(SECTION_SUBJECT)) {
+                                subject.append(line).append("\n");
                             }
-                        } else if (section.equals(SECTION_BODY)) {
-                            body.append(line).append("\n");
-                        } else if (section.equals(SECTION_SUBJECT)) {
-                            subject.append(line).append("\n");
+                        } catch (Exception e) {
+                            //mainly numberformat?
+                            e.printStackTrace();
                         }
-                    } catch (Exception e) {
-                        //mainly numberformat?
-                        e.printStackTrace();
                     }
+                    line = reader.readLine();
                 }
-                line = reader.readLine();
-            }
-        } finally {
-            if (reader != null) {
-                reader.close();
-            }
-            if (inStream != null) {
-                inStream.close();
             }
         }
         if (sectionCount != 3) {
-            throw new Exception("System event parser: " + eventFile.toString() + " is no event file - bad number of sections (found " + sectionCount + ")");
+            throw new Exception("System event parser: "
+                    + eventFile.toString()
+                    + " is no event file - bad number of sections (found " + sectionCount + ")");
         }
         event.setBody(body.toString());
         event.setSubject(subject.toString());
@@ -607,11 +692,11 @@ public class SystemEvent implements Serializable {
      * for the storage filename
      */
     public String severityToFilename() {
-        if (this.getSeverity() == SEVERITY_ERROR) {
+        if (this.getSeverity() == SystemEvent.Severity.ERROR) {
             return ("error");
-        } else if (this.getSeverity() == SEVERITY_INFO) {
+        } else if (this.getSeverity() == SystemEvent.Severity.INFO) {
             return ("info");
-        } else if (this.getSeverity() == SEVERITY_WARNING) {
+        } else if (this.getSeverity() == SystemEvent.Severity.WARNING) {
             return ("warning");
         }
         return ("unknown");
@@ -622,24 +707,24 @@ public class SystemEvent implements Serializable {
      * for the storage filename
      */
     public String severityToTextLocalized() {
-        return (rb.getResourceString("severity." + this.severity));
+        return (rb.getResourceString("severity." + this.severity.toInt()));
     }
 
     /**
      * Returns the category of this event in a human readable form
      */
     public String categoryToTextLocalized() {
-        return (rb.getResourceString("category." + this.getCategory()));
+        return (rb.getResourceString("category." + this.getCategory().toInt()));
     }
 
     /**
      * Contains a multi resolution image that displays the severity of the event
      */
     public ImageIcon getSeverityIconMultiResolution(int minResolution) {
-        if (this.getSeverity() == SEVERITY_ERROR) {
+        if (this.getSeverity() == SystemEvent.Severity.ERROR) {
             return (new ImageIcon(
                     ICON_SEVERITY_ERROR_MULTIRESOLUTION.toMinResolution(minResolution)));
-        } else if (this.getSeverity() == SEVERITY_INFO) {
+        } else if (this.getSeverity() == SystemEvent.Severity.INFO) {
             return (new ImageIcon(
                     ICON_SEVERITY_INFO_MULTIRESOLUTION.toMinResolution(minResolution)));
         }
@@ -651,10 +736,10 @@ public class SystemEvent implements Serializable {
      * Contains a multi resolution image that displays the origin of the event
      */
     public ImageIcon getOriginIconMultiResolution(int minResolution) {
-        if (this.getOrigin() == ORIGIN_SYSTEM) {
+        if (this.getOrigin() == SystemEvent.Origin.SYSTEM) {
             return (new ImageIcon(
                     ICON_ORIGIN_SYSTEM_MULTIRESOLUTION.toMinResolution(minResolution)));
-        } else if (this.getOrigin() == ORIGIN_TRANSACTION) {
+        } else if (this.getOrigin() == SystemEvent.Origin.TRANSACTION) {
             return (new ImageIcon(
                     ICON_ORIGIN_TRANSACTION_MULTIRESOLUTION.toMinResolution(minResolution)));
         }
@@ -668,7 +753,7 @@ public class SystemEvent implements Serializable {
     public ImageIcon getCategoryIconMultiResolution(int minResolution) {
         return (new ImageIcon(
                 UIEventCategory.getImageByCategory(
-                this.getCategory()).toMinResolution(minResolution)));
+                        this.getCategory()).toMinResolution(minResolution)));
     }
 
     /**
@@ -676,7 +761,7 @@ public class SystemEvent implements Serializable {
      * the storage filename
      */
     public String originToTextLocalized() {
-        return (this.rb.getResourceString("origin." + this.origin));
+        return (rb.getResourceString("origin." + this.origin.toInt()));
     }
 
     /**
@@ -684,56 +769,60 @@ public class SystemEvent implements Serializable {
      * the storage filename
      */
     public String originToFilename() {
-        if (this.getOrigin() == ORIGIN_USER) {
+        if (this.getOrigin() == SystemEvent.Origin.USER) {
             return ("user");
-        } else if (this.getOrigin() == ORIGIN_TRANSACTION) {
+        } else if (this.getOrigin() == SystemEvent.Origin.TRANSACTION) {
             return ("transaction");
-        } else if (this.getOrigin() == ORIGIN_SYSTEM) {
+        } else if (this.getOrigin() == SystemEvent.Origin.SYSTEM) {
             return ("system");
         }
         return ("unknown");
     }
 
     public String typeToFilename() {
-        String englishText = this.rbFilenames.getResourceString("type." + this.type);
-        englishText = this.replace(englishText, "(", "");
-        englishText = this.replace(englishText, ")", "");
-        englishText = this.replace(englishText, "'", "");
-        englishText = englishText.toLowerCase();
-        englishText = this.replace(englishText, " ", "-");
+        String englishText = rbFilenames.getResourceString("type." + this.type.toInt());
+        if (englishText != null) {
+            englishText = englishText.replace("(", "");
+            englishText = englishText.replace(")", "");
+            englishText = englishText.replace("'", "");
+            englishText = englishText.toLowerCase();
+            englishText = englishText.replace(" ", "-");
+        }
         return (englishText);
     }
 
     public String typeToTextLocalized() {
-        return (this.rb.getResourceString("type." + this.type));
+        return (rb.getResourceString("type." + this.type.toInt()));
     }
 
     /**
      * @return the severity
      */
-    public int getSeverity() {
+    public SystemEvent.Severity getSeverity() {
         return severity;
     }
 
     /**
      * @param severity the severity to set
      */
-    public void setSeverity(int severity) {
+    public SystemEvent setSeverity(SystemEvent.Severity severity) {
         this.severity = severity;
+        return (this);
     }
 
     /**
      * @return the origin
      */
-    public int getOrigin() {
+    public SystemEvent.Origin getOrigin() {
         return origin;
     }
 
     /**
      * @param origin the origin to set
      */
-    public void setOrigin(int origin) {
+    public SystemEvent setOrigin(SystemEvent.Origin origin) {
         this.origin = origin;
+        return (this);
     }
 
     /**
@@ -746,8 +835,9 @@ public class SystemEvent implements Serializable {
     /**
      * @param processOriginHost the processOriginHost to set
      */
-    public void setProcessOriginHost(String processOriginHost) {
+    public SystemEvent setProcessOriginHost(String processOriginHost) {
         this.processOriginHost = processOriginHost;
+        return (this);
     }
 
     /**
@@ -760,8 +850,9 @@ public class SystemEvent implements Serializable {
     /**
      * @param user the user to set
      */
-    public void setUser(String user) {
+    public SystemEvent setUser(String user) {
         this.user = user;
+        return (this);
     }
 
     /**
@@ -774,8 +865,9 @@ public class SystemEvent implements Serializable {
     /**
      * @param id the id to set
      */
-    public void setId(String id) {
+    public SystemEvent setId(String id) {
         this.id = id;
+        return (this);
     }
 
     /**
@@ -790,7 +882,7 @@ public class SystemEvent implements Serializable {
         }
         if (anObject != null && anObject instanceof SystemEvent) {
             SystemEvent event = (SystemEvent) anObject;
-            return (event != null && event.getId().equals(this.id));
+            return (event.getId().equals(this.id));
         }
         return (false);
     }
@@ -805,15 +897,16 @@ public class SystemEvent implements Serializable {
     /**
      * @return the category
      */
-    public int getCategory() {
+    public SystemEvent.Category getCategory() {
         return category;
     }
 
     /**
      * @param category the category to set
      */
-    public void setCategory(int category) {
+    public SystemEvent setCategory(SystemEvent.Category category) {
         this.category = category;
+        return (this);
     }
 
 }

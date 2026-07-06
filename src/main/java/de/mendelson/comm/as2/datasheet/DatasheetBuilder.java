@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 20    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetBuilder.java 24    23/03/26 12:56 Heller $
 package de.mendelson.comm.as2.datasheet;
 
 import de.intarsys.pdf.cds.CDSRectangle;
@@ -18,6 +18,7 @@ import de.intarsys.pdf.pd.PDWidgetAnnotation;
 import de.intarsys.tools.locator.FileLocator;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.message.AS2Message;
+import de.mendelson.comm.as2.message.MessageCompressionType;
 import de.mendelson.comm.as2.message.ResourceBundleAS2Message;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.util.MecResourceBundle;
@@ -46,7 +47,7 @@ import java.util.ResourceBundle;
  * Class that is responsible for the creation of a PDF file
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 24 $
  */
 public class DatasheetBuilder {
 
@@ -159,12 +160,19 @@ public class DatasheetBuilder {
         algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_RC4_40));
         algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_RC4_56));
         algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_RC4_128));
-        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128));
-        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192));
-        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256));
-        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_RSAES_AOEP));
-        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_RSAES_AOEP));
-        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_RSAES_AOEP));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_CCM));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_CCM));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_CCM));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_GCM));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_GCM));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC_RSAES_AOEP));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC_RSAES_AOEP));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC_RSAES_AOEP));
+        algorithms.add(this.rbMessage.getResourceString("encryption." + EncryptionConstantsAS2.ENCRYPTION_CHACHA20_POLY1305));
         String[] algorithmArray = new String[algorithms.size()];
         algorithmArray = algorithms.toArray(algorithmArray);
         return (algorithmArray);
@@ -290,7 +298,7 @@ public class DatasheetBuilder {
         this.writeText(creator, rowX1Abs, y - ygap - lineY, 10, "Compression");
         boolean crossYes = false;
         boolean crossNo = false;
-        if (this.localInformation.getCompression() == AS2Message.COMPRESSION_ZLIB) {
+        if (this.localInformation.getCompression() == MessageCompressionType.ZLIB) {
             crossYes = true;
         } else {
             crossNo = true;
@@ -523,8 +531,8 @@ public class DatasheetBuilder {
         if (this.localInformation.getCertEncryptData() != null) {
             this.addAttachment(page, "encryptdata.p7b", "Encrypt data to us using this certificate", this.localInformation.getCertEncryptData());
         }
-        if (this.localInformation.getCertSSL() != null) {
-            this.addAttachment(page, "ssl.p7b", "Use this certificate for the TLS connection", this.localInformation.getCertSSL());
+        if (this.localInformation.getCertTLS() != null) {
+            this.addAttachment(page, "ssl.p7b", "Use this certificate for the TLS connection", this.localInformation.getCertTLS());
         }
         if (this.localInformation.getCertVerifySignature() != null) {
             this.addAttachment(page, "verifysignature.p7b", "Verify our data signature using this certificate", this.localInformation.getCertVerifySignature());

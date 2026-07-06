@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 7     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 13    23/04/25 11:40 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import java.io.BufferedReader;
@@ -20,6 +20,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MultiReader;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -40,15 +41,13 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 13 $
  */
 public abstract class ServerSideLogfileSearch {
 
-    private final DateFormat dailySubDirFormat = new SimpleDateFormat("yyyyMMdd");
-
     private final int minHeaderParameter;
 
-    public ServerSideLogfileSearch(int minHeaderParameter) {
+    protected ServerSideLogfileSearch(int minHeaderParameter) {
         this.minHeaderParameter = minHeaderParameter;
     }
 
@@ -80,26 +79,29 @@ public abstract class ServerSideLogfileSearch {
      * @param filter The filter to filter the log lines
      */
     public synchronized List<Logline> performSearch(ServerSideLogfileFilter filter) {
+        //dont use DateTimeFormatter here - this class does not like references to calendars
+        final DateFormat DAILY_SUB_DIR_FORMAT = new SimpleDateFormat("yyyyMMdd");
         List<Logline> resultList = new ArrayList<Logline>();
         //create a list of dates
         List<Date> searchDateList = this.generateSearchDatesFromFilter(filter);
         //add all index reader of the date range
-        MultiReader multiReader = null;
         try {
             List<IndexReader> indexReaderList = new ArrayList<IndexReader>();
             for (Date searchDate : searchDateList) {
-                String indexDirStr = "log/" + this.dailySubDirFormat.format(searchDate) + "/index";
-                boolean today = this.dailySubDirFormat.format(searchDate).equals(this.dailySubDirFormat.format(new Date()));
+                String formattedSearchTime = DAILY_SUB_DIR_FORMAT.format(searchDate);
+                String indexDirStr = "log/" + formattedSearchTime + "/index";
+                boolean today = DAILY_SUB_DIR_FORMAT.format(new Date()).equals(
+                        formattedSearchTime);
                 //if the search date is today the index always have to recreated in a temp dir. The reason is that
                 //more log entries are up to come for today....
                 if (today) {
-                    indexDirStr = "log/" + this.dailySubDirFormat.format(searchDate) + "/index_tmp";
+                    indexDirStr = "log/" + formattedSearchTime + "/index_tmp";
                     //this directory is useless tomorrow and then the standard index directory will be used. Anyway
                     //it makes no sense to create the index directory for todays log lines because then the later searches will
                     //think that the index is complete - but it is possible that more log lines happen today
                 }
                 //skip the index generation process for this date if there is no log directory available for the day
-                if (!Files.exists(Paths.get("log", this.dailySubDirFormat.format(searchDate)))) {
+                if (!Files.exists(Paths.get("log", formattedSearchTime))) {
                     continue;
                 }
                 try {
@@ -127,36 +129,28 @@ public abstract class ServerSideLogfileSearch {
             IndexReader[] indexReaderArray = (IndexReader[]) indexReaderList.toArray(new IndexReader[indexReaderList.size()]);
             //setup multiple index reader - one for each date. The search will be performed over all index files
             //as the multireader merges the index files of the search days
-            multiReader = new MultiReader(indexReaderArray, true);
-            IndexSearcher searcher = new IndexSearcher(multiReader);
-            Query query = this.buildQueryFromFilter(filter);
-            SortField msSortField = new SortField(Logline.KEY_MILLISECS, SortField.Type.STRING, true);
-            Sort sortByMillisecs = new Sort(msSortField);
-            long startTime = System.currentTimeMillis();
-            //finally perform the search
-            TopDocs hits = searcher.search(query, filter.getMaxResults(), sortByMillisecs);
-            //System.out.println("Searched in " + (System.currentTimeMillis()-startTime) + "ms");
-            if (hits.totalHits.value > 0) {
-                for (ScoreDoc scoreDoc : hits.scoreDocs) {
-                    Document doc = multiReader.document(scoreDoc.doc);
-                    try {
-                        resultList.add(this.generateLoglineFromSingleSearchResult(doc));
-                    } catch (Throwable e) {
-                        //ignore this - it is possible that a corrupted index prevent the
-                        //regeneration of the object
+            try (MultiReader multiReader = new MultiReader(indexReaderArray, true)) {
+                IndexSearcher searcher = new IndexSearcher(multiReader);
+                Query query = this.buildQueryFromFilter(filter);
+                SortField msSortField = new SortField(Logline.KEY_MILLISECS, SortField.Type.STRING, true);
+                Sort sortByMillisecs = new Sort(msSortField);
+                //finally perform the search
+                TopDocs hits = searcher.search(query, filter.getMaxResults(), sortByMillisecs);             
+                if (hits.totalHits.value > 0) {
+                    StoredFields storedFields = searcher.storedFields();
+                    for (ScoreDoc scoreDoc : hits.scoreDocs) {
+                        Document hitDoc = storedFields.document(scoreDoc.doc);
+                        try {
+                            resultList.add(this.generateLoglineFromSingleSearchResult(hitDoc));
+                        } catch (Throwable e) {
+                            //ignore this - it is possible that a corrupted index prevent the
+                            //regeneration of the object
+                        }
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            if (multiReader != null) {
-                try {
-                    multiReader.close();
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-            }
         }
         //sort by millisecs and if they are equal sort by sequence number
         Collections.sort(resultList);
@@ -174,27 +168,23 @@ public abstract class ServerSideLogfileSearch {
      * passed event date
      */
     private void recreateIndex(Date date, String indexDirStr) throws IOException {
+        //dont use DateTimeFormatter here - this class does not like references to calendars
+        final DateFormat DAILY_SUB_DIR_FORMAT = new SimpleDateFormat("yyyyMMdd");
         int logFileCount = 0;
-        IndexWriter indexWriter = null;
         Path indexDirPath = Paths.get(indexDirStr);
         //generate index
-        try {
-            FSDirectory indexDir = FSDirectory.open(indexDirPath);
-            IndexWriterConfig config = new IndexWriterConfig();
-            indexWriter = new IndexWriter(indexDir, config);
-            Path storageDir = Paths.get("log", this.dailySubDirFormat.format(date));
-            DirectoryStream<Path> dirStream = null;
-            try {
-                dirStream = Files.newDirectoryStream(storageDir);
+        FSDirectory indexDir = FSDirectory.open(indexDirPath);
+        IndexWriterConfig config = new IndexWriterConfig();
+        try (IndexWriter indexWriter = new IndexWriter(indexDir, config)) {
+            Path storageDir = Paths.get("log", DAILY_SUB_DIR_FORMAT.format(date));
+            try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(storageDir)) {
                 indexWriter.deleteAll();
                 for (Path foundLogfile : dirStream) {
                     if (Files.isDirectory(foundLogfile)) {
                         continue;
                     }
                     logFileCount++;
-                    BufferedReader reader = null;
-                    try {
-                        reader = Files.newBufferedReader(foundLogfile);
+                    try (BufferedReader reader = Files.newBufferedReader(foundLogfile)) {
                         String line = "";
                         while (line != null) {
                             line = reader.readLine();
@@ -220,33 +210,13 @@ public abstract class ServerSideLogfileSearch {
                     } catch (Throwable e) {
                         //ignore - it is no log line in the right format that has been found
                         e.printStackTrace();
-                    } finally {
-                        if (reader != null) {
-                            try {
-                                reader.close();
-                            } catch (Exception e) {
-                                //nop
-                            }
-                        }
                     }
-                }
-            } finally {
-                if (dirStream != null) {
-                    dirStream.close();
                 }
             }
             //finally rewrite the index
             indexWriter.commit();
         } catch (Exception e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (indexWriter != null) {
-                    indexWriter.close();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
         }
     }
 

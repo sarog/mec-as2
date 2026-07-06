@@ -1,5 +1,6 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 15    2/11/23 14:02 Heller $
+ ///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 23    24/03/26 15:34 Heller $
 package de.mendelson.comm.as2.servlet;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -12,16 +13,22 @@ package de.mendelson.comm.as2.servlet;
  * Servlet to display the server state
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 23 $
  */
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
 import de.mendelson.util.clientserver.about.ServerInfoResponse;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.clientserver.AnonymousTextClient;
+import de.mendelson.util.clientserver.ClientType;
+import de.mendelson.util.clientserver.connectionpool.PooledAnonymousTextClient;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.DateFormat;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.FormatStyle;
 import java.util.Map;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
@@ -33,7 +40,8 @@ public class ServerState extends HttpServlet {
     /**
      * Format the date display
      */
-    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
+    private static final DateTimeFormatter FORMAT
+            = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT);
 
     public ServerState() {
     }
@@ -43,7 +51,7 @@ public class ServerState extends HttpServlet {
      */
     @Override
     public void doGet(HttpServletRequest req, HttpServletResponse res) throws ServletException, IOException {
-        Map map = req.getParameterMap();
+        Map<String, String[]> map = req.getParameterMap();
         String output = "html";
         if (map.containsKey("output")) {
             output = ((String[]) map.get("output"))[0];
@@ -75,26 +83,23 @@ public class ServerState extends HttpServlet {
         builder.append("    </head>");
         builder.append("    <body>");
         boolean processingUnitUp = false;
-        AnonymousTextClient client = null;
-        try {
-            client = new AnonymousTextClient();
+        try (AnonymousTextClient client = PooledAnonymousTextClient.createClient(
+                ClientType.WEB, AS2ServerVersion.instance())) {
             client.setDisplayServerLogMessages(false);
             client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             ServerInfoResponse response = (ServerInfoResponse) client.sendSync(new ServerInfoRequest(), 30000);
-            long startTime = Long.valueOf(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME)).longValue();
-            builder.append("The AS2 processing unit "
-                    + response.getProperties().getProperty(ServerInfoResponse.SERVER_PRODUCT_NAME) + " "
-                    + response.getProperties().getProperty(ServerInfoResponse.SERVER_VERSION) + " "
-                    + response.getProperties().getProperty(ServerInfoResponse.SERVER_BUILD) + " is up and running since "
-                    + format.format(startTime) + ".");
+            long startTime = Long.parseLong(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME));
+            ZonedDateTime zonedDateTime = Instant.ofEpochMilli(startTime).atZone(ZoneId.systemDefault());
+            builder.append("The mendelson AS2 processing unit ")
+                    .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_PRODUCT_NAME)).append(" ")
+                    .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_VERSION)).append(" ")
+                    .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_BUILD)).append(" is up and running since ")
+                    .append(FORMAT.format(zonedDateTime))
+                    .append(".");
             processingUnitUp = true;
         } catch (Exception e) {
             builder.append("Error connecting to AS2 processing unit: ");
             builder.append(e.getMessage());
-        } finally {
-            if (client != null && client.isConnected()) {
-                client.disconnect();
-            }
         }
         builder.append("<br><br>");
         if (processingUnitUp) {

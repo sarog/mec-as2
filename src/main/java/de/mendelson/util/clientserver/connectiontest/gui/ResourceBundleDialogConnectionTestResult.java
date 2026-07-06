@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult.java 12    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult.java 14    9/04/26 8:08 Heller $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleDialogConnectionTestResult extends MecResourceBundle {
 
@@ -29,19 +30,19 @@ public class ResourceBundleDialogConnectionTestResult extends MecResourceBundle 
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Connection test result"},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_OFTP2, 
+        {"description." + ConnectionTest.Type.OFTP2.toInt(), 
             "The system performed an IP connection to the ip address {0}, port {1}. "
             + "The following result log shows if this connection was successful and if an OFTP2 server listens to this address. "
             + "If a TLS connection has been requested and was successful it is possible to download the certificate(s), they will be stored in your TLS keystore."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS2, 
+        {"description." +  ConnectionTest.Type.AS2.toInt(), 
             "The system performed an IP connection to the ip address {0}, port {1}. "
             + "The following result log shows if this connection was successful and if a HTTP server listens to this address. "
             + "Even if the test is successful it is not ensured that there listens a AS2 server - it could be a normal HTTP server. "
             + "If a TLS connection has been requested (HTTPS) and was successful it is possible to download the certificate(s), "
             + "they will be stored in your TLS keystore."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS4, 
+        {"description." +  ConnectionTest.Type.AS4.toInt(), 
             "The system performed an IP connection to the ip address {0}, port {1}. "
             + "The following result log shows if this connection was successful and if a HTTP server listens to this address. "
             + "Even if the test is successful it is not ensured that there listens a AS4 server - it could be a normal HTTP server. "
@@ -54,7 +55,7 @@ public class ResourceBundleDialogConnectionTestResult extends MecResourceBundle 
         {"header.ssl", "{0} [TLS]"},
         {"header.plain", "{0} [PLAIN]"},
         {"no.certificate.plain", "Not available (Plain connection test)"},
-        {"button.viewcert", "<HTML><div style=\"text-align:center\">Import certificate(s)</div></HTML>"},
+        {"button.viewcert", "<HTML>Import&nbsp;certificate(s)</HTML>"},
         {"button.close", "Close"},
         {"label.connection.established", "The raw IP connection has been established"},
         {"label.certificates.available.local", "The partner TLS certificates are available in your system"},

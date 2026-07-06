@@ -1,10 +1,12 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/ImageButtonBarUI.java 6     19.12.19 13:11 Heller $
+//$Header: /mec_as4/de/mendelson/util/ImageButtonBarUI.java 9     14/04/26 9:04 Heller $
 package de.mendelson.util;
 
 import com.l2fprod.common.swing.plaf.basic.BasicButtonBarUI;
 import com.l2fprod.common.swing.plaf.blue.BlueishButtonBarUI;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Insets;
 import javax.swing.AbstractButton;
 import javax.swing.BorderFactory;
 import javax.swing.JComponent;
@@ -27,19 +29,18 @@ import javax.swing.plaf.basic.BasicButtonUI;
  * UI LAF for the button bar
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class ImageButtonBarUI extends BasicButtonBarUI {
 
+    public static final int DEFAULT_IMAGE_HEIGHT = 28;
+    
     public static ComponentUI createUI(JComponent c) {
         return new BlueishButtonBarUI();
     }
 
     @Override
     protected void installDefaults() {
-        
-        
-     
         Border border = this.bar.getBorder();
         if (border == null || border instanceof javax.swing.plaf.UIResource) {
             this.bar.setBorder(new BorderUIResource(
@@ -48,21 +49,20 @@ public class ImageButtonBarUI extends BasicButtonBarUI {
                                     UIManager.getColor("Panel.background")),
                             BorderFactory.createEmptyBorder(1, 1, 1, 1))));
         }
-
         Color color = this.bar.getBackground();
         if (color == null || color instanceof ColorUIResource) {
             this.bar.setOpaque(true);
             //defaults to white in standard Windows theme
             this.bar.setBackground(new ColorUIResource(
                     UIManager.getLookAndFeelDefaults().getColor("List.background")));
-        }
+        }        
     }
 
     @Override
     public void installButtonBarUI(AbstractButton button) {
         button.setUI(new ImageButtonBarButtonUI());
         button.setHorizontalTextPosition(0);
-        button.setVerticalTextPosition(3);
+        button.setVerticalTextPosition(3);        
         button.setOpaque(false);
     }
 
@@ -115,8 +115,8 @@ public class ImageButtonBarUI extends BasicButtonBarUI {
         }
 
         @Override
-        public void paint(Graphics g, JComponent c) {
-            AbstractButton button = (AbstractButton) c;
+        public void paint(Graphics g, JComponent component) {
+            AbstractButton button = (AbstractButton) component;
             if (button.getModel().isRollover() || button.getModel().isArmed() || button.getModel().isSelected()) {
                 Color oldColor = g.getColor();
                 if (button.getModel().isSelected()) {
@@ -126,18 +126,18 @@ public class ImageButtonBarUI extends BasicButtonBarUI {
                     g.setColor(BACKGROUND_COLOR_HOVER);
                     button.setForeground(FOREGROUND_COLOR_HOVER);
                 }
-                g.fillRect(0, 0, c.getWidth() - 1, c.getHeight() - 1);
+                g.fillRect(0, 0, component.getWidth() - 1, component.getHeight() - 1);
                 if (button.getModel().isSelected()) {
                     g.setColor(BORDER_COLOR_SELECTED);
                 } else {
                     g.setColor(BORDER_COLOR_HOVER);
                 }
-                g.drawRect(0, 0, c.getWidth() - 1, c.getHeight() - 1);
+                g.drawRect(0, 0, component.getWidth() - 1, component.getHeight() - 1);
                 g.setColor(oldColor);
             }else{
                 button.setForeground(UIManager.getLookAndFeelDefaults().getColor("Button.foreground")); 
             }
-            super.paint(g, c);
+            super.paint(g, component);
         }
     }
 }

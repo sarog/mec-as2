@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 24    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 31    17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -7,12 +7,14 @@ import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.filesystemview.RemoteFileBrowser;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.tables.JTableColumnResizer;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 /*
@@ -23,32 +25,37 @@ import javax.swing.SwingUtilities;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- *Panel to define the directory preferences
+ * Panel to define the directory preferences
+ *
  * @author S.Heller
- * @version: $Revision: 24 $
+ * @version: $Revision: 31 $
  */
-public class PreferencesPanelDirectories extends PreferencesPanel {
+public final class PreferencesPanelDirectories extends PreferencesPanel {
 
-    private final static MendelsonMultiResolutionImage ICON_FOLDER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/folder.svg", 
-                    JDialogPreferences.IMAGE_HEIGHT, JDialogPreferences.IMAGE_HEIGHT*2);
-    
-    /**Localize the GUI*/
-    private MecResourceBundle rb = null;
-    /**GUI prefs*/
-    private final PreferencesClient preferences;
-    private final BaseClient baseClient;
-    private String preferencesStrAtLoadTime = "";
+    private static final MendelsonMultiResolutionImage ICON_FOLDER
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/folder.svg",
+                    JDialogPreferences.IMAGE_HEIGHT);
 
-    /** Creates new form PreferencesPanelDirectories */
-    public PreferencesPanelDirectories(BaseClient baseClient) {
-        //load resource bundle
+    private static final MecResourceBundle rb;
+
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundlePreferences.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private final PreferencesClient preferences;
+    private final BaseClient baseClient;
+    private String preferencesStrAtLoadTime = "";
+
+    /**
+     * Creates new form PreferencesPanelDirectories
+     */
+    public PreferencesPanelDirectories(BaseClient baseClient) {
+        //load resource bundle
+
         this.preferences = new PreferencesClient(baseClient);
         this.baseClient = baseClient;
         this.initComponents();
@@ -57,18 +64,19 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         this.setButtonState();
     }
 
-    private void initializeHelp(){
-        this.jPanelUIHelpPartnerDir.setToolTip( this.rb, "receipt.subdir.help");
+    private void initializeHelp() {
+        this.jPanelUIHelpPartnerDir.setToolTip(this.rb, "receipt.subdir.help");
     }
-    
-    /**checks the state of the buttons, it depends on the selection in
-     *the table
+
+    /**
+     * checks the state of the buttons, it depends on the selection in the table
      */
     private void setButtonState() {
         this.jButtonChange.setEnabled(this.jTable.getSelectedRow() >= 0);
     }
 
-    /**Sets new preferences to this panel to changes/modify
+    /**
+     * Sets new preferences to this panel to changes/modify
      */
     @Override
     public void loadPreferences() {
@@ -82,35 +90,39 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         }
         ((TableModelPreferencesDir) this.jTable.getModel()).passNewData(list);
         JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
-        this.jCheckBoxReceiverSubdirectory.setSelected(this.preferences.getBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR));
+        this.switchButtonReceiverSubdirectory.setSelected(this.preferences.getBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR));
         this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
-    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
-    private String captureSettingsToStr(){
+    /**
+     * Helper method to find out if there are changes in the GUI before storing
+     * them to the server
+     */
+    private String captureSettingsToStr() {
         StringBuilder builder = new StringBuilder();
         PreferencesObjectKeyValue directory = ((TableModelPreferencesDir) this.jTable.getModel()).getPreference(0);
         String currentPath = directory.getValue();
-        builder.append( PreferencesAS2.DIR_MSG ).append("=")
-                .append( currentPath).append(";");
-        builder.append( PreferencesAS2.RECEIPT_PARTNER_SUBDIR ).append("=")
-                .append( this.jCheckBoxReceiverSubdirectory.isSelected()).append(";");        
-        return( builder.toString() );
+        builder.append(PreferencesAS2.DIR_MSG).append("=")
+                .append(currentPath).append(";");
+        builder.append(PreferencesAS2.RECEIPT_PARTNER_SUBDIR).append("=")
+                .append(this.switchButtonReceiverSubdirectory.isSelected()).append(";");
+        return (builder.toString());
     }
-    
+
     @Override
     public boolean preferencesAreModified() {
-        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+        return (!this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()));
     }
-    
-    
-    /**Modifies the selected row in the table*/
+
+    /**
+     * Modifies the selected row in the table
+     */
     private void modifySelection() {
         PreferencesObjectKeyValue directory = ((TableModelPreferencesDir) this.jTable.getModel()).getPreference(this.jTable.getSelectedRow());
         String existingPath = directory.getValue();
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         RemoteFileBrowser browser = new RemoteFileBrowser(parent, this.baseClient,
-                this.rb.getResourceString("remotedir.select"));
+                rb.getResourceString("remotedir.select"));
         browser.setDirectoriesOnly(true);
         browser.setSelectedFile(existingPath);
         browser.setVisible(true);
@@ -118,21 +130,24 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         if (selectedPath != null) {
             directory.setValue(selectedPath);
             ((TableModelPreferencesDir) this.jTable.getModel()).fireTableDataChanged();
-            this.preferences.put(directory.getKey(), selectedPath);
+            try {
+                this.preferences.put(directory.getKey(), selectedPath);
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
         }
     }
 
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
      */
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
         java.awt.GridBagConstraints gridBagConstraints;
 
         jPanelMargin = new javax.swing.JPanel();
-        jCheckBoxReceiverSubdirectory = new javax.swing.JCheckBox();
         jPanelDirSelection = new javax.swing.JPanel();
         jScrollPane = new javax.swing.JScrollPane();
         jTable = new javax.swing.JTable();
@@ -140,25 +155,12 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         jPanelUIHelpPartnerDir = new de.mendelson.util.balloontip.JPanelUIHelp();
         jPanelSpacer = new javax.swing.JPanel();
         jPanelSpaceAbove = new javax.swing.JPanel();
+        switchButtonReceiverSubdirectory = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        jLabelReceiverSubdirectory = new javax.swing.JLabel();
 
         setLayout(new java.awt.GridBagLayout());
 
         jPanelMargin.setLayout(new java.awt.GridBagLayout());
-
-        jCheckBoxReceiverSubdirectory.setText(this.rb.getResourceString( "receipt.subdir" ));
-        jCheckBoxReceiverSubdirectory.setBorder(javax.swing.BorderFactory.createEmptyBorder(0, 0, 0, 0));
-        jCheckBoxReceiverSubdirectory.setMargin(new java.awt.Insets(0, 0, 0, 0));
-        jCheckBoxReceiverSubdirectory.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jCheckBoxReceiverSubdirectoryActionPerformed(evt);
-            }
-        });
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 3;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
-        jPanelMargin.add(jCheckBoxReceiverSubdirectory, gridBagConstraints);
 
         jPanelDirSelection.setLayout(new java.awt.GridBagLayout());
 
@@ -197,7 +199,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 4;
-        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridwidth = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.weighty = 1.0;
@@ -210,7 +212,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         gridBagConstraints.gridy = 3;
         jPanelMargin.add(jPanelUIHelpPartnerDir, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 4;
         gridBagConstraints.gridy = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
@@ -219,9 +221,31 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.gridwidth = 5;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelMargin.add(jPanelSpaceAbove, gridBagConstraints);
+
+        switchButtonReceiverSubdirectory.setDisplayStatusText(true);
+        switchButtonReceiverSubdirectory.setHorizontalTextPosition(SwingConstants.LEFT);
+        switchButtonReceiverSubdirectory.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                switchButtonReceiverSubdirectoryActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.insets = new java.awt.Insets(5, 50, 5, 5);
+        jPanelMargin.add(switchButtonReceiverSubdirectory, gridBagConstraints);
+
+        jLabelReceiverSubdirectory.setText(this.rb.getResourceString( "receipt.subdir" ));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 3;
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
+        jPanelMargin.add(jLabelReceiverSubdirectory, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -242,12 +266,17 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         this.modifySelection();
     }//GEN-LAST:event_jButtonChangeActionPerformed
 
-private void jCheckBoxReceiverSubdirectoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jCheckBoxReceiverSubdirectoryActionPerformed
-    this.preferences.putBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR, this.jCheckBoxReceiverSubdirectory.isSelected());
-}//GEN-LAST:event_jCheckBoxReceiverSubdirectoryActionPerformed
+    private void switchButtonReceiverSubdirectoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_switchButtonReceiverSubdirectoryActionPerformed
+        try {
+            this.preferences.putBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR, this.switchButtonReceiverSubdirectory.isSelected());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
+    }//GEN-LAST:event_switchButtonReceiverSubdirectoryActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonChange;
-    private javax.swing.JCheckBox jCheckBoxReceiverSubdirectory;
+    private javax.swing.JLabel jLabelReceiverSubdirectory;
     private javax.swing.JPanel jPanelDirSelection;
     private javax.swing.JPanel jPanelMargin;
     private javax.swing.JPanel jPanelSpaceAbove;
@@ -255,6 +284,7 @@ private void jCheckBoxReceiverSubdirectoryActionPerformed(java.awt.event.ActionE
     private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelpPartnerDir;
     private javax.swing.JScrollPane jScrollPane;
     private javax.swing.JTable jTable;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchButtonReceiverSubdirectory;
     // End of variables declaration//GEN-END:variables
 
     @Override
@@ -264,7 +294,7 @@ private void jCheckBoxReceiverSubdirectoryActionPerformed(java.awt.event.ActionE
 
     @Override
     public ImageIcon getIcon() {
-        return (new ImageIcon( ICON_FOLDER));
+        return (new ImageIcon(ICON_FOLDER));
     }
 
     @Override
