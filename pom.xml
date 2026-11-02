@@ -166,9 +166,9 @@
                         WEB-INF/lib/jaxen-*.jar,
                         WEB-INF/lib/jcalendar-*.jar,
                         WEB-INF/lib/jfreechart-*.jar,
-                        WEB-INF/lib/jfreechart_common-*.jar,
+                        WEB-INF/lib/jcommon-*.jar, <!-- jfreechart_common -->
                         WEB-INF/lib/jsch-*.jar,
-                        WEB-INF/lib/l2fprod-common-all.jar,
+                        WEB-INF/lib/l2fprod-common-*.jar,
                         WEB-INF/lib/mina-core-*.jar,
                         WEB-INF/lib/slf4j-api-*.jar,
                         WEB-INF/lib/slf4j-nop-*.jar
@@ -203,9 +203,9 @@
                                 <include>jaxen-*.jar</include>
                                 <include>jcalendar-*.jar</include>
                                 <include>jfreechart-*.jar</include>
-                                <include>jfreechart_common-*.jar</include>
+                                <include>jcommon-*.jar</include>
                                 <include>jsch-*.jar</include>
-                                <include>l2fprod-common-all.jar</include>
+                                <include>l2fprod-common-*.jar</include>
                                 <include>mina-core-*.jar</include>
                                 <include>slf4j-api-*.jar</include>
                                 <include>slf4j-nop-*.jar</include>
@@ -271,7 +271,7 @@
                                         <include>jfreechart-*.jar</include>
                                         <include>jfreechart_common-*.jar</include>
                                         <include>jsch-*.jar</include>
-                                        <include>l2fprod-common-all.jar</include>
+                                        <include>l2fprod-common-.jar</include>
                                         <include>mina-core-*.jar</include>
                                         <include>slf4j-api-*.jar</include>
                                         <include>slf4j-nop-*.jar</include>
