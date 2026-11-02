@@ -78,6 +78,14 @@
             </includes>
         </fileSet>
 
+        <fileSet>
+            <directory>dist</directory>
+            <outputDirectory>/jetty10</outputDirectory>
+            <includes>
+                <include>jetty.config</include>
+            </includes>
+        </fileSet>
+
 
         <!-- Include local system-scope help jars manually because Maven does not copy system dependencies normally -->
         <fileSet>
