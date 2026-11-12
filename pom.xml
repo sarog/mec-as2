@@ -602,6 +602,11 @@
             <version>3.6.2</version>
         </dependency>
 
+        <!--
+        todo: httpcomponents new location: org.apache.httpcomponents.client5 » httpclient5
+                https://mvnrepository.com/artifact/org.apache.httpcomponents.client5/httpclient5
+        -->
+
         <!-- Source: https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -611,12 +616,12 @@
         </dependency>
 
         <!-- Source: https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient-cache -->
-        <!--<dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient-cache</artifactId>
             <version>4.5.14</version>
             <scope>compile</scope>
-        </dependency>-->
+        </dependency>
 
         <dependency>
             <groupId>org.apache.httpcomponents</groupId>
@@ -705,6 +710,8 @@
             <scope>compile</scope>
         </dependency>
 
+        <!-- https://github.com/l2fprod/l2fprod-common -->
+
         <!--<dependency>
             <groupId>com.l2fprod</groupId>
             <artifactId>l2fprod-common-all</artifactId>
@@ -716,6 +723,13 @@
             <artifactId>l2fprod-common-buttonbar</artifactId>
             <version>6.9.1</version>
         </dependency>
+
+        <!--<dependency>
+            <groupId>l2fprod</groupId>
+            <artifactId>l2fprod-common-directorychooser</artifactId>
+            <version>7.3</version>
+            <scope>compile</scope>
+        </dependency>-->
 
         <!-- XML / PDF / image-related legacy libraries -->
         <dependency>
