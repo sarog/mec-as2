@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='ISO-8859-1'  ?>
+
+<toc version="1.0">
+
+<tocitem text="mendelson AS2" target="as2_main">
+	<tocitem text="Installation" target="as2_install"/>
+	<tocitem text="Technical overview" target="commercial"/>
+	<tocitem text="First steps" target="commercial"/>
+	<tocitem text="Architecture" target="overview"/>
+        <tocitem text="Client-server" target="commercial"/>
+        <tocitem text="Client" target="commercial"/>
+        <tocitem text="System administration" target="commercial"/>
+	<tocitem text="Send and receive" target="send_receive"/>
+        <tocitem text="Certificates and keys" target="security_certs"/>
+        <tocitem text="Certificate exchange (CEM)" target="commercial"/>
+        <tocitem text="Directory structure" target="commercial"/>
+	<tocitem text="Logging" target="logging"/>
+	<tocitem text="Partner" target="partner"/>
+	<tocitem text="Additional configuration" target="commercial"/>
+        <tocitem text="SSL setup" target="commercial"/>
+        <tocitem text="Statistic" target="commercial"/>
+        <tocitem text="Settings" target="commercial"/>
+	<tocitem text="Notification" target="commercial"/>
+	<tocitem text="Web interface" target="commercial"/>
+        <tocitem text="Integration" target="commercial"/>                        
+        <tocitem text="Backup of the configuration" target="commercial"/>
+        <tocitem text="AS2 server update" target="commercial"/>
+	<tocitem text="Troubleshooting" target="commercial"/>
+</tocitem>
+
+</toc>
+
+
+

@@ -1,0 +1,669 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>Partner Einstellungen</TITLE>
+<link rel="stylesheet" href="../../doc/mec_HTMLdoc.css">
+</HEAD>
+<h2>Partner</h2>
+<hr>
+<h3><a href="#overview">&Uuml;bersicht</a><br>
+  <a href="#settings">Einstellungen</a></h3>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h2><a name="overview" id="overview"></a> &Uuml;bersicht</h2>
+<p>&nbsp;</p>
+<p><img src="../images/as2_partner.png" width="653" height="404" alt="Partner"></p>
+<p>Partner sind im AS2 Server alle Parteien der Kommunikation. Ein Partner nimmt 
+  eine gesonderte Stellung ein: die lokale Station (es k&ouml;nnen mehrere definiert 
+  werden). Es werden folgende Icons benutzt:</p>
+<table width="75%" border="0">
+  <tr>
+    <td width="4%"><object data="../images/localstation.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td width="96%">Lokale Station</td>
+  </tr>
+  <tr>
+    <td><object data="../images/singlepartner.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>Entfernter AS2 Partner</td>
+  </tr>
+</table>
+<p>Lokale Station und Partner haben eine geringf&uuml;gig andere Konfiguration. 
+  Die GUI beachtet dies, bitte wundern Sie sich aus diesen Gr&uuml;nden nicht 
+  dar&uuml;ber, dass einige Felder bei dem einen oder anderen ausgegraut sind. 
+  Ausgegraute Felder sind Konfigurationsdaten, die f&uuml;r den Partner in der 
+  jeweiligen Position nicht relevant sind.</p>
+<p>Es muss immer mindestens eine lokale Station definiert sein, sie k&ouml;nnen 
+  aber nat&uuml;rlich beliebig viele definieren und damit verschiedene Identit&auml;ten 
+  annehmen. <br>
+  Lokale Stationen haben weniger Einstellungsm&ouml;glichkeiten als dazugeh&ouml;rige 
+  Partner. Wenn Sie also eine lokale Station definiert haben, sind einige Reiter 
+  der Konfigurationseinstellung nicht mehr erreichbar.</p>
+<p>&nbsp;</p>
+<h2><a name="settings" id="settings"></a> Einstellungen</h2>
+<p>&Uuml;ber die Einstellungen des Servers definieren Sie das Sende- und Empfangsverhalten 
+  von Nachrichten (partnerspezifisch). Hierbei gibt es folgende Einstellungen:</p>
+<p>&nbsp;</p>
+<p><strong>Allgemein:</strong></p>
+<p>Jeder Partner und auch die lokale Station hat einen internen Namen und eine 
+  &ouml;ffentliche AS2 Kennung. Diese AS2 Kennung muss sowohl vom Sender als auch 
+  vom Empf&auml;nger f&uuml;r einen Kommunikationskanal benutzt werden. Sie m&uuml;ssen 
+  also Ihren Partnern Ihre AS2 id mitteilen, damit diese Ihre Nachrichten identifizieren 
+  k&ouml;nnen. Es ist nicht m&ouml;glich, mehrere Partner mit der gleichen Kennung 
+  zu definieren, ansonsten w&auml;re es eingangsseitig nicht m&ouml;glich, den 
+  Nachrichtenempf&auml;nger eindeutig zu identifizieren</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>Sicherheit:</strong></p>
+<p>AS2 unterst&uuml;tzt das digitale Signieren und die Verschl&uuml;sselung von 
+  Nachrichten. Es gibt jeweils verschiedene Verschl&uuml;sselungsalgorithmen und 
+  Signaturalgorithmen (Hashalgorithmen). Sender und Empf&auml;nger einer Nachricht m&uuml;ssen die 
+  gleichen Algorithmen w&auml;hlen, ansonsten kann eine Kommunikation nicht zustande 
+  kommen.<br>
+  F&uuml;r die AS2 Kommunikation m&uuml;ssen sich beide Partner also vorher &uuml;ber 
+  die zu benutzene Sicherheit und die entsprechenden Algorithmen verabreden. Wenn 
+  ein Partner mit Ihnen Daten austauschen m&ouml;chte, teilen Sie ihm bitte die 
+Sicherheitseinstellungen mit.</p>
+<p>Die hier get&auml;tigten Einstellungen stellen nicht nur ausgangsseitig die Eckdaten f&uuml;r die Sicherheit dar. Vielmehr ist die eingestellte Verschl&uuml;sselung auch die erwartete Verschl&uuml;sselung eingehender Nachrichten dieses Partners. Wenn Sie zum Beispiel &quot;TripleDES&quot; als Verschl&uuml;sselung einstellen und Ihr Partner Ihnen unverschl&uuml;sselte Nachrichten schickt, wird die Transaktion mit dem Hinweis <span class="techDescription">insufficient-message-security</span> zur&uuml;ckgewiesen. <br>
+  Der hier eingestellte Signaturalgorithmus (zum Beispiel MD5, SHA-1) ist auch der, der f&uuml;r eine (eventuell) signierte MDN Ihres Transaktionspartners erwartet wird.<br>
+  <br>
+Bitte beachten Sie, dass die SHA-2 Hashalgorithmen (SHA-256, SHA-384, SHA-256) nicht Teil der AS2 Standarddefinition sind. Sie sind Teil des optionalen AS2 Profils &quot;SHA-2&quot;. Dieses optionale Profil wurde Ende 2012 eingef&uuml;hrt und kam in den ersten AS2 Produkten Mitte 2013 zum Einsatz. Wenn Ihr Partner eine &auml;ltere Version einer AS2 Software hat oder in seinem Produkt dieses optionale Profil nicht unterst&uuml;tzt wird, k&ouml;nnen Sie f&uuml;r den fehlerfreien Datenaustuasch nicht auf die die SHA-2 Hashalgorithmen zur&uuml;ckgreifen.</p>
+<p>mendelson AS2 unterst&uuml;tzt das optionale Profil SHA-2 seit &quot;mendelson 
+  AS2 2013 build 274&quot;, herausgekommen in 09/2013.</p>
+<p>&nbsp;</p>
+<p><strong>Sicherheit/Signatur:<br>
+  <br>
+  </strong>Hier stellen Sie den Algorithmus ein, mit dem die Daten signiert werden 
+  sollen. Die digitale Signatur stellt sicher, dass die Daten auf dem &Uuml;bertragungsweg 
+  nicht modifiziert wurden und erlaubt ausserdem eine eindeutige &Uuml;berpr&uuml;fung, 
+  dass der Absender der richtige ist.</p>
+<p>Sie finden neben den normalen SHA-n Signaturalgorithmen auch SHA-n Algorithmen 
+  mit dem Zusatz &quot;RSASSA-PSS&quot;. Der Grund, warum zwei verschiedene Signaturschemata 
+  unterst&uuml;tzt werden, findet sich im RFC 4056:</p>
+<p><em>1.1. PSS Algorithm</em></p>
+<p><em> Although there are no known defects with the PKCS #1 v1.5 [P1v1.5]<br>
+  signature algorithm, RSASSA-PSS [P1v2.1] was developed in an effort<br>
+  to have more mathematically provable security. PKCS #1 v1.5<br>
+  signatures were developed in an ad hoc manner; RSASSA-PSS was<br>
+  developed based on mathematical foundations.</em></p>
+<p>Einige Partner fordern explizit das RSASSA-PSS Signaturschema ein.</p>
+<p><br>
+  Es gibt einige Signaturalgorithmen, die allgemein als nicht mehr sicher gelten 
+  und daher unter Umst&auml;nden nicht empfehlenswert sind. <br>
+  Letzendlich liegt es (wie bei allen Parametern) immer in Ihrem Ermessen und 
+  der Abstimmung mit Ihrem Partner, ob Sie diese verwenden m&ouml;chten. <br>
+  Um unsere unverbindlichen Empfehlungen zu visualisieren, verwenden wir bei der 
+  Darstellung und Auswahl der Signaturalgorithmen folgende Icons mit folgenden 
+  Bedeutungen:</p>
+<br>
+<table width="509"border = 0>
+  <tr> 
+    <td width="70" height="24"><object data="../images/signature_broken.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td width="423">Kein Signaturalgorithmus</td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/signature_weak.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>Der Signaturalgorithmus wird allgemein als unsicher eingestuft (unverbindliche 
+      Empfehlung zum Zeitpunkt des Releases) </td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/signature_strong.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>Der Signaturalgorithmus wird allgemein als recht sicher eingestuft (unverbindliche 
+      Empfehlung zum Zeitpunkt des Releases)</td>
+  </tr>
+</table>
+<p><br>
+</p>
+<p>Hierbei haben folgende <strong>Signatureinstellungen</strong> die folgende 
+  Bedeutung:</p>
+<table width="700"border = 1>
+  <th width="190" height="24">Eintrag</th>
+  <th width="303">Verwendeter Algorithmus</th>
+    <th width="600">Hinweise</th>
+  
+  <tr> 
+    <td height="24">MD5</td>
+    <td>MD5</td>
+    <td>Message-Digest Algorithm 5 (MD5) ist eine weit verbreitete kryptographische 
+      Hashfunktion, die aus einer beliebigen Nachricht einen 128-Bit-Hashwert 
+      erzeugt. <span class="fontRed"><strong>Bitte verwenden Sie diesen Algorithmus 
+      nur, wenn Ihr Partner das einfordert, da er nicht sicher ist!</strong></span></td>
+  </tr>
+  <tr> 
+    <td height="36">SHA-1</td>
+    <td>EC Schl&uuml;ssel: <strong>SHA1withECDSA</strong><br>
+        RSA Schl&uuml;ssel: <strong>SHA1withRSA</strong>
+      </td>
+    <td>RSA Schl&uuml;ssel: PKCS#1 v1.5. SHA-224, SHA-256, SHA-384 und SHA-512: 
+      Die angef&uuml;gte Zahl bezeichnet jeweils die L&auml;nge des Hash-Werts 
+      (in Bit). Diese Weiterentwicklungen von SHA-1 werden h&auml;ufig unter der 
+      Bezeichnung SHA-2 zusammengefasst.</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-256</td>
+    <td>EC Schl&uuml;ssel: <strong>SHA256withECDSA</strong><br>
+      RSA Schl&uuml;ssel: <strong>SHA256withRSA</strong></td>
+    <td>RSA Schl&uuml;ssel: PKCS#1 v1.5. SHA-224, SHA-256, SHA-384 und SHA-512: 
+      Die angef&uuml;gte Zahl bezeichnet jeweils die L&auml;nge des Hash-Werts 
+      (in Bit). Diese Weiterentwicklungen von SHA-1 werden h&auml;ufig unter der 
+      Bezeichnung SHA-2 zusammengefasst.</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-384</td>
+    <td>EC Schl&uuml;ssel: <strong>SHA384withECDSA</strong><br>
+      RSA Schl&uuml;ssel: <strong>SHA384withRSA</strong></td>
+    <td>RSA Schl&uuml;ssel: PKCS#1 v1.5. SHA-224, SHA-256, SHA-384 und SHA-512: 
+      Die angef&uuml;gte Zahl bezeichnet jeweils die L&auml;nge des Hash-Werts 
+      (in Bit). Diese Weiterentwicklungen von SHA-1 werden h&auml;ufig unter der 
+      Bezeichnung SHA-2 zusammengefasst.</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-512</td>
+    <td>EC Schl&uuml;ssel: <strong>SHA512withECDSA</strong><br>
+      RSA Schl&uuml;ssel: <strong>SHA512withRSA</strong></td>
+    <td>RSA Schl&uuml;ssel: PKCS#1 v1.5. SHA-224, SHA-256, SHA-384 und SHA-512: 
+      Die angef&uuml;gte Zahl bezeichnet jeweils die L&auml;nge des Hash-Werts 
+      (in Bit). Diese Weiterentwicklungen von SHA-1 werden h&auml;ufig unter der 
+      Bezeichnung SHA-2 zusammengefasst.</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-1 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Schl&uuml;ssel: <strong>Nicht unterst&uuml;tzt</strong></span><br>
+      RSA Schl&uuml;ssel: <strong>SHA1withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1v2.1 RSASSA-PSS Signaturschema mit SHA-1 als Hash Algorithmus 
+      und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-224 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Schl&uuml;ssel: <strong>Nicht unterst&uuml;tzt</strong></span><br>
+      RSA Schl&uuml;ssel: <strong>SHA224withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1v2.1 RSASSA-PSS Signaturschema mit SHA-224 als Hash Algorithmus 
+      und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-256 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Schl&uuml;ssel: <strong>Nicht unterst&uuml;tzt</strong></span><br>
+      RSA Schl&uuml;ssel: <strong>SHA256withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1v2.1 RSASSA-PSS Signaturschema mit SHA-256 als Hash Algorithmus 
+      und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-384 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Schl&uuml;ssel: <strong>Nicht unterst&uuml;tzt</strong></span><br>
+      RSA Schl&uuml;ssel: <strong>SHA384withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1v2.1 RSASSA-PSS Signaturschema mit SHA-384 als Hash Algorithmus 
+      und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-512 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Schl&uuml;ssel: <strong>Nicht unterst&uuml;tzt</strong></span><br>
+      RSA Schl&uuml;ssel: <strong>SHA512withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1v2.1 RSASSA-PSS Signaturschema mit SHA-512 als Hash Algorithmus 
+      und MGF1. <strong>Bitte beachten Sie, dass die Schl&uuml;ssell&auml;nge 
+      gr&ouml;&szlig;er als 1024 bit sein muss, ansonsten kommt es zu der Fehlermeldung 
+      &quot;<span class="fontRed">key too small for specified hash and salt lengths</span>&quot;, 
+      P</strong>robabilistic <strong>S</strong>ignature <strong>S</strong>cheme<strong> 
+      </strong></td>
+  </tr>
+</table>
+<p>Bei der Signatur der MDN wird versucht, das gleiche Signaturschema zu verwenden, 
+  wie es auch f&uuml;r eingehende AS2 Nachrichten verwendet wurde. Wenn also eine 
+  eingehende Nachricht mit SHA-1 (RSA SSA-PSS) signiert wurde und SHA-1 als m&ouml;glicher 
+  Signaturalgorithmus f&uuml;r die MDN in den Disposition Notification Options 
+  (HTTP header) der eingehenden AS2 Nachricht gelistet ist, wird auch die MDN 
+  mit SHA-1 (RSA SSA-PSS) signiert.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>Es gibt einige Verschl&uuml;sselungsgorithmen, die allgemein als nicht mehr 
+  sicher gelten und daher unter Umst&auml;nden nicht empfehlenswert sind. <br>
+  Letzendlich liegt es (wie bei allen Parametern) immer in Ihrem Ermessen und 
+  der Abstimmung mit Ihrem Partner, ob Sie diese verwenden m&ouml;chten. <br>
+  Um unsere unverbindlichen Empfehlungen zu visualisieren, verwenden wir bei der 
+  Darstellung und Auswahl der Verschl&uuml;sselungsalgorithmen folgende Icons 
+  mit folgenden Bedeutungen:</p>
+<br>
+<table width="509"border = 0>
+  <tr> 
+    <td width="70" height="24"><object data="../images/encryption_broken.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td width="423">Unverschl&uuml;sselt</td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/encryption_weak.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>Der Verschl&uuml;sselungsalgorithmus wird allgemein als unsicher eingestuft 
+      (unverbindliche Empfehlung zum Zeitpunkt des Releases) </td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/encryption_strong.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>Der Verschl&uuml;sselungsalgorithmus wird allgemein als recht sicher eingestuft 
+      (unverbindliche Empfehlung zum Zeitpunkt des Releases)</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>Hierbei haben folgende <strong>Verschl&uuml;sselungseinstellungen</strong> 
+  die folgende Bedeutung:</p>
+<table width="700"border = 1>
+  <th width="190" height="24">Eintrag</th>
+  <th width="303">Verwendeter Algorithmus</th>
+  <th width="600">Hinweise</th>
+  <tr> 
+    <td height="24">3DES</td>
+    <td>3DES</td>
+    <td>Mehrfachanwendung des DES zur Vergr&ouml;sserung der Schl&uuml;ssell&auml;nge, 
+      wird auch als Triple-DES, TDES, 3DES oder DESede bezeichnet.<br>
+      Der Triple Data Encryption Algorithm (3DES) wurde vom NIST (National Institute of Standards and Technology, US) offiziell aus dem Verkehr gezogen. Dies geht aus einem Richtlinienentwurf hervor, den das NIST am 19. Juli 2018 ver&ouml;ffentlicht hat. Laut dem Standard <span class="fontRed"><strong>wird 3DES nach einer &ouml;ffentlichen Debatte f&uuml;r alle neuen Anwendungen veraltet sein, und seine Verwendung wird nach 2023 verboten sein.</strong></span></td>
+  </tr>
+  <tr> 
+    <td height="20">RC2-40</td>
+    <td>RC2</td>
+    <td>RC2 ist eine 64 Bit Blockchiffre mit variabler Schl&uuml;ssell&auml;nge, 
+      die von Ronald Rivest als m&ouml;glicher Ersatz f&uuml;r DES im Jahr 1987 
+      entwickelt wurde. RC steht f&uuml;r Rivest Cipher oder Ron&#8217;s Code. 
+      <span class="fontRed"><strong>RC2 ist verwundbar gegen&uuml;ber einem Angriff 
+      mit verwandtem Schl&uuml;ssel, welcher 2<sup>34</sup> Klartextbl&ouml;cke ben&ouml;tigt. 
+      </strong> </span></td>
+  </tr>
+  <tr> 
+    <td height="20">RC2-64</td>
+    <td>RC2</td>
+    <td>RC2 ist eine 64 Bit Blockchiffre mit variabler Schl&uuml;ssell&auml;nge, 
+      die von Ronald Rivest als m&ouml;glicher Ersatz f&uuml;r DES im Jahr 1987 
+      entwickelt wurde. RC steht f&uuml;r Rivest Cipher oder Ron&#8217;s Code. 
+      <span class="fontRed"><strong>RC2 ist verwundbar gegen&uuml;ber einem Angriff 
+      mit verwandtem Schl&uuml;ssel, welcher 2<sup>34</sup> Klartextbl&ouml;cke 
+      ben&ouml;tigt. </strong></span> </td>
+  </tr>
+  <tr> 
+    <td height="24">RC2-128</td>
+    <td>RC2</td>
+    <td>RC2 ist eine 64 Bit Blockchiffre mit variabler Schl&uuml;ssell&auml;nge, 
+      die von Ronald Rivest als m&ouml;glicher Ersatz f&uuml;r DES im Jahr 1987 
+      entwickelt wurde. RC steht f&uuml;r Rivest Cipher oder Ron&#8217;s Code. 
+      <span class="fontRed"><strong>RC2 ist verwundbar gegen&uuml;ber einem Angriff 
+      mit verwandtem Schl&uuml;ssel, welcher 2<sup>34</sup> Klartextbl&ouml;cke 
+      ben&ouml;tigt. </strong></span> </td>
+  </tr>
+  <tr> 
+    <td height="24">RC2-196</td>
+    <td>RC2</td>
+    <td>RC2 ist eine 64 Bit Blockchiffre mit variabler Schl&uuml;ssell&auml;nge, 
+      die von Ronald Rivest als m&ouml;glicher Ersatz f&uuml;r DES im Jahr 1987 
+      entwickelt wurde. RC steht f&uuml;r Rivest Cipher oder Ron&#8217;s Code. 
+      <span class="fontRed"><strong>RC2 ist verwundbar gegen&uuml;ber einem Angriff 
+      mit verwandtem Schl&uuml;ssel, welcher </strong><strong>2<sup>34</sup></strong><strong> 
+      Klartextbl&ouml;cke ben&ouml;tigt. </strong></span> </td>
+  </tr>
+  <tr> 
+    <td height="24">AES-128 (CBC)</td>
+    <td>AES_CBC</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+      sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem CBC Block Modus - dies ist ein relativ alter Modus, der in der Regel immer angefragt wird, wenn von &quot;AES-128&quot; die Rede ist. </td>
+  </tr>
+  <tr> 
+    <td height="24">AES-192 (CBC)</td>
+    <td>AES_CBC</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+      sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem CBC Block Modus - dies ist ein relativ alter Modus, der in der Regel immer angefragt wird, wenn von &quot;AES-192&quot; die Rede ist. </td>
+  </tr>
+  <tr> 
+    <td height="24">AES-256 (CBC)</td>
+    <td>AES_CBC</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+      sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem CBC Block Modus - dies ist ein relativ alter Modus, der in der Regel immer angefragt wird, wenn von &quot;AES-256&quot; die Rede ist. </td>
+  </tr>
+  <tr>
+    <td height="24">AES-128 (GCM)</td>
+    <td>AES_GCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+      sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem <span lang="en">Galois/Counter Modus (GCM). Dieser Algorithmus wird ebenfalls im TLS verwendet, er ist ab TLS 1.2 obligatorisch, definiert im RFC 5288.</span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-192 (GCM)</td>
+    <td>AES_GCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+      sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem <span lang="en">Galois/Counter Modus (GCM). Dieser Algorithmus wird ebenfalls im TLS verwendet, er ist ab TLS 1.2 obligatorisch, definiert im RFC 5288.</span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-256 (GCM)</td>
+    <td>AES_GCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+      sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem <span lang="en">Galois/Counter Modus (GCM). Dieser Algorithmus wird ebenfalls im TLS verwendet, er ist ab TLS 1.2 obligatorisch, definiert im RFC 5288.</span></td>
+  </tr>
+  <tr> 
+    <td height="24">AES-128 (CBC, RSAES_AOEP)</td>
+    <td>AES-128_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal 
+      <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Schl&uuml;sselverschl&uuml;sselungsalgorithmus ist RSAES_AOEP.</td>
+  </tr>
+  <tr> 
+    <td height="24">AES-192 (CBC, RSAES_AOEP)</td>
+    <td>AES-192_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal 
+      <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Schl&uuml;sselverschl&uuml;sselungsalgorithmus ist RSAES_AOEP.</td>
+  </tr>
+  <tr> 
+    <td height="24">AES-256 (CBC, RSAES_AOEP)</td>
+    <td>AES-256_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal 
+      <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Schl&uuml;sselverschl&uuml;sselungsalgorithmus ist RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-128 (GCM, RSAES_AOEP)</td>
+    <td>AES-128_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Schl&uuml;sselverschl&uuml;sselungsalgorithmus ist RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-192 (GCM, RSAES_AOEP)</td>
+    <td>AES-192_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Schl&uuml;sselverschl&uuml;sselungsalgorithmus ist RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-256 (GCM, RSAES_AOEP)</td>
+    <td>AES-256_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Schl&uuml;sselverschl&uuml;sselungsalgorithmus ist RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-128 (CCM)</td>
+    <td>AES_CCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+    sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem C<span lang="en">ounter with CBC-MAC Modus (CCM). </span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-192 (CCM)</td>
+    <td>AES_CCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+    sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem C<span lang="en">ounter with CBC-MAC Modus (CCM). </span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-256 (CCM)</td>
+    <td>AES_CCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      Die Bezeichnungen der drei AES-Varianten AES-128, AES-192 und AES-256 beziehen 
+      sich jeweils auf die gew&auml;hlte Schl&uuml;ssell&auml;nge. Dies ist die Implementierung mit dem C<span lang="en">ounter with CBC-MAC Modus (CCM). </span></td>
+  </tr>
+  <tr>
+    <td>CAMELLIA-128 (CBC)</td>
+    <td>CAMELLIA_128</td>
+    <td><p>Camellia ist eine symmetrische Blockchiffre mit einer Blockgr&ouml;&szlig;e von 128 Bit und Schl&uuml;sselgr&ouml;&szlig;en von 128, 192 und 256 Bit. Sie wurde gemeinsam von Mitsubishi Electric und NTT (Japan) entwickelt. Die Chiffre wurde von der ISO/IEC, dem NESSIE-Projekt der Europ&auml;ischen Union und dem japanischen CRYPTREC-Projekt zur Verwendung zugelassen. Die Chiffre verf&uuml;gt &uuml;ber Sicherheitsstufen und Verarbeitungsm&ouml;glichkeiten, die mit dem Advanced Encryption Standard vergleichbar sind. Sie ist in RFC 5528 definiert.</p></td>
+  </tr>
+  <tr>
+    <td>CAMELLIA-192 (CBC)</td>
+    <td>CAMELLIA_192 </td>
+    <td>Camellia ist eine symmetrische Blockchiffre mit einer Blockgr&ouml;&szlig;e von 128 Bit und Schl&uuml;sselgr&ouml;&szlig;en von 128, 192 und 256 Bit. Sie wurde gemeinsam von Mitsubishi Electric und NTT (Japan) entwickelt. Die Chiffre wurde von der ISO/IEC, dem NESSIE-Projekt der Europ&auml;ischen Union und dem japanischen CRYPTREC-Projekt zur Verwendung zugelassen. Die Chiffre verf&uuml;gt &uuml;ber Sicherheitsstufen und Verarbeitungsm&ouml;glichkeiten, die mit dem Advanced Encryption Standard vergleichbar sind. Sie ist in RFC 5528 definiert.</td>
+  </tr>
+  <tr>
+    <td>CAMELLIA-256 (CBC)</td>
+    <td>CAMELLIA_256 </td>
+    <td>Camellia ist eine symmetrische Blockchiffre mit einer Blockgr&ouml;&szlig;e von 128 Bit und Schl&uuml;sselgr&ouml;&szlig;en von 128, 192 und 256 Bit. Sie wurde gemeinsam von Mitsubishi Electric und NTT (Japan) entwickelt. Die Chiffre wurde von der ISO/IEC, dem NESSIE-Projekt der Europ&auml;ischen Union und dem japanischen CRYPTREC-Projekt zur Verwendung zugelassen. Die Chiffre verf&uuml;gt &uuml;ber Sicherheitsstufen und Verarbeitungsm&ouml;glichkeiten, die mit dem Advanced Encryption Standard vergleichbar sind. Sie ist in RFC 5528 definiert.</td>
+  </tr>
+  <tr>
+    <td height="24">CHACHA20-POLY1305</td>
+    <td>CHACHA20-POLY1305</td>
+    <td>Die ChaCha20-Stream-Chiffer und der Poly1305 Message Authentication Code (MAC) wurden 2005 und 2008 unabh&auml;ngig voneinander von Daniel J. Bernstein entwickelt. Sie sind f&uuml;r ihre Einfachheit, Geschwindigkeit und Sicherheit bekannt. ChaCha20 verwendet einen 256-Bit-Schl&uuml;ssel. ChaCha20 ist einer der schnellsten verf&uuml;gbaren Verschl&uuml;sselungsalgorithmen. Er ist im RFC 7539 definiert.</td>
+  </tr>
+  <tr> 
+    <td height="24">RC4-40</td>
+    <td>RC4</td>
+    <td>RC4 (Ron&#8217;s Code 4) wurde 1987 von Ronald L. Rivest entwickelt. Im 
+      Februar 2015 wurde mit RFC 7465 der Einsatz von RC4 im Rahmen von TLS verboten, 
+      <span class="fontRed"><strong>da es erhebliche Sicherheitsm&auml;ngel aufweist</strong></span>. 
+      Das Bundesamt f&uuml;r Sicherheit in der Informationstechnik r&auml;t von 
+      der Verwendung von RC4 ab. </td>
+  </tr>
+  <tr> 
+    <td height="24">RC4-56</td>
+    <td>RC4</td>
+    <td>RC4 (Ron&#8217;s Code 4) wurde 1987 von Ronald L. Rivest entwickelt. Im 
+      Februar 2015 wurde mit RFC 7465 der Einsatz von RC4 im Rahmen von TLS verboten, 
+      <span class="fontRed"><strong>da es erhebliche Sicherheitsm&auml;ngel aufweist</strong></span>. 
+      Das Bundesamt f&uuml;r Sicherheit in der Informationstechnik r&auml;t von 
+      der Verwendung von RC4 ab. </td>
+  </tr>
+  <tr> 
+    <td height="24">RC4-128</td>
+    <td>RC4</td>
+    <td>RC4 (Ron&#8217;s Code 4) wurde 1987 von Ronald L. Rivest entwickelt. Im 
+      Februar 2015 wurde mit RFC 7465 der Einsatz von RC4 im Rahmen von TLS verboten, 
+      <span class="fontRed"><strong>da es erhebliche Sicherheitsm&auml;ngel aufweist</strong></span>. 
+      Das Bundesamt f&uuml;r Sicherheit in der Informationstechnik r&auml;t von 
+      der Verwendung von RC4 ab. </td>
+  </tr>
+  <tr> 
+    <td height="24">DES</td>
+    <td>DES</td>
+    <td>M&auml;rz 2006: Der FPGA-basierte Parallelrechner COPACOBANA kostet weniger 
+      als 10.000 Dollar (Materialkosten) und <span class="fontRed"><strong>bricht 
+      DES in weniger als 9 Tagen - dieser Algorithmus gilt aber bereits seit 1999 
+      als gebrochen.</strong></span></td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p><strong>Algorithm Identifier Protection Attribute</strong></p>
+<p>Die beim AS2 verwendete kryptographische Nachrichtensyntax (CMS) ist im Gegensatz 
+  zu X.509/PKIX<br>
+  Zertifikaten anf&auml;llig f&uuml;r Algorithmus-Substitution-Angriffe. <br>
+  In einem Algorithmus-Substitutionsangriff &auml;ndert der Angreifer entweder 
+  den Algorithmus oder die Parameter des Algorithmus und ver&auml;ndert damit 
+  das Ergebnis der Signaturpr&uuml;fung. Somit kann der Angreifer die Signaturpr&uuml;fung 
+  aushebeln. <br>
+  Das Attribut &quot;<strong>Algorithm Identifier Protection Attribute</strong>&quot; 
+  enth&auml;lt nun eine Kopie der entsprechenden Algorithmus-Identifikatoren, 
+  so dass diese durch den Signatur- oder Authentifizierungsprozess gesch&uuml;tzt 
+  sind.</p>
+<p><span class="fontRed">Wenn Sie dieses Attribut nicht verwenden (zum Beispiel 
+  aus Kompatibilit&auml;tsgr&uuml;nden mit alten AS2 Systemen), entspricht das 
+  der gleichen Sicherheitsstufe, als ob Sie keine Datensignatur verwenden w&uuml;rden.<br>
+  </span> </p>
+<p>&nbsp;</p>
+<p><strong>Versand:</strong></p>
+<p>Die Daten beim EDIINT AS2 werden &uuml;ber HTTP oder HTTPs verschickt. Es muss 
+  also eine Empf&auml;nger URL f&uuml;r jeden Kommunikationspartner vorhanden 
+  sein. Diese Daten k&ouml;nnen Sie von Ihrem Kommunikationspartner erfahren.<br>
+  AS2 ist ein Punkt-zu-Punkt Protokoll - beide Systeme m&uuml;ssen f&uuml;r den 
+  Datenaustausch online sein.<br>
+  Subject und Content Type der Nachrichten sollten Sie nur auf Nachfrage Ihres 
+  Kommunikationspartners &auml;ndern. <br>
+  Es gibt zus&auml;tzlich die M&ouml;glichkeit, pro Partner das Content Transfer 
+  Encoding zu setzen. Das bezeichnet das Encoding der Daten w&auml;hrend des Transports. 
+  Normalerweise ist dies &quot;binary&quot;, man kann aber auch &quot;base64&quot; 
+  w&auml;hlen. <br>
+  Es gibt verschiedene AS2 Standards mit unterschiedlichen Leistungsmerkmalen. 
+  Wenn Ihr Kommunikationspartner eine AS2 L&ouml;sung &gt;= AS2 1.1 einsetzt, 
+  k&ouml;nnen Sie Ihre Nutzdaten vor dem Verschicken komprimieren und somit das 
+  zu versendene Datenvolumen verringern.<br>
+  <br>
+  Das System &uuml;bertr&auml;gt den original Dateinamen automatisch. Dazu wird 
+  in der AS2 Nachrichtenstruktur im Payment Header ein gesonderter Eintrag angelegt:<br>
+  <span class="TechDescription"><br>
+  Content-Disposition: attachment; filename=myfile.txt</span></p>
+<p>Da es nach RFC 822 nicht zul&auml;ssig ist, Zeichen &gt; ASCII 127 in MIME 
+  Headern zu verwenden, wird der Dateiname encoded, wenn dies notwendig ist. So 
+  w&uuml;rde f&uuml;r die Datei &quot;&ouml;.txt&quot; zum Beispiel der Dateiname 
+  in folgendem Format (RFC 2047, UTF-8, B) &uuml;bertragen werden und m&uuml;sste 
+  auf der Gegenseite entsprechend interpretiert werden, wenn damit gearbeitet 
+  werden soll:</p>
+<p><span class="TechDescription">Content-Disposition: attachment; filename=&quot;=?UTF-8?B?w7YudHh0?=&quot;</span></p>
+<p>&nbsp;</p>
+<p><strong>MDN (Message Delivery Notification, Empfangsbest&auml;tigung):</strong></p>
+<p><img src="../images/as2_msg_mdn.png" width="667" height="320" alt="MDN"></p>
+<p>Das AS2 Protokoll sieht f&uuml;r jede versandte Nachricht eine Versandbest&auml;tigung 
+  vor. Eine Versandtransaktion ist erst abgeschlossen, wenn diese Best&auml;tigung 
+  (MDN) als Antwort auf eine AS2 Nachricht fehlerfrei empfangen oder versandt 
+  wurde. Hierbei gibt es zwei verschiedene M&ouml;glichkeiten der Empfangsbest&auml;tigung. 
+  Das eine ist die synchrone MDN, hierbei wird die Empfangsbest&auml;tigung direkt 
+  auf der Kommunikationsverbindung des Senders geschickt. Das andere ist die asynchrone 
+  MDN, hierbei wird vom Empf&auml;nger der Nachricht eine neue Verbindung aufgebaut 
+  und dar&uuml;ber die MDN geschickt.<br>
+  Im Fall der synchronen MDN wird also keine Empfangs-URL f&uuml;r die MDN ben&ouml;tigt, 
+  im asynchronen Fall legt der Sender fest, wohin der Empf&auml;nger die MDN schicken 
+  soll.<br>
+  Es gibt keine festgelegte Zeit, nach der eine Transaktion auf einen Fehler l&auml;uft, 
+  wenn keine asynchrone MDN innerhalb eines bestimmten Zeitfensters empfangen 
+  wird. In der Regel liegt diese Zeit f&uuml;r asynchrone MDN jedoch bei 30 Minuten. 
+  Sie k&ouml;nnen diesen Voreinstellungwert in den Servereinstellungen ver&auml;ndern.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>Verzeichnis&uuml;berwachung:</strong></p>
+<p>Es gibt verschiedene M&ouml;glichkeiten, Nachrichten zu versenden. Eine davon 
+  ist das direkte Ablegen von Dateien in bestimmten Verzeichnissen 
+  f&uuml;r die jeweiligen Partner. Eine Verzeichnis&uuml;berwachung kann pro Partner 
+  definiert werden, die sich alle (definierten) Dateien eines Verzeichnisses abholt, 
+  diese AS2 konform einpackt, eventuell verschl&uuml;sselt, signiert und dann 
+  verschickt. Sie k&ouml;nnen hier auch Dateien definieren, die vom Pollprozess 
+  ignoriert werden sollen (Wildcards sind erlaubt). Die M&ouml;glichkeit, bestimmte Dateinamen zu ignorieren, ist notwendig, wenn Sie die zu versendenen Dateien &uuml;ber eine nichtransaktionale Operation in das Verzeichnis kopieren (z.B. via copy, &uuml;ber FTP Server oder &auml;hnliches).<br>
+Die Liste der einzelnen zu ignorierenden Dateinamensmuster wird durch Komma getrennt, der Standardwert ist <strong>&quot;*.tmp,*.temp"</strong>. In den einzelnen Dateinamensmustern k&ouml;nnen folgende Zeichen verwendet werden, aus denen dann eine regular expression erstellt wird:</p>
+<ul>
+  <li><strong>"*"</strong> wird ersetzt durch die reg exp <strong>".*" </strong></li>
+  <li><strong>"?" </strong>wird ersetzt durch die reg exp<strong> "." </strong></li>
+  <li><strong>"." </strong>wird ersetzt durch die reg exp <strong>"\." </strong></li>
+</ul>
+<p>Jeder Dateiname im jeweiligen Pollverzeichnis, der auf diese Muster passt, wird ignoriert.</p>
+<p><strong>Hinweis:</strong><br>
+  Auch wenn es m&ouml;glich sein sollte, ein Pollintervall von weniger als 1s 
+  f&uuml;r die Verzeichnis&uuml;berwachung einzustellen, macht das keinen Sinn 
+  und f&uuml;hrt schnell zu einer Prozessorlast von 100%. Aus diesem Grund wird 
+  die Verzeichnis&uuml;berwachung immer mit dem Mindestintervall von 1s arbeiten, 
+  auch wenn Sie das anders konfigurieren. Sie m&uuml;ssen bedenken, dass ein Verzeichnispoll 
+  das Holen aller Dateinamen eines Verzeichnisses und die Sortierung nach Datum 
+  beinhaltet. <br>
+  Mit der Anzahl der lokalen Stationen kann die Anzahl der Pollprozesse recht 
+  schnell steigen und f&uuml;r eine entsprechend hohe Last sorgen - auch das sollten 
+  Sie beim Einstellen der Pollintervalle beachten. Folgende Tabelle gibt Ihnen 
+  exemplarisch einen &Uuml;berblick, wie die Anzahl der Pollprozesse in Abh&auml;ngigkeit 
+  der lokalen Stationen recht schnell ansteigen kann. Das liegt daran, dass ein 
+  Pollprozess immer f&uuml;r eine Partnerbeziehung (lokale Station-Partner) eingerichtet 
+  wird und nicht nur f&uuml;r einen Partner.<br>
+</p>
+<table width="700"border = 1>
+  <th width="255" height="24">Anzahl lokaler Stationen</th>
+    <th width="204">Partneranzahl</th>
+  <th width="250">Anzahl der Pollprozesse</th>
+  <tr> 
+    <td height="24">1</td>
+    <td>10</td>
+    <td><strong>10</strong></td>
+  </tr>
+  <tr> 
+    <td height="24">2</td>
+    <td>10</td>
+    <td><strong>20</strong></td>
+  </tr>
+  <tr> 
+    <td height="24">5</td>
+    <td>10</td>
+    <td><strong>50</strong></td>
+  </tr>
+</table>
+<p><br>
+  Mit der Checkbox zur Verzeichnis&uuml;berwachung kann man den Pollprozess des 
+  Verzeichnisses ausschalten. Dies kann helfen, die File IO zu verringern, ausserdem 
+  k&ouml;nnen Sie einen automatischen Versand an einen bestimmten Partner damit 
+  tempor&auml;r unterbrechen. <br>
+  Da dies im Fall einer dauerhaften Konfiguration den automatisierten Prozess 
+  der Verzeichnis&uuml;berwachung unterbricht, m&uuml;ssten Sie dann entweder 
+  die Daten manuell versenden (&uuml;ber &quot;Datei-Datei an Partner senden im 
+  Client&quot;) oder Sie m&uuml;ssten die Sendeauftr&auml;ge in Ihrem jeweiligen 
+  Flow &uuml;ber die Kommandozeile absetzen.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>Empfang:</strong><br>
+  <br>
+  Es ist m&ouml;glich (aber nicht standardisiert), den Dateinamen der &uuml;bertragenen 
+  Datei mitzusenden. Wenn das AS2 System Ihres Partners diese Funktion unterst&uuml;tzt, 
+  k&ouml;nnen sie hier einstellen, ob Sie diesen Namen aus der Nachricht entnehmen 
+  m&ouml;chten.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>HTTP Authentifizierung:</strong></p>
+<p>Neben digitaler Signatur, Verschl&uuml;sselung der Nachricht und Leitungsverschl&uuml;sselung 
+  (TLS/SSL, Transport Layer Security) gibt es die weitere M&ouml;glichkeit, f&uuml;r 
+  das Empfangen von Nachrichten auch noch Passw&ouml;rter zu vergeben. Diese k&ouml;nnen 
+  Sie hier einstellen.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>HTTP Header:</strong></p>
+<p>Diese Einstellungen erlauben einen tiefen Eingriff in die Versandstruktur der 
+  AS2 Nachricht. Sie k&ouml;nnen damit alle HTTP Header partnerspezifisch ver&auml;ndern 
+  oder neue hinzuf&uuml;gen. Bitte setzen Sie diese Einstellungen nur, wenn Sie 
+  wirklich wissen, was Sie bewirken. Sie k&ouml;nnen durch das &Uuml;berschreiben 
+  von Headern f&uuml;r die Transaktionnummer oder &auml;hnlichem etc die gesamte 
+  Kommunikation zu diesem Partner st&ouml;ren oder verhindern.<br>
+  <em><strong>Achtung:</strong></em><br>
+  Bevor Sie diese Konfigurationsm&ouml;glichkeit haben, m&uuml;ssen Sie in den 
+  Einstellungen unter &quot;Oberfl&auml;che&quot; die Checkbox zum Anzeigen der 
+  Header aktivieren.<br>
+</p>
+<p>&nbsp;</p>
+<p><strong>Benachrichtigungen:</strong></p>
+<p>Wenn Sie mit Nachrichtenkontingenten arbeiten, k&ouml;nnen Sie hier die Benachrichtigungen 
+  f&uuml;r das &Uuml;berschreiten der Kontingente einstellen.<br>
+  <strong><em>Achtung: </em></strong><br>
+  Bevor Sie diese Konfigurationsm&ouml;glichkeit haben, m&uuml;ssen Sie in den 
+  Einstellungen unter &quot;Oberfl&auml;che&quot; die Checkbox zum Anzeigen der 
+  Benachrichtigung der Kontingente aktivieren.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>Nachbearbeitung:</strong><br>
+  <br>
+  Sie k&ouml;nnen nach Empfang oder Versand von Daten Nachbearbeitungsprozesse 
+  ausl&ouml;sen. Detaillierte Informationen finden Sie im Abschnitt <a href="postprocessing_de.html">Nachbearbeitung</a>.<br>
+</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h2>Neue Verbindung einrichten</h2>
+<p>Wenn Sie eine neue Verbindung einrichten, m&uuml;ssen Sie die
+  Kommunikationsparameter Ihres Partners kennen und ihm Ihre mitteilen.
+  Der mendelson AS2 Server unterst&uuml;tzt Sie dabei mit einem Datenblatt
+  der Kommunikationsparameter, das Sie automatisch erstellen k&ouml;nnen und
+  dem Partner schicken k&ouml;nnen. Dort stehen Ihre Parameter, der Partner
+  kann dann seine eigenen in dem Formular einpflegen und das Datenblatt
+  zur&uuml;cksenden. <br>
+  Dazu sollten Sie zun&auml;chst bei Ihrer lokalen Station Ihre Kontaktdaten
+  einpflegen (Tab "Kontakt" in der Partnerverwaltung). Den Dialog zum
+  Erstellen des Datenblattes finden Sie unter "Datei-Datenblatt f&uuml;r
+  Anbindung". Dort werden noch einige Zusatzinformationen Ihres Systems
+  ben&ouml;tigt (Empfangs-URL, KOmmentar), dann wird ein PDF erzeugt, das auf der
+  Partnerseite editierbare PDF Felder beinhaltet, die vom Partner ausgef&uuml;llt
+werden k&ouml;nnen.</p>
+<p>&nbsp;</p>
+<p><br>
+  <img alt="Communication data sheet" src="../images/datasheet.png"><br> 
+  PDF Dateien k&ouml;nnen Anh&auml;nge beinhalten. In diesem Fall werden die Zertifikate angeh&auml;ngt, die Ihr Partner f&uuml;r die Verschl&uuml;sselung von Daten an Sie, den Aufbau einer SSL Verbindung und das Pr&uuml;fen der digitalen Signatur ben&ouml;tigt.<br>
+  Wenn Sie Mac OS X verwenden und den standard PDF Preview Reader verwenden, werden Sie diese Anh&auml;nge nicht sehen, das wird dort nicht unterst&uuml;tzt. Bitte installieren Sie in diesem Fall den Acrobat Reader.
+</p>
+<hr>
+<table width="100%" border="0">
+  <tr> 
+    <td><div class="mendelsonLogo"/></td>
+    <td class="date"><b>Last modified:</b> $Date: 3/09/24 16:13 $</td>
+  </tr>
+</table>
+</BODY>
+
+</HTML>

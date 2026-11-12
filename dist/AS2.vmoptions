@@ -1,0 +1,6 @@
+# Configuration file to edit the JVM parameter for the AS2.exe
+# (c) mendelson-e-commerce GmbH, Berlin
+#
+#
+# To set the maximum memory usage to 4GB please uncomment the following line:
+# -Xmx4096m

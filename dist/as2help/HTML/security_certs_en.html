@@ -1,0 +1,395 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>Keys and certificates</TITLE>
+<link rel="stylesheet" href="../../doc/mec_HTMLdoc.css">
+</HEAD>
+<h2>Keys and certificates</h2>
+
+<h3>&nbsp;</h3>
+<p><span class="fontRed"><strong>Important:</strong> This mendelson software comes with some test keys. <strong>NEVER</strong> use these keys for production operation!</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="keystores" id="keystores"></a>Keystores, formats, certificates and keys</h3>
+<P>To transmit data, you need different keys and certificates for transport security, encryption and digital signatures.<br>
+  In this mendelson product, these keys and certificates are stored internally at a technical level in the underlying database. Although keystore files are always supplied, these are only used for backup purposes.<br>
+  <br>
+  There are different formats of keys and certificates. Entering partner certificates in your certificate management can therefore be a complex process. This is especially true if the certificates sent by your partner are in formats that are not directly supported by this software.<br>
+  <br>
+  Please note that you must never pass on your private key to partners. You will also not receive any private keys from your partner. Only certificates are exchanged between the communication partners.<br>
+  <strong><br>
+  Please protect your private key and create a backup that you keep in a safe place.</strong><br>
+  <br>
+  You will usually receive certificate files from your partners that are CER or DER encoded. This can usually be seen from the <a href="#filename_extension">file extensions</a>. You can import these using the import function of the certificate management. They are then available in the system and only need to be assigned to the partner in the partner administration.<br>
+  <br>
+  Certificates are available in many different formats. If the capabilities of the integrated certificate management are not sufficient to import a certificate from your partner, please speak to your partner and ask them to provide the certificate in a different format - although this should only be the case very rarely. If this is not possible, you should try to convert your partner's certificates using special programs. An important software package in this environment is OpenSSL. It is very powerful, but it is also quite complex to use because the program is command line-based.</P>
+<p>You can also use the integrated certificate management to export keys (for backup purposes only) and certificates (for your trading partners).</p>
+<p>Please familiarize yourself with the options for importing and exporting keys and certificates in this product. As keys have to be renewed after a certain period of time for security reasons (and therefore also the certificates), it is always necessary to replace certificates. As a rule, each key is replaced once a year. For security reasons, you should not use certificates that are valid for longer than three years.<br>
+  Once a certificate or key has expired, it can no longer be used. You should apply for a new certificate from your CA before a key expires. You should agree an exact time and date with your partners as to when the new key will be used by you. If there are coordination problems here, some messages may be rejected because they were processed with the wrong keys.<br>
+You will also receive new certificates from your partners from time to time (or a hint where you can download the certificates). Please make sure that you always use the currently valid certificates for each partner, otherwise no data exchange can take place! </p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><strong>Certificate management</strong></h3>
+<p>In the mendelson products, the keys and certificates for different tasks are each managed in a separate certificate manager. There is a TLS certificate manager for the TLS connection and a signature/encryption certificate manager for the keys and certificates of the content encryption and signature. So you will always find two certificate managers.<br>
+  The certificate managers are a pool of available keys and certificates. Once a key/certificate is in the certificate manager, it is known to the system. Via the client, the certificates can then be assigned to the respective tasks, for example to the partners for encryption, etc. For security reasons, your system's private keys are never forwarded to a connected graphical client. This leads to some inconveniences - for example, you can export private keys only to directories on the server side. This means that even if your private key is displayed in the certificate manager on the client, it is not present there, but remains on the server side.<br>
+  <br>
+Before you can work with keys/certificates, you have to import them into the respective certificate management. </p>
+<p>&nbsp;</p>
+<p>The following icons are used in the mendelson certificate manager:</p>
+<table width="700" border = "0">
+  <tr> 
+    <td width="47"><object data="../images/certificate.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+      </object></td>
+    <td width="1261"> Partner certificate or certificate of your station. Please 
+      send this to your partner.</td>
+  </tr>
+  <tr> 
+    <td><object data="../images/key.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+      </object></td>
+    <td> Own private key. Under no circumstances may you pass this on to a partner. 
+      You sign your outgoing messages with your private key and decrypt incoming 
+      messages with it. </td>
+  </tr>
+  <td> <object data="../images/cert_root.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Root certificate. If you use trusted certificates, that is, certificates 
+      issued by a Certification Authority (CA), you will encounter these certificates.</td>
+
+  <tr> 
+    <td> <object data="../images/cert_untrusted.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+      </object></td>
+    <td> Missing certificate If you encounter this icon, a certificate is missing 
+      in an assignment or trust chain.</td>
+  </tr>
+</table>
+
+
+<p>Note: If an icon is grayed out, it means that the associated key or certificate is not used in the product. </p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="certmanager"></a>Functions of the certificate manager</h3>
+<table width="700" border = "0">
+  <tr>
+    <td width="47"><object data="../images/ca.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td width="885"> Certificate Authority: Everything that has to do with the authentication of a certificate. You can also use this to renew expired certificates/keys with the CA.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/add.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td>Create a new - initially self signed key. You can then have this authenticated later by the mendelson CA.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/import.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td>Import certificates and private keys of different formats into the Certificate Manager.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/export.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Export certificates for your partners and private keys for your backup</td>
+  </tr>
+  <tr>
+    <td><object data="../images/keycopy.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Copy an entry from the TLS certificate manager to the encryption/signing certificate manager or vice versa</td>
+  </tr>
+  <tr>
+    <td><object data="../images/reference.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Display the location of the mendelson product where a key or certificate is used. This function is only available for the signature/encryption management. You can only delete certificates/keys on the certificate manager if they are no longer used elsewhere in the product.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/delete_expired.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Delete all entries from the certificate management that have expired</td>
+  </tr>
+  <tr>
+    <td><object data="../images/delete.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Delete a single entry from the certificate management. This works only if the key/certificate is no longer used in the product</td>
+  </tr>
+  <tr>
+    <td><object data="../images/edit.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Rename an alias of an entry in the certificate management. This has no functional effect on the product, the entries are identified by their fingerprint and not the alias</td>
+  </tr>
+    <tr>
+    <td><object data="../images/crl.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Check the revocation lists of the authenticated certificates - whether they are still valid or have been withdrawn by the CA.</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>For each certificate, you can view all relevant information in the Certificate Manager - you can get there through the tabs at the bottom of the Certificate Manager. These are:</p>
+<ul>
+  <li>Details: Here you can see all data about the certificate like validity, technical values, fingerprints</li>
+  <li>Extensions: These are usually key/certificate usage details</li>
+  <li>Trust path: This is the trust path from the end certificate via the intermediate certificate to the root certificate of the CA - so this is only necessary for trusted certificates. All certificates that make up the trust path should be available in the respective certificate manager.</li>
+</ul>
+<p>&nbsp;</p>
+<h3><a name="transportencryption"></a>Encryption of the transmission path (TLS)</h3>
+<P>The transmission path can be encrypted separately (Transport Layer Security - TLS). This is not an encryption/security of the data, but only a security of the transmission path.<br>
+  To do this, the corresponding certificates for sending messages must be imported into the TLS certificate manager. There can only be one private key in this certificate manager - this is then used as your private TLS key.<br>
+  <br>
+As a rule, you need the following prerequisites to establish a TLS connection:</P>
+<ul>
+  <li>You must have one (and ONLY one!) private key in the TLS certificate management. This should be authenticated by a CA; in this case, the entire authentication path (Trust Path) must be available in the TLS certificate management. It may be possible to use a self-signed key (not trustworthy) - but this is generally not possible because it is rejected by the connection partners</li>
+  <li>As a rule, your private key in the TLS certificate management must contain the name of the host in the CN (common name) field. For example, if your receive URL is &ldquo;https://myhost.com:8080/asX/HttpReceiver&rdquo;, the CN should contain the value &ldquo;myhost.com&rdquo;. This setting is not always checked by the partner system, but is a prerequisite for many systems.</li>
+  <li>The end certificate of the respective partner and the entire trust path to the root certificate of its CA must be available. </li>
+  <li>The certificate of your private key - including the entire trust path - must be available on your partner's side. This means that you must export the certificate of your private key for the partner, including your entire trust path.<br>
+    <br>
+    <br>
+  </li>
+</ul>
+<p>If these requirements are not met, a so-called TLS handshake error will occur. The error messages that occur are not always particularly meaningful. The most common complaint is that the trust path to the root certificate could not be found. You and your partner would then have to check that the following things are really present on both sides:<br>
+  <br>
+  In your system:<ul>
+  <li>Your private key</li>
+  <li>(If applicable) The intermediate certificate of the CA of your key</li>
+  <li>The root certificate of the CA of your key<br>
+  </li>
+  <li>The end certificate of your partner<br>
+  </li>
+  <li>(If applicable) The intermediate certificate of your partner's CA</li>
+  <li>The root certificate of your partner's CA</li>
+</ul>
+  <p>Your partner's system must have the same configuration, but the other way round.</p>
+  <p></p>
+<p>&nbsp;</p>
+<h3><a name="msgencryption"></a>Signature and encryption of messages</h3>
+<p>The sender of a message requires a private key for himself and a public key for his partner. <br>
+  A message is signed with the respective private key, which should therefore only be in the possession of the respective sender. The public key is used to verify a signature. The same mechanism also works for encryption.<br>
+</p>
+<p>The public keys must be exchanged accordingly before the transfer. To give the partner their public key, the &ldquo;Export certificate&rdquo; function in the GUI can be used to manage the certificates. To import your partner's public key (embedded in the certificate), you can use the &ldquo;Import key certificate&rdquo; function.<br>
+  Each key or key pair is addressed via an alias that is assigned during import. This alias can then be selected in the partner definitions.<br>
+  Please note that most keys have a limited validity, which you should check from time to time. The expiration date can be seen in the GUI for key management. If a key has expired, you can no longer work with it, it is invalid.<br>
+  Messages can only be exchanged in signed and/or encrypted form if both parties involved have the same certificates and keys for each other.</p>
+<p>&nbsp;</p>
+<h3>Key generation</h3>
+<p>There are different types of keys: selfsigned and trusted. In productive environments 
+  trusted keys are usually used. Trusting a key means that there is an entity 
+  that ensures that the domain under which this server software is running is 
+  actually owned by the respective partners. This instance is the already addressed 
+  Certificate Authority (CA). mendelson e-commerce GmbH has such a CA, you can 
+  trust a key directly at the mendelson CA (http://ca.mendelson-e-c.com/).<br>
+  To create a private key in the certificate manager please navigate to "Tools 
+  - Create new key (self signed)." The generated can be trusted later (see next 
+  section). <br>
+  Some data is important when creating the key. You should not choose the validity 
+  for security reasons longer than 365 days. The "Common Name (CN)" is the domain 
+  under which this server software runs. The associated email address must be 
+  located on this domain, so the CA can verify that you actually own this domain. 
+  <strong>The CA will send the answer to the trust request (CSR) to the mail address 
+  found in the certificate - that means it is important that you are able to access 
+  this mail address!</strong> The other fields describe organization data and 
+  the address of your business. </p>
+<p>&nbsp;</p>
+
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3>Request a trusted key (CA) </h3>
+<p>If you want to use key that is trusted by a CA (Certificate Authority), you 
+  first have to create a private key. <br>
+  During the key trusting process the CA will mainly send a mail to the mail address 
+  stored in the certificate - please always enter a valid mail address in the 
+  certificate that is on the right domain (CN) and could be accessed by you.<br>
+  Then build a CSR of it (certificate signing request) and send it to the CA. 
+  The CA will respond with a certificate, use this to patch your private key. 
+  The CA will be never obtain your private key. Please always backup your private 
+  key and do not give it to a third party. mendelson will never aks for your private 
+  key. Most CAs will charge you for getting a trusted key. Please refer to the 
+  CAs web site for the prices.<br>
+</p>
+<p><img src="../images/trust_key.png" width="579" height="629" alt="Trust key"></p>
+<p>&nbsp;</p>
+<p>In this mendelson software, please follow the following steps to get a CA trusted 
+  private key:</p>
+<ul>
+  <li>Open the certificate manager in the user interface</li>
+  <li>Create a private key under &quot;Tools - Create key (self signed)&quot;. 
+    Enter all the required data into the mask and press the &quot;Ok&quot; button. 
+    Key purpose settings are not required at this step.</li>
+  <li>Create a certificate sign request (CSR) of this key, under &quot;Tools - 
+    Generate CSR to CA&quot;. Please mark the newly created key and generate the 
+    CSR file.</li>
+  <li>Send the CSR file to the CA. The exact procedure of this step differs from 
+    CA to CA, if you don't have the information howto send the file to the CA 
+    please contact the CAs customer support. You have to tell the CA also for 
+    which purpose the key has to be trusted.</li>
+  <li>Create a backup of your keystores, the keystore file is displayed in the 
+    status line of the certificate manager. Backup this file to a safe place. 
+    It contains your untrusted private key.</li>
+  <li>Import the root and intermediate certificates of the CA into the system 
+    using the certificate manager. These certificates are mainly available at 
+    the CAs web site. If you do not find them please contact the CAs customer 
+    support. </li>
+  <li>The CA sends a response to your certificate sign request (CSR), it looks 
+    like a normal certificate</li>
+  <li>Please select the key for which you submitted the CSR and patch the key 
+    with the response of the CA, under &quot;Tools - Import CAs answer to CSR&quot;. 
+    The keystore of the system includes the trusted key now. Please create a backup 
+    of the keystore file again at a safe place. Never give away the private key.</li>
+</ul>
+<p>&nbsp;</p>
+<h3>Renew a certificate (that is trusted by a CA)</h3>
+<p>If you want are using a key that is trusted by a CA (Certificate Authority) 
+  it will exceed mainly after 365 days, then it must be renewed.<strong> It is 
+  possible to renew a certificate at the mendelson CA even if the key has been 
+  trusted by an other CA before!</strong></p>
+<p>In this mendelson software please perform the following steps to renew your 
+  certificate:</p>
+<ul>
+  <li>Open the certificate manager in the user interface</li>
+  <li>Mark the key you would like to renew the certificate from</li>
+  <li>Create a certificate sign request (CSR) of this key, under &quot;Tools - 
+    Generate CSR to CA&quot;. Please mark the newly created key and generate the 
+    CSR file.</li>
+  <li>Send the CSR file to the CA. The exact procedure of this step differs from 
+    CA to CA, if you don't have the information howto send the file to the CA 
+    please contact the CAs customer support. You have to tell the CA also for 
+    which purpose the key has to be trusted.</li>
+  <li>Create a backup of your keystores, the keystore file is displayed in the 
+    status line of the certificate manager. Backup this file to a safe place. 
+    It contains your untrusted private key.</li>
+  <li>The CA sends a response to your certificate sign request (CSR), it looks 
+    like a normal certificate</li>
+  <li>Please select the key for which you submitted the CSR and patch the key 
+    with the response of the CA, under &quot;Tools - Import CAs answer to CSR&quot;. 
+    The keystore of the system includes the trusted key now. Please create a backup 
+    of the keystore file again at a safe place. Never give away the private key.</li>
+</ul>
+<p>Don't worry - This process will not delete your od key pair but create a new 
+  one.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3>Import and export of keys and certificates</h3>
+<p><span id="result_box" lang="en"><span title="&Uuml;ber den Zertifikatmanager k&ouml;nnen Sie Zertifikate und Schl&uuml;ssel aus dem Produkt exportieren und auch entsprechend von externen Programmen generierte Schl&uuml;ssel importieren.">You 
+  can export certificates and keys from the product and also import keys that 
+  have been generated by external programs. </span>It's also possible to import 
+  your partners certificates which is required for any secure connection or transmission 
+  to or from one of your partners<span title="Hier werden auch die Zertifikate Ihrer Partner importiert, die diese Ihnen zur Verf&uuml;gung stellen.">. 
+  </span><span title="Sobald die Zertifikate und Schl&uuml;ssel im Zertifikatmanager verf&uuml;gbar sind, k&ouml;nnen sie in der Partnerverwaltung den einzelnen Sicherheitsfunktionen der Partner zugewiesen werden oder auch f&uuml;r die SSL Anbindung verwendet werden.  ">Once 
+  the certificates and keys are available in the certificate Manager they can 
+  be assigned to the safety functions of the partner in the partner management 
+  or be used for the TLS connection.<br>
+  </span><span title="Wenn Sie von Ihren Partnern Zertifikate bekommen, sollten diese &uuml;ber die Importfunktion alle importierbar sein.">All 
+  the certificates your partner has sent could be imported using the certificate 
+  import function. The import functionality detects the import format automatically 
+  - you don't have to care for that.</span><span title="Es spielt dabei keine Rolle, in welchem Format Ihr Partner Ihnen die Zertifikate sendet, das sollte automatisch erkannt werden."> 
+  </span><span title="Sollte ein Zertifikat nicht &uuml;ber den Importmechanismus eingelesen werden k&ouml;nnen, wenden Sie sich bitte an den mendelson Support.">If 
+  a certificate can not be imported via the import mechanism because an error 
+  message occurs please contact the mendelson support. </span><span title="Einige von Ihren Partnern geschickte Dateien beinhalten auch mehr als ein Zertifikat (.p7b), dort k&ouml;nnen Sie dann mehrere Zertifikate nacheinander importieren.  ">Sometimes 
+  received certificate files of your partners contain more than one certificate 
+  (. p7b ) - in this case you can import multiple certificates from one file.<br>
+  </span><span title="Wenn Sie Schl&uuml;ssel importieren wollen, k&ouml;nnen diese in einem Keystoreformat vorliegen (JKS oder PKCS#12) - oder in PEM.">Private 
+  keys that you would like to import should be present in one of the common keystore formats (JKS or 
+  PKCS#12). </span><span title="Beim Keystoreformat ist zu beachten, dass der Keystore mit einem Password gesichert ist (PKCS#12) oder sogar der Keystore mit einem Passwort gesichert ist und der Schl&uuml;ssel mit einem weiteren (JKS).">When 
+  a key is imported from a keystore please remember that the keystore is protected 
+  by a password (PKCS # 12) or even the keystore is secured with a password and 
+  the included key with another one (JKS) - means you need the keystore password 
+  and (depends on the format) the key password to import keys from a keystore 
+  file.</span><span title="Haben Sie nur eine Datei im PEM Format, so werden Sie beide Abschnitte finden und m&uuml;ssten sie in zwei Dateien separieren.  "><br>
+  </span><span title="Wenn Sie Schl&uuml;ssel exportieren wollen, dann tun Sie das bitte nur aus Backup Zwecken und niemals, um diese Schl&uuml;ssel einem Dritten zu geben.  "><br>
+  The &quot;Export&quot; function allows to either export the entry as certificate (for your partner) or (if the entry is a key) as private key (just for you!). If 
+  you want to export the key, then please do so only for backup purposes and <strong>never to give any third party</strong>! mendelson-e-commerce GmbH will <strong>never</strong> ask for your private keys!<br>
+  </span></span><br>
+  For any form of secure communication it is  necessary to give your partner 
+  the public part of your key. There are different formats - except for the format &quot;SSH2&quot; 
+  (which is only used for SSH based systems like SFTP or SCP) your partner should 
+  be able to import all of them. We would recommend to use the .p7b format for the certificate export. It's because .p7b files (pkcs#7 format) contain the whole trust chain to the CA and your end user certificate in one file.</p>
+<p><img src="../images/certificates_im_export.png" width="553" height="639" alt="Certificates im- and export"></p>
+<p>&nbsp;</p>
+<h3><a name="keys_hints"></a>Notes on keys and certificates
+</h3>
+<p>Keys and certificates have some characteristics, such as key length or signature algorithm, that might make you wonder why you don't just always use the longest key length and strongest signature algorithm for security reasons. However, higher security also has disadvantages, and these are in processing speed. For example, if you choose high key lengths, you will see a slowdown in processing. The processing speed grows non-linearly with the key length. Here, you need to weigh speed against security in each case.</p>
+<p>It should also be noted that older TLS versions with TLS 1.2 cannot handle SHA-3 512 or SHA-2 512 signed keys in some implementations. You would have to check with your partners what their TLS versions support before using the respective keys and certificates. </p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="filename_extension" id="filename_extension"></a>Filename extension</h3>
+<p>Whenever you deal with certificates or keys you will find files with several 
+  file name extension. In most cases the following extensions are used for the 
+  following certificate related file formats<br>
+</p>
+<ul>
+  <li><strong>.CER: </strong>CER-coded certificate. Your partner will send these 
+    files to you (it includes their public key/certificate), import them into 
+    your keystore</li>
+  <li><strong>.CRT: </strong>DER- or BASE64 coded certificate. Your partner will 
+    send these files to you (it includes their public key/certificate), import 
+    them into your keystore</li>
+  <li><strong>.DER</strong>: DER - coded certificate. Your partner will send these 
+    files to you (it includes their public key/certificate), import them into 
+    your keystore</li>
+  <li><strong>.P7B, .P7C: </strong>Signature in pkcs#7 format, contains a certificate 
+    and might contain a trust chain with all related certificates</li>
+  <li><strong>.P12</strong>, <strong>.PFX: </strong>key store format (PKCS#12), 
+    contains one or more private key. The keystore file is password secured, the 
+    contained keys are not password secured.</li>
+  <li><strong>.PEM: </strong>Base64-encoded certificate or key, enclosed by -----BEGIN CERTIFICATE----- and -----END CERTIFICATE-----. This format can be opened with a normal editor. If the file is a key, in addition to the &ldquo;BEGIN CERTIFICATE -- END CERTIFICATE&rdquo; section, there is also a &ldquo;BEGIN ... KEY -- END ... KEY&rdquo; section. In principle, all certificates, keystores and keys can be saved in this format.<br>
+  It is possible to save any number of certificates and keys in a PEM file one after the other. </li>
+  <li>Translated with DeepL.com (free version)</li>
+  <li><strong>.pub:</strong> certificate in PEM format/BASE 64, for all SSH based 
+    applications like SFTP, SCP etc. This format is not used outside SSH applications.</li>
+</ul>
+<p>&nbsp;</p>
+<h3>PKCS</h3>
+<p>If you are talking about security with your trading partner it might be helpful 
+  to have some knowledge about PKCS (&quot;Public Key Cryptography Standard&quot;). 
+  The following list will give you a short overview on the used abbreviations. 
+  A detailled list could be obtained at <a href="http://de.wikipedia.org/wiki/PKCS">http://en.wikipedia.org/wiki/PKCS</a></p>
+<table width="700">
+  <tr> 
+    <th width="66"></th>
+    <th width="281">Name</th>
+    <th width="337">Comment</th>
+  </tr>
+  <tr> 
+    <th align="left">PKCS#7</th>
+    <td>Cryptographic Message Syntax Standard</td>
+    <td>To sign/encrypt messages</td>
+  </tr>
+  <tr> 
+    <th align="left">PKCS#10</th>
+    <td>Certification Request Standard</td>
+    <td>Format of the message that is send to a CA (<i>certification authority</i>) 
+      to request the trusting of a key</td>
+  </tr>
+  <tr> 
+    <th align="left">PKCS#12</th>
+    <td>Personal Information Exchange Syntax Standard</td>
+    <td>Defines the file format of a keystore to store private keys with the assigned 
+      certificate </td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="crl" id="crl"></a>CRL</h3>
+<p>A certificate revocation list (CRL) is a list that describes the invalidity of certificates. It makes it possible to determine whether a certificate has been revoked or revoked by the respective CA and why. Revocation list queries are therefore only available for authenticated certificates.<br>
+Certificates are usually revoked or revoked if their associated keys are no longer secure, for example because they have fallen into the wrong hands. In such cases, the certificate must be revoked before the actual expiration date so that the associated key is no longer used.<br>
+The CA manages a revocation list for these cases, which can be queried using the mendelson certificate manager. For this to work, the server process must be able to reach the respective URL of the revocation list for each certificate - this is generally not possible in the DMZ.<br>
+Technically, a URL containing information on the revocation list is stored in every trusted certificate via an optional certificate extension. As a rule, this can be accessed via HTTP, FTP or LDAP (RFC 2587). This URL is tracked and the revocation list is analysed.<br>
+</p>
+<p>&nbsp;</p>
+<h3>External links:</h3>
+<p><strong>mendelson CA, request a trusted certificate:</strong> http://ca.mendelson-e-c.com<strong><br>
+  Public key certificate:</strong> http://en.wikipedia.org/wiki/Public_key_certificate<br>
+  <strong>CA:</strong> http://en.wikipedia.org/wiki/Certificate_authority<br>
+  <strong>Self signed certificates (engl.):</strong> http://en.wikipedia.org/wiki/Self-signed_certificate 
+</p>
+<p>&nbsp;</p>
+<h3>Technical background:</h3>
+<p><strong>Public-key cryptography:</strong> http://en.wikipedia.org/wiki/Public_key<br>
+  <strong>Symmetric-key algorithm:</strong> http://en.wikipedia.org/wiki/Symmetric_cryptography</p>
+<p><br>
+</p>
+<hr>
+<table width="100%" border="0">
+  <tr> 
+    <td><div class="mendelsonLogo"/></td>
+    <td class="date"><b>Last modified:</b> $Date: 11/03/25 9:18 $</td>
+  </tr>
+</table>
+</BODY>
+
+</HTML>

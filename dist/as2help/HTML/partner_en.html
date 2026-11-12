@@ -1,0 +1,604 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>Partner</TITLE>
+<link rel="stylesheet" href="../../doc/mec_HTMLdoc.css">
+</HEAD>
+<h2>Partner</h2>
+<h3>&nbsp;</h3>
+<h2><a name="overview" id="overview"></a> Overview</h2>
+<p><img src="../images/as2_partner.png" width="653" height="404" alt="Partner"></p>
+<p>Participants of every AS2 communication are you (localstation) and your trading 
+  partners. This is why the interface uses two different icons for these parties:</p>
+<table width="75%" border="0">
+  <tr>
+    <td width="4%"><object data="../images/localstation.svg" type="image/svg+xml" width="20" height="20"></object>
+    </td>
+    <td width="96%">Local station (you), local</td>
+  </tr>
+  <tr>
+    <td><object data="../images/singlepartner.svg" type="image/svg+xml" width="20" height="20"></object></td>
+    <td>Trading partner (TP), remote</td>
+  </tr>
+</table>
+<p>The configuration of a partner differs depending if it is the local statation 
+  or the trading partner. The partner configuration GUI will not show some options 
+  if you are the TP/localstation. Please don't be confused about this.</p>
+<p>There has to be defined always min one local station for the server. You could 
+  create as many local stations as you wish, this allows to present different 
+  identities.<br>
+  Please remember that most settings in this panel belong to the remote partner. 
+  That is why the number of visible tabs is reduced if you have configured a partner 
+  as &quot;local station&quot;.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h2><a name="settings" id="settings"></a> Settings</h2>
+<p>The partner settings define the behavior of the server depending on a partner 
+  in many ways: The following paragraph describes these settings:</p>
+<p><strong>Misc:<br>
+  <br>
+  </strong>Every TP and the local stations use an internal name (for the as2 server 
+  only) and a public AS2 id. The AS2 id must be sent to your partners to allow 
+  them to identify your messages.</p>
+<p>&nbsp;</p>
+<p><strong>Security:<br>
+  </strong><br>
+  This product supports encryption and digitial signature of AS2 messages. There 
+  are different encryption algorithm and signature algorith. You and your trading 
+  partner have to chose the same algorithms else the communication will fail.<br>
+  The security settings are not only valid for outbound messages. If you have 
+  for example setup &quot;3DES&quot; as encryption inbound messages of this partner 
+  are expected to be encrypted with this algorithm, too - else the transaction 
+  will be rejected with the hint <span class="techDescription">insufficient-message-security</span>.<br>
+  The signature algorith is not only used to sign the AS2 messages but also requested 
+  as hash function for signed MDN.<br>
+  <br>
+  Please make an appointment with your partner about these AS2 communication settings.<br>
+  Please remember that the SHA-2 hash algorithms (SHA-256, SHA-384, SHA-256) are 
+  not part of the standard AS2 protocol. They are part of the AS2 optional profile 
+  &quot;SHA-2&quot;. This optional profile has been introduced at the end of 2012 
+  and has been implemented in the first AS2 products in the middle of 2013. If 
+  your parter has an older AS2 software or does not support this optional profile 
+  you must not use SHA-2 as hash alrorithm for successful data transfer.<br>
+  mendelson AS2 supports the optional profile SHA-2 since &quot;mendelson AS2 
+  2013 build 274&quot;, released in 09/2013. </p>
+<p>Please remember that there are two different types of signature algorithm available, 
+  these are the standard SHA-n algorithm and the SHA-n algorithm using the RSASSA-PSS 
+  signature scheme for outbound signatures. The reason could be found in RFC 4056:</p>
+<p><em>1.1. PSS Algorithm</em></p>
+<p><em> Although there are no known defects with the PKCS #1 v1.5 [P1v1.5]<br>
+  signature algorithm, RSASSA-PSS [P1v2.1] was developed in an effort<br>
+  to have more mathematically provable security. PKCS #1 v1.5<br>
+  signatures were developed in an ad hoc manner; RSASSA-PSS was<br>
+  developed based on mathematical foundations.</em></p>
+<p><br>
+  There are some signature algorithms that are generally considered to be no longer 
+  secure and therefore may not be recommended. <br>
+  Ultimately, it is always up to your discretion (as with all parameters) and 
+  coordination with your partner whether you want to use them. <br>
+  To visualize our non-binding recommendations, we use the following icons with 
+  the following meanings when displaying and selecting signature algorithms:</p>
+<br>
+<table width="509"border = 0>
+  <tr> 
+    <td width="70" height="24"><object data="../images/signature_broken.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td width="423">No signature algorithm</td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/signature_weak.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>The signature algorithm is generally considered insecure (non-binding 
+      recommendation at the time of release) </td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/signature_strong.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>The signature algorithm is generally considered to be quite secure (non-binding 
+      recommendation at the time of release)</td>
+  </tr>
+</table>
+<p></p>
+<p><br>
+  <br>
+  <br>
+  <br>
+  Content signature settings:</p>
+<table width="700"border = 1>
+  <th width="190" height="24">Entry</th>
+    <th width="303">Used alrorithm</th>
+    <th width="600">Hints</th>
+  
+  <tr> 
+    <td height="24">MD5</td>
+    <td>MD5</td>
+    <td>The MD5 algorithm is a widely used hash function producing a 128-bit hash 
+      value. <span class="fontRed"><strong>Please do not use the algorithm as 
+      long it is not required for the integration as it is not secure!</strong></span></td>
+  </tr>
+  <tr> 
+    <td height="36">SHA-1</td>
+    <td>EC Key: <strong>SHA1withECDSA</strong><br>
+      RSA Key: <strong>SHA1withRSA</strong> </td>
+    <td>RSA Key: PKCS#1 v1.5</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-256</td>
+    <td>EC Key: <strong>SHA256withECDSA</strong><br>
+      RSA Key: <strong>SHA256withRSA</strong></td>
+    <td>RSA Key: PKCS#1 v1.5. </td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-384</td>
+    <td>EC Key: <strong>SHA384withECDSA</strong><br>
+      RSA Key: <strong>SHA384withRSA</strong></td>
+    <td>RSA Key: PKCS#1 v1.5</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-512</td>
+    <td>EC Key: <strong>SHA512withECDSA</strong><br>
+      RSA Key: <strong>SHA512withRSA</strong></td>
+    <td>RSA Key: PKCS#1 v1.5</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-1 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Key: <strong>Not supported</strong></span><br>
+      RSA Key: <strong>SHA1withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1 v2.1 RSASSA-PSS signature scheme with SHA-1 as hash algorithm 
+      und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-224 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Key: <strong>Not supported</strong></span><br>
+      RSA Key: <strong>SHA224withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1 v2.1 RSASSA-PSS signature scheme with SHA-224 as hash 
+      algorithm und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature 
+      <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-256 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Key: <strong>Not supported</strong></span><br>
+      RSA Key: <strong>SHA256withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1 v2.1 RSASSA-PSS signature scheme with SHA-256 as hash 
+      algorithm und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature 
+      <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="37">SHA-384 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Key: <strong>Not supported</strong></span><br>
+      RSA Key: <strong>SHA384withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1v2.1 RSASSA-PSS signature scheme with SHA-384 as hash 
+      algorithm und MGF1, <strong>P</strong>robabilistic <strong>S</strong>ignature 
+      <strong>S</strong>cheme</td>
+  </tr>
+  <tr> 
+    <td height="24">SHA-512 (RSA SSA-PSS Signaturschema)</td>
+    <td><span class="fontRed">EC Key: <strong>Not supported</strong></span><br>
+      RSA Key: <strong>SHA512withRSAandMGF1</strong></td>
+    <td>RFC 3447, PKCS#1v2.1 RSASSA-PSS signature scheme with SHA-512 as hash 
+      algorithm und MGF1. <strong>Please remember that the key length has to be 
+      &gt; 1024 bit else the error message &quot;<span class="fontRed">key too 
+      small for specified hash and salt lengths</span>&quot; will come up.</strong></td>
+  </tr>
+</table>
+<p>The signature of the MDN attempts to use the same signature scheme as it was 
+  used for incoming AS2 messages. Thus, if an incoming message is signed with 
+  SHA-1 (RSASSA-PSS) and SHA-1 is listed as a possible signature algorithm for 
+  the MDN in the Disposition Notification Options (HTTP header) of the incoming 
+  AS2 message, SHA-1 (RSASSA-PSS) is used as signature for the outbound MDN.</p>
+<p>&nbsp;</p>
+<p>There are some encryption algorithms that are generally considered no longer 
+  secure and therefore may not be recommended. <br>
+  Ultimately, it is always up to your discretion (as with all parameters) and 
+  coordination with your partner whether you want to use them. <br>
+  To visualize our non-binding recommendations, we use the following icons with 
+  the following meanings when displaying and selecting encryption algorithms:</p>
+<br>
+<table width="509"border = 0>
+  <tr> 
+    <td width="70" height="24"><object data="../images/encryption_broken.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td width="423">Not encrypted</td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/encryption_weak.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>The encryption algorithm is generally considered insecure (non-binding 
+      recommendation at the time of release) </td>
+  </tr>
+  <tr> 
+    <td height="20"><object data="../images/encryption_strong.svg" type="image/svg+xml" width="20" height="20">
+      </object></td>
+    <td>The encryption algorithm is generally considered to be quite secure (non-binding 
+      recommendation at the time of release)</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p><br>
+  Content encryption settings:</p>
+<table width="700"border = 1>
+  <th width="190" height="24">Entry</th>
+    <th width="303">Used alrorithm</th>
+    <th width="600">Hints</th>
+  
+  <tr> 
+    <td height="24">3DES</td>
+    <td>3DES</td>
+    <td>Triple DES (3DES), officially the Triple Data Encryption Algorithm (TDEA 
+      or Triple DEA), is a symmetric-key block cipher, which applies the Data 
+      Encryption Standard (DES) cipher algorithm three times to each data block. 
+      The original DES cipher's key size of 56 bits was generally sufficient when 
+      that algorithm was designed, but the availability of increasing computational 
+      power made brute-force attacks feasible. Triple DES provides a relatively 
+      simple method of increasing the key size of DES to protect against such 
+      attacks, without the need to design a completely new block cipher algorithm. 
+    <br>
+    The Triple Data Encryption Algorithm (3DES) is being officially   decommissioned by the NIST ((National Institute of Standards and Technology, US), according to draught guidelines provided by NIST on July   19, 2018. According to the standards, <span class="fontRed"><strong>3DES will be deprecated for all   new applications following a period of public deliberation, and its use   will be prohibited after 2023.</strong></span></td>
+  </tr>
+  <tr> 
+    <td height="20">RC2-40</td>
+    <td>RC2</td>
+    <td>RC2 (also known as ARC2) is a symmetric-key block cipher designed by Ron 
+      Rivest in 1987. &quot;RC&quot; stands for &quot;Ron's Code&quot; or &quot;Rivest 
+      Cipher&quot;, RFC 2268. <strong><span class="fontRed">RC2 is vulnerable 
+      to a related-key attack using <strong>2<sup>34</sup></strong> chosen plaintexts 
+      (Kelsey et al., 1997). </span></strong></td>
+  </tr>
+  <tr> 
+    <td height="20">RC2-64</td>
+    <td>RC2</td>
+    <td>RC2 (also known as ARC2) is a symmetric-key block cipher designed by Ron 
+      Rivest in 1987. &quot;RC&quot; stands for &quot;Ron's Code&quot; or &quot;Rivest 
+      Cipher&quot;, RFC 2268. <strong><span class="fontRed">RC2 is vulnerable 
+      to a related-key attack using <strong>2<sup>34</sup></strong> chosen plaintexts 
+      (Kelsey et al., 1997). </span></strong></td>
+  </tr>
+  <tr> 
+    <td height="24">RC2-128</td>
+    <td>RC2</td>
+    <td>RC2 (also known as ARC2) is a symmetric-key block cipher designed by Ron 
+      Rivest in 1987. &quot;RC&quot; stands for &quot;Ron's Code&quot; or &quot;Rivest 
+      Cipher&quot;, RFC 2268. <strong><span class="fontRed">RC2 is vulnerable 
+      to a related-key attack using <strong>2<sup>34</sup></strong> chosen plaintexts 
+      (Kelsey et al., 1997). </span></strong></td>
+  </tr>
+  <tr> 
+    <td height="24">RC2-196</td>
+    <td>RC2</td>
+    <td>RC2 (also known as ARC2) is a symmetric-key block cipher designed by Ron 
+      Rivest in 1987. &quot;RC&quot; stands for &quot;Ron's Code&quot; or &quot;Rivest 
+      Cipher&quot;, RFC 2268. <strong><span class="fontRed">RC2 is vulnerable 
+      to a related-key attack using <strong>2<sup>34</sup></strong> chosen plaintexts 
+      (Kelsey et al., 1997). </span></strong></td>
+  </tr>
+  <tr>
+    <td height="24">AES-128 (CBC)</td>
+    <td>AES_CBC</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with the CBC block mode - this is a relatively old mode that is usually always requested when &quot;AES-128&quot; is mentioned. </td>
+  </tr>
+  <tr>
+    <td height="24">AES-192 (CBC)</td>
+    <td>AES_CBC</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with the CBC block mode - this is a relatively old mode that is usually always requested when &quot;AES-192&quot; is mentioned. </td>
+  </tr>
+  <tr>
+    <td height="24">AES-256 (CBC)</td>
+    <td>AES_CBC</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with the CBC block mode - this is a relatively old mode that is usually always requested when &quot;AES-256&quot; is mentioned. </td>
+  </tr>
+  <tr>
+    <td height="24">AES-128 (GCM)</td>
+    <td>AES_GCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      <span lang="en">The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with Galois/Counter Mode (GCM). <br>
+      This algorithm is also used and mandatory as of TLS 1.2, it's defined in RFC 5288.</span><span lang="en">      </span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-192 (GCM)</td>
+    <td>AES_GCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      <span lang="en">The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with Galois/Counter Mode (GCM). <span lang="en">This algorithm is also used and mandatory as of TLS 1.2, it's defined in RFC 5288.</span><span lang="en"></span></span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-256 (GCM)</td>
+    <td>AES_GCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. 
+      <span lang="en">The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with Galois/Counter Mode (GCM). <span lang="en">This algorithm is also used and mandatory as of TLS 1.2, it's defined in RFC 5288.</span><span lang="en"></span></span></td>
+  </tr>
+  <tr> 
+    <td height="24">AES-128 (CBC, RSAES_AOEP)</td>
+    <td>AES-128_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal 
+      <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Key encryption algorithm is RSAES_AOEP.</td>
+  </tr>
+  <tr> 
+    <td height="24">AES-192 (CBC, RSAES_AOEP)</td>
+    <td>AES-192_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal 
+      <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Key encryption algorithm is RSAES_AOEP.</td>
+  </tr>
+  <tr> 
+    <td height="24">AES-256 (CBC, RSAES_AOEP)</td>
+    <td>AES-256_CBC RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal 
+      <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Key encryption algorithm is RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-128 (GCM, RSAES_AOEP)</td>
+    <td>AES-128_GCM RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Key encryption algorithm is RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-192 (GCM, RSAES_AOEP)</td>
+    <td>AES-192_GCM RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Key encryption algorithm is RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-256 (GCM, RSAES_AOEP)</td>
+    <td>AES-256_GCM RSAES_AOEP pkcs#1v2.1 SHA-256</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard 
+      (<strong>E</strong>ncryption <strong>S</strong>cheme <strong>O</strong>ptimal <strong>A</strong>symmetric <strong>E</strong>ncryption <strong>P</strong>adding 
+      [RFC 3447]), Key encryption algorithm is RSAES_AOEP.</td>
+  </tr>
+  <tr>
+    <td height="24">AES-128 (CCM)</td>
+    <td>AES_CCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. <span lang="en">The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with C<span lang="en">ounter with CBC-MAC Modus (CCM)</span>.</span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-192 (CCM)</td>
+    <td>AES_CCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. <span lang="en">The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with C<span lang="en">ounter with CBC-MAC Modus (CCM)</span>.</span></td>
+  </tr>
+  <tr>
+    <td height="24">AES-256 (CCM)</td>
+    <td>AES_CCM</td>
+    <td><strong>A</strong>dvanced <strong>E</strong>ncryption <strong>S</strong>tandard. <span lang="en">The names of the three AES variants AES-128, AES-192 and AES-256 each refer to the selected key length. This is the implementation with C<span lang="en">ounter with CBC-MAC Modus (CCM)</span>.</span></td>
+  </tr>
+  <tr>
+    <td>CAMELLIA-128 (CBC)</td>
+    <td>CAMELLIA_128</td>
+    <td>Camellia is a symmetric key block cipher with a block size of 128 bits and key sizes of 128, 192 and 256 bits. It was jointly developed by Mitsubishi Electric and NTT of Japan. The cipher has been approved for use by the ISO/IEC, the European Union's NESSIE project and the Japanese CRYPTREC project. The cipher has security levels and processing abilities comparable to the Advanced Encryption Standard. It's defined in RFC 5528.</td>
+  </tr>
+  <tr>
+    <td>CAMELLIA-192 (CBC)</td>
+    <td>CAMELLIA_192 </td>
+    <td>Camellia is a symmetric key block cipher with a block size of 128 bits and key sizes of 128, 192 and 256 bits. It was jointly developed by Mitsubishi Electric and NTT of Japan. The cipher has been approved for use by the ISO/IEC, the European Union's NESSIE project and the Japanese CRYPTREC project. The cipher has security levels and processing abilities comparable to the Advanced Encryption Standard. It's defined in RFC 5528.</td>
+  </tr>
+  <tr>
+    <td>CAMELLIA-256 (CBC)</td>
+    <td>CAMELLIA_256 </td>
+    <td>Camellia is a symmetric key block cipher with a block size of 128 bits and key sizes of 128, 192 and 256 bits. It was jointly developed by Mitsubishi Electric and NTT of Japan. The cipher has been approved for use by the ISO/IEC, the European Union's NESSIE project and the Japanese CRYPTREC project. The cipher has security levels and processing abilities comparable to the Advanced Encryption Standard. It's defined in RFC 5528.</td>
+  </tr>
+  <tr>
+    <td height="24">CHACHA20-POLY1305</td>
+    <td>CHACHA20-POLY1305</td>
+    <td>The ChaCha20 stream cipher and the Poly1305 message authentication code (MAC) were independently designed by Daniel J. Bernstein in 2005 and 2008. It is known for its simplicity, speed, and security. It uses a 256-bit key. ChaCha20 is among the fastest encryption algorithms available. Its defined in RFC 7539.</td>
+  </tr>
+  <tr> 
+    <td height="24">RC4-40</td>
+    <td>RC4</td>
+    <td>RC4 was designed by Ron Rivest of RSA Security in 1987. As of 2015, there 
+      is speculation that some state cryptologic agencies may possess the capability 
+      to break RC4 when used in the TLS protocol. IETF has published RFC 7465 
+      to prohibit the use of RC4 in TLS. <strong><span class="fontRed">Multiple 
+      vulnerabilities have been discovered in RC4.</span></strong></td>
+  </tr>
+  <tr> 
+    <td height="24">RC4-56</td>
+    <td>RC4</td>
+    <td>RC4 was designed by Ron Rivest of RSA Security in 1987. As of 2015, there 
+      is speculation that some state cryptologic agencies may possess the capability 
+      to break RC4 when used in the TLS protocol. IETF has published RFC 7465 
+      to prohibit the use of RC4 in TLS. <strong><span class="fontRed">Multiple 
+      vulnerabilities have been discovered in RC4.</span></strong></td>
+  </tr>
+  <tr> 
+    <td height="24">RC4-128</td>
+    <td>RC4</td>
+    <td>RC4 was designed by Ron Rivest of RSA Security in 1987. As of 2015, there 
+      is speculation that some state cryptologic agencies may possess the capability 
+      to break RC4 when used in the TLS protocol. IETF has published RFC 7465 
+      to prohibit the use of RC4 in TLS. <strong><span class="fontRed">Multiple 
+      vulnerabilities have been discovered in RC4.</span></strong></td>
+  </tr>
+  <tr> 
+    <td height="24">DES</td>
+    <td>DES</td>
+    <td>DES is now considered to be insecure for many applications. This is mainly 
+      due to the 56-bit key size being too small; in January 1999, distributed.net 
+      and the Electronic Frontier Foundation collaborated to publicly break a 
+      DES key in 22 hours and 15 minutes. 2006: The FPGA based parallel machine 
+      COPACOBANA of the Universities of Bochum and Kiel, Germany, breaks DES in 
+      9 days at $10,000 hardware cost.</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p><strong>Algorithm Identifier Protection Attribute</strong></p>
+<p>In contrast to X.509/PKIX, the cryptographic message syntax (CMS) used in AS2 
+  is vulnerable to algorithm substitution attacks. <br>
+  In an algorithm substitution attack, the attacker changes either the algorithm 
+  or the parameters of the algorithm and thus changes the result of the signature 
+  check. This allows the attacker to leverage the signature check. <br>
+  The attribute &quot;Algorithm Identifier Protection Attribute&quot; now contains 
+  a copy of the corresponding algorithm identifiers so that they are protected 
+  by the signature or authentication process.</p>
+<p><br>
+  <span class="fontRed">If you do not use this attribute (for compatibility reasons 
+  with old AS2 systems, for example), this corresponds to the same security level 
+  as if you were not using a data signature.</span></p>
+<p>&nbsp;</p>
+<p>&nbsp; </p>
+<p><strong><br>
+  MDN (Message Delivery Notification):</strong></p>
+<p><img src="../images/as2_msg_mdn.png" width="667" height="320" alt="MDN"></p>
+<p>The AS2 protocol requires a receipt acknowledgement for every sent message. 
+  This ack is called &quot;<strong>MDN</strong>&quot; (<strong>Message Delivery 
+  Notification</strong>). A transaction is completed if the MDN to sent data arrives. 
+  There are two different types of MDN transfers: sync MDN and async MDN. Mainly 
+  it depends on the message receiver with mode to select. If you chose the sync 
+  MDN mode the MDN is sent on the same HTTP connection the message has been sent/received 
+  on. In this case there is no information needed to which URL a MDN should be 
+  sent to. If you chose the async MDN the AS2 messages contains information of 
+  where to send a MDN to. Because of this the sender of a message has to define 
+  a MDN URL in this case.<br>
+  The EDIINT standard does not define on how long to wait for a async MDN before 
+  setting the transaction on error. Mainly this time is set to 30 min but this 
+  could be defined in the AS2 server settings.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>Directory polling:</strong></p>
+<p>There are different possiblities to send messages to the AS2 server in this 
+  product. You could directly copy the data to an outbound 
+  directory of a defined partner. The poll manager for every partner will pick 
+  up these files, enwrapp them into AS2 messages, encrypt and sign them (is requested). 
+  This setting defines the bahavior of the poll manager per partner.<br>
+  Its possible to define file patterns or a list of files that should be ignored 
+  by the polling process - this is required if you are using a non atomic copy process to put the files there instead an atomic move. The patterns are comma separated, the default value is <strong>&quot;*.tmp,*.temp"</strong>. <br>
+  These are the special characters in the patterns that will create regular expressions:</p>
+<ul>
+  <li><strong>"*"</strong> will be replaced by the regexp <strong>".*" </strong></li>
+  <li><strong>"?"</strong> will be replaced by the regexp <strong>"." </strong></li>
+  <li><strong>"."</strong> will be replaced by the regexp  <strong>"\." </strong></li>
+</ul>
+<p> Every file name in the poll directory that matches these patterns will be 
+  ignored.<br>
+  <br>
+  <strong>Hint:</strong><br>
+  Even if it might be possible to set the poll interval to under 1s this makes 
+  no sense and pushes up the CPU to 100%. Because of this the poll threads will 
+  always wait a minimum of 1s, even if you configure the poll thread to wait 0s. 
+  Polling a directory includes getting all file entries of a directory and sorting 
+  them by date which is a slow process (file IO). Because the poll processes are 
+  running per relationship and not perpartner the number of poll processes could 
+  increase fast if you are using a huge amount of local stations, please have 
+  a look at the following table which gives an idea of that: </p>
+<table width="700"border = 1>
+  <th width="255" height="24">Number of local stations</th>
+    <th width="204">Number of partner</th>
+    <th width="250">Number of directory poll processes</th>
+  
+  <tr> 
+    <td height="24">1</td>
+    <td>10</td>
+    <td><strong>10</strong></td>
+  </tr>
+  <tr> 
+    <td height="24">2</td>
+    <td>10</td>
+    <td><strong>20</strong></td>
+  </tr>
+  <tr> 
+    <td height="24">5</td>
+    <td>10</td>
+    <td><strong>50</strong></td>
+  </tr>
+</table>
+<p>With the checkbox for directory polling you can switch off the poll process 
+  of the directory. This can help to reduce the file IO, and you can also temporarily 
+  interrupt an automatic transmission to a specific partner. <br>
+  Since this interrupts the automated process of directory monitoring in the case 
+  of a permanent configuration, you would either have to send the data manually 
+  (via &quot;Send file to partner&quot; in the AS2 client) or you would have to 
+  send the send requests in your respective flow via the command line.<br>
+</p>
+<p>&nbsp;</p>
+<p><strong>Receipt:</strong></p>
+<p>It's possible to transmit the filename of a AS2 transmisson. Anyway this is 
+  not standardized and not every AS2 product supports this option.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>HTTP authentication:</strong><br>
+  <br>
+  Beneath message encryption, digital signature, TLS (transport layer security, 
+  SSL) its also possible to define an additional passwort for the HTTP receipt. 
+  This could be set here.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>Notification:</strong></p>
+<p>If you use message quota you could setup the quota notification here.<br>
+  <em><strong>Attention:</strong></em><br>
+  You have to activate this configuration possibility in the settings first (&quot;Interface&quot;).</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>HTTP Header:</strong></p>
+<p>Allows to reconfigure the HTTP headers of the AS2 messages and add new ones. 
+  Please be careful using these settings because its possible to stop the communication 
+  to a partner if you overwrite some reuqired AS2 Headers.<br>
+  <em><strong>Attention:</strong></em><br>
+  You have to activate this configuration possibility in the settings first (&quot;Interface&quot;). 
+</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<p><strong>Send:</strong></p>
+<p>The AS2 messages are sent and received via HTTP or HTTPs. To perform this you 
+  need the receipt URL of your TP for every communication. Please contact your 
+  TP to get these data.<br>
+  AS2 is a point to point protocol - both trading partners systems have be online.<br>
+  <br>
+  Please do not change the default settings for subject and content type of the 
+  message unlike you TP requests to change them.<br>
+  It's also possible to set the content transfer encoding per partner. This is 
+  &quot;binary&quot; by default, you could also set &quot;base64&quot;.<br>
+  There are multiple AS2 versions out with different features. If your TP uses 
+  a AS2 solution &gt;= AS 1.1 you may compress the message data to reduce the 
+  sent data size.<br>
+  <br>
+  The system transfers the original file name automatically. For this purpose, 
+  a separate entry is created in the AS2 message structure in the payment header:<br>
+  <span class="TechDescription"><br>
+  Content-Disposition: attachment; filename=myfile.txt</span></p>
+<p>Since RFC 822 does not allow characters &gt; ASCII 127 to be used in MIME headers, 
+  the filename is encoded when necessary. For example, for the file &quot;&ouml;.txt&quot; 
+  the file name would be transmitted in the following format (RFC 2047, UTF-8, 
+  B) and would have to be interpreted accordingly on the other side if it is to 
+  be used:</p>
+<p><span class="TechDescription">Content-Disposition: attachment; filename=&quot;=?UTF-8?B?w7YudHh0?=&quot;</span></p>
+<p><br>
+</p>
+<p><strong>Postprocessing:</strong> </p>
+<p>You can trigger post-processing processes after receiving or sending data. 
+  For detailed information, see the section <a href="postprocessing_en.html">Postprocessing</a>.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h2>Setting up a new connection<br>
+  <br>
+</h2>
+<p>When you create a new connection, you must know the communication
+  parameters of your partner and tell him yours. The mendelson AS2
+  server can help you with a data sheet of communication parameters, you
+  can automatically create it and send it to the partner. In this form
+  there are all the required parameters, the partner can fill in his own
+  and return the data sheet.<br>
+</p>
+<p>You should start inputting your contact data for your local station
+  (tab "Contact" in the partner management). To create the data sheet
+  please navigate to "File-Create communication data sheet". There are
+  some additional details of your system that are required (receipt URL, comment), then a PDF is generated that contains editable PDF fields on the
+  partner site that can be filled out by the partner:</p>
+<br>
+<p><img alt="Communication data sheet" src="../images/datasheet.png"><br>
+The PDF will have some attachments - these are the certificates that are required for your partner to establish an SSL connection and encrypt message to you or verify your digital signature. If you are using Mac OS X and you are using the standard PDF preview reader you will see no attachments - this is not supported there. Please install the acrobat reader to read the document in this case.</p>
+<hr>
+<table width="100%" border="0">
+  <tr> 
+    <td><div class="mendelsonLogo"/></td>
+    <td class="date"><b>Last modified:</b> $Date: 3/09/24 16:13 $</td>
+  </tr>
+</table>
+</BODY>
+
+</HTML>
