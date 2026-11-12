@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/wizard/category/CategorySelectionListener.java 2     30.03.05 12:24 Heller $
+//$Header: /oftp2/de/mendelson/util/wizard/category/CategorySelectionListener.java 3     13/03/26 11:12 Heller $
 package de.mendelson.util.wizard.category;
 
 import java.util.EventListener;
@@ -14,9 +14,9 @@ import java.util.EventObject;
 /**
  * Listener interface every class has to implement that listens to a category selection
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
-public interface CategorySelectionListener extends EventListener {
+public sealed interface CategorySelectionListener extends EventListener permits JDialogCategorySelection{
     
     public void selectionPerformed( CategorySelectionEvent evt );
     

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectionprogress/JDialogConnectionProgress.java 1     13.01.11 12:36 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/connectionprogress/JDialogConnectionProgress.java 2     8/07/25 8:5 $
 package de.mendelson.util.clientserver.connectionprogress;
 
 import de.mendelson.util.MecResourceBundle;
@@ -17,28 +17,31 @@ import javax.swing.JFrame;
 /**
  * GUI Client root implementation
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class JDialogConnectionProgress extends JDialog {
 
-    private MecResourceBundle rb = null;
-
-    /** Creates new form JDialogConnectionProgress */
-    public JDialogConnectionProgress(JFrame parent) {
-        super(parent);
+    private static final MecResourceBundle rb;
+    static{
         //load resource bundle
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleConnectionProgress.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle "
                     + e.getClassName() + " not found.");
         }
+    }
+
+    /** Creates new form JDialogConnectionProgress */
+    public JDialogConnectionProgress(JFrame parent) {
+        super(parent);
+        
         initComponents();
     }
 
     public void setHost(String host) {
-        this.jLabelConnect.setText(this.rb.getResourceString("connecting.to", host));
+        this.jLabelConnect.setText(rb.getResourceString("connecting.to", host));
     }
 
     /** This method is called from within the constructor to

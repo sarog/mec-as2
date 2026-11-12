@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/crl/CRLCache.java 1     26/02/24 11:26 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/crl/CRLCache.java 2     14/04/26 9:05 Heller $
 package de.mendelson.util.security.crl;
 
 import java.security.cert.X509CRL;
@@ -15,11 +15,11 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * Verifies a CRL of a certificate
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class CRLCache {
     
-    private final static ConcurrentHashMap<String, X509CRL> CRL_MAP 
+    private static final ConcurrentHashMap<String, X509CRL> CRL_MAP 
             = new ConcurrentHashMap<String, X509CRL>();
 
     /**Returns the CRL of the passed URL if it is still valid or null if it is either no longer valid or does not

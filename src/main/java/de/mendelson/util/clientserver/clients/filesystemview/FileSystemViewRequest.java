@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewRequest.java 7     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewRequest.java 9     11/06/25 13:16 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -16,7 +17,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class FileSystemViewRequest extends ClientServerMessage implements Serializable {
 
@@ -32,6 +33,13 @@ public class FileSystemViewRequest extends ClientServerMessage implements Serial
 
     public FileSystemViewRequest( int requestType ){
         this.requestType = requestType;
+    }
+    
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public FileSystemViewRequest() {
+        super();
     }
     
     public void setFileFilter( FileFilter fileFilter ){

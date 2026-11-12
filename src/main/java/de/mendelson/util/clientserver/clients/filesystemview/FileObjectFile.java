@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectFile.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectFile.java 8     13/03/26 10:09 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.net.URI;
 import java.nio.file.Paths;
 import javax.swing.Icon;
@@ -16,38 +17,47 @@ import javax.swing.Icon;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
-public class FileObjectFile extends FileObject {
+public final class FileObjectFile extends FileObject {
 
     private static final long serialVersionUID = 1L;
     private boolean hidden = false;
     private boolean readOnly = false;
     private boolean executable = false;
     private String symbolicLinkTarget = null;
-    private boolean isSymbolikLink = false;
+    private boolean symbolicLink = false;
 
     /**
      * Server side icon for the root - might be null
      */
-    private final Icon serversideIcon;
+    private Icon serversideIcon;
 
     public FileObjectFile(URI fileURI, Icon serversideIcon) {
         super(fileURI);
         this.serversideIcon = serversideIcon;
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public FileObjectFile() {
+        super();
+    }
+
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append(Paths.get(this.getFileURI()).getFileName().toString());
-        if( this.isSymbolikLink){
-            builder.append( " -> ");
-            if( this.symbolicLinkTarget != null ){
-                builder.append( this.symbolicLinkTarget);
+        if (this.symbolicLink) {
+            builder.append(" -> ");
+            if (this.symbolicLinkTarget != null) {
+                builder.append(this.symbolicLinkTarget);
             }
         }
-        return( builder.toString());
+        return (builder.toString());
     }
 
     /**
@@ -139,15 +149,15 @@ public class FileObjectFile extends FileObject {
     /**
      * @return the isSymbolikLink
      */
-    public boolean isSymbolikLink() {
-        return isSymbolikLink;
+    public boolean isSymbolicLink() {
+        return symbolicLink;
     }
 
     /**
-     * @param isSymbolikLink the isSymbolikLink to set
+     * @param isSymbolicLink the isSymbolicLink to set
      */
-    public void setIsSymbolikLink(boolean isSymbolikLink) {
-        this.isSymbolikLink = isSymbolikLink;
+    public void setSymbolicLink(boolean isSymbolicLink) {
+        this.symbolicLink = isSymbolicLink;
     }
 
 }

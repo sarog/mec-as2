@@ -1,10 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEventAccessDB.java 17    12/03/25 16:07 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/message/postprocessingevent/ProcessingEventAccessDB.java 19    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
-import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.Base64;
 import de.mendelson.util.systemevents.SystemEvent;
@@ -14,7 +13,6 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import org.hsqldb.types.Types;
 
 
@@ -30,7 +28,7 @@ import org.hsqldb.types.Types;
  * processing)
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 19 $
  */
 public class ProcessingEventAccessDB {
 
@@ -61,8 +59,8 @@ public class ProcessingEventAccessDB {
                 statementSelect.setLong(1, System.currentTimeMillis() - TimeUnit.SECONDS.toMillis(15));
                 try (ResultSet result = statementSelect.executeQuery()) {
                     if (result.next()) {
-                        int eventType = result.getInt("eventtype");
-                        int processType = result.getInt("processtype");
+                        ProcessingEventTriggerType triggerType = ProcessingEventTriggerType.of(result.getInt("eventtype"));
+                        ProcessingEventType processType = ProcessingEventType.of(result.getInt("processtype"));
                         long initDate = result.getLong("initdate");
                         List<String> parameter = this.deserializeList(result.getString("parameterlist"));
                         String relatedMessageId = result.getString("messageid");
@@ -70,7 +68,7 @@ public class ProcessingEventAccessDB {
                         if (result.wasNull()) {
                             relatedMDNId = null;
                         }
-                        event = new ProcessingEvent(eventType, processType, relatedMessageId, relatedMDNId, parameter, initDate);
+                        event = new ProcessingEvent(triggerType, processType, relatedMessageId, relatedMDNId, parameter, initDate);
                         try (PreparedStatement statementDelete = runtimeConnectionNoAutoCommit.prepareStatement(
                                 "DELETE FROM processingeventqueue WHERE messageid=?")) {
                             statementDelete.setString(1, relatedMessageId);
@@ -81,11 +79,11 @@ public class ProcessingEventAccessDB {
                 this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 return (event);
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                 this.dbDriverManager.rollbackTransaction(transactionStatement);
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
         return (null);
     }
@@ -104,8 +102,8 @@ public class ProcessingEventAccessDB {
                         "INSERT INTO processingeventqueue("
                         + "eventtype,processtype,initdate,parameterlist,messageid,mdnid)"
                         + "VALUES(?,?,?,?,?,?)")) {
-                    statement.setInt(1, event.getEventType());
-                    statement.setInt(2, event.getProcessType());
+                    statement.setInt(1, event.getTriggerType().toInt());
+                    statement.setInt(2, event.getProcessType().toInt());
                     statement.setLong(3, event.getInitDate());
                     statement.setString(4, this.serializeList(event.getParameter()));
                     statement.setString(5, event.getMessageId());
@@ -117,13 +115,13 @@ public class ProcessingEventAccessDB {
                     statement.executeUpdate();
                     this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                     this.dbDriverManager.rollbackTransaction(transactionStatement);
 
                 }
             }
         } catch (Throwable e) {
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
         }
     }
 

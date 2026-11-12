@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplPKCS11.java 15    11/02/25 13:40 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplPKCS11.java 16    14/01/26 14:05 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -12,6 +12,7 @@ import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
 
 /*
@@ -25,7 +26,7 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a HSM via PKCS#11
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
 
@@ -67,6 +68,11 @@ public class KeystoreStorageImplPKCS11 implements KeystoreStorage {
     @Override
     public void loadKeystoreFromServer() throws Exception {
         throw new IllegalAccessException("KeystoreStorageImplPKCS11: loadKeystoreFromServer() is not available for this implementation of storage.");
+    }
+    
+    @Override
+    public Optional<KeystoreCertificate> getDownloadedEntriesMetadata(String fingerprintSHA1){
+        return( Optional.empty() );
     }
 
     @Override

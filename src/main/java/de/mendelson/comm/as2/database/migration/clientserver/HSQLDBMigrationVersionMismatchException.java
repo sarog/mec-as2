@@ -1,5 +1,6 @@
-//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBMigrationVersionMismatchException.java 2     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBMigrationVersionMismatchException.java 3     4/06/25 11:44 Heller $
 package de.mendelson.comm.as2.database.migration.clientserver;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -12,7 +13,7 @@ package de.mendelson.comm.as2.database.migration.clientserver;
  * Exception for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class HSQLDBMigrationVersionMismatchException extends Exception {
 
@@ -21,8 +22,20 @@ public class HSQLDBMigrationVersionMismatchException extends Exception {
     private int requiredVersionRuntimeDB = -1;
     private int foundVersionRuntimeDB = -1;
     private int foundVersionConfigDB = -1;
-    
+
     public HSQLDBMigrationVersionMismatchException() {
+    }
+
+    @Override
+    public String getMessage() {
+        return ("Expected DB_CONFIG v"
+                + this.getRequiredVersionConfigDB()
+                + " and DB_RUNTIME v"
+                + this.getRequiredVersionRuntimeDB()
+                + " but found DB_CONFIG v"
+                + this.getFoundVersionConfigDB()
+                + " and DB_RUNTIME v"
+                + this.getFoundVersionRuntimeDB());
     }
 
     /**

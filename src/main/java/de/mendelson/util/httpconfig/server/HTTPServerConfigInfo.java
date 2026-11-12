@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfo.java 19    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/server/HTTPServerConfigInfo.java 20    16/09/25 16:39 Heller $
 package de.mendelson.util.httpconfig.server;
 
 import java.net.InetAddress;
@@ -35,7 +35,7 @@ import org.eclipse.jetty.webapp.WebAppContext;
  * Stores information about the current HTTP server configuration
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 20 $
  */
 public class HTTPServerConfigInfo {
 
@@ -69,8 +69,7 @@ public class HTTPServerConfigInfo {
     }
 
     public List<String> getDeployedWars() {
-        List<String> tempList = new ArrayList<String>();
-        tempList.addAll(this.deployedWars);
+        List<String> tempList = new ArrayList<String>(this.deployedWars);
         return (tempList);
     }
 
@@ -79,8 +78,7 @@ public class HTTPServerConfigInfo {
     }
 
     public List<String> getExcludedProtocols() {
-        List<String> tempList = new ArrayList<String>();
-        tempList.addAll(this.excludedProtocols);
+        List<String> tempList = new ArrayList<String>(this.excludedProtocols);
         return (tempList);
     }
 
@@ -89,8 +87,7 @@ public class HTTPServerConfigInfo {
     }
 
     public List<String> getPossibleProtocols() {
-        List<String> tempList = new ArrayList<String>();
-        tempList.addAll(this.possibleProtocols);
+        List<String> tempList = new ArrayList<String>(this.possibleProtocols);
         return (tempList);
     }
 
@@ -99,8 +96,7 @@ public class HTTPServerConfigInfo {
     }
 
     public List<String> getPossibleCipher() {
-        List<String> tempList = new ArrayList<String>();
-        tempList.addAll(this.possibleCiphers);
+        List<String> tempList = new ArrayList<String>(this.possibleCiphers);
         return (tempList);
     }
 
@@ -109,8 +105,7 @@ public class HTTPServerConfigInfo {
     }
 
     public List<String> getExcludedCipher() {
-        List<String> tempList = new ArrayList<String>();
-        tempList.addAll(this.excludedCiphers);
+        List<String> tempList = new ArrayList<String>(this.excludedCiphers);
         return (tempList);
     }
 
@@ -119,8 +114,7 @@ public class HTTPServerConfigInfo {
     }
 
     public List<Listener> getListener() {
-        List<Listener> tempList = new ArrayList<Listener>();
-        tempList.addAll(this.listenerList);
+        List<Listener> tempList = new ArrayList<Listener>(this.listenerList);
         return (tempList);
     }
 

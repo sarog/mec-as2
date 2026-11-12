@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/ImageButtonBar.java 18    11/02/25 16:26 Heller $
+//$Header: /mec_as4/de/mendelson/util/ImageButtonBar.java 19    14/04/26 9:04 Heller $
 package de.mendelson.util;
 
 import com.l2fprod.common.swing.JButtonBar;
@@ -33,7 +33,7 @@ import javax.swing.SwingConstants;
  * the following way: 1.initialize it 2.Add panels to it by addButton()
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class ImageButtonBar extends JPanel {
 
@@ -166,7 +166,7 @@ public class ImageButtonBar extends JPanel {
         return (this);
     }
 
-    private final static class ImageButtonComponent {
+    private static final class ImageButtonComponent {
 
         private final ImageIcon icon;
         private final String text;

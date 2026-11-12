@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ImageButtonBarUI.java 8     8/05/24 14:47 Heller $
+//$Header: /mec_as4/de/mendelson/util/ImageButtonBarUI.java 9     14/04/26 9:04 Heller $
 package de.mendelson.util;
 
 import com.l2fprod.common.swing.plaf.basic.BasicButtonBarUI;
@@ -29,11 +29,11 @@ import javax.swing.plaf.basic.BasicButtonUI;
  * UI LAF for the button bar
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class ImageButtonBarUI extends BasicButtonBarUI {
 
-    public final static int DEFAULT_IMAGE_HEIGHT = 28;
+    public static final int DEFAULT_IMAGE_HEIGHT = 28;
     
     public static ComponentUI createUI(JComponent c) {
         return new BlueishButtonBarUI();

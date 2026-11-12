@@ -1,0 +1,23 @@
+$Header:$
+Le fichier suivant contient un modèle qui est utilisé pour l'événement système d'un problème de connexion.
+${MESSAGE} : Le message d'erreur
+${HINT} : Quelques idées sur ce qui pourrait être à l'origine du problème
+${PARTENAIRE} : Le partenaire avec lequel la connexion doit être établie
+${URL} : L'URL qui a été utilisée
+${MESSAGE_ID} : numéro du message qui doit être transmis
+
+
+
+
+[SUBJECT]
+Problème de connexion au partenaire ${PARTNER} [${MESSAGE_ID}]
+
+
+[BODY]
+Vous avez essayé d'établir une connexion sortante avec le partenaire "${PARTNER}", cela a échoué.
+
+URL DE LA PAGE : ${URL}
+Description : ${MESSAGE}
+
+${HINT}
+

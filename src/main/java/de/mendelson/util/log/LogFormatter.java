@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/LogFormatter.java 28    20/02/25 13:42 Heller $
+//$Header: /mec_as4/de/mendelson/util/log/LogFormatter.java 29    14/04/26 9:05 Heller $
 package de.mendelson.util.log;
 
 import java.io.PrintWriter;
@@ -59,9 +59,9 @@ public class LogFormatter extends Formatter {
 
     private final int formatType;
 
-    private final static DateTimeFormatter DATE_TIME_FORMAT 
+    private static final DateTimeFormatter DATE_TIME_FORMAT 
             = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT);
-    private final static DateTimeFormatter TIME_FORMAT 
+    private static final DateTimeFormatter TIME_FORMAT 
             = DateTimeFormatter.ofLocalizedTime(FormatStyle.MEDIUM);
     
     private final Map<Level, String> COLOR_MAP = new ConcurrentHashMap<Level, String>();

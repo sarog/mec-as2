@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMSystemState.java 4     2/11/23 14:02 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMSystemState.java 5     15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -11,7 +11,7 @@ import java.awt.Rectangle;
 /** 
  * Renders the system activity column
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class TableCellRendererCEMSystemState extends DefaultTableCellRenderer implements TableCellRenderer {
 
@@ -57,13 +57,13 @@ public class TableCellRendererCEMSystemState extends DefaultTableCellRenderer im
 
         if (value instanceof CEMSystemActivity) {
             CEMSystemActivity activity = (CEMSystemActivity) value;
-            int state = activity.getState();
+            CEMEntry.Status state = activity.getState();
             this.setText(activity.getText());
-            if (state == CEMEntry.STATUS_ACCEPTED_INT || state == CEMEntry.STATUS_PENDING_INT) {
+            if (state == CEMEntry.Status.ACCEPTED || state == CEMEntry.Status.PENDING) {
                 Color backgroundColor = table.getBackground();
-                if (state == CEMEntry.STATUS_ACCEPTED_INT) {
+                if (state == CEMEntry.Status.ACCEPTED) {
                     backgroundColor = this.colorAccepted;
-                } else if (state == CEMEntry.STATUS_PENDING_INT) {
+                } else if (state == CEMEntry.Status.PENDING) {
                     backgroundColor = this.colorPending;
                 }
                 if (isSelected) {

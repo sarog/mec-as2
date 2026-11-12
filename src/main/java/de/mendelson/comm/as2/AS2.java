@@ -1,13 +1,13 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/AS2.java 9     20/03/25 11:29 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/AS2.java 12    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2;
 
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.server.ServerAlreadyRunningException;
-import de.mendelson.util.DisplayMode;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.Splash;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.font.FontUtil;
 import de.mendelson.util.security.BCCryptoHelper;
 import de.mendelson.util.systemevents.SystemEvent;
@@ -28,7 +28,7 @@ import javax.swing.JOptionPane;
  * Start the AS2 server and the configuration GUI
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 12 $
  */
 public class AS2 {
 
@@ -42,7 +42,7 @@ public class AS2 {
         System.out.println("-lang <String>: Language to use for the client/server, nonpersistent. Possible values are " + PreferencesAS2.getSupportedLanguagesAsUsageList() + ".");
         System.out.println("-country <String>: Country/region to use for the client/server, nonpersistent. Possible values are \"DE\", \"US\", \"FR\", \"GB\"...");
         System.out.println("-nohttpserver: Do not start the integrated HTTP server, only useful if you are integrating the product into an other web container");
-        System.out.println("-mode <String>: Sets up the LIGHT or DARK mode for the client - default is LIGHT");
+        System.out.println("-mode <String>: Sets up the LIGHT, DARK or HICONTRAST mode for the client - default is LIGHT");
         System.out.println("-importTLS: Imports a new TLS keystore to the system and overwrites the existing. For further requirements please have a look at the documentation.");
         System.out.println("-importSignEnc: Imports a new sign/encryption keystore to the system and overwrites the existing. For further requirements please have a look at the documentation.");
     }
@@ -68,12 +68,13 @@ public class AS2 {
             } else if (args[optind].toLowerCase().equals("-mode")) {
                 String modeParameter = args[++optind];
                 if (modeParameter != null) {
-                    if (modeParameter.equalsIgnoreCase(DisplayMode.DARK)) {
-                        clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.DARK);
-                    } else if (modeParameter.equalsIgnoreCase(DisplayMode.HICONTRAST)) {
-                        clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.HICONTRAST);
+                    DisplayMode displayMode = DisplayMode.of(modeParameter);
+                    if (displayMode == DisplayMode.DARK) {
+                        clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.DARK.toDisplayStr());
+                    } else if (displayMode == DisplayMode.HICONTRAST) {
+                        clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.HICONTRAST.toDisplayStr());
                     } else {
-                        clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.LIGHT);
+                        clientPreferences.put(PreferencesAS2.DISPLAY_MODE_CLIENT, DisplayMode.LIGHT.toDisplayStr());
                     }
                 }
             } else if (args[optind].toLowerCase().equals("-importtls")) {
@@ -117,13 +118,16 @@ public class AS2 {
             } else if (language.toLowerCase().equals("pt")) {
                 Locale portugal = new Locale("pt", "PT");
                 Locale.setDefault(new Locale(portugal.getLanguage(), country));
+            } else if (language.toLowerCase().equals("pl")) {
+                Locale poland = new Locale("pl", "PL");
+                Locale.setDefault(new Locale(poland.getLanguage(), country));
             } else {
                 System.out.println("Language " + language + " is not supported, switching to en");
                 Locale.setDefault(new Locale(Locale.ENGLISH.getLanguage(), country));
             }
         }
-        String displayMode = clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
-        if (displayMode.equalsIgnoreCase(DisplayMode.DARK)) {
+        DisplayMode displayMode = DisplayMode.of(clientPreferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT));
+        if (displayMode == DisplayMode.DARK) {
             //darken all SVG generated images/icons by 10% (also the splash)
             MendelsonMultiResolutionImage.addSVGImageOperation(new RescaleOp(0.9f, 0, null));
         }
@@ -154,9 +158,9 @@ public class AS2 {
         } catch (ServerAlreadyRunningException e) {
             //don't delete the lockfile in this case!
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.MAIN_SERVER_STARTUP_BEGIN,
                     "[" + e.getClass().getSimpleName() + "]",
                     e.getMessage());
             if (splash != null) {
@@ -171,9 +175,9 @@ public class AS2 {
             System.exit(1);
         } catch (Throwable e) {
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_MAIN_SERVER_STARTUP_BEGIN,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.MAIN_SERVER_STARTUP_BEGIN,
                     "[" + e.getClass().getSimpleName() + "]",
                     e.getMessage());
             if (splash != null) {

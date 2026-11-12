@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/about/ServerInfoResponse.java 4     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/about/ServerInfoResponse.java 9     12/06/25 11:13 Heller $
 package de.mendelson.util.clientserver.about;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.util.Properties;
@@ -16,7 +18,7 @@ import java.util.Properties;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 9 $
  */
 public class ServerInfoResponse extends ClientServerResponse implements Serializable {
 
@@ -29,15 +31,24 @@ public class ServerInfoResponse extends ClientServerResponse implements Serializ
     /**
      * Properties to return
      */
-    private final Properties properties = new Properties();
+    private Properties properties = new Properties();
 
     public ServerInfoResponse(ServerInfoRequest request) {
         super(request);
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ServerInfoResponse() {
+        super();
+    }
+        
+    
     /**
      * Sets a single property
      */
+    @JsonIgnore
     public void setProperty(String key, String value) {
         if (key != null && value != null) {
             this.properties.setProperty(key.toLowerCase(), value);
@@ -54,5 +65,12 @@ public class ServerInfoResponse extends ClientServerResponse implements Serializ
     @Override
     public String toString() {
         return ("Server info response");
+    }
+
+    /**This is a dummy method for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setProperties(Properties properties) {
+        this.properties = properties;
     }
 }

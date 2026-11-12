@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageResponseLastMessage.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/clientserver/MessageResponseLastMessage.java 7     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.message.clientserver;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 /*
@@ -16,7 +17,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class MessageResponseLastMessage extends ClientServerResponse implements Serializable {
 
@@ -27,6 +28,15 @@ public class MessageResponseLastMessage extends ClientServerResponse implements 
         super(request);
     }
 
+     /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public MessageResponseLastMessage() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Message respond last message");

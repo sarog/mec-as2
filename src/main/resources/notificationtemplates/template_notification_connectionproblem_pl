@@ -1,0 +1,23 @@
+$Header:$
+Poniższy plik zawiera szablon, który jest używany w przypadku wystąpienia problemu z połączeniem.
+${MESSAGE}: Komunikat o błędzie
+${HINT}: Jakiś pomysł, co może być przyczyną?
+${PARTNER}: Partner, z którym należy nawiązać połączenie
+${URL}: Adres URL, który został użyty
+${MESSAGE_ID}: Numer wiadomości, która powinna zostać przesłana
+
+
+
+
+[SUBJECT]
+Problem z połączeniem z partnerem ${PARTNER} [${MESSAGE_ID}]
+
+
+[BODY]
+Próbowano nawiązać połączenie wychodzące z partnerem "${PARTNER}", ale nie powiodło się.
+
+URL: ${URL}
+Opis: ${MESSAGE}
+
+${HINT}
+

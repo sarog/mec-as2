@@ -1,11 +1,10 @@
-//$Header: /oftp2/de/mendelson/util/preferences/PreferencesCache.java 7     31/07/23 12:19 Heller $
+//$Header: /as2/de/mendelson/util/preferences/PreferencesCache.java 9     22/05/25 9:05 Heller $
 package de.mendelson.util.preferences;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import com.github.benmanes.caffeine.cache.Cache;
+import com.github.benmanes.caffeine.cache.Caffeine;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -18,17 +17,31 @@ import java.util.concurrent.TimeUnit;
  * Cache for the server preferences to prevent database access
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class PreferencesCache {
 
-    private long expireTime = TimeUnit.SECONDS.toMillis(5);
+    private final Cache<String, String> CACHE;
 
-    private final Map<String, String> preferencesMap = Collections.synchronizedMap(new HashMap<String, String>());
-    private final Map<String, Long> expireMap = new ConcurrentHashMap<String, Long>();
+    private static PreferencesCache instance;
 
-    public PreferencesCache(long expireTime) {
-        this.expireTime = expireTime;
+    private final AtomicInteger accessCount = new AtomicInteger(0);
+
+    private PreferencesCache() {
+        this.CACHE = Caffeine.newBuilder()
+                //.recordStats()
+                .expireAfterWrite(15, TimeUnit.SECONDS)
+                .build();
+    }
+
+    /**
+     * Singleton for the whole application
+     */
+    public static synchronized PreferencesCache instance() {
+        if (instance == null) {
+            instance = new PreferencesCache();
+        }
+        return instance;
     }
 
     /**
@@ -39,63 +52,47 @@ public class PreferencesCache {
      * @return
      */
     public String get(String key) {
-        synchronized (this.preferencesMap) {
-            String foundValue = this.preferencesMap.get(key);
-            if (foundValue == null) {
-                return (null);
-            } else {
-                Long initTime = this.expireMap.get(key);
-                if (initTime == null) {
-                    //should not happen but this is for data consistency
-                    this.preferencesMap.remove(key);
-                    return (null);
-                } else {
-                    //check if found value is still valid
-                    long ageInMS = System.currentTimeMillis() - initTime;
-                    if (ageInMS < this.expireTime) {
-                        //cache hit
-                        return (foundValue);
-                    } else {
-                        //value expired
-                        this.preferencesMap.remove(key);
-                        this.expireMap.remove(key);
-                        return (null);
-                    }
-                }
-            }
+        //output stats only if the stat mechanism is enabled in the Caffein Builder by .recordStats().
+        //The stats will not count if this is not enabled
+        if (this.CACHE.stats().hitCount() > 0 && accessCount.incrementAndGet() % 100 == 0) {
+            System.out.println(this.getStats());
         }
+        return CACHE.getIfPresent(key);
     }
 
     /**
      * Adds a new key value pair to the cache
      */
     public void put(String key, String value) {
-        synchronized (this.preferencesMap) {
-            this.preferencesMap.put(key, value);
-            this.expireMap.put(key, Long.valueOf(System.currentTimeMillis()));
-        }
+        this.CACHE.put(key, value);
     }
 
     /**
      * Removes a key from the cache
      */
     public void remove(String key) {
-        synchronized (this.preferencesMap) {
-            this.preferencesMap.remove(key);
-            this.expireMap.remove(key);
-        }
+        this.CACHE.invalidate(key);
     }
-    
+
     /**
      * Clear the cache. This might be required in HA mode if there are multiple
-     * nodes working on the same preferences and a request needs to get
-     * the current stored value in the database
+     * nodes working on the same preferences and a request needs to get the
+     * current stored value in the database
      */
-    public void clear(){
-        synchronized (this.preferencesMap) {
-            this.preferencesMap.clear();
-            this.expireMap.clear();
-        }
+    public void clear() {
+        this.CACHE.invalidateAll();
     }
-  
+
+    public String getStats() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Preferences Cache Statistics:\n");
+        stringBuilder.append("  Hit Count        : ").append(CACHE.stats().hitCount()).append('\n');
+        stringBuilder.append("  Miss Count       : ").append(CACHE.stats().missCount()).append('\n');
+        stringBuilder.append("  Eviction Count   : ").append(CACHE.stats().evictionCount()).append('\n');
+        stringBuilder.append("  Eviction Weight  : ").append(CACHE.stats().evictionWeight()).append('\n');
+        stringBuilder.append("  Hit Rate         : ").append(String.format("%.2f%%", CACHE.stats().hitRate() * 100)).append('\n');
+        stringBuilder.append("  Miss Rate        : ").append(String.format("%.2f%%", CACHE.stats().missRate() * 100)).append('\n');
+        return (stringBuilder.toString());
+    }
+
 }

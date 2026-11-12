@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 16    12/02/25 11:58 Heller $
+//$Header: /mec_as2/de/mendelson/util/systemevents/search/ServerSideEventSearch.java 19    15/04/26 12:44 Heller $
 package de.mendelson.util.systemevents.search;
 
 import de.mendelson.util.systemevents.SystemEvent;
@@ -30,6 +30,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MultiReader;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.index.Term;
 import org.apache.lucene.search.BooleanClause;
 import org.apache.lucene.search.BooleanQuery;
@@ -56,24 +57,24 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 19 $
  */
 public class ServerSideEventSearch {
 
-    private final static String TAG_PATH = "path";
-    private final static String TAG_BODY = "body";
-    private final static String TAG_SUBJECT = "subject";
-    private final static String TAG_SEVERITY = "severity";
-    private final static String TAG_ORIGIN = "origin";
-    private final static String TAG_CATEGORY = "category";
-    private final static String TAG_TYPE = "type";
-    private final static String TAG_ID = "id";
-    private final static String TAG_USER = "user";
-    private final static String TAG_ORIGINHOST = "originhost";
-    private final static String TAG_TIMESTAMP = "timestamp";
+    private static final String TAG_PATH = "path";
+    private static final String TAG_BODY = "body";
+    private static final String TAG_SUBJECT = "subject";
+    private static final String TAG_SEVERITY = "severity";
+    private static final String TAG_ORIGIN = "origin";
+    private static final String TAG_CATEGORY = "category";
+    private static final String TAG_TYPE = "type";
+    private static final String TAG_ID = "id";
+    private static final String TAG_USER = "user";
+    private static final String TAG_ORIGINHOST = "originhost";
+    private static final String TAG_TIMESTAMP = "timestamp";
 
-    private final static int MIN_TOKEN_LENGTH = 20;
-    private final static int MAX_TOKEN_LENGTH = 20;
+    private static final int MIN_TOKEN_LENGTH = 20;
+    private static final int MAX_TOKEN_LENGTH = 20;
 
     public ServerSideEventSearch() {
     }
@@ -164,10 +165,11 @@ public class ServerSideEventSearch {
                 //finally perform the search
                 TopDocs hits = searcher.search(query, filter.getMaxResults(), sortByTimestamp);
                 if (hits.totalHits.value > 0) {
+                    StoredFields storedFields = searcher.storedFields();
                     for (ScoreDoc scoreDoc : hits.scoreDocs) {
-                        Document doc = multiReader.document(scoreDoc.doc);
+                        Document hitDoc = storedFields.document(scoreDoc.doc);
                         try {
-                            resultList.add(this.generateEventFromSingleSearchResult(doc));
+                            resultList.add(this.generateEventFromSingleSearchResult(hitDoc));
                         } catch (Throwable e) {
                             //ignore this - it is possible that a corrupted index prevent the
                             //regeneration of the object
@@ -191,21 +193,20 @@ public class ServerSideEventSearch {
      */
     private SystemEvent generateEventFromSingleSearchResult(Document document) {
         SystemEvent event = new SystemEvent(
-                document.getField(TAG_SEVERITY).numericValue().intValue(),
-                document.getField(TAG_ORIGIN).numericValue().intValue(),
-                document.getField(TAG_TYPE).numericValue().intValue());
-        event.setBody(document.getField(TAG_BODY).stringValue());
-        event.setSubject(document.getField(TAG_SUBJECT).stringValue());
-        event.setId(document.getField(TAG_ID).stringValue());
-        event.setUser(document.getField(TAG_USER).stringValue());
-        event.setProcessOriginHost(document.getField(TAG_ORIGINHOST).stringValue());
-        event.setTimestamp(document.getField(TAG_TIMESTAMP).numericValue().longValue());
+                SystemEvent.Severity.of(document.getField(TAG_SEVERITY).numericValue().intValue()),
+                SystemEvent.Origin.of(document.getField(TAG_ORIGIN).numericValue().intValue()),
+                SystemEvent.Type.of(document.getField(TAG_TYPE).numericValue().intValue()));
+        event.setBody(document.getField(TAG_BODY).stringValue())
+                .setSubject(document.getField(TAG_SUBJECT).stringValue())
+                .setId(document.getField(TAG_ID).stringValue())
+                .setUser(document.getField(TAG_USER).stringValue())
+                .setProcessOriginHost(document.getField(TAG_ORIGINHOST).stringValue())
+                .setTimestamp(document.getField(TAG_TIMESTAMP).numericValue().longValue());
         return (event);
     }
 
     private Query buildQueryFromFilter(ServerSideEventFilter filter) {
         BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-
         boolean freeTextEntered
                 = (filter.getSubjectSearchText() != null && !filter.getSubjectSearchText().trim().isEmpty())
                 || (filter.getBodySearchText() != null && !filter.getBodySearchText().trim().isEmpty())
@@ -249,48 +250,48 @@ public class ServerSideEventSearch {
             Query freeTextQuery = freeTextSearchBuilder.build();
             queryBuilder.add(freeTextQuery, BooleanClause.Occur.MUST);
         }
-        Query subquery = IntPoint.newExactQuery(TAG_SEVERITY, SystemEvent.SEVERITY_ERROR);
+        Query subquery = IntPoint.newExactQuery(TAG_SEVERITY, SystemEvent.Severity.ERROR.toInt());
         if (!filter.getAcceptSeverityError()) {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST_NOT);
         } else {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.SHOULD);
         }
-        subquery = IntPoint.newExactQuery(TAG_SEVERITY, SystemEvent.SEVERITY_WARNING);
+        subquery = IntPoint.newExactQuery(TAG_SEVERITY, SystemEvent.Severity.WARNING.toInt());
         if (!filter.getAcceptSeverityWarning()) {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST_NOT);
         } else {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.SHOULD);
         }
-        subquery = IntPoint.newExactQuery(TAG_SEVERITY, SystemEvent.SEVERITY_INFO);
+        subquery = IntPoint.newExactQuery(TAG_SEVERITY, SystemEvent.Severity.INFO.toInt());
         if (!filter.getAcceptSeverityInfo()) {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST_NOT);
         } else {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.SHOULD);
         }
-        subquery = IntPoint.newExactQuery(TAG_ORIGIN, SystemEvent.ORIGIN_SYSTEM);
+        subquery = IntPoint.newExactQuery(TAG_ORIGIN, SystemEvent.Origin.SYSTEM.toInt());
         if (!filter.getAcceptOriginSystem()) {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST_NOT);
         } else {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.SHOULD);
         }
-        subquery = IntPoint.newExactQuery(TAG_ORIGIN, SystemEvent.ORIGIN_TRANSACTION);
+        subquery = IntPoint.newExactQuery(TAG_ORIGIN, SystemEvent.Origin.TRANSACTION.toInt());
         if (!filter.getAcceptOriginTransaction()) {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST_NOT);
         } else {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.SHOULD);
         }
-        subquery = IntPoint.newExactQuery(TAG_ORIGIN, SystemEvent.ORIGIN_USER);
+        subquery = IntPoint.newExactQuery(TAG_ORIGIN, SystemEvent.Origin.USER.toInt());
         if (!filter.getAcceptOriginUser()) {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST_NOT);
         } else {
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.SHOULD);
         }
-        if (filter.getAcceptCategory() != -1) {
-            subquery = IntPoint.newExactQuery(TAG_CATEGORY, filter.getAcceptCategory());
+        if (filter.getAcceptCategory() != SystemEvent.Category.FILTER_ACCEPT_ALL) {
+            subquery = IntPoint.newExactQuery(TAG_CATEGORY, filter.getAcceptCategory().toInt());
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST);
         }
-        if (filter.getAcceptType() != -1) {
-            subquery = IntPoint.newExactQuery(TAG_TYPE, filter.getAcceptType());
+        if (filter.getAcceptType() != SystemEvent.Type.FILTER_ACCEPT_ALL) {
+            subquery = IntPoint.newExactQuery(TAG_TYPE, filter.getAcceptType().toInt());
             queryBuilder = queryBuilder.add(subquery, BooleanClause.Occur.MUST);
         }
         BooleanQuery query = queryBuilder.build();
@@ -339,14 +340,14 @@ public class ServerSideEventSearch {
                         bodyTokenizer.setReader(new StringReader(bodyToTokenize));
                         luceneDocument.add(new TextField(TAG_BODY, bodyTokenizer));
                         luceneDocument.add(new StoredField(TAG_BODY, event.getBody()));
-                        luceneDocument.add(new IntPoint(TAG_SEVERITY, event.getSeverity()));
-                        luceneDocument.add(new StoredField(TAG_SEVERITY, event.getSeverity()));
-                        luceneDocument.add(new IntPoint(TAG_ORIGIN, event.getOrigin()));
-                        luceneDocument.add(new StoredField(TAG_ORIGIN, event.getOrigin()));
-                        luceneDocument.add(new IntPoint(TAG_CATEGORY, event.getCategory()));
-                        luceneDocument.add(new StoredField(TAG_CATEGORY, event.getCategory()));
-                        luceneDocument.add(new IntPoint(TAG_TYPE, event.getType()));
-                        luceneDocument.add(new StoredField(TAG_TYPE, event.getType()));
+                        luceneDocument.add(new IntPoint(TAG_SEVERITY, event.getSeverity().toInt()));
+                        luceneDocument.add(new StoredField(TAG_SEVERITY, event.getSeverity().toInt()));
+                        luceneDocument.add(new IntPoint(TAG_ORIGIN, event.getOrigin().toInt()));
+                        luceneDocument.add(new StoredField(TAG_ORIGIN, event.getOrigin().toInt()));
+                        luceneDocument.add(new IntPoint(TAG_CATEGORY, event.getCategory().toInt()));
+                        luceneDocument.add(new StoredField(TAG_CATEGORY, event.getCategory().toInt()));
+                        luceneDocument.add(new IntPoint(TAG_TYPE, event.getType().toInt()));
+                        luceneDocument.add(new StoredField(TAG_TYPE, event.getType().toInt()));
                         //search for full event id only - use Stringfield and not TextField
                         luceneDocument.add(new StringField(TAG_ID, event.getId(), Field.Store.YES));
                         luceneDocument.add(new TextField(TAG_USER, event.getUser(), Field.Store.YES));

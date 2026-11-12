@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/BaseTextClient.java 24    20/02/25 13:41 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/BaseTextClient.java 28    23/03/26 8:03 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.IProductVersion;
 import de.mendelson.util.clientserver.console.LoggingHandlerPrintStream;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
@@ -27,27 +28,30 @@ import java.util.logging.Logger;
  * Text Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 24 $
+ * @version $Revision: 28 $
  */
-public abstract class BaseTextClient implements ClientSessionHandlerCallback {
+public abstract class BaseTextClient implements ClientSessionHandlerCallback{
 
-    private final static String MODULE_NAME = "[CLIENT-SERVER]";
-    
+    private static final String MODULE_NAME = "[CLIENT-SERVER]";
+
     private final Logger logger = Logger.getAnonymousLogger();
     private BaseClient baseClient = null;
-    private final List<ClientsideMessageProcessor> messageProcessorList 
+    private final List<ClientsideMessageProcessor> messageProcessorList
             = Collections.synchronizedList(new ArrayList<ClientsideMessageProcessor>());
     private final PrintStream out;
     private String host = null;
+    private final IProductVersion productVersion;
 
     /**
-     * 
-     * @param CLIENT_TYPE The client type as defined in the BaseClient.CLIENT_XXX
+     *
+     * @param CLIENT_TYPE The client type as defined in the
+     * BaseClient.CLIENT_XXX
      */
-    protected BaseTextClient(final int CLIENT_TYPE) {
+    protected BaseTextClient(ClientType clientType, IProductVersion productVersion) {
         this.out = System.out;
+        this.productVersion = productVersion;
         this.setupLogger();
-        this.baseClient = new BaseClient(this, CLIENT_TYPE);
+        this.baseClient = new BaseClient(this, clientType, this.productVersion);
         this.baseClient.setLogger(this.logger);
     }
 
@@ -55,7 +59,7 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
         this.baseClient = baseClient;
         this.baseClient.setLogger(this.logger);
     }
-    
+
     /**
      * Indicates if server log messages should be displayed in the client or
      * simply ignored
@@ -120,12 +124,12 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
             throw new RuntimeException("BaseTextClient: No logger set.");
         }
         if (this.baseClient.getDisplayServerLogMessages()) {
-            this.log(Level.INFO, 
-                    BaseClient.clientTypeToStr(this.baseClient.getClientType()) 
-                    +  " client is connecting to " + hostAddress);
+            this.log(Level.INFO,
+                    this.baseClient.getClientType().getDisplayStr()
+                    + " client is connecting to " + hostAddress);
         }
         if (!this.baseClient.connect(hostAddress, timeout)) {
-            String logMessage = BaseClient.clientTypeToStr(this.baseClient.getClientType()) 
+            String logMessage = this.baseClient.getClientType().getDisplayStr()
                     + " client could not reach server (connection refused): " + hostAddress.toString();
             this.log(Level.WARNING, logMessage);
             throw new Exception(logMessage);
@@ -188,8 +192,8 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
             throw new RuntimeException("TextClient: No logger set.");
         }
         if (this.baseClient.getDisplayServerLogMessages()) {
-            this.log(Level.INFO, 
-                    BaseClient.clientTypeToStr(this.baseClient.getClientType())
+            this.log(Level.INFO,
+                    this.baseClient.getClientType().getDisplayStr()
                     + "client has established connection to " + socketAddress.toString());
         }
     }
@@ -200,8 +204,8 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
             throw new RuntimeException("BaseTextClient: No logger set.");
         }
         if (this.baseClient.getDisplayServerLogMessages()) {
-            this.log(Level.INFO, 
-                    BaseClient.clientTypeToStr(this.baseClient.getClientType())
+            this.log(Level.INFO,
+                    this.baseClient.getClientType().getDisplayStr()
                     + " client logged out");
         }
     }
@@ -212,8 +216,8 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
             throw new RuntimeException("BaseTextClient: No logger set.");
         }
         if (this.baseClient.getDisplayServerLogMessages()) {
-            this.log(Level.INFO, 
-                    BaseClient.clientTypeToStr(this.baseClient.getClientType())
+            this.log(Level.INFO,
+                    this.baseClient.getClientType().getDisplayStr()
                     + " client connection closed by foreign host");
         }
     }
@@ -227,7 +231,7 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
             throw new RuntimeException("BaseTextClient: No logger set.");
         }
         //there is no user defined processing for sync responses
-        if (message._isSyncRequest()) {
+        if (message.isSyncRequest()) {
             return;
         } else if (message instanceof LoginRequired) {
             this.loginRequestedFromServer();
@@ -240,7 +244,7 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
                 }
             }
             if (!(message instanceof ServerSideNotification) && !processed) {
-                this.log(Level.WARNING, 
+                this.log(Level.WARNING,
                         "The server notified an unprocessed message of type "
                         + message.getClass().getName());
             }
@@ -259,8 +263,8 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
         if (this.logger == null) {
             throw new RuntimeException("BaseTextClient: No logger set.");
         }
-        this.log(Level.SEVERE, 
-                BaseClient.clientTypeToStr(this.baseClient.getClientType())
+        this.log(Level.SEVERE,
+                this.baseClient.getClientType().getDisplayStr()
                 + " client reports error: " + message);
     }
 
@@ -292,14 +296,18 @@ public abstract class BaseTextClient implements ClientSessionHandlerCallback {
     public String getHost() {
         return host;
     }
-    
-    /**This is called if there is any decoder problem between client and server which means that the client is not compatible to the server.
-     * This is not a result of a compare of the client/server versions but mainly a problem that occurs already if the client tries to connect/login.
-     * In this case a transfer of the client version to the server to check the versions is not even possible
-     * 
+
+    /**
+     * This is called if there is any decoder problem between client and server
+     * which means that the client is not compatible to the server. This is not
+     * a result of a compare of the client/server versions but mainly a problem
+     * that occurs already if the client tries to connect/login. In this case a
+     * transfer of the client version to the server to check the versions is not
+     * even possible
+     *
      */
     @Override
-    public void clientIsIncompatible( String errorMessage ){
+    public void clientIsIncompatible(String errorMessage) {
         this.logger.severe(errorMessage);
     }
 }

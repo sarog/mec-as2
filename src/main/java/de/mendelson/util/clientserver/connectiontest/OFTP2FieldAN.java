@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2FieldAN.java 1     4/06/17 2:13p Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2FieldAN.java 2     17/03/26 10:28 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 /*
@@ -11,9 +11,9 @@ package de.mendelson.util.clientserver.connectiontest;
 /**
  * An alphanumeric field in a command structure
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public class OFTP2FieldAN extends OFTP2Field {
+public final class OFTP2FieldAN extends OFTP2Field {
 
     public OFTP2FieldAN(String name, int maxLength, String description) {
         super(name, maxLength, description);

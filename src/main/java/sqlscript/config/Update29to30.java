@@ -1,7 +1,7 @@
-//$Header: /as2/sqlscript/config/Update29to30.java 3     25/10/23 10:04 Heller $
+//$Header: /as2/sqlscript/config/Update29to30.java 4     8/11/24 9:05 Heller $
 package sqlscript.config;
 
-import de.mendelson.comm.as2.database.IUpdater;
+import de.mendelson.util.database.IUpdater;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -30,7 +30,7 @@ import java.util.Enumeration;
  *
  * Update the database from version 29 to version 30
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  * @since build 128
  */
 public class Update29to30 implements IUpdater {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/CEMSystemActivity.java 6     2/11/23 15:52 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/gui/CEMSystemActivity.java 7     15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -18,12 +18,12 @@ import java.util.ResourceBundle;
 /**
  * Helper class state stores beneath the cem protocol issues what the system will really do with the entry
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class CEMSystemActivity {
 
     private String text = "";
-    private int state = CEMEntry.STATUS_ACCEPTED_INT;
+    private CEMEntry.Status state = CEMEntry.Status.ACCEPTED;
     private final MecResourceBundle rb;
     private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
@@ -42,58 +42,59 @@ public class CEMSystemActivity {
     /**Returns the activity*/
     private void processActivity(CEMEntry entry) {
         //the user has canceled the process by gui or by sending a new request with the same parameters
-        if (entry.getCemState() == CEMEntry.STATUS_CANCELED_INT) {
+        if (entry.getCemState() == CEMEntry.Status.CANCELED) {
             this.text = this.rb.getResourceString("activity.none");
-            this.state = CEMEntry.STATUS_CANCELED_INT;
+            this.state = CEMEntry.Status.CANCELED;
         }
         //the receiver has rejected the certificate (no idea why he should do this???)
-        if (entry.getCemState() == CEMEntry.STATUS_REJECTED_INT) {
+        if (entry.getCemState() == CEMEntry.Status.REJECTED) {
             this.text = this.rb.getResourceString("activity.none");
-            this.state = CEMEntry.STATUS_REJECTED_INT;
+            this.state = CEMEntry.Status.REJECTED;
         }
         //processing failure, e.g. bad MDN on the request
-        if (entry.getCemState() == CEMEntry.STATUS_PROCESSING_ERROR_INT) {
+        if (entry.getCemState() == CEMEntry.Status.PROCESSING_ERROR) {
             this.text = this.rb.getResourceString("activity.none");
-            this.state = CEMEntry.STATUS_PROCESSING_ERROR_INT;
+            this.state = CEMEntry.Status.PROCESSING_ERROR;
         }
         //activation is either done by a direct response for all certs or - if a respondbydate is set
         // - by the respondby date for sign and ssl.
-        if (entry.getCemState() == CEMEntry.STATUS_PENDING_INT) {
-            if (entry.getCategory() == CEMEntry.CATEGORY_CRYPT) {
+        if (entry.getCemState() == CEMEntry.Status.PENDING) {
+            if (entry.getCategory() == CEMEntry.Category.CRYPT) {
                 this.text = this.rb.getResourceString("activity.waitingforanswer");
-                this.state = CEMEntry.STATUS_PENDING_INT;
+                this.state = CEMEntry.Status.PENDING;
             } else {
                 if (entry.hasRespondByDate()) {
                     //SSL and SIGN CEm request dont require an answer if the respondby date is transmitted, activation is always the date
                     this.text = this.rb.getResourceString("activity.waitingfordate", this.format.format(new Date(entry.getRespondByDate())));
-                    this.state = CEMEntry.STATUS_PENDING_INT;
+                    this.state = CEMEntry.Status.PENDING;
                 }else{
                     //same as for crypt: change certs on cem response - dont do this if you have more than
                     //one partner - you will be unable to send other CEM requests because the digital signature
                     //will not match for the other partners
                     this.text = this.rb.getResourceString("activity.waitingforanswer");
-                    this.state = CEMEntry.STATUS_PENDING_INT;
+                    this.state = CEMEntry.Status.PENDING;
                 }
             }
         }
-        if (entry.getCemState() == CEMEntry.STATUS_ACCEPTED_INT) {
-            if (entry.getCategory() == CEMEntry.CATEGORY_CRYPT) {
+        if (entry.getCemState() == CEMEntry.Status.ACCEPTED) {
+            if (entry.getCategory() == CEMEntry.Category.CRYPT) {
                 if (entry.isProcessed()) {
                     this.text = this.rb.getResourceString("activity.activated", this.format.format(new Date(entry.getProcessDate())));
-                    this.state = CEMEntry.STATUS_ACCEPTED_INT;
+                    this.state = CEMEntry.Status.ACCEPTED;
                 } else {
                     //cem protocol state says ok but answer not yet processed
                     this.text = this.rb.getResourceString("activity.waitingforprocessing");
-                    this.state = CEMEntry.STATUS_PENDING_INT;
+                    this.state = CEMEntry.Status.PENDING;
                 }
             } else {
                 if (entry.isProcessed()) {
                     this.text = this.rb.getResourceString("activity.activated", this.format.format(new Date(entry.getProcessDate())));
-                    this.state = CEMEntry.STATUS_ACCEPTED_INT;
+                    this.state = CEMEntry.Status.ACCEPTED;
                 } else {
                     //SSL and SIGN CEm request dont require an answer, activation is always the date
-                    this.text = this.rb.getResourceString("activity.waitingfordate", this.format.format(new Date(entry.getRespondByDate())));
-                    this.state = CEMEntry.STATUS_PENDING_INT;
+                    this.text = this.rb.getResourceString("activity.waitingfordate", 
+                            this.format.format(new Date(entry.getRespondByDate())));
+                    this.state = CEMEntry.Status.PENDING;
                 }
             }
         }
@@ -109,7 +110,7 @@ public class CEMSystemActivity {
     /**
      * @return the state
      */
-    public int getState() {
+    public CEMEntry.Status getState() {
         return state;
     }
 }

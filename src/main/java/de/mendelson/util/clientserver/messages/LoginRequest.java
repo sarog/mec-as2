@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 14    24/01/24 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequest.java 20    23/03/26 8:03 Heller $
 package de.mendelson.util.clientserver.messages;
 
-import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.ClientType;
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -18,32 +19,42 @@ import java.io.Serializable;
  * be send to the server
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 20 $
  */
-public class LoginRequest extends ClientServerMessage implements Serializable {
+public final class LoginRequest extends ClientServerMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String username = null;
     private char[] password = null;
-    private final String clientOSName;
+    private String clientOSName;
     /**
      * The servers require a special client version/id because client and server
      * must be compatible. This is set here
      */
     private String clientId = null;
-    private final int clientType;
+    private ClientType clientType;
 
-    public LoginRequest(final int CLIENT_TYPE) {
-        this.clientType = CLIENT_TYPE;
+    public LoginRequest(ClientType clientType) {
+        super();
+        this.clientType = clientType;
         this.clientOSName = System.getProperty("os.name");
     }
 
-    public String getUserName() {
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public LoginRequest() {
+        super();
+    }
+
+    public String getUsername() {
         return username;
     }
 
-    public void setUserName(String user) {
-        this.username = user;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getPasswd() {
@@ -51,7 +62,7 @@ public class LoginRequest extends ClientServerMessage implements Serializable {
     }
 
     public void setPasswd(char[] passwd) {
-        this.password = passwd;
+        this.setPassword(passwd);
     }
 
     @Override
@@ -90,9 +101,30 @@ public class LoginRequest extends ClientServerMessage implements Serializable {
     /**
      * @return the clientType
      */
-    public int getClientType() {
+    public ClientType getClientType() {
         return clientType;
     }
 
-    
+
+    /**
+     * @param password the password to set
+     */
+    public void setPassword(char[] password) {
+        this.password = password;
+    }
+
+    /**
+     * @param clientOSName the clientOSName to set
+     */
+    public void setClientOSName(String clientOSName) {
+        this.clientOSName = clientOSName;
+    }
+
+    /**
+     * @param clientType the clientType to set
+     */
+    public void setClientType(ClientType clientType) {
+        this.clientType = clientType;
+    }
+
 }

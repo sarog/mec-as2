@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/database/DebuggableStatement.java 8     10/07/24 18:03 Heller $
+//$Header: /mec_as4/de/mendelson/util/database/DebuggableStatement.java 9     14/04/26 9:05 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Connection;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * Database statement that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class DebuggableStatement implements Statement {
 
@@ -31,7 +31,7 @@ public class DebuggableStatement implements Statement {
     /**
      * Counter for the unique query ids
      */
-    private final static AtomicLong currentId = new AtomicLong(0);
+    private static final AtomicLong currentId = new AtomicLong(0);
 
     public DebuggableStatement(DebuggableConnection connection, Statement statement, Logger connectionLogger, String connectionName) {
         this.connection = connection;

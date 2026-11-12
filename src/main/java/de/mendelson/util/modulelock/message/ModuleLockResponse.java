@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/modulelock/message/ModuleLockResponse.java 3     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/modulelock/message/ModuleLockResponse.java 5     11/06/25 13:17 Heller $
 package de.mendelson.util.modulelock.message;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.modulelock.LockClientInformation;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ModuleLockResponse extends ClientServerResponse implements Serializable {
 
@@ -27,6 +28,14 @@ public class ModuleLockResponse extends ClientServerResponse implements Serializ
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ModuleLockResponse() {
+        super();
+    }
     
     @Override
     public String toString() {
@@ -50,7 +59,7 @@ public class ModuleLockResponse extends ClientServerResponse implements Serializ
     /**
      * @return the success
      */
-    public boolean wasSuccessful() {
+    public boolean getSuccess() {
         return success;
     }
 

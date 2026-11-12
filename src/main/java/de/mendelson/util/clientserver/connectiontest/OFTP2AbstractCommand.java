@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2AbstractCommand.java 1     4/06/17 2:13p Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2AbstractCommand.java 2     17/03/26 10:28 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -11,9 +11,10 @@ package de.mendelson.util.clientserver.connectiontest;
 /**
  * Superclass for the commands
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public abstract class OFTP2AbstractCommand implements OFTP2Command {
+public abstract sealed class OFTP2AbstractCommand implements OFTP2Command 
+        permits OFTP2SSRM{
 
 
     @Override

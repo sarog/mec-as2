@@ -1,9 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListResponse.java 3     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/clientserver/PartnerListResponse.java 5     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.partner.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -17,17 +19,26 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class PartnerListResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private List<Partner> list = null;
+    private List<Partner> list = new ArrayList<Partner>();
 
     public PartnerListResponse(PartnerListRequest request) {
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public PartnerListResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("List partner");
@@ -44,6 +55,7 @@ public class PartnerListResponse extends ClientServerResponse implements Seriali
      * @param list the list to set
      */
     public void setList(List<Partner> list) {
-        this.list = list;
+        this.list.clear();
+        this.list.addAll( list );
     }
 }

@@ -1,0 +1,18 @@
+$Header:$
+Questo file contiene il modello di notifica per la notifica delle richieste di scambio di certificati (CEM) in arrivo.
+È possibile utilizzare le seguenti variabili, che vengono sostituite di conseguenza:
+${PARTNER}: partner che ha presentato la richiesta di scambio
+${PRODUCTNAME}: nome del prodotto
+${HOST}: Host del server AS2
+${REQUEST_ID}: id della richiesta CEM
+
+
+
+
+[SUBJECT]
+Richiesta CEM ricevuta da ${PARTNER}
+
+
+[BODY]
+Il partner ${PARTNER} ha inviato un messaggio con una richiesta di scambio di certificati; il numero della richiesta è ${REQUEST_ID}.
+La richiesta è stata evasa. Si prega di consultare il sistema (Gestione CEM) per vedere i dettagli del processo.

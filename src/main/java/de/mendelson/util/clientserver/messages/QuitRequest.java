@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/QuitRequest.java 8     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/QuitRequest.java 10    13/03/26 10:09 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import java.io.IOException;
@@ -16,13 +16,17 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
-public class QuitRequest extends ClientServerMessage implements Serializable {
+public final class QuitRequest extends ClientServerMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String user = null;
 
+    public QuitRequest(){
+        super();
+    }
+    
     public String getUser() {
         return user;
     }

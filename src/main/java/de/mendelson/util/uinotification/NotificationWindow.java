@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/uinotification/NotificationWindow.java 25    21/06/24 8:59 Heller $package de.mendelson.util.uinotification;
+//$Header: /as2/de/mendelson/util/uinotification/NotificationWindow.java 27    8/04/26 13:31 Heller $package de.mendelson.util.uinotification;
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.ColorUtil;
@@ -29,7 +29,6 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JWindow;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
 import javax.swing.event.MouseInputListener;
 
 /*
@@ -43,18 +42,18 @@ import javax.swing.event.MouseInputListener;
  * Single notification panel
  *
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 27 $
  */
 public class NotificationWindow extends JWindow implements MouseInputListener {
 
     /**
      * At which opacity should the frame disappear/appear?
      */
-    private final static float VISIBLE_OPACITY_THRESHOLD = UINotification.VISIBLE_OPACITY_THRESHOLD;
+    private static final float VISIBLE_OPACITY_THRESHOLD = UINotification.VISIBLE_OPACITY_THRESHOLD;
     /**
      * The wait time per step of the internal fade out thread
      */
-    private final long THREAD_WAIT_TIME_STEPS_IN_MS = 25;
+    private static final long THREAD_WAIT_TIME_STEPS_IN_MS = 25;
 
     private final Runnable fadeout;
     private final INotificationHandler notificationHandler;
@@ -71,17 +70,19 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
     private Color crossColor = Color.BLACK;
     private Color crossColorMouseOver = Color.WHITE;
 
-    /**Paint a border if this color is set - else do not paint a border*/
+    /**
+     * Paint a border if this color is set - else do not paint a border
+     */
     private Color borderColor = null;
 
-    protected final static float ARC = 10.0f;
-    
+    protected static final float ARC = 10.0f;
+
     /**
      * @param anchorFrame Root frame for the notification position
      * @param image Image to display - there is a default if this is null which
      * depends on the notification type
-     * @param NOTIFICATION_TYPE One of UINotification.TYPE_OK,
-     * UINotification.TYPE_WARNING, UINotification.TYPE_ERROR
+     * @param notificationType One of UINotification.TYPE.OK,
+     * UINotification.TYPE.WARNING, UINotification.TYPE.ERROR
      * @param notificationTitle The title of the notification - not folded -
      * means you have to ensure a short title. If this is null, the type OK,
      * WARNING, ERROR is displayed in the localized language of the current
@@ -93,7 +94,7 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
      */
     public NotificationWindow(JFrame anchorFrame,
             MendelsonMultiResolutionImage image,
-            final int NOTIFICATION_TYPE, String notificationTitle,
+            UINotification.Type notificationType, String notificationTitle,
             String notificationDetails, Rectangle bounds,
             INotificationHandler notificationHandler,
             long notificationDisplayTimeFadeIn,
@@ -130,7 +131,7 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
         }
         this.setBounds(bounds);
         this.notificationHandler = notificationHandler;
-        this.notificationPanel = new NotificationPanel(image, NOTIFICATION_TYPE,
+        this.notificationPanel = new NotificationPanel(image, notificationType,
                 notificationTitle, notificationDetails, bounds, this.graphicSupportsShapedWindows);
         this.notificationTypePanel = this.notificationPanel.getNotificationTypePanel();
         this.textPanel = this.notificationPanel.getTextPanel();
@@ -478,9 +479,9 @@ public class NotificationWindow extends JWindow implements MouseInputListener {
             RoundRectangle2D.Float shape;
             if (graphicSupportsShapedWindows) {
                 shape = new RoundRectangle2D.Float(0, 0,
-                        (float)getWidth() - 1f,
+                        (float) getWidth() - 1f,
                         (float) getHeight() - 1f,
-                        ARC-2f, ARC-2f);
+                        ARC - 2f, ARC - 2f);
             } else {
                 shape = new RoundRectangle2D.Float(0, 0,
                         (float) getWidth() - 1f,

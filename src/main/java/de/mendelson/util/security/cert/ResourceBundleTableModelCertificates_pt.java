@@ -1,39 +1,42 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleTableModelCertificates_pt.java 3     4/03/25 14:41 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleTableModelCertificates_pt.java 4     11/04/25 15:50 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
+
 /*
 * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
 *
 * This software is subject to the license agreement set forth in the license.
 * Please read and agree to all terms before using this software.
 * Other product and brand names are trademarks of their respective owners.
-*/
+ */
 
 /**
-* ResourceBundle to localize a mendelson product
-* @author S.Heller
-* @version $Revision: 3 $
-*/
+ * ResourceBundle to localize a mendelson product
+ *
+ * @author S.Heller
+ * @version $Revision: 4 $
+ */
 public class ResourceBundleTableModelCertificates_pt extends MecResourceBundle {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Override
-	public Object[][] getContents() {
-		return CONTENTS;
-	}
-	/**List of messages in the specific language*/
-	private static final Object[][] CONTENTS = {
-		{"header.algorithm", "Algoritmo"},
-		{"header.alias", "Apelido"},
-		{"header.expire", "Válido até"},
-		{"header.length", "Comprimento"},
-		{"header.organization", "Organização"},
-		{"header.trust", "Notarização"},
-		{"trust.root", "Certificado de mestrado"},
-		{"trust.selfsigned", "Auto-assinado"},
-		{"trust.trusted", "Fiável"},
-		{"trust.untrusted", "Não é de confiança"},
-	};
+    @Override
+    public Object[][] getContents() {
+        return CONTENTS;
+    }
+    /**
+     * List of messages in the specific language
+     */
+    private static final Object[][] CONTENTS = {
+        {"header.algorithm", "Algoritmo"},
+        {"header.alias", "Apelido"},
+        {"header.expire", "Válido até"},
+        {"header.length", "Comprimento"},
+        {"header.organization", "Organização"},
+        {"header.trust", "Notarização"},
+        {"trust.root", "Certificado de mestrado"},
+        {"trust.selfsigned", "Auto-assinado"},
+        {"trust.trusted", "Fiável"},
+        {"trust.untrusted", "Não é de confiança"},};
 }

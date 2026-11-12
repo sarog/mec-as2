@@ -15,7 +15,7 @@ Fehler in AS2 Nachricht ${MESSAGEID}
 
 
 [BODY]
-Die AS2 Nachricht ${MESSAGEID} von ${SENDER} an ${RECEIVER} mit dem Subject "${SUBJECT}" konnte nicht mit dem Status OK uebertragen werden.
+Die AS2 Nachricht ${MESSAGEID} von ${SENDER} an ${RECEIVER} mit dem Betreff "${SUBJECT}" konnte nicht mit dem Status OK uebertragen werden.
 
 Transaktionslog:
 ${LOG}

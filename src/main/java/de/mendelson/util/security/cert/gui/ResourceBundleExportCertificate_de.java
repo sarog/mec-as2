@@ -1,7 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_de.java 16    9/12/24 15:51 Heller $ 
+//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_de.java 17    31/03/26 17:12 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.security.CertificateFormatType;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 
 /*
@@ -16,7 +17,7 @@ import de.mendelson.util.security.cert.KeystoreCertificate;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleExportCertificate_de extends MecResourceBundle {
 
@@ -45,11 +46,11 @@ public class ResourceBundleExportCertificate_de extends MecResourceBundle {
         {"certificate.export.error.message", "Der Export des Zertifikates schlug fehl:\n{0}"},
         {"certificate.export.success.title", "Erfolg"},
         {"certificate.export.success.message", "Das Zertifikat konnte erfolgreich exportiert werden nach\n\"{0}\""},
-        {KeystoreCertificate.CERTIFICATE_FORMAT_PEM, "Textformat (PEM, *.cer)"},
-        {KeystoreCertificate.CERTIFICATE_FORMAT_PEM_CHAIN, "Textformat (+Beglaubigungskette) (PEM, *.pem)"},
-        {KeystoreCertificate.CERTIFICATE_FORMAT_DER, "Binärformat (DER, *.cer)"},
-        {KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7, "Mit Zertifizierungskette (PKCS#7, *.p7b)"},
-        {KeystoreCertificate.CERTIFICATE_FORMAT_SSH2, "SSH2 Format (öffentlicher Schlüssel, *.pub)"},
+        {CertificateFormatType.PEM.toString(), "Textformat (PEM, *.cer)"},
+        {CertificateFormatType.PEM_CHAIN.toString(), "Textformat (+Beglaubigungskette) (PEM, *.pem)"},
+        {CertificateFormatType.DER.toString(), "Binärformat (DER, *.cer)"},
+        {CertificateFormatType.PKCS7.toString(), "Mit Zertifizierungskette (PKCS#7, *.p7b)"},
+        {CertificateFormatType.SSH2.toString(), "SSH2 Format (öffentlicher Schlüssel, *.pub)"},
     };
 
 }

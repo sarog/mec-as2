@@ -1,0 +1,15 @@
+$Header:$
+Diese Datei beinhaltet die Benachrichtigungsvorlage fuer die Benachrichtigung der Ueberschreitung eines definierten Nachrichtenkontingents an einen spezifischen Partner
+Folgende Variablen koennen verwendet werden, sie werden entsprechend ersetzt:
+${PRODUCTNAME}: Produktname
+${HOST}: AS2 Server Host
+${PARTNER}: Name des Partners, fuer den das Sende+Empfangskontingent ueberschritten wurde
+${QUOTA}: Die Anzahl der erlaubten Sende- und Empfangsnachrichten  (Kontingent)
+
+
+[SUBJECT]
+Sende- und Empfangskontingent ueberschritten fuer ${PARTNER}
+
+
+[BODY]
+Die Anzahl von Nachrichten, die vom den Partner ${PARTNER} empfangen und zum Partner ${PARTNER} verschickt wurden, hat ${QUOTA} ueberschritten. Serverseitig hat dies keine Auswirkungen, eventuelle Aktivitaeten muessten Sie manuell ausfuehren.

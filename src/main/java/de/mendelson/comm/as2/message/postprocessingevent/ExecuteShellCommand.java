@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 19    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteShellCommand.java 24    31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.log.LogAccessDB;
@@ -10,6 +10,7 @@ import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
 import de.mendelson.comm.as2.message.MDNAccessDB;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.server.AS2Server;
@@ -36,11 +37,11 @@ import java.util.logging.Logger;
  * message receipt
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 24 $
  */
-public class ExecuteShellCommand implements IProcessingExecution {
+public final class ExecuteShellCommand implements IProcessingExecution {
 
-    private final static Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private static final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final MessageAccessDB messageAccess;
     private final MDNAccessDB mdnAccess;
     private final PartnerAccessDB partnerAccess;
@@ -48,13 +49,13 @@ public class ExecuteShellCommand implements IProcessingExecution {
     /**
      * Localize your GUI!
      */
-    private final static MecResourceBundle rb;    
-    static{
+    private static final MecResourceBundle rb;
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleExecuteShellCommand.class.getName());
-        } //load up  resourcebundle
-        catch (MissingResourceException e) {
+        } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
@@ -83,8 +84,8 @@ public class ExecuteShellCommand implements IProcessingExecution {
                 mdnInfo = mdnInfoList.get(0);
             }
         }
-        if (event.getEventType() == ProcessingEvent.TYPE_SEND_FAILURE
-                || event.getEventType() == ProcessingEvent.TYPE_SEND_SUCCESS) {
+        if (event.getTriggerType() == ProcessingEventTriggerType.SEND_FAILURE
+                || event.getTriggerType() == ProcessingEventTriggerType.SEND_SUCCESS) {
             this.executeShellCommandOnSend(event, messageInfo, mdnInfo);
         } else {
             this.executeShellCommandOnReceipt(event, messageInfo);
@@ -98,11 +99,11 @@ public class ExecuteShellCommand implements IProcessingExecution {
     private void executeShellCommandOnSend(ProcessingEvent event, AS2MessageInfo messageInfo, AS2MDNInfo mdnInfo)
             throws Exception {
         //do not execute a command for CEM messages
-        if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
+        if (messageInfo.getMessageType() == MessageType.CEM) {
             return;
         }
-        Partner messageSender = this.partnerAccess.getPartner(messageInfo.getSenderId());
-        Partner messageReceiver = this.partnerAccess.getPartner(messageInfo.getReceiverId());
+        Partner messageSender = this.partnerAccess.getPartnerByAS2Id(messageInfo.getSenderId());
+        Partner messageReceiver = this.partnerAccess.getPartnerByAS2Id(messageInfo.getReceiverId());
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String rawCommand = event.getParameter().get(0);
         if (payload != null && !payload.isEmpty()) {
@@ -116,26 +117,26 @@ public class ExecuteShellCommand implements IProcessingExecution {
                     throw new PostprocessingException("executeShellCommandOnSend: payload filename does not exist.",
                             messageSender, messageReceiver);
                 }
-                String filename = singlePayload.getOriginalFilename();
-                String command = this.replace(rawCommand, "${filename}", filename);
-                command = this.replace(command, "${fullstoragefilename}", singlePayload.getPayloadFilename());
-                command = this.replace(command, "${sender}", messageSender.getName());
-                command = this.replace(command, "${receiver}", messageReceiver.getName());
-                command = this.replace(command, "${messageid}", messageInfo.getMessageId());
+                String originalFilename = singlePayload.getOriginalFilename();
+                String command = rawCommand.replace("${filename}", this.sanitize(originalFilename));
+                command = command.replace("${fullstoragefilename}", singlePayload.getPayloadFilename());
+                command = command.replace("${sender}", messageSender.getName());
+                command = command.replace("${receiver}", messageReceiver.getName());
+                command = command.replace("${messageid}", messageInfo.getMessageId());
                 if (messageInfo.getSubject() != null) {
-                    command = this.replace(command, "${subject}", messageInfo.getSubject());
+                    command = command.replace("${subject}", this.sanitize(messageInfo.getSubject()));
                 } else {
-                    command = this.replace(command, "${subject}", "");
+                    command = command.replace("${subject}", "");
                 }
                 if (messageInfo.getUserdefinedId() != null) {
-                    command = this.replace(command, "${userdefinedid}", messageInfo.getUserdefinedId());
+                    command = command.replace("${userdefinedid}", messageInfo.getUserdefinedId());
                 } else {
-                    command = this.replace(command, "${userdefinedid}", "");
+                    command = command.replace("${userdefinedid}", "");
                 }
                 if (mdnInfo != null) {
-                    command = this.replace(command, "${mdntext}", mdnInfo.getRemoteMDNText());
+                    command = command.replace("${mdntext}", mdnInfo.getRemoteMDNText());
                 } else {
-                    command = this.replace(command, "${mdntext}", "");
+                    command = command.replace("${mdntext}", "");
                 }
                 //add log?
                 if (command.contains("${log}")) {
@@ -147,9 +148,9 @@ public class ExecuteShellCommand implements IProcessingExecution {
                             logBuffer.append(logEntry.getMessage()).append("\\n");
                         }
                         //dont use single and double quotes, this is used in command line environment
-                        String logText = this.replace(logBuffer.toString(), "\"", "");
-                        logText = this.replace(logText, "'", "");
-                        command = this.replace(command, "${log}", logText);
+                        String logText = logBuffer.toString().replace("\"", "");
+                        logText = logText.replace("'", "");
+                        command = command.replace("${log}", logText);
                     } catch (Exception e) {
                         throw new PostprocessingException(e.getMessage(), messageSender, messageReceiver);
                     }
@@ -186,13 +187,13 @@ public class ExecuteShellCommand implements IProcessingExecution {
     private void executeShellCommandOnReceipt(ProcessingEvent event, AS2MessageInfo messageInfo)
             throws Exception {
         //do not execute a command for CEM messages
-        if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
+        if (messageInfo.getMessageType() == MessageType.CEM) {
             return;
         }
-        Partner messageSender = this.partnerAccess.getPartner(messageInfo.getSenderId());
-        Partner messageReceiver = this.partnerAccess.getPartner(messageInfo.getReceiverId());
+        Partner messageSender = this.partnerAccess.getPartnerByAS2Id(messageInfo.getSenderId());
+        Partner messageReceiver = this.partnerAccess.getPartnerByAS2Id(messageInfo.getReceiverId());
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
-        String rawCommand = event.getParameter().get(0);
+        String definedRawCommand = event.getParameter().get(0);
         if (payload != null) {
             logger.log(Level.INFO, rb.getResourceString("executing.receipt",
                     new Object[]{
@@ -208,17 +209,17 @@ public class ExecuteShellCommand implements IProcessingExecution {
                 if (originalFilename == null) {
                     originalFilename = "NOT_TRANSMITTED";
                 }
-                rawCommand = this.replace(rawCommand, "${filename}",
+                String rawCommand = definedRawCommand.replace("${filename}",
                         Paths.get(filename).toAbsolutePath().toString());
-                rawCommand = this.replace(rawCommand, "${sender}", messageSender.getName());
-                rawCommand = this.replace(rawCommand, "${receiver}", messageReceiver.getName());
-                rawCommand = this.replace(rawCommand, "${messageid}", messageInfo.getMessageId());
+                rawCommand = rawCommand.replace("${sender}", messageSender.getName());
+                rawCommand = rawCommand.replace("${receiver}", messageReceiver.getName());
+                rawCommand = rawCommand.replace("${messageid}", messageInfo.getMessageId());
                 if (messageInfo.getSubject() != null) {
-                    rawCommand = this.replace(rawCommand, "${subject}", messageInfo.getSubject());
+                    rawCommand = rawCommand.replace("${subject}", this.sanitize(messageInfo.getSubject()));
                 } else {
-                    rawCommand = this.replace(rawCommand, "${subject}", "");
+                    rawCommand = rawCommand.replace("${subject}", "");
                 }
-                rawCommand = this.replace(rawCommand, "${originalfilename}", originalFilename);
+                rawCommand = rawCommand.replace("${originalfilename}", this.sanitize(originalFilename));
                 logger.log(Level.INFO, rb.getResourceString("executing.command",
                         new Object[]{rawCommand}), messageInfo);
                 Exec exec = new Exec();
@@ -245,27 +246,17 @@ public class ExecuteShellCommand implements IProcessingExecution {
     }
 
     /**
-     * Replaces the string tag by the string replacement in the sourceString
-     *
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
+     * This method prevents shell injection via message parameter - means if there is something
+     * weird in the subject etc this should be removed before the command should
+     * be executed on the shell. It is very uncommon that this happens - which partner will send you a subject that will
+     * attack your system? Makes no sense. But anyway
      */
-    private String replace(String source, String tag, String replacement) {
-        if (source == null) {
-            return null;
+    private String sanitize(String inputStr) {
+        if (inputStr == null) {
+            return "";
         }
-        StringBuilder buffer = new StringBuilder();
-        while (true) {
-            int index = source.indexOf(tag);
-            if (index == -1) {
-                buffer.append(source);
-                return (buffer.toString());
-            }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
-            source = source.substring(index + tag.length());
-        }
+        //Remove and replace the following character which VERY are dangerous: ; & | > < ` $ \
+        return inputStr.replaceAll("[;&|><`\\$\\\\]", "_");
     }
+
 }

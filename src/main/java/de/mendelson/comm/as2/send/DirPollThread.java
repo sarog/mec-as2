@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollThread.java 45    19/02/25 17:31 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/send/DirPollThread.java 47    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -49,7 +49,7 @@ import java.util.logging.Logger;
  * Thread that polls a directory
  *
  * @author S.Heller
- * @version $Revision: 45 $
+ * @version $Revision: 47 $
  */
 public class DirPollThread implements Runnable {
 
@@ -295,7 +295,7 @@ public class DirPollThread implements Runnable {
             }
         } catch (Throwable e) {
             //do never bail out with an exception - else the schedule of this thread is lost
-            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_PROCESSING_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.PROCESSING_ANY);
         }
     }
 
@@ -340,7 +340,7 @@ public class DirPollThread implements Runnable {
                     }));
             SendOrderSender orderSender = new SendOrderSender(this.dbDriverManager);
             AS2Message message = orderSender.send(this.certificateManagerEncSign, this.sender, this.receiver, file, null,
-                    this.receiver.getSubject(), null);
+                    this.receiver.getSubject(), null, null);
             this.clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
             try {
                 Files.delete(file);
@@ -353,9 +353,9 @@ public class DirPollThread implements Runnable {
                 }
             } catch (IOException e) {
                 SystemEvent event = new SystemEvent(
-                        SystemEvent.SEVERITY_WARNING,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_FILE_DELETE);
+                        SystemEvent.Severity.WARNING,
+                        SystemEvent.Origin.SYSTEM,
+                        SystemEvent.Type.FILE_DELETE);
                 event.setSubject(event.typeToTextLocalized());
                 event.setBody(
                         rb.getResourceString("processing.file",
@@ -375,7 +375,7 @@ public class DirPollThread implements Runnable {
                         e.getMessage()});
             logger.severe(message);
             Exception exception = new Exception(message, e);
-            SystemEventManagerImplAS2.instance().systemFailure(exception, SystemEvent.TYPE_PROCESSING_ANY);
+            SystemEventManagerImplAS2.instance().systemFailure(exception, SystemEvent.Type.PROCESSING_ANY);
         }
     }
 }

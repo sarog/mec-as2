@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_fr.java 19    17/01/25 10:06 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_fr.java 20    21/10/25 15:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 19 $
+* @version $Revision: 20 $
 */
 public class ResourceBundleMessageDetails_fr extends MecResourceBundle {
 
@@ -66,5 +66,6 @@ public class ResourceBundleMessageDetails_fr extends MecResourceBundle {
 		{"transactionstate.error.out", "<HTML>Vous avez transmis avec succès le message {0} à votre partenaire \"{1}\" - mais il n''a pas été en mesure de le traiter et a répondu avec l''erreur [{2}].</HTML>"},
 		{"tab.log", "Log de cette instance de message"},
 		{"header.signature", "Signature numérique"},
+                {"mdn.nopayload", "Il s''agit d'un MDN - aucune pièce jointe n''est disponible pour ce document."},
 	};
 }

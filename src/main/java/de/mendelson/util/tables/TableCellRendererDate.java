@@ -1,12 +1,15 @@
-//$Header: /as2/de/mendelson/util/tables/TableCellRendererDate.java 3     2/11/23 14:03 Heller $
+//$Header: /mec_as4/de/mendelson/util/tables/TableCellRendererDate.java 4     10/04/26 12:06 Heller $
 package de.mendelson.util.tables;
+
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Rectangle;
 import java.text.DateFormat;
 import java.util.Date;
+import java.util.Locale;
 import javax.swing.*;
 import javax.swing.table.*;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -14,10 +17,11 @@ import javax.swing.table.*;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-/** 
+/**
  * Renders the special classes in the task list table
+ *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class TableCellRendererDate extends DefaultTableCellRenderer implements TableCellRenderer {
 
@@ -31,17 +35,24 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
         this.format = format;
         this.setOpaque(true);
     }
+
+    public static TableCellRendererDate createDefault() {
+        return new TableCellRendererDate(
+                DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT, Locale.getDefault())
+        );
+    }
+
     // implements javax.swing.table.TableCellRenderer
     /**
      *
      * Returns the default table cell renderer.
      *
-     * @param table  the <code>JTable</code>
-     * @param value  the value to assign to the cell at
-     *			<code>[row, column]</code>
+     * @param table the <code>JTable</code>
+     * @param value the value to assign to the cell at
+     * <code>[row, column]</code>
      * @param isSelected true if cell is selected
      * @param hasFocus true if cell has focus
-     * @param row  the row of the cell to render
+     * @param row the row of the cell to render
      * @param column the column of the cell to render
      * @return the default table cell renderer
      */
@@ -60,7 +71,6 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
         this.setEnabled(table.isEnabled());
         this.setFont(table.getFont());
 
-
         if (value instanceof Date) {
             Date date = (Date) value;
             this.setText(this.format.format(date));
@@ -76,8 +86,8 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
      * drawbacks of overriding methods like these.
      */
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -88,15 +98,15 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
             p = p.getParent();
         }
         // p should now be the JTable.
-        boolean colorMatch = (back != null) && (p != null) &&
-                back.equals(p.getBackground()) &&
-                p.isOpaque();
+        boolean colorMatch = (back != null) && (p != null)
+                && back.equals(p.getBackground())
+                && p.isOpaque();
         return !colorMatch && super.isOpaque();
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -104,8 +114,8 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -113,8 +123,8 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -122,8 +132,8 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -131,8 +141,8 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -144,13 +154,11 @@ public class TableCellRendererDate extends DefaultTableCellRenderer implements T
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
     public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {
     }
 }
-
-

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/uinotification/ShapedPanel.java 2     21/06/24 8:59 Heller $
+//$Header: /mec_as4/de/mendelson/util/uinotification/ShapedPanel.java 3     14/04/26 9:05 Heller $
 package de.mendelson.util.uinotification;
 
 import java.awt.Color;
@@ -19,7 +19,7 @@ import javax.swing.JPanel;
  * Panel that contains the notification information
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ShapedPanel extends JPanel {
 
@@ -28,7 +28,7 @@ public class ShapedPanel extends JPanel {
     protected static final int TYPE_NO_ROUNDED_EDGES = 3;
     private int type = TYPE_ROUNDED_EDGES_LEFT;
 
-    private final static RenderingHints RENDERING_HINTS = new RenderingHints(RenderingHints.KEY_RENDERING,
+    private static final RenderingHints RENDERING_HINTS = new RenderingHints(RenderingHints.KEY_RENDERING,
             RenderingHints.VALUE_RENDER_QUALITY);
 
     static {

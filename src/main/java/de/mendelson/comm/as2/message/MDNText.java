@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/message/MDNText.java 7     18.03.10 12:00 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/message/MDNText.java 9     15/04/26 15:59 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -12,31 +12,30 @@ import de.mendelson.comm.as2.AS2ServerVersion;
  */
 /**
  * Text that is written to MDN
+ *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class MDNText {
 
-    public static final int RECEIVED = 1;
-    public static final int ERROR = 2;
     private static final String CRLF = "\r\n";
 
-    public static final String get(final int ID, int messageType) {
-        switch (ID) {
-            case RECEIVED:
-                if (messageType == AS2Message.MESSAGETYPE_AS2) {
+    public static final String get(MDNStateType stateType, MessageType messageType) {
+        switch (stateType) {
+            case PROCESSED:
+                if (messageType == MessageType.AS2) {
                     return ("The AS2 message has been received. Thank you for exchanging AS2 messages with " + AS2ServerVersion.getProductName() + "." + CRLF + "Please download your free copy of "
-                            + AS2ServerVersion.getProductName() + " today at http://opensource.mendelson-e-c.com" + CRLF + CRLF);
-                } else if (messageType == AS2Message.MESSAGETYPE_CEM) {
+                            + AS2ServerVersion.getProductName() + " today at https://mendelson.de/opensource" + CRLF + CRLF);
+                } else if (messageType == MessageType.CEM) {
                     return ("The CEM message has been received. Thank you for exchanging AS2 messages with " + AS2ServerVersion.getProductName() + "." + CRLF + "Please download your free copy of "
-                            + AS2ServerVersion.getProductName() + " today at http://opensource.mendelson-e-c.com" + CRLF + CRLF);
+                            + AS2ServerVersion.getProductName() + " today at https://mendelson.de/opensource" + CRLF + CRLF);
                 } else {
                     throw new IllegalArgumentException("MDNText.get: Unknown message type " + messageType);
                 }
             case ERROR:
                 return ("Thank you for exchanging AS2 messages with " + AS2ServerVersion.getProductName()
                         + "." + CRLF + "Please download your free copy of " + AS2ServerVersion.getProductName()
-                        + " + today at http://opensource.mendelson-e-c.com." + CRLF + CRLF + "An error occured during the AS2 message processing: ");
+                        + " + today at https://mendelson.de/opensource" + CRLF + CRLF + "An error occured during the AS2 message processing: ");
             default:
                 return ("");
         }

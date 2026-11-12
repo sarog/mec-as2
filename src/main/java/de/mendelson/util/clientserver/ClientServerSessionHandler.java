@@ -1,13 +1,13 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServerSessionHandler.java 54    11/02/25 13:39 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/ClientServerSessionHandler.java 62    24/03/26 11:14 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.util.clientserver.log.ClientServerLogBroadcaster;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.LoginRequest;
 import de.mendelson.util.clientserver.messages.LoginRequired;
 import de.mendelson.util.clientserver.messages.LoginState;
 import de.mendelson.util.clientserver.messages.QuitRequest;
 import de.mendelson.util.clientserver.messages.ServerInfo;
-import de.mendelson.util.clientserver.messages.ServerLogMessage;
 import de.mendelson.util.clientserver.user.PermissionDescription;
 import de.mendelson.util.clientserver.user.User;
 import de.mendelson.util.clientserver.user.UserAccess;
@@ -25,6 +25,7 @@ import org.apache.mina.core.session.IoSession;
 import org.apache.mina.core.write.WriteToClosedSessionException;
 import org.apache.mina.filter.FilterEvent;
 import org.apache.mina.filter.ssl.SslEvent;
+import de.mendelson.util.clientserver.messages.LoggableParameterClientServer;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -37,7 +38,7 @@ import org.apache.mina.filter.ssl.SslEvent;
  * Session handler for the server implementation
  *
  * @author S.Heller
- * @version $Revision: 54 $
+ * @version $Revision: 62 $
  */
 public class ClientServerSessionHandler extends IoHandlerAdapter {
 
@@ -46,6 +47,9 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     public static final String SESSION_ATTRIB_CLIENT_IP = "ip";
     public static final String SESSION_ATTRIB_CLIENT_TYPE = "clienttype";
 
+    private final ClientServerLogBroadcaster logBroadcaster;
+    
+    
     /**
      * User readable description of user permissions
      */
@@ -88,8 +92,14 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         this.maxClients = maxClients;
         this.validClientIds = validClientIds;
         this.loginHandler = new PasswordValidationHandler(validClientIds);
+        this.logBroadcaster = new ClientServerLogBroadcaster(this::broadcast);
     }
 
+    public SystemEventManager getSystemEventManager(){
+        return( this.eventManager );
+    }
+    
+    
     public void setCallback(ClientServerSessionHandlerCallback callback) {
         this.callback = callback;
     }
@@ -97,12 +107,11 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     /**
      * Get all available sessions
      */
-    public List<IoSession> getSessions() {
-        List<IoSession> sessionList = new ArrayList<IoSession>();
+    public List<IoSession> getSessions() {        
         synchronized (this.sessions) {
-            sessionList.addAll(this.sessions);
-        }
-        return (Collections.unmodifiableList(sessionList));
+            List<IoSession> sessionList = new ArrayList<IoSession>(this.sessions);
+            return (Collections.unmodifiableList(sessionList));
+        }        
     }
 
     /**
@@ -160,9 +169,9 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
         try {
             String remoteProcessId = (String) session.getAttribute(SESSION_ATTRIB_CLIENT_PID);
             String userName = (String) session.getAttribute(SESSION_ATTRIB_USER);
-            int clientType = BaseClient.CLIENT_UNSPECIFIED;
+            ClientType clientType = ClientType.UNSPECIFIED;
             if (session.containsAttribute(SESSION_ATTRIB_CLIENT_TYPE)) {
-                clientType = ((Integer) session.getAttribute(SESSION_ATTRIB_CLIENT_TYPE)).intValue();
+                clientType = ClientType.of(((Integer) session.getAttribute(SESSION_ATTRIB_CLIENT_TYPE)).intValue());
             }
             //this is tricky - if the session is closed it has no longer a remote IP - that is why it is stored
             //as session parameter
@@ -225,12 +234,12 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
             if (message instanceof LoginRequest) {
                 LoginRequest loginRequest = (LoginRequest) message;
                 //validate passwd first, close session if it fails
-                User definedUser = userAccess.readUser(loginRequest.getUserName());
+                User definedUser = userAccess.readUser(loginRequest.getUsername());
                 if (definedUser != null && this.permissionDescription != null) {
                     definedUser.setPermissionDescription(this.permissionDescription);
                 }
                 User transmittedUser = new User();
-                transmittedUser.setName(loginRequest.getUserName());
+                transmittedUser.setName(loginRequest.getUsername());
                 int validationState = this.loginHandler.validate(definedUser, loginRequest.getPasswd(),
                         loginRequest.getClientId());
                 if (validationState == PasswordValidationHandler.STATE_FAILURE) {
@@ -273,7 +282,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                     }
                     loginStateMessage.setUser(transmittedUser);
                     loginStateMessage.setState(LoginState.STATE_AUTHENTICATION_FAILURE_PASSWORD_REQUIRED);
-                    loginStateMessage.setStateDetails("Authentication failed, password required for user [" + loginRequest.getUserName() + "]");
+                    loginStateMessage.setStateDetails("Authentication failed, password required for user [" + loginRequest.getUsername() + "]");
                     this.throwEventLoginFailed(session, loginStateMessage, loginRequest);
                     session.write(loginStateMessage);
                     return;
@@ -294,9 +303,9 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                     }
                 }
                 //user is logged in: add the user name to the session
-                session.setAttribute(SESSION_ATTRIB_USER, loginRequest.getUserName());
-                session.setAttribute(SESSION_ATTRIB_CLIENT_PID, loginRequest.getPID());
-                session.setAttribute(SESSION_ATTRIB_CLIENT_TYPE, Integer.valueOf(loginRequest.getClientType()));
+                session.setAttribute(SESSION_ATTRIB_USER, loginRequest.getUsername());
+                session.setAttribute(SESSION_ATTRIB_CLIENT_PID, loginRequest.getPid());
+                session.setAttribute(SESSION_ATTRIB_CLIENT_TYPE, Integer.valueOf(loginRequest.getClientType().toInt()));
                 //add the session to the list of available sessions
                 synchronized (this.sessions) {
                     this.sessions.add(session);
@@ -309,7 +318,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
                 }
                 loginSuccessState.setState(LoginState.STATE_AUTHENTICATION_SUCCESS);
                 String userName = "undefined_user";
-                if( definedUser != null ){
+                if (definedUser != null) {
                     userName = definedUser.getName();
                 }
                 loginSuccessState.setStateDetails("Authentication successful, user [" + userName + "] logged in");
@@ -368,7 +377,7 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     /**
      * Sends a message object to all connected clients
      */
-    public void broadcast(Object data) {
+    public void broadcast(ClientServerMessage data) {
         synchronized (this.sessions) {
             for (IoSession session : this.sessions) {
                 if (session.isConnected()) {
@@ -379,18 +388,16 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     }
 
     /**
-     * Sends a log message to all connected clients
+     * Lets the broadcaster sends a log message to all connected clients. The broadcaster will 
+     * accumulate the log messages
      */
-    public void broadcastLogMessage(Level level, String message, Object[] parameter) {
-        ServerLogMessage serverMessage = new ServerLogMessage();
-        serverMessage.setLevel(level);
-        serverMessage.setMessage(message);
-        serverMessage.setParameter(parameter);
-        this.broadcast(serverMessage);
+    public void broadcastLogMessage(Level level, String message, String[] parameter) {
+        this.logBroadcaster.enqueueLogMessage(level, message, parameter);
     }
 
     /**
-     * Sends a log message to all connected clients
+     * Lets the broadcaster sends a log message to all connected clients. The broadcaster will 
+     * accumulate the log messages.
      */
     public void broadcastLogMessage(Level level, String message) {
         this.broadcastLogMessage(level, message, null);
@@ -422,17 +429,19 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
 
     @Override
     public void exceptionCaught(IoSession session, Throwable cause) {
-        //The method org.apache.mina.core.polling.AbstractPollingIoProcessor  seems to have a problem
+        //The method org.apache.mina.core.polling.AbstractPollingIoProcessor seems to have a problem
         //in the method clearWriteRequestQueue(AbstractPollingIoProcessor.java:1200) in MINA 2.2.1 - this will be ignored here
         if (cause instanceof WriteToClosedSessionException) {
             return;
         }
         StringBuilder builder = new StringBuilder();
-        builder.append("Exception caught in client-server interface.").append("\n");
-        builder.append("[" + cause.getClass().getSimpleName() + "]: " + cause.getMessage()).append("\n\n");
+        builder.append("Exception caught in client-server interface.").append("\n")
+                .append("[").append(cause.getClass().getSimpleName()).append("]: ")
+                .append(cause.getMessage()).append("\n\n");
         StackTraceElement[] stackTrace = cause.getStackTrace();
         for (StackTraceElement element : stackTrace) {
-            builder.append(element.getClassName() + ": " + element.getMethodName() + "\n");
+            builder.append(element.getClassName())
+                    .append(": ").append(element.getMethodName()).append("\n");
         }
         this.throwEventExceptionInClientServerProcess(session, builder.toString());
         // Close connection when unexpected exception is caught.
@@ -453,10 +462,12 @@ public class ClientServerSessionHandler extends IoHandlerAdapter {
     }
 
     /**
-     * Wait for the TLS handshake to be complete - then send the serverinfo and the login request to the client
+     * Wait for the TLS handshake to be complete - then send the serverinfo and
+     * the login request to the client
+     *
      * @param session
      * @param event
-     * @throws Exception 
+     * @throws Exception
      */
     @Override
     public void event(IoSession session, FilterEvent event) throws Exception {

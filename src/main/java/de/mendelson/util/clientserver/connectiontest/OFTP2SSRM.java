@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/OFTP2SSRM.java 2     2/11/23 14:03 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/OFTP2SSRM.java 3     17/03/26 10:28 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 /*
@@ -12,9 +12,9 @@ package de.mendelson.util.clientserver.connectiontest;
 /**
  * Command SSRM
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
-public class OFTP2SSRM extends OFTP2AbstractCommand implements OFTP2Command {
+public final class OFTP2SSRM extends OFTP2AbstractCommand{
 
     public static final String SSRMCMD = "SSRMCMD";
     public static final String SSRMMSG = "SSRMMSG";

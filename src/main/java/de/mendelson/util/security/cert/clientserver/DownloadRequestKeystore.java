@@ -1,6 +1,7 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/DownloadRequestKeystore.java 4     9/11/23 9:52 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/DownloadRequestKeystore.java 6     11/06/25 13:17 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import java.io.IOException;
@@ -19,7 +20,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class DownloadRequestKeystore extends ClientServerMessage implements Serializable {
 
@@ -28,12 +29,23 @@ public class DownloadRequestKeystore extends ClientServerMessage implements Seri
     
     private static final long serialVersionUID = 1L;
 
-    private final int keystoreUsage;
+    private int keystoreUsage;
 
     public DownloadRequestKeystore(final int KEYSTORE_USAGE) {
         this.keystoreUsage = KEYSTORE_USAGE;
     }
 
+     /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public DownloadRequestKeystore() {
+        super();    
+        this.keystoreUsage = KEYSTORE_TYPE_ENC_SIGN;
+    }
+    
+    
     @Override
     public String toString() {
         return ("Download request keystore");
@@ -41,6 +53,15 @@ public class DownloadRequestKeystore extends ClientServerMessage implements Seri
     
     public int getKeystoreUsage(){
         return( this.keystoreUsage);
+    }
+    
+    /**
+     * This is a dummy method for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setKeystoreUsage(final int KEYSTORE_USAGE){
+        this.keystoreUsage = KEYSTORE_USAGE;
     }
     
     /**Prevent an overwrite of the readObject method for de-serialization*/

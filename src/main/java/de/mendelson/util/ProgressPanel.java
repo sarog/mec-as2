@@ -1,12 +1,12 @@
-//$Header: /as2/de/mendelson/util/ProgressPanel.java 17    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/util/ProgressPanel.java 26    23/02/26 11:46 Heller $
 package de.mendelson.util;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.BoundedRangeModel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -19,11 +19,11 @@ import javax.swing.SwingUtilities;
  * Progress panel to display status information.
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 26 $
  */
 public class ProgressPanel extends JPanel {
 
-    private final List<ProgressRequest> progressList = Collections.synchronizedList(new ArrayList<ProgressRequest>());
+    private final CopyOnWriteArrayList<ProgressRequest> progressList = new CopyOnWriteArrayList<ProgressRequest>();
     private final BoundedRangeModel progressModel;
 
     /**
@@ -31,75 +31,87 @@ public class ProgressPanel extends JPanel {
      */
     public ProgressPanel() {
         this.initComponents();
-        this.disableProgressDisplay();
         this.progressModel = this.jProgressBar.getModel();
-    }
-
-    private void disableProgressDisplay() {
-        Runnable runnable = new Runnable() {
-            @Override
-            public void run() {
-                jProgressBar.setIndeterminate(false);
-                progressModel.setRangeProperties(0, 0, 0, 0, false);
-                jProgressBar.setStringPainted(false);
-                jLabelProgressDetails.setText(null);
-                jProgressBar.setVisible(false);
-            }
-        };
-        SwingUtilities.invokeLater(runnable);
+        this.jProgressBar.setVisible(false);
     }
 
     /**
-     * Adds a new progress to display to the progress bar. Its possible to add
-     * several requests, just use unique ids for each request
+     * There is no need to create a background thread for this - it is always
+     * called in a background thread
      */
-    public void startProgressIndeterminate(String progressDetails, String uniqueId) {
-        ProgressRequest request = new ProgressRequest(progressDetails, uniqueId);
-        request.setIndeterminate(true);
-        synchronized (this.progressList) {
-            this.progressList.add(request);
-        }
-        this.displayProgressBar(request);
+    private void disableProgressDisplay() {
+        jProgressBar.setIndeterminate(false);
+        progressModel.setRangeProperties(0, 0, 0, 0, false);
+        jProgressBar.setStringPainted(false);
+        jLabelProgressDetails.setText(null);
+        jProgressBar.setVisible(false);
     }
 
-    private void displayProgressBar(final ProgressRequest request) {
-        Runnable runnable = new Runnable() {
+    /**
+     * Sets a new max value of a progress bar
+     *
+     * @param uniqueId The unique id of the progress bar
+     * @param maxValue The new max value
+     */
+    public void setProgressMax(final String uniqueId, int maxValue) {
+        for (ProgressRequest request : progressList) {
+            if (request.uniqueId.equals(uniqueId)) {
+                request.setMaxValue(maxValue);
+                break;
+            }
+        }
+    }
+
+    public void startProgressIndeterminate(final String progressDetails, final String uniqueId) {
+        SwingWorker<Void, ProgressRequest> worker = new SwingWorker<Void, ProgressRequest>() {
+            @Override
+            protected Void doInBackground() {
+                ProgressRequest request = new ProgressRequest(progressDetails, uniqueId);
+                request.setIndeterminate(true);
+                progressList.add(request);
+                // publish the request to the EDT for display
+                publish(request);
+                return null;
+            }
 
             @Override
-            public void run() {
-                //ensure that no progress bar stop or delete is written to the synchronized list
-                //during the progress bar creation and display
-                //check if the progress bar display is still required if the swing graphic threads executes it. 
-                //If this was a really short action it might be faster deleted than displayed. 
-                //In this case just do nothing
-                boolean progressBarDisplayRequestIsStillValid = false;
-                synchronized (ProgressPanel.this.progressList) {
-                    for (ProgressRequest singleRequest : ProgressPanel.this.progressList) {
-                        if (request.getUniqueId().equals(singleRequest.getUniqueId())) {
-                            progressBarDisplayRequestIsStillValid = true;
-                            break;
-                        }
-                    }
-                }
-                if (progressBarDisplayRequestIsStillValid) {
-                    ProgressPanel.this.jLabelProgressDetails.setText(request.getDisplay());
-                    ProgressPanel.this.jProgressBar.setIndeterminate(request.isIndeterminate());
-                    if (request.isIndeterminate()) {
-                        ProgressPanel.this.jProgressBar.setStringPainted(false);
-                    } else {
-                        progressModel.setRangeProperties(
-                                request.getActualValue(), 0,
-                                request.getMinValue(), request.getMaxValue(), false);
-                    }
-                    ProgressPanel.this.jProgressBar.setVisible(true);
+            protected void process(List<ProgressRequest> chunks) {
+                for (ProgressRequest request : chunks) {
+                    displayProgressBar(request);
                 }
             }
         };
-        try {
-            SwingUtilities.invokeLater(runnable);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        worker.execute();
+    }
+
+    private void displayProgressBar(final ProgressRequest progressRequest) {
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                //Check if request still exists
+                boolean valid = false;
+                for (ProgressRequest request : progressList) {
+                    if (request.getUniqueId().equals(progressRequest.getUniqueId())) {
+                        valid = true;
+                        break;
+                    }
+                }
+                if (!valid) {
+                    return;
+                }
+                jLabelProgressDetails.setText(progressRequest.getDisplay());
+                jProgressBar.setIndeterminate(progressRequest.isIndeterminate());
+                if (progressRequest.isIndeterminate()) {
+                    jProgressBar.setStringPainted(false);
+                } else {
+                    progressModel.setRangeProperties(
+                            progressRequest.getActualValue(), 0,
+                            progressRequest.getMinValue(),
+                            progressRequest.getMaxValue(), false);
+                }
+                jProgressBar.setVisible(true);
+            }
+        });
     }
 
     /**
@@ -108,69 +120,112 @@ public class ProgressPanel extends JPanel {
      * is always displayed
      */
     public void startProgress(String display, String uniqueId, int min, int max) {
-        ProgressRequest request = new ProgressRequest(display, uniqueId);
-        request.setIndeterminate(false);
-        request.setMinValue(min);
-        request.setMaxValue(max);
-        request.setActualValue(0);
-        synchronized (this.progressList) {
-            this.progressList.add(request);
-        }
-        this.displayProgressBar(request);
+        SwingWorker<Void, ProgressRequest> worker = new SwingWorker<Void, ProgressRequest>() {
+            @Override
+            protected Void doInBackground() {
+                ProgressRequest request = new ProgressRequest(display, uniqueId);
+                request.setIndeterminate(false);
+                request.setMinValue(min);
+                request.setMaxValue(max);
+                request.setActualValue(0);
+                progressList.add(request);
+                publish(request);
+                return null;
+            }
+
+            @Override
+            protected void process(List<ProgressRequest> request) {
+                for (ProgressRequest singleRequest : request) {
+                    displayProgressBar(singleRequest);
+                }
+            }
+        };
+        worker.execute();
     }
 
     /**
      * This is ignored if the unique id is not assigned to a progress request -
      * anyway always the last progress request is displayed
      */
-    public void setProgressValue(String uniqueId, int progress) {
-        ProgressRequest foundRequest = null;
-        ProgressRequest actualDisplayedProgress = null;
-        synchronized (this.progressList) {
-            //find the progress request to delete
-            for (ProgressRequest request : this.progressList) {
-                if (request.uniqueId.equals(uniqueId)) {
-                    foundRequest = request;
-                    break;
+    public void setProgressValue(final String uniqueId, final int progress) {
+        SwingWorker<Void, ProgressRequest> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                ProgressRequest foundRequest = null;
+                ProgressRequest actualDisplayedProgress = null;
+                //Find the progress request to update
+                for (ProgressRequest request : progressList) {
+                    if (request.getUniqueId().equals(uniqueId)) {
+                        foundRequest = request;
+                        break;
+                    }
+                }
+                if (!progressList.isEmpty()) {
+                    actualDisplayedProgress = progressList.get(progressList.size() - 1);
+                }
+                if (foundRequest != null && !foundRequest.isIndeterminate()) {
+                    foundRequest.setActualValue(progress);
+                    if (foundRequest.equals(actualDisplayedProgress)) {
+                        //Send to EDT for display
+                        publish(foundRequest);
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            protected void process(List<ProgressRequest> chunks) {
+                for (ProgressRequest request : chunks) {
+                    displayProgressBar(request);
                 }
             }
-            actualDisplayedProgress = this.progressList.get(this.progressList.size() - 1);
-        }
-        //update the display if the set progress bar is the actual one
-        if (foundRequest != null && !foundRequest.isIndeterminate()) {
-            foundRequest.setActualValue(progress);
-            if (foundRequest.equals(actualDisplayedProgress)) {
-                this.displayProgressBar(foundRequest);
-            }
-        }
+        };
+        worker.execute();
     }
 
     /**
-     * Triies to stop a progress and does not care if it does not exist
+     * Tries to stop a progress and does not care if it does not exist
      */
     public void stopProgressIfExists(String uniqueId) {
-        ProgressRequest foundRequest = null;
-        synchronized (this.progressList) {
-            //find the progress request to delete
-            for (ProgressRequest request : this.progressList) {
-                if (request.uniqueId.equals(uniqueId)) {
-                    foundRequest = request;
-                    break;
+        SwingWorker<Void, ProgressRequest> worker = new SwingWorker<>() {
+            @Override
+            protected Void doInBackground() {
+                ProgressRequest foundRequest = null;
+                //find the progress request to delete
+                for (ProgressRequest request : progressList) {
+                    if (request.uniqueId.equals(uniqueId)) {
+                        foundRequest = request;
+                        break;
+                    }
+                }
+                if (foundRequest != null) {
+                    //now delete the found request
+                    progressList.remove(foundRequest);
+                    //no more progress entries?
+                    if (progressList.isEmpty()) {
+                        SwingUtilities.invokeLater(new Runnable() {
+                            @Override
+                            public void run() {
+                                disableProgressDisplay();
+                            }
+                        });
+                    } else {
+                        //get last entry and display its progress text
+                        ProgressRequest progressToDisplay = progressList.get(progressList.size() - 1);
+                        this.publish(progressToDisplay);
+                    }
+                }
+                return (null);
+            }
+
+            @Override
+            protected void process(List<ProgressRequest> progressList) {
+                for (ProgressRequest request : progressList) {
+                    displayProgressBar(request);
                 }
             }
-            if (foundRequest != null) {
-                //now delete the found request
-                this.progressList.remove(foundRequest);
-                //no more progress entries?
-                if (this.progressList.isEmpty()) {
-                    this.disableProgressDisplay();
-                } else {
-                    //get last entry and display its progress text
-                    ProgressRequest progressToDisplay = this.progressList.get(this.progressList.size() - 1);
-                    this.displayProgressBar(progressToDisplay);
-                }
-            }
-        }
+        };
+        worker.execute();
     }
 
     /**

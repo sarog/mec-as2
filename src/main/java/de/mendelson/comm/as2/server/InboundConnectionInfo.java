@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/server/InboundConnectionInfo.java 2     21/03/25 9:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/InboundConnectionInfo.java 3     23/05/25 9:57 Heller $
 package de.mendelson.comm.as2.server;
 
 /*
@@ -11,7 +11,7 @@ package de.mendelson.comm.as2.server;
 /**
  * Container that stores information about the inbound connection the data is received from
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class InboundConnectionInfo {
 
@@ -24,6 +24,9 @@ public class InboundConnectionInfo {
      * of the outbound connection. Means in case of sync MDN this is just an empty object without any additional information
      */
     private boolean isSyncMDN = false;
+    private long transferredBytes = 0;
+    private long transferStartTime = 0;
+    private long transferEndTime = 0;
     
     
     public InboundConnectionInfo() {
@@ -116,5 +119,47 @@ public class InboundConnectionInfo {
      */
     public void setSyncMDN(boolean isSyncMDN) {
         this.isSyncMDN = isSyncMDN;
+    }
+
+    /**
+     * @return the transferredBytes
+     */
+    public long getTransferredBytes() {
+        return transferredBytes;
+    }
+
+    /**
+     * @param transferredBytes the transferredBytes to set
+     */
+    public void setTransferredBytes(long transferredBytes) {
+        this.transferredBytes = transferredBytes;
+    }
+
+    /**
+     * @return the transferStartTime
+     */
+    public long getTransferStartTime() {
+        return transferStartTime;
+    }
+
+    /**
+     * @param transferStartTime the transferStartTime to set
+     */
+    public void setTransferStartTime(long transferStartTime) {
+        this.transferStartTime = transferStartTime;
+    }
+
+    /**
+     * @return the transferEndTime
+     */
+    public long getTransferEndTime() {
+        return transferEndTime;
+    }
+
+    /**
+     * @param transferEndTime the transferEndTime to set
+     */
+    public void setTransferEndTime(long transferEndTime) {
+        this.transferEndTime = transferEndTime;
     }
 }

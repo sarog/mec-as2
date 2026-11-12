@@ -1,8 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/send/HttpConnectionParameter.java 7     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/HttpConnectionParameter.java 9     31/03/26 16:31 Heller $
 package de.mendelson.comm.as2.send;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonValue;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import java.net.InetAddress;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,40 +16,70 @@ import java.net.InetAddress;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Sets several parameter for an outbound http connection. This includes routing, connection and protocol issues
- * @author  S.Heller
- * @version $Revision: 7 $
+ * Sets several parameter for an outbound http connection. This includes
+ * routing, connection and protocol issues
+ *
+ * @author S.Heller
+ * @version $Revision: 9 $
  */
 public class HttpConnectionParameter {
 
-    public static final String HTTP_1_0 = "1.0";
-    public static final String HTTP_1_1 = "1.1";
-    
     private boolean staleConnectionCheck = true;
     private int connectionTimeoutMillis = -1;
     private int soTimeoutMillis = -1;
     private InetAddress localAddress = null;
     private String userAgent = AS2ServerVersion.getUserAgent();
-    private String httpProtocolVersion = null;
+    private HttpProtocolVersion httpProtocolVersion = null;
     private boolean useExpectContinue = true;
     private ProxyObject proxy = null;
     private boolean trustAllRemoteServerCertificates = false;
     private boolean strictHostCheck = true;
+    private Map<String, String> userdefinedHeaderMap = new LinkedHashMap<String, String>();
+
+    public enum HttpProtocolVersion {
+        HTTP_1_0("1.0"),
+        HTTP_1_1("1.1");
+
+        private final String versionString;
+
+        HttpProtocolVersion(String versionString) {
+            this.versionString = versionString;
+        }
+
+        @Override
+        @JsonValue
+        public String toString() {
+            return this.versionString;
+        }
+
+        @JsonCreator
+        public static HttpProtocolVersion of(String version) {
+            if (version == null) {
+                return HTTP_1_1;
+            }
+            for (HttpProtocolVersion value : values()) {
+                if (value.versionString.equals(version)) {
+                    return value;
+                }
+            }
+            return( HTTP_1_1 );
+        }
+    }
 
     public HttpConnectionParameter() {
     }
 
-
-    public void setProxy( String host, int port, String user, char[] password){
+    public HttpConnectionParameter setProxy(String host, int port, String user, char[] password) {
         this.setProxy(new ProxyObject());
         this.getProxy().setHost(host);
         this.getProxy().setPort(port);
-        if( user != null ){
+        if (user != null) {
             this.getProxy().setUser(user);
-            if( password != null ){
+            if (password != null) {
                 this.getProxy().setPassword(password);
             }
         }
+        return (this);
     }
 
     /**
@@ -58,8 +92,9 @@ public class HttpConnectionParameter {
     /**
      * @param staleConnectionCheck the staleConnectionCheck to set
      */
-    public void setStaleConnectionCheck(boolean staleConnectionCheck) {
+    public HttpConnectionParameter setStaleConnectionCheck(boolean staleConnectionCheck) {
         this.staleConnectionCheck = staleConnectionCheck;
+        return (this);
     }
 
     /**
@@ -72,8 +107,9 @@ public class HttpConnectionParameter {
     /**
      * @param connectionTimeout the connectionTimeout to set
      */
-    public void setConnectionTimeoutMillis(int connectionTimeout) {
+    public HttpConnectionParameter setConnectionTimeoutMillis(int connectionTimeout) {
         this.connectionTimeoutMillis = connectionTimeout;
+        return (this);
     }
 
     /**
@@ -85,8 +121,9 @@ public class HttpConnectionParameter {
 
     /**
      */
-    public void setSoTimeoutMillis(int soTimeoutMillis) {
+    public HttpConnectionParameter setSoTimeoutMillis(int soTimeoutMillis) {
         this.soTimeoutMillis = soTimeoutMillis;
+        return (this);
     }
 
     /**
@@ -99,8 +136,9 @@ public class HttpConnectionParameter {
     /**
      * @param localAddress the localAddress to set
      */
-    public void setLocalAddress(InetAddress localAddress) {
+    public HttpConnectionParameter setLocalAddress(InetAddress localAddress) {
         this.localAddress = localAddress;
+        return (this);
     }
 
     /**
@@ -113,22 +151,24 @@ public class HttpConnectionParameter {
     /**
      * @param userAgent the userAgent to set
      */
-    public void setUserAgent(String userAgent) {
+    public HttpConnectionParameter setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+        return (this);
     }
 
     /**
      * @return the httpProtocolVersion
      */
-    public String getHttpProtocolVersion() {
+    public HttpProtocolVersion getHttpProtocolVersion() {
         return httpProtocolVersion;
     }
 
     /**
      * @param httpProtocolVersion the httpProtocolVersion to set
      */
-    public void setHttpProtocolVersion(String httpProtocolVersion) {
+    public HttpConnectionParameter setHttpProtocolVersion(HttpProtocolVersion httpProtocolVersion) {
         this.httpProtocolVersion = httpProtocolVersion;
+        return (this);
     }
 
     /**
@@ -141,8 +181,9 @@ public class HttpConnectionParameter {
     /**
      * @param useExpectContinue the useExpectContinue to set
      */
-    public void setUseExpectContinue(boolean useExpectContinue) {
+    public HttpConnectionParameter setUseExpectContinue(boolean useExpectContinue) {
         this.useExpectContinue = useExpectContinue;
+        return (this);
     }
 
     /**
@@ -155,8 +196,9 @@ public class HttpConnectionParameter {
     /**
      * @param proxy the proxy to set
      */
-    public void setProxy(ProxyObject proxy) {
+    public HttpConnectionParameter setProxy(ProxyObject proxy) {
         this.proxy = proxy;
+        return (this);
     }
 
     /**
@@ -167,10 +209,12 @@ public class HttpConnectionParameter {
     }
 
     /**
-     * @param trustAllRemoteServerCertificates the trustAllRemoteServerCertificates to set
+     * @param trustAllRemoteServerCertificates the
+     * trustAllRemoteServerCertificates to set
      */
-    public void setTrustAllRemoteServerCertificates(boolean trustAllRemoteServerCertificates) {
+    public HttpConnectionParameter setTrustAllRemoteServerCertificates(boolean trustAllRemoteServerCertificates) {
         this.trustAllRemoteServerCertificates = trustAllRemoteServerCertificates;
+        return (this);
     }
 
     /**
@@ -183,8 +227,27 @@ public class HttpConnectionParameter {
     /**
      * @param strictHostCheck the trustAllHostnames to set
      */
-    public void setStrictHostCheck(boolean strictHostCheck) {
+    public HttpConnectionParameter setStrictHostCheck(boolean strictHostCheck) {
         this.strictHostCheck = strictHostCheck;
+        return (this);
+    }
+
+    /**
+     * @return the userdefinedHeaderMap
+     */
+    public Map<String, String> getUserdefinedHeaderMap() {
+        return userdefinedHeaderMap;
+    }
+
+    /**
+     * @param userdefinedHeaderMap the userdefinedHeaderMap to set
+     */
+    public HttpConnectionParameter setUserdefinedHeaderMap(Map<String, String> userdefinedHeaderMap) {
+        this.userdefinedHeaderMap.clear();
+        if (userdefinedHeaderMap != null) {
+            this.userdefinedHeaderMap.putAll(userdefinedHeaderMap);
+        }
+        return (this);
     }
 
 }

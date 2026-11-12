@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 28    2/04/24 10:31 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelDirectories.java 31    17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -7,6 +7,7 @@ import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.filesystemview.RemoteFileBrowser;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.tables.JTableColumnResizer;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.MissingResourceException;
@@ -24,32 +25,37 @@ import javax.swing.SwingUtilities;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- *Panel to define the directory preferences
+ * Panel to define the directory preferences
+ *
  * @author S.Heller
- * @version: $Revision: 28 $
+ * @version: $Revision: 31 $
  */
-public class PreferencesPanelDirectories extends PreferencesPanel {
+public final class PreferencesPanelDirectories extends PreferencesPanel {
 
-    private final static MendelsonMultiResolutionImage ICON_FOLDER
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/folder.svg", 
+    private static final MendelsonMultiResolutionImage ICON_FOLDER
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/folder.svg",
                     JDialogPreferences.IMAGE_HEIGHT);
-    
-    /**Localize the GUI*/
-    private MecResourceBundle rb = null;
-    /**GUI prefs*/
-    private final PreferencesClient preferences;
-    private final BaseClient baseClient;
-    private String preferencesStrAtLoadTime = "";
 
-    /** Creates new form PreferencesPanelDirectories */
-    public PreferencesPanelDirectories(BaseClient baseClient) {
-        //load resource bundle
+    private static final MecResourceBundle rb;
+
+    static {
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundlePreferences.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+    private final PreferencesClient preferences;
+    private final BaseClient baseClient;
+    private String preferencesStrAtLoadTime = "";
+
+    /**
+     * Creates new form PreferencesPanelDirectories
+     */
+    public PreferencesPanelDirectories(BaseClient baseClient) {
+        //load resource bundle
+
         this.preferences = new PreferencesClient(baseClient);
         this.baseClient = baseClient;
         this.initComponents();
@@ -58,18 +64,19 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         this.setButtonState();
     }
 
-    private void initializeHelp(){
-        this.jPanelUIHelpPartnerDir.setToolTip( this.rb, "receipt.subdir.help");
+    private void initializeHelp() {
+        this.jPanelUIHelpPartnerDir.setToolTip(this.rb, "receipt.subdir.help");
     }
-    
-    /**checks the state of the buttons, it depends on the selection in
-     *the table
+
+    /**
+     * checks the state of the buttons, it depends on the selection in the table
      */
     private void setButtonState() {
         this.jButtonChange.setEnabled(this.jTable.getSelectedRow() >= 0);
     }
 
-    /**Sets new preferences to this panel to changes/modify
+    /**
+     * Sets new preferences to this panel to changes/modify
      */
     @Override
     public void loadPreferences() {
@@ -87,31 +94,35 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
-    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
-    private String captureSettingsToStr(){
+    /**
+     * Helper method to find out if there are changes in the GUI before storing
+     * them to the server
+     */
+    private String captureSettingsToStr() {
         StringBuilder builder = new StringBuilder();
         PreferencesObjectKeyValue directory = ((TableModelPreferencesDir) this.jTable.getModel()).getPreference(0);
         String currentPath = directory.getValue();
-        builder.append( PreferencesAS2.DIR_MSG ).append("=")
-                .append( currentPath).append(";");
-        builder.append( PreferencesAS2.RECEIPT_PARTNER_SUBDIR ).append("=")
-                .append( this.switchButtonReceiverSubdirectory.isSelected()).append(";");
-        return( builder.toString() );
+        builder.append(PreferencesAS2.DIR_MSG).append("=")
+                .append(currentPath).append(";");
+        builder.append(PreferencesAS2.RECEIPT_PARTNER_SUBDIR).append("=")
+                .append(this.switchButtonReceiverSubdirectory.isSelected()).append(";");
+        return (builder.toString());
     }
-    
+
     @Override
     public boolean preferencesAreModified() {
-        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+        return (!this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()));
     }
-    
-    
-    /**Modifies the selected row in the table*/
+
+    /**
+     * Modifies the selected row in the table
+     */
     private void modifySelection() {
         PreferencesObjectKeyValue directory = ((TableModelPreferencesDir) this.jTable.getModel()).getPreference(this.jTable.getSelectedRow());
         String existingPath = directory.getValue();
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
         RemoteFileBrowser browser = new RemoteFileBrowser(parent, this.baseClient,
-                this.rb.getResourceString("remotedir.select"));
+                rb.getResourceString("remotedir.select"));
         browser.setDirectoriesOnly(true);
         browser.setSelectedFile(existingPath);
         browser.setVisible(true);
@@ -119,14 +130,18 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
         if (selectedPath != null) {
             directory.setValue(selectedPath);
             ((TableModelPreferencesDir) this.jTable.getModel()).fireTableDataChanged();
-            this.preferences.put(directory.getKey(), selectedPath);
+            try {
+                this.preferences.put(directory.getKey(), selectedPath);
+            } catch (Throwable e) {
+                UINotification.instance().addNotification(e);
+            }
         }
     }
 
-    /** This method is called from within the constructor to
-     * initialize the form.
-     * WARNING: Do NOT modify this code. The content of this method is
-     * always regenerated by the Form Editor.
+    /**
+     * This method is called from within the constructor to initialize the form.
+     * WARNING: Do NOT modify this code. The content of this method is always
+     * regenerated by the Form Editor.
      */
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -252,7 +267,11 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
     }//GEN-LAST:event_jButtonChangeActionPerformed
 
     private void switchButtonReceiverSubdirectoryActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_switchButtonReceiverSubdirectoryActionPerformed
-        this.preferences.putBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR, this.switchButtonReceiverSubdirectory.isSelected());
+        try {
+            this.preferences.putBoolean(PreferencesAS2.RECEIPT_PARTNER_SUBDIR, this.switchButtonReceiverSubdirectory.isSelected());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
     }//GEN-LAST:event_switchButtonReceiverSubdirectoryActionPerformed
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -275,7 +294,7 @@ public class PreferencesPanelDirectories extends PreferencesPanel {
 
     @Override
     public ImageIcon getIcon() {
-        return (new ImageIcon( ICON_FOLDER));
+        return (new ImageIcon(ICON_FOLDER));
     }
 
     @Override

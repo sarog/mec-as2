@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendRequest.java 7     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/clientserver/CEMSendRequest.java 9     21/10/25 10:31 Heller $
 package de.mendelson.comm.as2.cem.clientserver;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -22,7 +22,7 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class CEMSendRequest extends ClientServerMessage implements Serializable {
    
@@ -30,7 +30,7 @@ public class CEMSendRequest extends ClientServerMessage implements Serializable 
     private Partner initiator = null;
     private KeystoreCertificate certificate = null;
     private Date activationDate = null;
-    private final List<Partner> receiver = new ArrayList<Partner>();
+    private final List<Partner> receiverList = new ArrayList<Partner>();
     private boolean purposeSSL = false;
     private boolean purposeEncryption = false;
     private boolean purposeSignature = false;
@@ -88,24 +88,24 @@ public class CEMSendRequest extends ClientServerMessage implements Serializable 
     /**
      * @return the receiver
      */
-    public List<Partner> getReceiver() {
-        return receiver;
+    public List<Partner> getReceiverList() {
+        return receiverList;
     }
 
     /**
      * @param newReceiver the receiver to set
      */
-    public void setReceiver(List<Partner> newReceiver) {
-        this.receiver.clear();
-        this.receiver.addAll( newReceiver );
+    public void setReceiverList(List<Partner> newReceiver) {
+        this.receiverList.clear();
+        this.receiverList.addAll( newReceiver );
     }
     
     /**
      * @param newReceiver the receiver to set
      */
     public void setReceiver(Partner newReceiver) {
-        this.receiver.clear();
-        this.receiver.add( newReceiver );
+        this.receiverList.clear();
+        this.receiverList.add( newReceiver );
     }
     
     /**

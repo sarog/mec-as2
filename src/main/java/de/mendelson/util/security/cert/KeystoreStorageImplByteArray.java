@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplByteArray.java 15    11/02/25 13:40 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplByteArray.java 16    14/01/26 14:05 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.security.BCCryptoHelper;
@@ -12,6 +12,7 @@ import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -24,7 +25,7 @@ import java.util.Map;
  * Keystore storage implementation that relies on a byte array
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class KeystoreStorageImplByteArray implements KeystoreStorage {
 
@@ -67,6 +68,11 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
         throw new IllegalAccessException("KeystoreStorageImplByteArray: loadKeystoreFromServer() is not available for byte array implementation of storage.");
     }
 
+    @Override
+    public Optional<KeystoreCertificate> getDownloadedEntriesMetadata(String fingerprintSHA1){
+        return( Optional.empty() );
+    }
+    
     @Override
     public void replaceAllEntriesAndSave(List<KeystoreCertificate> oldList, List<KeystoreCertificate> newList) throws Exception {
         throw new IllegalAccessException("KeystoreStorageImplByteArray: replaceAllEntriesAndSave() is not available for byte array implementation of storage.");

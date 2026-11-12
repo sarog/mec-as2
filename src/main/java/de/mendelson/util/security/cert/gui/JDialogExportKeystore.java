@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeystore.java 5     11/02/25 13:40 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportKeystore.java 6     8/04/26 13:35 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -29,7 +29,7 @@ import javax.swing.JFrame;
  * Export a private key into a keystore with a selectable password
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class JDialogExportKeystore extends JDialog {
 
@@ -97,7 +97,7 @@ public class JDialogExportKeystore extends JDialog {
                 throw response.getException();
             }
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_SUCCESS,
+                    UINotification.Type.SUCCESS,
                     this.rb.getResourceString("keystore.export.success.title"),
                     this.rb.getResourceString("keystore.exported.to.file",
                             new Object[]{
@@ -110,7 +110,7 @@ public class JDialogExportKeystore extends JDialog {
                     }));
         } catch (Throwable e) {
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     this.rb.getResourceString("keystore.export.error.title"),
                     this.rb.getResourceString("keystore.export.error.message", e.getMessage()));
         }

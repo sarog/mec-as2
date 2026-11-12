@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMState.java 10    2/11/23 15:52 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/gui/TableCellRendererCEMState.java 12    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -19,7 +19,7 @@ import javax.swing.table.TableCellRenderer;
 /** 
  * Renders the CEM state column
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class TableCellRendererCEMState extends DefaultTableCellRenderer implements TableCellRenderer {
 
@@ -72,30 +72,30 @@ public class TableCellRendererCEMState extends DefaultTableCellRenderer implemen
             Color backgroundColor = table.getBackground();
             CEMEntry entry = (CEMEntry) value;
             String receiverName = entry.getReceiverAS2Id();
-            PartnerListRequest request = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID);
+            PartnerListRequest request = new PartnerListRequest(PartnerListRequest.ListOption.AS2_ID);
             request.setAdditionalListOptionStr(receiverName);
             List<Partner> partnerList = ((PartnerListResponse)this.baseClient.sendSync(request)).getList();
             if( partnerList != null && !partnerList.isEmpty()){
                 receiverName = partnerList.get(0).getName();
             }
-            int state = entry.getCemState();            
-            if (state == CEMEntry.STATUS_ACCEPTED_INT) {
+            CEMEntry.Status state = entry.getCemState();            
+            if (state == CEMEntry.Status.ACCEPTED) {
                 backgroundColor = this.colorAccepted;
                 this.setText(CEMEntry.getStateLocalized(state, receiverName)
                         + " (" + this.format.format( new Date(entry.getResponseMessageOriginated()))
                         + ")");
-            } else if (state == CEMEntry.STATUS_PENDING_INT) {
+            } else if (state == CEMEntry.Status.PENDING) {
                 backgroundColor = this.colorPending;
                 this.setText(CEMEntry.getStateLocalized(state, receiverName));
-            } else if (state == CEMEntry.STATUS_REJECTED_INT) {
+            } else if (state == CEMEntry.Status.REJECTED) {
                 backgroundColor = this.colorRejected;
                 this.setText(CEMEntry.getStateLocalized(state, receiverName)
                         + " (" + this.format.format( new Date(entry.getResponseMessageOriginated()))
                         + ")");
-            } else if (state == CEMEntry.STATUS_CANCELED_INT) {
+            } else if (state == CEMEntry.Status.CANCELED) {
                 backgroundColor = this.colorRejected;
                 this.setText(CEMEntry.getStateLocalized(state, receiverName));
-            }else if (state == CEMEntry.STATUS_PROCESSING_ERROR_INT) {
+            }else if (state == CEMEntry.Status.PROCESSING_ERROR) {
                 backgroundColor = this.colorRejected;
                 this.setText(CEMEntry.getStateLocalized(state, receiverName));
             }

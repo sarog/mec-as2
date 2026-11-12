@@ -53,6 +53,7 @@ public class LibVersion {
         classMap.put("org.apache.batik.transcoder.image.ImageTranscoder", "SVG Batik v{0} (SVG processing)");
         classMap.put("com.fasterxml.jackson.databind.node.ObjectNode", "Jackson v{0} (JSON)");
         classMap.put("com.zaxxer.hikari.HikariDataSource", "Hikari v{0} (DB pool)");
+        classMap.put("com.github.benmanes.caffeine.cache.Caffeine", "Caffeine v{0} (Cache)");
         try {
             for (String singleClassStr : classMap.keySet()) {
                 Class<?> singleClass;

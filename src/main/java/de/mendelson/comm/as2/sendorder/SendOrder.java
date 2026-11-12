@@ -1,10 +1,14 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrder.java 8     14/01/25 14:20 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrder.java 12    31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -15,21 +19,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Send order that will be enqueued into the as2 server message queue
+ *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 12 $
  */
 public class SendOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    public static final int STATE_WAITING = 0;
-    public static final int STATE_PROCESSING = 1;
-    
+
     private Partner receiver;
     private AS2Message message;
     private Partner sender;
-    private final AtomicInteger retryCount = new AtomicInteger(0);
+    private AtomicInteger retryCount = new AtomicInteger(0);
     private int dbId = -1;
     private String userdefinedId = null;
+    private Map<String, String> userdefinedHeaderMap = new LinkedHashMap<String, String>();
 
     public Partner getReceiver() {
         return receiver;
@@ -37,16 +41,16 @@ public class SendOrder implements Serializable {
 
     public SendOrder setReceiver(Partner receiver) {
         this.receiver = receiver;
-        return( this );
+        return (this);
     }
 
     public AS2Message getMessage() {
         return message;
     }
 
-    public SendOrder setMessage(AS2Message message) {        
+    public SendOrder setMessage(AS2Message message) {
         this.message = message;
-        return( this );
+        return (this);
     }
 
     public Partner getSender() {
@@ -55,11 +59,11 @@ public class SendOrder implements Serializable {
 
     public SendOrder setSender(Partner sender) {
         this.sender = sender;
-        return( this );
+        return (this);
     }
 
     public int incRetryCount() {
-        return( this.retryCount.incrementAndGet());
+        return (this.getRetryCount().incrementAndGet());
     }
 
     /**
@@ -74,7 +78,7 @@ public class SendOrder implements Serializable {
      */
     public SendOrder setDbId(int dbId) {
         this.dbId = dbId;
-        return( this );
+        return (this);
     }
 
     /**
@@ -89,7 +93,43 @@ public class SendOrder implements Serializable {
      */
     public SendOrder setUserdefinedId(String userdefinedId) {
         this.userdefinedId = userdefinedId;
-        return( this );
+        return (this);
     }
-        
+
+    /**
+     * This is a dummy method for the deserialization process. Do not use in
+     * logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public AtomicInteger getRetryCount() {
+        return retryCount;
+    }
+
+    /**
+     * This is a dummy method for the deserialization process. Do not use in
+     * logic.
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setRetryCount(AtomicInteger retryCount) {
+        this.retryCount.set(retryCount.get());
+    }
+
+    /**
+     * @return the userdefinedHeaderMap
+     */
+    public Map<String, String> getUserdefinedHeaderMap() {
+        return userdefinedHeaderMap;
+    }
+
+    /**
+     * @param userdefinedHeaderMap the userdefinedHeaderMap to set, might be null
+     */
+    public SendOrder setUserdefinedHeaderMap(Map<String, String> userdefinedHeaderMap) {
+        this.userdefinedHeaderMap.clear();
+        if (userdefinedHeaderMap != null) {
+            this.userdefinedHeaderMap.putAll(userdefinedHeaderMap);
+        }
+        return (this);
+    }
+
 }

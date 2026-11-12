@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_fr.java 16    9/12/24 16:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesAS2_fr.java 19    8/12/25 16:39 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 19 $
  */
 public class ResourceBundlePreferencesAS2_fr extends MecResourceBundle {
 
@@ -29,6 +29,7 @@ public class ResourceBundlePreferencesAS2_fr extends MecResourceBundle {
      * List of messages in the specific language
      */
     private static final Object[][] CONTENTS = {
+        {PreferencesAS2.EXTENDED_LOG_PROCESSING, "Afficher le journal des traitements supplémentaires"},
         {"module.name", "[PARAMÈTRES]" }, 
         {"TRUE", "allumé" },
         {"FALSE", "désactivé" },
@@ -37,7 +38,7 @@ public class ResourceBundlePreferencesAS2_fr extends MecResourceBundle {
         {"notification.setting.updated", "Les paramètres de notification ont été modifiés." },
         {"setting.reset", "Le paramètre serveur [{0}] a été réinitialisé à sa valeur par défaut." },
         //preferences localized
-        {PreferencesAS2.ASYNC_MDN_TIMEOUT, "Délai d''attente pour MDN asynchrone en min"},
+        {PreferencesAS2.MDN_WAIT_TIME, "Délai d''attente pour MDN asynchrone en min"},
         {PreferencesAS2.AUTH_PROXY_PASS, "Données d''accès au proxy HTTP (mot de passe)"},
         {PreferencesAS2.AUTH_PROXY_USE, "Utiliser les données d'accès du proxy HTTP"},
         {PreferencesAS2.AUTH_PROXY_USER, "Données d''accès proxy HTTP (utilisateur)"},

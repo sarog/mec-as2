@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 89    20/02/25 13:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JDialogPartnerConfig.java 96    9/04/26 8:46 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -11,6 +11,9 @@ import de.mendelson.comm.as2.partner.PartnerSystem;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
 import de.mendelson.comm.as2.partner.clientserver.PartnerModificationRequest;
+import de.mendelson.comm.as2.partner.gui.filter.DialogFilterPartner;
+import de.mendelson.comm.as2.partner.gui.filter.DialogFilterPartner.FilterData;
+import de.mendelson.comm.as2.partner.gui.filter.ResourceBundleFilterPartner;
 import de.mendelson.comm.as2.partner.gui.global.JDialogGlobalChange;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.ColorUtil;
@@ -30,9 +33,12 @@ import de.mendelson.util.uinotification.UINotification;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.MissingResourceException;
+import java.util.Optional;
 import java.util.ResourceBundle;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.BorderFactory;
@@ -58,14 +64,12 @@ import javax.swing.tree.DefaultMutableTreeNode;
  * Dialog to configure the partner of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 89 $
+ * @version $Revision: 96 $
  */
 public class JDialogPartnerConfig extends JDialog {
 
-    /**
-     * Resource to localize the GUI
-     */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
+    private static final MecResourceBundle rbFilter;
 
     static {
         try {
@@ -74,34 +78,49 @@ public class JDialogPartnerConfig extends JDialog {
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+        try {
+            rbFilter = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleFilterPartner.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
     }
-    /**
-     * List of all available partner
-     */
-    private final List<Partner> partnerList = new ArrayList<Partner>();
+    private final List<Partner> fullPartnerList = new ArrayList<Partner>();
+    private final List<Partner> filteredPartnerList = new ArrayList<Partner>();
     private final JPanelPartner panelEditPartner;
     private final JTreePartner jTreePartner;
     private final CertificateManager certificateManagerEncSign;
-    private final CertificateManager certificateManagerSSL;
+    private final CertificateManager certificateManagerTLS;
     private final GUIClient guiClient;
-    private final static Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private static final Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private final AS2StatusBar status;
     private final List<AllowModificationCallback> allowModificationCallbackList
             = new ArrayList<AllowModificationCallback>();
     private final LockClientInformation lockKeeper;
-    private final static MendelsonMultiResolutionImage IMAGE_DELETE
+    private static final MendelsonMultiResolutionImage IMAGE_DELETE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/delete.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
-    private final static MendelsonMultiResolutionImage IMAGE_COPY
+    private static final MendelsonMultiResolutionImage IMAGE_COPY
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/copypartner.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
-    private final static MendelsonMultiResolutionImage IMAGE_ADD
+    private static final MendelsonMultiResolutionImage IMAGE_ADD
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/add.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
-    private final static MendelsonMultiResolutionImage IMAGE_PARTNER_GROUP
+    private static final MendelsonMultiResolutionImage IMAGE_PARTNER_GROUP
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/global/partner_group.svg",
                     AS2Gui.IMAGE_SIZE_TOOLBAR);
+    private static final MendelsonMultiResolutionImage IMAGE_FILTER
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/filter.svg",
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
+    private static final MendelsonMultiResolutionImage IMAGE_FILTER_CLEAR
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/filter_clear_noborder.svg",
+                    AS2Gui.IMAGE_SIZE_POPUP);
+    private static final MendelsonMultiResolutionImage IMAGE_FILTER_ACTIVE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/partner/gui/filter_active.svg",
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
     private Color colorRed = Color.RED.darker();
+    private final DialogFilterPartner filterDialog;
+    private final Consumer<FilterData> filterdataConsumer;
 
     /**
      * Creates new form JDialogMessageMapping
@@ -111,7 +130,7 @@ public class JDialogPartnerConfig extends JDialog {
             AS2StatusBar status, boolean changesAllowed,
             LockClientInformation lockKeeper,
             CertificateManager certificateManagerEncSign,
-            CertificateManager certificateManagerSSL,
+            CertificateManager certificateManagerTLS,
             List<PartnerSystem> partnerSystemList,
             String activatedPlugins) {
         super(parent, true);
@@ -119,8 +138,8 @@ public class JDialogPartnerConfig extends JDialog {
         this.guiClient = guiClient;
         this.lockKeeper = lockKeeper;
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.certificateManagerSSL = certificateManagerSSL;
-        this.jTreePartner = new JTreePartner(guiClient.getBaseClient());
+        this.certificateManagerTLS = certificateManagerTLS;
+        this.jTreePartner = new JTreePartner();
         //create tree gap
         this.jTreePartner.setBorder(BorderFactory.createEmptyBorder(2, 2, 2, 2));
         this.initComponents();
@@ -129,14 +148,30 @@ public class JDialogPartnerConfig extends JDialog {
         this.panelEditPartner = new JPanelPartner(this.guiClient.getBaseClient(),
                 this.jTreePartner,
                 this.certificateManagerEncSign,
-                this.certificateManagerSSL,
+                this.certificateManagerTLS,
                 this.jButtonPartnerConfigOk, this.status, changesAllowed,
                 partnerSystemList, activatedPlugins,
                 this.jPanelConfigurationWarning);
         this.jPanelPartner.add(this.panelEditPartner, BorderLayout.CENTER);
         this.getRootPane().setDefaultButton(this.jButtonPartnerConfigOk);
+        this.filterdataConsumer = new Consumer<FilterData>() {
+
+            @Override
+            public void accept(FilterData filterData) {
+                filterPartner(filterData);
+            }
+        };
+        this.filterDialog = new DialogFilterPartner(this, this.jButtonFilter, this.filterdataConsumer);
+        this.filterDialog.setVisible(false);
         try {
-            this.partnerList.addAll(this.jTreePartner.buildTree());
+            this.fullPartnerList.addAll(this.loadAllPartnerFromServer());
+            this.filteredPartnerList.addAll(this.fullPartnerList);
+            this.jLabelFilterCount.setText(rb.getResourceString("label.filterdisplay",
+                            new Object[]{
+                                String.valueOf(this.filteredPartnerList.size()),
+                                String.valueOf(this.fullPartnerList.size()),}));
+            this.jTreePartner.buildTree(Collections.unmodifiableList(this.fullPartnerList),
+                    Collections.unmodifiableList(this.filteredPartnerList));
         } catch (Exception e) {
             UINotification.instance().addNotification(e);
             return;
@@ -157,9 +192,10 @@ public class JDialogPartnerConfig extends JDialog {
         this.jPanelModuleLockWarning.setBorder(new LineBorder(this.colorRed, 1));
         this.jLabelModuleLockedWarning.setForeground(this.colorRed);
         this.jPanelConfigurationWarning.setBorder(new LineBorder(this.colorRed, 1));
-        this.jLabelConfigurationWarning.setForeground(this.colorRed);        
+        this.jLabelConfigurationWarning.setForeground(this.colorRed);
         this.jPanelModuleLockWarning.setVisible(!changesAllowed);
         this.jPanelConfigurationWarning.setVisible(false);
+        this.jButtonCancelFilter.setVisible(false);
     }
 
     @Override
@@ -175,7 +211,98 @@ public class JDialogPartnerConfig extends JDialog {
         this.jButtonClonePartner.setIcon(new ImageIcon(IMAGE_COPY.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
         this.jButtonNewPartner.setIcon(new ImageIcon(IMAGE_ADD.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
         this.jButtonGlobalSettings.setIcon(new ImageIcon(IMAGE_PARTNER_GROUP.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
+        this.jButtonFilter.setIcon(new ImageIcon(IMAGE_FILTER.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
+        this.jButtonCancelFilter.setIcon(new ImageIcon(IMAGE_FILTER_CLEAR.toMinResolution(AS2Gui.IMAGE_SIZE_POPUP)));
 
+    }
+
+    /**
+     * Sends a request to the server to load the partner
+     */
+    private List<Partner> loadAllPartnerFromServer() throws Exception {
+        PartnerListResponse response = (PartnerListResponse) this.guiClient.getBaseClient().sendSync(
+                new PartnerListRequest(PartnerListRequest.ListOption.ALL_NO_CACHE), Partner.TIMEOUT_PARTNER_REQUEST);
+        if (response.getException() != null) {
+            throw (response.getException());
+        }
+        List<Partner> partnerList = response.getList();
+        return (partnerList);
+    }
+
+    /**
+     * Filters the partner
+     */
+    private void filterPartner(FilterData filterData) {
+        synchronized (this.filteredPartnerList) {
+            this.filteredPartnerList.clear();
+            if (filterData.getSearchValue().isBlank()) {
+                this.filteredPartnerList.addAll(this.fullPartnerList);
+            } else {
+                synchronized (this.fullPartnerList) {
+                    String searchValueLower = filterData.getSearchValue().toLowerCase();
+                    for (Partner partner : this.fullPartnerList) {
+                        if (filterData.getCategory().equals("category.as2id")) {
+                            if (partner.getAS2Identification().toLowerCase().contains(searchValueLower)) {
+                                this.filteredPartnerList.add(partner);
+                            }
+                        } else if (filterData.getCategory().equals("category.name")) {
+                            if (partner.getName().toLowerCase().contains(searchValueLower)) {
+                                this.filteredPartnerList.add(partner);
+                            }
+                        } else if (filterData.getCategory().equals("category.comment")) {
+                            boolean match
+                                    = Optional.ofNullable(partner.getContactCompany())
+                                            .orElse("")
+                                            .toLowerCase()
+                                            .contains(searchValueLower)
+                                    || Optional.ofNullable(partner.getContactAS2())
+                                            .orElse("")
+                                            .toLowerCase()
+                                            .contains(searchValueLower);
+                            if (match) {
+                                this.filteredPartnerList.add(partner);
+                            }
+                        } else if (filterData.getCategory().equals("category.url")) {
+                            if (!partner.isLocalStation()) {
+                                if (partner.getURL().toLowerCase().contains(searchValueLower)) {
+                                    this.filteredPartnerList.add(partner);
+                                }
+                            }
+                        } else if (filterData.getCategory().equals("category.subject")) {
+                            if (!partner.isLocalStation()) {
+                                if (partner.getSubject().toLowerCase().contains(searchValueLower)) {
+                                    this.filteredPartnerList.add(partner);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            try {
+                synchronized (this.fullPartnerList) {
+                    this.jLabelFilterCount.setText(rb.getResourceString("label.filterdisplay",
+                            new Object[]{
+                                String.valueOf(this.filteredPartnerList.size()),
+                                String.valueOf(this.fullPartnerList.size()),}));
+                    if (filterData.getSearchValue().isBlank()) {
+                        this.jButtonCancelFilter.setVisible(false);
+                        this.jButtonFilter.setIcon(
+                                new ImageIcon(IMAGE_FILTER.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
+                    } else {
+                        this.jButtonCancelFilter.setVisible(true);
+                        this.jButtonCancelFilter.setText(
+                                "[" + rbFilter.getResourceString(filterData.getCategory()) + "] "
+                                + filterData.getSearchValue());
+                        this.jButtonFilter.setIcon(
+                                new ImageIcon(IMAGE_FILTER_ACTIVE.toMinResolution(AS2Gui.IMAGE_SIZE_TOOLBAR)));
+                    }
+                    this.jTreePartner.buildTree(Collections.unmodifiableList(this.fullPartnerList),
+                            Collections.unmodifiableList(this.filteredPartnerList));
+                }
+            } catch (Exception e) {
+                UINotification.instance().addNotification(e);
+            }
+        }
     }
 
     /**
@@ -198,7 +325,7 @@ public class JDialogPartnerConfig extends JDialog {
      * happens
      */
     public void setPreselectedPartner(String partnerName) {
-        Partner partner = this.jTreePartner.getPartnerByName(partnerName);
+        Partner partner = this.jTreePartner.getDisplayedPartnerByName(partnerName);
         if (partner != null) {
             this.jTreePartner.setSelectedPartner(partner);
         }
@@ -245,7 +372,11 @@ public class JDialogPartnerConfig extends JDialog {
             return;
         }
         Partner selectedPartner = (Partner) selectedNode.getUserObject();
-        this.panelEditPartner.setPartner(selectedPartner, selectedNode);
+        SwingUtilities.invokeLater(new Runnable() {
+            public void run() {
+                panelEditPartner.setPartner(selectedPartner, selectedNode);
+            }
+        });
     }
 
     private void deleteSelectedPartner() {
@@ -261,7 +392,7 @@ public class JDialogPartnerConfig extends JDialog {
             }
             partner = this.jTreePartner.deleteSelectedPartner();
             if (partner != null) {
-                this.partnerList.remove(partner);
+                this.fullPartnerList.remove(partner);
             }
         }
     }
@@ -299,23 +430,23 @@ public class JDialogPartnerConfig extends JDialog {
         String serverSideFileSeparator = serversideInfo[1];
         int requestValue = JOptionPane.showConfirmDialog(this, rb.getResourceString("dialog.partner.renamedir.message",
                 new Object[]{existingPartner.getName(), newPartner.getName(),
-                    existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
+                    existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
                 rb.getResourceString("dialog.partner.renamedir.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
             return;
         }
         FileOperationClient fileClient = new FileOperationClient(this.guiClient.getBaseClient());
-        boolean success = fileClient.rename(existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
-                newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator));
+        boolean success = fileClient.rename(existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                newPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator));
         if (success) {
             this.logger.log(Level.FINE, rb.getResourceString("directory.rename.success",
-                    new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
-                        newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
+                    new Object[]{existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                        newPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         } else {
             this.logger.log(Level.SEVERE, rb.getResourceString("directory.rename.failure",
-                    new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
-                        newPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
+                    new Object[]{existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                        newPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         }
     }
 
@@ -329,21 +460,21 @@ public class JDialogPartnerConfig extends JDialog {
         int requestValue = JOptionPane.showConfirmDialog(
                 this, rb.getResourceString("dialog.partner.deletedir.message",
                         new Object[]{existingPartner.getName(),
-                            existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
+                            existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator)}),
                 rb.getResourceString("dialog.partner.deletedir.title"),
                 JOptionPane.YES_NO_OPTION);
         if (requestValue != JOptionPane.YES_OPTION) {
             return;
         }
         FileOperationClient fileClient = new FileOperationClient(this.guiClient.getBaseClient());
-        boolean success = fileClient.delete(existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator));
+        boolean success = fileClient.delete(existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator));
         if (success) {
             this.logger.log(Level.FINE, rb.getResourceString("directory.delete.success",
-                    new Object[]{existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
+                    new Object[]{existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator)}));
         } else {
             this.logger.log(Level.WARNING, rb.getResourceString("directory.delete.failure",
                     new Object[]{
-                        existingPartner.getMessagePath(serverSideMessagePath, serverSideFileSeparator),
+                        existingPartner.computeMessagePath(serverSideMessagePath, serverSideFileSeparator),
                         fileClient.getLastException().getMessage()
                     }));
         }
@@ -374,7 +505,7 @@ public class JDialogPartnerConfig extends JDialog {
         if (!JDialogPartnerConfig.this.jTreePartner.localStationIsSet()) {
             UINotification.instance().addNotification(
                     null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     JDialogPartnerConfig.rb.getResourceString("nolocalstation.title"),
                     JDialogPartnerConfig.rb.getResourceString("nolocalstation.message")
             );
@@ -384,7 +515,7 @@ public class JDialogPartnerConfig extends JDialog {
         if (!JDialogPartnerConfig.this.checkAllLocalStationsHavePrivateKeys()) {
             UINotification.instance().addNotification(
                     null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     JDialogPartnerConfig.rb.getResourceString("localstation.noprivatekey.title"),
                     JDialogPartnerConfig.rb.getResourceString("localstation.noprivatekey.message")
             );
@@ -397,9 +528,9 @@ public class JDialogPartnerConfig extends JDialog {
 
                 try {
                     //detect if a partner name has been changed
-                    for (Partner newPartner : JDialogPartnerConfig.this.partnerList) {
+                    for (Partner newPartner : JDialogPartnerConfig.this.fullPartnerList) {
                         if (newPartner.getDBId() != -1) {
-                            PartnerListRequest request = new PartnerListRequest(PartnerListRequest.LIST_BY_DB_ID);
+                            PartnerListRequest request = new PartnerListRequest(PartnerListRequest.ListOption.DB_ID);
                             request.setAdditionalListOptionInt(newPartner.getDBId());
                             List<Partner> checkList = ((PartnerListResponse) JDialogPartnerConfig.this.guiClient.getBaseClient().
                                     sendSync(request, Partner.TIMEOUT_PARTNER_REQUEST)).getList();
@@ -410,10 +541,10 @@ public class JDialogPartnerConfig extends JDialog {
                     }
                     //detect if a partner has been deleted
                     List<Partner> existingPartnerArray = ((PartnerListResponse) JDialogPartnerConfig.this.guiClient.getBaseClient().
-                            sendSync(new PartnerListRequest(PartnerListRequest.LIST_ALL), Partner.TIMEOUT_PARTNER_REQUEST)).getList();
+                            sendSync(new PartnerListRequest(PartnerListRequest.ListOption.ALL_NO_CACHE), Partner.TIMEOUT_PARTNER_REQUEST)).getList();
                     for (Partner existingPartner : existingPartnerArray) {
                         boolean doesStillExist = false;
-                        for (Partner newPartner : JDialogPartnerConfig.this.partnerList) {
+                        for (Partner newPartner : JDialogPartnerConfig.this.fullPartnerList) {
                             if (newPartner.getDBId() == existingPartner.getDBId()) {
                                 doesStillExist = true;
                                 break;
@@ -428,7 +559,7 @@ public class JDialogPartnerConfig extends JDialog {
                     JDialogPartnerConfig.this.status.startProgressIndeterminate(
                             JDialogPartnerConfig.rb.getResourceString("saving"), uniqueId);
                     PartnerModificationRequest modificationRequest = new PartnerModificationRequest();
-                    modificationRequest.setData(JDialogPartnerConfig.this.partnerList);
+                    modificationRequest.setData(JDialogPartnerConfig.this.fullPartnerList);
                     ClientServerResponse response
                             = JDialogPartnerConfig.this.guiClient.getBaseClient().sendSync(
                                     modificationRequest, Partner.TIMEOUT_PARTNER_REQUEST);
@@ -473,7 +604,7 @@ public class JDialogPartnerConfig extends JDialog {
         while (alreadyUsed) {
             String testName = rawName + String.valueOf(counter);
             alreadyUsed = false;
-            for (Partner checkPartner : this.partnerList) {
+            for (Partner checkPartner : this.fullPartnerList) {
                 if (checkPartner.getName().equals(testName)) {
                     alreadyUsed = true;
                     break;
@@ -491,7 +622,7 @@ public class JDialogPartnerConfig extends JDialog {
         while (alreadyUsed) {
             String testId = rawId + String.valueOf(counter);
             alreadyUsed = false;
-            for (Partner checkPartner : this.partnerList) {
+            for (Partner checkPartner : this.fullPartnerList) {
                 if (checkPartner.getAS2Identification().equals(testId)) {
                     alreadyUsed = true;
                     break;
@@ -503,7 +634,7 @@ public class JDialogPartnerConfig extends JDialog {
             counter++;
         }
         this.jTreePartner.addPartner(newPartner);
-        this.partnerList.add(newPartner);
+        this.fullPartnerList.add(newPartner);
     }
 
     /**
@@ -520,17 +651,21 @@ public class JDialogPartnerConfig extends JDialog {
         jButtonClonePartner = new javax.swing.JButton();
         jButtonDeletePartner = new javax.swing.JButton();
         jButtonGlobalSettings = new javax.swing.JButton();
+        jButtonFilter = new javax.swing.JButton();
         jPanelMain = new javax.swing.JPanel();
         jPanelModuleLockWarning = new javax.swing.JPanel();
         jLabelModuleLockedWarning = new javax.swing.JLabel();
         jButtonModuleLockInfo = new javax.swing.JButton();
         jPanelPartnerMain = new javax.swing.JPanel();
         jSplitPane = new javax.swing.JSplitPane();
+        jPanelPartnerTree = new javax.swing.JPanel();
         jScrollPaneTree = new javax.swing.JScrollPane();
+        jButtonCancelFilter = new javax.swing.JButton();
         jPanelPartner = new javax.swing.JPanel();
         jPanelButton = new javax.swing.JPanel();
         jButtonCancel = new javax.swing.JButton();
         jButtonPartnerConfigOk = new de.mendelson.comm.as2.partner.gui.JButtonPartnerConfigOk();
+        jLabelFilterCount = new javax.swing.JLabel();
         jPanelConfigurationWarning = new javax.swing.JPanel();
         jLabelConfigurationWarning = new javax.swing.JLabel();
 
@@ -590,6 +725,18 @@ public class JDialogPartnerConfig extends JDialog {
         });
         jToolBar.add(jButtonGlobalSettings);
 
+        jButtonFilter.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/missing_image24x24.gif"))); // NOI18N
+        jButtonFilter.setText(this.rb.getResourceString( "button.filter"));
+        jButtonFilter.setFocusable(false);
+        jButtonFilter.setHorizontalTextPosition(javax.swing.SwingConstants.CENTER);
+        jButtonFilter.setVerticalTextPosition(javax.swing.SwingConstants.BOTTOM);
+        jButtonFilter.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonFilterActionPerformed(evt);
+            }
+        });
+        jToolBar.add(jButtonFilter);
+
         getContentPane().add(jToolBar, java.awt.BorderLayout.NORTH);
 
         jPanelMain.setLayout(new java.awt.GridBagLayout());
@@ -633,8 +780,32 @@ public class JDialogPartnerConfig extends JDialog {
 
         jSplitPane.setDividerLocation(170);
 
+        jPanelPartnerTree.setLayout(new java.awt.GridBagLayout());
+
         jScrollPaneTree.setPreferredSize(new java.awt.Dimension(150, 2));
-        jSplitPane.setLeftComponent(jScrollPaneTree);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridheight = 12;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.weightx = 1.0;
+        gridBagConstraints.weighty = 1.0;
+        jPanelPartnerTree.add(jScrollPaneTree, gridBagConstraints);
+
+        jButtonCancelFilter.setText("Filter");
+        jButtonCancelFilter.setHorizontalAlignment(javax.swing.SwingConstants.LEFT);
+        jButtonCancelFilter.setMargin(new java.awt.Insets(2, 2, 2, 2));
+        jButtonCancelFilter.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                jButtonCancelFilterActionPerformed(evt);
+            }
+        });
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.weightx = 1.0;
+        jPanelPartnerTree.add(jButtonCancelFilter, gridBagConstraints);
+
+        jSplitPane.setLeftComponent(jPanelPartnerTree);
 
         jPanelPartner.setLayout(new java.awt.BorderLayout());
         jSplitPane.setRightComponent(jPanelPartner);
@@ -664,8 +835,8 @@ public class JDialogPartnerConfig extends JDialog {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 1;
-        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridx = 4;
+        gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.EAST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelButton.add(jButtonCancel, gridBagConstraints);
@@ -677,12 +848,21 @@ public class JDialogPartnerConfig extends JDialog {
             }
         });
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_END;
         gridBagConstraints.weightx = 1.0;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelButton.add(jButtonPartnerConfigOk, gridBagConstraints);
+
+        jLabelFilterCount.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
+        jLabelFilterCount.setText("0/0");
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelButton.add(jLabelFilterCount, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
@@ -733,7 +913,7 @@ public class JDialogPartnerConfig extends JDialog {
             return;
         }
         Partner partner = this.jTreePartner.createNewPartner(this.certificateManagerEncSign);
-        this.partnerList.add(partner);
+        this.fullPartnerList.add(partner);
     }//GEN-LAST:event_jButtonNewPartnerActionPerformed
 
     private void jTreePartnerValueChanged(javax.swing.event.TreeSelectionEvent evt) {//GEN-FIRST:event_jTreePartnerValueChanged
@@ -765,25 +945,41 @@ public class JDialogPartnerConfig extends JDialog {
 
     private void jButtonModuleLockInfoActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonModuleLockInfoActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        ModuleLock.displayDialogModuleLocked(parent, this.lockKeeper, ModuleLock.MODULE_PARTNER);
+        ModuleLock.displayDialogModuleLocked(parent, this.lockKeeper, ModuleLock.Module.PARTNER);
     }//GEN-LAST:event_jButtonModuleLockInfoActionPerformed
 
     private void jButtonGlobalSettingsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonGlobalSettingsActionPerformed
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        JDialog dialog = new JDialogGlobalChange(parent, this.partnerList);
+        JDialog dialog = new JDialogGlobalChange(parent, this.fullPartnerList);
         dialog.setVisible(true);
         this.displayPartnerValues();
     }//GEN-LAST:event_jButtonGlobalSettingsActionPerformed
 
+    private void jButtonFilterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonFilterActionPerformed
+        if (this.filterDialog.isVisible()) {
+            this.filterDialog.setVisible(false);
+        } else {
+            this.filterDialog.toFront();
+            this.filterDialog.setVisible(true);
+        }
+    }//GEN-LAST:event_jButtonFilterActionPerformed
+
+    private void jButtonCancelFilterActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCancelFilterActionPerformed
+        this.filterPartner(new FilterData("", ""));
+    }//GEN-LAST:event_jButtonCancelFilterActionPerformed
+
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton jButtonCancel;
+    private javax.swing.JButton jButtonCancelFilter;
     private javax.swing.JButton jButtonClonePartner;
     private javax.swing.JButton jButtonDeletePartner;
+    private javax.swing.JButton jButtonFilter;
     private javax.swing.JButton jButtonGlobalSettings;
     private javax.swing.JButton jButtonModuleLockInfo;
     private javax.swing.JButton jButtonNewPartner;
     private de.mendelson.comm.as2.partner.gui.JButtonPartnerConfigOk jButtonPartnerConfigOk;
     private javax.swing.JLabel jLabelConfigurationWarning;
+    private javax.swing.JLabel jLabelFilterCount;
     private javax.swing.JLabel jLabelModuleLockedWarning;
     private javax.swing.JPanel jPanelButton;
     private javax.swing.JPanel jPanelConfigurationWarning;
@@ -791,6 +987,7 @@ public class JDialogPartnerConfig extends JDialog {
     private javax.swing.JPanel jPanelModuleLockWarning;
     private javax.swing.JPanel jPanelPartner;
     private javax.swing.JPanel jPanelPartnerMain;
+    private javax.swing.JPanel jPanelPartnerTree;
     private javax.swing.JScrollPane jScrollPaneTree;
     private javax.swing.JSplitPane jSplitPane;
     private javax.swing.JToolBar jToolBar;

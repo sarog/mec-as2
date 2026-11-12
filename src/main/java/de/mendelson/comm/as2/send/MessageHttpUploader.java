@@ -1,6 +1,7 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 224   21/03/25 9:12 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/send/MessageHttpUploader.java 253   15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.send;
 
+import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageResponse;
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -10,6 +11,8 @@ import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.MDNAccessDB;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageStateType;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.partner.HTTPAuthentication;
 import de.mendelson.comm.as2.partner.Partner;
@@ -20,8 +23,9 @@ import de.mendelson.comm.as2.statistic.QuotaAccessDB;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.AnonymousTextClient;
-import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.ClientServer;
+import de.mendelson.util.clientserver.ClientType;
+import de.mendelson.util.clientserver.connectionpool.PooledAnonymousTextClient;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.oauth2.OAuth2Config;
 import de.mendelson.util.security.cert.KeystoreStorage;
@@ -30,6 +34,7 @@ import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.ConnectException;
@@ -44,17 +49,16 @@ import java.nio.file.StandardOpenOption;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.text.DateFormat;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.mail.internet.MimeUtility;
@@ -68,7 +72,7 @@ import javax.security.auth.x500.X500Principal;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.beanutils.PropertyUtils;
 import org.apache.http.Header;
-import org.apache.http.HttpConnection;
+import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpVersion;
@@ -81,14 +85,17 @@ import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.config.Registry;
+import org.apache.http.config.RegistryBuilder;
 import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.conn.ManagedHttpClientConnection;
+import org.apache.http.conn.socket.ConnectionSocketFactory;
+import org.apache.http.conn.socket.PlainConnectionSocketFactory;
 import org.apache.http.conn.ssl.DefaultHostnameVerifier;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.conn.ssl.TrustSelfSignedStrategy;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.HttpEntityWrapper;
 import org.apache.http.impl.NoConnectionReuseStrategy;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.BasicAuthCache;
@@ -113,16 +120,17 @@ import org.apache.http.ssl.SSLContexts;
  * Class to allow HTTP multipart uploads
  *
  * @author S.Heller
- * @version $Revision: 224 $
+ * @version $Revision: 253 $
  */
 public class MessageHttpUploader {
 
+    private static final int RETURN_CODE_MDN_WAITTIME_EXPIRED = -9999;
+
     private Logger logger = null;
+    private static final Map<String, ConnectionManagerSendTime> CONNECTION_MAP
+            = new ConcurrentHashMap<String, ConnectionManagerSendTime>();
     private final PreferencesAS2 preferences = new PreferencesAS2();
-    /**
-     * localize the GUI
-     */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         //Load default resourcebundle
@@ -162,6 +170,32 @@ public class MessageHttpUploader {
      *
      */
     public MessageHttpUploader() {
+    }
+
+    /**
+     * Adds a new connection manager for the MDN wait control of outbound sync
+     * connections
+     *
+     * @param connectionManager
+     */
+    public static void addConnectionManager(String messageId, ConnectionManagerSendTime connectionManager) {
+        CONNECTION_MAP.put(messageId, connectionManager);
+    }
+
+    /**
+     * Performs an external shutdown on an existing connection to a partner -
+     * this happens if the MDN wait time has been exceeded and the connection is
+     * still open
+     *
+     * @param connectionManager
+     */
+    public static void shutdownConnection(String messageId) {
+        final ConnectionManagerSendTime connectionManager = CONNECTION_MAP.remove(messageId);
+        if (connectionManager != null) {
+            synchronized (connectionManager) {
+                connectionManager.shutdown();
+            }
+        }
     }
 
     /**
@@ -209,27 +243,23 @@ public class MessageHttpUploader {
      */
     public Properties upload(HttpConnectionParameter connectionParameter, AS2Message message,
             Partner sender, Partner receiver) throws Exception {
-        NumberFormat formatter = new DecimalFormat("0.00");
         AS2Info as2Info = message.getAS2Info();
         MessageAccessDB messageAccess = null;
-        MDNAccessDB mdnAccess = null;
         if (this.dbDriverManager != null && messageAccess == null && !as2Info.isMDN()) {
             messageAccess = new MessageAccessDB(this.dbDriverManager);
             messageAccess.initializeOrUpdateMessage((AS2MessageInfo) as2Info);
         } else if (this.dbDriverManager != null && as2Info.isMDN()) {
-            mdnAccess = new MDNAccessDB(this.dbDriverManager);
+            MDNAccessDB mdnAccess = new MDNAccessDB(this.dbDriverManager);
             mdnAccess.initializeOrUpdateMDN((AS2MDNInfo) as2Info);
         }
         if (this.clientserver != null) {
             this.clientserver.broadcastToClients(new RefreshClientMessageOverviewList());
         }
-        long startTime = System.currentTimeMillis();
         //sets the global requestHeader
-        int returnCode = this.performUpload(connectionParameter, message, sender, receiver);
-        long size = message.getRawDataSize();
-        long transferTime = System.currentTimeMillis() - startTime;
-        float bytePerSec = (float) ((float) size * 1000f / (float) transferTime);
-        float kbPerSec = (float) (bytePerSec / 1024f);
+        HttpUploadInformation uploadInformation = this.performUpload(connectionParameter, message, sender, receiver);
+        int returnCode = uploadInformation.getHTTPReturnCode();
+        long size = uploadInformation.getUploadedByteCount();
+        long transferTime = uploadInformation.getUploadTimeInMS();
         if (returnCode == HttpServletResponse.SC_OK) {
             if (this.logger != null) {
                 this.logger.log(Level.INFO,
@@ -238,9 +268,14 @@ public class MessageHttpUploader {
                                     String.valueOf(returnCode),
                                     AS2Tools.getDataSizeDisplay(size),
                                     AS2Tools.getTimeDisplay(transferTime),
-                                    formatter.format(kbPerSec),}), as2Info);
+                                    AS2Tools.getTransferrateDisplay(size, transferTime)
+                                }), as2Info);
             }
-        } else if (returnCode == HttpServletResponse.SC_ACCEPTED || returnCode == HttpServletResponse.SC_CREATED || returnCode == HttpServletResponse.SC_NO_CONTENT || returnCode == HttpServletResponse.SC_RESET_CONTENT || returnCode == HttpServletResponse.SC_PARTIAL_CONTENT) {
+        } else if (returnCode == HttpServletResponse.SC_ACCEPTED
+                || returnCode == HttpServletResponse.SC_CREATED
+                || returnCode == HttpServletResponse.SC_NO_CONTENT
+                || returnCode == HttpServletResponse.SC_RESET_CONTENT
+                || returnCode == HttpServletResponse.SC_PARTIAL_CONTENT) {
             if (this.logger != null) {
                 this.logger.log(Level.INFO,
                         rb.getResourceString("returncode.accepted",
@@ -248,8 +283,13 @@ public class MessageHttpUploader {
                                     String.valueOf(returnCode),
                                     AS2Tools.getDataSizeDisplay(size),
                                     AS2Tools.getTimeDisplay(transferTime),
-                                    formatter.format(kbPerSec),}), as2Info);
+                                    AS2Tools.getTransferrateDisplay(size, transferTime)
+                                }), as2Info);
             }
+        } else if (returnCode == RETURN_CODE_MDN_WAITTIME_EXPIRED) {
+            //just do nothing but exiting this processing, the outbound connection has been canceled and the 
+            //transaction handling will be performed in the MDN expire timing service
+            return (this.getRequestHeader());
         } else {
             //If the returncode is -1 here, this has been already handled by the upload routine 
             //- its a TLS Problem or a timeout problem
@@ -271,7 +311,12 @@ public class MessageHttpUploader {
         //store the sent data and assign the payload to the message
         if (this.dbDriverManager != null) {
             MessageStoreHandler messageStoreHandler = new MessageStoreHandler(this.dbDriverManager);
-            messageStoreHandler.storeSentMessage(message, sender, receiver, this.getRequestHeader());
+            messageStoreHandler.storeSentMessageOrMDN(message, sender, receiver, this.getRequestHeader());
+            if (message.isMDN()) {
+                //store information about the sent async MDN
+                MDNAccessDB mdnAccess = new MDNAccessDB(this.dbDriverManager);
+                mdnAccess.initializeOrUpdateMDN((AS2MDNInfo) message.getAS2Info());
+            }
         }
         //perform some statistic entries
         if (this.dbDriverManager != null) {
@@ -287,7 +332,7 @@ public class MessageHttpUploader {
         //inform the server of the result if a sync MDN has been requested
         if (!message.isMDN()) {
             AS2MessageInfo messageInfo = (AS2MessageInfo) message.getAS2Info();
-            if (messageInfo.requestsSyncMDN()) {
+            if (messageInfo.isRequestsSyncMDN()) {
                 //check if the received MDN is just empty
                 if ((this.getResponseHeader() == null || this.getResponseHeader().length == 0)
                         && (this.getResponseData() == null || this.getResponseData().length == 0)) {
@@ -310,7 +355,7 @@ public class MessageHttpUploader {
                     if (!as2FromExists) {
                         missingHeaderList.append(", \"AS2-FROM\"");
                     }
-                    String responseDataStr = null;
+                    String responseDataStr;
                     byte[] uploadResponseData = this.getResponseData();
                     if (uploadResponseData.length < 1024) {
                         responseDataStr = new String(uploadResponseData);
@@ -323,18 +368,18 @@ public class MessageHttpUploader {
                                 responseDataStr}));
                 }
                 //send the data to the as2 server. It does not care if the MDN has been sync or async anymore
-                Path tempFile = null;
-                try( AnonymousTextClient client = new AnonymousTextClient(BaseClient.CLIENT_SENDORDER)){
+                //create temporary file to store the data
+                Path tempFile = AS2Tools.createTempFile("SYNCMDN_received", ".bin");
+                Files.write(tempFile, this.responseData, StandardOpenOption.SYNC,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING,
+                        StandardOpenOption.WRITE);
+                try (AnonymousTextClient client
+                        = PooledAnonymousTextClient.createClient(ClientType.SENDORDER,
+                                AS2ServerVersion.instance())) {
                     client.setDisplayServerLogMessages(false);
-                    client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
                     IncomingMessageRequest messageRequest = new IncomingMessageRequest();
-                    messageRequest.setSyncMDN( true );
-                    //create temporary file to store the data
-                    tempFile = AS2Tools.createTempFile("SYNCMDN_received", ".bin");
-                    Files.write(tempFile, this.responseData, StandardOpenOption.SYNC,
-                            StandardOpenOption.CREATE,
-                            StandardOpenOption.TRUNCATE_EXISTING,
-                            StandardOpenOption.WRITE);
+                    messageRequest.setSyncMDN(true);
                     messageRequest.setMessageDataFilename(tempFile.toAbsolutePath().toString());
                     for (Header singleResponseHeader : this.getResponseHeader()) {
                         String key = singleResponseHeader.getName();
@@ -352,6 +397,7 @@ public class MessageHttpUploader {
                     if (!as2FromExists) {
                         messageRequest.addHeader("as2-from", AS2Message.escapeFromToHeader(receiver.getAS2Identification()));
                     }
+                    client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
                     IncomingMessageResponse response = (IncomingMessageResponse) client.sendSyncWaitInfinite(messageRequest);
                     if (response.getException() != null) {
                         throw (response.getException());
@@ -360,18 +406,18 @@ public class MessageHttpUploader {
                     if (this.logger != null) {
                         this.logger.log(Level.SEVERE, e.getMessage(), as2Info);
                     }
-                    messageAccess.setMessageState(as2Info.getMessageId(), AS2Message.STATE_STOPPED);
+                    messageAccess.setMessageState(as2Info.getMessageId(), MessageStateType.STOPPED);
                 }
                 if (tempFile != null) {
                     try {
                         Files.delete(tempFile);
                     } catch (Exception e) {
                         SystemEvent event = new SystemEvent(
-                                SystemEvent.SEVERITY_WARNING,
-                                SystemEvent.ORIGIN_SYSTEM,
-                                SystemEvent.TYPE_FILE_DELETE);
-                        event.setSubject(event.typeToTextLocalized());
-                        event.setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
+                                SystemEvent.Severity.WARNING,
+                                SystemEvent.Origin.SYSTEM,
+                                SystemEvent.Type.FILE_DELETE);
+                        event.setSubject(event.typeToTextLocalized())
+                                .setBody("[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
                         SystemEventManagerImplAS2.instance().newEvent(event);
                     }
                 }
@@ -402,7 +448,7 @@ public class MessageHttpUploader {
     /**
      * Uploads the data, returns the HTTP result code
      */
-    public int performUpload(HttpConnectionParameter connectionParameter, AS2Message message, Partner sender, Partner receiver) {
+    public HttpUploadInformation performUpload(HttpConnectionParameter connectionParameter, AS2Message message, Partner sender, Partner receiver) {
         return (this.performUpload(connectionParameter, message, sender, receiver, null));
     }
 
@@ -417,7 +463,7 @@ public class MessageHttpUploader {
             requestConfigBuilder.setConnectionRequestTimeout(connectionParameter.getConnectionTimeoutMillis());
         }
         if (connectionParameter.getSoTimeoutMillis() != -1) {
-            requestConfigBuilder.setSocketTimeout(connectionParameter.getConnectionTimeoutMillis());
+            requestConfigBuilder.setSocketTimeout(connectionParameter.getSoTimeoutMillis());
         }
         requestConfigBuilder.setStaleConnectionCheckEnabled(connectionParameter.isStaleConnectionCheck());
         requestConfigBuilder.setExpectContinueEnabled(connectionParameter.isUseExpectContinue());
@@ -440,33 +486,35 @@ public class MessageHttpUploader {
             AS2Message message) throws Exception {
         HttpHost proxyHost = new HttpHost(proxy.getHost(), proxy.getPort(), HttpHost.DEFAULT_SCHEME_NAME);
         DefaultProxyRoutePlanner routePlanner = new DefaultProxyRoutePlanner(proxyHost);
-        //proxy authentication
-        if (proxy.getUser() != null) {
-            credentialsProvider.setCredentials(new AuthScope(proxy.getHost(), proxy.getPort()),
-                    new UsernamePasswordCredentials(proxy.getUser(), String.valueOf(proxy.getPassword())));
-            BasicScheme basicAuth = new BasicScheme();
-            AuthCache authCache = new BasicAuthCache();
-            authCache.put(proxyHost, basicAuth);
-            HttpClientContext context = HttpClientContext.create();
-            context.setCredentialsProvider(credentialsProvider);
-            context.setAuthCache(authCache);
-            clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
-            this.logger.log(Level.INFO,
-                    rb.getResourceString("using.proxy.auth",
-                            new Object[]{
-                                proxy.getHost(),
-                                String.valueOf(proxy.getPort()),
-                                proxy.getUser()
-                            }), message.getAS2Info());
-        } else {
-            this.logger.log(Level.INFO,
-                    rb.getResourceString("using.proxy",
-                            new Object[]{
-                                proxy.getHost(),
-                                String.valueOf(proxy.getPort())
-                            }), message.getAS2Info());
-        }
         clientBuilder.setRoutePlanner(routePlanner);
+        if (proxy.getUser() != null && proxy.getUser().trim().length() > 0) {
+            credentialsProvider.setCredentials(
+                    new AuthScope(proxy.getHost(), proxy.getPort()),
+                    new UsernamePasswordCredentials(proxy.getUser(), String.valueOf(proxy.getPassword()))
+            );
+            AuthCache authCache = new BasicAuthCache();
+            BasicScheme basicAuth = new BasicScheme();
+            authCache.put(proxyHost, basicAuth);
+            clientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+            if (this.logger != null) {
+                this.logger.log(Level.INFO,
+                        rb.getResourceString("using.proxy.auth",
+                                new Object[]{
+                                    proxy.getHost(),
+                                    String.valueOf(proxy.getPort()),
+                                    proxy.getUser()
+                                }), message.getAS2Info());
+            }
+        } else {
+            if (this.logger != null) {
+                this.logger.log(Level.INFO,
+                        rb.getResourceString("using.proxy",
+                                new Object[]{
+                                    proxy.getHost(),
+                                    String.valueOf(proxy.getPort())
+                                }), message.getAS2Info());
+            }
+        }
     }
 
     /**
@@ -474,11 +522,10 @@ public class MessageHttpUploader {
      *
      * @param receiptURL Receivers URL, might be NULL
      */
-    public int performUpload(HttpConnectionParameter connectionParameter, AS2Message message,
+    public HttpUploadInformation performUpload(HttpConnectionParameter connectionParameter, AS2Message message,
             Partner sender, Partner receiver, URL receiptURL) {
-        int statusCode = -1;
-        HttpPost filePost = null;
-        CloseableHttpClient httpClient = null;
+        HttpUploadInformation uploadInformation = new HttpUploadInformation();
+        ConnectionManagerSendTime connectionManagerSendTime = null;
         try {
             //determine the receipt URL if it is not set
             if (receiptURL == null) {
@@ -497,10 +544,10 @@ public class MessageHttpUploader {
             }
             //create the http client
             HttpClientBuilder clientBuilder = HttpClients.custom();
+            SSLConnectionSocketFactory sslConnectionSocketFactory = null;
             if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
-                SSLConnectionSocketFactory sslConnectionSocketFactory
+                sslConnectionSocketFactory
                         = this.generateSSLFactory(connectionParameter, message.getAS2Info());
-                clientBuilder.setSSLSocketFactory(sslConnectionSocketFactory);
             }
             clientBuilder.setConnectionReuseStrategy(NoConnectionReuseStrategy.INSTANCE);
             HttpHost targetHost = new HttpHost(receiptURL.getHost(), receiptURL.getPort(), receiptURL.getProtocol());
@@ -509,289 +556,298 @@ public class MessageHttpUploader {
                 CredentialsProvider proxyCredentialsProvider = new BasicCredentialsProvider();
                 this.addProxy(proxy, clientBuilder, proxyCredentialsProvider, message);
             }
-            httpClient = clientBuilder.build();
-            filePost = new HttpPost(receiptURL.toExternalForm());
-            filePost.setConfig(this.generateRequestConfig(connectionParameter));
-            if (connectionParameter.getHttpProtocolVersion() == null) {
-                //default settings: HTTP 1.1
-                filePost.setProtocolVersion(HttpVersion.HTTP_1_1);
-            } else if (connectionParameter.getHttpProtocolVersion().equals(HttpConnectionParameter.HTTP_1_0)) {
-                filePost.setProtocolVersion(HttpVersion.HTTP_1_0);
-            } else if (connectionParameter.getHttpProtocolVersion().equals(HttpConnectionParameter.HTTP_1_1)) {
-                filePost.setProtocolVersion(HttpVersion.HTTP_1_1);
+            //always register both protocols. If there is a proxy the connection between the software
+            //and the proxy is http
+            RegistryBuilder<ConnectionSocketFactory> registryBuilder = RegistryBuilder.<ConnectionSocketFactory>create()
+                    .register("http", PlainConnectionSocketFactory.getSocketFactory());
+            if (sslConnectionSocketFactory != null) {
+                registryBuilder.register("https", sslConnectionSocketFactory);
             }
-            //add basic authentication
-            HTTPAuthentication basicAuthentication = null;
-            if (message.isMDN()) {
-                basicAuthentication = receiver.getAuthenticationCredentialsAsyncMDN();
-            } else {
-                basicAuthentication = receiver.getAuthenticationCredentialsMessage();
-            }
-            if (basicAuthentication.isEnabled()) {
-                filePost.addHeader("Authorization", this.generateBasicAuth(
-                        basicAuthentication.getUser(), basicAuthentication.getPassword()
-                ));
-            }
-            filePost.addHeader("as2-version", "1.2");
-            filePost.addHeader("ediint-features", ediintFeatures);
-            filePost.addHeader("mime-version", "1.0");
-            filePost.addHeader("recipient-address", receiptURL.toExternalForm());
-            filePost.addHeader("message-id", "<" + message.getAS2Info().getMessageId() + ">");
-            filePost.addHeader("as2-from", AS2Message.escapeFromToHeader(sender.getAS2Identification()));
-            filePost.addHeader("as2-to", AS2Message.escapeFromToHeader(receiver.getAS2Identification()));
-            String originalFilename = null;
-            if (message.getPayloads() != null && !message.getPayloads().isEmpty()) {
-                originalFilename = message.getPayloads().get(0).getOriginalFilename();
-            }
-            if (originalFilename != null) {
-                String subject = this.replaceSubject(message.getAS2Info().getSubject(), originalFilename);
-                filePost.addHeader("subject", subject);
-                //update the message infos subject with the actual content
-                if (!message.isMDN()) {
-                    ((AS2MessageInfo) message.getAS2Info()).setSubject(subject);
-                    //refresh this in the database if it is requested
-                    if (this.dbDriverManager != null) {
-                        MessageAccessDB access = new MessageAccessDB(this.dbDriverManager);
-                        access.updateSubject((AS2MessageInfo) message.getAS2Info());
-                    }
+            Registry<ConnectionSocketFactory> registry = registryBuilder.build();
+            connectionManagerSendTime = new ConnectionManagerSendTime(
+                    this.logger,
+                    this.dbDriverManager,
+                    message.getAS2Info(), registry);
+            clientBuilder.setConnectionManager(connectionManagerSendTime);
+            HttpPost filePost;
+            try (CloseableHttpClient httpClient = clientBuilder.build()) {
+                filePost = new HttpPost(receiptURL.toExternalForm());
+                filePost.setConfig(this.generateRequestConfig(connectionParameter));
+                if (connectionParameter.getHttpProtocolVersion() == null) {
+                    //default settings: HTTP 1.1
+                    filePost.setProtocolVersion(HttpVersion.HTTP_1_1);
+                } else if (connectionParameter.getHttpProtocolVersion().equals(
+                        HttpConnectionParameter.HttpProtocolVersion.HTTP_1_0)) {
+                    filePost.setProtocolVersion(HttpVersion.HTTP_1_0);
+                } else if (connectionParameter.getHttpProtocolVersion().equals(
+                        HttpConnectionParameter.HttpProtocolVersion.HTTP_1_1)) {
+                    filePost.setProtocolVersion(HttpVersion.HTTP_1_1);
                 }
-            } else {
-                filePost.addHeader("subject", message.getAS2Info().getSubject());
-            }
-            filePost.addHeader("from", sender.getEmail());
-            filePost.addHeader("connection", "close, TE");
-            //the data header must be always in english locale else there would be special
-            //french characters (e.g. 13 dec. 2011 16:28:56 CET) which is not allowed after 
-            //RFC 4130           
-            DateFormat format = new SimpleDateFormat("EE, dd MMM yyyy HH:mm:ss zz", Locale.US);
-            filePost.addHeader("date", format.format(new Date()));
-            String contentType;
-            if (message.getAS2Info().getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
-                contentType = "application/pkcs7-mime; smime-type=enveloped-data; name=smime.p7m";
-            } else {
-                contentType = message.getContentType();
-            }
-            filePost.addHeader("content-type", contentType);
-            //MDN header, this is always the way for async MDNs
-            if (message.isMDN()) {
-                if (this.logger != null) {
-                    this.logger.log(Level.INFO,
-                            rb.getResourceString("sending.mdn.async",
-                                    new Object[]{
-                                        receiptURL
-                                    }), message.getAS2Info());
-                    //its a TLS connection and the system should trust all server certificates
-                    if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
-                        if (connectionParameter.getTrustAllRemoteServerCertificates()) {
-                            this.logger.log(Level.INFO,
-                                    rb.getResourceString("trust.all.server.certificates"),
-                                    message.getAS2Info());
-                        }
-                        if (connectionParameter.getStrictHostCheck()) {
-                            this.logger.log(Level.INFO,
-                                    rb.getResourceString("strict.hostname.check"),
-                                    message.getAS2Info());
-                        }
-                    }
+                //add basic authentication
+                HTTPAuthentication basicAuthentication = null;
+                if (message.isMDN()) {
+                    basicAuthentication = receiver.getAuthenticationCredentialsAsyncMDN();
+                } else {
+                    basicAuthentication = receiver.getAuthenticationCredentialsMessage();
                 }
-                filePost.addHeader("server", message.getAS2Info().getUserAgent());
-            } else {
-                AS2MessageInfo messageInfo = (AS2MessageInfo) message.getAS2Info();
-                //outbound AS2/CEM message
-                if (messageInfo.requestsSyncMDN()) {
-                    if (this.logger != null) {
-                        if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
-                            this.logger.log(Level.INFO,
-                                    rb.getResourceString("sending.cem.sync",
-                                            new Object[]{
-                                                receiver.getURL()
-                                            }), messageInfo);
-                        } else if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_AS2) {
-                            this.logger.log(Level.INFO,
-                                    rb.getResourceString("sending.msg.sync",
-                                            new Object[]{
-                                                receiver.getURL()
-                                            }), messageInfo);
-                        }
-                        //its a TLS connection and the system should trust all server certificates
-                        if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
-                            if (connectionParameter.getTrustAllRemoteServerCertificates()) {
-                                this.logger.log(Level.INFO,
-                                        rb.getResourceString("trust.all.server.certificates"),
-                                        messageInfo);
-                            }
-                            if (connectionParameter.getStrictHostCheck()) {
-                                this.logger.log(Level.INFO,
-                                        rb.getResourceString("strict.hostname.check"),
-                                        messageInfo);
-                            }
+                if (basicAuthentication.isEnabled()) {
+                    filePost.addHeader("Authorization", this.generateBasicAuth(
+                            basicAuthentication.getUser(), basicAuthentication.getPassword()
+                    ));
+                    if (this.logger != null && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
+                        this.logger.log(Level.FINE,
+                                rb.getResourceString("httpheader.added.basicauth"),
+                                message.getAS2Info());
+                    }
+
+                }
+                filePost.addHeader("as2-version", "1.2");
+                filePost.addHeader("ediint-features", ediintFeatures);
+                filePost.addHeader("mime-version", "1.0");
+                filePost.addHeader("recipient-address", receiptURL.toExternalForm());
+                filePost.addHeader("message-id", "<" + message.getAS2Info().getMessageId() + ">");
+                filePost.addHeader("as2-from", AS2Message.escapeFromToHeader(sender.getAS2Identification()));
+                filePost.addHeader("as2-to", AS2Message.escapeFromToHeader(receiver.getAS2Identification()));
+                String originalFilename = null;
+                if (message.getPayloads() != null && !message.getPayloads().isEmpty()) {
+                    originalFilename = message.getPayloads().get(0).getOriginalFilename();
+                }
+                if (originalFilename != null) {
+                    String oldSubject = message.getAS2Info().getSubject();
+                    String subject = this.replaceSubject(oldSubject, originalFilename);
+                    filePost.addHeader("subject", subject);
+                    //update the message infos subject with the actual content
+                    if (!message.isMDN()) {
+                        ((AS2MessageInfo) message.getAS2Info()).setSubject(subject);
+                        //refresh this in the database if it is required
+                        if (this.dbDriverManager != null && !oldSubject.equals(subject)) {
+                            MessageAccessDB access = new MessageAccessDB(this.dbDriverManager);
+                            access.updateSubject((AS2MessageInfo) message.getAS2Info());
                         }
                     }
                 } else {
-                    //Message with ASYNC MDN request
+                    filePost.addHeader("subject", message.getAS2Info().getSubject());
+                }
+                filePost.addHeader("from", sender.getEmail());
+                filePost.addHeader("connection", "close, TE");
+                //the data header must be always in english locale else there would be special
+                //french characters (e.g. 13 dec. 2011 16:28:56 CET) which is not allowed after 
+                //RFC 4130           
+                DateFormat format = new SimpleDateFormat("EE, dd MMM yyyy HH:mm:ss zz", Locale.US);
+                filePost.addHeader("date", format.format(new Date()));
+                String contentType;
+                if (message.getAS2Info().getEncryptionType() != AS2Message.ENCRYPTION_NONE) {
+                    contentType = "application/pkcs7-mime; smime-type=enveloped-data; name=smime.p7m";
+                } else {
+                    contentType = message.getContentType();
+                }
+                filePost.addHeader("content-type", contentType);
+                //MDN header, this is always the way for async MDNs
+                if (message.isMDN()) {
                     if (this.logger != null) {
-                        if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_CEM) {
-                            this.logger.log(Level.INFO,
-                                    rb.getResourceString("sending.cem.async",
-                                            new Object[]{
-                                                receiver.getURL(),
-                                                sender.getMdnURL()
-                                            }), messageInfo);
-                        } else if (messageInfo.getMessageType() == AS2Message.MESSAGETYPE_AS2) {
-                            this.logger.log(Level.INFO,
-                                    rb.getResourceString("sending.msg.async",
-                                            new Object[]{
-                                                receiver.getURL(),
-                                                sender.getMdnURL()
-                                            }), messageInfo);
-                        }
+                        this.logger.log(Level.INFO,
+                                rb.getResourceString("sending.mdn.async",
+                                        new Object[]{
+                                            receiptURL
+                                        }), message.getAS2Info());
                         //its a TLS connection and the system should trust all server certificates
                         if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
                             if (connectionParameter.getTrustAllRemoteServerCertificates()) {
                                 this.logger.log(Level.INFO,
                                         rb.getResourceString("trust.all.server.certificates"),
-                                        messageInfo);
+                                        message.getAS2Info());
                             }
                             if (connectionParameter.getStrictHostCheck()) {
                                 this.logger.log(Level.INFO,
                                         rb.getResourceString("strict.hostname.check"),
-                                        messageInfo);
+                                        message.getAS2Info());
                             }
                         }
                     }
-                    //The following header indicates that this requests an asnc MDN.
-                    //When the header "receipt-delivery-option" is present,
-                    //the header "disposition-notification-to" serves as a request
-                    //for an asynchronous MDN.
-                    //The header "receipt-delivery-option" must always be accompanied by
-                    //the header "disposition-notification-to".
-                    //When the header "receipt-delivery-option" is not present and the header
-                    //"disposition-notification-to" is present, the header "disposition-notification-to"
-                    //serves as a request for a synchronous MDN.
-                    filePost.addHeader("receipt-delivery-option", sender.getMdnURL());
-                }
-                filePost.addHeader("disposition-notification-to", sender.getMdnURL());
-                //request a signed MDN if this is set up in the partner configuration
-                if (receiver.isSignedMDN()) {
-                    filePost.addHeader("disposition-notification-options",
-                            messageInfo.getDispositionNotificationOptions().getHeaderValue());
-                }
-                if (messageInfo.getSignType() != AS2Message.SIGNATURE_NONE) {
-                    filePost.addHeader("content-disposition", "attachment; filename=\"smime.p7m\"");
-                } else if (messageInfo.getSignType() == AS2Message.SIGNATURE_NONE && message.getAS2Info().getSignType() == AS2Message.ENCRYPTION_NONE) {
-                    //RFC 822 mail headers must contain only US-ASCII characters. Headers that contain non US-ASCII 
-                    //characters must be encoded so that they contain only US-ASCII characters. Basically, 
-                    //this process involves using either BASE64 or QP to encode certain characters. 
-                    //RFC 2047 describes this in detail. 
-                    //test if an encoding is required
-                    try {
-                        String filename = message.getPayload(0).getOriginalFilename();
-                        boolean filenameEncodingRequired = !MimeUtility.encodeText(filename).equals(filename);
-                        if (!filenameEncodingRequired) {
-                            filePost.addHeader("content-disposition", "attachment; filename=\"" + filename + "\"");
-                        } else {
-                            filePost.addHeader("content-disposition", "attachment; filename=\""
-                                    + MimeUtility.encodeText(filename,
-                                            StandardCharsets.UTF_8.displayName(), "B")
-                                    + "\"");
-                        }
-                    } catch (UnsupportedEncodingException willnothappen) {
-                        //NOP
-                    }
-                }
-            }
-            int port = receiptURL.getPort();
-            if (port == -1) {
-                port = receiptURL.getDefaultPort();
-            }
-            filePost.addHeader("host", receiptURL.getHost() + ":" + port);
-            filePost.addHeader("user-agent", connectionParameter.getUserAgent());
-            byte[] transferData = message.getRawData();
-            //using a ByteArrayEntity because this is repeatable
-            ByteArrayEntity postEntity = new ByteArrayEntity(transferData);
-            postEntity.setContentType(contentType);
-            filePost.setEntity(postEntity);
-            //setup oauth2 header
-            if (message.isMDN()) {
-                this.setOAuth2Header(filePost, receiver.usesOAuth2MDN(), receiver.getOAuth2MDN());
-            } else {
-                this.setOAuth2Header(filePost, receiver.usesOAuth2Message(), receiver.getOAuth2Message());
-            }
-            this.updateUploadHTTPHeaderWithUserDefinedHeaders(filePost, receiver);
-            //Monitor connection: create a httpClientContext
-            HttpClientContext httpClientContext = HttpClientContext.create();
-            try (CloseableHttpResponse httpResponse = httpClient.execute(targetHost, filePost, httpClientContext)) {
-                if (httpResponse != null) {
-                    if (this.logger != null) {
-                        HttpConnection httpConnection = httpClientContext.getConnection();
-                        if (httpConnection instanceof ManagedHttpClientConnection) {
-                            ManagedHttpClientConnection managedConnection = (ManagedHttpClientConnection) httpConnection;
-                            SSLSession sslSession = managedConnection.getSSLSession();
-                            if (sslSession != null) {
-                                if (message.isMDN()) {
+                    filePost.addHeader("server", message.getAS2Info().getUserAgent());
+                } else {
+                    AS2MessageInfo messageInfo = (AS2MessageInfo) message.getAS2Info();
+                    //outbound AS2/CEM message
+                    if (messageInfo.isRequestsSyncMDN()) {
+                        if (this.logger != null) {
+                            if (messageInfo.getMessageType() == MessageType.CEM) {
+                                this.logger.log(Level.INFO,
+                                        rb.getResourceString("sending.cem.sync",
+                                                new Object[]{
+                                                    receiver.getURL()
+                                                }), messageInfo);
+                            } else if (messageInfo.getMessageType() == MessageType.AS2) {
+                                this.logger.log(Level.INFO,
+                                        rb.getResourceString("sending.msg.sync",
+                                                new Object[]{
+                                                    receiver.getURL()
+                                                }), messageInfo);
+                            }
+                            //its a TLS connection and the system should trust all server certificates
+                            if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
+                                if (connectionParameter.getTrustAllRemoteServerCertificates()) {
                                     this.logger.log(Level.INFO,
-                                            rb.getResourceString("connection.tls.info",
-                                                    new Object[]{
-                                                        sslSession.getProtocol(),
-                                                        sslSession.getCipherSuite()
-                                                    }),
-                                            message.getAS2Info());
-
-                                } else {
+                                            rb.getResourceString("trust.all.server.certificates"),
+                                            messageInfo);
+                                }
+                                if (connectionParameter.getStrictHostCheck()) {
                                     this.logger.log(Level.INFO,
-                                            rb.getResourceString("connection.tls.info",
-                                                    new Object[]{
-                                                        sslSession.getProtocol(),
-                                                        sslSession.getCipherSuite()
-                                                    }),
-                                            (AS2MessageInfo) message.getAS2Info());
+                                            rb.getResourceString("strict.hostname.check"),
+                                            messageInfo);
                                 }
                             }
                         }
+                    } else {
+                        //Message with ASYNC MDN request
+                        if (this.logger != null) {
+                            if (messageInfo.getMessageType() == MessageType.CEM) {
+                                this.logger.log(Level.INFO,
+                                        rb.getResourceString("sending.cem.async",
+                                                new Object[]{
+                                                    receiver.getURL(),
+                                                    sender.getMdnURL()
+                                                }), messageInfo);
+                            } else if (messageInfo.getMessageType() == MessageType.AS2) {
+                                this.logger.log(Level.INFO,
+                                        rb.getResourceString("sending.msg.async",
+                                                new Object[]{
+                                                    receiver.getURL(),
+                                                    sender.getMdnURL()
+                                                }), messageInfo);
+                            }
+                            //its a TLS connection and the system should trust all server certificates
+                            if (receiptURL.getProtocol().equalsIgnoreCase("https")) {
+                                if (connectionParameter.getTrustAllRemoteServerCertificates()) {
+                                    this.logger.log(Level.INFO,
+                                            rb.getResourceString("trust.all.server.certificates"),
+                                            messageInfo);
+                                }
+                                if (connectionParameter.getStrictHostCheck()) {
+                                    this.logger.log(Level.INFO,
+                                            rb.getResourceString("strict.hostname.check"),
+                                            messageInfo);
+                                }
+                            }
+                        }
+                        //The following header indicates that this requests an asnc MDN.
+                        //When the header "receipt-delivery-option" is present,
+                        //the header "disposition-notification-to" serves as a request
+                        //for an asynchronous MDN.
+                        //The header "receipt-delivery-option" must always be accompanied by
+                        //the header "disposition-notification-to".
+                        //When the header "receipt-delivery-option" is not present and the header
+                        //"disposition-notification-to" is present, the header "disposition-notification-to"
+                        //serves as a request for a synchronous MDN.
+                        filePost.addHeader("receipt-delivery-option", sender.getMdnURL());
                     }
-                    this.responseData = this.readEntityData(httpResponse);
-                    this.responseStatusLine = httpResponse.getStatusLine();
-                    statusCode = this.responseStatusLine.getStatusCode();
-                    this.responseHeader = httpResponse.getAllHeaders();
+                    filePost.addHeader("disposition-notification-to", sender.getMdnURL());
+                    //request a signed MDN if this is set up in the partner configuration
+                    if (receiver.isSignedMDN()) {
+                        filePost.addHeader("disposition-notification-options",
+                                messageInfo.getDispositionNotificationOptions().getHeaderValue());
+                    }
+                    if (messageInfo.getSignType() != AS2Message.SIGNATURE_NONE) {
+                        filePost.addHeader("content-disposition", "attachment; filename=\"smime.p7m\"");
+                    } else if (messageInfo.getSignType() == AS2Message.SIGNATURE_NONE && message.getAS2Info().getSignType() == AS2Message.ENCRYPTION_NONE) {
+                        //RFC 822 mail headers must contain only US-ASCII characters. Headers that contain non US-ASCII 
+                        //characters must be encoded so that they contain only US-ASCII characters. Basically, 
+                        //this process involves using either BASE64 or QP to encode certain characters. 
+                        //RFC 2047 describes this in detail. 
+                        //test if an encoding is required
+                        try {
+                            String filename = message.getPayload(0).getOriginalFilename();
+                            boolean filenameEncodingRequired = !MimeUtility.encodeText(filename).equals(filename);
+                            if (!filenameEncodingRequired) {
+                                filePost.addHeader("content-disposition", "attachment; filename=\"" + filename + "\"");
+                            } else {
+                                filePost.addHeader("content-disposition", "attachment; filename=\""
+                                        + MimeUtility.encodeText(filename,
+                                                StandardCharsets.UTF_8.displayName(), "B")
+                                        + "\"");
+                            }
+                        } catch (UnsupportedEncodingException willnothappen) {
+                            //NOP
+                        }
+                    }
                 }
-            }
-            for (Header singleHeader : filePost.getAllHeaders()) {
-                if (singleHeader.getValue() != null) {
-                    this.requestHeader.setProperty(singleHeader.getName(), singleHeader.getValue());
+                int port = receiptURL.getPort();
+                if (port == -1) {
+                    port = receiptURL.getDefaultPort();
                 }
-            }
-            //accept all 2xx answers
-            //SC_ACCEPTED Status code (202) indicating that a request was accepted for processing, but was not completed.
-            //SC_CREATED  Status code (201) indicating the request succeeded and created a new resource on the server.
-            //SC_NO_CONTENT Status code (204) indicating that the request succeeded but that there was no new information to return.
-            //SC_NON_AUTHORITATIVE_INFORMATION Status code (203) indicating that the meta information presented by the client did not originate from the server.
-            //SC_OK Status code (200) indicating the request succeeded normally.
-            //SC_RESET_CONTENT Status code (205) indicating that the agent SHOULD reset the document view which caused the request to be sent.
-            //SC_PARTIAL_CONTENT Status code (206) indicating that the server has fulfilled the partial GET request for the resource.
-            if (statusCode != HttpServletResponse.SC_OK
-                    && statusCode != HttpServletResponse.SC_ACCEPTED
-                    && statusCode != HttpServletResponse.SC_CREATED
-                    && statusCode != HttpServletResponse.SC_NO_CONTENT
-                    && statusCode != HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION
-                    && statusCode != HttpServletResponse.SC_RESET_CONTENT
-                    && statusCode != HttpServletResponse.SC_PARTIAL_CONTENT) {
-                if (this.logger != null) {
-                    this.logger.log(Level.SEVERE,
-                            rb.getResourceString("error.httpupload",
-                                    new Object[]{
-                                        String.valueOf(statusCode) + " "
-                                        + URLDecoder.decode(this.responseStatusLine == null ? ""
-                                                : this.responseStatusLine.getReasonPhrase(), StandardCharsets.UTF_8)
-                                    }), message.getAS2Info());
+                filePost.addHeader("host", receiptURL.getHost() + ":" + port);
+                filePost.addHeader("user-agent", connectionParameter.getUserAgent());
+                byte[] transferData = message.getRawData();
+                if (transferData == null) {
+                    transferData = new byte[0];
                 }
-                //store the sent data and assign the payload to the message - it should be available even if the 
-                //message has been rejected
-                if (this.dbDriverManager != null) {
-                    MessageStoreHandler messageStoreHandler = new MessageStoreHandler(this.dbDriverManager);
-                    messageStoreHandler.storeSentMessage(message, sender, receiver, this.getRequestHeader());
+                uploadInformation.setUploadedByteCount(transferData.length);
+                //using a ByteArrayEntity because this is repeatable
+                ByteArrayEntity postEntity = new ByteArrayEntity(transferData);
+                postEntity.setContentType(contentType);
+                //setup oauth2 header
+                if (message.isMDN()) {
+                    this.setOAuth2Header(filePost, receiver.usesOAuth2MDN(), receiver.getOAuth2MDN());
+                } else {
+                    this.setOAuth2Header(filePost, receiver.usesOAuth2Message(), receiver.getOAuth2Message());
+                }
+                this.updateUploadHTTPHeaderWithUserDefinedHeaders(filePost,
+                        receiver, message.getAS2Info(), connectionParameter);
+                //behind this line no HTTP headers could be set anymore(!)
+                UploadTimingHttpEntity uploadTimeEntity
+                        = new UploadTimingHttpEntity(postEntity, uploadInformation);
+                filePost.setEntity(uploadTimeEntity);
+                try (CloseableHttpResponse httpResponse = httpClient.execute(targetHost, filePost)) {
+                    if (httpResponse != null) {
+                        this.responseData = this.readEntityData(httpResponse);
+                        this.responseStatusLine = httpResponse.getStatusLine();
+                        uploadInformation.setHTTPReturnCode(this.responseStatusLine.getStatusCode());
+                        this.responseHeader = httpResponse.getAllHeaders();
+                    }
+                }
+                for (Header singleHeader : filePost.getAllHeaders()) {
+                    if (singleHeader.getValue() != null) {
+                        this.requestHeader.setProperty(singleHeader.getName(), singleHeader.getValue());
+                    }
+                }
+                //accept all 2xx answers
+                //SC_ACCEPTED Status code (202) indicating that a request was accepted for processing, but was not completed.
+                //SC_CREATED  Status code (201) indicating the request succeeded and created a new resource on the server.
+                //SC_NO_CONTENT Status code (204) indicating that the request succeeded but that there was no new information to return.
+                //SC_NON_AUTHORITATIVE_INFORMATION Status code (203) indicating that the meta information presented by the client did not originate from the server.
+                //SC_OK Status code (200) indicating the request succeeded normally.
+                //SC_RESET_CONTENT Status code (205) indicating that the agent SHOULD reset the document view which caused the request to be sent.
+                //SC_PARTIAL_CONTENT Status code (206) indicating that the server has fulfilled the partial GET request for the resource.
+                if (uploadInformation.getHTTPReturnCode() != HttpServletResponse.SC_OK
+                        && uploadInformation.getHTTPReturnCode() != HttpServletResponse.SC_ACCEPTED
+                        && uploadInformation.getHTTPReturnCode() != HttpServletResponse.SC_CREATED
+                        && uploadInformation.getHTTPReturnCode() != HttpServletResponse.SC_NO_CONTENT
+                        && uploadInformation.getHTTPReturnCode() != HttpServletResponse.SC_NON_AUTHORITATIVE_INFORMATION
+                        && uploadInformation.getHTTPReturnCode() != HttpServletResponse.SC_RESET_CONTENT
+                        && uploadInformation.getHTTPReturnCode() != HttpServletResponse.SC_PARTIAL_CONTENT) {
+                    if (this.logger != null) {
+                        this.logger.log(Level.SEVERE,
+                                rb.getResourceString("error.httpupload",
+                                        new Object[]{
+                                            String.valueOf(uploadInformation.getHTTPReturnCode()) + " "
+                                            + URLDecoder.decode(this.responseStatusLine == null ? ""
+                                                    : this.responseStatusLine.getReasonPhrase(), StandardCharsets.UTF_8)
+                                        }), message.getAS2Info());
+                    }
+                    //store the sent data and assign the payload to the message - it should be available even if the 
+                    //message has been rejected
+                    if (this.dbDriverManager != null) {
+                        MessageStoreHandler messageStoreHandler = new MessageStoreHandler(this.dbDriverManager);
+                        messageStoreHandler.storeSentMessageOrMDN(message, sender, receiver, this.getRequestHeader());
+                    }
                 }
             }
         } catch (Exception ex) {
+            if (connectionManagerSendTime != null && connectionManagerSendTime.isMDNWaitTimeExpired()) {
+                //the connection has been closed by the internal MDN wait time
+                //control service
+                uploadInformation.setHTTPReturnCode(RETURN_CODE_MDN_WAITTIME_EXPIRED);
+                return (uploadInformation);
+            }
             if (this.logger != null) {
                 StringBuilder errorMessage = new StringBuilder();
                 errorMessage.append("MessageHTTPUploader.performUpload: [");
@@ -851,16 +907,9 @@ public class MessageHttpUploader {
                 this.logger.log(Level.SEVERE, errorMessage.toString(), message.getAS2Info());
             }
         } finally {
-            if (httpClient != null) {
-                //shutdown the HTTPClient to release the resources
-                try {
-                    httpClient.close();
-                } catch (IOException e) {
-                    //nop
-                }
-            }
+            CONNECTION_MAP.remove(message.getAS2Info().getMessageId());
         }
-        return (statusCode);
+        return (uploadInformation);
     }
 
     private String generateBasicAuth(String username, String password) {
@@ -973,7 +1022,7 @@ public class MessageHttpUploader {
      * ISO-8859-1, only printable characters, CR, LF and TAB are replaced
      */
     private String replaceSubject(String definedSubject, String originalFilename) {
-        String subjectStr = this.replace(definedSubject, "${filename}", originalFilename);
+        String subjectStr = definedSubject.replace("${filename}", originalFilename);
         StringBuilder subjectBuilder = new StringBuilder();
         for (int i = 0; i < subjectStr.length(); i++) {
             char testChar = subjectStr.charAt(i);
@@ -1001,55 +1050,85 @@ public class MessageHttpUploader {
 
     /**
      * Updates the passed post HTTP headers with the headers defined for the
-     * receiver
+     * receiver and the send order
      */
-    private void updateUploadHTTPHeaderWithUserDefinedHeaders(HttpPost post, Partner receiver) {
-        List<String> usedHeaderKeys = new ArrayList<String>();
-        for (Header singleHeader : post.getAllHeaders()) {
-            PartnerHttpHeader headerReplacement = receiver.getHttpHeader(singleHeader.getName());
-            if (headerReplacement != null) {
-                //a value to replace is set
-                if (headerReplacement.getValue() != null && !headerReplacement.getValue().isEmpty()) {
-                    post.setHeader(singleHeader.getName(), headerReplacement.getValue());
+    private void updateUploadHTTPHeaderWithUserDefinedHeaders(HttpPost post, Partner receiver, AS2Info as2Info,
+            HttpConnectionParameter connectionParameter) {
+        //perform partner defined HTTP header settings, these are the settings of the partner configuration
+        List<PartnerHttpHeader> httpHeaderPartnerConfig = receiver.getHttpHeader();
+        for (PartnerHttpHeader userdefinedHeaderPartner : httpHeaderPartnerConfig) {
+            //delete or overwrite header
+            if (post.containsHeader(userdefinedHeaderPartner.getKey())) {
+                if (userdefinedHeaderPartner.getValue() == null
+                        || userdefinedHeaderPartner.getValue().isBlank()) {
+                    post.removeHeaders(userdefinedHeaderPartner.getKey());
+                    if (this.logger != null && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
+                        this.logger.log(Level.FINE,
+                                rb.getResourceString("httpheader.removed", new Object[]{
+                            userdefinedHeaderPartner.getKey()
+                        }), as2Info);
+                    }
                 } else {
-                    //no value to replace is set: delete the header
-                    post.removeHeader(singleHeader);
+                    //overwrite/modified the HTTP header
+                    post.setHeader(userdefinedHeaderPartner.getKey(), userdefinedHeaderPartner.getValue());
+                    if (this.logger != null && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
+                        this.logger.log(Level.FINE,
+                                rb.getResourceString("httpheader.replaced",
+                                        new Object[]{
+                                            userdefinedHeaderPartner.getKey(),
+                                            userdefinedHeaderPartner.getValue()
+                                        }), as2Info);
+                    }
                 }
-                usedHeaderKeys.add(singleHeader.getName());
+            } else {
+                //add a new header
+                post.addHeader(userdefinedHeaderPartner.getKey(), userdefinedHeaderPartner.getValue());
+                if (this.logger != null && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
+                    this.logger.log(Level.FINE,
+                            rb.getResourceString("httpheader.set",
+                                    new Object[]{
+                                        userdefinedHeaderPartner.getKey(), userdefinedHeaderPartner.getValue()
+                                    }), as2Info);
+                }
             }
         }
-        //add additional user defined headers
-        List<PartnerHttpHeader> additionalHeaders = receiver.getAllNonListedHttpHeader(usedHeaderKeys);
-        for (PartnerHttpHeader additionalHeader : additionalHeaders) {
-            //add the header if a value is set
-            if (additionalHeader.getValue() != null && !additionalHeader.getValue().isEmpty()) {
-                post.setHeader(additionalHeader.getKey(), additionalHeader.getValue());
+        //perform sendorder defined http header settings, these are the settings of the send order
+        Map<String, String> sendorderHTTPHeaderMap = connectionParameter.getUserdefinedHeaderMap();
+        for (String sendorderHTTPHeaderKey : sendorderHTTPHeaderMap.keySet()) {
+            String sendorderHTTPHeaderValue = sendorderHTTPHeaderMap.get(sendorderHTTPHeaderKey);
+            //delete or overwrite header
+            if (post.containsHeader(sendorderHTTPHeaderKey)) {
+                if (sendorderHTTPHeaderValue == null || sendorderHTTPHeaderValue.isBlank()) {
+                    post.removeHeaders(sendorderHTTPHeaderKey);
+                    if (this.logger != null && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
+                        this.logger.log(Level.FINE,
+                                rb.getResourceString("httpheader.removed", new Object[]{
+                            sendorderHTTPHeaderKey
+                        }), as2Info);
+                    }
+                } else {
+                    //overwrite/modified the HTTP header
+                    post.setHeader(sendorderHTTPHeaderKey, sendorderHTTPHeaderValue);
+                    if (this.logger != null && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
+                        this.logger.log(Level.FINE,
+                                rb.getResourceString("httpheader.replaced",
+                                        new Object[]{
+                                            sendorderHTTPHeaderKey,
+                                            sendorderHTTPHeaderValue
+                                        }), as2Info);
+                    }
+                }
+            } else {
+                //add a new header
+                post.addHeader(sendorderHTTPHeaderKey, sendorderHTTPHeaderValue);
+                if (this.logger != null && this.preferences.getBoolean(PreferencesAS2.EXTENDED_LOG_PROCESSING)) {
+                    this.logger.log(Level.FINE,
+                            rb.getResourceString("httpheader.set",
+                                    new Object[]{
+                                        sendorderHTTPHeaderKey, sendorderHTTPHeaderValue
+                                    }), as2Info);
+                }
             }
-        }
-    }
-
-    /**
-     * Replaces the string tag by the string replacement in the sourceString
-     *
-     * @param source Source string
-     * @param tag	String that will be replaced
-     * @param replacement String that will replace the tag
-     * @return String that contains the replaced values
-     */
-    private String replace(String source, String tag, String replacement) {
-        if (source == null) {
-            return null;
-        }
-        StringBuilder buffer = new StringBuilder();
-        while (true) {
-            int index = source.indexOf(tag);
-            if (index == -1) {
-                buffer.append(source);
-                return (buffer.toString());
-            }
-            buffer.append(source.substring(0, index));
-            buffer.append(replacement);
-            source = source.substring(index + tag.length());
         }
     }
 
@@ -1057,7 +1136,7 @@ public class MessageHttpUploader {
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 224 $";
+        String revision = "$Revision: 253 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -1066,6 +1145,9 @@ public class MessageHttpUploader {
      * Returns the response data as byte array
      */
     public byte[] getResponseData() {
+        if (this.responseData == null) {
+            return (new byte[0]);
+        }
         return (this.responseData);
     }
 
@@ -1148,6 +1230,28 @@ public class MessageHttpUploader {
             } catch (Exception e) {
                 return false;
             }
+        }
+
+    }
+
+    /**
+     * Class to measure the upload time of messages via HTTP/S POST to get the
+     * upload transfer rate
+     */
+    private class UploadTimingHttpEntity extends HttpEntityWrapper {
+
+        private final HttpUploadInformation uploadInformation;
+
+        public UploadTimingHttpEntity(HttpEntity wrapped, HttpUploadInformation uploadInformation) {
+            super(wrapped);
+            this.uploadInformation = uploadInformation;
+        }
+
+        @Override
+        public void writeTo(OutputStream outstream) throws IOException {
+            long startTime = System.currentTimeMillis();
+            super.writeTo(outstream);
+            this.uploadInformation.setUploadTimeInMS(System.currentTimeMillis() - startTime);
         }
 
     }

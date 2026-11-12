@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent_de.java 6     9/12/24 16:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ResourceBundleProcessingEvent_de.java 8     31/03/26 9:30 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleProcessingEvent_de extends MecResourceBundle{
     
@@ -26,12 +26,13 @@ public class ResourceBundleProcessingEvent_de extends MecResourceBundle{
     /**List of messages in the specific language*/
     static final Object[][] CONTENTS = {
         {"event.enqueued", "Das definierte Nachbearbeitungsereignis ({0}) wurde in die Warteschlange gestellt und wird in einigen Sekunden ausgeführt." },
-        {"processtype." + ProcessingEvent.PROCESS_EXECUTE_SHELL, "Kommando auf der Systemshell ausführen" },
-        {"processtype." + ProcessingEvent.PROCESS_MOVE_TO_DIR, "Nachricht in Verzeichnis verschieben" },
-        {"processtype." + ProcessingEvent.PROCESS_MOVE_TO_PARTNER, "Nachricht an Partner weiterleiten" },
-        {"eventtype." + ProcessingEvent.TYPE_RECEIPT_SUCCESS, "Empfang" },
-        {"eventtype." + ProcessingEvent.TYPE_SEND_FAILURE, "Versand (fehlerhaft)" },
-        {"eventtype." + ProcessingEvent.TYPE_SEND_SUCCESS, "Versand (in Ordnung)" },
+        {"processtype." + ProcessingEventType.EXECUTE_SHELL.toInt(), "Kommando auf der Systemshell ausführen" },
+        {"processtype." + ProcessingEventType.MOVE_TO_DIR.toInt(), "Nachricht in Verzeichnis verschieben" },
+        {"processtype." + ProcessingEventType.MOVE_TO_PARTNER.toInt(), "Nachricht an Partner weiterleiten" },
+        {"eventtype." + ProcessingEventTriggerType.RECEIPT_SUCCESS.toInt(), "Empfang" },
+        {"eventtype." + ProcessingEventTriggerType.SEND_FAILURE.toInt(), "Versand (fehlerhaft)" },
+        {"eventtype." + ProcessingEventTriggerType.SEND_SUCCESS.toInt(), "Versand (in Ordnung)" },
+        {"event.skipped.cem", "Das definierte Nachbearbeitungsereignis wurde übersprungen, dies ist ein CEM" },
     };
     
 }

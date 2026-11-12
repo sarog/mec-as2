@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleFileDeleteController.java 7     11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleFileDeleteController.java 8     9/09/25 16:23 Heller $
 package de.mendelson.comm.as2.timing;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleFileDeleteController extends MecResourceBundle{
     
@@ -29,6 +29,7 @@ public class ResourceBundleFileDeleteController extends MecResourceBundle{
         {"delete.title", "File delete operation by system maintenance" },
         {"delete.title.log", "Log dir delete operation by system maintenance" },
         {"delete.title.tempfiles", "Temporary files" },
+        {"delete.title.sentfiles", "Sent files" },
         {"delete.title._rawincoming", "Inbound file from _rawincoming" },
         {"delete.header.logfiles", "Delete log and system event files older than {0} days" },
         {"success", "SUCCESS" },

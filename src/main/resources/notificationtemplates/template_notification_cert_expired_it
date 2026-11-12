@@ -1,0 +1,30 @@
+$Header:$
+Questo file contiene il modello di notifica per la notifica di un certificato scaduto.
+È possibile utilizzare le seguenti variabili, che vengono sostituite di conseguenza:
+
+${PRODUCTNAME}: Nome del prodotto
+${HOST}: Host del server
+${ALIAS}: Alias del certificato corrispondente
+${ISSUER}: Emittente del certificato/chiave
+${FINGERPRINT_SHA1}: Impronta digitale del certificato/chiave (SHA-1)
+${VALID_FROM}: Data valida a partire dalla data
+${VALID_TO}: Valido fino alla data
+
+
+
+
+[SUBJECT]
+Il certificato è scaduto
+
+
+[BODY]
+Il certificato con l'alias "${ALIAS}" su "${PRODUCTNAME}@${HOST}" è scaduto.
+
+Si prega di aggiornarlo, perché attualmente non è più utilizzabile e non può più essere usato per operazioni di crittografia.
+
+Ulteriori informazioni sul certificato:
+Alias: ${ALIAS}
+Emittente: ${ISSUER}
+Impronta digitale (SHA-1): ${FINGERPRINT_SHA1}
+Valido da: ${VALID_FROM}
+Valido fino a: ${VALID_TO}

@@ -1,0 +1,30 @@
+$Header:$
+Ce fichier contient le modèle de notification pour la notification d'un certificat expiré.
+Les variables suivantes peuvent être utilisées, elles seront remplacées en conséquence :
+
+${PRODUCTNAME} : nom du produit
+${HOST} : hôte du serveur
+${ALIAS} : Alias du certificat correspondant
+${ISSUER} : Émetteur du certificat/de la clé
+${FINGERPRINT_SHA1} : Empreinte du certificat/de la clé (SHA-1)
+${VALID_FROM} : Valable à partir de la date
+${VALID_TO} : Valable jusqu'à la date
+
+
+
+
+[SUBJECT]
+Le certificat a expiré
+
+
+[BODY]
+Le certificat avec l'alias "${ALIAS}" sur "${PRODUCTNAME}@${HOST}" a expiré.
+
+Veuillez le mettre à jour, il n'est actuellement plus utilisable et ne peut plus être utilisé pour des tâches cryptographiques.
+
+Informations complémentaires sur le certificat :
+Alias : ${ALIAS}
+Émetteur : ${ISSUER}
+Empreinte (SHA-1) : ${FINGERPRINT_SHA1}
+Valable à partir de : ${VALID_FROM}
+Valable jusqu'à : ${VALID_TO}

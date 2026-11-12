@@ -1,6 +1,10 @@
-//$Header: /as4/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 6     19/09/24 14:12 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 8     9/04/26 8:08 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.mendelson.util.clientserver.ClientServerException;
+import de.mendelson.util.clientserver.ClientServerExceptionContainer;
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
@@ -16,59 +20,58 @@ import java.security.cert.X509Certificate;
  * Stores the results of a connection test
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ConnectionTestResult implements Serializable {
-    
-    
+
     private static final long serialVersionUID = 1L;
     private boolean connectionIsPossible = false;
     private boolean oftpServiceFound = false;
     private X509Certificate[] foundCertificates = null;
-    private Throwable exception = null;
+    private ClientServerExceptionContainer exceptionContainer = null;
     private String protocol = null;
     private InetSocketAddress testedRemoteAddress = null;
     private boolean wasSSLTest = false;
     private String usedCipherSuite = null;
     private String[] supportedCipherSuites = null;
-    private String[] enabledCipherSuites = null;    
+    private String[] enabledCipherSuites = null;
     private String senderName = null;
     private String receiverName = null;
-    private int partnerRole = ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER;
+    private ConnectionTest.PartnerRole partnerRole = ConnectionTest.PartnerRole.REMOTE_PARTNER;
 
     public ConnectionTestResult(InetSocketAddress testedRemoteAddress, boolean wasSSLTest,
-            String senderName, String receiverName, final int PARTNER_ROLE){
+            String senderName, String receiverName,  ConnectionTest.PartnerRole partnerRole) {
         this.testedRemoteAddress = testedRemoteAddress;
         this.wasSSLTest = wasSSLTest;
         this.senderName = senderName;
         this.receiverName = receiverName;
-        this.partnerRole = PARTNER_ROLE;
-    }    
-    
-    public void setUsedCipherSuite( String usedCipherSuite){
+        this.partnerRole = partnerRole;
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ConnectionTestResult() {
+    }
+
+    public void setUsedCipherSuite(String usedCipherSuite) {
         this.usedCipherSuite = usedCipherSuite;
     }
-    
-    public void setSupportedCipherSuites(String[] supportedCipherSuites){
-        this.supportedCipherSuites = supportedCipherSuites;        
+
+    public ConnectionTest.PartnerRole getPartnerRole() {
+        return (this.partnerRole);
     }
-    
-    public void setEnabledCipherSuites(String[] enabledCipherSuites){
-        this.enabledCipherSuites = enabledCipherSuites;
-    }    
-    
-    public int getPartnerRole(){
-        return( this.partnerRole );
+
+    public String getSenderName() {
+        return (this.senderName);
     }
-    
-    public String getSenderName(){
-        return( this.senderName );
+
+    public String getReceiverName() {
+        return (this.receiverName);
     }
-    
-    public String getReceiverName(){
-        return( this.receiverName );
-    }
-    
+
     /**
      * @return the oftpServiceFound
      */
@@ -105,24 +108,19 @@ public class ConnectionTestResult implements Serializable {
     }
 
     /**
-     * @param foundCertificates the foundCertificates to set
-     */
-    public void setFoundCertificates(X509Certificate[] foundCertificates) {
-        this.foundCertificates = foundCertificates;
-    }
-
-    /**
      * @return the exception
      */
-    public Throwable getException() {
-        return exception;
+    @JsonIgnore
+    public ClientServerException getException() {
+        return (ClientServerExceptionContainer.toThrowable(this.exceptionContainer));
     }
 
     /**
      * @param exception the exception to set
      */
-    public void setException(Throwable exception) {
-        this.exception = exception;
+    @JsonIgnore
+    public void setException(Throwable exception) {        
+        this.setExceptionContainer(ClientServerExceptionContainer.fromThrowable(exception));
     }
 
     /**
@@ -149,10 +147,10 @@ public class ConnectionTestResult implements Serializable {
     /**
      * @return the wasSSLTest
      */
-    public boolean wasSSLTest() {
+    public boolean isWasSSLTest() {
         return wasSSLTest;
     }
-    
+
     /**
      * @return the usedCipherSuite
      */
@@ -173,6 +171,77 @@ public class ConnectionTestResult implements Serializable {
     public String[] getEnabledCipherSuites() {
         return enabledCipherSuites;
     }
-    
 
+    /**
+     * @param foundCertificates the foundCertificates to set
+     */
+    public void setFoundCertificates(X509Certificate[] foundCertificates) {
+        this.foundCertificates = foundCertificates;
+    }
+
+    /**
+     * @param testedRemoteAddress the testedRemoteAddress to set
+     */
+    public void setTestedRemoteAddress(InetSocketAddress testedRemoteAddress) {
+        this.testedRemoteAddress = testedRemoteAddress;
+    }
+
+    /**
+     * @param wasSSLTest the wasSSLTest to set
+     */
+    public void setWasSSLTest(boolean wasSSLTest) {
+        this.wasSSLTest = wasSSLTest;
+    }
+
+    /**
+     * @param supportedCipherSuites the supportedCipherSuites to set
+     */
+    public void setSupportedCipherSuites(String[] supportedCipherSuites) {
+        this.supportedCipherSuites = supportedCipherSuites;
+    }
+
+    /**
+     * @param enabledCipherSuites the enabledCipherSuites to set
+     */
+    public void setEnabledCipherSuites(String[] enabledCipherSuites) {
+        this.enabledCipherSuites = enabledCipherSuites;
+    }
+
+    /**
+     * @param senderName the senderName to set
+     */
+    public void setSenderName(String senderName) {
+        this.senderName = senderName;
+    }
+
+    /**
+     * @param receiverName the receiverName to set
+     */
+    public void setReceiverName(String receiverName) {
+        this.receiverName = receiverName;
+    }
+
+    /**
+     * @param partnerRole the partnerRole to set
+     */
+    public void setPartnerRole(ConnectionTest.PartnerRole partnerRole) {
+        this.partnerRole = partnerRole;
+    }
+
+     /**
+     * Dummy method for Jackson deserialization only. Do not use in logic
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public ClientServerExceptionContainer getExceptionContainer() {
+        return exceptionContainer;
+    }
+
+    /**
+     * Dummy method for Jackson deserialization only. Do not use in logic
+     */
+    @SerializationDummy(reason = "This is a dummy method for client-server serialization only - do not use in logic.")
+    public void setExceptionContainer(ClientServerExceptionContainer exceptionContainer) {
+        this.exceptionContainer = exceptionContainer;
+    }
+    
 }

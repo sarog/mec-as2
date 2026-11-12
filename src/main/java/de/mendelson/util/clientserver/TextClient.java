@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/clientserver/TextClient.java 32    14/02/25 9:58 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/TextClient.java 35    23/03/26 8:03 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.IProductVersion;
+import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.clientserver.messages.LoginRequest;
@@ -25,7 +27,7 @@ import java.util.logging.Level;
  * Text Client to connect to a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 32 $
+ * @version $Revision: 35 $
  */
 public class TextClient extends BaseTextClient implements ClientsideMessageProcessor, AutoCloseable {
 
@@ -33,13 +35,15 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
     private char[] password = null;
     private ConnectThread connectionThread = null;
     private String clientId = "undefined";
+    private static final ExecutorService CONNECT_EXECUTOR = Executors.newCachedThreadPool(
+            new NamedThreadFactory("textclient_connect"));
 
     /**
      *
      * @param CLIENT_TYPE Client Type as defined in the BaseClient
      */
-    public TextClient(final int CLIENT_TYPE) {
-        super(CLIENT_TYPE);
+    public TextClient(ClientType clientType, IProductVersion productVersion) {
+        super(clientType, productVersion);
         super.addMessageProcessor(this);
     }
 
@@ -54,9 +58,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
         this.password = password;
         this.clientId = clientId;
         this.connectionThread = new ConnectThread(host, clientServerCommPort, timeout);
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(this.connectionThread);
-        executor.shutdown();
+        CONNECT_EXECUTOR.submit(this.connectionThread);
         this.connectionThread.getDoneSignal().await(timeout, TimeUnit.MILLISECONDS);
         if (this.connectionThread.getState() == ConnectThread.STATE_FAILURE) {
             throw (this.connectionThread.getException());
@@ -155,7 +157,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 32 $";
+        String revision = "$Revision: 35 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -173,7 +175,8 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
     }
 
     /**
-     * Makes this class AutoCloseable: automatically logout and disconnect the text client
+     * Makes this class AutoCloseable: automatically logout and disconnect the
+     * text client
      */
     @Override
     public void close() throws Exception {

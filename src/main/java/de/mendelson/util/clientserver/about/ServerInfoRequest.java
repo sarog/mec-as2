@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/clientserver/about/ServerInfoRequest.java 15    4/07/24 9:27 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/about/ServerInfoRequest.java 17    9/07/25 14:25 Heller $
 package de.mendelson.util.clientserver.about;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -19,7 +19,7 @@ import java.lang.management.RuntimeMXBean;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 17 $
  */
 public class ServerInfoRequest extends ClientServerMessage implements Serializable {
 
@@ -57,7 +57,7 @@ public class ServerInfoRequest extends ClientServerMessage implements Serializab
     public static final String UNIQUE_INSTANCE_ID = "unique_instance_id";    
     public static final String HA_NUMBER_OF_NODES_LAST_30DAYS = "ha_nodes_last_30_days";    
     public static final String EXPIRE_DATE = "expire_date";          
-    
+    public static final String SERVERSIDE_THROUGHPUT = "server_throughput";              
     /**32 or 64 bit?*/
     public static final String JVM_DATA_MODEL = "jvm_data_model";
 

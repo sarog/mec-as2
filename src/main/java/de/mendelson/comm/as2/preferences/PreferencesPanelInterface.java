@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelInterface.java 27    18/07/24 11:05 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelInterface.java 33    17/03/26 9:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -6,6 +6,7 @@ import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.balloontip.BalloonToolTip;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
+import de.mendelson.util.uinotification.UINotification;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import javax.swing.ImageIcon;
@@ -22,16 +23,17 @@ import javax.swing.SwingConstants;
  * Panel to define the interface preferences
  *
  * @author S.Heller
- * @version: $Revision: 27 $
+ * @version: $Revision: 33 $
  */
-public class PreferencesPanelInterface extends PreferencesPanel {
+public final class PreferencesPanelInterface extends PreferencesPanel {
 
-    private final static MendelsonMultiResolutionImage IMAGE_INTERFACE
+    private static final MendelsonMultiResolutionImage IMAGE_INTERFACE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/preferences/interface.svg",
                     JDialogPreferences.IMAGE_HEIGHT);
 
-    private final static MecResourceBundle rb;
-    static{
+    private static final MecResourceBundle rb;
+
+    static {
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundlePreferencesInterface.class.getName());
@@ -46,7 +48,7 @@ public class PreferencesPanelInterface extends PreferencesPanel {
     /**
      * Creates new form PreferencesPanelDirectories
      */
-    public PreferencesPanelInterface(BaseClient baseClient) {        
+    public PreferencesPanelInterface(BaseClient baseClient) {
         this.preferences = new PreferencesClient(baseClient);
         this.initComponents();
         this.initializeHelp();
@@ -77,32 +79,34 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         this.preferencesStrAtLoadTime = this.captureSettingsToStr();
     }
 
-    /**Helper method to find out if there are changes in the GUI before storing them to the server*/
-    private String captureSettingsToStr(){
+    /**
+     * Helper method to find out if there are changes in the GUI before storing
+     * them to the server
+     */
+    private String captureSettingsToStr() {
         StringBuilder builder = new StringBuilder();
-        builder.append( PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG ).append("=")
-                .append( this.switchShowQuota.isSelected()).append(";");
-        builder.append( PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG ).append("=")
-                .append( this.switchShowHttpHeader.isSelected()).append(";");
-        builder.append( PreferencesAS2.CEM ).append("=")
-                .append( this.switchCEM.isSelected()).append(";");
-        builder.append( PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE ).append("=")
-                .append( this.switchOutboundStatusFiles.isSelected()).append(";");
-        builder.append( PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG ).append("=")
-                .append( this.switchDisplaySecurityOverwriteLocalstation.isSelected()).append(";");
-        builder.append( PreferencesAS2.CHECK_REVOCATION_LISTS ).append("=")
-                .append( this.switchCheckRevocationLists.isSelected()).append(";");
-        builder.append( PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES ).append("=")
-                .append( this.switchCheckPartnerTLSCertificates.isSelected()).append(";");
-        return( builder.toString() );
+        builder.append(PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG).append("=")
+                .append(this.switchShowQuota.isSelected()).append(";");
+        builder.append(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG).append("=")
+                .append(this.switchShowHttpHeader.isSelected()).append(";");
+        builder.append(PreferencesAS2.CEM).append("=")
+                .append(this.switchCEM.isSelected()).append(";");
+        builder.append(PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE).append("=")
+                .append(this.switchOutboundStatusFiles.isSelected()).append(";");
+        builder.append(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG).append("=")
+                .append(this.switchDisplaySecurityOverwriteLocalstation.isSelected()).append(";");
+        builder.append(PreferencesAS2.CHECK_REVOCATION_LISTS).append("=")
+                .append(this.switchCheckRevocationLists.isSelected()).append(";");
+        builder.append(PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES).append("=")
+                .append(this.switchCheckPartnerTLSCertificates.isSelected()).append(";");
+        return (builder.toString());
     }
-    
-    
+
     @Override
     public boolean preferencesAreModified() {
-        return( !this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()) );
+        return (!this.preferencesStrAtLoadTime.equals(this.captureSettingsToStr()));
     }
-    
+
     /**
      * This method is called from within the constructor to initialize the form.
      * WARNING: Do NOT modify this code. The content of this method is always
@@ -162,7 +166,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 1;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         add(jLabelShowQuota, gridBagConstraints);
@@ -171,7 +174,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 6;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         add(jLabelCEM, gridBagConstraints);
@@ -184,7 +186,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jPanelUIHelpLabelShowHTTPHeader, gridBagConstraints);
@@ -197,7 +198,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jPanelUIHelpLabelDisplaySecurityOverwriteLocalstation, gridBagConstraints);
@@ -246,7 +246,7 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints.gridx = 1;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridheight = 9;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.insets = new java.awt.Insets(5, 30, 5, 5);
         add(jPanelSpace7743, gridBagConstraints);
 
@@ -258,7 +258,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 7;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jPanelUIHelpLabelOutboundStatusFiles, gridBagConstraints);
@@ -271,7 +270,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 8;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jPanelUIHelpLabelCheckRevocationLists, gridBagConstraints);
@@ -292,7 +290,6 @@ public class PreferencesPanelInterface extends PreferencesPanel {
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 9;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         add(jPanelUIHelpLabelCheckPartnerTLSCertificates, gridBagConstraints);
@@ -330,20 +327,24 @@ public class PreferencesPanelInterface extends PreferencesPanel {
 
     @Override
     public void savePreferences() {
-        this.preferences.putBoolean(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG, 
-                this.switchShowHttpHeader.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG, 
-                this.switchShowQuota.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.CEM, 
-                this.switchCEM.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE, 
-                this.switchOutboundStatusFiles.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG, 
-                this.switchDisplaySecurityOverwriteLocalstation.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.CHECK_REVOCATION_LISTS, 
-                this.switchCheckRevocationLists.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES, 
-                this.switchCheckPartnerTLSCertificates.isSelected());
+        try {
+            this.preferences.putBoolean(PreferencesAS2.SHOW_HTTPHEADER_IN_PARTNER_CONFIG,
+                    this.switchShowHttpHeader.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.SHOW_QUOTA_NOTIFICATION_IN_PARTNER_CONFIG,
+                    this.switchShowQuota.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.CEM,
+                    this.switchCEM.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.WRITE_OUTBOUND_STATUS_FILE,
+                    this.switchOutboundStatusFiles.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.SHOW_OVERWRITE_LOCALSTATION_SECURITY_IN_PARTNER_CONFIG,
+                    this.switchDisplaySecurityOverwriteLocalstation.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.CHECK_REVOCATION_LISTS,
+                    this.switchCheckRevocationLists.isSelected());
+            this.preferences.putBoolean(PreferencesAS2.AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES,
+                    this.switchCheckPartnerTLSCertificates.isSelected());
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
+        }
     }
 
     @Override

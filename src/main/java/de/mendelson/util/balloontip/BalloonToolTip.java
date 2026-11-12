@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/balloontip/BalloonToolTip.java 16    12/02/25 11:57 Heller $
+//$Header: /mec_as4/de/mendelson/util/balloontip/BalloonToolTip.java 17    14/04/26 9:04 Heller $
 package de.mendelson.util.balloontip;
 
 import java.awt.AlphaComposite;
@@ -38,7 +38,7 @@ import javax.swing.border.LineBorder;
  * direct in the UI
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class BalloonToolTip extends JToolTip {
 
@@ -51,9 +51,9 @@ public class BalloonToolTip extends JToolTip {
     private Color backgoundColor = Color.LIGHT_GRAY;
     private Color foregoundColor = Color.BLACK;
 
-    public final static int TRIANGLE_ALIGNMENT_CENTER = SwingUtilities.CENTER;
-    public final static int TRIANGLE_ALIGNMENT_TOP = SwingUtilities.TOP;
-    public final static int TRIANGLE_ALIGNMENT_BOTTOM = SwingUtilities.BOTTOM;
+    public static final int TRIANGLE_ALIGNMENT_CENTER = SwingUtilities.CENTER;
+    public static final int TRIANGLE_ALIGNMENT_TOP = SwingUtilities.TOP;
+    public static final int TRIANGLE_ALIGNMENT_BOTTOM = SwingUtilities.BOTTOM;
 
     private int triangleAlignment = TRIANGLE_ALIGNMENT_TOP;
 

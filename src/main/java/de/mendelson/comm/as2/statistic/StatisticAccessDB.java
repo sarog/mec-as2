@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/statistic/StatisticAccessDB.java 2     2/02/22 15:38 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/statistic/StatisticAccessDB.java 3     14/04/26 17:02 Heller $
 package de.mendelson.comm.as2.statistic;
 
 /*
@@ -12,7 +12,7 @@ package de.mendelson.comm.as2.statistic;
  * Implementation of a server log for the as2 server database
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class StatisticAccessDB {
 
@@ -24,7 +24,7 @@ public class StatisticAccessDB {
         return (0);
     }
 
-    public StatisticDetailEntry getDetails(long a, long b, Object c, Object d, int e, int[] f) {
+    public StatisticDetailEntry getDetails(long a, long b, Object c, Object d, Object e, int[] f) {
         return (new StatisticDetailEntry());
     }
 }

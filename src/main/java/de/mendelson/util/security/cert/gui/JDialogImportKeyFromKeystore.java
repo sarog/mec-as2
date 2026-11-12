@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogImportKeyFromKeystore.java 11    11/02/25 13:40 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/JDialogImportKeyFromKeystore.java 16    14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -7,12 +7,15 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.passwordfield.PasswordOverlay;
 import de.mendelson.util.security.BCCryptoHelper;
+import de.mendelson.util.security.BouncyCastleProviderSingleton;
 import de.mendelson.util.security.JKSKeys2JKS;
 import de.mendelson.util.security.JKSKeys2PKCS12;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.PKCS122JKS;
 import de.mendelson.util.security.PKCS122PKCS12;
 import de.mendelson.util.security.cert.KeystoreCertificate;
+import de.mendelson.util.security.memkeystore.InMemoryKeyStore;
+import de.mendelson.util.security.memkeystore.InMemoryKeyStoreUtil;
 import de.mendelson.util.uinotification.UINotification;
 import java.security.KeyStore;
 import java.security.cert.X509Certificate;
@@ -40,14 +43,14 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Dialog to import a key from a keystore (pkcs#12, jks)
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 16 $
  */
 public class JDialogImportKeyFromKeystore extends JDialog {
 
     /**
      * ResourceBundle to localize the GUI
      */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -105,7 +108,7 @@ public class JDialogImportKeyFromKeystore extends JDialog {
                 this.performImportJKS();
             } catch (Throwable ex) {
                 UINotification.instance().addNotification(null,
-                        UINotification.TYPE_ERROR,
+                        UINotification.Type.ERROR,
                         rb.getResourceString("key.import.error.title"),
                         rb.getResourceString("key.import.error.message",
                                 "[" + ex.getClass().getSimpleName() + "]:" + e.getMessage()));
@@ -178,7 +181,7 @@ public class JDialogImportKeyFromKeystore extends JDialog {
         }
         this.newAlias = selectedAlias;
         UINotification.instance().addNotification(null,
-                UINotification.TYPE_SUCCESS,
+                UINotification.Type.SUCCESS,
                 rb.getResourceString("key.import.success.title"),
                 rb.getResourceString("key.import.success.message"));
     }
@@ -210,7 +213,7 @@ public class JDialogImportKeyFromKeystore extends JDialog {
      */
     private void performImportPKCS12() throws Exception {
         KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12,
-                BouncyCastleProvider.PROVIDER_NAME);
+                BouncyCastleProviderSingleton.instance());
         KeyStoreUtil.loadKeyStore(sourceKeystore, this.jTextFieldImportKeystoreFile.getText(),
                 this.jPasswordFieldPassphrase.getPassword());
         List<String> keyAliasesList = KeyStoreUtil.getKeyAliases(sourceKeystore);
@@ -256,10 +259,12 @@ public class JDialogImportKeyFromKeystore extends JDialog {
             PKCS122JKS importer = new PKCS122JKS(this.logger);
             importer.setTargetKeyStore(this.manager.getKeystore(), this.manager.getKeystorePass());
             importer.importKey(sourceKeystore, selectedAlias);
+        } else if (this.manager.getStorageType().equals(InMemoryKeyStore.KEYSTORE_INMEMORY)) {
+            InMemoryKeyStoreUtil.importKey(sourceKeystore, this.manager.getKeystore(), this.newAlias);
         }
         this.newAlias = selectedAlias;
         UINotification.instance().addNotification(null,
-                UINotification.TYPE_SUCCESS,
+                UINotification.Type.SUCCESS,
                 rb.getResourceString("key.import.success.title"),
                 rb.getResourceString("key.import.success.message"));
     }

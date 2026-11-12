@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_it.java 4     11/03/25 16:42 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleCertificates_it.java 10    5/02/26 15:42 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -10,12 +10,11 @@ import de.mendelson.util.MecResourceBundle;
 * Please read and agree to all terms before using this software.
 * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleCertificates_it extends MecResourceBundle {
 
@@ -28,7 +27,7 @@ public class ResourceBundleCertificates_it extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"cert.delete.impossible", "La voce non può essere cancellata, è in uso.\nPer ulteriori informazioni, utilizzare \"Mostra utilizzo\"."},
         {"label.keystore.export", "Esportazione di tutte le voci in un file keystore (solo per scopi di backup!)"},
         {"certificate.import.alias", "Alias per questo certificato:"},
@@ -41,13 +40,12 @@ public class ResourceBundleCertificates_it extends MecResourceBundle {
         {"button.keycopy", "Copia nella gestione {0}"},
         {"button.delete", "Cancellare la chiave/certificato"},
         {"label.cert.valid", "Questo certificato è valido"},
-        {"display.ca.certs", "Mostra i certificati CA ({0})"},
         {"keystore.readonly.message", "Protetto da scrittura. Non è possibile modificarlo."},
         {"keycopy.success.text", "La voce [{0}] è stata copiata con successo"},
         {"menu.tools.generatekey", "Generare una nuova chiave (autofirmata)"},
         {"label.key.export.pkcs12", "Chiave di esportazione (PKCS#12, PEM) (solo per scopi di backup!)"},
         {"button.keycopy.signencrypt", "Crittografia/firma"},
-        {"label.key.invalid", "Questa chiave non è valida"},
+        {"label.key.invalid", "Questa chiave non è valida {0}"},
         {"dialog.cert.delete.title", "Cancellare il certificato"},
         {"success.deleteallexpired.title", "Eliminare i certificati/chiavi scaduti e non utilizzati"},
         {"success.deleteallexpired.text", "{0} le chiavi/certificati scaduti e non utilizzati sono stati eliminati"},
@@ -58,7 +56,7 @@ public class ResourceBundleCertificates_it extends MecResourceBundle {
         {"dialog.cert.delete.message", "Si vuole davvero eliminare il certificato con l''alias \"{0}\"?"},
         {"button.cancel", "Annullamento"},
         {"title.cert.in.use", "Il certificato viene utilizzato"},
-        {"label.cert.invalid", "Questo certificato non è valido"},
+        {"label.cert.invalid", "Questo certificato non è valido {0}"},
         {"certificate.import.error.message", "Si è verificato un errore durante l''importazione:\n{0}"},
         {"button.delete.all.expired", "Cancellare tutte le chiavi/certificati scaduti"},
         {"button.keycopy.tls", "TLS"},
@@ -77,7 +75,7 @@ public class ResourceBundleCertificates_it extends MecResourceBundle {
         {"tab.info.trustchain", "Percorso di certificazione"},
         {"warning.deleteallexpired.text", "Si vuole davvero eliminare {0} voci scadute e inutilizzate?"},
         {"module.locked.title", "Il modulo è in uso"},
-        {"title.ssl", "Chiavi e certificati (TLS)"},
+        {"title.tls", "Chiavi e certificati (TLS)"},
         {"tab.info.extension", "Estensioni"},
         {"menu.tools", "Esteso"},
         {"button.reference", "Mostra l''utilizzo"},
@@ -86,6 +84,7 @@ public class ResourceBundleCertificates_it extends MecResourceBundle {
         {"modifications.notalllowed.message", "Le modifiche non sono possibili"},
         {"keycopy.target.ro.title", "Il target è di sola lettura"},
         {"label.key.import", "Importare la propria chiave privata (da Keystore PKCS#12, JKS)"},
+        {"label.key.import.pem", "Importare la propria chiave privata (PEM)" },  
         {"menu.tools.importcsr.renew", "Rinnovare il certificato: Importazione della risposta della CA alla richiesta di autenticazione"},
         {"keycopy.target.exists.title", "La voce esiste già nella destinazione"},
         {"generatekey.error.title", "Errore durante la generazione della chiave"},
@@ -98,9 +97,11 @@ public class ResourceBundleCertificates_it extends MecResourceBundle {
         {"label.cert.import", "Certificato di importazione (dal partner)"},
         {"warning.deleteallexpired.title", "Eliminare le chiavi/certificati scaduti e non utilizzati"},
         {"menu.tools.generatecsr.renew", "Rinnovare il certificato: Generare richiesta di autenticazione (alla CA)"},
+        {"menu.tools.crmf", "Generazione richiesta CRMF (BDEW)"},
         {"menu.tools.verifyall", "Controllare gli elenchi di revoca di tutti i certificati (CRL)"},
-        {"warning.testkey", "Chiave del test di Mendelson disponibile pubblicamente - non utilizzare in operazioni produttive!"},
         {"keycopy.target.exists.text", "Questa voce esiste già nell''amministrazione del certificato di destinazione (alias {0})."},
         {"menu.tools.generatecsr", "Autenticare il certificato: Genera richiesta di autenticazione (alla CA)"},
-        {"menu.import", "Importazione"},};
+        {"menu.import", "Importazione"},
+        {"certificates.save", "Salvare certificati" },
+    };
 }

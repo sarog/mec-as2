@@ -1,8 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 74    20/02/25 13:41 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Message.java 82    23/03/26 13:41 Heller $
 package de.mendelson.comm.as2.message;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.security.encryption.EncryptionConstantsAS2;
 import de.mendelson.util.security.signature.SignatureConstantsAS2;
+import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.Serializable;
@@ -19,7 +22,7 @@ import java.util.Properties;
  * Stores a AS2 message
  *
  * @author S.Heller
- * @version $Revision: 74 $
+ * @version $Revision: 82 $
  */
 public class AS2Message implements Serializable {
 
@@ -112,17 +115,7 @@ public class AS2Message implements Serializable {
     public static final int SIGNATURE_SHA3_512_RSASSA_PSS = SignatureConstantsAS2.SIGNATURE_SHA3_512_RSASSA_PSS;
     public static final int SIGNATURE_SPHINCS_PLUS = SignatureConstantsAS2.SIGNATURE_SPHINCS_PLUS;
     public static final int SIGNATURE_DILITHIUM = SignatureConstantsAS2.SIGNATURE_DILITHIUM;
-
-    public static final int COMPRESSION_UNKNOWN = 0;
-    public static final int COMPRESSION_NONE = 1;
-    public static final int COMPRESSION_ZLIB = 2;
-    public static final int STATE_FINISHED = 1;
-    public static final int STATE_PENDING = 2;
-    public static final int STATE_STOPPED = 3;
-    public static final int CONTENT_TRANSFER_ENCODING_BINARY = 1;
-    public static final int CONTENT_TRANSFER_ENCODING_BASE64 = 2;
-    public static final int MESSAGETYPE_AS2 = 1;
-    public static final int MESSAGETYPE_CEM = 2;
+        
     /**
      * Stores all details about the message
      */
@@ -130,17 +123,17 @@ public class AS2Message implements Serializable {
     /**
      * Stores the raw message data
      */
-    private final ByteStorage rawData = new ByteStorage();
+    private ByteStorage rawData = new ByteStorage();
     /**
      * Stores the raw message data, decrypted. Contains the same data as the raw
      * data if the message has been sent unencrypted
      */
-    private final ByteStorage decryptedRawData = new ByteStorage();
+    private ByteStorage decryptedRawData = new ByteStorage();
     /**
      * Payload of the as2 message, will be only one if the AS2 version is < AS2
      * 1.2
      */
-    private final List<AS2Payload> payload = Collections.synchronizedList(new ArrayList<AS2Payload>());
+    private List<AS2Payload> payload = Collections.synchronizedList(new ArrayList<AS2Payload>());
     private Properties header = new Properties();
     private String contentType;
 
@@ -149,6 +142,14 @@ public class AS2Message implements Serializable {
      */
     public AS2Message(AS2Info as2Info) {
         this.as2Info = as2Info;
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public AS2Message() {
     }
 
     public boolean isMDN() {
@@ -188,6 +189,7 @@ public class AS2Message implements Serializable {
      * Returns the number of attachments of the AS2 message. This will mainly be
      * 1 if the AS2 version is < AS2 1.2
      */
+    @JsonIgnore
     public int getPayloadCount() {
         synchronized (this.payload) {
             return (this.payload.size());
@@ -201,6 +203,7 @@ public class AS2Message implements Serializable {
         return (this.rawData.getSize());
     }
 
+    @JsonIgnore
     public InputStream getRawDataInputStream() throws Exception {
         return (this.rawData.getInputStream());
     }
@@ -220,6 +223,7 @@ public class AS2Message implements Serializable {
         return (this.rawData.getSize());
     }
 
+    @JsonIgnore
     public InputStream getDecryptedRawDataInputStream() throws Exception {
         return (this.decryptedRawData.getInputStream());
     }
@@ -244,6 +248,7 @@ public class AS2Message implements Serializable {
      * Will return the payload of the passed index. The index should be 0 if the
      * AS2 version is < AS2 1.2
      */
+    @JsonIgnore
     public AS2Payload getPayload(int index) {
         synchronized (this.payload) {
             if (this.payload.isEmpty()) {
@@ -253,12 +258,14 @@ public class AS2Message implements Serializable {
         }
     }
 
+    @JsonIgnore
     public void addPayload(AS2Payload data) {
         synchronized (this.payload) {
             this.payload.add(data);
         }
     }
 
+    @JsonIgnore
     public void clearPayloads() {
         synchronized (this.payload) {
             this.payload.clear();
@@ -269,11 +276,10 @@ public class AS2Message implements Serializable {
      * Will return the payloads of the message
      */
     public List<AS2Payload> getPayloads() {
-        List<AS2Payload> list = new ArrayList<AS2Payload>();
         synchronized (this.payload) {
-            list.addAll(this.payload);
+            List<AS2Payload> list = new ArrayList<AS2Payload>(this.payload);
+            return (list);
         }
-        return (list);
     }
 
     /**
@@ -289,12 +295,13 @@ public class AS2Message implements Serializable {
     /**
      * Writes the payload to the message to the passed file
      */
+    @JsonIgnore
     public void writeRawDecryptedTo(Path file) throws Exception {
-        try (OutputStream outStream = Files.newOutputStream(file,
+        try (OutputStream outStream = new BufferedOutputStream(Files.newOutputStream(file,
                 StandardOpenOption.SYNC,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING,
-                StandardOpenOption.WRITE)) {
+                StandardOpenOption.WRITE))) {
             try (InputStream inStream = this.decryptedRawData.getInputStream()) {
                 inStream.transferTo(outStream);
             }

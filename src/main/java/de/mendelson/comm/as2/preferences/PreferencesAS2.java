@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 102   12/03/25 16:57 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/preferences/PreferencesAS2.java 112   15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.preferences.PreferencesCache;
@@ -43,15 +43,15 @@ import java.util.logging.Level;
  * Class to manage the preferences of the AS2 server
  *
  * @author S.Heller
- * @version $Revision: 102 $
+ * @version $Revision: 112 $
  */
 public class PreferencesAS2 {
 
-    private final static List<String> SUPPORTED_LANGUAGES = Arrays.asList(new String[]{
-        "de", "fr", "es", "pt", "it", "en"
+    private static final List<String> SUPPORTED_LANGUAGES = Arrays.asList(new String[]{
+        "de", "fr", "es", "pt", "it", "en", "pl"
     });
 
-    private final static MecResourceBundle rb;
+    private static final  MecResourceBundle rb;
 
     static {
         //load resource bundle
@@ -62,8 +62,6 @@ public class PreferencesAS2 {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
-
-    private final static PreferencesCache SERVERSIDE_PREFERENCES_CACHE = new PreferencesCache(TimeUnit.SECONDS.toMillis(5));
 
     /**
      * Position of the client frame X
@@ -90,7 +88,7 @@ public class PreferencesAS2 {
      * Directory the message parts are stored in
      */
     public static final String DIR_MSG = "dirmsg";
-    public static final String ASYNC_MDN_TIMEOUT = "asyncmdntimeout";
+    public static final String MDN_WAIT_TIME = "asyncmdntimeout";
     public static final String AUTH_PROXY_USER = "proxyuser";
     public static final String AUTH_PROXY_PASS = "proxypass";
     public static final String AUTH_PROXY_USE = "proxyuseauth";
@@ -103,6 +101,7 @@ public class PreferencesAS2 {
     public static final String AUTO_LOGDIR_DELETE = "autologdirdelete";
     public static final String AUTO_LOGDIR_DELETE_OLDERTHAN = "autologdirdeleteolderthan";
     public static final String LOG_POLL_PROCESS = "logpollprocess";
+    public static final String EXTENDED_LOG_PROCESSING = "logprocessing";
     public static final String PROXY_HOST = "proxyhost";
     public static final String PROXY_PORT = "proxyport";
     public static final String PROXY_USE = "proxyuse";
@@ -144,38 +143,37 @@ public class PreferencesAS2 {
      * properties are stored in the java preferences
      */
     private static final List<String> SERVER_SIDE_KEYS
-            = Collections.unmodifiableList(
-                    Arrays.asList(
-                            DIR_MSG,
-                            ASYNC_MDN_TIMEOUT,
-                            AUTH_PROXY_USER,
-                            AUTH_PROXY_PASS,
-                            AUTH_PROXY_USE,
-                            AUTO_MSG_DELETE,
-                            AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S,
-                            AUTO_MSG_DELETE_OLDERTHAN,
-                            AUTO_MSG_DELETE_LOG,
-                            AUTO_STATS_DELETE,
-                            AUTO_STATS_DELETE_OLDERTHAN,
-                            AUTO_LOGDIR_DELETE,
-                            AUTO_LOGDIR_DELETE_OLDERTHAN,
-                            LOG_POLL_PROCESS,
-                            PROXY_HOST,
-                            PROXY_PORT,
-                            PROXY_USE,
-                            RECEIPT_PARTNER_SUBDIR,
-                            HTTP_SEND_TIMEOUT,
-                            CEM,
-                            WRITE_OUTBOUND_STATUS_FILE,
-                            MAX_CONNECTION_RETRY_COUNT,
-                            MAX_OUTBOUND_CONNECTIONS,
-                            CONNECTION_RETRY_WAIT_TIME_IN_S,
-                            TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES,
-                            TLS_STRICT_HOST_CHECK,
-                            EMBEDDED_HTTP_SERVER_REQUESTLOG,
-                            CHECK_REVOCATION_LISTS,
-                            AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES
-                    ));
+            = Collections.unmodifiableList(Arrays.asList(DIR_MSG,
+                    MDN_WAIT_TIME,
+                    AUTH_PROXY_USER,
+                    AUTH_PROXY_PASS,
+                    AUTH_PROXY_USE,
+                    AUTO_MSG_DELETE,
+                    AUTO_MSG_DELETE_OLDERTHAN_MULTIPLIER_S,
+                    AUTO_MSG_DELETE_OLDERTHAN,
+                    AUTO_MSG_DELETE_LOG,
+                    AUTO_STATS_DELETE,
+                    AUTO_STATS_DELETE_OLDERTHAN,
+                    AUTO_LOGDIR_DELETE,
+                    AUTO_LOGDIR_DELETE_OLDERTHAN,
+                    LOG_POLL_PROCESS,
+                    EXTENDED_LOG_PROCESSING,
+                    PROXY_HOST,
+                    PROXY_PORT,
+                    PROXY_USE,
+                    RECEIPT_PARTNER_SUBDIR,
+                    HTTP_SEND_TIMEOUT,
+                    CEM,
+                    WRITE_OUTBOUND_STATUS_FILE,
+                    MAX_CONNECTION_RETRY_COUNT,
+                    MAX_OUTBOUND_CONNECTIONS,
+                    CONNECTION_RETRY_WAIT_TIME_IN_S,
+                    TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES,
+                    TLS_STRICT_HOST_CHECK,
+                    EMBEDDED_HTTP_SERVER_REQUESTLOG,
+                    CHECK_REVOCATION_LISTS,
+                    AUTO_IMPORT_CHANGED_PARTNER_TLS_CERTIFICATES
+            ));
     private static final HashSet<String> SERVER_SIDE_PROPERTIES
             = new HashSet<String>(SERVER_SIDE_KEYS);
 
@@ -204,8 +202,7 @@ public class PreferencesAS2 {
             );
 
     private static final Map<String, String> DEFAULT_VALUES
-            = Map.ofEntries(
-                    Map.entry(FRAME_WIDTH, "1024"),
+            = Map.ofEntries(Map.entry(FRAME_WIDTH, "1024"),
                     Map.entry(FRAME_HEIGHT, "786"),
                     Map.entry(AUTO_MSG_DELETE, "TRUE"),
                     Map.entry(AUTO_MSG_DELETE_OLDERTHAN, "5"),
@@ -220,7 +217,7 @@ public class PreferencesAS2 {
                     Map.entry(AUTH_PROXY_PASS, "mypass"),
                     Map.entry(AUTH_PROXY_USER, "myuser"),
                     Map.entry(AUTH_PROXY_USE, "FALSE"),
-                    Map.entry(ASYNC_MDN_TIMEOUT, "30"),
+                    Map.entry(MDN_WAIT_TIME, "30"),
                     Map.entry(AUTO_MSG_DELETE_LOG, "TRUE"),
                     Map.entry(AUTO_STATS_DELETE, "TRUE"),
                     Map.entry(AUTO_STATS_DELETE_OLDERTHAN, "180"),
@@ -239,6 +236,7 @@ public class PreferencesAS2 {
                     Map.entry(HIDDENCOLS, "1111111111000"),
                     Map.entry(HIDEABLECOLS, "0011111111111"),
                     Map.entry(LOG_POLL_PROCESS, "FALSE"),
+                    Map.entry(EXTENDED_LOG_PROCESSING, "TRUE"),
                     Map.entry(MAX_OUTBOUND_CONNECTIONS, "9999"),
                     Map.entry(DISPLAY_MODE_CLIENT, "LIGHT"),
                     Map.entry(TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES, "FALSE"),
@@ -358,7 +356,7 @@ public class PreferencesAS2 {
                     int rows = statement.executeUpdate();
                     resetPerformed = rows == 1;
                     if (resetPerformed) {
-                        SERVERSIDE_PREFERENCES_CACHE.remove(KEY);
+                        PreferencesCache.instance().remove(KEY);
                     }
                 }
             } catch (Throwable e) {
@@ -385,7 +383,7 @@ public class PreferencesAS2 {
         if (value == null) {
             value = getDefaultValue(KEY);
             if (this.isServerSideProperty(KEY)) {
-                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+                PreferencesCache.instance().put(KEY, value);
             }
             return (value);
         } else {
@@ -427,7 +425,7 @@ public class PreferencesAS2 {
         if (value == null) {
             value = getDefaultValue(KEY);
             if (this.isServerSideProperty(KEY)) {
-                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+                PreferencesCache.instance().put(KEY, value);
             }
         }
         return (Integer.parseInt(value));
@@ -452,7 +450,7 @@ public class PreferencesAS2 {
         if (value == null) {
             value = getDefaultValue(KEY);
             if (this.isServerSideProperty(KEY)) {
-                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+                PreferencesCache.instance().put(KEY, value);
             }
         }
         return (Boolean.parseBoolean(value));
@@ -467,7 +465,7 @@ public class PreferencesAS2 {
         if (value == null) {
             value = String.valueOf(defaultValue);
             if (this.isServerSideProperty(KEY)) {
-                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+                PreferencesCache.instance().put(KEY, value);
             }
         }
         return (Boolean.parseBoolean(value));
@@ -521,7 +519,7 @@ public class PreferencesAS2 {
             return (handler.getValue(KEY, getDefaultValue(KEY)));
         }
         if (isServerSideProperty(KEY)) {
-            String cachedValue = SERVERSIDE_PREFERENCES_CACHE.get(KEY);
+            String cachedValue = PreferencesCache.instance().get(KEY);
             if (cachedValue != null) {
                 return (cachedValue);
             } else {
@@ -536,7 +534,7 @@ public class PreferencesAS2 {
                         try (ResultSet result = statement.executeQuery()) {
                             if (result.next()) {
                                 String value = result.getString("vvalue");
-                                SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+                                PreferencesCache.instance().put(KEY, value);
                                 return (value);
                             }
                         }
@@ -593,14 +591,14 @@ public class PreferencesAS2 {
                                 }
                             }
                             this.dbDriverManager.commitTransaction(statementTransaction, transactionName);
-                            SERVERSIDE_PREFERENCES_CACHE.put(KEY, value);
+                            PreferencesCache.instance().put(KEY, value);
                         } catch (Throwable e) {
-                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                            SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                             this.dbDriverManager.rollbackTransaction(statementTransaction);
                         }
                     }
                 } catch (Throwable e) {
-                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                    SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
                 }
             } else {
                 //its a client value - just write it to the preferences
@@ -643,14 +641,14 @@ public class PreferencesAS2 {
                         statementDelete.setString(1, KEY);
                         statementDelete.executeUpdate();
                         this.dbDriverManager.commitTransaction(statementTransactionControl, transactionName);
-                        SERVERSIDE_PREFERENCES_CACHE.remove(KEY);
+                        PreferencesCache.instance().remove(KEY);
                     } catch (Throwable e) {
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                         this.dbDriverManager.rollbackTransaction(statementTransactionControl);
                     }
                 }
             } catch (Throwable e) {
-                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
+                SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ANY);
             }
         } else {
             Preferences preferences = Preferences.userNodeForPackage(AS2ServerVersion.class);
@@ -668,7 +666,7 @@ public class PreferencesAS2 {
      * request needs to get the current stored value in the database
      */
     public void clearCache() {
-        SERVERSIDE_PREFERENCES_CACHE.clear();
+        PreferencesCache.instance().clear();
     }
 
     public static String getSupportedLanguagesAsUsageList() {

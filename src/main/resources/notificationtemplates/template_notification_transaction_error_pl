@@ -1,0 +1,24 @@
+$Header:$
+Ten plik zawiera szablon powiadomienia do testowania ustawień poczty e-mail.
+Można użyć następujących zmiennych, które są odpowiednio zastępowane:
+
+${PRODUCTNAME}: Nazwa produktu
+${MESSAGEID}: Numer wiadomości AS2
+${SENDER}: Nadawca wiadomości (jeśli znany, w przeciwnym razie "--")
+${RECEIVER}: Odbiorca wiadomości (jeśli znany, w przeciwnym razie "--")
+${HOST}: Host serwera AS2
+${LOG}: Dziennik transakcji (kilka wierszy)
+
+
+
+
+[SUBJECT]
+Błąd w komunikacie AS2 ${MESSAGEID}
+
+
+[BODY]
+Wiadomość AS2 ${MESSAGEID} od ${SENDER} do ${RECEIVER} z tematem "${SUBJECT}" nie mogła zostać przesłana ze statusem OK.
+
+Dziennik transakcji:
+${LOG}
+

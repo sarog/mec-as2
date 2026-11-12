@@ -1,0 +1,27 @@
+$Header:$
+Este ficheiro contém o modelo de notificação para a notificação no caso de um problema no sistema
+Podem ser utilizadas as seguintes variáveis, que são substituídas em conformidade:
+${PRODUCTNAME}: Nome do produto
+${HOST}: Anfitrião do servidor AS2
+${CATEGORY}: Categoria de erro
+${MESSAGE}: Mensagem de erro
+${DETAILS}: Mais informações sobre o problema
+
+
+
+
+[SUBJECT]
+Problema no sistema
+
+
+[BODY]
+Ocorreu um problema no servidor AS2. Em regra, os problemas comunicados por este correio eletrónico não são críticos para o estado do sistema AS2. Se a transação correspondente tiver o estado "verde", foi concluída sem erros.
+De qualquer forma, verifique o servidor para ver o que aconteceu.
+
+Categoria: ${CATEGORY}
+Mensagem: ${MESSAGE}
+
+
+
+Mais informações sobre o problema:
+${DETAILS}

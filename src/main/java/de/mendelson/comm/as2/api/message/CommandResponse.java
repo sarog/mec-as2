@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/api/message/CommandResponse.java 3     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/api/message/CommandResponse.java 5     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.api.message;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 /*
@@ -14,7 +15,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class CommandResponse extends ClientServerResponse implements Serializable {
     private static final long serialVersionUID = 1L;
@@ -24,6 +25,13 @@ public class CommandResponse extends ClientServerResponse implements Serializabl
         super(request);
     }
 
+     /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CommandResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Command response");

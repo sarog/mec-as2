@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/mailautoconfig/clientserver/MailAutoConfigDetectResponse.java 3     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/mailautoconfig/clientserver/MailAutoConfigDetectResponse.java 5     11/06/25 13:17 Heller $
 package de.mendelson.util.mailautoconfig.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.mailautoconfig.MailServiceConfiguration;
 import java.io.Serializable;
@@ -19,15 +20,24 @@ import java.util.List;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class MailAutoConfigDetectResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
-    private final List<MailServiceConfiguration> configurationList = new ArrayList<MailServiceConfiguration>();
+    private List<MailServiceConfiguration> configurationList = new ArrayList<MailServiceConfiguration>();
       
     public MailAutoConfigDetectResponse(MailAutoConfigDetectRequest request) {
         super(request);
+    }
+    
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public MailAutoConfigDetectResponse() {
+        super();
     }
     
     public List<MailServiceConfiguration> getConfiguration() {

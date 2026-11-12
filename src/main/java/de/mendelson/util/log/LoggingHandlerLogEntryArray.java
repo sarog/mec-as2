@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/log/LoggingHandlerLogEntryArray.java 10    20/02/25 13:42 Heller $
+//$Header: /as4/de/mendelson/util/log/LoggingHandlerLogEntryArray.java 12    11/06/25 16:52 Heller $
 package de.mendelson.util.log;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.util.List;
@@ -20,7 +21,7 @@ import java.util.logging.LogRecord;
  * Handler to log output to a StringBuilder
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class LoggingHandlerLogEntryArray extends Handler {
 
@@ -45,7 +46,7 @@ public class LoggingHandlerLogEntryArray extends Handler {
      */
     @Override
     public void setEncoding(String encoding)
-            throws SecurityException, java.io.UnsupportedEncodingException {
+            throws SecurityException, UnsupportedEncodingException {
         super.setEncoding(encoding);
     }
 
@@ -102,10 +103,10 @@ public class LoggingHandlerLogEntryArray extends Handler {
      */
     private synchronized void logMessage(Level level, long millis, String message, Object[] parameter) {
         LogEntry entry = new LogEntry(level, millis, message);
-        this.out.add( entry );
+        this.out.add(entry);
     }
 
-    public static class LogEntry implements Serializable{
+    public static class LogEntry implements Serializable {
 
         private static final long serialVersionUID = 1L;
         private Level level;
@@ -116,6 +117,14 @@ public class LoggingHandlerLogEntryArray extends Handler {
             this.level = level;
             this.millis = millis;
             this.message = message;
+        }
+
+        /**
+         * This is a dummy constructor for the deserialization process. Do not
+         * use in logic.
+         */
+        @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+        public LogEntry() {
         }
 
         /**
@@ -160,8 +169,6 @@ public class LoggingHandlerLogEntryArray extends Handler {
             this.message = message;
         }
 
-        
-        
     }
 
 }

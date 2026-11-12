@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ListCellRendererDirection.java 5     14/05/24 13:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ListCellRendererDirection.java 6     11/09/25 15:41 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -20,20 +20,20 @@ import javax.swing.border.EmptyBorder;
  * Renderer to render the direction of a transaction to be selected
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ListCellRendererDirection extends JLabel implements ListCellRenderer {
 
-    private final static int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_MENU_ITEM;
-    private final static int ROW_HEIGHT = IMAGE_HEIGHT + 2;
+    private static final int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_MENU_ITEM;
+    private static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
 
-    private final static MendelsonMultiResolutionImage IMAGE_DIRECTION_INBOUND
+    private static final MendelsonMultiResolutionImage IMAGE_DIRECTION_INBOUND
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/in.svg", IMAGE_HEIGHT);
-    private final static MendelsonMultiResolutionImage IMAGE_DIRECTION_OUTBOUND
+    private static final MendelsonMultiResolutionImage IMAGE_DIRECTION_OUTBOUND
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/out.svg", IMAGE_HEIGHT);
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -183,7 +183,7 @@ public class ListCellRendererDirection extends JLabel implements ListCellRendere
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         setComponentOrientation(list.getComponentOrientation());
-        setBorder(new EmptyBorder(0,2,0,0));
+        setBorder(new EmptyBorder(0, 2, 0, 0));
         if (isSelected) {
             this.setBackground(list.getSelectionBackground());
             this.setForeground(list.getSelectionForeground());

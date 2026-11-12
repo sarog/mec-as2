@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponseFileLimited.java 3     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/DownloadResponseFileLimited.java 6     17/03/26 9:24 Heller $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,9 +14,9 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
-public class DownloadResponseFileLimited extends DownloadResponseFile implements Serializable {
+public final class DownloadResponseFileLimited extends DownloadResponseFile implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private boolean sizeExceeded = false;
@@ -24,6 +25,13 @@ public class DownloadResponseFileLimited extends DownloadResponseFile implements
         super(request);
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public DownloadResponseFileLimited() {
+        super();
+    }
+    
     /**
      * @return the exceeded
      */

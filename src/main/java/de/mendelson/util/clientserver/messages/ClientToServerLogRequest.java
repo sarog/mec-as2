@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/ClientToServerLogRequest.java 3     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/messages/ClientToServerLogRequest.java 4     12/06/25 16:04 Heller $
 package de.mendelson.util.clientserver.messages;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
@@ -19,7 +20,7 @@ import java.util.logging.Level;
  * that is relevant for the server and should be displayed there as client related activity
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ClientToServerLogRequest extends ClientServerMessage implements Serializable {
 
@@ -30,11 +31,12 @@ public class ClientToServerLogRequest extends ClientServerMessage implements Ser
     public ClientToServerLogRequest() {
     }
 
+    @JsonIgnore
     public void setLogEntry(Level level, String message) {
-        this.message = message;
-        this.level = level;
+        this.setMessage(message);
+        this.setLevel(level);
     }
-
+    
     @Override
     public String toString() {
         return ("Add a log entry from a client that should be displayed in the server log");
@@ -57,6 +59,20 @@ public class ClientToServerLogRequest extends ClientServerMessage implements Ser
     /**Prevent an overwrite of the readObject method for de-serialization*/
     private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
         inStream.defaultReadObject();
+    }
+
+    /**
+     * @param message the message to set
+     */
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    /**
+     * @param level the level to set
+     */
+    public void setLevel(Level level) {
+        this.level = level;
     }
 
 }

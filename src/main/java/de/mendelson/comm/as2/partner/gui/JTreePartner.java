@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JTreePartner.java 38    3/07/24 9:54 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/JTreePartner.java 42    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -6,14 +6,13 @@ import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
-import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
-import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
-import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.tree.SortableTreeNode;
 import java.awt.Font;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 
@@ -24,17 +23,17 @@ import javax.swing.tree.TreePath;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * Tree to display the AS2 partner
  *
  * @author S.Heller
- * @version $Revision: 38 $
+ * @version $Revision: 42 $
  */
 public class JTreePartner extends JTree {
 
     public static final int ICON_HEIGHT = AS2Gui.IMAGE_SIZE_TREENODE;
-    
+    private final List<Partner> fullPartnerList = Collections.synchronizedList(new ArrayList<Partner>());
+
     /**
      * Holds a new partner ID for every created partner that is always negativ
      * but unique in this lifecycle
@@ -44,33 +43,29 @@ public class JTreePartner extends JTree {
      * This is the root node
      */
     private final SortableTreeNode root;
-    private final BaseClient baseClient;
 
     /**
      * Tree constructor
      */
-    public JTreePartner(BaseClient baseClient) {
+    public JTreePartner() {
         super(new SortableTreeNode());
-        this.baseClient = baseClient;
         this.setRootVisible(false);
         this.root = (SortableTreeNode) this.getModel().getRoot();
         this.setCellRenderer(new TreeCellRendererPartner());
         //adjust font and row height, depending on icon size
-        this.setRowHeight(ICON_HEIGHT+1);
+        this.setRowHeight(ICON_HEIGHT + 1);
         //the standard ratio from row hight to font size is 11/16 which is 0.68
-        Font treeFont = this.getFont().deriveFont((float)(0.68f*ICON_HEIGHT));
-        this.setFont( treeFont );
+        Font treeFont = this.getFont().deriveFont((float) (0.68f * ICON_HEIGHT));
+        this.setFont(treeFont);
     }
 
     /**
      * Returns the partner that is the local station or null if none exists
      */
     public List<Partner> getLocalStations() {
-        synchronized (this.getModel()) {
-            List<Partner> localStationList = new ArrayList<Partner>();
-            for (int i = 0; i < this.root.getChildCount(); i++) {
-                SortableTreeNode child = (SortableTreeNode) root.getChildAt(i);
-                Partner partner = (Partner) child.getUserObject();
+        List<Partner> localStationList = new ArrayList<Partner>();
+        synchronized (this.fullPartnerList) {
+            for (Partner partner : this.fullPartnerList) {
                 if (partner.isLocalStation()) {
                     localStationList.add(partner);
                 }
@@ -125,18 +120,19 @@ public class JTreePartner extends JTree {
     }
 
     /**
-     * Builds up the tree
+     * Builds up the tree with a given list of partners
      */
-    public List<Partner> buildTree() throws Exception {
+    public void buildTree(List<Partner> newFullPartnerList, List<Partner> filteredPartnerList) throws Exception {
+        SortableTreeNode firstNodePartner = null;
+        synchronized (this.fullPartnerList) {
+            this.fullPartnerList.clear();
+            this.fullPartnerList.addAll(newFullPartnerList);
+        }
         synchronized (this.getModel()) {
             this.root.removeAllChildren();
-            PartnerListResponse response = (PartnerListResponse) this.baseClient.sendSync(
-                    new PartnerListRequest(PartnerListRequest.LIST_ALL), Partner.TIMEOUT_PARTNER_REQUEST);
-            List<Partner> partnerList = response.getList();
             SortableTreeNode nodePartner = null;
-            SortableTreeNode firstNodePartner = null;
-            for (int i = 0; i < partnerList.size(); i++) {
-                nodePartner = new SortableTreeNode(partnerList.get(i));
+            for (Partner partner : filteredPartnerList) {
+                nodePartner = new SortableTreeNode(partner);
                 this.root.add(nodePartner);
                 if (firstNodePartner == null) {
                     firstNodePartner = nodePartner;
@@ -147,17 +143,23 @@ public class JTreePartner extends JTree {
                 this.fireTreeExpanded(new TreePath(nodePartner.getPath()));
 
             }
-            if (firstNodePartner != null) {
-                this.setSelectionPath(new TreePath(firstNodePartner.getPath()));
-            }
-            return (partnerList);
         }
+        SortableTreeNode firstNodePartnerFinal = firstNodePartner;
+        ((DefaultTreeModel) this.getModel()).nodeStructureChanged(this.root);
+        SwingUtilities.invokeLater(new Runnable() {
+            @Override
+            public void run() {
+                if (firstNodePartnerFinal != null) {
+                    setSelectionPath(new TreePath(firstNodePartnerFinal.getPath()));
+                }
+            }
+        });
     }
 
     /**
      * Returns a specified partner from the tree
      */
-    public Partner getPartnerByName(String name) {
+    public Partner getDisplayedPartnerByName(String name) {
         synchronized (this.getModel()) {
             for (int i = 0; i < this.root.getChildCount(); i++) {
                 SortableTreeNode child = (SortableTreeNode) root.getChildAt(i);
@@ -179,8 +181,8 @@ public class JTreePartner extends JTree {
         this.uniquePartnerIdCounter--;
         partner.setName("Partner");
         partner.setAS2Identification("AS2Ident");
-        partner.setURL(partner.getDefaultURL());
-        partner.setMdnURL(partner.getDefaultURL());
+        partner.setURL(Partner.DEFAULT_URL);
+        partner.setMdnURL(Partner.DEFAULT_URL);
         partner.setLocalStation(false);
         List<KeystoreCertificate> list = certificateManagerEncSign.getKeyStoreCertificateList();
         if (!list.isEmpty()) {
@@ -188,11 +190,11 @@ public class JTreePartner extends JTree {
             //just take the first entry
             PartnerCertificateInformation signInfo = new PartnerCertificateInformation(
                     certificate.getFingerPrintSHA1(),
-                    PartnerCertificateInformation.CATEGORY_SIGN);
+                    PartnerCertificateInformation.Category.SIGN);
             partner.setCertificateInformation(signInfo);
             PartnerCertificateInformation cryptInfo = new PartnerCertificateInformation(
                     certificate.getFingerPrintSHA1(),
-                    PartnerCertificateInformation.CATEGORY_CRYPT);
+                    PartnerCertificateInformation.Category.CRYPT);
             partner.setCertificateInformation(cryptInfo);
         }
         this.addPartner(partner);
@@ -201,6 +203,9 @@ public class JTreePartner extends JTree {
 
     public void addPartner(Partner partner) {
         synchronized (this.getModel()) {
+            synchronized (this.fullPartnerList) {
+                this.fullPartnerList.add(partner);
+            }
             SortableTreeNode node = new SortableTreeNode(partner);
             this.root.add(node);
             ((DefaultTreeModel) this.getModel()).nodeStructureChanged(this.root);
@@ -233,7 +238,7 @@ public class JTreePartner extends JTree {
             if (selectedNode == null) {
                 return (null);
             }
-            Partner partner = (Partner) selectedNode.getUserObject();
+            Partner partnerToDelete = (Partner) selectedNode.getUserObject();
             int index = this.root.getIndex(selectedNode);
             this.root.remove(selectedNode);
             if (index > 0) {
@@ -242,7 +247,10 @@ public class JTreePartner extends JTree {
             ((DefaultTreeModel) this.getModel()).nodeStructureChanged(this.root);
             SortableTreeNode newSelectedNode = (SortableTreeNode) root.getChildAt(index);
             this.setSelectionPath(new TreePath(newSelectedNode.getPath()));
-            return (partner);
+            synchronized (this.fullPartnerList) {
+                this.fullPartnerList.remove(partnerToDelete);
+            }
+            return (partnerToDelete);
         }
     }
 
@@ -263,14 +271,8 @@ public class JTreePartner extends JTree {
      * Returns a list of all partners
      */
     public List<Partner> getAllPartner() {
-        List<Partner> allPartnerList = new ArrayList<Partner>();
-        synchronized (this.getModel()) {            
-            for (int i = 0; i < this.root.getChildCount(); i++) {
-                SortableTreeNode child = (SortableTreeNode) root.getChildAt(i);
-                Partner partner = (Partner) child.getUserObject();
-                allPartnerList.add(partner);
-            }
-            return (allPartnerList);
+        synchronized (this.fullPartnerList) {
+            return (Collections.unmodifiableList(this.fullPartnerList));
         }
     }
 

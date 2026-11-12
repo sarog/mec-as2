@@ -1,0 +1,25 @@
+$Header:$
+Questo file contiene il modello di notifica per testare le impostazioni della posta elettronica.
+È possibile utilizzare le seguenti variabili, che vengono sostituite di conseguenza:
+${PRODUCTNAME}: Nome del prodotto
+${HOST}: Host su cui è in esecuzione il server
+${USER}: Utente con cui il server è in esecuzione
+${MAILHOST}: Nome host SMTP
+${MAILPORT}: porta del server SMTP
+${CONNECTIONSECURITY}: Sicurezza della connessione (NONE/STARTSSL/SSL)
+${AUTHORIZATION}: Utente/password, OAUTH2 o NESSUNO
+
+
+
+[SUBJECT]
+Messaggio per il controllo della configurazione
+
+
+[BODY]
+Questo messaggio è stato inviato dall'utente ${USER} sull'host ${HOST}. La ricezione di questo messaggio assicura che le impostazioni di ${PRODUCTNAME} per la notifica via e-mail siano corrette.
+
+Impostazioni di questo tentativo andato a buon fine:
+
+Server di posta SMTP: ${MAILHOST}:${MAILPORT}
+Sicurezza della connessione: ${CONNECTIONSECURITY}
+Autorizzazione: ${AUTHORIZATION}

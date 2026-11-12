@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/DebuggableConnection.java 12    24/11/23 11:55 Heller $
+//$Header: /mec_as4/de/mendelson/util/database/DebuggableConnection.java 13    14/04/26 9:05 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Array;
@@ -34,7 +34,7 @@ import java.util.logging.Logger;
  * Wrapper for a database connection that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class DebuggableConnection implements Connection {
 
@@ -44,7 +44,7 @@ public class DebuggableConnection implements Connection {
     /**
      * Counter for the unique query ids
      */
-    private final static AtomicLong currentId = new AtomicLong(0);
+    private static final AtomicLong currentId = new AtomicLong(0);
 
     /**
      * Creates a new instance of DebuggableConnection

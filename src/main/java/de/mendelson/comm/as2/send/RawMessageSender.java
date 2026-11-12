@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 28    10/07/24 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 30    23/03/26 8:03 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -7,6 +7,7 @@ import de.mendelson.comm.as2.clientserver.message.IncomingMessageResponse;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.clientserver.AnonymousTextClient;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.ClientType;
 import de.mendelson.util.security.BCCryptoHelper;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -23,11 +24,11 @@ import java.util.logging.Logger;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Raw data uploader, for test purpose. Sends a already fully prepared
- * AS2 message to a specified sender
+ * Raw data uploader, for test purpose. Sends a already fully prepared AS2
+ * message to a specified sender
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 30 $
  */
 public class RawMessageSender {
 
@@ -51,8 +52,9 @@ public class RawMessageSender {
             }
         }
         AnonymousTextClient client = null;
-        client = new AnonymousTextClient(BaseClient.CLIENT_UNSPECIFIED);
-        client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);        
+        client = new AnonymousTextClient(ClientType.UNSPECIFIED,
+                AS2ServerVersion.instance());
+        client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
         IncomingMessageRequest messageRequest = new IncomingMessageRequest();
         messageRequest.setMessageDataFilename(rawDataFile.toAbsolutePath().toString());
         messageRequest.setHeader(header);

@@ -1,4 +1,4 @@
-//$Header: /mec_oftp2/de/mendelson/activation/AWSRESTAccess.java 2     13/03/25 13:23 Heller $
+//$Header: /mec_oftp2/de/mendelson/activation/AWSRESTAccess.java 3     7/04/26 13:12 Heller $
 package de.mendelson.activation;
 
 /*
@@ -13,11 +13,11 @@ public class AWSRESTAccess {
     private AWSRESTAccess() {
     }
 
-    public static String retrieveInstanceId() {
+    public static String getInstanceId() {
         return ("MENDELSON COMMUNITY EDITION");
     }
 
-    public static String retrieveIP4Address() {
+    public static String getIP4Address() {
         return ("MENDELSON COMMUNITY EDITION");
     }
 }

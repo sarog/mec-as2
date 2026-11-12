@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/IProductVersion.java 1     21.04.21 10:56 Heller $
+//$Header: /oftp2/de/mendelson/IProductVersion.java 2     25/09/25 16:57 Heller $
 package de.mendelson;
 
 /*
@@ -11,7 +11,7 @@ package de.mendelson;
 /**
  * Makes all software versions of the different mendelson products available in one interface
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public interface IProductVersion{
 
@@ -20,4 +20,8 @@ public interface IProductVersion{
      */
     public String getFullName();
     
+    /**
+     * Returns the magic number for the client-server communication
+     */
+    public long getMagicNumber();
 }

@@ -1,0 +1,42 @@
+$Header:$
+Questo file contiene il modello di notifica nel caso in cui si verifichi un'anomalia.
+Viene ricevuto di nuovo un messaggio con un numero di messaggio già elaborato
+Vengono sostituite le seguenti variabili
+${PRODUCTNAME}: nome del prodotto
+${HOST}: Host del server AS2
+${EXISTING_MESSAGE_INIT_TIME}: orario di creazione del messaggio già elaborato
+${MESSAGEID}: Numero del messaggio ricevuto
+${SENDER}: Canale di notizie
+${RECEIVER}: Destinatario del messaggio
+
+
+
+
+[SUBJECT]
+Messaggio rifiutato che è già stato elaborato
+
+
+[BODY]
+Il vostro interlocutore ${MITTENTE} vi ha inviato un messaggio il cui numero di messaggio
+è uguale al numero di messaggio di un messaggio già elaborato. Questo
+messaggio non è stato elaborato ma rifiutato.
+Il destinatario è la stazione locale ${RECEIVER}.
+
+Questo può avere i seguenti motivi e richiede un controllo manuale:
+
+
+*I numeri dei messaggi creati da ${SENDER} non sono univoci - questo è un problema del vostro interlocutore.
+    unico - questo è un problema del vostro interlocutore.
+*${MITTENTE} ha reinviato un messaggio perché non ha ricevuto la vostra conferma di ricezione.
+    non l'ha ricevuto. Questa procedura comporta il rischio che il file venga ricevuto ed elaborato due volte.
+    ricevuto ed elaborato due volte e non è consigliabile. Il protocollo AS2
+    Il protocollo AS2 non specifica chiaramente come debbano essere gestiti i numeri di messaggio duplicati e se
+    e se i messaggi duplicati debbano essere rifiutati.
+
+
+Data iniziale del messaggio già elaborato: ${EXISTING_MESSAGE_INIT_TIME}
+Numero di messaggio del messaggio già elaborato: ${MESSAGEID}
+
+Si prega di controllare il sistema AS2 per vedere cosa è successo. È possibile
+che ${MITTENTE} abbia uno stato della transazione diverso dal proprio. Dovreste
+contattare il vostro partner e chiarire la questione.

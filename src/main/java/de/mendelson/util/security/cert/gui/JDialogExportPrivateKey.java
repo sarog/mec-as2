@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportPrivateKey.java 4     11/02/25 13:40 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JDialogExportPrivateKey.java 6     8/04/26 13:35 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -34,17 +34,14 @@ import javax.swing.JFrame;
  * Export a private key into a pkcs#12 keystore or a PEM encoded keyfile
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class JDialogExportPrivateKey extends JDialog {
 
-    private final String EXPORTFORMAT_PKCS12 = ExportRequestPrivateKey.EXPORTFORMAT_PKCS12;
-    private final String EXPORTFORMAT_PEM = ExportRequestPrivateKey.EXPORTFORMAT_PEM;
+    private static final String EXPORTFORMAT_PKCS12 = ExportRequestPrivateKey.EXPORTFORMAT_PKCS12;
+    private static final String EXPORTFORMAT_PEM = ExportRequestPrivateKey.EXPORTFORMAT_PEM;
 
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -92,7 +89,7 @@ public class JDialogExportPrivateKey extends JDialog {
         }
         this.jComboBoxKeys.setRenderer(new ListCellRendererCertificates());
         this.populateKeyList(selectedAlias);
-        
+
         this.getRootPane().setDefaultButton(this.jButtonOk);
         this.setButtonState();
     }
@@ -169,7 +166,7 @@ public class JDialogExportPrivateKey extends JDialog {
             }
             saveFileOnServer = response.getSaveFileOnServer();
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_SUCCESS,
+                    UINotification.Type.SUCCESS,
                     rb.getResourceString("key.export.success.title"),
                     rb.getResourceString("key.exported.to.file",
                             new Object[]{
@@ -184,7 +181,7 @@ public class JDialogExportPrivateKey extends JDialog {
                     }));
         } catch (Throwable e) {
             UINotification.instance().addNotification(null,
-                    UINotification.TYPE_ERROR,
+                    UINotification.Type.ERROR,
                     rb.getResourceString("key.export.error.title"),
                     rb.getResourceString("key.export.error.message", e.getMessage()));
         }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequired.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/messages/LoginRequired.java 7     13/03/26 10:09 Heller $
 package de.mendelson.util.clientserver.messages;
 
 import de.mendelson.util.clientserver.user.User;
@@ -17,13 +17,17 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
-public class LoginRequired extends ClientServerMessage implements Serializable {
+public final class LoginRequired extends ClientServerMessage implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private User user;
 
+    public LoginRequired(){
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Login required.");

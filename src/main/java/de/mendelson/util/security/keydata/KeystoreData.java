@@ -1,7 +1,5 @@
-//$Header: /oftp2/de/mendelson/util/security/keydata/KeystoreData.java 1     17/04/24 15:36 Heller $
+//$Header: /oftp2/de/mendelson/util/security/keydata/KeystoreData.java 2     9/10/25 16:52 Heller $
 package de.mendelson.util.security.keydata;
-
-import de.mendelson.util.security.cert.KeystoreStorageImplDB;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -14,11 +12,11 @@ import de.mendelson.util.security.cert.KeystoreStorageImplDB;
  * Stores keystore data
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class KeystoreData {
 
-    private final byte[] data;
+    private byte[] data;
     private final String securityProvider;
     private final int storageType;
 
@@ -51,6 +49,13 @@ public class KeystoreData {
     
     public String getStorageTypeAsStr(){
         return( KeydataAccessDB.intToKeystoreTypeStr(this.storageType));
+    }
+
+    /**
+     * @param data the data to set
+     */
+    public void setData(byte[] data) {
+        this.data = data;
     }
     
 

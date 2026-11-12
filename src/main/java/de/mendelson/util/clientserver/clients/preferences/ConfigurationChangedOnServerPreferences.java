@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServerPreferences.java 2     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/clients/preferences/ConfigurationChangedOnServerPreferences.java 4     11/06/25 13:17 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,7 +13,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ConfigurationChangedOnServerPreferences extends ConfigurationChangedOnServer implements Serializable{
 
@@ -35,6 +36,15 @@ public class ConfigurationChangedOnServerPreferences extends ConfigurationChange
         this.newValue = newValue;
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    protected ConfigurationChangedOnServerPreferences() {
+        super();
+    }
+    
     /**
      * @return the key
      */

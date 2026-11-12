@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBMigrationResponse.java 2     7/11/23 10:05 Heller $
+//$Header: /as2/de/mendelson/comm/as2/database/migration/clientserver/HSQLDBMigrationResponse.java 4     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.database.migration.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 /*
@@ -15,7 +16,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class HSQLDBMigrationResponse extends ClientServerResponse implements Serializable {
 
@@ -28,6 +29,15 @@ public class HSQLDBMigrationResponse extends ClientServerResponse implements Ser
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public HSQLDBMigrationResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("HSQLDB preferences migration response");

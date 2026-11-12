@@ -1,10 +1,13 @@
-//$Header: /mec_as4/de/mendelson/util/database/AbstractDBDriverManagerPostgreSQL.java 3     6.01.22 9:25 Heller $
+//$Header: /mec_as2/de/mendelson/util/database/AbstractDBDriverManagerPostgreSQL.java 4     14/04/26 16:46 Heller $
 package de.mendelson.util.database;
 
+import de.mendelson.util.systemevents.SystemEventManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.List;
+import java.util.Optional;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -17,7 +20,7 @@ import java.sql.Statement;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public abstract class AbstractDBDriverManagerPostgreSQL implements IDBDriverManager {
     @Override
@@ -58,19 +61,19 @@ public abstract class AbstractDBDriverManagerPostgreSQL implements IDBDriverMana
     }
 
     @Override
-    public String readTextStoredAsJavaObject(ResultSet result, String columnName) throws Exception {
+    public String readTextStoredAsJavaObject(ResultSet x, String y) throws Exception {
         throw new IllegalAccessError();
     }
 
    
     @Override
-    public Object readObjectStoredAsJavaObject(ResultSet result, String columnName) throws Exception {
+    public Object readObjectStoredAsJavaObject(ResultSet x, String y) throws Exception {
         throw new IllegalAccessError();
     }
 
    
     @Override
-    public void setObjectParameterAsJavaObject(PreparedStatement statement, int index, Object obj) throws Exception {
+    public void setObjectParameterAsJavaObject(PreparedStatement x, int index, Object obj) throws Exception {
         throw new IllegalAccessError();
     }
 
@@ -80,7 +83,22 @@ public abstract class AbstractDBDriverManagerPostgreSQL implements IDBDriverMana
      * writing binary objects differs relating the used database system
      */
     @Override
-    public byte[] readBytesStoredAsJavaObject(ResultSet result, String columnName) throws Exception {
+    public byte[] readBytesStoredAsJavaObject(ResultSet x, String columnName) throws Exception {
+        throw new IllegalAccessError();
+    }
+    
+    @Override
+    public void setTableLockREAD(Statement a, String[] b) throws SQLException {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public <T> Optional<T> executeWithRetry(SystemEventManager a, RetryableDBOperation<T> b) {
+        throw new IllegalAccessError();
+    }
+
+    @Override
+    public <T> T setSingleRowLockForModification(Statement s, String c, String b, List<Object> e, String f, Class<T> a) throws SQLException {
         throw new IllegalAccessError();
     }
 

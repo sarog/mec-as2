@@ -1,6 +1,7 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/KeyCopyRequest.java 4     9/11/23 9:52 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/KeyCopyRequest.java 7     11/06/25 13:17 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import java.io.IOException;
@@ -18,7 +19,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 7 $
  */
 public class KeyCopyRequest extends ClientServerMessage implements Serializable {
 
@@ -26,9 +27,9 @@ public class KeyCopyRequest extends ClientServerMessage implements Serializable 
 
     public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplFile.KEYSTORE_USAGE_TLS;
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
-    private final int keystoreUsageSource;
-    private final int keystoreUsageTarget;
-    private final String fingerprintSHA1;
+    private int keystoreUsageSource;
+    private int keystoreUsageTarget;
+    private String fingerprintSHA1;
 
     public KeyCopyRequest(
             final int KEYSTORE_USAGE_SOURCE,
@@ -39,6 +40,15 @@ public class KeyCopyRequest extends ClientServerMessage implements Serializable 
         this.fingerprintSHA1 = fingerprintSHA1;
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public KeyCopyRequest() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("Key copy request");
@@ -72,5 +82,26 @@ public class KeyCopyRequest extends ClientServerMessage implements Serializable 
      */
     public String getFingerprintSHA1() {
         return fingerprintSHA1;
+    }
+
+    /**
+     * @param keystoreUsageSource the keystoreUsageSource to set
+     */
+    public void setKeystoreUsageSource(int keystoreUsageSource) {
+        this.keystoreUsageSource = keystoreUsageSource;
+    }
+
+    /**
+     * @param keystoreUsageTarget the keystoreUsageTarget to set
+     */
+    public void setKeystoreUsageTarget(int keystoreUsageTarget) {
+        this.keystoreUsageTarget = keystoreUsageTarget;
+    }
+
+    /**
+     * @param fingerprintSHA1 the fingerprintSHA1 to set
+     */
+    public void setFingerprintSHA1(String fingerprintSHA1) {
+        this.fingerprintSHA1 = fingerprintSHA1;
     }
 }

@@ -1,10 +1,12 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewResponse.java 6     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/clients/filesystemview/FileSystemViewResponse.java 8     11/06/25 13:16 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.Serializable;
 import java.nio.file.FileSystems;
 import java.util.List;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -15,21 +17,35 @@ import java.util.List;
 
 /**
  * Msg for the client server protocol
+ *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class FileSystemViewResponse extends ClientServerResponse implements Serializable {
 
     private static final long serialVersionUID = 1L;
+    
     private FileObject parameterFile = null;
     private List<FileObject> parameterFileArray = null;
     private String parameterString = null;
-    /**As this object is always created on the server side this gives additional information about the server side
-     * path separator*/
-    private final String serverSideFileSeparator;
+    /**
+     * As this object is always created on the server side this gives additional
+     * information about the server side path separator
+     */
+    private String serverSideFileSeparator;
 
     public FileSystemViewResponse(FileSystemViewRequest request) {
         super(request);
+        this.serverSideFileSeparator = FileSystems.getDefault().getSeparator();
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public FileSystemViewResponse() {
+        super();
         this.serverSideFileSeparator = FileSystems.getDefault().getSeparator();
     }
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 46    18/06/24 11:51 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/gui/DialogCEMOverview.java 49    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem.gui;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -6,6 +6,7 @@ import de.mendelson.comm.as2.cem.clientserver.CEMCancelRequest;
 import de.mendelson.comm.as2.cem.clientserver.CEMDeleteRequest;
 import de.mendelson.comm.as2.cem.clientserver.CEMListRequest;
 import de.mendelson.comm.as2.cem.clientserver.CEMListResponse;
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.clientserver.message.RefreshClientCEMDisplay;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
@@ -38,6 +39,7 @@ import javax.swing.ListSelectionModel;
 import javax.swing.SwingUtilities;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.TableColumnModel;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -50,19 +52,23 @@ import javax.swing.event.ListSelectionListener;
  * Gives an overview on all CEM messages
  *
  * @author S.Heller
- * @version $Revision: 46 $
+ * @version $Revision: 49 $
  */
 public class DialogCEMOverview extends JDialog implements ListSelectionListener, ClientsideMessageProcessor {
 
-    private final static MendelsonMultiResolutionImage ICON_EXIT
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/exit.svg", 24);
-    private final static MendelsonMultiResolutionImage ICON_DELETE
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/delete.svg", 24);
-    private final static MendelsonMultiResolutionImage ICON_MESSAGEDETAILS
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/messagedetails.svg", 24);
-    private final static MendelsonMultiResolutionImage ICON_CEM
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg", 24);
-    
+    private static final MendelsonMultiResolutionImage ICON_EXIT
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/exit.svg", 
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
+    private static final MendelsonMultiResolutionImage ICON_DELETE
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/delete.svg", 
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
+    private static final MendelsonMultiResolutionImage ICON_MESSAGEDETAILS
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/messagedetails.svg", 
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
+    private static final MendelsonMultiResolutionImage ICON_CEM
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg", 
+                    AS2Gui.IMAGE_SIZE_TOOLBAR);
+
     /**
      * Manages all internal certificates
      */
@@ -96,12 +102,14 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
         this.setMultiresolutionIcons();
         this.jToolBar.setLayout(new LayoutManagerJToolbar());
         List<CEMEntry> cemEntries = ((CEMListResponse) this.guiClient.getBaseClient().sendSync(new CEMListRequest())).getList();
+        this.jTable.setRowHeight(TableModelCEMOverview.ROW_HEIGHT);
         ((TableModelCEMOverview) (this.jTable.getModel())).passNewData(cemEntries);
-        this.jTable.getColumnModel().getColumn(0).setCellRenderer(new TableCellRendererCEMSystemState());
-        this.jTable.getColumnModel().getColumn(1).setCellRenderer(new TableCellRendererCEMState(this.guiClient.getBaseClient()));
-        this.jTable.getColumnModel().getColumn(3).setCellRenderer(new TableCellRendererPartner(this.guiClient.getBaseClient()));
-        this.jTable.getColumnModel().getColumn(4).setCellRenderer(new TableCellRendererPartner(this.guiClient.getBaseClient()));
-        this.jTable.getColumnModel().getColumn(5).setCellRenderer(new TableCellRendererCertificates(this.certificateManagerEncSign,
+        TableColumnModel columModel = this.jTable.getColumnModel();
+        columModel.getColumn(0).setCellRenderer(new TableCellRendererCEMSystemState());
+        columModel.getColumn(1).setCellRenderer(new TableCellRendererCEMState(this.guiClient.getBaseClient()));
+        columModel.getColumn(3).setCellRenderer(new TableCellRendererPartner(this.guiClient.getBaseClient()));
+        columModel.getColumn(4).setCellRenderer(new TableCellRendererPartner(this.guiClient.getBaseClient()));
+        columModel.getColumn(5).setCellRenderer(new TableCellRendererCertificates(this.certificateManagerEncSign,
                 TableCellRendererCertificates.TYPE_ISSUER_SERIAL));
         JTableColumnResizer.adjustColumnWidthByContent(this.jTable);
         this.jTable.getSelectionModel().addListSelectionListener(this);
@@ -120,7 +128,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
         this.jButtonRemove.setIcon(new ImageIcon(ICON_DELETE));
         this.jButtonCancel.setIcon(new ImageIcon(ICON_DELETE));
     }
-    
+
     private void setButtonState() {
         int selectedRow = this.jTable.getSelectedRow();
         boolean responseExists = false;
@@ -129,7 +137,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
             CEMEntry entry = ((TableModelCEMOverview) this.jTable.getModel()).getRowAt(selectedRow);
             responseExists = entry.getResponseMessageid() != null;
             CEMSystemActivity activity = new CEMSystemActivity(entry);
-            isPending = activity.getState() == CEMEntry.STATUS_PENDING_INT;
+            isPending = activity.getState() == CEMEntry.Status.PENDING;
         }
         this.jButtonDisplayRequestDetails.setEnabled(selectedRow >= 0);
         this.jButtonDisplayResponseDetails.setEnabled(responseExists);
@@ -168,7 +176,7 @@ public class DialogCEMOverview extends JDialog implements ListSelectionListener,
             } else {
                 this.jTextAreaDetails.setText(certificate.getInfo());
             }
-            if (entry.getCemState() == CEMEntry.STATUS_REJECTED_INT && entry.getReasonForRejection() != null) {
+            if (entry.getCemState() == CEMEntry.Status.REJECTED && entry.getReasonForRejection() != null) {
                 this.jTabbedPane.addTab(this.rb.getResourceString("tab.reasonforrejection"), this.jPanelReasonForRejection);
                 this.jTextAreaReasonForRejection.setText(entry.getReasonForRejection());
             }

@@ -1,7 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_fr.java 6     9/12/24 15:50 Hell $
+//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_fr.java 7     9/04/26 8:08 Heller $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.clientserver.connectiontest.ConnectionTest;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -15,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleDialogConnectionTestResult_fr extends MecResourceBundle {
 
@@ -31,13 +32,13 @@ public class ResourceBundleDialogConnectionTestResult_fr extends MecResourceBund
      */
     private static final Object[][] CONTENTS = {
         {"title", "Résultat du test de connexion"},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_OFTP2, 
+        {"description." +  ConnectionTest.Type.OFTP2.toInt(), 
             "Le système a effectué un test de connexion à l'adresse {0}, port {1}. "
             + "Le résultat suivant indique si la connexion a réussi et si un serveur OFTP2 "
             + "fonctionne à cette adresse. Si une connexion TLS doit être utilisée et que cela "
             + "était possible, vous pouvez télécharger les certificats de votre partenaire et les "
             + "importer dans votre keystore."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS2, 
+        {"description." +  ConnectionTest.Type.AS2.toInt(), 
             "Le système a effectué un test de connexion à l''adresse {0}, port {1}. "
             + "Le résultat suivant indique si la connexion a réussi et si un serveur "
             + "HTTP fonctionne à cette adresse. Même si le test est réussi, il n''est "
@@ -45,7 +46,7 @@ public class ResourceBundleDialogConnectionTestResult_fr extends MecResourceBund
             + "AS2. Si une connexion TLS doit être utilisée (HTTPS) et que cela a été "
             + "possible avec succès, vous pouvez télécharger les certificats de votre "
             + "partenaire et les importer dans votre keystore."},
-        {"description." + JDialogConnectionTestResult.CONNECTION_TEST_AS4, 
+        {"description." +  ConnectionTest.Type.AS4.toInt(), 
             "Le système a effectué un test de connexion à l''adresse {0}, port {1}. "
             + "Le résultat suivant indique si la connexion a réussi et si un serveur "
             + "HTTP fonctionne à cette adresse. Même si le test est réussi, il n''est "

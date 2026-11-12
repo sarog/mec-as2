@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/systemevents/ResourceBundleSystemEventManager_pt.java 3     15/01/25 10:18 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEventManager_pt.java 4     20/02/26 16:54 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleSystemEventManager_pt extends MecResourceBundle {
 
@@ -38,6 +38,7 @@ public class ResourceBundleSystemEventManager_pt extends MecResourceBundle {
         {"label.error.clientserver", "Problema na ligação cliente-servidor"},
         {"label.body.clientos", "Sistema operativo do cliente: {0}"},
         {"label.body.clientip", "Endereço IP: {0}"},
+        {"label.body.sessionid", "Session id: [{0}]"},
         {"label.body.processid", "Número do processo no sistema operativo do cliente: {0}"},
         {"label.body.tlsprotocol", "Protocolo TLS: {0}"},
         {"label.body.tlsciphersuite", "Cifra TLS: {0}"},

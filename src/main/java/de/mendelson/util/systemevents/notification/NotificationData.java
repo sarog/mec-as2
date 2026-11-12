@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationData.java 12    2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/notification/NotificationData.java 13    11/06/25 13:17 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.oauth2.OAuth2Config;
@@ -14,7 +14,7 @@ import java.io.Serializable;
 /**
  * Stores the notification data for the mendelson products
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public abstract class NotificationData implements Serializable{
 
@@ -31,9 +31,9 @@ public abstract class NotificationData implements Serializable{
     /**The connection security, one of SECURITY_PLAIN, SECURITY_START_TLS, SECURITY_TLS*/
     public abstract int getConnectionSecurity();
     /**Returns if this is a user/password login*/
-    public abstract boolean usesSMTPAuthCredentials();
+    public abstract boolean isUsesSMTPAuthCredentials();
     /**Returns if this is a OAuth2 authorization*/
-    public abstract boolean usesSMTPAuthOAuth2();
+    public abstract boolean isUsesSMTPAuthOAuth2();
     /**The user name for a SMTP login using credentials*/
     public abstract String getSMTPUser();
     /**The password for a SMTP login using credentials*/

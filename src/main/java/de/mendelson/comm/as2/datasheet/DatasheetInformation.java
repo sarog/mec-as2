@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetInformation.java 5     21/11/24 17:47 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetInformation.java 6     23/03/26 12:56 Heller $
 package de.mendelson.comm.as2.datasheet;
 
 import de.mendelson.comm.as2.message.AS2Message;
+import de.mendelson.comm.as2.message.MessageCompressionType;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,7 +14,7 @@ import de.mendelson.comm.as2.message.AS2Message;
 /**
  * Container that contains information for the datasheet
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class DatasheetInformation {
 
@@ -26,7 +27,7 @@ public class DatasheetInformation {
     private boolean requestSignedMDN = false;
     private int encryption = AS2Message.ENCRYPTION_AES_128_CBC;
     private int signature = AS2Message.SIGNATURE_SHA256;
-    private int compression = AS2Message.COMPRESSION_NONE;
+    private MessageCompressionType compression = MessageCompressionType.NONE;
 
     public DatasheetInformation() {
     }
@@ -160,14 +161,14 @@ public class DatasheetInformation {
     /**
      * @return the compression
      */
-    public int getCompression() {
+    public MessageCompressionType getCompression() {
         return compression;
     }
 
     /**
      * @param compression the compression to set
      */
-    public void setCompression(int compression) {
+    public void setCompression(MessageCompressionType compression) {
         this.compression = compression;
     }
 

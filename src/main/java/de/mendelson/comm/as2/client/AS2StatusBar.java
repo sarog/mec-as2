@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 48    19/12/24 8:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 50    15/10/25 8:25 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.comm.as2.configurationcheck.gui.JDialogIssuesList;
@@ -7,19 +7,20 @@ import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckRequest;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckResponse;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.ColorUtil;
-import de.mendelson.util.DisplayMode;
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.ProgressPanel;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.GUIClient;
+import de.mendelson.util.displaymode.DisplayMode;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Point;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
+import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,7 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.SwingWorker;
 import javax.swing.UIManager;
 
 /*
@@ -41,7 +43,7 @@ import javax.swing.UIManager;
  * Status bar for the AS2 GUI
  *
  * @author S.Heller
- * @version $Revision: 48 $
+ * @version $Revision: 50 $
  */
 public class AS2StatusBar extends JPanel implements IStatusBar {
 
@@ -574,6 +576,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     private de.mendelson.util.ProgressPanel progressPanel;
     // End of variables declaration//GEN-END:variables
 
+    
     public class ConfigurationCheckThread implements Runnable {
 
         public ConfigurationCheckThread() {
@@ -581,26 +584,31 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
 
         @Override
         public void run() {
-            try {
-                ConfigurationCheckRequest checkRequest = new ConfigurationCheckRequest();
-                checkRequest.setPerformClientRelatedTests(true);
-                ConfigurationCheckResponse response = (ConfigurationCheckResponse) baseClient.sendSync(checkRequest);
-                final int issueCount = response.getIssues().size();
-                if (issueCount == 0) {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
+            SwingWorker<Void, Integer> worker = new SwingWorker<>() {
+                @Override
+                protected Void doInBackground() {
+                    try {
+                        ConfigurationCheckRequest checkRequst = new ConfigurationCheckRequest();
+                        checkRequst.setPerformClientRelatedTests(true);
+                        ConfigurationCheckResponse response = (ConfigurationCheckResponse) baseClient.sendSync(checkRequst);
+                        final int issueCount = response.getIssues().size();
+                        publish(Integer.valueOf(issueCount));
+                    } catch (Throwable e) {
+                        //nop
+                    }
+                    return (null);
+                }
+
+                @Override
+                protected void process(List<Integer> issueCountList) {
+                    for (Integer issueCount : issueCountList) {
+                        if (issueCount == 0) {
                             notificationBadgeButton.setText("");
                             String text = rb.getResourceString("no.configuration.issues");
                             jLabelConfigurationIssue.setText(text);
                             int labelWidth = computeStringWidth(jLabelConfigurationIssue.getFont(), text) + 10;
                             jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, IMAGE_HEIGHT));
-                        }
-                    });
-                } else {
-                    SwingUtilities.invokeLater(new Runnable() {
-                        @Override
-                        public void run() {
+                        } else {
                             String text = rb.getResourceString("configuration.issue");
                             jLabelConfigurationIssue.setText(text);
                             notificationBadgeButton.setText(String.valueOf(issueCount));
@@ -612,20 +620,19 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                                     + 10
                                     + (int) notificationBadgeButton.getPreferredSize().getWidth(), IMAGE_HEIGHT));
                         }
-                    });
+                    }
                 }
-            } catch (Throwable e) {
-                //nop
-            }
+            };
+            worker.execute();
         }
-
+        
         private int computeStringWidth(Font font, String text) {
             AffineTransform affinetransform = new AffineTransform();
             FontRenderContext fontRenderContext = new FontRenderContext(affinetransform, true, true);
             int width = (int) (font.getStringBounds(text, fontRenderContext).getWidth());
             return (width);
         }
-
+        
     }
 
 }

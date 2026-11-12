@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_de.java 101   9/12/24 16:03 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences_de.java 104   9/09/25 16:23 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 101 $
+ * @version $Revision: 104 $
  */
 public class ResourceBundlePreferences_de extends MecResourceBundle {
 
@@ -91,11 +91,21 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "</HTML>"},
         {"label.deletestatsolderthan", "Von Statistikdaten, die älter sind als"},
         {"label.deletelogdirolderthan", "Von Protokolldaten, die älter sind als"},
-        {"label.asyncmdn.timeout", "Maximale Wartezeit auf asynchrone MDNs"},
-        {"label.asyncmdn.timeout.help", "<HTML><strong>Maximale Wartezeit auf asynchrone MDNs</strong>"
-            + "<br><br>Die Zeit, die das System auf eine asynchrone MDN (Message Delivery Notification) für eine gesendete AS2 Nachricht wartet, "
-            + "bevor es die Transaktion in den Status \"fehlgeschlagen\" versetzt.<br>"
-            + "Dieser Wert ist systemweit für alle Partner gültig.<br><br>Der Voreinstellungswert ist 30 min."
+        {"label.mdn.timeout", "Maximale Wartezeit auf MDN"},
+        {"label.mdn.timeout.help", "<HTML><strong>Maximale Wartezeit auf MDNs</strong>"
+            + "<br><br>Die Zeit, die das System auf eine MDN (Message Delivery Notification) für eine "
+            + "gesendete AS2 Nachricht wartet, "
+            + "bevor es die zugehörige Transaktion in den Status \"fehlgeschlagen\" versetzt.<br>"
+            + "Dieser Wert ist systemweit für alle Partner gültig.<br><br>Der Voreinstellungswert ist "
+            + PreferencesAS2.getDefaultValue(PreferencesAS2.MDN_WAIT_TIME) + " min, die Zeit "
+            + "wird ab dem erfolgreichen Verbindungsaufbau zum Partner gezählt.<br><br>"
+            + "Im Falle einer synchronen MDN wird die Verbindung zum Partner so lange offen gehalten, bis eine MDN auf dem Rückkanal"
+            + "empfangen wird oder diese Wartezeit abgelaufen ist. Wenn sie abgelaufen ist, wird die Verbindung beendet, die Transaktion "
+            + "auf den Status \"fehlgeschlagen\" gesetzt und die eventuelle Nachbearbeitung ausgeführt. Diese Transaktion wird nicht wiederholt.<br><br>"
+            + "Im Falle einer asynchronen MDN wird so lange auf die eingehende Verbindung des Partners mit der MDN gewartet, "
+            + "bis diese Wartezeit abgelaufen ist. Wenn nach Ablauf der Wartezeit keine MDN eingegangen ist, wird die zugehörige "
+            + "Transaktion auf \"fehlgeschlagen\" gesetzt und die eventuell definierte Nachbearbeitung ausgeführt. Auch hier findet "
+            + "keine Wiederholung der Transaktion statt."
             + "</HTML>"},
         {"label.httpsend.timeout", "HTTP/S Sende-Timeout"},
         {"label.httpsend.timeout.help", "<HTML><strong>HTTP/S Sende-Timeout</strong><br><br>"
@@ -152,7 +162,7 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
         {"testmail.message.success", "Eine Test-eMail wurde erfolgreich an {0} versandt."},
         {"testmail.message.error", "Fehler beim Senden der Test-eMail:\n{0}"},
         {"testmail.title", "Senden einer Test-eMail"},
-        {"testmail", "Test Mail"},                
+        {"testmail", "Test Mail"},
         {"info.restart.client", "Sie müssen den Client neu starten, damit diese Änderungen gültig werden!"},
         {"remotedir.select", "Verzeichnis auf dem Server wählen"},
         //retry
@@ -176,8 +186,6 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "Der Voreinstellungswert ist " + PreferencesAS2.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S) + "s."
             + "</HTML>"},
         {"label.sec", "s"},
-        {"keystore.hint", "<HTML><strong>Achtung:</strong><br>Bitte ändern Sie diese Parameter nur, wenn Sie externe Keystores "
-            + "einbinden möchten. Mit veränderten Pfaden kann es zu Problemen beim Update kommen.</HTML>"},
         {"maintenancemultiplier.day", "Tag(e)"},
         {"maintenancemultiplier.hour", "Stunde(n)"},
         {"maintenancemultiplier.minute", "Minute(n)"},
@@ -223,7 +231,8 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "angezeigt werden sollen.<br>Diese Einstellungen betreffen <strong>nicht</strong> Ihre empfangenen Daten/Dateien, diese "
             + "bleiben unberührt.<br>"
             + "Für gelöschte Transaktionen ist das Transaktionsprotokoll über die Funktionalität der Logsuche "
-            + "weiterhin verfügbar."
+            + "weiterhin verfügbar.<br><br>"
+            + "Diese Wartungseinstellung bereinigt die zugehörigen Verzeichnisse //temp, //sent und //_rawincoming im Dateisystem des Servers."
             + "</HTML>"},
         {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Löschen alter Statistikdaten</strong><br><br>Das System sammelt Kompatibilitätsdaten "
             + "der Partnersysteme und kann diese als Statistik darstellen.<br>"
@@ -271,13 +280,19 @@ public class ResourceBundlePreferences_de extends MecResourceBundle {
             + "</HTML>"
         },
         {"embedded.httpconfig.not.available", "HTTP Server nicht verfügbar oder Zugriffsprobleme auf Konfigurationsdatei"},
-        {"button.mailserverdetection", "Mail Server herausfinden"},   
+        {"button.mailserverdetection", "Mail Server herausfinden"},
         {"label.loghttprequests", "Protokollierung der HTTP Anfragen des integrierten HTTP Servers"},
         {"label.loghttprequests.help", "<HTML><strong>HTTP Anfrageprotokoll</strong><br><br>"
             + "Wenn aktiviert, schreibt der eingebettete HTTP-Server (Jetty) ein Anfrageprotokoll in "
             + "die Dateien <strong>log/yyyy_MM_dd.jetty.request.log</strong>. Diese Protokolldateien "
             + "werden nicht von der Systemwartung gelöscht - bitte löschen Sie sie manuell.<br><br>"
             + "Bitte starten Sie die Software neu, damit Änderungen dieser Einstellung gültig werden."
+            + "</HTML>"
+        },
+        {"label.logmessageprocessing", "Erweiterte Protokollierung der Nachrichtenverarbeitung"},
+        {"label.logmessageprocessing.help", "<HTML><strong>Erweiterte Protokollierung der Nachrichtenverarbeitung</strong><br><br>"
+            + "Wenn aktiviert, werden in das Protokoll erweiterte Ausgaben zur Verarbeitung der "
+            + "Nachrichten ausgegeben."
             + "</HTML>"
         },
     };

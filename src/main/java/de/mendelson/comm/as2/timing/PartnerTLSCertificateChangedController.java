@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/PartnerTLSCertificateChangedController.java 6     11/02/25 13:39 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/timing/PartnerTLSCertificateChangedController.java 11    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -39,12 +39,12 @@ import java.util.logging.Logger;
  * automatically imports this into the TLS certificate manager
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 11 $
  */
 public class PartnerTLSCertificateChangedController {
 
     public static final int CHECK_DELAY_IN_MIN = 15;
-    
+
     /**
      * Logger to log information to
      */
@@ -55,9 +55,9 @@ public class PartnerTLSCertificateChangedController {
     private final IDBDriverManager dbDriverManager;
     private final CertificateManager certificateManagerTLS;
     private ScheduledFuture future = null;
-    private final static MecResourceBundle rb;
-    private final static String MODULE_NAME;
-    private final static String MODULE_EVENT_SUBJECT_NAME;
+    private static final MecResourceBundle rb;
+    private static final String MODULE_NAME;
+    private static final String MODULE_EVENT_SUBJECT_NAME;
     private final PreferencesAS2 preferences;
 
     static {
@@ -88,7 +88,7 @@ public class PartnerTLSCertificateChangedController {
      */
     public void startTLSCertificateChangedControl(boolean logThis) {
         if (this.future == null) {
-            this.future = this.scheduledExecutor.scheduleWithFixedDelay(this.tlsCertificateChangedThread, 
+            this.future = this.scheduledExecutor.scheduleWithFixedDelay(this.tlsCertificateChangedThread,
                     CHECK_DELAY_IN_MIN, CHECK_DELAY_IN_MIN, TimeUnit.MINUTES);
             if (logThis) {
                 logger.log(Level.INFO, MODULE_NAME
@@ -137,7 +137,7 @@ public class PartnerTLSCertificateChangedController {
                 try {
                     if (partner.getURL() != null && partner.getURL().toLowerCase().startsWith("https")) {
                         ConnectionTest connectionTest = new ConnectionTest(logger,
-                                ConnectionTest.CONNECTION_TEST_AUTOMATIC_CERTIFICATE_DOWNLOAD);
+                                ConnectionTest.Type.AUTOMATIC_CERTIFICATE_DOWNLOAD);
                         if (proxy != null) {
                             connectionTest.setProxy(proxy);
                         }
@@ -147,20 +147,22 @@ public class PartnerTLSCertificateChangedController {
                         ConnectionTestResult result = connectionTest.checkConnectionTLS(host, port,
                                 TimeUnit.SECONDS.toMillis(45),
                                 certificateManagerTLS,
-                                "[local]", partner.getName(), ConnectionTest.PARTNER_ROLE_REMOTE_PARTNER);
+                                "[local]", partner.getName(), ConnectionTest.PartnerRole.REMOTE_PARTNER);
                         if (result.getException() != null) {
                             logger.log(Level.WARNING,
-                                    MODULE_NAME + " " + rb.getResourceString("import.failed"),
-                                    new Object[]{partner.getName(),
-                                        "[" + result.getException().getClass().getSimpleName() + "] "
-                                        + result.getException().getMessage()});
+                                    MODULE_NAME + " " + rb.getResourceString("import.failed",
+                                            new Object[]{partner.getName(),
+                                                "[" + result.getException().getClass().getSimpleName() + "] "
+                                                + result.getException().getMessage()
+                                            }));
                             SystemEventManagerImplAS2.instance().newEvent(
-                                    SystemEvent.SEVERITY_WARNING,
-                                    SystemEvent.ORIGIN_SYSTEM,
-                                    SystemEvent.TYPE_CERTIFICATE_ANY,
+                                    SystemEvent.Severity.WARNING,
+                                    SystemEvent.Origin.SYSTEM,
+                                    SystemEvent.Type.CERTIFICATE_ANY,
                                     MODULE_EVENT_SUBJECT_NAME,
                                     rb.getResourceString("import.failed",
-                                            new Object[]{partner.getName(),
+                                            new Object[]{
+                                                partner.getName(),
                                                 "[" + result.getException().getClass().getSimpleName() + "] "
                                                 + result.getException().getMessage()
                                             })
@@ -177,12 +179,14 @@ public class PartnerTLSCertificateChangedController {
                                             String alias = KeyStoreUtil.importX509Certificate(certificateManagerTLS.getKeystore(), certificate);
                                             certificateAdded = true;
                                             logger.log(Level.FINE,
-                                                    MODULE_NAME + " " + rb.getResourceString("import.success"),
-                                                    new Object[]{alias, partner.getName()});
+                                                    MODULE_NAME + " " + rb.getResourceString("import.success",
+                                                            new Object[]{
+                                                                alias, partner.getName()
+                                                            }));
                                             SystemEventManagerImplAS2.instance().newEvent(
-                                                    SystemEvent.SEVERITY_INFO,
-                                                    SystemEvent.ORIGIN_SYSTEM,
-                                                    SystemEvent.TYPE_CERTIFICATE_ADD,
+                                                    SystemEvent.Severity.INFO,
+                                                    SystemEvent.Origin.SYSTEM,
+                                                    SystemEvent.Type.CERTIFICATE_ADD,
                                                     rb.getResourceString("import.success.event.header"),
                                                     rb.getResourceString("import.success.event.body",
                                                             new Object[]{
@@ -192,14 +196,16 @@ public class PartnerTLSCertificateChangedController {
                                                             }));
                                         } catch (Throwable e) {
                                             logger.log(Level.WARNING,
-                                                    MODULE_NAME + " " + rb.getResourceString("import.failed"),
-                                                    new Object[]{partner.getName(),
-                                                        "[" + e.getClass().getSimpleName() + "] "
-                                                        + e.getMessage()});
+                                                    MODULE_NAME + " " + rb.getResourceString("import.failed",
+                                                            new Object[]{
+                                                                partner.getName(),
+                                                                "[" + e.getClass().getSimpleName() + "] "
+                                                                + e.getMessage()
+                                                            }));
                                             SystemEventManagerImplAS2.instance().newEvent(
-                                                    SystemEvent.SEVERITY_WARNING,
-                                                    SystemEvent.ORIGIN_SYSTEM,
-                                                    SystemEvent.TYPE_CERTIFICATE_ANY,
+                                                    SystemEvent.Severity.WARNING,
+                                                    SystemEvent.Origin.SYSTEM,
+                                                    SystemEvent.Type.CERTIFICATE_ANY,
                                                     MODULE_EVENT_SUBJECT_NAME,
                                                     rb.getResourceString("import.failed",
                                                             new Object[]{partner.getName(),

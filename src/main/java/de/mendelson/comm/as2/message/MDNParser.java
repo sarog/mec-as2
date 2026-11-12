@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/MDNParser.java 36    4/02/25 14:26 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/MDNParser.java 37    23/03/26 12:56 Heller $
 package de.mendelson.comm.as2.message;
 
 import de.mendelson.util.MecResourceBundle;
@@ -32,7 +32,7 @@ import javax.mail.util.ByteArrayDataSource;
  * Parses MDNs, this is NOT thread safe!
  *
  * @author S.Heller
- * @version $Revision: 36 $
+ * @version $Revision: 37 $
  */
 public class MDNParser {
 
@@ -94,7 +94,7 @@ public class MDNParser {
         //If the parse process comes to this point it must be a new MDN
         AS2MDNInfo info = new AS2MDNInfo();
         message.setAS2Info(info);
-        info.setDirection(AS2MessageInfo.DIRECTION_IN);
+        info.setDirection(MessageDirectionType.IN);
         try {
             this.extractMessageDispositionDetailsFromMDN(reportPart);
         } catch (Exception e) {

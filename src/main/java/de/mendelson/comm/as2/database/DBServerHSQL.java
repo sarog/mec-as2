@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/database/DBServerHSQL.java 35    12/03/25 17:13 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBServerHSQL.java 37    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.database.IUpdater;
@@ -48,7 +48,7 @@ import org.hsqldb.server.ServerConstants;
  * Class to start a dedicated SQL database server
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 37 $
  * @since build 70
  */
 public class DBServerHSQL implements IDBServer {
@@ -121,9 +121,9 @@ public class DBServerHSQL implements IDBServer {
         //configuration of java.util.logging. Otherwise configuration takes place.
         System.setProperty("hsqldb.reconfig_logging", "false");
         SystemEventManagerImplAS2.instance().newEvent(
-                SystemEvent.SEVERITY_INFO,
-                SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_DATABASE_SERVER_STARTUP_BEGIN,
+                SystemEvent.Severity.INFO,
+                SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.DATABASE_SERVER_STARTUP_BEGIN,
                 rb.getResourceString("dbserver.startup"),
                 "");
         this.server = new Server();
@@ -210,9 +210,9 @@ public class DBServerHSQL implements IDBServer {
             this.logger.info(MODULE_NAME + " " + rb.getResourceString("dbserver.running.embedded",
                     new Object[]{data.getDatabaseProductName() + " " + data.getDatabaseProductVersion()}));
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_INFO,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_DATABASE_SERVER_RUNNING,
+                    SystemEvent.Severity.INFO,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.DATABASE_SERVER_RUNNING,
                     rb.getResourceString("dbserver.running.embedded",
                             new Object[]{
                                 data.getDatabaseProductName()
@@ -222,9 +222,9 @@ public class DBServerHSQL implements IDBServer {
                     startupLog);
         } catch (Exception e) {
             SystemEventManagerImplAS2.instance().newEvent(
-                    SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_DATABASE_SERVER_RUNNING,
+                    SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.DATABASE_SERVER_RUNNING,
                     rb.getResourceString("dbserver.startup"),
                     startupLog + "\n"
                     + "[" + e.getClass().getSimpleName() + "]: " + e.getMessage());
@@ -378,16 +378,15 @@ public class DBServerHSQL implements IDBServer {
                         rb.getResourceString("database." + DB_TYPE),
                         String.valueOf(requiredDBVersion),
                         String.valueOf(foundVersion)}));
-            SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_DATABASE_UPDATE);
-            event.setSubject(
-                    rb.getResourceString("database." + DB_TYPE));
-            event.setBody(rb.getResourceString("update.error.futureversion",
-                    new Object[]{
-                        rb.getResourceString("database." + DB_TYPE),
-                        String.valueOf(requiredDBVersion),
-                        String.valueOf(foundVersion)}));
+            SystemEvent event = new SystemEvent(SystemEvent.Severity.ERROR,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.DATABASE_UPDATE);
+            event.setSubject(rb.getResourceString("database." + DB_TYPE))
+                    .setBody(rb.getResourceString("update.error.futureversion",
+                            new Object[]{
+                                rb.getResourceString("database." + DB_TYPE),
+                                String.valueOf(requiredDBVersion),
+                                String.valueOf(foundVersion)}));
             SystemEventManagerImplAS2.instance().newEvent(event);
             System.exit(-1);
         }
@@ -405,13 +404,12 @@ public class DBServerHSQL implements IDBServer {
                 if (!this.startDBUpdate(i, DB_TYPE)) {
                     this.logger.severe(MODULE_NAME + " " + rb.getResourceString("update.error.hsqldb",
                             new Object[]{String.valueOf(i), String.valueOf(i + 1)}));
-                    SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR,
-                            SystemEvent.ORIGIN_SYSTEM,
-                            SystemEvent.TYPE_DATABASE_UPDATE);
-                    event.setSubject(
-                            rb.getResourceString("database." + DB_TYPE));
-                    event.setBody(rb.getResourceString("update.error.hsqldb",
-                            new Object[]{String.valueOf(i), String.valueOf(i + 1)}));
+                    SystemEvent event = new SystemEvent(SystemEvent.Severity.ERROR,
+                            SystemEvent.Origin.SYSTEM,
+                            SystemEvent.Type.DATABASE_UPDATE);
+                    event.setSubject(rb.getResourceString("database." + DB_TYPE))
+                            .setBody(rb.getResourceString("update.error.hsqldb",
+                                    new Object[]{String.valueOf(i), String.valueOf(i + 1)}));
                     SystemEventManagerImplAS2.instance().newEvent(event);
                     System.exit(-1);
                 }
@@ -420,12 +418,12 @@ public class DBServerHSQL implements IDBServer {
                 int newActualVersion = this.getActualDBVersion(DB_TYPE);
                 this.logger.info(MODULE_NAME + " " + rb.getResourceString("update.progress.version.end",
                         new Object[]{String.valueOf(newActualVersion), dbName}));
-                SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_INFO,
-                        SystemEvent.ORIGIN_SYSTEM,
-                        SystemEvent.TYPE_DATABASE_UPDATE);
-                event.setSubject(rb.getResourceString("update.successfully", dbName));
-                event.setBody(rb.getResourceString("update.progress.version.end",
-                        new Object[]{String.valueOf(newActualVersion), dbName}));
+                SystemEvent event = new SystemEvent(SystemEvent.Severity.INFO,
+                        SystemEvent.Origin.SYSTEM,
+                        SystemEvent.Type.DATABASE_UPDATE);
+                event.setSubject(rb.getResourceString("update.successfully", dbName))
+                        .setBody(rb.getResourceString("update.progress.version.end",
+                                new Object[]{String.valueOf(newActualVersion), dbName}));
                 SystemEventManagerImplAS2.instance().newEvent(event);
             }
             this.logger.info(MODULE_NAME + " " + rb.getResourceString("update.successfully", dbName));
@@ -491,9 +489,9 @@ public class DBServerHSQL implements IDBServer {
             }
         }
         SystemEventManagerImplAS2.instance().newEvent(
-                SystemEvent.SEVERITY_INFO,
-                SystemEvent.ORIGIN_SYSTEM,
-                SystemEvent.TYPE_DATABASE_SERVER_SHUTDOWN,
+                SystemEvent.Severity.INFO,
+                SystemEvent.Origin.SYSTEM,
+                SystemEvent.Type.DATABASE_SERVER_SHUTDOWN,
                 rb.getResourceString("dbserver.shutdown"),
                 "");
         String shutdownMessage = rb.getResourceString("dbserver.shutdown");
@@ -561,7 +559,7 @@ public class DBServerHSQL implements IDBServer {
                         this.dbDriverManager.commitTransaction(transactionStatement, transactionName);
                         return (true);
                     } catch (Throwable e) {
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.Type.DATABASE_ROLLBACK);
                         this.dbDriverManager.rollbackTransaction(transactionStatement);
                     }
                 }

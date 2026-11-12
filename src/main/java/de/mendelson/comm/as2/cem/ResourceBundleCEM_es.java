@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_es.java 2     9/12/24 16:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_es.java 3     22/10/25 11:27 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
 * ResourceBundle to localize a mendelson product
 * @author S.Heller
-* @version $Revision: 2 $
+* @version $Revision: 3 $
 */
 public class ResourceBundleCEM_es extends MecResourceBundle {
 
@@ -27,7 +27,7 @@ public class ResourceBundleCEM_es extends MecResourceBundle {
 	private static final Object[][] CONTENTS = {
 		{"TLS.cert.already.imported", "El certificado CEM transmitido ya existe en el sistema [TLS] (alias {0}), se ha omitido la importación."},
 		{"cemtype.response", "El mensaje CEM es del tipo \"Respuesta de certificado"},
-		{"category.3", "SSL"},
+		{"category.3", "TLS"},
 		{"cemtype.request", "El mensaje CEM es del tipo \"Solicitud de certificado"},
 		{"category.2", "Firma"},
 		{"state.999", "Errores de procesamiento"},

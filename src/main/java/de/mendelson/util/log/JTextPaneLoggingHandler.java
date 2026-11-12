@@ -1,8 +1,8 @@
-//$Header: /oftp2/de/mendelson/util/log/JTextPaneLoggingHandler.java 40    25/02/25 11:51 Heller $
+//$Header: /mec_oftp2/de/mendelson/util/log/JTextPaneLoggingHandler.java 43    7/04/26 16:14 Heller $
 package de.mendelson.util.log;
 
 import de.mendelson.util.ColorUtil;
-import de.mendelson.util.DisplayMode;
+import de.mendelson.util.displaymode.DisplayMode;
 import de.mendelson.util.log.panel.LogConsolePanel;
 import java.awt.Color;
 import java.io.UnsupportedEncodingException;
@@ -31,7 +31,7 @@ import javax.swing.text.StyledDocument;
  * Handler to log logger data to a swing text component
  *
  * @author S.Heller
- * @version $Revision: 40 $
+ * @version $Revision: 43 $
  */
 public class JTextPaneLoggingHandler extends Handler {
 
@@ -39,7 +39,7 @@ public class JTextPaneLoggingHandler extends Handler {
      * The max number of bytes that are displayed. If the content exceeds this
      * there is data removed at the start
      */
-    private final static long MAX_BUFFER_SIZE = 30000;
+    private static final long MAX_BUFFER_SIZE = 30000;
     private final JTextPane jTextPane;
     private final Style currentStyle;
     private boolean bold = false;
@@ -57,7 +57,7 @@ public class JTextPaneLoggingHandler extends Handler {
      */
     private final Map<Level, String> colorMapANSI = new ConcurrentHashMap<Level, String>();
 
-    public JTextPaneLoggingHandler(JTextPane jTextPane, LogFormatter formatter, String displayMode) {
+    public JTextPaneLoggingHandler(JTextPane jTextPane, LogFormatter formatter, DisplayMode displayMode) {
         this.setFormatter(formatter);
         this.formatter = formatter;
         this.setDefaultColors(displayMode);
@@ -81,8 +81,8 @@ public class JTextPaneLoggingHandler extends Handler {
         this.resetStyle();
     }
 
-    private void setDefaultColors( String displayMode ){
-        if (displayMode.equals(DisplayMode.HICONTRAST)) {
+    private void setDefaultColors(DisplayMode displayMode) {
+        if (displayMode == DisplayMode.HICONTRAST) {
             this.setColor(Level.SEVERE, LogConsolePanel.COLOR_LIGHT_RED);
             this.setColor(Level.WARNING, LogConsolePanel.COLOR_LIGHT_CYAN);
             this.setColor(Level.CONFIG, LogConsolePanel.COLOR_LIGHT_GREEN);
@@ -100,8 +100,7 @@ public class JTextPaneLoggingHandler extends Handler {
             this.setColor(Level.FINEST, LogConsolePanel.COLOR_LIGHT_GRAY);
         }
     }
-    
-    
+
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
@@ -116,11 +115,12 @@ public class JTextPaneLoggingHandler extends Handler {
         this.formatter.setColor(loglevel, ANSI_COLOR);
     }
 
-    /**Takes the colors from the given logging handler
-     * - useful if there are multiple logging handlers in the product that should use always
-     * the same colors
+    /**
+     * Takes the colors from the given logging handler - useful if there are
+     * multiple logging handlers in the product that should use always the same
+     * colors
      */
-    public void setColorsFrom( JTextPaneLoggingHandler otherHandler ){
+    public void setColorsFrom(JTextPaneLoggingHandler otherHandler) {
         this.setColor(Level.CONFIG, otherHandler.getColorAsANSI(Level.CONFIG));
         this.setColor(Level.FINE, otherHandler.getColorAsANSI(Level.FINE));
         this.setColor(Level.FINER, otherHandler.getColorAsANSI(Level.FINER));
@@ -129,8 +129,7 @@ public class JTextPaneLoggingHandler extends Handler {
         this.setColor(Level.SEVERE, otherHandler.getColorAsANSI(Level.SEVERE));
         this.setColor(Level.WARNING, otherHandler.getColorAsANSI(Level.WARNING));
     }
-    
-    
+
     /**
      * Returns the current set color for the passed log level. May return null
      * if no color is defined for the passed level
@@ -191,19 +190,19 @@ public class JTextPaneLoggingHandler extends Handler {
                         //looks like an error, the sequence has no end marker - just bail out
                         break;
                     } else {
-                        if( nextSequenceEndIndex == message.length()-1 ){
+                        if (nextSequenceEndIndex == message.length() - 1) {
                             this.performANSICommand(message.substring(pos));
                             inSequence = false;
                             break;
-                        }else{
-                            this.performANSICommand(message.substring(pos, nextSequenceEndIndex+1));
-                            pos = nextSequenceEndIndex+1;
+                        } else {
+                            this.performANSICommand(message.substring(pos, nextSequenceEndIndex + 1));
+                            pos = nextSequenceEndIndex + 1;
                             inSequence = false;
                         }
                     }
                 }
             }
-        } else {            
+        } else {
             messageDecodeWrite(new StringBuilder(message));
         }
     }

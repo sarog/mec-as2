@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TreeCellRendererPartner.java 15    3/07/24 9:54 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TreeCellRendererPartner.java 16    17/06/25 17:54 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -24,7 +24,7 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * TreeCellRenderer that will display the icons of the partner tree
  *
  * @author S.Heller
- * @version $Revision: 15 $
+ * @version $Revision: 16 $
  */
 public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
 
@@ -83,7 +83,7 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
             if (object instanceof Partner) {
                 Partner partner = (Partner) object;
                 super.setText(partner.toString());
-                if (partner.hasConfigError()) {
+                if (partner.isConfigError()) {
                     if (isSelected) {
                         Color selectionBackground = super.getBackgroundSelectionColor();
                         Color xorForeground = ColorUtil.getXORColor(selectionBackground);                        
@@ -118,13 +118,13 @@ public class TreeCellRendererPartner extends DefaultTreeCellRenderer {
         }
         Partner partner = (Partner) object;
         if (partner.isLocalStation()) {
-            if (partner.hasConfigError()) {
+            if (partner.isConfigError()) {
                 icon = ICON_LOCAL_ERROR;
             } else {
                 icon = ICON_LOCAL;
             }
         } else {
-            if (partner.hasConfigError()) {
+            if (partner.isConfigError()) {
                 icon = ICON_REMOTE_ERROR;
             } else {
                 icon = ICON_REMOTE;

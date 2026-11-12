@@ -1,0 +1,35 @@
+$Header:$
+Este archivo contiene la plantilla para enviar una notificación,
+si falla el tratamiento posterior de un mensaje
+Se sustituyen las siguientes variables:
+${NOMBREDELPRODUCTO}: El nombre del producto
+${HOST}: El host en el que se ejecuta el servidor
+${EVENT_TYPE}: El tipo de evento (tras la recepción, tras el envío (error/éxito)).
+${TIPO_PROCESO}: El tipo de proceso (reenvío a interlocutor, línea de comandos..).
+${MESSAGEID}: El número de mensaje correspondiente
+${ERROR_MESSAGE}: El mensaje de error
+${SENDER}: El canal de noticias
+${RECEIVER}: El destinatario del mensaje
+
+
+
+
+[SUBJECT]
+Problema de postprocesamiento (${SENDER} a ${RECEIVER}) [${MESSAGEID}]
+
+
+[BODY]
+Se ha producido un problema al procesar un mensaje en su ${PRODUCTNAME}@${HOST}.
+El estado de la transacción no se ve afectado. Sin embargo, como su postprocesamiento no ha funcionado correctamente
+es posible que su postprocesamiento se haya interrumpido. Por favor, eche un vistazo a la
+transacción en el sistema.
+
+Tipo de evento: ${EVENT_TYPE}
+Tipo de proceso: ${PROCESS_TYPE}
+Número de mensaje: ${MESSAGEID}
+Remitente: ${SENDER}
+Destinatario: ${RECEIVER}
+
+
+${ERROR_MESSAGE}
+

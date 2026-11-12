@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 33    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/JPanelFileDisplay.java 37    4/02/26 16:07 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.FileEncodingDetection;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.ClientServerException;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadRequestFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.DownloadResponseFileLimited;
 import de.mendelson.util.clientserver.clients.datatransfer.TransferClient;
@@ -38,7 +39,7 @@ import javax.swing.UIManager;
  * Panel to display the content of a file
  *
  * @author S.Heller
- * @version $Revision: 33 $
+ * @version $Revision: 37 $
  */
 public class JPanelFileDisplay extends JPanel {
 
@@ -94,6 +95,19 @@ public class JPanelFileDisplay extends JPanel {
     }
 
     /**
+     * Displays text in the panel
+     */
+    public void displayText(String text) {
+        this.jLabelImage.setIcon(null);
+        this.jPanelImage.setVisible(false);
+        this.jLabelEncoding.setVisible(false);
+        this.jScrollPaneTextEditor.setVisible(true);
+        this.jTextFieldFilename.setText("");
+        this.jEditorPaneRawText.setText(text);
+
+    }
+
+    /**
      * Loads a file to the editor and displays it
      */
     public void displayFile(String filename, boolean detectEncoding) {
@@ -103,7 +117,7 @@ public class JPanelFileDisplay extends JPanel {
         this.jScrollPaneTextEditor.setVisible(true);
         if (filename == null) {
             this.jTextFieldFilename.setText("");
-            this.jEditorPaneRawText.setText(this.rb.getResourceString("no.file"));
+            this.jEditorPaneRawText.setText(rb.getResourceString("no.file"));
             return;
         }
         TransferClient transferClient = new TransferClient(this.baseClient);
@@ -117,42 +131,47 @@ public class JPanelFileDisplay extends JPanel {
                 this.jEditorPaneRawText.setText(rb.getResourceString("file.tolarge",
                         new Object[]{filename}));
             } else {
-                byte[] data = response.getDataStream().readAllBytes();
-                if (this.isImage(new ByteArrayInputStream(data))) {
-                    try (InputStream dataIn = new ByteArrayInputStream(data)) {
-                        ImageIcon icon = new ImageIcon(ImageIO.read(dataIn));
-                        this.jLabelImage.setIcon(icon);
-                    }
-                    this.getToolkit().sync();
-                    this.jScrollPaneTextEditor.setVisible(false);
-                    this.jPanelImage.setVisible(true);
-                } else {
-                    if (detectEncoding) {
-                        this.displayRawTextDetectEncoding(data);
-                    } else {
-                        this.displayRawTextIgnoreEncoding(data);
-                    }
-                    try {
-                        try (InputStream dataIn = new ByteArrayInputStream(data)) {
-                            this.jEditorPaneXML.read(dataIn, data);
+                byte[] data = response.getData();
+                try (InputStream dataIn = new ByteArrayInputStream(data)) {
+                    if (this.isImage(dataIn)) {
+                        try (InputStream dataIn2 = new ByteArrayInputStream(data)) {
+                            ImageIcon icon = new ImageIcon(ImageIO.read(dataIn2));
+                            this.jLabelImage.setIcon(icon);
+                            this.getToolkit().sync();
+                            this.jScrollPaneTextEditor.setVisible(false);
+                            this.jPanelImage.setVisible(true);
                         }
-                        //the XML data is parsable and could be displayed: move the raw text editor to the split pane
-                        this.jScrollPaneTextEditor.getParent().remove(this.jScrollPaneTextEditor);
-                        this.jSplitPaneTextAndXML.setTopComponent(this.jScrollPaneTextEditor);
-                        this.jSplitPaneTextAndXML.setVisible(true);
-                    } catch (Throwable e) {
-                        //its no parsable XML data: no action required
+                    } else {
+                        if (detectEncoding) {
+                            this.displayRawTextDetectEncoding(data);
+                        } else {
+                            this.displayRawTextIgnoreEncoding(data);
+                        }
+                        try {
+                            try (InputStream dataIn2 = new ByteArrayInputStream(data)) {
+                                this.jEditorPaneXML.read(dataIn2, data);
+                                //the XML data is parsable and could be displayed: move the raw text editor to the split pane
+                                this.jScrollPaneTextEditor.getParent().remove(this.jScrollPaneTextEditor);
+                                this.jSplitPaneTextAndXML.setTopComponent(this.jScrollPaneTextEditor);
+                                this.jSplitPaneTextAndXML.setVisible(true);
+                            }
+                        } catch (Throwable e) {
+                            //its no parsable XML data: no action required
+                        }
                     }
                 }
             }
         } catch (Throwable e) {
+            String errorMessage = e.getMessage();
             if (e instanceof FileNotFoundException) {
-                this.jEditorPaneRawText.setText(this.rb.getResourceString("file.notfound",
-                        filename));
-            } else {
-                this.jEditorPaneRawText.setText(e.getMessage());
+                errorMessage = rb.getResourceString("file.notfound", filename);
+            } else if (e instanceof ClientServerException) {
+                if (((ClientServerException) e).getOriginalClassName().equals(
+                        FileNotFoundException.class.getName())) {
+                    errorMessage = rb.getResourceString("file.notfound", filename);
+                }
             }
-            return;
+            this.jEditorPaneRawText.setText(errorMessage);
         }
     }
 
@@ -171,8 +190,8 @@ public class JPanelFileDisplay extends JPanel {
             this.jLabelEncoding.setVisible(true);
             this.jLabelEncoding.setText("[" + encoding.displayName() + "]");
             decoder = encoding.newDecoder().reset();
-            try (InputStream inStream = new ByteArrayInputStream(data)) {
-                try (Reader reader = new InputStreamReader(inStream, decoder)) {
+            try (ByteArrayInputStream dataIn = new ByteArrayInputStream(data)) {
+                try (Reader reader = new InputStreamReader(dataIn, decoder)) {
                     this.jEditorPaneRawText.read(reader, null);
                 }
             }

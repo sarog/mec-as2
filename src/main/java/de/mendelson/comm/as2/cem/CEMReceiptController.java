@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 82    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/CEMReceiptController.java 85    23/03/26 12:54 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.comm.as2.AS2Exception;
@@ -15,6 +15,7 @@ import de.mendelson.comm.as2.message.AS2MessageCreation;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
@@ -30,6 +31,8 @@ import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.KeystoreStorageImplDB;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -48,11 +51,14 @@ import java.util.logging.Level;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
 import javax.xml.validation.Schema;
 import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.w3c.dom.Document;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -66,7 +72,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * like
  *
  * @author S.Heller
- * @version $Revision: 82 $
+ * @version $Revision: 85 $
  */
 public class CEMReceiptController {
 
@@ -96,27 +102,66 @@ public class CEMReceiptController {
         this.preferences = new PreferencesAS2(dbDriverManager);
     }
 
+    private DocumentBuilderFactory createSecureDocumentBuilderFactory() {
+        DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
+        builderFactory.setCoalescing(true);
+        builderFactory.setValidating(false);
+        builderFactory.setIgnoringComments(false);
+        builderFactory.setIgnoringElementContentWhitespace(false);
+        builderFactory.setAttribute(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        builderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        builderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        try {
+            builderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (Exception e) {
+        }
+        try {
+            // Disable external DTDs
+            builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (Exception e) {
+        }
+        // per Timothy Morgans 2014 paper: "XML Schema, DTD, and Entity Attacks"
+        builderFactory.setXIncludeAware(false);
+        builderFactory.setExpandEntityReferences(false);
+        return (builderFactory);
+    }
+
     /**
      * Checks a XML file against a W3C Schema and throws an exception if
      * anything happens
      */
-    private void checkAgainstSchema(AS2Message message, Path schemaFile, byte[] xmlData) throws Exception {
-        //create a new W3C Schema instance
-        SchemaFactory factory = SchemaFactory.newInstance("http://www.w3.org/2001/XMLSchema");
-        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-        Schema schema = factory.newSchema(schemaFile.toFile());
+    private void checkCEMAgainstSchema(AS2Message message, byte[] xmlData) throws Exception {
+        Path cemSchemaFile = Paths.get("cem.xsd");
+        if (!Files.exists(cemSchemaFile) || !Files.isReadable(cemSchemaFile) || !Files.isRegularFile(cemSchemaFile)) {
+            throw new FileNotFoundException("CEM schema file cem.xsd");
+        }        
+        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+        // allow loading local .xsd files via file:
+        factory.setProperty(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "file");
+        factory.setProperty(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        Source cemSchemaSource = new StreamSource(cemSchemaFile.toFile());
+        Schema schema = factory.newSchema(new Source[]{cemSchemaSource});        
         Validator validator = schema.newValidator();
-        DocumentBuilderFactory domFactory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory domFactory = this.createSecureDocumentBuilderFactory();
         domFactory.setNamespaceAware(true);
-        DocumentBuilder builder = domFactory.newDocumentBuilder();
-        ByteArrayInputStream memIn = new ByteArrayInputStream(xmlData);
-        DOMSource source = new DOMSource(builder.parse(memIn));
-        validator.validate(source);
+        DocumentBuilder documentBuilder = domFactory.newDocumentBuilder();
+        try (ByteArrayInputStream memIn = new ByteArrayInputStream(xmlData)) {
+            //Parse XML securely
+            Document document = documentBuilder.parse(memIn);
+            DOMSource source = new DOMSource(document);
+            //Validate against schema
+            validator.validate(source);
+        }
         AS2MessageInfo info = (AS2MessageInfo) message.getAS2Info();
         this.logger.log(Level.INFO, this.rb.getResourceString("cem.validated.schema"), info);
-        memIn.close();
     }
 
     /**
@@ -139,8 +184,7 @@ public class CEMReceiptController {
                     throw new Exception("CEM is in wrong structure: missing ediint-cert-exchange xml.");
                 }
             }
-            Path cemSchema = Paths.get("cem.xsd");
-            this.checkAgainstSchema(message, cemSchema, description.getData());
+            this.checkCEMAgainstSchema(message, description.getData());
             //parse the XML data to check if the content is in right structure and all attachments are present
             ByteArrayInputStream inStream = new ByteArrayInputStream(description.getData());
             XPathHelper helper = new XPathHelper(inStream);
@@ -212,8 +256,8 @@ public class CEMReceiptController {
     private void processInboundCEMRequest(AS2MessageInfo info, List<AS2Payload> payloads, AS2Payload description) throws Throwable {
         PartnerAccessDB partnerAccess
                 = new PartnerAccessDB(this.dbDriverManager);
-        Partner initiator = partnerAccess.getPartner(info.getSenderId());
-        Partner receiver = partnerAccess.getPartner(info.getReceiverId());
+        Partner initiator = partnerAccess.getPartnerByAS2Id(info.getSenderId());
+        Partner receiver = partnerAccess.getPartnerByAS2Id(info.getReceiverId());
         EDIINTCertificateExchangeRequest request = EDIINTCertificateExchangeRequest.parse(description.getData());
         //auto import the attached certificates into the right keystore: SSL to the SSL keystore,
         //encryption and signature to the enc/singnature keystore
@@ -263,8 +307,8 @@ public class CEMReceiptController {
         //insert the request data into the certificate database
         PartnerAccessDB partnerAccess
                 = new PartnerAccessDB(this.dbDriverManager);
-        Partner receiver = partnerAccess.getPartner(info.getSenderId());
-        Partner initiator = partnerAccess.getPartner(info.getReceiverId());
+        Partner receiver = partnerAccess.getPartnerByAS2Id(info.getSenderId());
+        Partner initiator = partnerAccess.getPartnerByAS2Id(info.getReceiverId());
         cemAccess.insertResponse(info, initiator, receiver, response);
         if (this.clientServer != null) {
             this.clientServer.broadcastToClients(new RefreshClientCEMDisplay());
@@ -318,8 +362,8 @@ public class CEMReceiptController {
     private void sendResponse(AS2MessageInfo requestInfo, String senderId, String receiverId, EDIINTCertificateExchangeResponse response) throws Exception {
         PartnerAccessDB partnerAccess
                 = new PartnerAccessDB(this.dbDriverManager);
-        Partner sender = partnerAccess.getPartner(senderId);
-        Partner receiver = partnerAccess.getPartner(receiverId);
+        Partner sender = partnerAccess.getPartnerByAS2Id(senderId);
+        Partner receiver = partnerAccess.getPartnerByAS2Id(receiverId);
         AS2MessageCreation creation = new AS2MessageCreation(this.certificateManagerEncSign, this.certificateManagerEncSign);
         //store the payload
         Path payloadFile = AS2Tools.createTempFile("AS2Response", ".xml");
@@ -330,7 +374,8 @@ public class CEMReceiptController {
         descriptionXML.setContentType("application/ediint-cert-exchange+xml");
         descriptionXML.setPayloadFilename(payloadFile.toAbsolutePath().toString());
         descriptionXML.loadDataFromPayloadFile();
-        AS2Message message = creation.createMessage(sender, receiver, new AS2Payload[]{descriptionXML}, AS2Message.MESSAGETYPE_CEM);
+        AS2Message message = creation.createMessage(sender, receiver, new AS2Payload[]{descriptionXML}, 
+                MessageType.CEM);
         this.logger.log(Level.INFO, this.rb.getResourceString("cem.response.prepared",
                 new Object[]{
                     response.getRequestId()
@@ -433,7 +478,7 @@ public class CEMReceiptController {
                             boolean imported = this.importSingleCertificate(info, this.certificateManagerEncSign, cert, KEYSTORE_TYPE_ENC_SIGN);
                             //notify the user that a sign/encrypt certificate has been imported from the desired partner
                             if (imported) {
-                                String importAlias = KeyStoreUtil.getCertificateAlias(certificateManagerEncSign.getKeystore(), 
+                                String importAlias = KeyStoreUtil.getCertificateAlias(certificateManagerEncSign.getKeystore(),
                                         KeyStoreUtil.convertToX509Certificate(cert));
                                 SystemEventManagerImplAS2.instance().newEventEncSignCertificateAddedByCEM(initiator, certificateManagerEncSign.getKeystoreCertificate(importAlias));
                             }
@@ -452,7 +497,7 @@ public class CEMReceiptController {
                             //notify the user that a SSL/TLS certificate has been imported from the desired partner
                             if (imported) {
                                 String importAlias = KeyStoreUtil.getCertificateAlias(
-                                        certificateManagerSSL.getKeystore(), 
+                                        certificateManagerSSL.getKeystore(),
                                         KeyStoreUtil.convertToX509Certificate(cert));
                                 SystemEventManagerImplAS2.instance().newEventSSLCertificateAddedByCEM(initiator, certificateManagerSSL.getKeystoreCertificate(importAlias));
                             }

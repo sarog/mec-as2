@@ -1,0 +1,32 @@
+$Header:$
+Este ficheiro contém o modelo de notificação para a notificação de certificados expirados.
+Podem ser utilizadas as seguintes variáveis, que são substituídas em conformidade:
+
+${PRODUCTNAME}: Nome do produto
+${HOST}: Anfitrião do servidor
+${ALIAS}: Alias do certificado correspondente
+${DURATION}: Dias até à expiração do certificado
+${ISSUER}: Emissor do certificado/chave
+${FINGERPRINT_SHA1}: Impressão digital do certificado/chave (SHA-1)
+${VALID_FROM}: Data de início de validade
+${VALID_TO}: Válido até à data
+
+
+
+
+[SUBJECT]
+O certificado expira
+
+
+[BODY]
+O certificado com o alias ${ALIAS} em "${PRODUCTNAME}@${HOST}" expirará em ${DURATION} dia(s).
+
+Por favor, actualize-o, pois deixará de ser utilizável após este período e não poderá ser utilizado para tarefas criptográficas.
+
+Informações adicionais sobre o certificado:
+Alias: ${ALIAS}
+Emissor: ${ISSUER}
+Impressão digital (SHA-1): ${FINGERPRINT_SHA1}
+Válido desde: ${VALID_FROM}
+Válido até: ${VALID_TO}
+

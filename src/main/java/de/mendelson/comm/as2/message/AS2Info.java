@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Info.java 3     1/09/22 14:11 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Info.java 7     23/03/26 13:41 Heller $
 package de.mendelson.comm.as2.message;
 
+import com.fasterxml.jackson.annotation.JsonSubTypes;
+import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -12,12 +14,21 @@ import java.util.Date;
  * Other product and brand names are trademarks of their respective owners.
  */
 /**
- * Stores all information about a as2 message
+ * Interface for all information about a AS2 messages
+ *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 7 $
  */
-public interface AS2Info extends Serializable {
-    
+@JsonTypeInfo(
+        use = JsonTypeInfo.Id.NAME,
+        include = JsonTypeInfo.As.PROPERTY,
+        property = "type"
+)
+@JsonSubTypes({
+    @JsonSubTypes.Type(value = AS2MDNInfo.class, name = "mdn"),
+    @JsonSubTypes.Type(value = AS2MessageInfo.class, name = "msg")
+})
+public sealed interface AS2Info extends Serializable permits AS2MDNInfo,AS2MessageInfo{
 
     public boolean isMDN();
 
@@ -29,63 +40,71 @@ public interface AS2Info extends Serializable {
 
     public String getSubject();
 
-    /**Returns the MessageId*/
+    /**
+     * Returns the MessageId
+     */
     public String getMessageId();
 
-    /**sets the messge id, unescaped*/
+    /**
+     * sets the messge id, unescaped
+     */
     public void setMessageId(String messageId);
 
-
-    /**Returns the senderId, unescaped*/
+    /**
+     * Returns the senderId, unescaped
+     */
     public String getSenderId();
 
-    /**sets the sender id, unescaped*/
+    /**
+     * sets the sender id, unescaped
+     */
     public void setSenderId(String senderId);
 
-    /**sets the receiver id, unescaped*/
+    /**
+     * sets the receiver id, unescaped
+     */
     public String getReceiverId();
 
-    /**sets the sender id, unescaped*/
+    /**
+     * sets the sender id, unescaped
+     */
     public void setReceiverId(String receiverId);
-
 
     public String getRawFilename();
 
     public void setRawFilename(String rawFilename);
-    
-    public int getDirection();
 
-    public void setDirection(int direction);
+    public MessageDirectionType getDirection();
 
-    public int getState();
+    public void setDirection(MessageDirectionType direction);
 
-    public void setState(int state);
+    public MessageStateType getState();
 
+    public void setState(MessageStateType state);
 
     public int getSignType();
 
     public void setSignType(int signType);
 
-
     public String getHeaderFilename();
 
     public void setHeaderFilename(String headerFilename);
-
 
     public String getSenderHost();
 
     public void setSenderHost(String senderHost);
 
-    /**Returns the content of this object for debug purpose
+    /**
+     * Returns the content of this object for debug purpose
      */
     public String getDebugDisplay();
 
     public String getUserAgent();
 
     public void setUserAgent(String useragent);
-        
-    public boolean usesTLS();
+
+    public boolean isUsesTLS();
+
     public void setUsesTLS(boolean usesTLS);
- 
 
 }

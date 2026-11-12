@@ -1,0 +1,26 @@
+$Header:$
+Este archivo contiene la plantilla de notificación para informar de un cambio de certificado debido a un CEM.
+Se pueden utilizar las siguientes variables, que se sustituirán según corresponda:
+${PRODUCTNAME}: nombre del producto.
+${HOST}: host del servidor AS2.
+${CERTIFICATEDESCRIPTION}: descripción del certificado que se utiliza actualmente.
+${CERTIFICATETECHDETAILS}: detalles técnicos de los certificados a los que se hace referencia en esta notificación.
+${PARTNER}: iniciador del mensaje CEM.
+
+
+[SUBJECT]
+El certificado se ha añadido al sistema mediante CEM y ahora debe aceptarse
+
+
+[BODY]
+A raíz de una solicitud de certificado por parte del socio ${PARTNER}, se ha añadido un nuevo certificado al almacén de claves del sistema. Su socio ha sugerido que
+a partir de ahora utilice este certificado.
+
+${CERTIFICATEDESCRIPTION}
+
+Consulte el sistema para ver los detalles del proceso. Si no confía en estos cambios,
+ revierta los cambios y póngase en contacto con su socio.
+
+Información técnica sobre los certificados mencionados en esta notificación:
+
+${CERTIFICATETECHDETAILS}

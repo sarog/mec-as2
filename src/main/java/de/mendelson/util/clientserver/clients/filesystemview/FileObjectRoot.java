@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectRoot.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/FileObjectRoot.java 8     13/03/26 10:09 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.net.URI;
 import javax.swing.Icon;
 
@@ -16,18 +17,18 @@ import javax.swing.Icon;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
-public class FileObjectRoot extends FileObject {
+public final class FileObjectRoot extends FileObject {
 
     private static final long serialVersionUID = 1L;
     /**
      * A special name for this root - e.g. a drive name, might be null if no
      * name exists
      */
-    private final String name;
+    private String name;
     /**Server side icon for the root - might be null*/
-    private final Icon serversideIcon;
+    private Icon serversideIcon;
 
     public FileObjectRoot(URI fileURI, String name, Icon serversideIcon) {
         super(fileURI);
@@ -35,6 +36,15 @@ public class FileObjectRoot extends FileObject {
         this.serversideIcon = serversideIcon;
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public FileObjectRoot() {
+        super();
+    }
+    
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_de.java 28    17/01/25 9:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_de.java 29    21/10/25 15:02 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 29 $
  */
 public class ResourceBundleMessageDetails_de extends MecResourceBundle{
     
@@ -67,6 +67,7 @@ public class ResourceBundleMessageDetails_de extends MecResourceBundle{
         {"header.signature", "Digitale Signatur" },
         {"header.senderhost", "Sender" },
         {"header.useragent", "AS2 Server" },
+        {"mdn.nopayload", "Dies ist eine MDN - es ist kein Anhang dafür verfügbar"},
     };
     
 }

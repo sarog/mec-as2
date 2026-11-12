@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 26    12/02/25 11:58 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/JDialogInfoOnExternalCertificate.java 27    14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.ColorUtil;
@@ -40,7 +40,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * or a passed object
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 27 $
  */
 public class JDialogInfoOnExternalCertificate extends JDialog {
 
@@ -49,7 +49,7 @@ public class JDialogInfoOnExternalCertificate extends JDialog {
     /**
      * ResourceBundle to localize the GUI
      */
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {

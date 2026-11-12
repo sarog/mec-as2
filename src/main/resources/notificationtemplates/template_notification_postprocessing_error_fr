@@ -1,0 +1,35 @@
+$Header:$
+Ce fichier contient le modèle pour l'envoi d'une notification,
+si le post-traitement d'un message échoue
+Les variables suivantes sont remplacées :
+${PRODUCTNAME} : Le nom du produit
+${HOST} : L'hôte sur lequel le serveur est exécuté
+${EVENT_TYPE} : Le type d'événement (après réception, après envoi (erreur/succès))
+${PROCESS_TYPE} : Le type de processus (transfert vers un partenaire, ligne de commande...)
+${MESSAGEID} : Le numéro de message correspondant
+${ERROR_MESSAGE} : Le message d'erreur
+${SENDER} : La chaîne d'information
+${RECEIVER} : Le destinataire du message
+
+
+
+
+[SUBJECT]
+Problème de post-traitement (${SENDER} à ${RECEIVER}) [${MESSAGEID}]
+
+
+[BODY]
+Sur votre ${PRODUCTNAME}@${HOST}, il y a eu un problème lors du post-traitement d'un message.
+Le statut de la transaction n'en est pas affecté. Cependant, comme votre post-traitement ne s'est pas déroulé correctement
+a fonctionné, il se peut que votre traitement ultérieur soit interrompu. Veuillez consulter la
+transaction sur le système.
+
+Type d'événement : ${EVENT_TYPE}
+Type de processus : ${PROCESS_TYPE}
+Numéro de message : ${MESSAGEID}
+Expéditeur : ${SENDER}
+Destinataire : ${RECEIVER}
+
+
+${ERROR_MESSAGE}
+

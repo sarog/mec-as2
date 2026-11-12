@@ -1,0 +1,27 @@
+$Header:$
+Plik ten zawiera szablon powiadomienia w przypadku wystąpienia problemu systemowego
+Można użyć następujących zmiennych, które są odpowiednio zastępowane:
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host serwera AS2
+${CATEGORY}: Kategoria błędu
+${MESSAGE}: Komunikat o błędzie
+${DETAILS}: Więcej informacji o problemie
+
+
+
+
+[SUBJECT]
+Problem z systemem
+
+
+[BODY]
+Wystąpił problem na serwerze AS2. Z reguły problemy zgłaszane za pomocą tej poczty nie są krytyczne dla stanu systemu AS2. Jeśli odpowiednia transakcja ma status "zielony", została zakończona bez błędów.
+Mimo to sprawdź serwer, aby zobaczyć, co się tam stało.
+
+Kategoria: ${CATEGORY}
+Wiadomość: ${MESSAGE}
+
+
+
+Więcej informacji o problemie:
+${DETAILS}

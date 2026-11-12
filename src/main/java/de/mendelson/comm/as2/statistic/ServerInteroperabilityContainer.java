@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/statistic/ServerInteroperabilityContainer.java 2     8.01.19 9:48 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/statistic/ServerInteroperabilityContainer.java 3     15/04/26 9:57 Heller $
 package de.mendelson.comm.as2.statistic;
 
 import java.io.Serializable;
@@ -13,19 +13,23 @@ import java.util.List;
  */
 /**
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
-public class ServerInteroperabilityContainer implements Serializable{
+public class ServerInteroperabilityContainer implements Serializable {
 
     public static final long serialVersionUID = 1L;
 
-    public ServerInteroperabilityContainer(String serverId) {
+    public ServerInteroperabilityContainer(Object x) {
+    }
+
+    public ServerInteroperabilityContainer() {
+
     }
 
     public List<ServerInteroperabilityEntry> getEntries() {
         return (null);
     }
 
-    public void addEntry(ServerInteroperabilityEntry entry) {
+    public void addEntry(Object entry) {
     }
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/FileEncodingDetection.java 16    4/02/25 14:26 Heller $
+//$Header: /as2/de/mendelson/util/FileEncodingDetection.java 17    1/08/25 9:44 Heller $
 package de.mendelson.util;
 
 import java.io.BufferedReader;
@@ -31,10 +31,23 @@ import java.util.Map.Entry;
  * Checks the encoding of a file by just trying all available encodings on it
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class FileEncodingDetection {
 
+    private static final List<Charset> AVAILABLE_SYSTEM_ENCODING_LIST = new ArrayList<Charset>();
+    
+    static{        
+        //get all supported encodings of the operation system
+        Map<String, Charset> map = Charset.availableCharsets();
+        Iterator<Entry<String, Charset>> iterator = map.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Entry<String, Charset> entry = iterator.next();
+            AVAILABLE_SYSTEM_ENCODING_LIST.add(entry.getValue());
+        }
+    }
+    
+    
     /**
      * @deprecated
      */
@@ -48,16 +61,8 @@ public class FileEncodingDetection {
      * just ASCII characters these could be a lot.
      */
     public List<Charset> detectCharsets(Path file) {
-        List<Charset> matchingFileEncodingList = new ArrayList<Charset>();
-        List<Charset> availableSystemEncodingList = new ArrayList<Charset>();
-        //get all supported encodings of the operation system
-        Map<String, Charset> map = Charset.availableCharsets();
-        Iterator<Entry<String, Charset>> iterator = map.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Entry<String, Charset> entry = iterator.next();
-            availableSystemEncodingList.add(entry.getValue());
-        }
-        for (Charset encoding : availableSystemEncodingList) {
+        List<Charset> matchingFileEncodingList = new ArrayList<Charset>();        
+        for (Charset encoding : AVAILABLE_SYSTEM_ENCODING_LIST) {
             if (this.encodingMatches(file, encoding)) {
                 matchingFileEncodingList.add(encoding);
             }
@@ -106,7 +111,6 @@ public class FileEncodingDetection {
         if (encodingByBOM != null && this.encodingMatches(path, encodingByBOM)) {
             return (encodingByBOM);
         }
-
         //check if the default file encoding does already match. This is the
         //choice the user expects if it matches - e.g. on windows systems every user expects
         //windows-1225

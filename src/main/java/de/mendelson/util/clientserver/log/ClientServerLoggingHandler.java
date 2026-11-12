@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/ClientServerLoggingHandler.java 5     20/02/25 13:41 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/log/ClientServerLoggingHandler.java 7     31/03/26 17:51 Heller $
 package de.mendelson.util.clientserver.log;
 
 import de.mendelson.util.clientserver.ClientServerSessionHandler;
@@ -6,6 +6,7 @@ import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import de.mendelson.util.clientserver.messages.LoggableParameterClientServer;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -16,8 +17,9 @@ import java.util.logging.LogRecord;
  */
 /**
  * Handler to log logger data via the client-server interface
+ *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ClientServerLoggingHandler extends Handler {
 
@@ -31,15 +33,15 @@ public class ClientServerLoggingHandler extends Handler {
     /**
      * Set (or change) the character encoding used by this <tt>Handler</tt>.
      * <p>
-     * The encoding should be set before any <tt>LogRecords</tt> are written
-     * to the <tt>Handler</tt>.
+     * The encoding should be set before any <tt>LogRecords</tt> are written to
+     * the <tt>Handler</tt>.
      *
-     * @param encoding  The name of a supported character encoding.
-     *	      May be null, to indicate the default platform encoding.
-     * @exception  SecurityException  if a security manager exists and if
-     *             the caller does not have <tt>LoggingPermission("control")</tt>.
-     * @exception  UnsupportedEncodingException if the named encoding is
-     *		not supported.
+     * @param encoding The name of a supported character encoding. May be null,
+     * to indicate the default platform encoding.
+     * @exception SecurityException if a security manager exists and if the
+     * caller does not have <tt>LoggingPermission("control")</tt>.
+     * @exception UnsupportedEncodingException if the named encoding is not
+     * supported.
      */
     @Override
     public void setEncoding(String encoding)
@@ -49,7 +51,8 @@ public class ClientServerLoggingHandler extends Handler {
 
     /**
      * Format and publish a LogRecord.
-     * @param  logRecord  description of the log event
+     *
+     * @param logRecord description of the log event
      */
     @Override
     public synchronized void publish(LogRecord logRecord) {
@@ -57,8 +60,25 @@ public class ClientServerLoggingHandler extends Handler {
             return;
         }
         try {
+            String[] loggableParameterArray = null;
+            Object[] givenParameter = logRecord.getParameters();
+            if (givenParameter != null) {
+                loggableParameterArray = new String[givenParameter.length];
+                for (int i = 0; i < givenParameter.length; i++) {
+                    Object objParameter = givenParameter[i];
+                    if (objParameter != null) {
+                        if (!(objParameter instanceof LoggableParameterClientServer)) {
+                            throw new RuntimeException("Client-Server logging handler: All log parameter must implement "
+                                    + " the interface LoggableParameter, found " + objParameter.getClass().getName());
+                        }
+                        loggableParameterArray[i]
+                                = ((LoggableParameterClientServer) objParameter).getLoggingPrefix() + ":"
+                                + ((LoggableParameterClientServer) objParameter).getLoggingId();
+                    }
+                }
+            }
             this.logMessage(logRecord.getLevel(), logRecord.getMessage(),
-                    logRecord.getParameters());
+                    loggableParameterArray);
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -67,8 +87,9 @@ public class ClientServerLoggingHandler extends Handler {
     }
 
     /**
-     * Check if this Handler would actually log a given LogRecord, depending of the
-     * log level
+     * Check if this Handler would actually log a given LogRecord, depending of
+     * the log level
+     *
      * @param logRecord a LogRecord
      * @return true if the LogRecord would be logged.
      *
@@ -85,16 +106,19 @@ public class ClientServerLoggingHandler extends Handler {
     public synchronized void flush() {
     }
 
-    /**Just flushes the current message
+    /**
+     * Just flushes the current message
      */
     @Override
     public synchronized void close() throws SecurityException {
         this.flush();
     }
 
-    /**Finally logs the passed message to the text component and sets the canvas pos
+    /**
+     * Finally logs the passed message to the text component and sets the canvas
+     * pos
      */
-    private synchronized void logMessage(Level level, String message, Object[] parameter) {
+    private synchronized void logMessage(Level level, String message, String[] parameter) {
         this.sessionHandler.broadcastLogMessage(level, message, parameter);
     }
 }

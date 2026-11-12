@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventShell.java 9     11/03/25 17:00 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventShell.java 11    15/04/26 16:41 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventTriggerType;
+import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEventType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerEventInformation;
 import de.mendelson.util.MecResourceBundle;
@@ -24,22 +26,22 @@ import javax.swing.JFrame;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 11 $
  */
 public class JDialogConfigureEventShell extends JDialog {
 
     private final MecResourceBundle rb;
     private final Partner partner;
-    private final int eventType;
+    private final ProcessingEventTriggerType triggerType;
 
     /**
      * Creates new form JDialogMigrateFromHSQLDB
      */
     public JDialogConfigureEventShell(JFrame frameParent,
-            Partner partner, final int EVENT_TYPE) {
+            Partner partner, ProcessingEventTriggerType triggerType) {
         super(frameParent, true);
         this.partner = partner;
-        this.eventType = EVENT_TYPE;
+        this.triggerType = triggerType;
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -50,16 +52,16 @@ public class JDialogConfigureEventShell extends JDialog {
         this.setTitle(this.rb.getResourceString("title.configuration.shell",
                 new Object[]{
                     partner.getName(),
-                    this.rb.getResourceString("type." + EVENT_TYPE)
+                    this.rb.getResourceString("type." + triggerType.toInt())
                 }
         ));
         initComponents();
         this.setMultiresolutionIcons();
         this.jLabelInfo.setText(this.rb.getResourceString("label.shell.info"));
-        this.jLabelReplacement.setText(this.rb.getResourceString("shell.hint.replacement." + EVENT_TYPE));
+        this.jLabelReplacement.setText(this.rb.getResourceString("shell.hint.replacement." + triggerType));
         this.jLabelSamples.setText(this.rb.getResourceString("shell.hint.samples"));
         this.jLabelCommand.setText(this.rb.getResourceString("label.shell.command",
-                this.rb.getResourceString("type." + EVENT_TYPE)));
+                this.rb.getResourceString("type." + triggerType.toInt())));
         this.displayParameter();
         this.getRootPane().setDefaultButton(this.jButtonOk);
     }
@@ -74,9 +76,9 @@ public class JDialogConfigureEventShell extends JDialog {
      *
      */
     private void displayParameter() {
-        if (this.partner.getPartnerEvents().getProcess(this.eventType)
-                == PartnerEventInformation.PROCESS_EXECUTE_SHELL) {
-            List<String> parameter = this.partner.getPartnerEvents().getParameter(this.eventType);
+        if (this.partner.getPartnerEvents().getProcess(this.triggerType)
+                == ProcessingEventType.EXECUTE_SHELL) {
+            List<String> parameter = this.partner.getPartnerEvents().getParameter(this.triggerType);
             if (!parameter.isEmpty()) {
                 this.jTextFieldCommand.setText(parameter.get(0));
             }
@@ -87,8 +89,8 @@ public class JDialogConfigureEventShell extends JDialog {
         List<String> newParameter = new ArrayList<String>();
         String command = this.jTextFieldCommand.getText();
         newParameter.add(command);
-        this.partner.getPartnerEvents().setParameter(this.eventType, newParameter);
-        this.partner.getPartnerEvents().setProcess(this.eventType, PartnerEventInformation.PROCESS_EXECUTE_SHELL);
+        this.partner.getPartnerEvents().setParameter(this.triggerType, newParameter);
+        this.partner.getPartnerEvents().setProcess(this.triggerType, ProcessingEventType.EXECUTE_SHELL);
     }
 
     /**

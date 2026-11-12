@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 8     21/03/25 9:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/clientserver/message/IncomingMessageRequest.java 9     23/05/25 9:57 Heller $
 package de.mendelson.comm.as2.clientserver.message;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -18,7 +18,7 @@ import java.util.Properties;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class IncomingMessageRequest extends ClientServerMessage implements Serializable {
 
@@ -32,6 +32,10 @@ public class IncomingMessageRequest extends ClientServerMessage implements Seria
     private int localPort = -1;
     private String tlsProtocol = null;
     private String cipherSuite = null;
+    private long receiptStartTime = 0;
+    private long receiptEndTime = 0;
+    private long transferredBytes = 0;
+    
     /**Indicates if this is a sync MDN. In this case there is no additional connection information as this came in on the back channel
      * of the outbound connection
      */
@@ -181,6 +185,48 @@ public class IncomingMessageRequest extends ClientServerMessage implements Seria
      */
     public void setSyncMDN(boolean isSyncMDN) {
         this.isSyncMDN = isSyncMDN;
+    }
+
+    /**
+     * @return the receiptStartTime
+     */
+    public long getReceiptStartTime() {
+        return receiptStartTime;
+    }
+
+    /**
+     * @param receiptStartTime the receiptStartTime to set
+     */
+    public void setReceiptStartTime(long receiptStartTime) {
+        this.receiptStartTime = receiptStartTime;
+    }
+
+    /**
+     * @return the receiptEndTime
+     */
+    public long getReceiptEndTime() {
+        return receiptEndTime;
+    }
+
+    /**
+     * @param receiptEndTime the receiptEndTime to set
+     */
+    public void setReceiptEndTime(long receiptEndTime) {
+        this.receiptEndTime = receiptEndTime;
+    }
+
+    /**
+     * @return the receivedBytes
+     */
+    public long getTransferredBytes() {
+        return transferredBytes;
+    }
+
+    /**
+     * @param receivedBytes the receivedBytes to set
+     */
+    public void setTransferredBytes(long transferredBytes) {
+        this.transferredBytes = transferredBytes;
     }
     
 }

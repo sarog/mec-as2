@@ -1,0 +1,18 @@
+$Header:$
+Este archivo contiene la plantilla de notificación para la notificación de solicitudes de intercambio de certificados (CEM) entrantes.
+Se pueden utilizar las siguientes variables, que se sustituyen en consecuencia:
+${PARTNER}: Socio que presentó la solicitud de intercambio
+${PRODUCTNAME}: Nombre del producto
+${HOST}: Host del servidor AS2
+${REQUEST_ID}: Id. de solicitud CEM
+
+
+
+
+[SUBJECT]
+Solicitud CEM recibida de ${PARTNER}
+
+
+[BODY]
+Su socio ${PARTNER} ha enviado un mensaje con una solicitud de intercambio de certificados, el número de solicitud es ${REQUEST_ID}.
+La solicitud ha sido respondida. Consulte el sistema (Gestión CEM) para ver los detalles del proceso.

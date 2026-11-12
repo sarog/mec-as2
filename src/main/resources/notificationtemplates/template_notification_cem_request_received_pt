@@ -1,0 +1,18 @@
+$Header:$
+Este ficheiro contém o modelo de notificação para a notificação de pedidos de troca de certificados (CEM) de entrada.
+Podem ser utilizadas as seguintes variáveis, que são substituídas em conformidade:
+${PARTNER}: Parceiro que apresentou o pedido de troca
+${PRODUCTNAME}: Nome do produto
+${HOST}: Anfitrião do servidor AS2
+${REQUEST_ID}: ID do pedido CEM
+
+
+
+
+[SUBJECT]
+Pedido de MCE recebido de ${PARTNER}
+
+
+[BODY]
+O seu parceiro ${PARTNER} enviou uma mensagem com um pedido de troca de certificados, o número do pedido é ${REQUEST_ID}
+O pedido foi respondido. Por favor, consulte o sistema (CEM Management) para ver os detalhes do processo.

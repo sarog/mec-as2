@@ -1,7 +1,8 @@
-//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendResponse.java 6     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/manualsend/ManualSendResponse.java 8     11/06/25 13:28 Heller $
 package de.mendelson.comm.as2.client.manualsend;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.clients.datatransfer.UploadResponseFile;
 import java.io.Serializable;
 /*
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ManualSendResponse extends UploadResponseFile implements Serializable {
 
@@ -26,7 +27,12 @@ public class ManualSendResponse extends UploadResponseFile implements Serializab
         super(request);
     }
 
-    
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public ManualSendResponse() {
+        super();
+    }
     
     @Override
     public String toString() {

@@ -1,11 +1,15 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableModelHttpHeader.java 7     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableModelHttpHeader.java 8     17/06/25 17:54 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerHttpHeader;
-import javax.swing.table.*;
-import java.util.*;
 import de.mendelson.util.MecResourceBundle;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
+import javax.swing.table.AbstractTableModel;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -18,14 +22,21 @@ import de.mendelson.util.MecResourceBundle;
  * Table model to display the properties to set
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class TableModelHttpHeader extends AbstractTableModel {
 
-    /*Actual data to display, list of directory prefs*/
-    private final List<PartnerHttpHeader> array = Collections.synchronizedList(new ArrayList<PartnerHttpHeader>());
-    /*ResourceBundle to localize the headers*/
-    private MecResourceBundle rb = null;
+    private final List<PartnerHttpHeader> headerList = Collections.synchronizedList(new ArrayList<PartnerHttpHeader>());
+    private static final MecResourceBundle rb;
+    static{
+        //load resource bundle
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundlePartnerPanel.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private Partner partner = null;
 
     /**
@@ -33,13 +44,7 @@ public class TableModelHttpHeader extends AbstractTableModel {
      *
      */
     public TableModelHttpHeader() {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundlePartnerPanel.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+        
     }
 
     /**
@@ -48,9 +53,9 @@ public class TableModelHttpHeader extends AbstractTableModel {
      */
     public void passNewData(Partner partner) {
         this.partner = partner;
-        synchronized (this.array) {
-            array.clear();
-            array.addAll(partner.getHttpHeader());
+        synchronized (this.headerList) {
+            headerList.clear();
+            headerList.addAll(partner.getHttpHeader());
         }
         ((AbstractTableModel) this).fireTableDataChanged();
     }
@@ -61,9 +66,9 @@ public class TableModelHttpHeader extends AbstractTableModel {
      * @param header new header to add to the partner
      */
     public void addRow(PartnerHttpHeader header) {
-        synchronized (this.array) {
-            this.array.add(header);
-            this.partner.setHttpHeader(this.array);
+        synchronized (this.headerList) {
+            this.headerList.add(header);
+            this.partner.addHttpHeader(header);
         }
         ((AbstractTableModel) this).fireTableDataChanged();
     }
@@ -73,9 +78,9 @@ public class TableModelHttpHeader extends AbstractTableModel {
      *
      */
     public void deleteRow(int row) {
-        synchronized (this.array) {
-            this.array.remove(row);
-            this.partner.setHttpHeader(this.array);
+        synchronized (this.headerList) {
+            this.headerList.remove(row);
+            this.partner.setHttpHeader(this.headerList);
         }
         ((AbstractTableModel) this).fireTableDataChanged();
     }
@@ -88,9 +93,9 @@ public class TableModelHttpHeader extends AbstractTableModel {
      */
     @Override
     public Object getValueAt(int row, int col) {
-        PartnerHttpHeader header = null;
-        synchronized (this.array) {
-            header = this.array.get(row);
+        PartnerHttpHeader header;
+        synchronized (this.headerList) {
+            header = this.headerList.get(row);
         }
         //preferences name
         if (col == 0) {
@@ -108,8 +113,8 @@ public class TableModelHttpHeader extends AbstractTableModel {
      */
     @Override
     public int getRowCount() {
-        synchronized (this.array) {
-            return this.array.size();
+        synchronized (this.headerList) {
+            return this.headerList.size();
         }
     }
 
@@ -131,9 +136,9 @@ public class TableModelHttpHeader extends AbstractTableModel {
 
         switch (col) {
             case 0:
-                return this.rb.getResourceString("header.httpheaderkey");
+                return rb.getResourceString("header.httpheaderkey");
             case 1:
-                return this.rb.getResourceString("header.httpheadervalue");
+                return rb.getResourceString("header.httpheadervalue");
             default:
                 return "";
         }
@@ -147,13 +152,13 @@ public class TableModelHttpHeader extends AbstractTableModel {
     @Override
     public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
         String value = (String) aValue;
-        synchronized (this.array) {
+        synchronized (this.headerList) {
             if (columnIndex == 0) {
-                this.array.get(rowIndex).setKey(value);
+                this.headerList.get(rowIndex).setKey(value);
             } else {
-                this.array.get(rowIndex).setValue(value);
+                this.headerList.get(rowIndex).setValue(value);
             }
-            this.partner.setHttpHeader(this.array);
+            this.partner.setHttpHeader(this.headerList);
         }
     }
 }

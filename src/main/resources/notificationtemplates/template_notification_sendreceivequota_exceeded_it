@@ -1,0 +1,17 @@
+$Header:$
+Questo file contiene il modello di notifica per la notifica del superamento di una quota di messaggi definita a un partner specifico.
+È possibile utilizzare le seguenti variabili, che vengono sostituite di conseguenza:
+${PRODUCTNAME}: nome del prodotto
+${HOST}: Host del server AS2
+${PARTNER}: Nome del partner per il quale è stata superata la quota di invio+ricezione
+${QUOTA}: Il numero di messaggi autorizzati per l'invio e la ricezione (quota).
+
+
+
+
+[SUBJECT]
+Quota di invio e ricezione superata per ${PARTNER}
+
+
+[BODY]
+Il numero di messaggi ricevuti dal partner ${PARTNER} e inviati al partner ${PARTNER} ha superato ${QUOTA}. Sul lato server questo non ha alcun effetto, qualsiasi attività deve essere eseguita manualmente.

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/IProcessingExecution.java 2     10.09.20 12:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/IProcessingExecution.java 3     17/03/26 9:45 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 
@@ -13,10 +13,13 @@ package de.mendelson.comm.as2.message.postprocessingevent;
  * Interface for all execution classes that execute postprocess processes
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
-public interface IProcessingExecution{
+public sealed interface IProcessingExecution
+        permits ExecuteMoveToDir,
+        ExecuteMoveToPartner,
+        ExecuteShellCommand {
 
     public void executeProcess(ProcessingEvent event) throws Exception;
-    
+
 }

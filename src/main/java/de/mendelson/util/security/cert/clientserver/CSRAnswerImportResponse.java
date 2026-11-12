@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/security/cert/clientserver/CSRAnswerImportResponse.java 3     11/02/25 13:40 Heller $
+//$Header: /as4/de/mendelson/util/security/cert/clientserver/CSRAnswerImportResponse.java 5     11/06/25 13:17 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -16,7 +17,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class CSRAnswerImportResponse extends ClientServerResponse implements Serializable {
 
@@ -26,6 +27,15 @@ public class CSRAnswerImportResponse extends ClientServerResponse implements Ser
         super(request);
     }
 
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CSRAnswerImportResponse() {
+        super();
+    }
+    
     @Override
     public String toString() {
         return ("CSR answer import response");

@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/GUIClient.java 46    20/02/25 13:41 Heller $
+//$Header: /mec_as4/de/mendelson/util/clientserver/GUIClient.java 51    14/04/26 9:04 Heller $
 package de.mendelson.util.clientserver;
 
+import de.mendelson.IProductVersion;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.connectionprogress.JDialogConnectionProgress;
@@ -39,12 +40,12 @@ import javax.swing.SwingUtilities;
  * GUI Client root implementation
  *
  * @author S.Heller
- * @version $Revision: 46 $
+ * @version $Revision: 51 $
  */
 public abstract class GUIClient extends JFrame implements ClientSessionHandlerCallback {
 
     private final BaseClient client;
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
 
     static {
         try {
@@ -57,14 +58,14 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
     }
     //The underlaying queue is a DelayedWorkQueue - this is optimized for scheduled
     //execution but submit does also work. The queue is unlimited
-    private final static ScheduledThreadPoolExecutor UI_EXECUTOR 
+    private static final ScheduledThreadPoolExecutor UI_EXECUTOR 
             = new ScheduledThreadPoolExecutor(4, new NamedThreadFactory("ui-client-schedules"));
 
     private final List<ClientsideMessageProcessor> messageProcessorList = Collections.synchronizedList(new ArrayList<ClientsideMessageProcessor>());
     private String serverProductName = null;
 
-    protected GUIClient() {
-        this.client = new BaseClient(this, BaseClient.CLIENT_RICH_CLIENT);
+    protected GUIClient(IProductVersion productVersion) {
+        this.client = new BaseClient(this, ClientType.RICH_CLIENT, productVersion);
         this.client.setLogger(this.getLogger());
     }
 
@@ -278,7 +279,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
     @Override
     public void messageReceivedFromServer(ClientServerMessage message) {
         //there is no user defined processing for sync responses
-        if (message._isSyncRequest() && message instanceof ClientServerResponse) {
+        if (message.isSyncRequest() && message instanceof ClientServerResponse) {
             synchronized (this.messageProcessorList) {
                 //let the message process by all registered client side processors            
                 for (ClientsideMessageProcessor processor : this.messageProcessorList) {
@@ -315,7 +316,7 @@ public abstract class GUIClient extends JFrame implements ClientSessionHandlerCa
         if (this.getLogger() == null) {
             throw new RuntimeException("GUIClient.error: No logger set.");
         }
-        this.log(Level.SEVERE, rb.getResourceString("error", message));
+        this.log(Level.SEVERE, rb.getResourceString("error.client", message));
     }
 
     /**

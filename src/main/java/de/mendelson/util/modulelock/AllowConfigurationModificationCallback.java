@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/modulelock/AllowConfigurationModificationCallback.java 4     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/modulelock/AllowConfigurationModificationCallback.java 6     8/04/26 15:28 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.modulelock.message.ModuleLockRequest;
@@ -23,18 +23,18 @@ import javax.swing.JOptionPane;
  * Handles the refresh for a locked module, executed on the client side.
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class AllowConfigurationModificationCallback implements AllowModificationCallback {
 
-    private final String moduleName;
+    private final ModuleLock.Module module;
     private final JFrame parent;
     private final boolean hadLockAtOpenTime;
     private final BaseClient baseClient;
     private final MecResourceBundle rb;
 
-    public AllowConfigurationModificationCallback(JFrame parent, BaseClient baseClient, String moduleName, boolean hasLock) {
-        this.moduleName = moduleName;
+    public AllowConfigurationModificationCallback(JFrame parent, BaseClient baseClient, ModuleLock.Module module, boolean hasLock) {
+        this.module = module;
         this.parent = parent;
         this.hadLockAtOpenTime = hasLock;
         this.baseClient = baseClient;
@@ -50,29 +50,40 @@ public class AllowConfigurationModificationCallback implements AllowModification
 
     @Override
     public boolean allowModification(boolean silent) {
-        String moduleNameLocalized = this.rb.getResourceString(this.moduleName);
-        if (!this.hadLockAtOpenTime) {
-            //two different cases: 
-            //*Another client is currently locking the module
-            //*Another client has locked this at the opening time of this module - this requires a reopen of the module to get the current configuration
-            // which might have been changed by the other client
-            ModuleLockRequest request = new ModuleLockRequest(this.moduleName, ModuleLockRequest.TYPE_LOCK_INFO);
-            ModuleLockResponse response = (ModuleLockResponse) this.baseClient.sendSync(request);
-            LockClientInformation lockKeeper = response.getLockKeeper();
-            if (!silent) {
-                if (lockKeeper == null) {
-                    String text = this.rb.getResourceString("configuration.changed.otherclient", moduleNameLocalized);
-                    JOptionPane.showMessageDialog(this.parent,
-                            text,
-                            this.rb.getResourceString("modifications.notallowed.message"),
-                            JOptionPane.ERROR_MESSAGE);
-                } else {
-                    ModuleLock.displayDialogModuleLocked(this.parent, lockKeeper, this.moduleName);
-                }
+        if( silent ){
+            return(this.hadLockAtOpenTime);
+        }else{
+            if (!this.hadLockAtOpenTime) {
+                this.displayLockinformationDialog();
             }
-            return (false);
+            return(this.hadLockAtOpenTime);
+        }        
+    }
+
+    /**
+     * Displays a dialog with lock information - only useful if the caller has
+     * not the lock
+     *
+     */
+    public void displayLockinformationDialog(){
+        //two different cases: 
+        //*Another client is currently locking the module
+        //*Another client has locked this at the opening time of this module - this requires a reopen of the module to get the current configuration
+        // which might have been changed by the other client
+        String moduleNameLocalized = this.rb.getResourceString(this.module.toDisplayStr());
+        ModuleLockRequest request = new ModuleLockRequest(this.module, ModuleLockRequest.Type.LOCK_INFO);
+        ModuleLockResponse response = (ModuleLockResponse) this.baseClient.sendSync(request);
+        LockClientInformation lockKeeper = response.getLockKeeper();
+        if (lockKeeper == null) {
+            String text = this.rb.getResourceString("configuration.changed.otherclient", moduleNameLocalized);
+            JOptionPane.showMessageDialog(this.parent,
+                    text,
+                    this.rb.getResourceString("modifications.notallowed.message"),
+                    JOptionPane.ERROR_MESSAGE);
+        } else {
+            ModuleLock.displayDialogModuleLocked(this.parent, lockKeeper, this.module);
         }
-        return (this.hadLockAtOpenTime);
+
     }
 
 }

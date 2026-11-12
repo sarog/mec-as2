@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/DirPollManager.java 63    19/02/25 17:31 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/send/DirPollManager.java 69    15/04/26 12:43 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.partner.Partner;
@@ -15,11 +15,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -37,17 +38,26 @@ import java.util.logging.Logger;
  * and sends them
  *
  * @author S.Heller
- * @version $Revision: 63 $
+ * @version $Revision: 69 $
  */
 public class DirPollManager {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+
     private final CertificateManager certificateManager;
+
+    private record RelationshipKey(int senderDBId, int receiverDBId) {
+
+        @Override
+        public String toString() {
+            return "RelationshipKey[senderDBId=" + senderDBId + ", receiverDBId=" + receiverDBId + "]";
+        }
+    }
     /**
      * Stores all poll threads key: partner DB id, value: pollThread
      */
-    private final Map<String, DirPollThread> mapPollThread
-            = Collections.synchronizedMap(new HashMap<String, DirPollThread>());
+    private final Map<RelationshipKey, DirPollThread> mapPollThread
+            = Collections.synchronizedMap(new HashMap<RelationshipKey, DirPollThread>());
     /**
      * Executor service for all poll threads, with n poll threads at the same
      * time
@@ -147,25 +157,25 @@ public class DirPollManager {
         List<Partner> localStationList = new ArrayList<Partner>();
         for (Partner partner : allPartnerList) {
             if (partner.isLocalStation()) {
-                Partner clonedLocalStation = (Partner)partner.clone();
-                localStationList.add(clonedLocalStation);                
+                Partner clonedLocalStation = (Partner) partner.clone();
+                localStationList.add(clonedLocalStation);
             }
         }
         synchronized (this.mapPollThread) {
             for (Partner sender : localStationList) {
                 for (Partner receiver : allPartnerList) {
-                    String id = sender.getDBId() + "_" + receiver.getDBId();
+                    RelationshipKey key = new RelationshipKey(sender.getDBId(), receiver.getDBId());
                     //add partner task if it does not exist so far and if the receiver is no local station and the dir poll is enabled
-                    if (!this.mapPollThread.containsKey(id) && !receiver.isLocalStation() && receiver.isEnableDirPoll()) {
+                    if (!this.mapPollThread.containsKey(key) && !receiver.isLocalStation() && receiver.isEnableDirPoll()) {
                         DirPollThread newPoll = this.addPartnerPollThread(sender, receiver);
                         pollStartLines.add(newPoll.getLogLine());
-                    } else if (this.mapPollThread.containsKey(id)) {
-                        DirPollThread thread = (DirPollThread) this.mapPollThread.get(id);
+                    } else if (this.mapPollThread.containsKey(key)) {
+                        DirPollThread thread = (DirPollThread) this.mapPollThread.get(key);
                         if (!receiver.isLocalStation()) {
                             if (thread.hasBeenModified(sender, receiver)) {
                                 //restart a poll thread - it has been modified
                                 thread.requestStop();
-                                this.mapPollThread.remove(id);
+                                this.mapPollThread.remove(key);
                                 //restart the poll thread with the new values
                                 if (receiver.isEnableDirPoll()) {
                                     DirPollThread restartPoll = this.addPartnerPollThread(sender, receiver);
@@ -178,46 +188,43 @@ public class DirPollManager {
                             //its a local station now: stop the task and remove it
                             pollStopLines.add(thread.getLogLine());
                             thread.requestStop();
-                            this.mapPollThread.remove(id);
+                            this.mapPollThread.remove(key);
                         }
+                    }
+                }
+            }
+            //setup the valid relationships
+            Set<RelationshipKey> validRelationships = new HashSet<RelationshipKey>();
+            for (Partner sender : localStationList) {
+                for (Partner receiver : allPartnerList) {
+                    if (!receiver.isLocalStation() && receiver.isEnableDirPoll()) {
+                        validRelationships.add(new RelationshipKey(sender.getDBId(), receiver.getDBId()));
                     }
                 }
             }
             //still running task that is not in the configuration any more: stop and remove
-            List<String> idList = new ArrayList<String>();
-            Iterator<String> iterator = this.mapPollThread.keySet().iterator();
-            while (iterator.hasNext()) {
-                idList.add((String) iterator.next());
-            }
-            for (String id : idList) {
-                boolean idFound = false;
-                for (Partner sender : localStationList) {
-                    for (Partner receiver : allPartnerList) {
-                        String relationShipId = sender.getDBId() + "_" + receiver.getDBId();
-                        if (id.equals(relationShipId)) {
-                            idFound = true;
-                            break;
-                        }
-                    }
-                }
+            List<RelationshipKey> idList = new ArrayList<RelationshipKey>(this.mapPollThread.keySet());
+            for (RelationshipKey id : idList) {
+                boolean idFound = validRelationships.contains(id);
                 //old still running taks, has been deleted in the config: stop and remove
                 if (!idFound) {
-                    DirPollThread thread = this.mapPollThread.get(id);
-                    pollStopLines.add(thread.getLogLine());
-                    thread.requestStop();
-                    this.mapPollThread.remove(id);
+                    DirPollThread thread = this.mapPollThread.remove(id);
+                    if (thread != null) {
+                        pollStopLines.add(thread.getLogLine());
+                        thread.requestStop();
+                    }
                 }
             }
         }
         //all done - now fire a system event
         if (!pollStopLines.isEmpty() || !pollStartLines.isEmpty()) {
             SystemEvent event = new SystemEvent(
-                    SystemEvent.SEVERITY_INFO,
-                    SystemEvent.ORIGIN_SYSTEM,
-                    SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED);
+                    SystemEvent.Severity.INFO,
+                    SystemEvent.Origin.SYSTEM,
+                    SystemEvent.Type.DIRECTORY_MONITORING_STATE_CHANGED);
             List<DirPollThread> threadList = this.getPollThreads();
-            event.setSubject(this.rb.getResourceString("manager.status.modified", String.valueOf(threadList.size())));
-
+            event.setSubject(this.rb.getResourceString("manager.status.modified",
+                    String.valueOf(threadList.size())));
             StringBuilder bodyBuilder = new StringBuilder();
             //display stopped polls
             bodyBuilder.append(rb.getResourceString("title.list.polls.stopped"))
@@ -275,9 +282,9 @@ public class DirPollManager {
                 this.clientserver, this.certificateManager,
                 localStation, partner);
         synchronized (this.mapPollThread) {
-            this.mapPollThread.put(localStation.getDBId() + "_" + partner.getDBId(), thread);
+            this.mapPollThread.put(new RelationshipKey(localStation.getDBId(), partner.getDBId()), thread);
             thread.initializeThread();
-            ScheduledFuture future = this.scheduledExecutor.scheduleWithFixedDelay(thread, 5000,
+            ScheduledFuture<?> future = this.scheduledExecutor.scheduleWithFixedDelay(thread, 5000,
                     thread.getPollIntervalInMS(), TimeUnit.MILLISECONDS);
             //set the future to the thread to have the possibility to cancel it later and 
             //remove it from the schedulers internal queue

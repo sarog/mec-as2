@@ -1,5 +1,6 @@
-///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 19    19/02/25 10:08 Heller $
+ ///$Header: /as2/de/mendelson/comm/as2/servlet/ServerState.java 23    24/03/26 15:34 Heller $
 package de.mendelson.comm.as2.servlet;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -12,17 +13,17 @@ package de.mendelson.comm.as2.servlet;
  * Servlet to display the server state
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 23 $
  */
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.util.clientserver.about.ServerInfoRequest;
 import de.mendelson.util.clientserver.about.ServerInfoResponse;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.clientserver.AnonymousTextClient;
-import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.ClientType;
+import de.mendelson.util.clientserver.connectionpool.PooledAnonymousTextClient;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.text.DateFormat;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -39,7 +40,7 @@ public class ServerState extends HttpServlet {
     /**
      * Format the date display
      */
-    private static final DateTimeFormatter FORMAT 
+    private static final DateTimeFormatter FORMAT
             = DateTimeFormatter.ofLocalizedDateTime(FormatStyle.SHORT, FormatStyle.SHORT);
 
     public ServerState() {
@@ -82,15 +83,16 @@ public class ServerState extends HttpServlet {
         builder.append("    </head>");
         builder.append("    <body>");
         boolean processingUnitUp = false;
-        try(AnonymousTextClient client = new AnonymousTextClient(BaseClient.CLIENT_WEB)){
+        try (AnonymousTextClient client = PooledAnonymousTextClient.createClient(
+                ClientType.WEB, AS2ServerVersion.instance())) {
             client.setDisplayServerLogMessages(false);
             client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);
             ServerInfoResponse response = (ServerInfoResponse) client.sendSync(new ServerInfoRequest(), 30000);
             long startTime = Long.parseLong(response.getProperties().getProperty(ServerInfoResponse.SERVER_START_TIME));
             ZonedDateTime zonedDateTime = Instant.ofEpochMilli(startTime).atZone(ZoneId.systemDefault());
             builder.append("The mendelson AS2 processing unit ")
-                    .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_PRODUCT_NAME)).append( " ")
-                    .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_VERSION)).append( " ")
+                    .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_PRODUCT_NAME)).append(" ")
+                    .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_VERSION)).append(" ")
                     .append(response.getProperties().getProperty(ServerInfoResponse.SERVER_BUILD)).append(" is up and running since ")
                     .append(FORMAT.format(zonedDateTime))
                     .append(".");

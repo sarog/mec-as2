@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/CertificateCEMController.java 22    18/12/24 17:06 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/cem/CertificateCEMController.java 25    15/04/26 12:42 Heller $
 package de.mendelson.comm.as2.cem;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -6,8 +6,10 @@ import de.mendelson.comm.as2.clientserver.message.RefreshClientCEMDisplay;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.MessageAccessDB;
+import de.mendelson.comm.as2.message.MessageStateType;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.PartnerAccessDB;
+import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.timing.TimingScheduledThreadPool;
 import de.mendelson.util.clientserver.ClientServer;
@@ -29,7 +31,7 @@ import java.util.logging.Logger;
  * Controller that executes CEM events
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 25 $
  */
 public class CertificateCEMController {
 
@@ -87,7 +89,7 @@ public class CertificateCEMController {
             CEMAccessDB cemAccess = new CEMAccessDB(dbDriverManager);
             List<CEMEntry> certificateChangeList = cemAccess.getCertificatesToChange();
             for (CEMEntry entry : certificateChangeList) {
-                Partner partner = partnerAccess.getPartner(entry.getInitiatorAS2Id());
+                Partner partner = partnerAccess.getPartnerByAS2Id(entry.getInitiatorAS2Id());
                 KeystoreCertificate referencedCert = certificateManager.getKeystoreCertificateByIssuerDNAndSerial(
                         entry.getIssuername(), entry.getSerialId());
                 if (referencedCert == null) {
@@ -97,9 +99,11 @@ public class CertificateCEMController {
                 cemAccess.markAsProcessed(entry.getRequestId(), entry.getCategory());
                 //a state has changed: inform the user
                 logger.fine(partner.getPartnerCertificateInformationList()
-                        .getCertificatePurposeDescription(certificateManager, partner, entry.getCategory()));
+                        .getCertificatePurposeDescription(certificateManager, partner, 
+                                PartnerCertificateInformation.Category.of(entry.getCategory().toInt())));
                 try {
-                    SystemEventManagerImplAS2.instance().newEventCertificateChangeShouldHappenNowByCEM(certificateManager, partner, entry.getCategory());
+                    SystemEventManagerImplAS2.instance().newEventCertificateChangeShouldHappenNowByCEM(
+                            certificateManager, partner, entry.getCategory());
                 } catch (Exception e) {
                     logger.warning("CertificateCEMController: Notification@handleCertificateChanges " + e.getMessage());
                 }
@@ -122,16 +126,16 @@ public class CertificateCEMController {
                 if (entry.getRequestMessageid() != null) {
                     AS2MessageInfo messageInfo = messageAccess.getLastMessageEntry(entry.getRequestMessageid());
                     //it could happen that the pending request message no longer exists
-                    if (messageInfo != null && messageInfo.getState() == AS2Message.STATE_STOPPED) {
+                    if (messageInfo != null && messageInfo.getState() == MessageStateType.STOPPED) {
                         cemAccess.setPendingRequestsToState(entry.getInitiatorAS2Id(),
-                                entry.getReceiverAS2Id(), CEMEntry.CATEGORY_CRYPT,
-                                entry.getRequestId(), CEMEntry.STATUS_PROCESSING_ERROR_INT);
+                                entry.getReceiverAS2Id(), CEMEntry.Category.CRYPT,
+                                entry.getRequestId(), CEMEntry.Status.PROCESSING_ERROR);
                         cemAccess.setPendingRequestsToState(entry.getInitiatorAS2Id(),
-                                entry.getReceiverAS2Id(), CEMEntry.CATEGORY_SIGN,
-                                entry.getRequestId(), CEMEntry.STATUS_PROCESSING_ERROR_INT);
+                                entry.getReceiverAS2Id(), CEMEntry.Category.SIGN,
+                                entry.getRequestId(), CEMEntry.Status.PROCESSING_ERROR);
                         cemAccess.setPendingRequestsToState(entry.getInitiatorAS2Id(),
-                                entry.getReceiverAS2Id(), CEMEntry.CATEGORY_TLS,
-                                entry.getRequestId(), CEMEntry.STATUS_PROCESSING_ERROR_INT);
+                                entry.getReceiverAS2Id(), CEMEntry.Category.TLS,
+                                entry.getRequestId(), CEMEntry.Status.PROCESSING_ERROR);
                     }
                 }
             }

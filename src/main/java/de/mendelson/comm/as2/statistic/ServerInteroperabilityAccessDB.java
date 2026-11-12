@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/statistic/ServerInteroperabilityAccessDB.java 5     2/01/23 12:08 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/statistic/ServerInteroperabilityAccessDB.java 6     14/04/26 17:02 Heller $
 package de.mendelson.comm.as2.statistic;
 
 import java.util.List;
@@ -12,14 +12,14 @@ import java.util.List;
  */
 /**
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ServerInteroperabilityAccessDB {
 
     public ServerInteroperabilityAccessDB(Object a) {
     }
 
-    public void addEntry(Object a, int b, Object c) {
+    public void addEntry(Object a, Object b, Object c) {
     }
 
     public List<ServerInteroperabilityContainer> getServer() {

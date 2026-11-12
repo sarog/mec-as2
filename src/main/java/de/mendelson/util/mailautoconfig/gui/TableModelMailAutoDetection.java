@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/mailautoconfig/gui/TableModelMailAutoDetection.java 5     2/11/23 15:53 Heller $
+//$Header: /mec_as4/de/mendelson/util/mailautoconfig/gui/TableModelMailAutoDetection.java 6     14/04/26 9:05 Heller $
 package de.mendelson.util.mailautoconfig.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -21,12 +21,12 @@ import javax.swing.table.AbstractTableModel;
  * Model to display all services that are available for a given mail address
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class TableModelMailAutoDetection extends AbstractTableModel {
 
-    protected final static int ROW_HEIGHT = 24;
-    protected final static int IMAGE_HEIGHT = ROW_HEIGHT - 3;
+    protected static final int ROW_HEIGHT = 24;
+    protected static final int IMAGE_HEIGHT = ROW_HEIGHT - 3;
 
     private final List<MailServiceConfiguration> configurationList = Collections.synchronizedList(new ArrayList<MailServiceConfiguration>());
 

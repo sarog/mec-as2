@@ -1,0 +1,23 @@
+$Header:$
+El siguiente archivo contiene una plantilla que se utiliza para el evento de sistema de un problema de conexión.
+${MESSAGE}: El mensaje de error
+${HINT}: Alguna idea de lo que podría ser la causa
+${PARTNER}: El interlocutor con el que debe establecerse la conexión
+${URL}: La URL que se utilizó
+${MESSAGE_ID}: Número de mensaje del mensaje que debe transmitirse.
+
+
+
+
+[SUBJECT]
+Problema de conexión con el interlocutor ${PARTNER} [${MESSAGE_ID}]
+
+
+[BODY]
+Ha intentado establecer una conexión saliente con el interlocutor "${PARTNER}", pero ha fallado.
+
+URL: ${URL}
+Descripción: ${MESSAGE}
+
+${HINT}
+

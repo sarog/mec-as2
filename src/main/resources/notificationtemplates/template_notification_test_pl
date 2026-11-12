@@ -1,0 +1,25 @@
+$Header:$
+Ten plik zawiera szablon powiadomienia do testowania ustawień poczty e-mail.
+Można użyć następujących zmiennych, które są odpowiednio zastępowane:
+${PRODUCTNAME}: Nazwa produktu
+${HOST}: Host, na którym działa serwer
+${USER}: Użytkownik, pod którym działa serwer
+${MAILHOST}: Nazwa hosta SMTP
+${MAILPORT}: port serwera SMTP
+${CONNECTIONSECURITY}: Bezpieczeństwo połączenia (NONE/STARTSSL/SSL)
+${AUTHORIZATION}: Użytkownik/hasło, OAUTH2 lub BRAK
+
+
+
+[SUBJECT]
+Komunikat do sprawdzenia konfiguracji
+
+
+[BODY]
+Ta wiadomość została zainicjowana przez użytkownika ${USER} na hoście ${HOST}. Otrzymanie tej wiadomości zapewnia, że ustawienia w ${PRODUCTNAME} dla powiadomień e-mail są prawidłowe.
+
+Ustawienia tej udanej próby:
+
+Serwer poczty SMTP: ${MAILHOST}:${MAILPORT}
+Zabezpieczenia połączenia: ${CONNECTIONSECURITY}
+Autoryzacja: ${AUTHORIZATION}

@@ -1,10 +1,12 @@
-//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/QuotaResetRequest.java 5     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/statistic/clientserver/QuotaResetRequest.java 7     11/06/25 13:29 Heller $
 package de.mendelson.comm.as2.statistic.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
+
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -17,17 +19,25 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class QuotaResetRequest extends ClientServerMessage implements Serializable {
-    
+
     private static final long serialVersionUID = 1L;
-    private final String localStationId;
-    private final String partnerId;
-    
+    private String localStationId;
+    private String partnerId;
+
     public QuotaResetRequest(String localStationId, String partnerId) {
         this.localStationId = localStationId;
-        this.partnerId = partnerId;                
+        this.partnerId = partnerId;
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public QuotaResetRequest() {
     }
 
     @Override
@@ -49,8 +59,10 @@ public class QuotaResetRequest extends ClientServerMessage implements Serializab
         return partnerId;
     }
 
-    /**Prevent an overwrite of the readObject method for de-serialization*/
-    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException{
+    /**
+     * Prevent an overwrite of the readObject method for de-serialization
+     */
+    private void readObject(ObjectInputStream inStream) throws ClassNotFoundException, IOException {
         inStream.defaultReadObject();
     }
 }

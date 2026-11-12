@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 12    20/02/25 13:41 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/log/search/ServerSideLogfileSearch.java 13    23/04/25 11:40 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import java.io.BufferedReader;
@@ -20,6 +20,7 @@ import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.index.IndexWriterConfig;
 import org.apache.lucene.index.MultiReader;
+import org.apache.lucene.index.StoredFields;
 import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
@@ -40,7 +41,7 @@ import org.apache.lucene.store.FSDirectory;
  * by state, type, category or also free text search
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public abstract class ServerSideLogfileSearch {
 
@@ -134,12 +135,13 @@ public abstract class ServerSideLogfileSearch {
                 SortField msSortField = new SortField(Logline.KEY_MILLISECS, SortField.Type.STRING, true);
                 Sort sortByMillisecs = new Sort(msSortField);
                 //finally perform the search
-                TopDocs hits = searcher.search(query, filter.getMaxResults(), sortByMillisecs);
+                TopDocs hits = searcher.search(query, filter.getMaxResults(), sortByMillisecs);             
                 if (hits.totalHits.value > 0) {
+                    StoredFields storedFields = searcher.storedFields();
                     for (ScoreDoc scoreDoc : hits.scoreDocs) {
-                        Document doc = multiReader.document(scoreDoc.doc);
+                        Document hitDoc = storedFields.document(scoreDoc.doc);
                         try {
-                            resultList.add(this.generateLoglineFromSingleSearchResult(doc));
+                            resultList.add(this.generateLoglineFromSingleSearchResult(hitDoc));
                         } catch (Throwable e) {
                             //ignore this - it is possible that a corrupted index prevent the
                             //regeneration of the object

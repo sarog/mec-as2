@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/NotificationBadgeButton.java 8     18/06/24 12:38 Heller $
+//$Header: /mec_as4/de/mendelson/util/NotificationBadgeButton.java 9     14/04/26 9:04 Heller $
 package de.mendelson.util;
 
 import java.awt.Color;
@@ -31,7 +31,7 @@ import javax.swing.plaf.basic.BasicButtonUI;
  * Button that contains a notification badge to count something
  *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class NotificationBadgeButton extends JButton {
 
@@ -39,7 +39,7 @@ public class NotificationBadgeButton extends JButton {
     private Color circleColor = Color.RED;
     private Color foregroundColor = Color.WHITE;
 
-    private final static RenderingHints RENDERING_HINTS_BEST_QUALITY
+    private static final RenderingHints RENDERING_HINTS_BEST_QUALITY
             = new RenderingHints(RenderingHints.KEY_RENDERING,
                     RenderingHints.VALUE_RENDER_QUALITY);
 

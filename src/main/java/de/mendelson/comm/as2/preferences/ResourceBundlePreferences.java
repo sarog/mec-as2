@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences.java 94    31/05/24 13:40 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferences.java 98    9/09/25 16:23 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 94 $
+ * @version $Revision: 98 $
  */
 public class ResourceBundlePreferences extends MecResourceBundle {
 
@@ -89,10 +89,22 @@ public class ResourceBundlePreferences extends MecResourceBundle {
             + "</HTML>"},
         {"label.deletestatsolderthan", "Statistic data older than"},
         {"label.deletelogdirolderthan", "Log data older than"},
-        {"label.asyncmdn.timeout", "Max waiting time for async MDN"},
-        {"label.asyncmdn.timeout.help", "<HTML><strong>Max waiting time for async MDN</strong>"
-            + "<br><br>The time the system will wait for an asynchronous MDN (message delivery notification) for a sent AS2 message before setting the transaction to failed state.<br>"
-            + "This value is valid system-wide for all partners.<br>The default value is 30 min.<br><br>"
+        {"label.mdn.timeout", "Max waiting time for MDN"},
+        {"label.mdn.timeout.help", "<HTML><strong>Max waiting time for MDN</strong><br><br>"
+            + "The time that the system waits for an MDN (Message Delivery Notification) for a sent AS2 "
+            + "message before it sets the associated transaction to \"failed\" status. "
+            + "This value is valid system-wide for all partners. The default value is "
+            + PreferencesAS2.getDefaultValue(PreferencesAS2.MDN_WAIT_TIME) + " min, the time is counted from the "
+            + "successful connection to the partner.<br><br>"
+            + "In the case of a synchronous MDN, the connection to the partner is kept open until an MDN is received on the "
+            + "back channel of the connection or the MDN waiting time has expired. When it has expired, "
+            + "the connection is terminated, the transaction "
+            + "is set to the status \"failed\" and any post-processing is carried out. This transaction is not repeated.<br><br>"
+            + "In the case of an asynchronous MDN, the system waits for the incoming connection of the partner with the MDN "
+            + "until this waiting time has expired. "
+            + "If no MDN has been received after the waiting time has expired, the associated "
+            + "transaction is set to \"failed\" and any defined post-processing is carried out. "
+            + "The transaction is not repeated here either."
             + "</HTML>"},
         {"label.httpsend.timeout", "HTTP/S send timeout"},
         {"label.httpsend.timeout.help", "<HTML><strong>HTTP/S send timeout</strong><br><br>"
@@ -165,11 +177,10 @@ public class ResourceBundlePreferences extends MecResourceBundle {
             + "A connection retry is only performed if it was impossible to establish a connection to a partner "
             + "(e.g. partner system down or infrastructure problem). The number of connection retries could be configured in the property "
             + "<strong>Max number of connection retries</strong>.<br><br>"
-            + "The default value is " + PreferencesAS2.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S) + "s."
+            + "The default value is "
+            + PreferencesAS2.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S) + "s."
             + "</HTML>"},
         {"label.sec", "seconds"},
-        {"keystore.hint", "<HTML><strong>Warning:</strong><br>Please only change these parameters if you want to integrate external keystores. "
-            + "Changing the paths may cause problems during the update.</HTML>"},
         {"maintenancemultiplier.day", "day(s)"},
         {"maintenancemultiplier.hour", "hour(s)"},
         {"maintenancemultiplier.minute", "minute(s)"},
@@ -206,7 +217,12 @@ public class ResourceBundlePreferences extends MecResourceBundle {
             + "To prevent too many mails you could summarize all notifications by setting up the max number of notifications that will be sent per minute."
             + "Using this functionality you will receive mails that contain multiple notifications."
             + "</HTML>"},
-        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Delete old transaction entries</strong><br><br>This sets up the time range the transaction entries and related temp data will remain in the system and should be displayed in the transaction overview.<br>These settings will <strong>not</strong> touch your received data/files.<br>Even for deleted transactions the transaction log is still available via the \"log search\" functionality.</HTML>"},
+        {"systemmaintenance.deleteoldtransactions.help", "<HTML><strong>Delete old transaction entries</strong><br><br>"
+            + "This sets up the time range the transaction entries and related temp data will remain in the system and should be "
+            + "displayed in the transaction overview.<br>These settings will <strong>not</strong> touch your received data/files.<br>"
+            + "Even for deleted transactions the transaction log is still available via the \"log search\" functionality.<br><br>"
+            + "This maintenance setting will cleanup the related directories //temp, //sent and //_rawincoming in the file system of the server."
+            + "</HTML>"},
         {"systemmaintenance.deleteoldstatistic.help", "<HTML><strong>Delete old statistic data</strong><br><br>The system collects compatibility data from the partner systems and can display this as statistics. This determines the time frame in which this data is kept.</HTML>"},
         {"systemmaintenance.deleteoldlogdirs.help", "<HTML><strong>Delete old log dirs</strong><br><br>Even if old transactions have been deleted, the transaction logs can still be traced via existing log files. This setting deletes these log files and also all files for system events that fall within the same time period.</HTML>"},
         {"label.colorblindness", "Enable support for color blindness"},
@@ -255,5 +271,9 @@ public class ResourceBundlePreferences extends MecResourceBundle {
             + "Please restart the software for changes to this setting to take effect."
             + "</HTML>"
         },
-    };
+        {"label.logmessageprocessing", "Extended logging of message processing"},
+        {"label.logmessageprocessing.help", "<HTML><strong>Extended logging of message processing</strong><br><br>"
+            + "If activated, extended outputs for processing the messages are output to the log."
+            + "</HTML>"
+        },};
 }

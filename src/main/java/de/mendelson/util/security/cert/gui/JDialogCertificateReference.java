@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/gui/JDialogCertificateReference.java 6     3/07/24 14:07 Heller $
+//$Header: /mec_as4/de/mendelson/util/security/cert/gui/JDialogCertificateReference.java 7     14/04/26 9:05 Heller $
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -18,11 +18,11 @@ import javax.swing.table.TableColumn;
  * Dialog to configure a single partner
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class JDialogCertificateReference extends JDialog {
     
-    private final static MecResourceBundle rb;
+    private static final MecResourceBundle rb;
     static{
         try {
             rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -32,7 +32,7 @@ public class JDialogCertificateReference extends JDialog {
                     + e.getClassName() + " not found.");
         }
     }
-    public final static MendelsonMultiResolutionImage IMAGE_REFERENCE
+    public static final MendelsonMultiResolutionImage IMAGE_REFERENCE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/security/cert/gui/reference.svg", 16, 64);
     
     /**

@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/LoglineImplAS2.java 2     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/LoglineImplAS2.java 4     13/06/25 11:22 Heller $
 package de.mendelson.util.clientserver.log.search;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
 import java.util.Map;
 import org.apache.lucene.document.Document;
@@ -19,7 +20,7 @@ import org.apache.lucene.document.StringField;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class LoglineImplAS2 extends Logline implements Serializable {
 
@@ -40,6 +41,13 @@ public class LoglineImplAS2 extends Logline implements Serializable {
         super(header, logMessage);
     }
 
+    /**This is a dummy constructor for the deserialization process. Do not use in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public LoglineImplAS2() {
+        super();
+    }
+    
     @Override
     public void addAdditionalFieldsToDocument(Document luceneDocument) {
         if (this.getValue(KEY_MESSAGEID) != null) {

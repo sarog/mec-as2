@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AS2ServerMBean.java 1     17.04.09 15:24 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AS2ServerMBean.java 2     17/03/26 10:00 Heller $
 package de.mendelson.comm.as2.server;
 
 /*
@@ -12,9 +12,9 @@ package de.mendelson.comm.as2.server;
  * MBean interface for the AS2 server. Do NOT change the class name of this interface,
  * this will result in a NotCompliantMBeanException.
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
-public interface AS2ServerMBean{
+public sealed interface AS2ServerMBean permits AS2Server{
     
 
     public String getServerVersion();

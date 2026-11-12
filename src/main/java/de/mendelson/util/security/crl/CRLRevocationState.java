@@ -1,7 +1,9 @@
-//$Header: /as4/de/mendelson/util/security/crl/CRLRevocationState.java 1     29/02/24 10:06 Heller $
+//$Header: /as4/de/mendelson/util/security/crl/CRLRevocationState.java 8     14/01/26 14:06 Heller $
 package de.mendelson.util.security.crl;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import java.io.Serializable;
+import de.mendelson.util.security.cert.CertificateValiditySettings;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -13,27 +15,33 @@ import java.io.Serializable;
 /**
  * Stores information regarding a single revocation request
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 8 $
  */
 public class CRLRevocationState implements Serializable{
     
     private static final long serialVersionUID = 1L;
     
-    public static final int STATE_OK = 0;
-    public static final int STATE_REVOKED = 1;    
-    public static final int STATE_NO_CRL_INFORMATION_IN_CERTIFICATE = 2;
-    public static final int STATE_UNABLE_TO_RETRIEVE_CRL_URL_FROM_CERTIFICATE = 3;
-    public static final int STATE_CRL_NOT_REACHABLE = 4;
-    public static final int STATE_MALFORMED_CRL_URL = 5;
-    public static final int STATE_CERTIFICATE_NOT_READABLE = 6;
-    public static final int STATE_CRL_DOWNLOAD_FAILED = 7;
-    public static final int STATE_OTHER_PROBLEM = 8;
-    public static final int STATE_HTTPS_NOT_SUPPORTED_IN_URL = 9;
-    public static final int STATE_CRL_IN_BAD_FORMAT = 10;
+    public static final int STATE_OK = CertificateValiditySettings.STATE_OK;
+    public static final int STATE_CRL_REVOKED = CertificateValiditySettings.STATE_CRL_REVOKED;    
+    public static final int STATE_CRL_UNABLE_TO_EXTRACT_CRL_URL 
+            = CertificateValiditySettings.STATE_CRL_UNABLE_TO_EXTRACT_CRL_URL;
+    public static final int STATE_CRL_NO_CDP_EXTENSION 
+            = CertificateValiditySettings.STATE_CRL_NO_CDP_EXTENSION;
+    public static final int STATE_CRL_NOT_REACHABLE = CertificateValiditySettings.STATE_CRL_NOT_REACHABLE;
+    public static final int STATE_CRL_MALFORMED_URL = CertificateValiditySettings.STATE_CRL_MALFORMED_URL;
+    public static final int STATE_CRL_CERT_NOT_READABLE = CertificateValiditySettings.STATE_CRL_CERT_NOT_READABLE;
+    public static final int STATE_CRL_DOWNLOAD_FAILED = CertificateValiditySettings.STATE_CRL_DOWNLOAD_FAILED;
+    public static final int STATE_CRL_OTHER_PROBLEM = CertificateValiditySettings.STATE_CRL_OTHER_PROBLEM;
+    public static final int STATE_CRL_UNSUPPORTED_CRL_URL_SCHEME 
+            = CertificateValiditySettings.STATE_CRL_UNSUPPORTED_CRL_URL_SCHEME;
+    public static final int STATE_CRL_IN_BAD_FORMAT = CertificateValiditySettings.STATE_CRL_IN_BAD_FORMAT;
+    public static final int STATE_CRL_EXPIRED = CertificateValiditySettings.STATE_CRL_EXPIRED;
+    public static final int STATE_CRL_INVALID_SIGNATURE = CertificateValiditySettings.STATE_CRL_INVALID_SIGNATURE;
+    public static final int STATE_CRL_ISSUER_MISSING = CertificateValiditySettings.STATE_CRL_ISSUER_MISSING;
 
    
-    private final int state;
-    private final String details;
+    private int state;
+    private String details;
   
     
     public CRLRevocationState( int state, String details){
@@ -41,6 +49,14 @@ public class CRLRevocationState implements Serializable{
         this.details = details;
     }
 
+     /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CRLRevocationState(){
+    }
+    
     /**
      * @return the state
      */
@@ -53,6 +69,20 @@ public class CRLRevocationState implements Serializable{
      */
     public String getDetails() {
         return details;
+    }
+
+    /**
+     * @param state the state to set
+     */
+    public void setState(int state) {
+        this.state = state;
+    }
+
+    /**
+     * @param details the details to set
+     */
+    public void setDetails(String details) {
+        this.details = details;
     }
     
     

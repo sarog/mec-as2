@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 19    10/10/24 9:43 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/JDialogConfigurationIssueDetails.java 21    7/04/26 17:05 Heller $
 package de.mendelson.comm.as2.configurationcheck.gui;
 
 import de.mendelson.comm.as2.client.ModuleStarter;
@@ -6,9 +6,9 @@ import de.mendelson.comm.as2.configurationcheck.ConfigurationIssue;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.ColorUtil;
-import de.mendelson.util.DisplayMode;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.displaymode.DisplayMode;
 import java.awt.Color;
 import java.awt.Frame;
 import java.awt.KeyEventDispatcher;
@@ -32,12 +32,12 @@ import javax.swing.UIManager;
  * This is a dialog that contains additional information about a single issue
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class JDialogConfigurationIssueDetails extends JDialog {
 
-    private final static MendelsonMultiResolutionImage IMAGE_WARNING_SIGN
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/configurationcheck/gui/warning_sign.svg", 
+    private static final MendelsonMultiResolutionImage IMAGE_WARNING_SIGN
+            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/configurationcheck/gui/warning_sign.svg",
                     38);
 
     private final ModuleStarter moduleStarter;
@@ -45,7 +45,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
     private int currentIssueIndex;
     private final static MecResourceBundle rbIssueDetails;
 
-    static{
+    static {
         try {
             rbIssueDetails = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleConfigurationIssueDetails.class.getName());
@@ -53,7 +53,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
     }
-    
+
     /**
      * Creates new form JDialogConfigurationIssueDetails
      */
@@ -61,7 +61,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
             int issueIndex) {
         super(parent, true);
         //load resource bundle
-        
+
         this.issueList = issueList;
         this.currentIssueIndex = issueIndex;
         this.moduleStarter = moduleStarter;
@@ -70,7 +70,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
         this.jLabelIssueShortDescription.setForeground(Color.BLACK);
         Color warningColor = Color.WHITE;
         PreferencesAS2 preferences = new PreferencesAS2();
-        if (!preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT).equalsIgnoreCase(DisplayMode.HICONTRAST)) {
+        if (DisplayMode.of(preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT)) != DisplayMode.HICONTRAST) {
             if (UIManager.getColor("Panel.background") != null) {
                 warningColor = UIManager.getColor("Panel.background");
                 warningColor = ColorUtil.lightenColor(warningColor, 0.9f);
@@ -102,7 +102,7 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                     String.valueOf(this.issueList.size())
                 }));
         String shortDescription = selectedIssue.getSubject();
-        if( selectedIssue.getDetails() != null && !selectedIssue.getDetails().trim().isEmpty()){
+        if (selectedIssue.getDetails() != null && !selectedIssue.getDetails().trim().isEmpty()) {
             shortDescription = shortDescription + " (" + selectedIssue.getDetails() + ")";
         }
         String longDescription = selectedIssue.getHintAsHTML();
@@ -148,13 +148,13 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                 break;
             case ConfigurationIssue.KEY_MISSING_SIGN_LOCAL_STATION:
                 this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.partner"));
-                break;    
+                break;
             case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN:
                 this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
-                break;  
+                break;
             case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS:
                 this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.keystore"));
-                break;    
+                break;
             default:
                 this.jButtonJumpToIssue.setText(rbIssueDetails.getResourceString("button.jumpto.generic"));
                 break;
@@ -200,10 +200,10 @@ public class JDialogConfigurationIssueDetails extends JDialog {
                 break;
             case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN:
                 this.moduleStarter.displayCertificateManagerEncSign(null);
-                break;    
+                break;
             case ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS:
                 this.moduleStarter.displayCertificateManagerTLS(null);
-                break;        
+                break;
         }
     }
 

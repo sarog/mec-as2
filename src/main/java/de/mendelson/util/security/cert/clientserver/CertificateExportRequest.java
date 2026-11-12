@@ -1,7 +1,9 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/CertificateExportRequest.java 4     9/11/23 9:52 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/clientserver/CertificateExportRequest.java 8     31/03/26 17:12 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
+import de.mendelson.util.clientserver.SerializationDummy;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
+import de.mendelson.util.security.CertificateFormatType;
 import de.mendelson.util.security.cert.KeystoreStorageImplFile;
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -18,7 +20,7 @@ import java.io.Serializable;
  * Msg for the client server protocol
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 8 $
  */
 public class CertificateExportRequest extends ClientServerMessage implements Serializable {
 
@@ -26,21 +28,30 @@ public class CertificateExportRequest extends ClientServerMessage implements Ser
 
     public static final int KEYSTORE_USAGE_TLS = KeystoreStorageImplFile.KEYSTORE_USAGE_TLS;
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
-    private final int keystoreUsageSource;
-    private final String fingerprintSHA1;
-    private final String exportFormat;
+    private int keystoreUsageSource;
+    private String fingerprintSHA1;
+    private CertificateFormatType exportFormat;
 
     /**
-     * 
+     *
      * @param KEYSTORE_USAGE_SOURCE
      * @param fingerprintSHA1
      * @param exportFormat One of KeystoreCertificate.CERTIFICATE_FORMAT_*
      */
     public CertificateExportRequest(final int KEYSTORE_USAGE_SOURCE,
-            String fingerprintSHA1,  String exportFormat) {
+            String fingerprintSHA1, CertificateFormatType exportFormat) {
         this.keystoreUsageSource = KEYSTORE_USAGE_SOURCE;
         this.fingerprintSHA1 = fingerprintSHA1;
         this.exportFormat = exportFormat;
+    }
+
+    /**
+     * This is a dummy constructor for the deserialization process. Do not use
+     * in logic.
+     */
+    @SerializationDummy(reason = "This is a dummy constructor for client-server serialization only - do not use in logic.")
+    public CertificateExportRequest() {
+        super();
     }
 
     @Override
@@ -56,10 +67,11 @@ public class CertificateExportRequest extends ClientServerMessage implements Ser
     }
 
     /**
-     * @return the keystoreType, one of ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS 
-     * or ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN
+     * @return the keystoreType, one of
+     * ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_TLS or
+     * ExportRequestPrivateKeyPKCS12.KEYSTORE_USAGE_ENC_SIGN
      */
-    public int getKeystoreUsage() {
+    public int getKeystoreUsageSource() {
         return keystoreUsageSource;
     }
 
@@ -73,8 +85,29 @@ public class CertificateExportRequest extends ClientServerMessage implements Ser
     /**
      * @return the exportFormat, one of KeystoreCertificate.CERTIFICATE_FORMAT_*
      */
-    public String getExportFormat() {
+    public CertificateFormatType getExportFormat() {
         return exportFormat;
     }
-    
+
+    /**
+     * @param keystoreUsageSource the keystoreUsageSource to set
+     */
+    public void setKeystoreUsageSource(int keystoreUsageSource) {
+        this.keystoreUsageSource = keystoreUsageSource;
+    }
+
+    /**
+     * @param fingerprintSHA1 the fingerprintSHA1 to set
+     */
+    public void setFingerprintSHA1(String fingerprintSHA1) {
+        this.fingerprintSHA1 = fingerprintSHA1;
+    }
+
+    /**
+     * @param exportFormat the exportFormat to set
+     */
+    public void setExportFormat(CertificateFormatType exportFormat) {
+        this.exportFormat = exportFormat;
+    }
+
 }

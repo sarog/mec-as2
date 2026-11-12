@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/user/UserAccess.java 13    11/02/25 13:39 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/user/UserAccess.java 14    5/06/25 9:36 Heller $
 package de.mendelson.util.clientserver.user;
 
 import java.io.BufferedReader;
@@ -23,7 +23,7 @@ import java.util.logging.Logger;
  * Contains several utilities for the user access
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class UserAccess {
 
@@ -49,7 +49,7 @@ public class UserAccess {
         user.setName(userName);
         user.setPasswdCrypted(User.cryptPassword(password));
         for (int i = 0; i < 3; i++) {
-            user.setPermission(i, "");
+            user.setPermissionOfIndex(i, "");
         }
         try (RandomAccessFile file = new RandomAccessFile(this.passwdFile.toFile(), "rw")) {
             file.seek(Files.size(this.passwdFile));

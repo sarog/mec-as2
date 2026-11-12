@@ -1,7 +1,7 @@
-//$Header: /as2/sqlscript/config/Update24to25.java 13    25/10/23 10:05 Heller $
+//$Header: /as2/sqlscript/config/Update24to25.java 14    8/11/24 9:05 Heller $
 package sqlscript.config;
 
-import de.mendelson.comm.as2.database.IUpdater;
+import de.mendelson.util.database.IUpdater;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import java.io.ByteArrayInputStream;
 import java.io.File;
@@ -28,7 +28,7 @@ import java.sql.Statement;
  *
  * Update the database from version 24 to version 25
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  * @since build 128
  */
 public class Update24to25 implements IUpdater {

@@ -1,7 +1,7 @@
-//$Header: /as2/sqlscript/config/Update44to45.java 2     3.09.20 9:21 Heller $
+//$Header: /as2/sqlscript/config/Update44to45.java 3     8/11/24 9:05 Heller $
 package sqlscript.config;
 
-import de.mendelson.comm.as2.database.IUpdater;
+import de.mendelson.util.database.IUpdater;
 import de.mendelson.util.security.Base64;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -21,7 +21,7 @@ import java.sql.Statement;
  * Update the database from version 29 to version 30
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  * @since build 128
  */
 public class Update44to45 implements IUpdater {

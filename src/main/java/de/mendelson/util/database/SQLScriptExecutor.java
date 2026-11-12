@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/database/SQLScriptExecutor.java 3     16/12/24 9:51 Heller $
+//$Header: /mec_as4/de/mendelson/util/database/SQLScriptExecutor.java 5     14/04/26 9:05 Heller $
 package de.mendelson.util.database;
 
 import de.mendelson.IProductVersion;
@@ -26,14 +26,14 @@ import java.util.TimeZone;
  * assigned to scripts
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class SQLScriptExecutor {
 
     public static final String SCRIPT_RESOURCE_CONFIG = "/sqlscript/config/";
     public static final String SCRIPT_RESOURCE_RUNTIME = "/sqlscript/runtime/";
     private ISQLQueryModifier queryModifier = null;
-    private final static boolean DISPLAY_QUERY = false;
+    private static final boolean DISPLAY_QUERY = false;
 
     /**
      * Creates new SQLScriptExecutor
@@ -129,7 +129,7 @@ public class SQLScriptExecutor {
             ConsoleProgressBar.print(percent);
             //skip the query if this is made empty by the query modifier. In this case the query is not required by
             //the specified database system
-            if( modifiedQuery == null || modifiedQuery.trim().length() == 0){
+            if( modifiedQuery == null || modifiedQuery.isBlank()){
                 continue;
             }
             if( DISPLAY_QUERY ){

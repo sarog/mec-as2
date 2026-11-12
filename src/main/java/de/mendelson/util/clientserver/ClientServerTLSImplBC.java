@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientServerTLSImplBC.java 2     22/03/24 15:58 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/ClientServerTLSImplBC.java 3     21/07/25 10:21 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.security.BCCryptoHelper;
@@ -29,7 +29,7 @@ import org.bouncycastle.asn1.x509.KeyPurposeId;
  * Full Bonuncycastle implementation of the TLS layer of the client-server connection
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class ClientServerTLSImplBC implements ClientServerTLS{
 
@@ -81,9 +81,8 @@ public class ClientServerTLSImplBC implements ClientServerTLS{
     private KeyGenerationResult generateTLSKey() throws Exception {
         KeyGenerator generator = new KeyGenerator();
         KeyGenerationValues parameter = new KeyGenerationValues();
-        //generating a longer key takes some time.
-        parameter.setKeySize(2048);
         parameter.setKeyAlgorithm(KeyGenerationValues.KEYALGORITHM_RSA);
+        parameter.setKeySize(2048);
         //one shutdown every 10 years should be ok
         parameter.setKeyValidInDays(365 * 10);
         parameter.setSignatureAlgorithm(KeyGenerationValues.SIGNATUREALGORITHM_SHA256_WITH_RSA);

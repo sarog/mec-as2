@@ -1,7 +1,7 @@
-//$Header: /as2/sqlscript/config/Update21to22.java 7     18.05.12 11:17 Heller $
+//$Header: /as2/sqlscript/config/Update21to22.java 8     8/11/24 9:05 Heller $
 package sqlscript.config;
 
-import de.mendelson.comm.as2.database.IUpdater;
+import de.mendelson.util.database.IUpdater;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -21,7 +21,7 @@ import java.util.List;
  *
  * Update the database from version21 to version 22: create secondary keys
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  * @since build 128
  */
 public class Update21to22 implements IUpdater {

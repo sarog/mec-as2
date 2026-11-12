@@ -1,8 +1,8 @@
-//$Header: /as2/sqlscript/config/Update46to47.java 4     25/08/22 11:55 Heller $
+//$Header: /as2/sqlscript/config/Update46to47.java 5     8/11/24 9:05 Heller $
 package sqlscript.config;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
-import de.mendelson.comm.as2.database.IUpdater;
+import de.mendelson.util.database.IUpdater;
 import java.sql.Connection;
 import java.sql.Statement;
 import java.sql.PreparedStatement;
@@ -21,7 +21,7 @@ import java.util.prefs.Preferences;
  * to the database
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  * @since build 128
  */
 public class Update46to47 implements IUpdater {

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/ResourceBundleGUIClient_fr.java 3     9/12/24 15:50 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleGUIClient_fr.java 4     4/04/25 9:43 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleGUIClient_fr extends MecResourceBundle {
 
@@ -41,7 +41,7 @@ public class ResourceBundleGUIClient_fr extends MecResourceBundle {
         {"connection.closed.title", "Interruption de la connexion locale"},
         {"connection.closed.message", "La connexion locale client-serveur a été interrompue par le serveur"},
         {"client.received.unprocessed.message", "Le serveur a envoyé un message qui n''a pas été traité par le client: {0}"},
-        {"error", "Problem: {0}"},
+        {"error.client", "Un problème s''est produit dans la connexion client-serveur entre ce client et le serveur: {0}"},
         {"login.failed.client.incompatible.message", "Le serveur signale que ce client n''a pas la bonne version.\n"
             + "Veuillez utiliser le client qui correspond au serveur."
         },

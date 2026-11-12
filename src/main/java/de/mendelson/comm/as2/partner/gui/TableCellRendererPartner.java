@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableCellRendererPartner.java 8     27/06/24 14:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/TableCellRendererPartner.java 10    9/04/26 8:46 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.partner.Partner;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListRequest;
 import de.mendelson.comm.as2.partner.clientserver.PartnerListResponse;
@@ -15,19 +16,22 @@ import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 
-/** 
+/**
  * Renders a partner in a JTable column
+ *
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 10 $
  */
 public class TableCellRendererPartner extends DefaultTableCellRenderer implements TableCellRenderer {
 
     private static final ImageIcon ICON_LOCAL
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/localstation.svg", 16));
+                    "/de/mendelson/comm/as2/message/loggui/localstation.svg",
+                    AS2Gui.IMAGE_SIZE_TABLE));
     private static final ImageIcon ICON_REMOTE
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg", 16));
+                    "/de/mendelson/comm/as2/message/loggui/singlepartner.svg",
+                    AS2Gui.IMAGE_SIZE_TABLE));
     private final BaseClient baseClient;
 
     /**
@@ -44,12 +48,12 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
      *
      * Returns the default table cell renderer.
      *
-     * @param table  the <code>JTable</code>
-     * @param value  the value to assign to the cell at
-     *			<code>[row, column]</code>
+     * @param table the <code>JTable</code>
+     * @param value the value to assign to the cell at
+     * <code>[row, column]</code>
      * @param isSelected true if cell is selected
      * @param hasFocus true if cell has focus
-     * @param row  the row of the cell to render
+     * @param row the row of the cell to render
      * @param column the column of the cell to render
      * @return the default table cell renderer
      */
@@ -72,21 +76,23 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
             this.renderPartner(partner);
         } else if (value instanceof String) {
             //expecting AS2 id
-            PartnerListRequest request = new PartnerListRequest(PartnerListRequest.LIST_BY_AS2_ID);
+            PartnerListRequest request = new PartnerListRequest(PartnerListRequest.ListOption.AS2_ID);
             request.setAdditionalListOptionStr((String) value);
-            List<Partner> partnerList = ((PartnerListResponse)this.baseClient.sendSync(request, Partner.TIMEOUT_PARTNER_REQUEST)).getList();
-            if( partnerList != null && !partnerList.isEmpty()){
+            List<Partner> partnerList = ((PartnerListResponse) this.baseClient.sendSync(request, Partner.TIMEOUT_PARTNER_REQUEST)).getList();
+            if (partnerList != null && !partnerList.isEmpty()) {
                 this.renderPartner(partnerList.get(0));
-            }else {
+            } else {
                 //partner does not exist: just display the AS2 id
                 this.setIcon(ICON_LOCAL);
                 this.setText((String) value);
-            }            
+            }
         }
         return (this);
     }
 
-    /**Renders the partner entry in the table*/
+    /**
+     * Renders the partner entry in the table
+     */
     private void renderPartner(Partner partner) {
         if (partner.isLocalStation()) {
             this.setIcon(ICON_LOCAL);
@@ -105,8 +111,8 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
      * drawbacks of overriding methods like these.
      */
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -124,8 +130,8 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -133,8 +139,8 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -142,8 +148,8 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -151,8 +157,8 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -160,8 +166,8 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
@@ -173,13 +179,11 @@ public class TableCellRendererPartner extends DefaultTableCellRenderer implement
     }
 
     /**
-     * Overridden for performance reasons.
-     * See the <a href="#override">Implementation Note</a>
+     * Overridden for performance reasons. See the
+     * <a href="#override">Implementation Note</a>
      * for more information.
      */
     @Override
     public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {
     }
 }
-
-

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/TableModelCertificates.java 28    4/03/25 14:36 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/TableModelCertificates.java 33    13/10/25 11:16 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.ImageUtil;
@@ -8,17 +8,18 @@ import javax.swing.ImageIcon;
 import javax.swing.table.AbstractTableModel;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.gui.JDialogCertificates;
 import de.mendelson.util.security.keygeneration.KeyGenerator;
-import java.security.cert.CertPath;
 import java.security.cert.Certificate;
 import java.security.cert.PKIXCertPathBuilderResult;
-import java.security.cert.X509Certificate;
+import java.security.cert.TrustAnchor;
 import java.security.interfaces.ECPublicKey;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -31,9 +32,14 @@ import java.util.List;
  * table model to display a configuration grid
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 33 $
  */
 public class TableModelCertificates extends AbstractTableModel {
+
+    public static final int TYPE_TLS = 1;
+    public static final int TYPE_ENCSIGN = 2;
+
+    private int type = TYPE_ENCSIGN;
 
     public static final int ROW_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE + 3;
     protected static final int IMAGE_HEIGHT = JDialogCertificates.IMAGE_SIZE_TABLE;
@@ -95,14 +101,17 @@ public class TableModelCertificates extends AbstractTableModel {
         String.class,
         String.class,
         String.class,
-        String.class};
+        TrustType.class};
 
     private CertificateManager certificateManager = null;
 
     /**
      * Creates new table model
+     *
+     * @param TYPE The type of the storage, changes some display properties
      */
-    public TableModelCertificates() {
+    public TableModelCertificates(final int TYPE) {
+        this.type = TYPE;
     }
 
     public void setCertificateManager(CertificateManager certificateManager) {
@@ -138,7 +147,7 @@ public class TableModelCertificates extends AbstractTableModel {
     public List<KeystoreCertificate> getCurrentCertificateList() {
         List<KeystoreCertificate> copyList = new ArrayList<KeystoreCertificate>();
         synchronized (this.listData) {
-            copyList.addAll(this.listData);
+            copyList = new ArrayList<KeystoreCertificate>(this.listData);
         }
         return (copyList);
     }
@@ -158,7 +167,11 @@ public class TableModelCertificates extends AbstractTableModel {
      */
     @Override
     public int getColumnCount() {
-        return (8);
+        if (this.type == TYPE_TLS) {
+            return (8);
+        } else {
+            return (7);
+        }
     }
 
     /**
@@ -231,7 +244,7 @@ public class TableModelCertificates extends AbstractTableModel {
      */
     @Override
     public Object getValueAt(int row, int col) {
-        KeystoreCertificate certificate = null;
+        KeystoreCertificate certificate;
         synchronized (this.listData) {
             certificate = this.listData.get(row);
         }
@@ -242,7 +255,7 @@ public class TableModelCertificates extends AbstractTableModel {
             try {
                 certificate.getX509Certificate().checkValidity();
                 return (ICON_VALID);
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 return (ICON_INVALID);
             }
         }
@@ -276,22 +289,30 @@ public class TableModelCertificates extends AbstractTableModel {
         }
         if (col == 6) {
             String organization = certificate.getSubjectOrganization();
-            if (organization == null || organization.trim().length() == 0) {
+            if (organization == null || organization.isBlank()) {
                 organization = certificate.getSubjectCN();
             }
             return (organization);
         }
         if (col == 7) {
             if (certificate.isRootCertificate()) {
-                return (rb.getResourceString("trust.root"));
+                TrustType trustType = new TrustType(TrustType.TRUST_TYPE_ROOT,
+                        rb.getResourceString("trust.root"));
+                return (trustType);
             } else if (certificate.isSelfSigned()) {
-                return (rb.getResourceString("trust.selfsigned"));
+                TrustType trustType = new TrustType(TrustType.TRUST_TYPE_SELFSIGNED,
+                        rb.getResourceString("trust.selfsigned"));
+                return (trustType);
             } else {
                 KeystoreCertificate trustAnchor = this.getTrustAnchor(certificate);
                 if (trustAnchor == null) {
-                    return (rb.getResourceString("trust.untrusted"));
+                    TrustType trustType = new TrustType(TrustType.TRUST_TYPE_UNTRUSTED,
+                            rb.getResourceString("trust.untrusted"));
+                    return (trustType);
                 } else {
-                    return (rb.getResourceString("trust.trusted"));
+                    TrustType trustType = new TrustType(TrustType.TRUST_TYPE_TRUSTED,
+                            rb.getResourceString("trust.trusted"));
+                    return (trustType);
                 }
             }
         }
@@ -302,8 +323,7 @@ public class TableModelCertificates extends AbstractTableModel {
      * Swing GUI checks which cols are editable.
      */
     @Override
-    public boolean isCellEditable(int row, int col
-    ) {
+    public boolean isCellEditable(int row, int col) {
         return (false);
     }
 
@@ -344,16 +364,20 @@ public class TableModelCertificates extends AbstractTableModel {
         if (this.certificateManager == null) {
             return (null);
         }
-        PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(
-                this.certificateManager.getKeystore(),
-                this.certificateManager.getX509CertificateList());
-        if (result != null) {
-            Certificate trustAnchor = result.getTrustAnchor().getTrustedCert();
-            for (KeystoreCertificate availableKeystoreCert : this.certificateManager.getKeyStoreCertificateList()) {
-                if (trustAnchor.equals(availableKeystoreCert.getX509Certificate())) {
-                    return( availableKeystoreCert);                    
+        try {
+            Set<TrustAnchor> trustAnchors = KeyStoreUtil.getTrustAnchors(this.certificateManager.getKeystore());
+            PKIXCertPathBuilderResult result = certificate.getPKIXCertPathBuilderResult(
+                    trustAnchors,
+                    this.certificateManager.getX509CertificateList());
+            if (result != null) {
+                Certificate trustAnchor = result.getTrustAnchor().getTrustedCert();
+                for (KeystoreCertificate availableKeystoreCert : this.certificateManager.getKeyStoreCertificateList()) {
+                    if (trustAnchor.equals(availableKeystoreCert.getX509Certificate())) {
+                        return (availableKeystoreCert);
+                    }
                 }
             }
+        } catch (Exception e) {
         }
         return (null);
     }
