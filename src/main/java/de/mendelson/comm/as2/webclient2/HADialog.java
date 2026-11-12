@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/webclient2/HADialog.java 7     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/webclient2/HADialog.java 9     8/10/24 15:57 Heller $
 package de.mendelson.comm.as2.webclient2;
 
 import com.vaadin.server.ThemeResource;
@@ -7,9 +7,10 @@ import com.vaadin.ui.AbstractComponent;
 import com.vaadin.ui.Label;
 import com.vaadin.ui.Panel;
 import com.vaadin.ui.VerticalLayout;
-import de.mendelson.comm.as2.ha.HAAccessDB;
-import de.mendelson.comm.as2.ha.ServerInstanceHA;
+import de.mendelson.util.ha.ServerInstanceHA;
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.ha.HAAccessDB;
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.text.DateFormat;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  * Displays the state of the receipt unit
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class HADialog extends OkDialog {
 
@@ -41,7 +42,7 @@ public class HADialog extends OkDialog {
         this.setResizable(true);
         this.setClosable(true);
         this.dbDriverManager = dbDriverManager;
-        this.haAccess = new HAAccessDB();
+        this.haAccess = new HAAccessDB(SystemEventManagerImplAS2.instance());
     }
 
     /**

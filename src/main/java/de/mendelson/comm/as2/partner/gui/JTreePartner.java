@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JTreePartner.java 37    1/11/23 10:25 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JTreePartner.java 38    3/07/24 9:54 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.util.security.cert.CertificateManager;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.comm.as2.partner.Partner;
@@ -28,11 +29,11 @@ import javax.swing.tree.TreePath;
  * Tree to display the AS2 partner
  *
  * @author S.Heller
- * @version $Revision: 37 $
+ * @version $Revision: 38 $
  */
 public class JTreePartner extends JTree {
 
-    public static final int ICON_HEIGHT = 18;
+    public static final int ICON_HEIGHT = AS2Gui.IMAGE_SIZE_TREENODE;
     
     /**
      * Holds a new partner ID for every created partner that is always negativ

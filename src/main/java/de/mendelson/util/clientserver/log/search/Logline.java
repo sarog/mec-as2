@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/Logline.java 7     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/search/Logline.java 8     20/02/25 13:41 Heller $
 package de.mendelson.util.clientserver.log.search;
 
 import de.mendelson.util.log.LogFormatter;
@@ -24,7 +24,7 @@ import org.apache.lucene.util.BytesRef;
  * Stores the information about an event
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public abstract class Logline implements Serializable, Comparable<Logline> {
 
@@ -58,14 +58,14 @@ public abstract class Logline implements Serializable, Comparable<Logline> {
      * Pre parsed data - creates a log line from the data found in a lucene
      * result
      */
-    public Logline(Map<String, String> map) {
+    protected Logline(Map<String, String> map) {
         this.map.putAll(map);
     }
 
     /**
      * Creates a new logline - mainly from a splitted line found in the log file
      */
-    public Logline(String[] header, String logMessage) {
+    protected Logline(String[] header, String logMessage) {
         this.putValue(KEY_LOGMESSAGE, logMessage);
         for (int i = 0; i < header.length; i++) {
             int indexEqualSign = header[i].indexOf("=");

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToPartner.java 6     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToPartner.java 8     11/03/25 17:00 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -26,20 +26,18 @@ import javax.swing.JFrame;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class JDialogConfigureEventMoveToPartner extends JDialog {
 
     private final MecResourceBundle rb;
-    private final JFrame parent;
     private final Partner eventPartner;
     private final int eventType;
     private final List<Partner> partnerList;
 
-    public JDialogConfigureEventMoveToPartner(JFrame parent, List<Partner> partnerList,
+    public JDialogConfigureEventMoveToPartner(JFrame frameParent, List<Partner> partnerList,
             Partner eventPartner, final int EVENT_TYPE) {
-        super(parent, true);
-        this.parent = parent;
+        super(frameParent, true);
         this.eventPartner = eventPartner;
         this.partnerList = partnerList;
         this.eventType = EVENT_TYPE;
@@ -206,6 +204,7 @@ public class JDialogConfigureEventMoveToPartner extends JDialog {
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMain.add(jPanelSpace, gridBagConstraints);
 
         jComboBoxPartner.setMinimumSize(new java.awt.Dimension(160, 22));

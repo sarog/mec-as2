@@ -1,22 +1,21 @@
-//$Header: /as2/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 19    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/httpconfig/gui/JDialogDisplayHTTPConfiguration.java 21    11/02/25 13:40 Heller $
 package de.mendelson.util.httpconfig.gui;
 
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.LockingGlassPane;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationRequest;
 import de.mendelson.util.httpconfig.clientserver.DisplayHTTPServerConfigurationResponse;
 import de.mendelson.util.uinotification.UINotification;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import javax.swing.ImageIcon;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
+import javax.swing.border.EmptyBorder;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -29,17 +28,23 @@ import javax.swing.JFrame;
  * Dialog to send a file to a single partner
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class JDialogDisplayHTTPConfiguration extends JDialog {
 
-    /**
-     * ResourceBundle to localize the GUI
-     */
-    private MecResourceBundle rb = null;
+    private final static MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleDisplayHTTPConfiguration.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private final BaseClient baseClient;
     private final IStatusBar statusbar;
-    private final MendelsonMultiResolutionImage ICON_PORTS
+    private final static MendelsonMultiResolutionImage ICON_PORTS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/httpconfig/gui/ports.svg", 32, 64);
 
     /**
@@ -50,18 +55,13 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
             IStatusBar statusbar) {
         super(parent, true);
         this.statusbar = statusbar;
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleDisplayHTTPConfiguration.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.baseClient = baseClient;
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         this.jLabelIcon.setIcon(new ImageIcon(ICON_PORTS));
+        this.jTextAreaCipher.setBorder(new EmptyBorder(5, 5, 5, 5));
+        this.jTextAreaMisc.setBorder(new EmptyBorder(5, 5, 5, 5));
+        this.jTextAreaProtocols.setBorder(new EmptyBorder(5, 5, 5, 5));
     }
 
     /**
@@ -89,12 +89,11 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         Runnable runnable = new Runnable() {
             @Override
             public void run() {
-
                 try {
                     JDialogDisplayHTTPConfiguration.this.lock();
                     //display wait indicator
                     JDialogDisplayHTTPConfiguration.this.statusbar.startProgressIndeterminate(
-                            JDialogDisplayHTTPConfiguration.this.rb.getResourceString("reading.configuration"), uniqueId);
+                            JDialogDisplayHTTPConfiguration.rb.getResourceString("reading.configuration"), uniqueId);
                     DisplayHTTPServerConfigurationResponse response
                             = (DisplayHTTPServerConfigurationResponse) JDialogDisplayHTTPConfiguration.this.baseClient.sendSyncWaitInfinite(new DisplayHTTPServerConfigurationRequest());
                     JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(response.getMiscConfigurationText());
@@ -111,7 +110,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                         httpServerUserConfigFile = "--";
                     }
                     JDialogDisplayHTTPConfiguration.this.jLabelConfigFileInfo.setText("<HTML>"
-                            + JDialogDisplayHTTPConfiguration.this.rb.getResourceString("label.info.configfile",
+                            + JDialogDisplayHTTPConfiguration.rb.getResourceString("label.info.configfile",
                                     new Object[]{
                                         embeddedJettyServerVersion,
                                         "<strong>" + httpServerConfigFile + "</strong>",
@@ -120,20 +119,20 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                             + "</HTML>");
                     if (!response.isEmbeddedHTTPServerStarted()) {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaMisc.setText(
-                                JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
+                                JDialogDisplayHTTPConfiguration.rb.getResourceString("no.embedded.httpserver"));
                         JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(
-                                JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
+                                JDialogDisplayHTTPConfiguration.rb.getResourceString("no.embedded.httpserver"));
                         JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(
-                                JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.embedded.httpserver"));
+                                JDialogDisplayHTTPConfiguration.rb.getResourceString("no.embedded.httpserver"));
                     } else if (response.isSSLEnabled()) {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(response.getCipherConfigurationText());
                         JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(response.getProtocolConfigurationText());
                     } else {
                         JDialogDisplayHTTPConfiguration.this.jTextAreaCipher.setText(
-                                JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.ssl.enabled",
+                                JDialogDisplayHTTPConfiguration.rb.getResourceString("no.ssl.enabled",
                                         response.getHttpServerConfigFile()));
                         JDialogDisplayHTTPConfiguration.this.jTextAreaProtocols.setText(
-                                JDialogDisplayHTTPConfiguration.this.rb.getResourceString("no.ssl.enabled",
+                                JDialogDisplayHTTPConfiguration.rb.getResourceString("no.ssl.enabled",
                                         response.getHttpServerConfigFile()));
                     }
                 } catch (Exception e) {
@@ -146,10 +145,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor(
-                new NamedThreadFactory("ui-display-httpconfig"));
-        executor.submit(runnable);
-        executor.shutdown();
+        SwingUtilities.invokeLater(runnable);
     }
 
     /**
@@ -172,6 +168,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         jScrollPaneProtocols = new javax.swing.JScrollPane();
         jTextAreaProtocols = new javax.swing.JTextArea();
         jLabelConfigFileInfo = new javax.swing.JLabel();
+        jPanelSpace77456 = new javax.swing.JPanel();
         jPanelButtons = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
 
@@ -219,7 +216,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridy = 3;
         gridBagConstraints.gridwidth = 3;
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.NORTHWEST;
@@ -228,6 +225,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelEdit.add(jPanelSpace, gridBagConstraints);
 
+        jLabelConfigFileInfo.setFont(new java.awt.Font("Dialog", 0, 13)); // NOI18N
         jLabelConfigFileInfo.setText("<ConfigFileInfo>");
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -236,8 +234,15 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.FIRST_LINE_START;
         gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(15, 5, 10, 10);
+        gridBagConstraints.insets = new java.awt.Insets(20, 5, 10, 10);
         jPanelEdit.add(jLabelConfigFileInfo, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 1;
+        gridBagConstraints.gridwidth = 3;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 10);
+        jPanelEdit.add(jPanelSpace77456, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -281,6 +286,7 @@ public class JDialogDisplayHTTPConfiguration extends JDialog {
     private javax.swing.JPanel jPanelButtons;
     private javax.swing.JPanel jPanelEdit;
     private javax.swing.JPanel jPanelSpace;
+    private javax.swing.JPanel jPanelSpace77456;
     private javax.swing.JScrollPane jScrollPaneCipher;
     private javax.swing.JScrollPane jScrollPaneConfigMisc;
     private javax.swing.JScrollPane jScrollPaneProtocols;

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplByteArray.java 12    9/11/23 9:52 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplByteArray.java 15    11/02/25 13:40 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.security.BCCryptoHelper;
@@ -22,8 +22,9 @@ import java.util.Map;
  */
 /**
  * Keystore storage implementation that relies on a byte array
+ *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class KeystoreStorageImplByteArray implements KeystoreStorage {
 
@@ -31,10 +32,9 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
     public static final int KEYSTORE_USAGE_ENC_SIGN = KeystoreStorageImplFile.KEYSTORE_USAGE_ENC_SIGN;
     public static final String KEYSTORE_STORAGE_TYPE_JKS = BCCryptoHelper.KEYSTORE_JKS;
     public static final String KEYSTORE_STORAGE_TYPE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
-    
+
     private KeyStore keystore = null;
     private char[] keystorePass = null;
-    private final KeyStoreUtil keystoreUtil = new KeyStoreUtil();
     private int keystoreUsage = KEYSTORE_USAGE_ENC_SIGN;
     private String keystoreStorageType = KEYSTORE_STORAGE_TYPE_PKCS12;
 
@@ -52,14 +52,8 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
         BCCryptoHelper cryptoHelper = new BCCryptoHelper();
         this.keystore = cryptoHelper.createKeyStoreInstance(keystoreStorageType);
         //load data into keystore object
-        InputStream inStream = null;
-        try {
-            inStream = new ByteArrayInputStream(keystoreBytes);
+        try (InputStream inStream = new ByteArrayInputStream(keystoreBytes)) {
             this.keystore.load(inStream, this.keystorePass);
-        } finally {
-            if (inStream != null) {
-                inStream.close();
-            }
         }
     }
 
@@ -69,16 +63,15 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
     }
 
     @Override
-    public void loadKeystoreFromServer() throws Exception{
+    public void loadKeystoreFromServer() throws Exception {
         throw new IllegalAccessException("KeystoreStorageImplByteArray: loadKeystoreFromServer() is not available for byte array implementation of storage.");
     }
-    
+
     @Override
     public void replaceAllEntriesAndSave(List<KeystoreCertificate> oldList, List<KeystoreCertificate> newList) throws Exception {
         throw new IllegalAccessException("KeystoreStorageImplByteArray: replaceAllEntriesAndSave() is not available for byte array implementation of storage.");
     }
-    
-    
+
     @Override
     public Key getKey(String alias) throws Exception {
         Key key = this.keystore.getKey(alias, this.keystorePass);
@@ -98,8 +91,7 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
 
     @Override
     public void renameEntry(String oldAlias, String newAlias, char[] keypairPass) throws Exception {
-        KeyStoreUtil keystoreUtility = new KeyStoreUtil();
-        keystoreUtility.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
+        KeyStoreUtil.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
     }
 
     @Override
@@ -123,7 +115,7 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
 
     @Override
     public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {
-        Map<String, Certificate> certificateMap = this.keystoreUtil.getCertificatesFromKeystore(this.keystore);
+        Map<String, Certificate> certificateMap = KeyStoreUtil.getCertificatesFromKeystore(this.keystore);
         return (certificateMap);
     }
 
@@ -134,12 +126,17 @@ public class KeystoreStorageImplByteArray implements KeystoreStorage {
 
     @Override
     public String getKeystoreStorageType() {
-        return( this.keystoreStorageType);
+        return (this.keystoreStorageType);
     }
-    
+
     @Override
     public int getKeystoreUsage() {
-        return( this.keystoreUsage);
+        return (this.keystoreUsage);
     }
-    
+
+    @Override
+    public boolean isReadOnly() {
+        return (false);
+    }
+
 }

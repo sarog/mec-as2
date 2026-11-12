@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/tables/hideablecolumns/ResourceBundleHideableColumns_fr.java 3     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/tables/hideablecolumns/ResourceBundleHideableColumns_fr.java 4     9/12/24 16:03 Heller $
 package de.mendelson.util.tables.hideablecolumns;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleHideableColumns_fr extends MecResourceBundle {
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/JDialogGlobalChange.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/global/JDialogGlobalChange.java 8     11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.partner.gui.global;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -27,7 +27,7 @@ import javax.swing.JFrame;
  * application
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 8 $
  */
 public class JDialogGlobalChange extends JDialog {
 
@@ -39,7 +39,6 @@ public class JDialogGlobalChange extends JDialog {
                     AS2Gui.IMAGE_SIZE_DIALOG);
 
     private final MecResourceBundle rb;
-    private final Logger logger = Logger.getLogger("de.mendelson.as2.client");
     private final List<Partner> partnerList;
 
     public JDialogGlobalChange(JFrame parent, List<Partner> partnerList) {
@@ -93,7 +92,7 @@ public class JDialogGlobalChange extends JDialog {
     }
 
     private void setPollToAllPartner() {
-        boolean performPoll = this.jCheckBoxSetPollEnabled.isSelected();
+        boolean performPoll = this.switchSetPollEnabled.isSelected();
         int changeCount = 0;
         for (Partner partner : this.partnerList) {
             if (partner.isLocalStation()) {
@@ -167,7 +166,6 @@ public class JDialogGlobalChange extends JDialog {
 
         jPanelMain = new javax.swing.JPanel();
         jLabelIcon = new javax.swing.JLabel();
-        jCheckBoxSetPollEnabled = new javax.swing.JCheckBox();
         jButtonSetPollEnabled = new javax.swing.JButton();
         jPanelSpace = new javax.swing.JPanel();
         jLabelInfo = new javax.swing.JLabel();
@@ -180,6 +178,8 @@ public class JDialogGlobalChange extends JDialog {
         jTextFieldMaxPollFiles = new javax.swing.JTextField();
         jButtonSetMaxPollFiles = new javax.swing.JButton();
         jPanelHorizontalSpace2 = new javax.swing.JPanel();
+        switchSetPollEnabled = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        jLabelSetPollEnabled = new javax.swing.JLabel();
         jPanelButton = new javax.swing.JPanel();
         jButtonOk = new javax.swing.JButton();
 
@@ -200,15 +200,6 @@ public class JDialogGlobalChange extends JDialog {
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         jPanelMain.add(jLabelIcon, gridBagConstraints);
-
-        jCheckBoxSetPollEnabled.setText(this.rb.getResourceString("label.dirpoll"));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 9;
-        gridBagConstraints.gridwidth = 6;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
-        gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
-        jPanelMain.add(jCheckBoxSetPollEnabled, gridBagConstraints);
 
         jButtonSetPollEnabled.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/partner/gui/global/missing_image24x24.gif"))); // NOI18N
         jButtonSetPollEnabled.setText(this.rb.getResourceString( "button.set")
@@ -330,6 +321,24 @@ public class JDialogGlobalChange extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 0, 10);
         jPanelMain.add(jPanelHorizontalSpace2, gridBagConstraints);
 
+        switchSetPollEnabled.setDisplayStatusText(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 6;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMain.add(switchSetPollEnabled, gridBagConstraints);
+
+        jLabelSetPollEnabled.setText(this.rb.getResourceString("label.dirpoll"));
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 9;
+        gridBagConstraints.gridwidth = 6;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 5);
+        jPanelMain.add(jLabelSetPollEnabled, gridBagConstraints);
+
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
         gridBagConstraints.weightx = 1.0;
@@ -358,7 +367,7 @@ public class JDialogGlobalChange extends JDialog {
         gridBagConstraints.weightx = 1.0;
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(557, 446));
+        setSize(new java.awt.Dimension(720, 446));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 
@@ -384,12 +393,12 @@ public class JDialogGlobalChange extends JDialog {
     private javax.swing.JButton jButtonSetMaxPollFiles;
     private javax.swing.JButton jButtonSetPollEnabled;
     private javax.swing.JButton jButtonSetPollInterval;
-    private javax.swing.JCheckBox jCheckBoxSetPollEnabled;
     private javax.swing.JLabel jLabelIcon;
     private javax.swing.JLabel jLabelInfo;
     private javax.swing.JLabel jLabelPollFiles;
     private javax.swing.JLabel jLabelPollInterval;
     private javax.swing.JLabel jLabelSeconds;
+    private javax.swing.JLabel jLabelSetPollEnabled;
     private javax.swing.JPanel jPanelButton;
     private javax.swing.JPanel jPanelHorizontalSpace;
     private javax.swing.JPanel jPanelHorizontalSpace2;
@@ -397,5 +406,6 @@ public class JDialogGlobalChange extends JDialog {
     private javax.swing.JPanel jPanelSpace;
     private javax.swing.JTextField jTextFieldMaxPollFiles;
     private javax.swing.JTextField jTextFieldPollInterval;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchSetPollEnabled;
     // End of variables declaration//GEN-END:variables
 }

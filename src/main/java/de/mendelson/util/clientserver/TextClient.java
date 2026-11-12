@@ -1,7 +1,6 @@
-//$Header: /oftp2/de/mendelson/util/clientserver/TextClient.java 27    23/01/24 11:09 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/TextClient.java 32    14/02/25 9:58 Heller $
 package de.mendelson.util.clientserver;
 
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
 import de.mendelson.util.clientserver.messages.ClientServerResponse;
 import de.mendelson.util.clientserver.messages.LoginRequest;
@@ -23,20 +22,24 @@ import java.util.logging.Level;
  * and brand names are trademarks of their respective owners.
  */
 /**
- * Sends a command to the OFTP2 server
+ * Text Client to connect to a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 32 $
  */
-public class TextClient extends BaseTextClient implements ClientsideMessageProcessor {
+public class TextClient extends BaseTextClient implements ClientsideMessageProcessor, AutoCloseable {
 
     private String user = null;
     private char[] password = null;
     private ConnectThread connectionThread = null;
     private String clientId = "undefined";
 
-    public TextClient() {
-        super();
+    /**
+     *
+     * @param CLIENT_TYPE Client Type as defined in the BaseClient
+     */
+    public TextClient(final int CLIENT_TYPE) {
+        super(CLIENT_TYPE);
         super.addMessageProcessor(this);
     }
 
@@ -51,8 +54,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
         this.password = password;
         this.clientId = clientId;
         this.connectionThread = new ConnectThread(host, clientServerCommPort, timeout);
-        ExecutorService executor = Executors.newSingleThreadExecutor(
-                new NamedThreadFactory(connectionThreadNamePrefix + "clientserver-connect-login"));
+        ExecutorService executor = Executors.newSingleThreadExecutor();
         executor.submit(this.connectionThread);
         executor.shutdown();
         this.connectionThread.getDoneSignal().await(timeout, TimeUnit.MILLISECONDS);
@@ -70,13 +72,13 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      */
     @Override
     public boolean processMessageFromServer(ClientServerMessage message) {
-        if (message instanceof ServerInfo) {
+        if (message instanceof LoginRequest) {
+            this.loginRequestedFromServer();
+        } else if (message instanceof ServerInfo) {
             if (this.getBaseClient().getDisplayServerLogMessages()) {
                 ServerInfo serverInfo = (ServerInfo) message;
                 this.getLogger().log(Level.CONFIG, "Remote server identified as " + serverInfo.getProductname());
             }
-        } else if (message instanceof LoginRequest) {
-            this.loginRequestedFromServer();
         }
         return (true);
     }
@@ -153,7 +155,7 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
      * Returns the version of this class
      */
     public static String getVersion() {
-        String revision = "$Revision: 27 $";
+        String revision = "$Revision: 32 $";
         return (revision.substring(revision.indexOf(":") + 1,
                 revision.lastIndexOf("$")).trim());
     }
@@ -168,6 +170,15 @@ public class TextClient extends BaseTextClient implements ClientsideMessageProce
 
     @Override
     public void processSyncResponseFromServer(ClientServerResponse response) {
+    }
+
+    /**
+     * Makes this class AutoCloseable: automatically logout and disconnect the text client
+     */
+    @Override
+    public void close() throws Exception {
+        this.logout();
+        this.disconnect();
     }
 
     private class ConnectThread implements Runnable {

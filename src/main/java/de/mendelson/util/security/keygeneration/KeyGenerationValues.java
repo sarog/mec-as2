@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 14    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerationValues.java 15    15/08/24 11:54 Heller $
 package de.mendelson.util.security.keygeneration;
 
 import java.util.ArrayList;
@@ -18,13 +18,15 @@ import org.bouncycastle.asn1.x509.KeyUsage;
 /**
  * Stores key values for the generation process
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class KeyGenerationValues {
 
     public static final String KEYALGORITHM_DSA = KeyGenerator.KEYALGORITHM_DSA;
     public static final String KEYALGORITHM_RSA = KeyGenerator.KEYALGORITHM_RSA;
     public static final String KEYALGORITHM_ECDSA = KeyGenerator.KEYALGORITHM_ECDSA;
+    public static final String KEYALGORITHM_DILITHIUM = KeyGenerator.KEYALGORITHM_DILITHIUM;
+    public static final String KEYALGORITHM_SPHINCSPLUS = KeyGenerator.KEYALGORITHM_SPHINCSPLUS;
     public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = "SHA256WithRSA";
     public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA = "SHA512WithRSA";
     public static final String SIGNATUREALGORITHM_SHA1_WITH_RSA = "SHA1WithRSA";

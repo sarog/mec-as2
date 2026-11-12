@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 12    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToPartner.java 13    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -33,13 +33,12 @@ import java.util.logging.Logger;
  * defined remote partner
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 13 $
  */
 public class ExecuteMoveToPartner implements IProcessingExecution {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final MessageAccessDB messageAccess;
-    private final MDNAccessDB mdnAccess;
     private final PartnerAccessDB partnerAccess;
     private final CertificateManager certificateManagerEncSign;
 
@@ -54,7 +53,6 @@ public class ExecuteMoveToPartner implements IProcessingExecution {
         this.dbDriverManager = dbDriverManager;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.messageAccess = new MessageAccessDB(dbDriverManager);
-        this.mdnAccess = new MDNAccessDB(dbDriverManager);
         this.partnerAccess = new PartnerAccessDB(dbDriverManager);
         //Load resourcebundle
         try {

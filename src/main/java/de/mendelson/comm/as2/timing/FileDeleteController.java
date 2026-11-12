@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 22    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/FileDeleteController.java 25    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
+import de.mendelson.util.AS2Tools;
 import de.mendelson.util.IOFileFilterCreationDate;
 import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
 import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
@@ -19,8 +19,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -38,7 +36,7 @@ import java.util.stream.Stream;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 25 $
  */
 public class FileDeleteController {
 
@@ -50,8 +48,6 @@ public class FileDeleteController {
     private final TmpFileDeleteThread tempFileDeleteThread;
     private final LogFileDeleteThread logFileDeleteThread;
     private final MecResourceBundle rb;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(1,
-            new NamedThreadFactory("file-delete-control"));
 
     public FileDeleteController(IDBDriverManager dbDriverManager) {
         this.preferences = new PreferencesAS2(dbDriverManager);
@@ -70,9 +66,9 @@ public class FileDeleteController {
     /**
      * Starts the embedded task that guards the files to delete
      */
-    public void startAutoDeleteControl() {        
-        this.scheduledExecutor.scheduleWithFixedDelay(this.tempFileDeleteThread, 15, 30, TimeUnit.MINUTES);        
-        this.scheduledExecutor.scheduleWithFixedDelay(this.logFileDeleteThread, 30, 30, TimeUnit.MINUTES);
+    public void startAutoDeleteControl() {
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.tempFileDeleteThread, 15, 30, TimeUnit.MINUTES);
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.logFileDeleteThread, 30, 30, TimeUnit.MINUTES);
     }
 
     /**
@@ -80,15 +76,9 @@ public class FileDeleteController {
      */
     private List<Path> listFilesNIO(Path dir, DirectoryStream.Filter fileFilter) throws Exception {
         List<Path> result = new ArrayList<Path>();
-        DirectoryStream<Path> stream = null;
-        try {
-            stream = Files.newDirectoryStream(dir, fileFilter);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir, fileFilter)) {
             for (Path entry : stream) {
                 result.add(entry);
-            }
-        } finally {
-            if (stream != null) {
-                stream.close();
             }
         }
         return result;
@@ -103,15 +93,9 @@ public class FileDeleteController {
         dirOnlyFilter.setIncludeFiles(false);
         dirOnlyFilter.setIncludeDirecories(true);
         List<Path> result = new ArrayList<Path>();
-        DirectoryStream<Path> stream = null;
-        try {
-            stream = Files.newDirectoryStream(parentDir, dirOnlyFilter);
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(parentDir, dirOnlyFilter)) {
             for (Path entry : stream) {
                 result.add(entry);
-            }
-        } finally {
-            if (stream != null) {
-                stream.close();
             }
         }
         return result;
@@ -124,10 +108,10 @@ public class FileDeleteController {
     public void deleteDirectoryRecursive(Path dir) throws IOException {
         List<Path> pathsToDelete = new ArrayList<Path>();
         //try-with-resource pattern to close the file stream
-        try(Stream<Path> stream = Files.walk(dir)){
+        try (Stream<Path> stream = Files.walk(dir)) {
             pathsToDelete.addAll(
                     stream.sorted(Comparator.reverseOrder())
-                    .collect(Collectors.toList()));
+                            .collect(Collectors.toList()));
         }
         for (Path path : pathsToDelete) {
             Files.deleteIfExists(path);
@@ -154,8 +138,8 @@ public class FileDeleteController {
                     deleteLog.append(rb.getResourceString("delete.header.logfiles", String.valueOf(maxAgeInDays)));
                     deleteLog.append(System.lineSeparator()).append("---");
                     for (Path logDir : subDirList) {
-                        deleteLog.append(System.lineSeparator());
-                        deleteLog.append(logDir.toAbsolutePath());
+                        deleteLog.append(System.lineSeparator())
+                                .append(logDir.toAbsolutePath());
                         try {
                             deleteDirectoryRecursive(logDir);
                             deleteLog.append(" [").append(rb.getResourceString("success")).append("]");
@@ -261,25 +245,35 @@ public class FileDeleteController {
                 deleteLog.append(rb.getResourceString("no.entries", directory.toAbsolutePath().toString()));
                 deleteLog.append(System.lineSeparator());
             }
-            for (Path singlePath : fileList) {
+            for (Path singleFilePath : fileList) {
                 foundEntries.incrementAndGet();
+                String fileSizeStr = "";
                 //if its a directory descent into it and delete it first
-                if (Files.isDirectory(singlePath)) {
-                    int severity = this.deleteFilesInDirectory(singlePath, fileFilter, deleteLog, foundEntries);
+                if (Files.isDirectory(singleFilePath)) {
+                    int severity = this.deleteFilesInDirectory(singleFilePath, fileFilter, deleteLog, foundEntries);
                     if (severity == SystemEvent.SEVERITY_WARNING) {
                         eventSeverity = SystemEvent.SEVERITY_WARNING;
                     }
+                } else {
+                    long size = Files.size(singleFilePath);
+                    fileSizeStr = AS2Tools.getDataSizeDisplay(size);
                 }
                 try {
-                    Files.delete(singlePath);
-                    deleteLog.append(rb.getResourceString("success") + ": ");
-                    deleteLog.append(singlePath.toAbsolutePath().toString());
+                    Files.delete(singleFilePath);
+                    deleteLog.append(rb.getResourceString("success") + ": ")
+                            .append(singleFilePath.toAbsolutePath().toString());
+                    if (fileSizeStr.length() > 0) {
+                        deleteLog.append("      ")
+                                .append("[")
+                                .append(fileSizeStr)
+                                .append("]");
+                    }
                     deleteLog.append(System.lineSeparator());
-                    logger.config(rb.getResourceString("autodelete", singlePath.toAbsolutePath().toString()));
+                    logger.config(rb.getResourceString("autodelete", singleFilePath.toAbsolutePath().toString()));
                 } catch (Exception delEx) {
-                    deleteLog.append(rb.getResourceString("failure") + " [" + delEx.getClass().getSimpleName() + "]: ");
-                    deleteLog.append(singlePath.toAbsolutePath().toString());
-                    deleteLog.append(System.lineSeparator());
+                    deleteLog.append(rb.getResourceString("failure") + " [" + delEx.getClass().getSimpleName() + "]: ")
+                            .append(singleFilePath.toAbsolutePath().toString())
+                            .append(System.lineSeparator());
                     eventSeverity = SystemEvent.SEVERITY_WARNING;
                 }
             }

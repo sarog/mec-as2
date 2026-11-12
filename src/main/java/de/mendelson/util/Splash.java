@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/Splash.java 57    5/12/23 9:06 Heller $
+//$Header: /converteride/de/mendelson/util/Splash.java 62    28/02/25 15:38 Heller $
 package de.mendelson.util;
 
 import java.awt.BorderLayout;
@@ -18,10 +18,12 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -42,7 +44,7 @@ import javax.swing.SwingConstants;
  * Splash window to been shown while one of the mendelson products load
  *
  * @author S.Heller
- * @version $Revision: 57 $
+ * @version $Revision: 62 $
  */
 public class Splash extends JWindow implements SwingConstants {
 
@@ -53,7 +55,7 @@ public class Splash extends JWindow implements SwingConstants {
     /**
      * PrintStream to pass to out components to let them write stuff into
      */
-    private SplashPrintStream out = null;
+    private SplashPrintWriter out = null;
     /**
      * Indicates if this splash should have a progress bar, this is done if this
      * is != null
@@ -85,6 +87,12 @@ public class Splash extends JWindow implements SwingConstants {
                 (screenSize.height - (int) height) / 2, (int) width, (int) height);
     }
 
+    /**
+     * Allows to load an image resource
+     *
+     * @deprecated (This will load a bitmap as Splash - but this should not be
+     * used becasue of the missing scalability)
+     */
     @Deprecated(since = "2020")
     public Splash(String imageResource) {
         this(imageResource, 330);
@@ -129,10 +137,10 @@ public class Splash extends JWindow implements SwingConstants {
      * @param y Y Position of the output
      * @param fontColor Font color to use
      */
-    public PrintStream createPrintStream(Font font, int x, int y, Color fontColor) {
-        StringBuilder buffer = new StringBuilder();
-        StringBuilderOutputStream outStream = new StringBuilderOutputStream(this, buffer);
-        this.out = new SplashPrintStream(outStream, buffer, font, x, y, fontColor);
+    public PrintWriter createPrintWriter(Font font, int x, int y, Color fontColor) {
+        StringBuilder builder = new StringBuilder();
+        StringBuilderOutputStream outStream = new StringBuilderOutputStream(this, builder);
+        this.out = new SplashPrintWriter(outStream, builder, font, x, y, fontColor);
         return (this.out);
     }
 
@@ -307,7 +315,7 @@ public class Splash extends JWindow implements SwingConstants {
                     this.progress.getProgress(), this.progress.getHeight() / 2);
             if (this.progress.showPercent()) {
                 TextLayout layout = new TextLayout(this.progress.getPercent(),
-                        new Font("Dialog", Font.PLAIN, (int) (this.progress.getHeight() / 2)),
+                        new Font(Font.DIALOG, Font.PLAIN, (int) (this.progress.getHeight() / 2)),
                         renderContext);
                 AffineTransform transformPosition = new AffineTransform();
                 transformPosition.setToTranslation(
@@ -352,9 +360,9 @@ public class Splash extends JWindow implements SwingConstants {
      */
     private BufferedImage loadImage(String resource, int imageHeight) {
         if (resource.endsWith(".svg")) {
-            MendelsonMultiResolutionImage image 
+            MendelsonMultiResolutionImage image
                     = MendelsonMultiResolutionImage.fromSVG(resource, imageHeight,
-                    MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
+                            MendelsonMultiResolutionImage.SVGScalingOption.KEEP_HEIGHT);
             return (this.toBufferedImage(new ImageIcon(image.toMinResolution(imageHeight)).getImage()));
         } else {
             BufferedImage image = this.loadImageAsBitmap(resource);
@@ -364,22 +372,14 @@ public class Splash extends JWindow implements SwingConstants {
 
     private BufferedImage loadImageAsBitmap(String resource) {
         BufferedImage bufferedImage = null;
-        InputStream inStream = null;
         try {
             //get an input stream from the resource
-            inStream = Splash.class.getResourceAsStream(resource);
-            bufferedImage = ImageIO.read(inStream);
-        } catch (Exception e) {
+            try (InputStream inStream = Splash.class.getResourceAsStream(resource)) {
+                bufferedImage = ImageIO.read(inStream);
+            }
+        } catch (Throwable e) {
             System.err.println("Fatal: Unable to load splash image resource " + resource + ".");
             System.exit(-1);
-        } finally {
-            try {
-                if (inStream != null) {
-                    inStream.close();
-                }
-            } catch (Exception e) {
-
-            }
         }
         return (bufferedImage);
     }
@@ -397,28 +397,34 @@ public class Splash extends JWindow implements SwingConstants {
      */
     public void destroy() {
         this.setVisible(false);
+        if (this.out != null) {
+            try {
+                this.out.close();
+            } catch (Exception e) {
+            }
+        }
     }
 
     /**
      * PrintStream that will stores also information about position of the
      * output and refreshed the passed component whenever a \n occurs
      */
-    public static class SplashPrintStream extends PrintStream {
+    public static class SplashPrintWriter extends PrintWriter {
 
         /**
          * Font to use for the text printstream output in splash
          */
-        private Font font = new Font("Dialog", Font.PLAIN, 10);
+        private final Font font;
         /**
          * Font color to use in splash
          */
-        private Color fontColor = Color.black;
+        private final Color fontColor;
         /**
          * Position to use to write output to
          */
-        private int outputX = 0;
-        private int outputY = 0;
-        private final StringBuilder buffer;
+        private final int outputX;
+        private final int outputY;
+        private final StringBuilder builder;
 
         /**
          * @param @param outStream stream to write entries to a string buffer
@@ -427,11 +433,11 @@ public class Splash extends JWindow implements SwingConstants {
          * @param y Y Position of the output
          * @param fontColor Font color to use
          */
-        public SplashPrintStream(StringBuilderOutputStream outStream,
-                StringBuilder buffer,
+        public SplashPrintWriter(OutputStream outStream,
+                StringBuilder builder,
                 Font font, int x, int y, Color fontColor) {
-            super(outStream);
-            this.buffer = buffer;
+            super(outStream, true, StandardCharsets.UTF_8);
+            this.builder = builder;
             this.font = font;
             this.outputX = x;
             this.outputY = y;
@@ -455,7 +461,7 @@ public class Splash extends JWindow implements SwingConstants {
         }
 
         public String getText() {
-            return (this.buffer.toString());
+            return (this.builder.toString());
         }
     }
 
@@ -466,8 +472,8 @@ public class Splash extends JWindow implements SwingConstants {
      */
     public static class StringBuilderOutputStream extends OutputStream {
 
-        private StringBuilder builder = null;
-        private Component component = null;
+        private final StringBuilder builder;
+        private final Component component;
         /**
          * TempBuffer is necessary because an update of the component could be
          * forced outside this class, the LAST valid value is always in the
@@ -478,34 +484,36 @@ public class Splash extends JWindow implements SwingConstants {
 
         /**
          * @param component Component to update on an end of a line
-         * @param buffer Buffer to write output to
+         * @param builder Buffer to write output to
          */
-        public StringBuilderOutputStream(Component component, StringBuilder buffer) {
-            this.builder = buffer;
+        public StringBuilderOutputStream(Component component, StringBuilder builder) {
+            this.builder = builder;
             this.component = component;
         }
 
         @Override
-        public void write(int i) throws IOException {
-            char addChar = this.int2char(i);
-            if (addChar == '\n') {
-                this.builder.delete(0, this.builder.length());
-                this.builder.append(tempBuilder.toString());
-                if (this.component.getGraphics() != null) {
-                    this.component.update(this.component.getGraphics());
+        public void write(byte[] b, int off, int len) {
+            String logStr = new String(b, off, len, StandardCharsets.UTF_8);
+            for (char logChar : logStr.toCharArray()) {
+                if (logChar == '\n') {
+                    this.builder.delete(0, this.builder.length());
+                    this.builder.append(tempBuilder.toString());
+                    if (this.component.getGraphics() != null) {
+                        this.component.update(this.component.getGraphics());
+                    }
+                    tempBuilder.delete(0, this.builder.length());
+                } else {
+                    this.tempBuilder.append(logChar);
                 }
-                tempBuilder.delete(0, this.builder.length());
-            } else {
-                this.tempBuilder.append(addChar);
             }
         }
 
-        /**
-         * Map bytes to characters, bytes are always signed in java!
-         */
-        private char int2char(int i) {
-            return (char) ((i < 0) ? i + 0x100 : i);
+        @Override
+        public void write(int b) {
+            //works only for a single byte
+            this.builder.append((char) (b & 0xFF));
         }
+
     }
 
     /**
@@ -523,21 +531,21 @@ public class Splash extends JWindow implements SwingConstants {
         /**
          * Progress bar border
          */
-        private Color backgroundColor = Color.white;
+        private final Color backgroundColor;
         /**
          * Progress bar color itself
          */
-        private Color foregroundColor = Color.blue;
+        private final Color foregroundColor;
         /**
          * Border color for the progress bar
          */
-        private Color borderColor = Color.darkGray;
+        private final Color borderColor;
         /**
          * Progress state
          */
         private int maxProgress = 0;
         private int actualProgress = 0;
-        private boolean showPercent = false;
+        private final boolean showPercent;
         /**
          * Format to format the percent output
          */
@@ -681,15 +689,15 @@ public class Splash extends JWindow implements SwingConstants {
         /**
          * Font to use for the output
          */
-        private Font font = null;
+        private final Font font;
         /**
          * Position where to output the string
          */
-        private float x = 0;
-        private float y = 0;
-        private String text = null;
-        private Color color = null;
-        private AffineTransform fontTransform = null;
+        private final float x;
+        private final float y;
+        private final String text;
+        private final Color color;
+        private final AffineTransform fontTransform;
 
         /**
          * @param font Font to use to display the text in the splash

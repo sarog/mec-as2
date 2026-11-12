@@ -47,7 +47,7 @@ import javax.swing.event.DocumentListener;
  * the graphics hierarchy - else the resize is just skipped)
  *
  * @author S.Heller
- * @version: $Revision: 10 $
+ * @version: $Revision: 11 $
  */
 public class PasswordOverlay {
 
@@ -186,7 +186,7 @@ public class PasswordOverlay {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 if (evt.getPropertyName().equalsIgnoreCase("enabled")) {
-                    boolean enabled = Boolean.valueOf(evt.getNewValue().toString()).booleanValue();
+                    boolean enabled = Boolean.parseBoolean(evt.getNewValue().toString());
                     if (!enabled) {
                         //do not keep the raw display in disabled state. Also fall back to masked icon
                         jToggleButtonEye.setSelected(false);

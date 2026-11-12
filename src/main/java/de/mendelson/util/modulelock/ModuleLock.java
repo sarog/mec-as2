@@ -1,8 +1,10 @@
-//$Header: /as2/de/mendelson/util/modulelock/ModuleLock.java 18    2/11/23 14:03 Heller $
+//$Header: /oftp2/de/mendelson/util/modulelock/ModuleLock.java 27    12/03/25 13:13 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.MecResourceBundle;
+import de.mendelson.util.systemevents.SystemEvent;
+import de.mendelson.util.systemevents.SystemEventManager;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
@@ -26,7 +28,7 @@ import javax.swing.JOptionPane;
  * all other clients should have just a read-only view.
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 27 $
  */
 public class ModuleLock {
 
@@ -37,7 +39,7 @@ public class ModuleLock {
 
     private static final Logger logger = Logger.getAnonymousLogger();
 
-    public ModuleLock() {
+    private ModuleLock() {
     }
 
     /**
@@ -46,61 +48,41 @@ public class ModuleLock {
      * if no lock could be set just null is returned
      */
     public static LockClientInformation setLock(String moduleName, LockClientInformation requestingClient,
-            IDBDriverManager dbDriverManager) {
-        Statement transactionStatement = null;
-        Connection runtimeConnectionNoAutoCommit = null;
+            IDBDriverManager dbDriverManager) throws Exception {
         String transactionName = "ModuleLock_set";
-        try {
-            runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(
-                    IDBDriverManager.DB_RUNTIME);
+        LockClientInformation returnLockKeeper = null;
+        try (Connection runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(
+                IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = runtimeConnectionNoAutoCommit.createStatement();
-            //start transaction
-            dbDriverManager.startTransaction(transactionStatement, transactionName);
-            dbDriverManager.setTableLockExclusive(transactionStatement, new String[]{"modulelock"});
-            LockClientInformation currentLockKeeper = getCurrentLockKeeper(moduleName, runtimeConnectionNoAutoCommit);
-            if (currentLockKeeper != null) {
-                if (currentLockKeeper.equals(requestingClient)) {
-                    //perform a refresh, the requesting client is the lock keeper
-                    _refreshLock(moduleName, requestingClient, runtimeConnectionNoAutoCommit);
-                    dbDriverManager.commitTransaction(transactionStatement, transactionName);
-                    return (requestingClient);
-                } else {
-                    //end the transaction
-                    dbDriverManager.commitTransaction(transactionStatement, transactionName);
-                    //another client has the lock: just return its information
-                    return (currentLockKeeper);
-                }
-            } else {
-                //noone has the lock on this module: set it to the requesting client
-                _setLock(moduleName, requestingClient, runtimeConnectionNoAutoCommit);
-                //commit: write the lock transactional to the database
-                dbDriverManager.commitTransaction(transactionStatement, transactionName);
-                return (requestingClient);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            if (transactionStatement != null) {
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                //start transaction
+                dbDriverManager.startTransaction(transactionStatement, transactionName);
+                dbDriverManager.setTableLockExclusive(transactionStatement,
+                        new String[]{"modulelock"});
                 try {
+                    LockClientInformation currentLockKeeper = getCurrentLockKeeper(moduleName, runtimeConnectionNoAutoCommit);
+                    if (currentLockKeeper != null) {
+                        if (currentLockKeeper.equals(requestingClient)) {
+                            //perform a refresh, the requesting client is the lock keeper
+                            _refreshLock(moduleName, requestingClient, runtimeConnectionNoAutoCommit);
+                            returnLockKeeper = requestingClient;
+                        } else {
+                            //another client has the lock: just return its information
+                            returnLockKeeper = currentLockKeeper;
+                        }
+                    } else {
+                        //noone has the lock on this module: set it to the requesting client
+                        _setLock(moduleName, requestingClient, runtimeConnectionNoAutoCommit);
+                        returnLockKeeper = requestingClient;
+                    }
+                    dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
                     dbDriverManager.rollbackTransaction(transactionStatement);
-                } catch (Exception ex) {
-                }
-            }
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
-                }
-            }
-            if (runtimeConnectionNoAutoCommit != null) {
-                try {
-                    runtimeConnectionNoAutoCommit.close();
-                } catch (Exception e) {
+                    throw e;
                 }
             }
         }
-        return (null);
+        return (returnLockKeeper);
     }
 
     /**
@@ -109,50 +91,33 @@ public class ModuleLock {
      */
     public static LockClientInformation refreshLock(String moduleName, LockClientInformation requestingClient,
             IDBDriverManager dbDriverManager) {
-        Statement transactionStatement = null;
-        Connection runtimeConnectionNoAutoCommit = null;
         String transactionName = "ModuleLock_refresh";
-        try {
-            runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(
-                    IDBDriverManager.DB_RUNTIME);
+        try (Connection runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(
+                IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = runtimeConnectionNoAutoCommit.createStatement();
-            dbDriverManager.startTransaction(transactionStatement, transactionName);
-            //start transaction
-            dbDriverManager.setTableLockExclusive(transactionStatement, new String[]{"modulelock"});
-            LockClientInformation currentLockKeeper = getCurrentLockKeeper(moduleName, runtimeConnectionNoAutoCommit);
-            if (currentLockKeeper != null) {
-                if (currentLockKeeper.equals(requestingClient)) {
-                    //perform a refresh, the requesting client is the lock keeper
-                    _refreshLock(moduleName, requestingClient, runtimeConnectionNoAutoCommit);
-                    //write the lock transactional to the database
-                    dbDriverManager.commitTransaction(transactionStatement, transactionName);
-                    return (requestingClient);
-                }
-            } else {
-                //its another lockkeeper: just rollback
-                dbDriverManager.rollbackTransaction(transactionStatement);
-            }
-        } catch (Exception e) {
-            if (transactionStatement != null) {
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                dbDriverManager.startTransaction(transactionStatement, transactionName);
+                dbDriverManager.setTableLockExclusive(transactionStatement,
+                        new String[]{"modulelock"});
                 try {
+                    LockClientInformation currentLockKeeper = getCurrentLockKeeper(moduleName, runtimeConnectionNoAutoCommit);
+                    if (currentLockKeeper != null) {
+                        if (currentLockKeeper.equals(requestingClient)) {
+                            //perform a refresh, the requesting client is the lock keeper
+                            _refreshLock(moduleName, requestingClient, runtimeConnectionNoAutoCommit);
+                            //write the lock transactional to the database
+                            dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                            return (requestingClient);
+                        }
+                    } else {
+                        //its another lockkeeper: just rollback
+                        dbDriverManager.rollbackTransaction(transactionStatement);
+                    }
+                } catch (Throwable e) {
                     dbDriverManager.rollbackTransaction(transactionStatement);
-                } catch (Exception ex) {
                 }
             }
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
-                }
-            }
-            if (runtimeConnectionNoAutoCommit != null) {
-                try {
-                    runtimeConnectionNoAutoCommit.close();
-                } catch (Exception e) {
-                }
-            }
+        } catch (Throwable e) {
         }
         //this is an error: There is no lock on this module but a client tried to refresh it.
         return (null);
@@ -161,51 +126,50 @@ public class ModuleLock {
     /**
      * Releases all locks, should be executed on server start
      */
-    public synchronized static void releaseAllLocks(IDBDriverManager dbDriverManager) {
-        Connection runtimeConnectionAutoCommit = null;
-        try {
-            runtimeConnectionAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
-            _deleteAllLocks(runtimeConnectionAutoCommit, 0L);
-        } catch (Exception e) {
-        } finally {
-            if (runtimeConnectionAutoCommit != null) {
+    public static synchronized void releaseAllLocks(IDBDriverManager dbDriverManager) {
+        String transationName = "ModuleLock_releaseAllLocks";
+        try (Connection runtimeConnectionNoAutoCommit = dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                dbDriverManager.startTransaction(transactionStatement, transationName);
+                dbDriverManager.setTableLockExclusive(transactionStatement,
+                        new String[]{"modulelock"});
                 try {
-                    runtimeConnectionAutoCommit.close();
-                } catch (Exception e) {
+                    _deleteAllLocks(runtimeConnectionNoAutoCommit, 0L);
+                    dbDriverManager.commitTransaction(transactionStatement, transationName);
+                } catch (Throwable e) {
+                    dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
+        } catch (Throwable e) {
         }
     }
 
     /**
      * Releases all locks, should be executed on server start
      */
-    public static void releaseAllLocksOlderThan(IDBDriverManager dbDriverManager, Connection runtimeConnectionNoAutoCommit, long ageInms) {
-        Statement transactionStatement = null;
+    public static void releaseAllLocksOlderThan(IDBDriverManager dbDriverManager,
+            SystemEventManager systemEventManager,
+            long ageInms) {
         String transationName = "ModuleLock_releaseOlderThan";
-        try {
-            transactionStatement = runtimeConnectionNoAutoCommit.createStatement();
-            dbDriverManager.startTransaction(transactionStatement, transationName);
-            _deleteAllLocks(runtimeConnectionNoAutoCommit, ageInms);
-            dbDriverManager.commitTransaction(transactionStatement, transationName);
-        } catch (Exception e) {
-            try {
-                dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Exception ex) {
-            }
-            if (transactionStatement != null) {
+        try (Connection runtimeConnectionNoAutoCommit = dbDriverManager
+                .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
+            runtimeConnectionNoAutoCommit.setAutoCommit(false);
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                dbDriverManager.startTransaction(transactionStatement, transationName);
+                dbDriverManager.setTableLockExclusive(transactionStatement,
+                        new String[]{"modulelock"});
                 try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
+                    _deleteAllLocks(runtimeConnectionNoAutoCommit, ageInms);
+                    dbDriverManager.commitTransaction(transactionStatement, transationName);
+                } catch (Throwable e) {
+                    systemEventManager.systemFailure(e, SystemEvent.TYPE_DATABASE_ROLLBACK);
+                    dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
-                }
-            }
+        } catch (Throwable e) {
+            systemEventManager.systemFailure(e);
         }
     }
 
@@ -214,65 +178,37 @@ public class ModuleLock {
      */
     public static void releaseLock(String moduleName, LockClientInformation clientInformation,
             IDBDriverManager dbDriverManager) {
-        Statement transactionStatement = null;
-        Connection runtimeConnectionNoAutoCommit = null;
         String transactionName = "ModuleLock_release";
-        try {
-            runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(
-                    IDBDriverManager.DB_RUNTIME);
+        try (Connection runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(
+                IDBDriverManager.DB_RUNTIME)) {
             runtimeConnectionNoAutoCommit.setAutoCommit(false);
-            transactionStatement = runtimeConnectionNoAutoCommit.createStatement();
-            dbDriverManager.startTransaction(transactionStatement, transactionName);
-            _deleteLock(moduleName, runtimeConnectionNoAutoCommit);
-            dbDriverManager.commitTransaction(transactionStatement, transactionName);
-        } catch (Exception e) {
-            try {
-                dbDriverManager.rollbackTransaction(transactionStatement);
-            } catch (Exception ex) {
-            }
-            if (transactionStatement != null) {
+            try (Statement transactionStatement = runtimeConnectionNoAutoCommit.createStatement()) {
+                dbDriverManager.startTransaction(transactionStatement, transactionName);
+                dbDriverManager.setTableLockExclusive(transactionStatement,
+                        new String[]{"modulelock"});
                 try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
+                    _deleteLock(moduleName, runtimeConnectionNoAutoCommit);
+                    dbDriverManager.commitTransaction(transactionStatement, transactionName);
+                } catch (Throwable e) {
+                    dbDriverManager.rollbackTransaction(transactionStatement);
                 }
             }
-        } finally {
-            if (transactionStatement != null) {
-                try {
-                    transactionStatement.close();
-                } catch (Exception ex) {
-                }
-            }
-            if (runtimeConnectionNoAutoCommit != null) {
-                try {
-                    runtimeConnectionNoAutoCommit.close();
-                } catch (Exception e) {
-                }
-            }
+        } catch (Throwable e) {
         }
     }
 
     private static void _deleteAllLocks(Connection runtimeConnectionNoAutoCommit, long ageInms) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            if (ageInms > 0) {
-                statement = runtimeConnectionNoAutoCommit.prepareStatement("DELETE FROM modulelock WHERE refreshlockmillies<?");
+        if (ageInms > 0) {
+            try (PreparedStatement preparedStatement = runtimeConnectionNoAutoCommit.prepareStatement(
+                    "DELETE FROM modulelock WHERE refreshlockmillies<?")) {
                 long absoluteAge = System.currentTimeMillis() - ageInms;
-                statement.setLong(1, absoluteAge);
-            } else {
-                statement = runtimeConnectionNoAutoCommit.prepareStatement("DELETE FROM modulelock");
+                preparedStatement.setLong(1, absoluteAge);
+                preparedStatement.executeUpdate();
             }
-            statement.executeUpdate();
-        } catch (Exception e) {
-            logger.severe("ModuleLock._deleteAllLocks: " + e.getMessage());
-            throw e;
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    //NOP
-                }
+        } else {
+            try (PreparedStatement preparedStatement = runtimeConnectionNoAutoCommit.prepareStatement(
+                    "DELETE FROM modulelock")) {
+                preparedStatement.executeUpdate();
             }
         }
     }
@@ -281,31 +217,22 @@ public class ModuleLock {
      * Deletes a lock, could be run in transactional mode
      */
     private static void _deleteLock(String moduleName, Connection runtimeConnectionNoAutoCommit) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            statement = runtimeConnectionNoAutoCommit.prepareStatement("DELETE FROM modulelock WHERE modulename=?");
+        try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                "DELETE FROM modulelock WHERE modulename=?")) {
             statement.setString(1, moduleName);
             statement.executeUpdate();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe("ModuleLock._deleteLock: " + e.getMessage());
             throw e;
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                }
-            }
         }
     }
 
     private static void _setLock(String moduleName, LockClientInformation clientInformation,
             Connection runtimeConnectionNoAutoCommit) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            statement = runtimeConnectionNoAutoCommit.prepareStatement(
-                    "INSERT INTO modulelock(modulename,startlockmillis,refreshlockmillies,clientip,clientid,username,clientpid)"
-                    + "VALUES(?,?,?,?,?,?,?)");
+        try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                "INSERT INTO modulelock(modulename,startlockmillis,refreshlockmillies,"
+                + "clientip,clientid,username,clientpid)"
+                + "VALUES(?,?,?,?,?,?,?)")) {
             statement.setString(1, moduleName);
             long lockTime = System.currentTimeMillis();
             statement.setLong(2, lockTime);
@@ -318,36 +245,21 @@ public class ModuleLock {
         } catch (Exception e) {
             logger.severe("ModuleLock._setLock: " + e.getMessage());
             throw e;
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                }
-            }
         }
     }
 
     private static void _refreshLock(String moduleName, LockClientInformation clientInformation,
             Connection runtimeConnectionNoAutoCommit) throws Exception {
-        PreparedStatement statement = null;
-        try {
-            statement = runtimeConnectionNoAutoCommit.prepareStatement(
-                    "UPDATE modulelock SET refreshlockmillies=? WHERE modulename=? AND clientid=?");
+        try (PreparedStatement statement = runtimeConnectionNoAutoCommit.prepareStatement(
+                "UPDATE modulelock SET refreshlockmillies=? "
+                + "WHERE modulename=? AND clientid=?")) {
             statement.setLong(1, System.currentTimeMillis());
             statement.setString(2, moduleName);
             statement.setString(3, clientInformation.getUniqueid());
             statement.executeUpdate();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe("ModuleLock._refreshLock: " + e.getMessage());
             throw e;
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                }
-            }
         }
     }
 
@@ -356,41 +268,26 @@ public class ModuleLock {
      * keeper if there is one of null if there is none This is non transactional
      * - it just reads information
      */
-    public static LockClientInformation getCurrentLockKeeper(String moduleName, Connection runtimeConnection) throws Exception {
-        PreparedStatement statement = null;
-        ResultSet result = null;
-        try {
-            statement = runtimeConnection.prepareStatement("SELECT * FROM modulelock WHERE modulename=?");
+    public static LockClientInformation getCurrentLockKeeper(String moduleName,
+            Connection runtimeConnection) throws Exception {
+        try (PreparedStatement statement = runtimeConnection.prepareStatement("SELECT * FROM modulelock WHERE modulename=?")) {
             statement.setString(1, moduleName);
-            result = statement.executeQuery();
-            if (result.next()) {
-                String username = result.getString("username");
-                String clientIP = result.getString("clientip");
-                String uniqueId = result.getString("clientid");
-                String pid = result.getString("clientpid");
-                LockClientInformation clientInfo = new LockClientInformation(username, clientIP, uniqueId, pid);
-                return (clientInfo);
+            try (ResultSet result = statement.executeQuery()) {
+                if (result.next()) {
+                    String username = result.getString("username");
+                    String clientIP = result.getString("clientip");
+                    String uniqueId = result.getString("clientid");
+                    String pid = result.getString("clientpid");
+                    LockClientInformation clientInfo = new LockClientInformation(username, clientIP, uniqueId, pid);
+                    return (clientInfo);
+                } else {
+                    return (null);
+                }
             }
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe(e.getMessage());
             throw e;
-        } finally {
-            if (statement != null) {
-                try {
-                    statement.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
-            if (result != null) {
-                try {
-                    result.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
         }
-        return (null);
     }
 
     /**
@@ -399,22 +296,12 @@ public class ModuleLock {
      * - it just reads information
      */
     public static LockClientInformation getCurrentLockKeeper(String moduleName, IDBDriverManager dbDriverManager) throws Exception {
-        Connection runtimeConnectionAutoCommit = null;
-        try {
-            runtimeConnectionAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+        try(Connection runtimeConnectionAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)){
             return (getCurrentLockKeeper(moduleName, runtimeConnectionAutoCommit));
-        } catch (Exception e) {
+        } catch (Throwable e) {
             logger.severe("ModuleLock.getCurrentLockKeeper: " + e.getMessage());
-        } finally {
-            if (runtimeConnectionAutoCommit != null) {
-                try {
-                    runtimeConnectionAutoCommit.close();
-                } catch (Exception e) {
-                    logger.severe("ModuleLock.getCurrentLockKeeper: " + e.getMessage());
-                }
-            }
+            throw e;
         }
-        return (null);
     }
 
     public static void displayDialogModuleLocked(JFrame parent, LockClientInformation lockKeeper, String nonLocalizedModuleName) {

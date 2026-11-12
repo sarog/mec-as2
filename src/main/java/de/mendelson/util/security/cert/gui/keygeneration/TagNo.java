@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TagNo.java 2     6/09/17 11:11a Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TagNo.java 3     11/02/25 13:40 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -15,7 +15,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
  * Stores the tag No entry of the General Name
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class TagNo {
 
@@ -29,8 +29,8 @@ public class TagNo {
 
     //the following values are available in the API but seem not to be valid as
     //General Name during the key generation:
-    //public static final String EDI_PARTY_NAME = "EDI party name";
-    //public static final String X400 = "x.400 address";
+    //"public static final String EDI_PARTY_NAME = "EDI party name";"
+    //"public static final String X400 = "x.400 address";"
     public TagNo(int value) {
         this.value = value;
     }

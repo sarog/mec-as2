@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/xmleditorkit/XMLEditorKit.java 3     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/xmleditorkit/XMLEditorKit.java 6     1/11/24 14:42 Heller $
 package de.mendelson.util.xmleditorkit;
 
+import de.mendelson.util.ColorUtil;
+import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Insets;
 import java.awt.Rectangle;
@@ -20,6 +22,7 @@ import java.io.Reader;
 import java.io.Writer;
 import javax.swing.Action;
 import javax.swing.JEditorPane;
+import javax.swing.UIManager;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
 import javax.swing.text.DefaultEditorKit.CopyAction;
@@ -28,6 +31,7 @@ import javax.swing.text.Element;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.Position;
 import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
 import javax.swing.text.StyledEditorKit;
 import javax.swing.text.TextAction;
 import javax.swing.text.View;
@@ -45,11 +49,35 @@ import javax.swing.text.ViewFactory;
  * XML Editor Kit - based on code from Stanislav Lapitsky
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 6 $
  */
 public class XMLEditorKit extends StyledEditorKit {
 
+    public static final SimpleAttributeSet BRACKET_ATTRIBUTES = XMLStyledDocument.BRACKET_ATTRIBUTES;
+    public static final SimpleAttributeSet TAGNAME_ATTRIBUTES = XMLStyledDocument.TAGNAME_ATTRIBUTES;
+    public static final SimpleAttributeSet ATTRIBUTENAME_ATTRIBUTES = XMLStyledDocument.ATTRIBUTENAME_ATTRIBUTES;
+    public static final SimpleAttributeSet ATTRIBUTEVALUE_ATTRIBUTES = XMLStyledDocument.ATTRIBUTEVALUE_ATTRIBUTES;
+    public static final SimpleAttributeSet PLAIN_ATTRIBUTES = XMLStyledDocument.PLAIN_ATTRIBUTES;
+    public static final SimpleAttributeSet COMMENT_ATTRIBUTES = XMLStyledDocument.COMMENT_ATTRIBUTES;
+
     private final ViewFactory defaultFactory = new XMLEditorKitViewFactory();
+
+    /**
+     * Defines new colors for the styled attribute set - please use one of the
+     * constants of this class, e.g. XMLEditorKit.TAGNAME_ATTRIBUTES
+     *
+     * @param attributeSet
+     * @param newForegroundColor
+     */
+    public void setForegroundColor(SimpleAttributeSet attributeSet, Color newForegroundColor) {
+        Color editorPaneBackgroundColor = UIManager.getColor("EditorPane.background");
+        if (editorPaneBackgroundColor == null) {
+            editorPaneBackgroundColor = Color.WHITE;
+        }
+        StyleConstants.setForeground(attributeSet,
+                ColorUtil.getBestContrastColorAroundForeground(
+                        editorPaneBackgroundColor, newForegroundColor));
+    }
 
     @Override
     public ViewFactory getViewFactory() {
@@ -68,15 +96,18 @@ public class XMLEditorKit extends StyledEditorKit {
 
     @Override
     public void read(Reader in, Document document, int position) throws IOException, BadLocationException {
-        BufferedReader bufferedReader = new BufferedReader(in);
-        String line = bufferedReader.readLine();
-        StringBuilder stringBuilder = new StringBuilder();
-        while (line != null) {
-            stringBuilder.append(line);
-            line = bufferedReader.readLine();
+        try (BufferedReader bufferedReader = new BufferedReader(in)) {
+            String line = bufferedReader.readLine();
+            StringBuilder stringBuilder = new StringBuilder();
+            while (line != null) {
+                stringBuilder.append(line);
+                line = bufferedReader.readLine();
+            }
+            int insertPosition = getInsertPosition(position, document);
+            try (InputStream memIn = new ByteArrayInputStream(stringBuilder.toString().getBytes())) {
+                XMLEditorKitXMLReader.getInstance().read(memIn, document, insertPosition);
+            }
         }
-        int insertPosition = getInsertPosition(position, document);
-        XMLEditorKitXMLReader.getInstance().read(new ByteArrayInputStream(stringBuilder.toString().getBytes()), document, insertPosition);
     }
 
     @Override
@@ -156,7 +187,6 @@ public class XMLEditorKit extends StyledEditorKit {
         return position;
     }
 
-    
     private final MouseListener lstCollapse = new MouseAdapter() {
         @Override
         public void mouseClicked(MouseEvent evt) {
@@ -164,7 +194,6 @@ public class XMLEditorKit extends StyledEditorKit {
 
             int pos = src.viewToModel(evt.getPoint());
             View v = src.getUI().getRootView(src);
-            boolean insideTagView = false;
             while (v != null && !(v instanceof XMLTagView)) {
                 int i = v.getViewIndex(pos, Position.Bias.Forward);
                 v = v.getView(i);
@@ -270,14 +299,11 @@ public class XMLEditorKit extends StyledEditorKit {
 
             vParent = vParent.getParent();
         }
-
         if (v instanceof BoxView) {
             int ind = v.getParent().getViewIndex(v.getStartOffset(), Position.Bias.Forward);
             Rectangle r2 = v.getParent().getChildAllocation(ind, new Rectangle(0, 0, Integer.MAX_VALUE, Integer.MAX_VALUE)).getBounds();
-
             return new Rectangle(x, y, r2.width, r2.height);
         }
-
         return new Rectangle(x, y, (int) v.getPreferredSpan(View.X_AXIS), (int) v.getPreferredSpan(View.Y_AXIS));
     }
 

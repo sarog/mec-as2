@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/TableCellEditorSubjectAlternativeNames.java 2     2/11/23 14:03 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/keygeneration/TableCellEditorSubjectAlternativeNames.java 4     20/02/25 15:51 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import java.awt.Component;
@@ -25,7 +25,7 @@ import javax.swing.table.TableCellEditor;
 /**
  * Cell editor for Columns of the class type ScriptPropertiesObject
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class TableCellEditorSubjectAlternativeNames
         extends AbstractCellEditor implements TableCellEditor {
@@ -185,12 +185,12 @@ public class TableCellEditorSubjectAlternativeNames
         this.table = table;
         if (value instanceof String) {
             String selectionValue = (String) value;
-            JComboBox comboBox = new JComboBox();
+            JComboBox<String> comboBoxCellEditor = new JComboBox<String>();
             for( String propertyType:this.allValuesList){
-                comboBox.addItem(propertyType);                
+                comboBoxCellEditor.addItem(propertyType);                
             }
-            comboBox.setSelectedItem(selectionValue);
-            this.setEditorComponent(comboBox);
+            comboBoxCellEditor.setSelectedItem(selectionValue);
+            this.setEditorComponent(comboBoxCellEditor);
         }
         return (editorComponent);
     }

@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/MecFileChooser.java 25    21/11/23 14:06 Heller $
+//$Header: /as2/de/mendelson/util/MecFileChooser.java 26    11/02/25 13:39 Heller $
 package de.mendelson.util;
 
 import java.awt.Frame;
@@ -34,7 +34,7 @@ import javax.swing.text.JTextComponent;
  * file chooser.
  *
  * @author S.Heller
- * @version $Revision: 25 $
+ * @version $Revision: 26 $
  */
 public class MecFileChooser extends JFileChooser {
     //supports only one type of choosers at the moment
@@ -47,7 +47,7 @@ public class MecFileChooser extends JFileChooser {
     /**
      * ParentFrame of this component
      */
-    private Frame parent = null;
+    private Frame frameParent = null;
     /**
      * indicates if the user canceled the dialog
      */
@@ -68,14 +68,14 @@ public class MecFileChooser extends JFileChooser {
      *
      * @param defaultDirectory Directory to start by default, may be a file
      * @param dialogTitle Title to show at the chooser
-     * @param parent parent component
+     * @param frameParent parent component
      * @param TYPE type of the dialog to choose as defined in the class
      * @deprecated use the same method without the type settings
      */
     @Deprecated
-    public MecFileChooser(Frame parent, String defaultDirectory,
+    public MecFileChooser(Frame frameParent, String defaultDirectory,
             String dialogTitle, final int TYPE) {
-        this(parent, dialogTitle);
+        this(frameParent, dialogTitle);
         this.setPreselectedFile(new File(defaultDirectory));
     }
 
@@ -84,9 +84,9 @@ public class MecFileChooser extends JFileChooser {
      * default directory
      *
      * @param dialogTitle Title to show at the chooser
-     * @param parent parent component
+     * @param frameParent parent component
      */
-    public MecFileChooser(Frame parent, String dialogTitle) {
+    public MecFileChooser(Frame frameParent, String dialogTitle) {
         super(FileSystemView.getFileSystemView());
         //Load default resourcebundle
         try {
@@ -96,7 +96,7 @@ public class MecFileChooser extends JFileChooser {
         catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found");
         }
-        this.parent = parent;
+        this.frameParent = frameParent;
         this.setDialogTitle(dialogTitle);
         this.setMultiSelectionEnabled(false);
         //trow an exception to get the call stack. Then build a hash on this call stack to figure out the context
@@ -155,7 +155,7 @@ public class MecFileChooser extends JFileChooser {
      */
     private void showChooserDialog() {
         this.setApproveButtonText(this.rb.getResourceString("button.select"));
-        final JDialog dialog = this.createDialog(this.parent);
+        final JDialog dialog = this.createDialog(this.frameParent);
         // Add listener for approve and cancel events
         this.addActionListener(new AbstractAction() {
 

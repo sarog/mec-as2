@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/database/DebuggableStatement.java 7     2/11/23 14:03 Heller $
+//$Header: /as4/de/mendelson/util/database/DebuggableStatement.java 8     10/07/24 18:03 Heller $
 package de.mendelson.util.database;
 
 import java.sql.Connection;
@@ -20,7 +20,7 @@ import java.util.logging.Logger;
  * Database statement that could be debugged
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class DebuggableStatement implements Statement {
 
@@ -80,14 +80,14 @@ public class DebuggableStatement implements Statement {
     }
 
     @Override
-    public boolean execute(String str) throws SQLException {
+    public boolean execute(String query) throws SQLException {
         String uniqueQueryName = null;
         if (this.connectionLogger != null) {
             uniqueQueryName = createId();
-            this.connectionLogger.info("[" + this.connectionName + "] [execute query " + uniqueQueryName + "] " + str);
+            this.connectionLogger.info("[" + this.connectionName + "] [execute query " + uniqueQueryName + "] " + query);
         }
         try {
-            boolean returnValue = this.statement.execute(str);
+            boolean returnValue = this.statement.execute(query);
             return (returnValue);
         } catch (SQLException e) {
             if (this.connectionLogger != null) {
@@ -123,14 +123,14 @@ public class DebuggableStatement implements Statement {
     }
 
     @Override
-    public ResultSet executeQuery(String str) throws SQLException {
+    public ResultSet executeQuery(String query) throws SQLException {
         String uniqueQueryName = null;
         if (this.connectionLogger != null) {
             uniqueQueryName = createId();
-            this.connectionLogger.info("[" + this.connectionName + "] [execute query " + uniqueQueryName + "] " + str);
+            this.connectionLogger.info("[" + this.connectionName + "] [execute query " + uniqueQueryName + "] " + query);
         }
         try {
-            ResultSet result = this.statement.executeQuery(str);
+            ResultSet result = this.statement.executeQuery(query);
             return (result);
         } catch (SQLException e) {
             if (this.connectionLogger != null) {

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 34    12/12/23 14:44 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/ResourceBundleSystemEvent_de.java 38    15/01/25 10:18 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 34 $
+ * @version $Revision: 38 $
  */
 public class ResourceBundleSystemEvent_de extends MecResourceBundle {
 
@@ -28,7 +28,7 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"type." + SystemEvent.TYPE_CERTIFICATE_ADD, "Zertifikat (hinzugefügt)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_ANY, "Zertifikat"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_DEL, "Zertifikat (gelöscht)"},
@@ -63,6 +63,7 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_DATABASE_SERVER_STARTUP_BEGIN, "DB Server startet"},
         {"type." + SystemEvent.TYPE_DATABASE_SERVER_RUNNING, "DB Server läuft"},
         {"type." + SystemEvent.TYPE_DATABASE_SERVER_SHUTDOWN, "DB Server heruntergefahren"},
+        {"type." + SystemEvent.TYPE_DATABASE_ROLLBACK, "Transaktion Rollback"},
         {"type." + SystemEvent.TYPE_HTTP_SERVER_STARTUP_BEGIN, "HTTP Server startet"},
         {"type." + SystemEvent.TYPE_HTTP_SERVER_RUNNING, "HTTP Server läuft"},
         {"type." + SystemEvent.TYPE_HTTP_SERVER_SHUTDOWN, "HTTP Server heruntergefahren"},
@@ -90,7 +91,7 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_FILE_DELETE, "Datei (löschen)"},
         {"type." + SystemEvent.TYPE_FILE_MOVE, "Datei (verschieben)"},
         {"type." + SystemEvent.TYPE_FILE_COPY, "Datei (kopieren)"},
-        {"type." + SystemEvent.TYPE_MKDIR, "Verzeichnis erstellen"},
+        {"type." + SystemEvent.TYPE_FILE_MKDIR, "Verzeichnis erstellen"},
         {"type." + SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED, "Verzeichnisüberwachung (Status verändert)"},        
         {"type." + SystemEvent.TYPE_CLIENT_ANY, "Client"},
         {"type." + SystemEvent.TYPE_CLIENT_LOGIN_FAILURE, "Benutzeranmeldung (Fehlgeschlagen)"},
@@ -98,8 +99,17 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Benutzertrennung"},
         {"type." + SystemEvent.TYPE_OTHER, "Unspezifiziert"},
         {"type." + SystemEvent.TYPE_PORT_LISTENER, "Empfangsport"},
+        {"type." + SystemEvent.TYPE_XML_INTERFACE_ANY, "XML"},
         {"type." + SystemEvent.TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION, "Zertifikatkonfiguration"},
         {"type." + SystemEvent.TYPE_XML_INTERFACE_PARTNER_MODIFICATION, "Partnerkonfiguration"},
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_ANY, "REST"},
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_ADD, "Zertifikat hinzufügen" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_DEL, "Zertifikat löschen" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_MODIFICATION, "Zertifikatkonfiguration" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_ADD, "Partner hinzufügen" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_DEL, "Partner löschen" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_MODIFICATION, "Partnerkonfiguration" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_SENDORDER, "Sendeauftrag" },
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "System"},
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaktion"},
         {"origin." + SystemEvent.ORIGIN_USER, "Benutzer"},
@@ -120,5 +130,6 @@ public class ResourceBundleSystemEvent_de extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "Dateioperation" },
         {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Client Operation" },
         {"category." + SystemEvent.CATEGORY_XML_INTERFACE, "XML Schnittstelle" },
+        {"category." + SystemEvent.CATEGORY_REST_INTERFACE, "REST Schnittstelle" },
     };
 }

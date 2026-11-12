@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerDecoder.java 17    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/codec/ClientServerDecoder.java 21    29/11/24 13:02 Heller $
 package de.mendelson.util.clientserver.codec;
 
 import de.mendelson.util.MecResourceBundle;
@@ -8,7 +8,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.InvalidClassException;
 import java.io.ObjectInputFilter;
 import java.io.ObjectInputStream;
-import java.math.BigInteger;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -31,11 +32,20 @@ import org.apache.mina.filter.codec.ProtocolDecoderOutput;
  * Decodes a command from the line
  *
  * @author S.Heller
- * @version $Revision: 17 $
+ * @version $Revision: 21 $
  */
 public class ClientServerDecoder extends CumulativeProtocolDecoder {
 
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    de.mendelson.util.clientserver.codec.ResourceBundleServerDecoder.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
     private final ClientSessionHandlerCallback clientCallback;
     private final List<String> allowedClientServerClassList = Collections.synchronizedList(new ArrayList<String>());
 
@@ -46,19 +56,12 @@ public class ClientServerDecoder extends CumulativeProtocolDecoder {
      */
     public ClientServerDecoder(ClientSessionHandlerCallback clientCallback) {
         super();
-        this.clientCallback = clientCallback;
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    de.mendelson.util.clientserver.codec.ResourceBundleServerDecoder.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
+        this.clientCallback = clientCallback;        
     }
 
     private int decodeLengthHeader32Bit(byte[] header32Bit) {
-        BigInteger lengthValue = new BigInteger(header32Bit);
-        return (lengthValue.intValue());
+        //BIG_ENDIAN is the standard oder under java - just to ensure this
+        return( ByteBuffer.wrap(header32Bit).order(ByteOrder.BIG_ENDIAN).getInt());
     }
 
     @Override
@@ -84,27 +87,19 @@ public class ClientServerDecoder extends CumulativeProtocolDecoder {
         byte[] compressedObjectBuffer = new byte[contentLength];
         in.get(compressedObjectBuffer);
         byte[] objectBuffer = this.decompress(compressedObjectBuffer);
-        ByteArrayInputStream objectInStream = new ByteArrayInputStream(objectBuffer);
-        ObjectInputStream objectInput = null;
-        try {
-            objectInput = new ObjectInputStream(objectInStream);
-            //serialization filtering deserialization vulnerability protection, 
-            //see https://docs.oracle.com/javase/10/core/serialization-filtering1.htm            
-            objectInput.setObjectInputFilter(this::clientServerMessageFilter);
-            Object object = objectInput.readObject();
-            //at this point it must be a de.mendelson.util.clientserver.messages.ClientServerMessage
-            //-every REJECT results in a InvalidClassException which will result in informing the callback if set
-            decoderOutput.write(object);
-        } catch (InvalidClassException ex) {
-            ex.printStackTrace();
-            if (this.clientCallback != null) {
-                this.clientCallback.clientIsIncompatible(this.rb.getResourceString("client.incompatible"));
-            }
-        } finally {
-            if (objectInput != null) {
-                try {
-                    objectInput.close();
-                } catch (Exception e) {
+        try (ByteArrayInputStream objectInStream = new ByteArrayInputStream(objectBuffer)) {
+            try (ObjectInputStream objectInput = new ObjectInputStream(objectInStream)) {
+                //serialization filtering deserialization vulnerability protection, 
+                //see https://docs.oracle.com/javase/10/core/serialization-filtering1.htm            
+                objectInput.setObjectInputFilter(this::clientServerMessageFilter);
+                Object object = objectInput.readObject();
+                //at this point it must be a de.mendelson.util.clientserver.messages.ClientServerMessage
+                //-every REJECT results in a InvalidClassException which will result in informing the callback if set
+                decoderOutput.write(object);
+            } catch (InvalidClassException ex) {
+                ex.printStackTrace();
+                if (this.clientCallback != null) {
+                    this.clientCallback.clientIsIncompatible(rb.getResourceString("client.incompatible"));
                 }
             }
         }
@@ -115,21 +110,15 @@ public class ClientServerDecoder extends CumulativeProtocolDecoder {
     private byte[] decompress(byte[] data) throws Exception {
         Inflater inflater = new Inflater();
         inflater.setInput(data);
-        ByteArrayOutputStream outputStream = null;
-        try {
-            outputStream = new ByteArrayOutputStream(data.length);
-            byte[] buffer = new byte[1024];
+        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream(data.length)) {
+            byte[] buffer = new byte[2048];
             while (!inflater.finished()) {
                 int count = inflater.inflate(buffer);
                 outputStream.write(buffer, 0, count);
-            }            
-            byte[] output = outputStream.toByteArray();
-            return output;
+            }
+            return outputStream.toByteArray();
         } finally {
             inflater.end();
-            if (outputStream != null) {
-                outputStream.close();
-            }
         }
     }
 

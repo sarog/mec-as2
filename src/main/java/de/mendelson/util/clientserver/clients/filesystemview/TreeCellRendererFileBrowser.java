@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/TreeCellRendererFileBrowser.java 11    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/clients/filesystemview/TreeCellRendererFileBrowser.java 13    11/03/25 14:52 Heller $
 package de.mendelson.util.clientserver.clients.filesystemview;
 
 import de.mendelson.util.ColorUtil;
@@ -24,13 +24,13 @@ import javax.swing.tree.DefaultTreeCellRenderer;
  * TreeCellRenderer that will display the icons of the config tree
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 13 $
  */
 public class TreeCellRendererFileBrowser extends DefaultTreeCellRenderer {
 
-    private final ImageIcon ROOT_ICON = new ImageIcon(TreeCellRendererFileBrowser.class.getResource(
+    private static final ImageIcon ROOT_ICON = new ImageIcon(TreeCellRendererFileBrowser.class.getResource(
             "/de/mendelson/util/clientserver/clients/filesystemview/root16x16.gif"));
-    private final ImageIcon WAIT_ICON = new ImageIcon(TreeCellRendererFileBrowser.class.getResource(
+    private static final ImageIcon WAIT_ICON = new ImageIcon(TreeCellRendererFileBrowser.class.getResource(
             "/de/mendelson/util/clientserver/clients/filesystemview/waiting16x16.gif"));
     /**
      * Stores the currently selected node
@@ -79,7 +79,10 @@ public class TreeCellRendererFileBrowser extends DefaultTreeCellRenderer {
      * Returns the defined Icon of the entry, might be null if anything fails
      */
     private Icon getDefinedIcon() {
-        Object userObject = this.selectedNode.getUserObject();
+        Object userObject = null;
+        if( this.selectedNode != null ){
+            userObject = this.selectedNode.getUserObject();
+        }
         //is this root node?
         if (userObject == null) {
             return (super.getOpenIcon());
@@ -176,6 +179,6 @@ public class TreeCellRendererFileBrowser extends DefaultTreeCellRenderer {
         if (defaultIcon != null) {
             return (defaultIcon.getIconHeight());
         }
-        return (this.ROOT_ICON.getIconHeight());
+        return (ROOT_ICON.getIconHeight());
     }
 }

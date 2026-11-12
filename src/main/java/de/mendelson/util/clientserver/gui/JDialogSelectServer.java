@@ -1,4 +1,4 @@
-//$Header: /mec_oftp2/de/mendelson/util/clientserver/gui/JDialogSelectServer.java 2     28.05.10 14:43 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/gui/JDialogSelectServer.java 3     19/02/25 9:39 Heller $
 package de.mendelson.util.clientserver.gui;
 import java.awt.KeyEventDispatcher;
 import java.awt.KeyboardFocusManager;
@@ -15,7 +15,7 @@ import javax.swing.JFrame;
 /**
  * Login dialog for server authentication
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class JDialogSelectServer extends JDialog {
     
@@ -171,7 +171,7 @@ public class JDialogSelectServer extends JDialog {
     private void jButtonOkActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonOkActionPerformed
         this.host = this.jTextFieldHost.getText();
         try{
-            this.port = Integer.valueOf( this.jTextFieldPort.getText().trim()).intValue();
+            this.port = Integer.parseInt( this.jTextFieldPort.getText().trim());
         }
         catch( NumberFormatException e ){
             //nop

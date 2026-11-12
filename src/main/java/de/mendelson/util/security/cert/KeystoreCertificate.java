@@ -1,23 +1,21 @@
-//$Header: /oftp2/de/mendelson/util/security/cert/KeystoreCertificate.java 50    3/11/23 9:57 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/KeystoreCertificate.java 65    4/03/25 11:54 Heller $
 package de.mendelson.util.security.cert;
 
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+import de.mendelson.util.security.Base64;
+import de.mendelson.util.security.BouncyCastleProviderSingleton;
 import de.mendelson.util.security.keygeneration.KeyGenerator;
 import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.KeyStore;
-import java.security.KeyStoreException;
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
-import java.security.NoSuchProviderException;
 import java.security.PublicKey;
 import java.security.cert.CertPath;
 import java.security.cert.CertPathBuilder;
-import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertPathValidator;
-import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertPathValidatorResult;
 import java.security.cert.CertStore;
 import java.security.cert.CertStoreParameters;
@@ -36,6 +34,7 @@ import java.security.interfaces.RSAPublicKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
 import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -43,27 +42,36 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.naming.ldap.LdapName;
+import javax.naming.ldap.Rdn;
 import javax.security.auth.x500.X500Principal;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x500.RDN;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.CertificatePolicies;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
-import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.jcajce.provider.asymmetric.edec.BCEdDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.rfc8032.Ed25519;
+import org.bouncycastle.pqc.jcajce.provider.dilithium.BCDilithiumPublicKey;
+import org.bouncycastle.pqc.jcajce.provider.sphincsplus.BCSPHINCSPlusPublicKey;
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -76,13 +84,14 @@ import org.bouncycastle.math.ec.rfc8032.Ed25519;
  * Object that stores a single configuration certificate/key
  *
  * @author S.Heller
- * @version $Revision: 50 $
+ * @version $Revision: 65 $
  */
 public class KeystoreCertificate implements Comparable, Serializable, Cloneable {
 
     private static final long serialVersionUID = 1L;
 
     public static final String CERTIFICATE_FORMAT_PEM = "PEM";
+    public static final String CERTIFICATE_FORMAT_PEM_CHAIN = "PEM_CHAIN";
     public static final String CERTIFICATE_FORMAT_DER = "DER";
     public static final String CERTIFICATE_FORMAT_PKCS7 = "PKCS#7";
     public static final String CERTIFICATE_FORMAT_SSH2 = "SSH2";
@@ -91,7 +100,7 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
     /**
      * Private of public key
      */
-    private Key key = null;
+    private Key privateKey = null;
     private boolean isKeyPair = false;
     private String infoText = "";
     //cache some data
@@ -99,40 +108,55 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
     private String fingerprintSHA1 = null;
     private Certificate[] certificateChain = null;
 
-    private static final Map<String, String> OID_MAP = new HashMap<String, String>();
+    private final static String[] KEY_USAGE_NAMES = {
+        "Digital signature",
+        "Non repudiation",
+        "Key encipherment",
+        "Data encipherment",
+        "Key agreement",
+        "Key certificate signing",
+        "CRL signing",
+        "Encipher",
+        "Decipher"
+    };
+
+    private static final Map<String, String> EXTENSION_OID_MAP = new HashMap<String, String>();
 
     static {
-        OID_MAP.put("1.3.6.1.5.5.7.3.2", "Client authentication");
-        OID_MAP.put("1.3.6.1.5.5.7.3.1", "Webserver authentication");
-        OID_MAP.put("1.3.6.1.5.5.7.3.5", "IPSec end system");
-        OID_MAP.put("1.3.6.1.5.5.7.3.6", "IPSec tunnel");
-        OID_MAP.put("1.3.6.1.5.5.7.3.3", "Code signing");
-        OID_MAP.put("1.3.6.1.5.5.7.3.7", "IPSec user");
-        OID_MAP.put("1.3.6.1.5.5.7.3.4", "Email protection");
-        OID_MAP.put("1.3.6.1.5.5.7.3.8", "Timestamping");
-        OID_MAP.put("2.16.840.1.113733.1.8.1", "Verisign Server Gated Crypto");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.1", "Webserver authentication");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.2", "Client authentication");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.3", "Code signing");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.4", "Email protection");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.5", "IPSec end system");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.6", "IPSec tunnel");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.7", "IPSec user");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.8", "Timestamping");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.9", "OCSP Signing");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.10", "Microsoft Smart Card Logon");
+        EXTENSION_OID_MAP.put("1.3.6.1.5.5.7.3.11", "Key Recovery");
+        EXTENSION_OID_MAP.put("2.16.840.1.113733.1.8.1", "Verisign Server Gated Crypto");
         //Netscape extended key usages
-        OID_MAP.put("2.16.840.1.113730.4.1", "Netscape Server Gated Crypto");
-        OID_MAP.put("2.16.840.1.113730.1.2", "Netscape base URL");
-        OID_MAP.put("2.16.840.1.113730.1.8", "Netscape CA policy URL");
-        OID_MAP.put("2.16.840.1.113730.1.4", "Netscape CA revocation URL");
-        OID_MAP.put("2.16.840.1.113730.1.7", "Netscape cert renewal URL");
-        OID_MAP.put("2.16.840.1.113730.2.5", "Netscape cert sequence");
-        OID_MAP.put("2.16.840.1.113730.1.1", "Netscape cert type");
-        OID_MAP.put("2.16.840.1.113730.1.13", "Netscape comment");
-        OID_MAP.put("2.16.840.1.113730.1.3", "Netscape revocation URL");
-        OID_MAP.put("2.16.840.1.113730.1.12", "Netscape SSL server name");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.4.1", "Netscape Server Gated Crypto");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.2", "Netscape base URL");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.8", "Netscape CA policy URL");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.4", "Netscape CA revocation URL");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.7", "Netscape cert renewal URL");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.2.5", "Netscape cert sequence");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.1", "Netscape cert type");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.13", "Netscape comment");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.3", "Netscape revocation URL");
+        EXTENSION_OID_MAP.put("2.16.840.1.113730.1.12", "Netscape SSL server name");
         //MS extended key usages
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.3", "Microsoft Server Gated Crypto");
-        OID_MAP.put("1.3.6.1.4.1.311.20.2.2", "Smart card logon");
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.4", "Encrypting filesystem");
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.12", "Document signing");
-        OID_MAP.put("1.3.6.1.4.1.311.21.5", "CA encryption certificate");
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.1", "Microsoft trust list signing");
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.4.1", "File recovery");
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.11", "Key recovery");
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.10", "Qualified subordination");
-        OID_MAP.put("1.3.6.1.4.1.311.10.3.9", "Root list signer");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.3", "Microsoft Server Gated Crypto");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.20.2.2", "Smart card logon");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.4", "Encrypting filesystem");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.12", "Document signing");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.21.5", "CA encryption certificate");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.1", "Microsoft trust list signing");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.4.1", "File recovery");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.11", "Key recovery");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.10", "Qualified subordination");
+        EXTENSION_OID_MAP.put("1.3.6.1.4.1.311.10.3.9", "Root list signer");
     }
 
     /**
@@ -168,23 +192,16 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
      */
     public List<String> getExtendedKeyUsage() {
         List<String> extendedKeyUsage = new ArrayList<String>();
-        byte[] extensionValue = this.certificate.getExtensionValue("2.5.29.37");
-        if (extensionValue == null) {
-            return (extendedKeyUsage);
-        }
         try {
-            byte[] octedBytes = ((ASN1OctetString) ASN1Primitive.fromByteArray(extensionValue)).getOctets();
-            ASN1Sequence asn1Sequence = (ASN1Sequence) ASN1Primitive.fromByteArray(octedBytes);
-            for (int i = 0; i < asn1Sequence.size(); i++) {
-                String oid = (asn1Sequence.getObjectAt(i).toASN1Primitive().toString());
-                if (OID_MAP.containsKey(oid)) {
-                    extendedKeyUsage.add(OID_MAP.get(oid));
+            List<String> oidList = this.certificate.getExtendedKeyUsage();
+            for (String oid : oidList) {
+                if (EXTENSION_OID_MAP.containsKey(oid)) {
+                    extendedKeyUsage.add(EXTENSION_OID_MAP.get(oid));
                 } else {
                     extendedKeyUsage.add(oid);
                 }
             }
         } catch (Exception e) {
-            e.printStackTrace();
         }
         return (extendedKeyUsage);
     }
@@ -253,58 +270,43 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         return (subjectKeyIdentifierList);
     }
 
+    public List<String> getPolicy() {
+        List<String> policyList = new ArrayList<String>();
+        byte[] extensionValue = this.certificate.getExtensionValue("2.5.29.32");
+        if (extensionValue == null) {
+            //there is no such extension: return empty list
+            return (policyList);
+        }
+        try {
+            byte[] octetBytes = ((ASN1OctetString) ASN1Primitive.fromByteArray(extensionValue)).getOctets();
+            ASN1Primitive parsedData = ASN1Primitive.fromByteArray(octetBytes);
+            CertificatePolicies policies = CertificatePolicies.getInstance(parsedData);
+            for (PolicyInformation policyInfo : policies.getPolicyInformation()) {
+                if (policyInfo.getPolicyQualifiers() != null) {
+                    ASN1Sequence policyQualifier = (ASN1Sequence) policyInfo.getPolicyQualifiers().getObjectAt(0);
+                    policyList.add(policyQualifier.getObjectAt(1).toString());
+                }
+            }
+        } catch (Exception e) {
+        }
+        return (policyList);
+    }
+
     /**
      * Returns the key usages of this cert, OID 2.5.29.15
      */
     public List<String> getKeyUsages() {
         List<String> keyUsages = new ArrayList<String>();
-        byte[] extensionValue = this.certificate.getExtensionValue("2.5.29.15");
-        if (extensionValue == null) {
-            //there is no such extension: return empty list
-            return (keyUsages);
-        }
+        boolean[] keyUsage = this.certificate.getKeyUsage();
         try {
-            byte[] octedBytes = ((ASN1OctetString) ASN1Primitive.fromByteArray(extensionValue)).getOctets();
-            //bit encoded values for the key usage
-            int val = KeyUsage.getInstance(ASN1Primitive.fromByteArray(octedBytes)).getPadBits();
-            //bit 0
-            if ((val & KeyUsage.digitalSignature) == KeyUsage.digitalSignature) {
-                keyUsages.add("Digital signature");
+            if (keyUsage != null) {
+                for (int i = 0; i < keyUsage.length; i++) {
+                    if (keyUsage[i]) {
+                        keyUsages.add(KEY_USAGE_NAMES[i]);
+                    }
+                }
             }
-            //bit 1
-            if ((val & KeyUsage.nonRepudiation) == KeyUsage.nonRepudiation) {
-                keyUsages.add("Non repudiation");
-            }
-            //bit 2
-            if ((val & KeyUsage.keyEncipherment) == KeyUsage.keyEncipherment) {
-                keyUsages.add("Key encipherment");
-            }
-            //bit 3
-            if ((val & KeyUsage.dataEncipherment) == KeyUsage.dataEncipherment) {
-                keyUsages.add("Data encipherment");
-            }
-            //bit 4
-            if ((val & KeyUsage.keyAgreement) == KeyUsage.keyAgreement) {
-                keyUsages.add("Key agreement");
-            }
-            //bit 5
-            if ((val & KeyUsage.keyCertSign) == KeyUsage.keyCertSign) {
-                keyUsages.add("Key certificate signing");
-            }
-            //bit6
-            if ((val & KeyUsage.cRLSign) == KeyUsage.cRLSign) {
-                keyUsages.add("CRL signing");
-            }
-            if ((val & KeyUsage.decipherOnly) == KeyUsage.decipherOnly) {
-                keyUsages.add("Decipher");
-            }
-
-            if ((val & KeyUsage.encipherOnly) == KeyUsage.encipherOnly) {
-                keyUsages.add("Encipher");
-            }
-
         } catch (Exception e) {
-            e.printStackTrace();
         }
         return (keyUsages);
     }
@@ -489,12 +491,101 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         return (this.certificate.getNotAfter());
     }
 
+    /**
+     * Returns a String that contains just the parts "CN", "O", "OU", "C", "ST",
+     * "L", "E" of the subject - in this order
+     *
+     * @return
+     */
     public String getSubjectDN() {
-        return (this.certificate.getSubjectDN().toString());
+        X500Principal subjectPrincipal = certificate.getSubjectX500Principal();
+        String fullSubject = subjectPrincipal.getName();
+        final String[] displayList = new String[]{
+            "CN", "O", "OU", "C", "ST", "L", "E"
+        };
+        StringBuilder subjectBuilder = new StringBuilder();
+        try {
+            LdapName subjectLdapName = new LdapName(fullSubject);
+            for (String displayType : displayList) {
+                for (Rdn rdn : subjectLdapName.getRdns()) {
+                    if (rdn.getType().equalsIgnoreCase(displayType)) {
+                        if (subjectBuilder.length() > 0) {
+                            subjectBuilder.append(",");
+                        }
+                        subjectBuilder.append(displayType)
+                                .append("=")
+                                .append(this.escapeRDNValue(rdn.getValue().toString()));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return (fullSubject);
+        }
+        return (subjectBuilder.toString());
     }
 
+    public X500Principal getSubjectX500Principal() {
+        return (this.certificate.getSubjectX500Principal());
+    }
+
+    public X500Principal getIssuerX500Principal() {
+        return (this.certificate.getIssuerX500Principal());
+    }
+
+    /**
+     * Returns a String that contains just the parts "CN", "O", "OU", "C", "ST",
+     * "L", "E" of the issuer - in this order
+     *
+     * @return The issuer as String - escaped if this is required by the content
+     */
     public String getIssuerDN() {
-        return (this.certificate.getIssuerDN().toString());
+        X500Principal issuerPrincipal = certificate.getIssuerX500Principal();
+        String fullIssuer = issuerPrincipal.getName();
+        final String[] displayList = new String[]{
+            "CN", "O", "OU", "C", "ST", "L", "E"
+        };
+        StringBuilder issuerBuilder = new StringBuilder();
+        try {
+            LdapName issuerLdapName = new LdapName(fullIssuer);
+            for (String displayType : displayList) {
+                for (Rdn rdn : issuerLdapName.getRdns()) {
+                    if (rdn.getType().equalsIgnoreCase(displayType)) {
+                        if (issuerBuilder.length() > 0) {
+                            issuerBuilder.append(",");
+                        }
+                        issuerBuilder.append(displayType)
+                                .append("=")
+                                .append(this.escapeRDNValue(rdn.getValue().toString()));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            return (fullIssuer);
+        }
+        return (issuerBuilder.toString());
+    }
+
+    /**
+     * If an issuer is requested as String there are several characters that
+     * need to be escaped, e.g. ","
+     *
+     * @param rdnValue
+     * @return
+     */
+    private String escapeRDNValue(String rdnValue) {
+        if (rdnValue == null || rdnValue.isEmpty()) {
+            return rdnValue;
+        }
+        final String SPECIAL_X500_CHARACTERS = ",=+<>#;\"\\";
+        StringBuilder escapedValue = new StringBuilder();
+        for (int i = 0; i < rdnValue.length(); i++) {
+            char foundChar = rdnValue.charAt(i);
+            if (SPECIAL_X500_CHARACTERS.contains(String.valueOf(foundChar))) {
+                escapedValue.append("\\");
+            }
+            escapedValue.append(foundChar);
+        }
+        return (escapedValue.toString());
     }
 
     /**
@@ -517,15 +608,24 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         }
         this.alias = alias;
     }
-
+    
     public void setCertificate(X509Certificate certificate, Certificate[] certificateChain) {
         this.certificate = certificate;
         this.certificateChain = certificateChain;
         this.computeInfoText();
     }
 
-    public void setKey(Key key) {
-        this.key = key;
+    /**
+     * @deprecated (This ment the private key - please use setPrivateKey
+     * instead)
+     */
+    @Deprecated(since = "2024")
+    public void setKey(Key privateKey) {
+        this.setPrivateKey(privateKey);
+    }
+
+    public void setPrivateKey(Key privateKey) {
+        this.privateKey = privateKey;
     }
 
     public void setIsKeyPair(boolean isKeyPair) {
@@ -542,9 +642,27 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
 
     /**
      * Returns the private key of the entry - or null if it is not set
+     *
+     * @deprecated (This ment the private key - please use getPrivateKey
+     * instead)
      */
+    @Deprecated(since = "2024")
     public Key getKey() {
-        return (this.key);
+        return (this.getPrivateKey());
+    }
+
+    /**
+     * Returns the private key of the entry - or null if it is not set
+     */
+    public Key getPrivateKey() {
+        return (this.privateKey);
+    }
+
+    /**
+     * Returns the public key of the entry
+     */
+    public PublicKey getPublicKey() {
+        return (this.certificate.getPublicKey());
     }
 
     /**
@@ -595,13 +713,13 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
     }
 
     /**
-     * If the public key could not be obtained by unknown reason this will
-     * return 0
+     * Returns the key length of the passed public key. It is first analyzed if
+     * this is a EC key, RSA etc..
      *
+     * @param publicKey
      * @return
      */
-    public int getPublicKeyLength() {
-        PublicKey publicKey = this.certificate.getPublicKey();
+    private int getPublicKeyLength(PublicKey publicKey) {
         if (publicKey instanceof RSAPublicKey) {
             RSAPublicKey rsaKey = (RSAPublicKey) publicKey;
             return (rsaKey.getModulus().bitLength());
@@ -611,15 +729,46 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         } else if (publicKey instanceof ECPublicKey) {
             ECPublicKey ecKey = (ECPublicKey) publicKey;
             return (ecKey.getParams().getOrder().bitLength());
-        }else if( publicKey instanceof BCEdDSAPublicKey){
-            BCEdDSAPublicKey edDSAPublicKey = (BCEdDSAPublicKey)publicKey;
-            if( edDSAPublicKey.getAlgorithm().equals( KeyGenerator.CURVE_NAME_ED25519)){
-                return( Ed25519.PUBLIC_KEY_SIZE*8);
-            }else{
-                return( 0 );
+        } else if (publicKey instanceof BCEdDSAPublicKey) {
+            BCEdDSAPublicKey edDSAPublicKey = (BCEdDSAPublicKey) publicKey;
+            if (edDSAPublicKey.getAlgorithm().equals(KeyGenerator.CURVE_NAME_ED25519)) {
+                return (Ed25519.PUBLIC_KEY_SIZE * 8);
+            } else {
+                return (0);
+            }
+        } else if (publicKey instanceof BCDilithiumPublicKey) {
+            BCDilithiumPublicKey dilithiumPublicKey = (BCDilithiumPublicKey) publicKey;
+            String specName = dilithiumPublicKey.getParameterSpec().getName();
+            if (specName.equals(DilithiumParameterSpec.dilithium2.getName())) {
+                return (1312);
+            } else if (specName.equals(DilithiumParameterSpec.dilithium3.getName())) {
+                return (1952);
+            } else if (specName.equals(DilithiumParameterSpec.dilithium5.getName())) {
+                return (2592);
+            }
+        } else if (publicKey instanceof BCSPHINCSPlusPublicKey) {
+            BCSPHINCSPlusPublicKey sphincsplusPublicKey = (BCSPHINCSPlusPublicKey) publicKey;
+            String specName = sphincsplusPublicKey.getParameterSpec().getName();
+            if (specName.contains("128")) {
+                return (32);
+            } else if (specName.contains("192")) {
+                return (48);
+            } else if (specName.contains("256")) {
+                return (64);
             }
         }
         return (0);
+    }
+
+    /**
+     * If the public key could not be obtained by unknown reason this will
+     * return 0
+     *
+     * @return
+     */
+    public int getPublicKeyLength() {
+        PublicKey publicKey = this.certificate.getPublicKey();
+        return (this.getPublicKeyLength(publicKey));
     }
 
     public byte[] getFingerPrintBytesSHA1() {
@@ -731,7 +880,7 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
      * Returns a fingerprint string that returns the fingerprint using the
      * format n:n:n
      *
-     * @param digest to create the hash value, please use SHA1 or MD5 only
+     * @param digest to create the hash value, e.g. "SHA1", "MD5", "SHA-256"
      *
      */
     private String getFingerPrint(String digest) {
@@ -739,37 +888,32 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
     }
 
     /**
-     * Returns the cert path for this certificate as it exists in the keystore
+     * Returns the cert path for this certificate as it exists in the keystore.
      *
      * @return null if no cert path could be found All used methods are not
      * thread safe
      */
     public synchronized PKIXCertPathBuilderResult
             getPKIXCertPathBuilderResult(KeyStore keystore, List<X509Certificate> certificateList) {
-        X509Certificate embeddedCertificate = this.getX509Certificate();
         try {
-            X509CertSelector selector = new X509CertSelector();
-            selector.setCertificate(embeddedCertificate);
-            boolean selected = selector.match(embeddedCertificate);
-            if (!selected) {
-                return (null);
-            }
-            CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", BouncyCastleProvider.PROVIDER_NAME);
-            PKIXBuilderParameters pkixParameter = new PKIXBuilderParameters(keystore, selector);
+            X509CertSelector certSelector = new X509CertSelector();
+            certSelector.setCertificate(this.certificate);
+            CertPathBuilder pathBuilder = CertPathBuilder.getInstance("PKIX",
+                    BouncyCastleProviderSingleton.instance().getName());
+            PKIXBuilderParameters pkixParameter = new PKIXBuilderParameters(keystore, certSelector);
             pkixParameter.setRevocationEnabled(false);
+            //this is necessary for brainpool certificates, else the signature check will always fail under 
+            //java 17 and above
+            pkixParameter.setSigProvider(BouncyCastleProviderSingleton.instance().getName());
             //a value of 5 does not work for some certificates in Bouncycastle. 3 means Anchor + 3 certificate 
             //which should be fine
             pkixParameter.setMaxPathLength(3);
-            CertStoreParameters params = new CollectionCertStoreParameters(certificateList);
-            CertStore intermediateCertStore = CertStore.getInstance("Collection", params,
-                    BouncyCastleProvider.PROVIDER_NAME);
-            pkixParameter.addCertStore(intermediateCertStore);
-            PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult) builder.build(pkixParameter);
+            CertStoreParameters storeParameter = new CollectionCertStoreParameters(certificateList);
+            CertStore certStore = CertStore.getInstance("Collection", storeParameter,
+                    BouncyCastleProviderSingleton.instance().getName());
+            pkixParameter.addCertStore(certStore);
+            PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult) pathBuilder.build(pkixParameter);
             return (result);
-        } catch (KeyStoreException e) {
-        } catch (NoSuchAlgorithmException e) {
-        } catch (InvalidAlgorithmParameterException e) {
-        } catch (CertPathBuilderException e) {
         } catch (Throwable e) {
         }
         return (null);
@@ -790,25 +934,95 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         try {
             // Validator params
             PKIXParameters params = new PKIXParameters(keystore);
+            //this is necessary for brainpool certificates, else the signature check will always fail under 
+            //java 17 and above
+            params.setSigProvider(BouncyCastleProviderSingleton.instance().getName());
             // Disable CRL checking since we are not supplying any CRLs
             params.setRevocationEnabled(false);
-            //use BC here else PKCS#12 is not supported as keystore
             CertPathValidator certPathValidator = CertPathValidator.getInstance("PKIX",
-                    BouncyCastleProvider.PROVIDER_NAME);
+                    BouncyCastleProviderSingleton.instance().getName());
             CertPathValidatorResult result = certPathValidator.validate(certPath, params);
             // Get the CA used to validate this path
             PKIXCertPathValidatorResult pkixResult = (PKIXCertPathValidatorResult) result;
-            TrustAnchor ta = pkixResult.getTrustAnchor();
-            X509Certificate taCert = ta.getTrustedCert();
+            TrustAnchor trustAnchor = pkixResult.getTrustAnchor();
+            X509Certificate taCert = trustAnchor.getTrustedCert();
             return (taCert);
-        } catch (NoSuchProviderException e) {
-        } catch (KeyStoreException e) {
-        } catch (NoSuchAlgorithmException e) {
-        } catch (InvalidAlgorithmParameterException e) {
-        } catch (CertPathValidatorException e) {
-            // Validation failed
+        } catch (Throwable e) {
         }
         return (null);
+    }
+
+    /**
+     * Returns the CN entry of the subject or null if this is not set
+     */
+    public String getSubjectCN() {
+        return (this.getSubjectEntryUnescaped("2.5.4.3"));
+    }
+
+    /**
+     * Returns the CN entry of the issuer or null if this is not set
+     */
+    public String getIssuerCN() {
+        return (this.getIssuerEntryUnescaped("2.5.4.3"));
+    }
+
+    /**
+     * Returns the CN entry of the issuer or null if this is not set
+     */
+    public String getIssuerOrganization() {
+        return (this.getIssuerEntryUnescaped("2.5.4.10"));
+    }
+
+    /**
+     * Returns the CN entry of the subject or null if this is not set
+     */
+    public String getSubjectOrganization() {
+        return (this.getSubjectEntryUnescaped("2.5.4.10"));
+    }
+
+    /**
+     * Returns the CN entry of the subject or null if this is not set
+     */
+    public String getSubjectOU() {
+        return (this.getSubjectEntryUnescaped("2.5.4.11"));
+    }
+
+    /**
+     * This returns the unescaped(!) value of the subject entry
+     *
+     * @param oidStr
+     * @return
+     */
+    private String getSubjectEntryUnescaped(String oidStr) {
+        X500Name x500Name = X500Name.getInstance(this.certificate.getSubjectX500Principal().getEncoded());
+        for (RDN rdn : x500Name.getRDNs()) {
+            for (AttributeTypeAndValue attributeAndValue : rdn.getTypesAndValues()) {
+                ASN1ObjectIdentifier oid = attributeAndValue.getType();
+                if (oid.equals(new ASN1ObjectIdentifier(oidStr))) {
+                    return (attributeAndValue.getValue().toString());
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * This returns the unescaped(!) value of the issuer entry
+     *
+     * @param oidStr
+     * @return
+     */
+    private String getIssuerEntryUnescaped(String oidStr) {
+        X500Name x500Name = X500Name.getInstance(this.certificate.getIssuerX500Principal().getEncoded());
+        for (RDN rdn : x500Name.getRDNs()) {
+            for (AttributeTypeAndValue attributeAndValue : rdn.getTypesAndValues()) {
+                ASN1ObjectIdentifier oid = attributeAndValue.getType();
+                if (oid.equals(new ASN1ObjectIdentifier(oidStr))) {
+                    return (attributeAndValue.getValue().toString());
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -836,18 +1050,18 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         if (this.isRootCertificate()) {
             infoTextBuilder.append(" (Root certificate)");
         }
-        infoTextBuilder.append("\n");
-        infoTextBuilder.append("Subject: ").append(this.getSubjectDN()).append("\n");
-        infoTextBuilder.append("Issuer: ").append(this.getIssuerDN()).append("\n");
-        infoTextBuilder.append("Serial (dec): ").append(this.getSerialNumberDEC()).append("\n");
-        infoTextBuilder.append("Serial (hex): ").append(this.getSerialNumberHEX()).append("\n");
-        infoTextBuilder.append("Valid from: ").append(format.format(this.getNotBefore())).append("\n");
-        infoTextBuilder.append("Valid until: ").append(format.format(this.getNotAfter())).append("\n");
-        infoTextBuilder.append("Public key: ");
+        infoTextBuilder.append("\n")
+                .append("Subject: ").append(this.getSubjectDN()).append("\n")
+                .append("Issuer: ").append(this.getIssuerDN()).append("\n")
+                .append("Serial (dec): ").append(this.getSerialNumberDEC()).append("\n")
+                .append("Serial (hex): ").append(this.getSerialNumberHEX()).append("\n")
+                .append("Valid from: ").append(format.format(this.getNotBefore())).append("\n")
+                .append("Valid until: ").append(format.format(this.getNotAfter())).append("\n")
+                .append("Public key: ");
         int publicKeyLength = this.getPublicKeyLength();
-        infoTextBuilder.append(String.valueOf(publicKeyLength));
-        infoTextBuilder.append(" ").append(this.getPublicKeyAlgorithm()).append("\n");
-        infoTextBuilder.append("Signature algorithm: ").append(this.getSigAlgName()).append(" (OID ")
+        infoTextBuilder.append(String.valueOf(publicKeyLength))
+                .append(" ").append(this.getPublicKeyAlgorithm()).append("\n")
+                .append("Signature algorithm: ").append(this.getSigAlgName()).append(" (OID ")
                 .append(this.getSigAlgOID()).append(")\n");
         if (this.getPublicKeyAlgorithm().startsWith("EC")) {
             try {
@@ -864,9 +1078,9 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
             }
         }
         try {
-            infoTextBuilder.append("Fingerprint (MD5): ").append(this.getFingerPrintMD5()).append("\n");
-            infoTextBuilder.append("Fingerprint (SHA-1): ").append(this.getFingerPrintSHA1()).append("\n");
-            infoTextBuilder.append("Fingerprint (SHA-256): ").append(this.getFingerPrintSHA256()).append("\n");
+            infoTextBuilder.append("Fingerprint (MD5): ").append(this.getFingerPrintMD5()).append("\n")
+                    .append("Fingerprint (SHA-1): ").append(this.getFingerPrintSHA1()).append("\n")
+                    .append("Fingerprint (SHA-256): ").append(this.getFingerPrintSHA256()).append("\n");
         } catch (Exception e) {
             infoTextBuilder.append("Fingerprint processing failed: ").append(e.getMessage());
         }
@@ -879,7 +1093,7 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
     private String getCurveOID(ECPublicKey publicKey) throws Throwable {
         AlgorithmParameters params = AlgorithmParameters.getInstance("EC");
         params.init(publicKey.getParams());
-        return(params.getParameterSpec(ECGenParameterSpec.class).getName());
+        return (params.getParameterSpec(ECGenParameterSpec.class).getName());
     }
 
     /**
@@ -954,6 +1168,10 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         if (!subjectKeyIdentifier.isEmpty()) {
             extensionText.append("Subject key identifier: ").append(this.convertListToString(subjectKeyIdentifier)).append("\n");
         }
+        List<String> policyList = this.getPolicy();
+        if (!policyList.isEmpty()) {
+            extensionText.append("Certificate policies: ").append(this.convertListToString(policyList)).append("\n");
+        }
         return (extensionText.toString());
     }
 
@@ -983,8 +1201,8 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         }
         if (anObject != null && anObject instanceof KeystoreCertificate) {
             KeystoreCertificate cert = (KeystoreCertificate) anObject;
-            String otherFingerPrint = null;
-            String ownFingerPrint = null;
+            String otherFingerPrint;
+            String ownFingerPrint;
             try {
                 otherFingerPrint = cert.getFingerPrintSHA1();
                 ownFingerPrint = this.getFingerPrintSHA1();
@@ -1023,23 +1241,60 @@ public class KeystoreCertificate implements Comparable, Serializable, Cloneable 
         //makes only sense for key entries - this will generate a dummy key for the display side.
         //The key itself will not be transported to the client
         if (this.isKeyPair) {
-            this.key = null;
+            this.privateKey = null;
         }
     }
 
     /**
-     * '3D:A0:27:42:4D:92:6D:04:BB:74:66:1D:48:3E:61:6A:46:2A:05:B7'
+     * Adds this entry to the passed parent JSON node
      */
-//    public static final void main(String[] args) {
-//        byte[] test = new byte[]{
-//            (byte) 0x00, (byte) 0x3D, (byte)0x04 , (byte) 0xA0, (byte) 0x92,
-//            (byte) 0x6D, (byte) 0x6D, (byte) 0x04, (byte) 0xBB, (byte) 0x74,
-//            (byte) 0x66, (byte) 0x1D, (byte) 0x48, (byte) 0x3E, (byte) 0x61,
-//            (byte) 0x6A, (byte) 0x46, (byte) 0x05, (byte) 0xB7, (byte) 0x42,
-//        };
-//        String str = KeystoreCertificate.fingerprintBytesToStr(test);
-//        byte[] testbytes = KeystoreCertificate.fingerprintStrToBytes(str);
-//        boolean areequal = Arrays.equals(test, testbytes);
-//        System.out.println(areequal);
-//    }
+    public void addToJSON(ArrayNode parent) {
+        DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss:SSS' UTC'");
+        ObjectNode certificateNode = parent.addObject();
+        certificateNode.put("alias", this.alias);
+        certificateNode.put("subject", this.getSubjectDN());
+        certificateNode.put("issuer", this.getIssuerDN());
+        certificateNode.put("notbefore", dateFormat.format(this.getNotBefore()));
+        certificateNode.put("notafter", dateFormat.format(this.getNotAfter()));
+        certificateNode.put("length", this.getPublicKeyLength());
+        certificateNode.put("algorithm", this.getPublicKeyAlgorithm());
+        if (this.getX509Certificate().getPublicKey() instanceof ECPublicKey) {
+            try {
+                certificateNode.put("curve", this.getCurveName((ECPublicKey) this.getX509Certificate().getPublicKey()));
+            } catch (Throwable e) {
+            }
+        }
+        certificateNode.put("fingerprintsha1", this.getFingerPrintSHA1());
+        certificateNode.put("fingerprintsha256", this.getFingerPrintSHA256());
+        certificateNode.put("serialhex", this.getSerialNumberHEX());
+        certificateNode.put("serialdec", this.getSerialNumberDEC());
+        if (!this.getKeyUsages().isEmpty()) {
+            ArrayNode usageNode = certificateNode.putArray("usages");
+            ObjectNode extNode = usageNode.addObject();
+            for (String ext : this.getKeyUsages()) {
+                extNode.put("usage", ext);
+            }
+        }
+        if (!this.getExtendedKeyUsage().isEmpty()) {
+            ArrayNode extArrayNode = certificateNode.putArray("extusages");
+            ObjectNode extNode = extArrayNode.addObject();
+            for (String ext : this.getExtendedKeyUsage()) {
+                extNode.put("extusage", ext);
+            }
+        }
+        if (!this.getSubjectAlternativeNames().isEmpty()) {
+            ArrayNode sanArrayNode = certificateNode.putArray("sanlist");
+            ObjectNode sanNode = sanArrayNode.addObject();
+            for (String san : this.getSubjectAlternativeNames()) {
+                sanNode.put("san", san);
+            }
+        }
+        String certificateBase64 = "ENCODING_ERROR";
+        try {
+            certificateBase64 = Base64.encode(this.certificate.getEncoded());
+        } catch (Throwable e) {
+        }
+        certificateNode.put("certencoded", certificateBase64);
+    }
+
 }

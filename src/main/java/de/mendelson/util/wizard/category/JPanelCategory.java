@@ -1,4 +1,4 @@
-//$Header: /mendelson_business_integration/de/mendelson/util/wizard/category/JPanelCategory.java 9     19.04.06 18:12 Heller $Revision: 7 $
+//$Header: /as2/de/mendelson/util/wizard/category/JPanelCategory.java 10    11/02/25 13:40 Heller $Revision: 7 $
 package de.mendelson.util.wizard.category;
 
 import java.awt.event.MouseAdapter;
@@ -18,7 +18,7 @@ import javax.swing.event.ListSelectionListener;
 /**
  * Panel to select categories
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 
 public class JPanelCategory extends JPanel implements ListSelectionListener{
@@ -41,6 +41,7 @@ public class JPanelCategory extends JPanel implements ListSelectionListener{
         this.jListSubcategories.setVisibleRowCount( 0 );
         
         MouseListener mouseListener = new MouseAdapter() {
+            @Override
             public void mouseClicked(MouseEvent e) {
                 if (e.getClickCount() == 2) {
                     int index = jListSubcategories.locationToIndex(e.getPoint());

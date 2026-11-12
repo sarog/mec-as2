@@ -1,10 +1,8 @@
-//$Header: /as2/de/mendelson/util/balloontip/JPanelUIHelp.java 19    1/12/23 11:15 Heller $
+//$Header: /oftp2/de/mendelson/util/balloontip/JPanelUIHelp.java 21    19/02/25 12:59 Heller $
 package de.mendelson.util.balloontip;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import static de.mendelson.util.balloontip.BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM;
-import static de.mendelson.util.balloontip.BalloonToolTip.TRIANGLE_ALIGNMENT_TOP;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -38,7 +36,7 @@ import javax.swing.ToolTipManager;
  * to explain details direct in the UI
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class JPanelUIHelp extends JPanel {
 
@@ -155,7 +153,7 @@ public class JPanelUIHelp extends JPanel {
                         int heightEnd = tooltipText.indexOf("\"", heightStart + 8);
                         String heightStr = tooltipText.substring(heightStart + 8, heightEnd);
                         try {
-                            height = Integer.valueOf(heightStr);
+                            height = Integer.parseInt(heightStr);
                         } catch (NumberFormatException ex) {
                         }
                     }
@@ -164,7 +162,7 @@ public class JPanelUIHelp extends JPanel {
                         int widthEnd = tooltipText.indexOf("\"", widthStart + 7);
                         String widthStr = tooltipText.substring(widthStart + 7, widthEnd);
                         try {
-                            width = Integer.valueOf(widthStr);
+                            width = Integer.parseInt(widthStr);
                         } catch (NumberFormatException ex) {
                         }
                     }

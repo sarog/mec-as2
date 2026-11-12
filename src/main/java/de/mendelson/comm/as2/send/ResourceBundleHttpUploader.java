@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpUploader.java 30    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/ResourceBundleHttpUploader.java 32    6/02/25 8:23 Heller $
 package de.mendelson.comm.as2.send;
 import de.mendelson.util.MecResourceBundle;
 
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 32 $
  */
 public class ResourceBundleHttpUploader extends MecResourceBundle{
     
@@ -17,9 +17,10 @@ public class ResourceBundleHttpUploader extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"returncode.ok", "Message sent successfully (HTTP {0}); {1} transfered in {2} [{3} KB/s]." },
         {"returncode.accepted", "Message sent successfully (HTTP {0}); {1} transfered in {2} [{3} KB/s]." },
+        {"connection.tls.info", "Outbound TLS connection established [{0}, {1}]" },
         {"sending.msg.sync", "Sending AS2 message to {0}, sync MDN requested." },
         {"sending.cem.sync", "Sending CEM message to {0}, sync MDN requested." },
         {"sending.msg.async", "Sending AS2 message to {0}, async MDN requested at {1}." },

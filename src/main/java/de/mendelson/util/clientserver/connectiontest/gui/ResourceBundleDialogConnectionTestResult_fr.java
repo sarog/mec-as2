@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_fr.java 4     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/gui/ResourceBundleDialogConnectionTestResult_fr.java 6     9/12/24 15:50 Hell $
 package de.mendelson.util.clientserver.connectiontest.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleDialogConnectionTestResult_fr extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleDialogConnectionTestResult_fr extends MecResourceBund
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Résultat du test de connexion"},
         {"description." + JDialogConnectionTestResult.CONNECTION_TEST_OFTP2, 
             "Le système a effectué un test de connexion à l'adresse {0}, port {1}. "
@@ -60,7 +60,7 @@ public class ResourceBundleDialogConnectionTestResult_fr extends MecResourceBund
         {"header.ssl", "{0} [Raccordement TLS]"},
         {"header.plain", "{0} [Connexion non sécurisée]"},
         {"no.certificate.plain", "Non disponible (connexion non sécurisée)"},
-        {"button.viewcert", "<HTML><div style=\"text-align:center\">Certificat(s) d''importation</div></HTML>"},
+        {"button.viewcert", "<HTML>Certificat(s)&nbsp;d''importation</HTML>"},
         {"button.close", "Fermer"},
         {"label.connection.established", "La simple connexion IP a été établie"},
         {"label.certificates.available.local", "Les certificats partenaires (TLS) sont disponibles dans votre système."},

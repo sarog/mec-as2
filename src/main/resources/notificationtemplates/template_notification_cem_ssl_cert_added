@@ -1,0 +1,22 @@
+$Header:$
+This file contains the mail template for a certificate SSL add as result of a CEM
+The following variables will be substituted:
+${PRODUCTNAME}: The productname of the AS2 server
+${HOST}: The host where the AS2 server runs at
+${CERTIFICATETECHDETAILS}: Tech details about the certificate that have been mentioned in this notification
+${PARTNER}: Initiator of the CEM
+
+
+[SUBJECT]
+SSL/TLS certificate added by CEM
+
+
+[BODY]
+As result of a CEM of your partner "${PARTNER}" a new SSL/TLS certificate has been added to the SSL/TLS keystore.
+
+Please have a look at your system to check the new settings. If you do not trust these changes please
+revert them and contact your partner immediatly.
+
+The following certificate has been added:
+
+${CERTIFICATETECHDETAILS}

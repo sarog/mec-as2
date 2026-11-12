@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/notification/ResourceBundleNotification.java 16    12/12/23 14:44 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/notification/ResourceBundleNotification.java 17    2/12/24 10:32 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 17 $
  */
 public class ResourceBundleNotification extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleNotification extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {        
+    private static final Object[][] CONTENTS = {        
         {"module.name", "[MAIL NOTIFICATION]" },
         {"test.message.send", "A test email has been sent to {0}."},
         {"test.message.debug", "\nThe send mail process failed.\n"},

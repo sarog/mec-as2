@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/signature/SignatureConstantsAS2.java 2     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/signature/SignatureConstantsAS2.java 3     16/08/24 8:23 Heller $
 package de.mendelson.util.security.signature;
 
 import java.io.Serializable;
@@ -7,7 +7,7 @@ import java.io.Serializable;
  * Keeps the constant values of the signatures
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 3 $
  */
 public class SignatureConstantsAS2 implements Serializable {
 
@@ -34,5 +34,7 @@ public class SignatureConstantsAS2 implements Serializable {
     public static final int SIGNATURE_SHA3_256_RSASSA_PSS = 18;
     public static final int SIGNATURE_SHA3_384_RSASSA_PSS = 19;
     public static final int SIGNATURE_SHA3_512_RSASSA_PSS = 20;    
+    public static final int SIGNATURE_SPHINCS_PLUS = 21;
+    public static final int SIGNATURE_DILITHIUM = 22;
     
 }

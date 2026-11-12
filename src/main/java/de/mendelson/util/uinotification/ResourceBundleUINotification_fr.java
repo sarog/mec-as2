@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/uinotification/ResourceBundleUINotification_fr.java 3     2/11/23 15:53 Heller $ 
+//$Header: /oftp2/de/mendelson/util/uinotification/ResourceBundleUINotification_fr.java 4     9/12/24 15:51 Heller $ 
 package de.mendelson.util.uinotification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleUINotification_fr extends MecResourceBundle {
 

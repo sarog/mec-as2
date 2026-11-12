@@ -1,6 +1,7 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/BrowserLinkedPanel.java 3     11.01.21 10:55 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/BrowserLinkedPanel.java 4     20/03/25 14:45 Heller $
 package de.mendelson.comm.as2.client;
 
+import de.mendelson.util.clientserver.GUIClient;
 import java.awt.Cursor;
 import java.awt.Desktop;
 import java.net.URL;
@@ -24,12 +25,11 @@ import javax.swing.text.html.HTMLDocument;
  * browser with the URL
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class BrowserLinkedPanel extends JPanel implements HyperlinkListener {
 
     private TextCycler cycler = null;
-    private final ScheduledExecutorService scheduledExecutorCycler = Executors.newScheduledThreadPool(1);
 
     /**
      * Creates new form BrowserLinkedPanel
@@ -40,7 +40,7 @@ public class BrowserLinkedPanel extends JPanel implements HyperlinkListener {
         if (Desktop.isDesktopSupported()) {
             this.jEditorPane.addHyperlinkListener(this);
         }
-        String cssRule = "div {font-size: 11pt; font-family:Dialog;}";
+        String cssRule = "div {font-size: 14pt; font-family:Dialog;}";
         HTMLDocument doc = (HTMLDocument) this.jEditorPane.getDocument();
         doc.getStyleSheet().addRule(cssRule);
     }
@@ -55,7 +55,7 @@ public class BrowserLinkedPanel extends JPanel implements HyperlinkListener {
             return;
         }
         this.cycler = new TextCycler(text);
-        this.scheduledExecutorCycler.scheduleAtFixedRate(this.cycler, 0, 1, TimeUnit.MINUTES);
+        GUIClient.scheduleWithFixedDelay(this.cycler, 0, 1, TimeUnit.MINUTES);
     }
 
     /**

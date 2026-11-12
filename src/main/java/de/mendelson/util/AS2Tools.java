@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/util/AS2Tools.java 18    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/util/AS2Tools.java 20    11/02/25 13:39 Heller $
 package de.mendelson.util;
 
+import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -24,12 +25,13 @@ import java.util.Locale;
  * Some programming tools for mendelson business integration
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 20 $
  */
 public class AS2Tools {
 
-    private final static DateFormat DATE_FORMAT_TEMP_FILE = new SimpleDateFormat("yyyyMMdd");
-
+    private AS2Tools(){        
+    }
+    
     /**
      * Replaces the string tag by the string replacement in the sourceString
      *
@@ -82,19 +84,28 @@ public class AS2Tools {
         return (result.toString());
     }
 
-    /**Returns the daily temp directory as absolute path. If the directory does not exist it is created
-     * 
-     * @return 
+    /**
+     * Returns the daily temp directory as absolute path. If the directory does
+     * not exist it is created
+     *
+     * @return
      */
-    public static String getDailyTempDir()throws IOException{
-        Path tempDateDir = Paths.get("temp", DATE_FORMAT_TEMP_FILE.format(new Date()));
+    public static String getDailyTempDir() throws IOException {
+        //date format is not thread safe!
+        DateFormat dateFormatTempName = new SimpleDateFormat("yyyyMMdd");
+        Path tempDateDir = Paths.get("temp", dateFormatTempName.format(new Date()));
         if (!Files.exists(tempDateDir)) {
-            Files.createDirectories(tempDateDir);
+            try {
+                Files.createDirectories(tempDateDir);
+            } catch (IOException e) {
+                SystemEventManagerImplAS2.instance().newEventExceptionInDirectoryCreation(e,
+                        tempDateDir.toAbsolutePath().toString());
+                throw e;
+            }
         }
-        return( tempDateDir.toAbsolutePath().toString());        
+        return (tempDateDir.toAbsolutePath().toString());
     }
-    
-    
+
     /**
      * Creates a temp file in a data stamped folder below the directory temp
      */
@@ -110,15 +121,16 @@ public class AS2Tools {
      */
     public static String getDataSizeDisplay(long size) {
         StringBuilder builder = new StringBuilder();
-        Formatter formatter = new Formatter(builder);
-        if (size > 1.048E6) {
-            formatter.format(Locale.getDefault(), "%.2f", Float.valueOf((float) size / (float) 1.048E6));
-            builder.append(" ").append("MB");
-            return (builder.toString());
-        } else if (size > 1024L) {
-            formatter.format(Locale.getDefault(), "%.2f", Float.valueOf((float) size / 1024f));
-            builder.append(" ").append("KB");
-            return (builder.toString());
+        try (Formatter formatter = new Formatter(builder)) {
+            if (size > 1.048E6) {
+                formatter.format(Locale.getDefault(), "%.2f", Float.valueOf((float) size / (float) 1.048E6));
+                builder.append(" ").append("MB");
+                return (builder.toString());
+            } else if (size > 1024L) {
+                formatter.format(Locale.getDefault(), "%.2f", Float.valueOf((float) size / 1024f));
+                builder.append(" ").append("KB");
+                return (builder.toString());
+            }
         }
         return (String.valueOf(size) + " Byte");
     }
@@ -169,20 +181,21 @@ public class AS2Tools {
     }
 
     /**
-     * Converts a suggested filename to a valid filename. Prevents any path characters and special characters and 
-     * replaces them by "_".
-     * This method will also replace multiple ".." character by a single one and will delete any
-     * "." at the end of the filename because some Windows System could not deal with this
+     * Converts a suggested filename to a valid filename. Prevents any path
+     * characters and special characters and replaces them by "_". This method
+     * will also replace multiple ".." character by a single one and will delete
+     * any "." at the end of the filename because some Windows System could not
+     * deal with this
      */
     public static String convertToValidFilenameAllowSinglePoint(String filename) {
         while (filename.contains("..")) {
             filename = filename.replace("..", ".");
         }
-        if( filename.endsWith(".")){
-            if( filename.length() == 1){
+        if (filename.endsWith(".")) {
+            if (filename.length() == 1) {
                 filename = "_";
-            }else{
-                filename = filename.substring(0, filename.length()-1);
+            } else {
+                filename = filename.substring(0, filename.length() - 1);
             }
         }
         //replace everything that may be a problem, e.g. pathes etc

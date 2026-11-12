@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/ResourceBundleTableModelCertificates_de.java 7     6/11/23 11:38 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleTableModelCertificates_de.java 10    4/03/25 14:36 Heller $
 package de.mendelson.util.security.cert;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleTableModelCertificates_de extends MecResourceBundle{
     
@@ -24,13 +24,17 @@ public class ResourceBundleTableModelCertificates_de extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {        
+    private static final Object[][] CONTENTS = {        
         {"header.alias", "Alias" },
         {"header.expire", "Gültig bis" },
         {"header.length", "Länge" },
         {"header.algorithm", "Algorithmus" },
         {"header.organization", "Organisation" },
-        {"header.ca", "CA" },
+        {"header.trust", "Beglaubigung" },
+        {"trust.selfsigned", "Selbstsigniert" },
+        {"trust.trusted", "Vertrauenswürdig" },
+        {"trust.untrusted", "Nicht vertrauenswürdig" },
+        {"trust.root", "Stammzertifikat" },
     };
     
 }

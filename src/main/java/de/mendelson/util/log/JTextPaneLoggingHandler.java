@@ -1,7 +1,9 @@
-//$Header: /as2/de/mendelson/util/log/JTextPaneLoggingHandler.java 36    24/08/22 12:56 Heller $
+//$Header: /oftp2/de/mendelson/util/log/JTextPaneLoggingHandler.java 40    25/02/25 11:51 Heller $
 package de.mendelson.util.log;
 
 import de.mendelson.util.ColorUtil;
+import de.mendelson.util.DisplayMode;
+import de.mendelson.util.log.panel.LogConsolePanel;
 import java.awt.Color;
 import java.io.UnsupportedEncodingException;
 import java.util.Map;
@@ -29,7 +31,7 @@ import javax.swing.text.StyledDocument;
  * Handler to log logger data to a swing text component
  *
  * @author S.Heller
- * @version $Revision: 36 $
+ * @version $Revision: 40 $
  */
 public class JTextPaneLoggingHandler extends Handler {
 
@@ -37,8 +39,8 @@ public class JTextPaneLoggingHandler extends Handler {
      * The max number of bytes that are displayed. If the content exceeds this
      * there is data removed at the start
      */
-    private final long MAX_BUFFER_SIZE = 30000;
-    private JTextPane jTextPane = null;
+    private final static long MAX_BUFFER_SIZE = 30000;
+    private final JTextPane jTextPane;
     private final Style currentStyle;
     private boolean bold = false;
     private boolean underline = false;
@@ -55,16 +57,10 @@ public class JTextPaneLoggingHandler extends Handler {
      */
     private final Map<Level, String> colorMapANSI = new ConcurrentHashMap<Level, String>();
 
-    public JTextPaneLoggingHandler(JTextPane jTextPane, LogFormatter formatter) {
+    public JTextPaneLoggingHandler(JTextPane jTextPane, LogFormatter formatter, String displayMode) {
         this.setFormatter(formatter);
         this.formatter = formatter;
-        //set default colors, these could be overwritten using the setColor method
-        this.setColor(Level.WARNING, ANSI.COLOR_SYSTEM_BLUE);
-        this.setColor(Level.SEVERE, ANSI.COLOR_SYSTEM_RED);
-        this.setColor(Level.INFO, ANSI.COLOR_SYSTEM_BLACK);
-        this.setColor(Level.FINE, ANSI.COLOR_SYSTEM_GREEN);
-        this.setColor(Level.FINER, ANSI.COLOR_SYSTEM_GREY);
-        this.setColor(Level.FINEST, ANSI.COLOR_SYSTEM_GREY_BRIGHT);        
+        this.setDefaultColors(displayMode);
         this.jTextPane = jTextPane;
         StyleContext context = StyleContext.getDefaultStyleContext();
         this.currentStyle = context.getStyle(StyleContext.DEFAULT_STYLE);
@@ -85,6 +81,27 @@ public class JTextPaneLoggingHandler extends Handler {
         this.resetStyle();
     }
 
+    private void setDefaultColors( String displayMode ){
+        if (displayMode.equals(DisplayMode.HICONTRAST)) {
+            this.setColor(Level.SEVERE, LogConsolePanel.COLOR_LIGHT_RED);
+            this.setColor(Level.WARNING, LogConsolePanel.COLOR_LIGHT_CYAN);
+            this.setColor(Level.CONFIG, LogConsolePanel.COLOR_LIGHT_GREEN);
+            this.setColor(Level.INFO, LogConsolePanel.COLOR_WHITE);
+            this.setColor(Level.FINE, LogConsolePanel.COLOR_LIGHT_YELLOW);
+            this.setColor(Level.FINER, LogConsolePanel.COLOR_LIGHT_YELLOW);
+            this.setColor(Level.FINEST, LogConsolePanel.COLOR_LIGHT_YELLOW);
+        } else {
+            this.setColor(Level.SEVERE, LogConsolePanel.COLOR_DARK_RED);
+            this.setColor(Level.WARNING, LogConsolePanel.COLOR_DARK_BLUE);
+            this.setColor(Level.INFO, LogConsolePanel.COLOR_BLACK);
+            this.setColor(Level.CONFIG, LogConsolePanel.COLOR_DARK_GREEN);
+            this.setColor(Level.FINE, LogConsolePanel.COLOR_DARK_GREEN);
+            this.setColor(Level.FINER, LogConsolePanel.COLOR_DARK_GRAY);
+            this.setColor(Level.FINEST, LogConsolePanel.COLOR_LIGHT_GRAY);
+        }
+    }
+    
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
     }
@@ -353,16 +370,16 @@ public class JTextPaneLoggingHandler extends Handler {
     /**
      * Format and publish a LogRecord.
      *
-     * @param record description of the log event
+     * @param logRecord description of the log event
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-        if (!isLoggable(record) || !this.enabled) {
+    public synchronized void publish(LogRecord logRecord) {
+        if (!isLoggable(logRecord) || !this.enabled) {
             return;
         }
         String message;
         try {
-            message = this.getFormatter().format(record);
+            message = this.getFormatter().format(logRecord);
         } catch (Throwable ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -386,13 +403,13 @@ public class JTextPaneLoggingHandler extends Handler {
      * Check if this Handler would actually log a given LogRecord, depending of
      * the log level
      *
-     * @param record a LogRecord
+     * @param logRecord a LogRecord
      * @return true if the LogRecord would be logged.
      *
      */
     @Override
-    public boolean isLoggable(LogRecord record) {
-        return super.isLoggable(record);
+    public boolean isLoggable(LogRecord logRecord) {
+        return super.isLoggable(logRecord);
     }
 
     /**

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/TextOverlay.java 15    2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/TextOverlay.java 16    19/02/25 9:39 Heller $
 package de.mendelson.util;
 
 import java.awt.Container;
@@ -43,7 +43,7 @@ import javax.swing.event.DocumentListener;
  * resize is just skipped)
  *
  * @author S.Heller
- * @version: $Revision: 15 $
+ * @version: $Revision: 16 $
  */
 public class TextOverlay {
 
@@ -125,13 +125,13 @@ public class TextOverlay {
             @Override
             public void propertyChange(PropertyChangeEvent evt) {
                 if (evt.getPropertyName().equalsIgnoreCase("enabled")) {
-                    boolean enabled = Boolean.valueOf(evt.getNewValue().toString()).booleanValue();
+                    boolean enabled = Boolean.parseBoolean(evt.getNewValue().toString());
                     placeholderOverlay.setVisible(enabled
                             && textField.isVisible()
                             && textField.getText().isEmpty()
                     );
                 } else if (evt.getPropertyName().equalsIgnoreCase("editable")) {
-                    boolean editable = Boolean.valueOf(evt.getNewValue().toString()).booleanValue();
+                    boolean editable = Boolean.parseBoolean(evt.getNewValue().toString());
                     placeholderOverlay.setVisible(editable
                             && textField.isVisible()
                             && textField.getText().isEmpty()

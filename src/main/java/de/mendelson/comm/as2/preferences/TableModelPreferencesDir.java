@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/TableModelPreferencesDir.java 6     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/TableModelPreferencesDir.java 7     10/07/24 8:43 Heller $
 package de.mendelson.comm.as2.preferences;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.util.MecResourceBundle;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,12 +21,12 @@ import javax.swing.table.AbstractTableModel;
  * Table model to display the properties to set
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class TableModelPreferencesDir extends AbstractTableModel {
 
-    public static final int ROW_HEIGHT = 20;
-    protected static final int IMAGE_HEIGHT = ROW_HEIGHT - 3;
+    protected static final int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_TABLE;
+    public static final int ROW_HEIGHT = IMAGE_HEIGHT + 2;
 
     /*Actual data to display, list of directory prefs*/
     private final List<PreferencesObjectKeyValue> array

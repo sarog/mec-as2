@@ -1,11 +1,11 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/JTreeTrustChain.java 9     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/gui/JTreeTrustChain.java 14    20/11/24 8:01 Heller $
 package de.mendelson.util.security.cert.gui;
 
-import de.mendelson.util.security.DNUtil;
 import de.mendelson.util.security.cert.KeystoreCertificate;
 import de.mendelson.util.tree.SortableTreeNode;
 import java.util.List;
 import javax.swing.JTree;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.TreeExpansionEvent;
 import javax.swing.event.TreeWillExpandListener;
 import javax.swing.tree.DefaultTreeModel;
@@ -23,7 +23,7 @@ import javax.swing.tree.TreePath;
  * Tree to display the trust chain of a certificate
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 14 $
  */
 public class JTreeTrustChain extends JTree {
 
@@ -37,10 +37,11 @@ public class JTreeTrustChain extends JTree {
      */
     public JTreeTrustChain() {
         super(new SortableTreeNode());
-        this.setRootVisible(true);
+        this.setRootVisible(true);       
         this.root = (SortableTreeNode) this.getModel().getRoot();
         this.setCellRenderer(new TreeCellRendererTrustChain());
         this.setRowHeight(TreeCellRendererTrustChain.ROW_HEIGHT);
+        this.setBorder(new EmptyBorder(2, 2, 2, 2));
         //prevent a collapse of this tree
         this.addTreeWillExpandListener(new TreeWillExpandListener() {
             @Override
@@ -62,14 +63,24 @@ public class JTreeTrustChain extends JTree {
         this.root.removeAllChildren();
         ((DefaultTreeModel) this.getModel()).nodeStructureChanged(this.root);
         //check if first cert is untrusted
-        SortableTreeNode parent = null;
+        SortableTreeNode parent;
         KeystoreCertificate firstCert = trustChain.get(0);
-        if (!firstCert.getIssuerDN().equals(firstCert.getSubjectDN())) {
+        if (!firstCert.getIssuerX500Principal().equals(firstCert.getSubjectX500Principal())) {
+            //there is a missing certificate above - means the first certificate of the chain is not 
+            //the root of the trust chain
             StringBuilder text = new StringBuilder();
-            text.append(DNUtil.getCommonName(firstCert.getX509Certificate(), DNUtil.ISSUER));
-            text.append(" [");
-            text.append(DNUtil.getOrganization(firstCert.getX509Certificate(), DNUtil.ISSUER));
-            text.append("]");
+            if( firstCert.getIssuerCN() != null ){
+                text.append( firstCert.getIssuerCN() );
+            }
+            String organization = firstCert.getIssuerOrganization();
+            if( organization != null ){
+                text.append(" [")
+                    .append(organization)
+                    .append("]");
+            }
+            if( text.length() == 0){
+                text.append( "--");
+            }
             this.root.setUserObject(text.toString());
             SortableTreeNode child = new SortableTreeNode(firstCert);
             this.root.add(child);
@@ -94,11 +105,13 @@ public class JTreeTrustChain extends JTree {
      * Returns the selected node of the Tree
      */
     public SortableTreeNode getSelectedNode() {
-        TreePath path = this.getSelectionPath();
-        if (path != null) {
-            return ((SortableTreeNode) path.getLastPathComponent());
+        synchronized (this.getModel()) {
+            TreePath path = this.getSelectionPath();
+            if (path != null) {
+                return ((SortableTreeNode) path.getLastPathComponent());
+            }
+            return (null);
         }
-        return (null);
     }
 
     public void partnerChanged(KeystoreCertificate certificate) {

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderSender.java 6     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/ResourceBundleSendOrderSender.java 7     21/08/24 10:58 Heller $
 package de.mendelson.comm.as2.sendorder;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleSendOrderSender extends MecResourceBundle{
     
@@ -24,7 +24,7 @@ public class ResourceBundleSendOrderSender extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"message.packed", "Outbound AS2 message created from \"{0}\" for the receiver \"{1}\" in {3}, raw message size: {2}, user defined id: \"{4}\"" },
         {"sendoder.sendfailed", "A problem occured during processing a send order: [{0}] \"{1}\" - the data has not been transmitted to the partner." },
     };

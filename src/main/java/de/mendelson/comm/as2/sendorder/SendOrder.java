@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrder.java 6     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrder.java 8     14/01/25 14:20 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.partner.Partner;
 import java.io.Serializable;
+import java.util.concurrent.atomic.AtomicInteger;
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
  *
@@ -15,7 +16,7 @@ import java.io.Serializable;
 /**
  * Send order that will be enqueued into the as2 server message queue
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class SendOrder implements Serializable {
 
@@ -26,7 +27,7 @@ public class SendOrder implements Serializable {
     private Partner receiver;
     private AS2Message message;
     private Partner sender;
-    private int retryCount = 0;
+    private final AtomicInteger retryCount = new AtomicInteger(0);
     private int dbId = -1;
     private String userdefinedId = null;
 
@@ -34,29 +35,31 @@ public class SendOrder implements Serializable {
         return receiver;
     }
 
-    public void setReceiver(Partner receiver) {
+    public SendOrder setReceiver(Partner receiver) {
         this.receiver = receiver;
+        return( this );
     }
 
     public AS2Message getMessage() {
         return message;
     }
 
-    public void setMessage(AS2Message message) {        
+    public SendOrder setMessage(AS2Message message) {        
         this.message = message;
+        return( this );
     }
 
     public Partner getSender() {
         return sender;
     }
 
-    public void setSender(Partner sender) {
+    public SendOrder setSender(Partner sender) {
         this.sender = sender;
+        return( this );
     }
 
-    public synchronized int incRetryCount() {
-        this.retryCount++;
-        return (this.retryCount);
+    public int incRetryCount() {
+        return( this.retryCount.incrementAndGet());
     }
 
     /**
@@ -69,8 +72,9 @@ public class SendOrder implements Serializable {
     /**
      * @param dbId the dbId to set
      */
-    public void setDbId(int dbId) {
+    public SendOrder setDbId(int dbId) {
         this.dbId = dbId;
+        return( this );
     }
 
     /**
@@ -83,8 +87,9 @@ public class SendOrder implements Serializable {
     /**
      * @param userdefinedId the userdefinedId to set
      */
-    public void setUserdefinedId(String userdefinedId) {
+    public SendOrder setUserdefinedId(String userdefinedId) {
         this.userdefinedId = userdefinedId;
+        return( this );
     }
         
 }

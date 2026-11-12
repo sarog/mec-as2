@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetInformation.java 4     8.10.14 17:35 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/DatasheetInformation.java 5     21/11/24 17:47 Heller $
 package de.mendelson.comm.as2.datasheet;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -13,7 +13,7 @@ import de.mendelson.comm.as2.message.AS2Message;
 /**
  * Container that contains information for the datasheet
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class DatasheetInformation {
 
@@ -21,11 +21,11 @@ public class DatasheetInformation {
     private String comment = "Please send this document back\nto fax no +1 123 123\nor via mail to \nourcontact@ourcomany.com";
     private byte[] certVerifySignature = null;
     private byte[] certEncryptData = null;
-    private byte[] certSSL = null;
+    private byte[] certTLS = null;
     private boolean requestSyncMDN = false;
     private boolean requestSignedMDN = false;
-    private int encryption = AS2Message.ENCRYPTION_3DES;
-    private int signature = AS2Message.SIGNATURE_SHA1;
+    private int encryption = AS2Message.ENCRYPTION_AES_128_CBC;
+    private int signature = AS2Message.SIGNATURE_SHA256;
     private int compression = AS2Message.COMPRESSION_NONE;
 
     public DatasheetInformation() {
@@ -130,17 +130,17 @@ public class DatasheetInformation {
     }
 
     /**
-     * @return the certSSL
+     * @return the certTLS
      */
-    public byte[] getCertSSL() {
-        return certSSL;
+    public byte[] getCertTLS() {
+        return certTLS;
     }
 
     /**
-     * @param certSSL the certSSL to set
+     * @param certTLS the certTLS to set
      */
-    public void setCertSSL(byte[] certSSL) {
-        this.certSSL = certSSL;
+    public void setCertTLS(byte[] certTLS) {
+        this.certTLS = certTLS;
     }
 
     /**

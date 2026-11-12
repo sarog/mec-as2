@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/log/JTextPaneOutputStream.java 3     21.10.11 11:25 Heller $
+//$Header: /as2/de/mendelson/util/log/JTextPaneOutputStream.java 4     11/02/25 13:40 Heller $
 package de.mendelson.util.log;
 
 import java.io.OutputStream;
@@ -46,7 +46,7 @@ public class JTextPaneOutputStream extends OutputStream {
         if ((byte) i == (byte) '\n') {
             try {
                 //this method is much much faster than the
-                //this.jEditorPane.setText(  this.text.toString() );
+                //"this.jEditorPane.setText(  this.text.toString());"
                 //method
                 final int documentLength = this.jTextPane.getDocument().getLength();
                 this.jTextPane.getDocument().insertString(

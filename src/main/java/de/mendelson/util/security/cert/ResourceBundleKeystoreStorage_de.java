@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/ResourceBundleKeystoreStorage_de.java 9     23/11/23 10:22 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/ResourceBundleKeystoreStorage_de.java 10    9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class ResourceBundleKeystoreStorage_de extends MecResourceBundle {
 

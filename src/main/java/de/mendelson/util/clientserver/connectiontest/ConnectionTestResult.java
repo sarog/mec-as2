@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 5     2/11/23 15:53 Heller $
+//$Header: /as4/de/mendelson/util/clientserver/connectiontest/ConnectionTestResult.java 6     19/09/24 14:12 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import java.io.Serializable;
@@ -16,7 +16,7 @@ import java.security.cert.X509Certificate;
  * Stores the results of a connection test
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ConnectionTestResult implements Serializable {
     
@@ -25,7 +25,7 @@ public class ConnectionTestResult implements Serializable {
     private boolean connectionIsPossible = false;
     private boolean oftpServiceFound = false;
     private X509Certificate[] foundCertificates = null;
-    private Exception exception = null;
+    private Throwable exception = null;
     private String protocol = null;
     private InetSocketAddress testedRemoteAddress = null;
     private boolean wasSSLTest = false;
@@ -114,14 +114,14 @@ public class ConnectionTestResult implements Serializable {
     /**
      * @return the exception
      */
-    public Exception getException() {
+    public Throwable getException() {
         return exception;
     }
 
     /**
      * @param exception the exception to set
      */
-    public void setException(Exception exception) {
+    public void setException(Throwable exception) {
         this.exception = exception;
     }
 

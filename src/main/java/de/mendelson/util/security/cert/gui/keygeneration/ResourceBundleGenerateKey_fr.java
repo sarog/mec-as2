@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_fr.java 16    2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_fr.java 18    9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleGenerateKey_fr extends MecResourceBundle {
 
@@ -24,14 +24,14 @@ public class ResourceBundleGenerateKey_fr extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Générer la clé"},
         {"button.ok", "Valider"},
         {"button.cancel", "Annuler"},
         {"label.keytype", "Type de clé"},
         {"label.keytype.help", "<HTML><strong>Type de clé</strong><br><br>"
             + "Il s''agit de l''algorithme de création de la clé. Pour les clés qui en résultent, il y a des avantages et des inconvénients selon l''algorithme.<br>"
-            + "En 2022, nous vous recommanderions une clé RSA avec une longueur de clé de 2048 ou 4096 bits."
+            + "En 2024, nous vous recommanderions une clé RSA avec une longueur de clé de 2048 ou 4096 bits."
             + "</HTML>"
         },
         {"label.signature", "Signature"},
@@ -40,7 +40,14 @@ public class ResourceBundleGenerateKey_fr extends MecResourceBundle {
             + "pour les tests d''intégrité de la clé elle-même. Ce paramètre n''a rien à voir avec les "
             + "capacités de signature de la clé - vous pouvez donc par exemple créer des signatures SHA-2 "
             + "avec une clé signée SHA-1 ou inversement.<br>"
-            + "En 2022, nous vous recommandons d''utiliser une clé signée SHA-2."
+            + "En 2022, nous vous recommandons d''utiliser une clé signée SHA-2.<br><br>"
+            + "<strong>Brève vue d''ensemble : SHA-1, SHA-2, SHA-3 et RSASSA-PSS</strong><br><br>"
+            + "<strong>SHA-1</strong>: un algorithme de hachage plus ancien, considéré aujourd''hui comme peu sûr.<br>"
+            + "<strong>SHA-2</strong>: une version plus moderne et plus sûre de SHA, qui existe en différentes variantes comme SHA-256 et SHA-512.<br>"
+            + "<strong>SHA-3</strong>: l''algorithme de hachage le plus récent, basé sur une structure différente de SHA-1 et SHA-2 et "
+            + "encore plus sûr contre les attaques.<br>"
+            + "<strong>RSASSA-PSS (Probabilistic Signature Scheme)</strong>: Il s''agit d''une extension de RSA. Elle combine la fonction de "
+            + "hachage SHA avec le processus de signature PSS, ce qui offre une sécurité supplémentaire."
             + "</HTML>"
         },
         {"label.size", "Taille"},

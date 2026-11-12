@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/ResourceBundleConfigurationIssueDetails_de.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/gui/ResourceBundleConfigurationIssueDetails_de.java 7     9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.configurationcheck.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleConfigurationIssueDetails_de extends MecResourceBundle {
 
@@ -34,7 +34,7 @@ public class ResourceBundleConfigurationIssueDetails_de extends MecResourceBundl
         {"button.next", "Nächstes Problem >>" },
         {"button.jumpto.generic", "Zum Problem" },
         {"button.jumpto.partner", "Zur Partnerverwaltung" },
-        {"button.jumpto.keystore", "Zur Zertfiikatsverwaltung" },        
+        {"button.jumpto.keystore", "Zur Zertifikatsverwaltung" },        
         {"button.jumpto.config", "Zur Konfiguration" },
     };
 }

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/preferences/PreferencesClient.java 6     2/11/23 14:03 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/clients/preferences/PreferencesClient.java 9     19/02/25 12:59 Heller $
 package de.mendelson.util.clientserver.clients.preferences;
 
 import de.mendelson.util.clientserver.BaseClient;
@@ -13,7 +13,7 @@ import de.mendelson.util.clientserver.BaseClient;
 /**
  * Requests and preferences from and sets new values to the server
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 9 $
  */
 public class PreferencesClient {
 
@@ -74,6 +74,28 @@ public class PreferencesClient {
         this.baseClient.sendAsync(request);
     }
 
+    /**Stores a value in the preferences and throws an exception if this did not work for some reason. 
+     * If the passed value is null or an
+     *empty string the key-value pair will be deleted from the registry.
+     *@param KEY Key as defined in this class
+     *@param value value to set
+     */
+    public void putSync(final String KEY, String value) throws Throwable{
+        PreferencesRequest request = new PreferencesRequest();
+        request.setKey(KEY);
+        request.setValue(value);
+        request.setType(PreferencesRequest.TYPE_SET_SYNC);
+        PreferencesResponse response = (PreferencesResponse) this.baseClient.sendSync(request, this.syncTimeout);
+        if( response == null ){
+            throw(new Exception( "Timeout in client-server interface"));
+        }
+        if (response.getException() != null) {
+            throw(response.getException());
+        }
+    }
+    
+    
+    
     /**Puts a value to the preferences and stores the prefs
      *@param KEY Key as defined in this class
      *@param value value to set
@@ -93,7 +115,7 @@ public class PreferencesClient {
         request.setType(PreferencesRequest.TYPE_GET);
         PreferencesResponse response = (PreferencesResponse) this.baseClient.sendSync(request, this.syncTimeout);
         if (response != null) {
-            return (Integer.valueOf(response.getValue()));
+            return (Integer.parseInt(response.getValue()));
         } else {
             return (-1);
         }
@@ -119,7 +141,7 @@ public class PreferencesClient {
         request.setType(PreferencesRequest.TYPE_GET);
         PreferencesResponse response = (PreferencesResponse) this.baseClient.sendSync(request, this.syncTimeout);
         if (response != null) {
-            return (Boolean.valueOf(response.getValue()).booleanValue());
+            return (Boolean.parseBoolean(response.getValue()));
         } else {
             return (false);
         }

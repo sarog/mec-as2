@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 10    2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/clientserver/connectiontest/ResourceBundleConnectionTest_fr.java 12    9/12/24 15:50 Heller $
 package de.mendelson.util.clientserver.connectiontest;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize a mendelson product
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleConnectionTest_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"tag", "Test de connexion sur {0}"},
         {"timeout.set", "Réglage du délai d''attente sur {0}ms"},
         {"test.start.ssl", "Démarrer la vérification de la connexion sur {0} à l''aide de la connexion TLS. "

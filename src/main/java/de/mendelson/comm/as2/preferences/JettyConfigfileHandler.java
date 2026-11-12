@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/JettyConfigfileHandler.java 1     2/08/22 15:37 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/JettyConfigfileHandler.java 2     24/01/25 10:24 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
@@ -22,7 +23,7 @@ import java.util.Properties;
  * reads the properties from it
  *
  * @author S.Heller
- * @version $Revision: 1 $
+ * @version $Revision: 2 $
  */
 public class JettyConfigfileHandler {
 
@@ -48,7 +49,7 @@ public class JettyConfigfileHandler {
      * Checks if the config file is r/w and does exist etc
      */
     public synchronized boolean configFileAccessible() {
-        Path configPath = Paths.get( HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER);
+        Path configPath = Paths.get(HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER);
         return (Files.exists(configPath)
                 && Files.isRegularFile(configPath)
                 && Files.isWritable(configPath)
@@ -60,9 +61,7 @@ public class JettyConfigfileHandler {
      */
     public synchronized String getValue(String preferencesKey, String defaultValue) {
         Properties properties = new Properties();
-        InputStream inStream = null;
-        try {
-            inStream = Files.newInputStream(Paths.get(HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER));
+        try (InputStream inStream = Files.newInputStream(Paths.get(HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER))) {
             properties.load(inStream);
             if (properties.containsKey(preferencesKey)) {
                 return (properties.getProperty(preferencesKey));
@@ -71,14 +70,6 @@ public class JettyConfigfileHandler {
             }
         } catch (Exception e) {
             return (defaultValue);
-        } finally {
-            if (inStream != null) {
-                try {
-                    inStream.close();
-                } catch (Exception e) {
-                    //nop
-                }
-            }
         }
     }
 
@@ -88,44 +79,35 @@ public class JettyConfigfileHandler {
      */
     public synchronized void setValue(String preferencesKey, String value) {
         //Load the file structure
-        List<String> lines = null;
-        BufferedWriter writer = null;
         try {
+            List<String> lines = new ArrayList<String>();
             //read the config file line by line
             try {
-                lines = Files.readAllLines(Paths.get(HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER));
+                lines.addAll(Files.readAllLines(Paths.get(HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER)));
                 //replace the single value
                 boolean replaced = false;
-                for( int i = 0; i < lines.size(); i++ ){
-                    if( lines.get(i).toLowerCase().startsWith(preferencesKey.toLowerCase())){
+                for (int i = 0; i < lines.size(); i++) {
+                    if (lines.get(i).toLowerCase().startsWith(preferencesKey.toLowerCase())) {
                         lines.set(i, preferencesKey + "=" + value);
                         replaced = true;
                     }
                 }
-                if( !replaced ){
+                if (!replaced) {
                     lines.add(preferencesKey + "=" + value);
                 }
             } catch (Exception e) {
                 return;
             }
-            writer = Files.newBufferedWriter(Paths.get(HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER));
-            //write back the config file
-            for( String line:lines){
-                writer.write( line );
-                writer.newLine();
+            try (BufferedWriter writer = Files.newBufferedWriter(
+                    Paths.get(HTTPServerConfigInfo.FILENAME_HTTP_SERVER_CONFIG_USER))) {
+                //write back the config file
+                for (String line : lines) {
+                    writer.write(line);
+                    writer.newLine();
+                }
             }
         } catch (Exception e) {
-        } finally {
-            if( writer != null ){
-                try{
-                    writer.flush();
-                    writer.close();
-                }
-                catch( Exception e ){                    
-                }
-            }
         }
-
     }
 
 }

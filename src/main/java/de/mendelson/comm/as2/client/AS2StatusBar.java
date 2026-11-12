@@ -1,32 +1,34 @@
-//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 41    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/AS2StatusBar.java 48    19/12/24 8:54 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.comm.as2.configurationcheck.gui.JDialogIssuesList;
 import de.mendelson.comm.as2.AS2ServerVersion;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckRequest;
 import de.mendelson.comm.as2.clientserver.message.ConfigurationCheckResponse;
+import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.ColorUtil;
+import de.mendelson.util.DisplayMode;
 import de.mendelson.util.IStatusBar;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.ProgressPanel;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.GUIClient;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.FontMetrics;
-import java.awt.Graphics2D;
+import java.awt.Font;
 import java.awt.Point;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -39,72 +41,80 @@ import javax.swing.SwingUtilities;
  * Status bar for the AS2 GUI
  *
  * @author S.Heller
- * @version $Revision: 41 $
+ * @version $Revision: 48 $
  */
 public class AS2StatusBar extends JPanel implements IStatusBar {
 
-    private final static int ICON_HEIGHT = 22;
+    private final static int IMAGE_HEIGHT = 22;
 
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleAS2StatusBar.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     public static final MendelsonMultiResolutionImage IMAGE_WRENCH
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/wrench.svg", ICON_HEIGHT);
+                    "/de/mendelson/comm/as2/client/wrench.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_PENDING
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_pending.svg", ICON_HEIGHT);
+                    "/de/mendelson/comm/as2/client/state_pending.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_STOPPED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_stopped.svg", ICON_HEIGHT);
+                    "/de/mendelson/comm/as2/client/state_stopped.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_FINISHED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_finished.svg", ICON_HEIGHT);
+                    "/de/mendelson/comm/as2/client/state_finished.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_SERVED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_all.svg", ICON_HEIGHT);
+                    "/de/mendelson/comm/as2/client/state_all.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_ALL
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_all_sum.svg", ICON_HEIGHT);
+                    "/de/mendelson/comm/as2/client/state_all_sum.svg", IMAGE_HEIGHT);
     public static final MendelsonMultiResolutionImage IMAGE_ALL_SELECTED
             = MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/client/state_allselected.svg", ICON_HEIGHT);
+                    "/de/mendelson/comm/as2/client/state_allselected.svg", IMAGE_HEIGHT);
     private ModuleStarter moduleStarter;
     private BaseClient baseClient = null;
     private ConfigurationCheckThread checkThread = null;
-    private final ScheduledExecutorService configurationCheckRefreshExecutor = Executors.newSingleThreadScheduledExecutor(
-            new NamedThreadFactory("client-configuration-check"));
 
     /**
      * Creates new form AS2StatusBar
      */
     public AS2StatusBar() {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleAS2StatusBar.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
         initComponents();
         this.setMultiresolutionIcons();
-        Color colorBadgeBackground = ColorUtil.getBestContrastColorAroundForeground(this.jPanelConfigurationIssues.getBackground(),
-                Color.RED.darker());
-        Color colorBadgeForeground = ColorUtil.getBestContrastColorAroundForeground(colorBadgeBackground, Color.WHITE);
-        this.notificationBadgeButton.setNotificationBadgeColors(colorBadgeBackground, colorBadgeForeground);
+        Color circleColor = null;
+        if (UIManager.getColor("Objects.RedStatus") != null) {
+            circleColor = UIManager.getColor("Objects.RedStatus");
+        } else {
+            circleColor = ColorUtil.getBestContrastColorAroundForeground(this.jPanelConfigurationIssues.getBackground(),
+                    Color.RED.darker());
+        }
+        Color colorBadgeForeground = ColorUtil.getBestContrastColorAroundForeground(circleColor, Color.WHITE);
+        this.notificationBadgeButton.setNotificationBadgeColors(circleColor, colorBadgeForeground);
     }
 
     private void setMultiresolutionIcons() {
+        PreferencesAS2 preferences = new PreferencesAS2();
+        final String displayMode = preferences.get(PreferencesAS2.DISPLAY_MODE_CLIENT);
         SwingUtilities.invokeLater(new Runnable() {
             @Override
             public void run() {
-                jLabelTransactionsFailure.setIcon(new ImageIcon(IMAGE_STOPPED.toMinResolution(ICON_HEIGHT)));
-                jLabelTransactionsOk.setIcon(new ImageIcon(IMAGE_FINISHED.toMinResolution(ICON_HEIGHT)));
-                jLabelTransactionsPending.setIcon(new ImageIcon(IMAGE_PENDING.toMinResolution(ICON_HEIGHT)));
-                jLabelTransactionsServed.setIcon(new ImageIcon(IMAGE_SERVED.toMinResolution(ICON_HEIGHT)));
-                jLabelTransactionsAll.setIcon(new ImageIcon(IMAGE_ALL.toMinResolution(ICON_HEIGHT)));
-                jLabelTransactionsSelected.setIcon(new ImageIcon(IMAGE_ALL_SELECTED.toMinResolution(ICON_HEIGHT)));
-                notificationBadgeButton.setIcon(new ImageIcon(IMAGE_WRENCH.toMinResolution(ICON_HEIGHT)));
+                jLabelTransactionsFailure.setIcon(new ImageIcon(IMAGE_STOPPED.toMinResolution(IMAGE_HEIGHT)));
+                jLabelTransactionsOk.setIcon(new ImageIcon(IMAGE_FINISHED.toMinResolution(IMAGE_HEIGHT)));
+                jLabelTransactionsPending.setIcon(new ImageIcon(IMAGE_PENDING.toMinResolution(IMAGE_HEIGHT)));
+                jLabelTransactionsServed.setIcon(new ImageIcon(IMAGE_SERVED.toMinResolution(IMAGE_HEIGHT)));
+                jLabelTransactionsAll.setIcon(new ImageIcon(IMAGE_ALL.toMinResolution(IMAGE_HEIGHT)));
+                jLabelTransactionsSelected.setIcon(new ImageIcon(IMAGE_ALL_SELECTED.toMinResolution(IMAGE_HEIGHT)));
+                notificationBadgeButton.setIcon(
+                        new ImageIcon(IMAGE_WRENCH.toMinResolution(IMAGE_HEIGHT)),
+                        !displayMode.equals(DisplayMode.LIGHT));
             }
-
         });
 
     }
@@ -119,7 +129,7 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
             throw new IllegalArgumentException("Status bar: Please pass the base client to the status bar before starting the config checker.");
         }
         this.checkThread = new ConfigurationCheckThread();
-        this.configurationCheckRefreshExecutor.scheduleWithFixedDelay(this.checkThread, 1, 30, TimeUnit.SECONDS);
+        GUIClient.scheduleWithFixedDelay(this.checkThread, 1, 30, TimeUnit.SECONDS);
     }
 
     public void setTransactionCount(int countAll, int countServed, int countOk, int countPending, int countFailed, int countSelected) {
@@ -504,15 +514,15 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     }// </editor-fold>//GEN-END:initComponents
 
     private void jPanelConfigurationIssuesMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanelConfigurationIssuesMouseClicked
-       if (evt.getClickCount() == 2) {
+        if (evt.getClickCount() == 2) {
             //double clicked on the issue panel
         }
     }//GEN-LAST:event_jPanelConfigurationIssuesMouseClicked
 
     private void jPanelConfigurationIssuesMouseEntered(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_jPanelConfigurationIssuesMouseEntered
         JFrame parent = (JFrame) SwingUtilities.getAncestorOfClass(JFrame.class, this);
-        int x = (int)this.jPanelConfigurationIssues.getLocationOnScreen().getX();
-        int y = (int)this.getLocationOnScreen().getY();
+        int x = (int) this.jPanelConfigurationIssues.getLocationOnScreen().getX();
+        int y = (int) this.getLocationOnScreen().getY();
         JDialogIssuesList dialog = new JDialogIssuesList(parent, this.baseClient,
                 new Point(x, y), this.moduleStarter);
         dialog.setVisible(true);
@@ -525,9 +535,9 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
     }//GEN-LAST:event_notificationBadgeButtonMouseEntered
 
     private void notificationBadgeButtonMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_notificationBadgeButtonMouseClicked
-       //buttons eat up mouse events
-       JComponent source = (JComponent) evt.getSource();
-       source.getParent().dispatchEvent(evt);
+        //buttons eat up mouse events
+        JComponent source = (JComponent) evt.getSource();
+        source.getParent().dispatchEvent(evt);
     }//GEN-LAST:event_notificationBadgeButtonMouseClicked
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -572,7 +582,9 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
         @Override
         public void run() {
             try {
-                ConfigurationCheckResponse response = (ConfigurationCheckResponse) baseClient.sendSync(new ConfigurationCheckRequest());
+                ConfigurationCheckRequest checkRequest = new ConfigurationCheckRequest();
+                checkRequest.setPerformClientRelatedTests(true);
+                ConfigurationCheckResponse response = (ConfigurationCheckResponse) baseClient.sendSync(checkRequest);
                 final int issueCount = response.getIssues().size();
                 if (issueCount == 0) {
                     SwingUtilities.invokeLater(new Runnable() {
@@ -581,8 +593,8 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                             notificationBadgeButton.setText("");
                             String text = rb.getResourceString("no.configuration.issues");
                             jLabelConfigurationIssue.setText(text);
-                            int labelWidth = computeStringWidth(text) + 10;
-                            jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, ICON_HEIGHT));
+                            int labelWidth = computeStringWidth(jLabelConfigurationIssue.getFont(), text) + 10;
+                            jLabelConfigurationIssue.setPreferredSize(new Dimension(labelWidth, IMAGE_HEIGHT));
                         }
                     });
                 } else {
@@ -593,12 +605,12 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
                             jLabelConfigurationIssue.setText(text);
                             notificationBadgeButton.setText(String.valueOf(issueCount));
                             //contents with some gap result in the label width
-                            final int labelWidth = computeStringWidth(text)
-                                    + new ImageIcon(IMAGE_WRENCH.toMinResolution(ICON_HEIGHT)).getIconWidth() + 10;
+                            final int labelWidth = computeStringWidth(jLabelConfigurationIssue.getFont(), text)
+                                    + new ImageIcon(IMAGE_WRENCH.toMinResolution(IMAGE_HEIGHT)).getIconWidth() + 10;
                             jPanelConfigurationIssues.setPreferredSize(new Dimension(
                                     labelWidth
                                     + 10
-                                    + (int) notificationBadgeButton.getPreferredSize().getWidth(), ICON_HEIGHT));
+                                    + (int) notificationBadgeButton.getPreferredSize().getWidth(), IMAGE_HEIGHT));
                         }
                     });
                 }
@@ -607,14 +619,11 @@ public class AS2StatusBar extends JPanel implements IStatusBar {
             }
         }
 
-        /**
-         * Compute the width of the content up to the actual cursor position not
-         * been found on the OS
-         */
-        private int computeStringWidth(String text) {
-            Graphics2D g = (Graphics2D) jLabelConfigurationIssue.getGraphics();
-            FontMetrics metrics = g.getFontMetrics(jLabelConfigurationIssue.getFont());
-            return ((int) Math.ceil(metrics.getStringBounds(text, g).getWidth()));
+        private int computeStringWidth(Font font, String text) {
+            AffineTransform affinetransform = new AffineTransform();
+            FontRenderContext fontRenderContext = new FontRenderContext(affinetransform, true, true);
+            int width = (int) (font.getStringBounds(text, fontRenderContext).getWidth());
+            return (width);
         }
 
     }

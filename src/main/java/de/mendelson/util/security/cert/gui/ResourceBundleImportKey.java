@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleImportKey.java 2     2/11/23 15:53 Heller $ 
+//$Header: /as4/de/mendelson/util/security/cert/gui/ResourceBundleImportKey.java 4     13/09/24 12:23 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleImportKey extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleImportKey extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"button.ok", "Ok"},
         {"button.cancel", "Cancel"},
         {"button.browse", "Browse"},
@@ -47,7 +47,7 @@ public class ResourceBundleImportKey extends MecResourceBundle {
         {"key.import.error.message", "There occured an error during the import process.\n{0}"},
         {"key.import.error.title", "Error"},
         {"enter.keypassword", "Enter key password for \"{0}\""},
-        
+        {"key.import.error.entry.exists", "Import not possible - an entry with this fingerprint does already exist, the alias is {0}."},
     };
 
 }

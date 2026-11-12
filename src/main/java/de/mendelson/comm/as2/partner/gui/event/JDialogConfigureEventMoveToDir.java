@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToDir.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/event/JDialogConfigureEventMoveToDir.java 7     11/03/25 17:00 Heller $
 package de.mendelson.comm.as2.partner.gui.event;
 
 import de.mendelson.comm.as2.client.AS2Gui;
@@ -27,23 +27,21 @@ import javax.swing.SwingUtilities;
  * Configure a shell execution command
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class JDialogConfigureEventMoveToDir extends JDialog {
 
     private final MecResourceBundle rb;
     private final BaseClient baseClient;
-    private final JFrame parent;
     private final Partner partner;
     private final int eventType;
 
     /**
      * Creates new form JDialogMigrateFromHSQLDB
      */
-    public JDialogConfigureEventMoveToDir(JFrame parent, BaseClient baseClient,
+    public JDialogConfigureEventMoveToDir(JFrame frameParent, BaseClient baseClient,
             Partner partner, final int EVENT_TYPE){
-        super(parent, true);
-        this.parent = parent;
+        super(frameParent, true);
         this.partner = partner;
         this.eventType = EVENT_TYPE;
         //load resource bundle
@@ -208,6 +206,7 @@ public class JDialogConfigureEventMoveToDir extends JDialog {
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weighty = 1.0;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMain.add(jPanelSpace, gridBagConstraints);
 
         jButtonSelectDir.setText("..");

@@ -1,10 +1,11 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelConnectivity.java 6     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelConnectivity.java 9     19/02/25 10:08 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.util.JTextFieldLimitDocument;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
+import de.mendelson.util.balloontip.BalloonToolTip;
 import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.uinotification.UINotification;
@@ -23,7 +24,7 @@ import javax.swing.ImageIcon;
  * Panel to define the interface preferences
  *
  * @author S.Heller
- * @version: $Revision: 6 $
+ * @version: $Revision: 9 $
  */
 public class PreferencesPanelConnectivity extends PreferencesPanel {
 
@@ -41,7 +42,16 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     /**
      * Localize the GUI
      */
-    private MecResourceBundle rb = null;
+    private final static MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundlePreferences.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * GUI prefs
@@ -52,14 +62,6 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
      * Creates new form PreferencesPanelDirectories
      */
     public PreferencesPanelConnectivity(BaseClient baseClient) {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundlePreferences.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
         this.preferences = new PreferencesClient(baseClient);
         this.initComponents();
         this.initializeHelp();
@@ -78,10 +80,6 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     }
 
     private void initializeHelp() {
-        this.jPanelUIHelpTrustAllServerCerts.setToolTip(this.rb, "label.trustallservercerts.help");
-        this.jPanelUIHelpTrustAllServerCerts.setTooltipWidth(350);
-        this.jPanelUIHelpStrictHostCheck.setToolTip(this.rb, "label.stricthostcheck.help");
-        this.jPanelUIHelpStrictHostCheck.setTooltipWidth(350);
         this.jPanelUIHelpLabelSendTimeout.setTooltipWidth(350);
         this.jPanelUIHelpLabelConnectionRetryCount.setTooltipWidth(350);
         this.jPanelUIHelpLabelConnectionRetryTime.setTooltipWidth(350);
@@ -96,8 +94,8 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
      */
     @Override
     public void loadPreferences() {
-        this.jCheckBoxTrustAllServerCerts.setSelected(this.preferences.getBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES));
-        this.jCheckBoxStrictHostnameCheck.setSelected(this.preferences.getBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK));
+        this.switchTrustAllServerCerts.setSelected(this.preferences.getBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES));
+        this.switchStrictHostnameCheck.setSelected(this.preferences.getBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK));
         this.jTextFieldSendHttpTimeout.setText(this.preferences.get(PreferencesAS2.HTTP_SEND_TIMEOUT));
         this.jTexFieldRetryCount.setText(this.preferences.get(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT));
         this.jTextFieldRetryWaittime.setText(this.preferences.get(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S));
@@ -126,9 +124,9 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     private String captureSettingsToStr(){
         StringBuilder builder = new StringBuilder();
         builder.append( PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES ).append("=")
-                .append( this.jCheckBoxTrustAllServerCerts.isSelected()).append(";");
+                .append( this.switchTrustAllServerCerts.isSelected()).append(";");                
         builder.append( PreferencesAS2.TLS_STRICT_HOST_CHECK ).append("=")
-                .append( this.jCheckBoxStrictHostnameCheck.isSelected()).append(";");
+                .append( this.switchStrictHostnameCheck.isSelected()).append(";");
         builder.append( PreferencesAS2.HTTP_SEND_TIMEOUT ).append("=")
                 .append( this.jTextFieldSendHttpTimeout.getText()).append(";");
         builder.append( PreferencesAS2.MAX_CONNECTION_RETRY_COUNT ).append("=")
@@ -164,14 +162,9 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
 
         jPanelMargin = new javax.swing.JPanel();
         jPanelSpace = new javax.swing.JPanel();
-        jPanelTrustAllServerCertficiates = new javax.swing.JPanel();
-        jCheckBoxTrustAllServerCerts = new javax.swing.JCheckBox();
-        jPanelUIHelpTrustAllServerCerts = new de.mendelson.util.balloontip.JPanelUIHelp();
-        jPanelSpaceTrustAllServerCerts = new javax.swing.JPanel();
         jPanelTrustAllHostNames = new javax.swing.JPanel();
-        jCheckBoxStrictHostnameCheck = new javax.swing.JCheckBox();
-        jPanelUIHelpStrictHostCheck = new de.mendelson.util.balloontip.JPanelUIHelp();
         jPanelSpaceStrictHostCheck = new javax.swing.JPanel();
+        switchStrictHostnameCheck = new de.mendelson.util.toggleswitch.ToggleSwitch();
         jPanelUIHelpLabelConnectionRetryTime = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelConnectionRetryCount = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jPanelUIHelpLabelMaxOutboundConnections = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
@@ -191,12 +184,16 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jPanelUIHelpLabelMaxInboundConnections = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
         jTextFieldInboundConnections = new javax.swing.JTextField();
         jLabelWarningJettyConfigAccess3 = new javax.swing.JLabel();
+        switchTrustAllServerCerts = new de.mendelson.util.toggleswitch.ToggleSwitch();
+        jPanelUIHelpLabelTrustAllServerCerts = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelUIHelpLabelStrictHostnameCheck = new de.mendelson.util.balloontip.JPanelUIHelpLabel();
+        jPanelSpace875 = new javax.swing.JPanel();
 
         setLayout(new java.awt.GridBagLayout());
 
         jPanelMargin.setLayout(new java.awt.GridBagLayout());
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 7;
+        gridBagConstraints.gridx = 13;
         gridBagConstraints.gridy = 14;
         gridBagConstraints.fill = java.awt.GridBagConstraints.VERTICAL;
         gridBagConstraints.weightx = 1.0;
@@ -204,59 +201,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelMargin.add(jPanelSpace, gridBagConstraints);
 
-        jPanelTrustAllServerCertficiates.setLayout(new java.awt.GridBagLayout());
-
-        jCheckBoxTrustAllServerCerts.setText(this.rb.getResourceString( "label.trustallservercerts" ));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelTrustAllServerCertficiates.add(jCheckBoxTrustAllServerCerts, gridBagConstraints);
-
-        jPanelUIHelpTrustAllServerCerts.setPreferredSize(new java.awt.Dimension(20, 20));
-        jPanelUIHelpTrustAllServerCerts.setTooltipWidth(250);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelTrustAllServerCertficiates.add(jPanelUIHelpTrustAllServerCerts, gridBagConstraints);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.weightx = 1.0;
-        gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
-        jPanelTrustAllServerCertficiates.add(jPanelSpaceTrustAllServerCerts, gridBagConstraints);
-
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 11;
-        gridBagConstraints.gridwidth = 4;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
-        jPanelMargin.add(jPanelTrustAllServerCertficiates, gridBagConstraints);
-
         jPanelTrustAllHostNames.setLayout(new java.awt.GridBagLayout());
-
-        jCheckBoxStrictHostnameCheck.setText(this.rb.getResourceString( "label.stricthostcheck" ));
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 0;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.gridwidth = 2;
-        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelTrustAllHostNames.add(jCheckBoxStrictHostnameCheck, gridBagConstraints);
-
-        jPanelUIHelpStrictHostCheck.setPreferredSize(new java.awt.Dimension(20, 20));
-        jPanelUIHelpStrictHostCheck.setTooltipWidth(250);
-        gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
-        gridBagConstraints.gridy = 5;
-        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        jPanelTrustAllHostNames.add(jPanelUIHelpStrictHostCheck, gridBagConstraints);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 3;
         gridBagConstraints.gridy = 5;
@@ -265,13 +210,21 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         gridBagConstraints.insets = new java.awt.Insets(1, 1, 1, 1);
         jPanelTrustAllHostNames.add(jPanelSpaceStrictHostCheck, gridBagConstraints);
 
+        switchStrictHostnameCheck.setDisplayStatusText(true);
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 5;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        jPanelTrustAllHostNames.add(switchStrictHostnameCheck, gridBagConstraints);
+
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 10;
-        gridBagConstraints.gridwidth = 4;
+        gridBagConstraints.gridwidth = 5;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
-        gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 5);
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMargin.add(jPanelTrustAllHostNames, gridBagConstraints);
 
         jPanelUIHelpLabelConnectionRetryTime.setToolTipText(this.rb.getResourceString( "label.retry.waittime.help"));
@@ -313,7 +266,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jTextFieldRetryWaittime.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldRetryWaittime.setPreferredSize(new java.awt.Dimension(50, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 8;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -321,7 +274,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
 
         jLabelSeconds.setText(this.rb.getResourceString( "label.sec"));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 9;
         gridBagConstraints.gridy = 8;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
@@ -331,7 +284,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jTexFieldRetryCount.setMinimumSize(new java.awt.Dimension(50, 20));
         jTexFieldRetryCount.setPreferredSize(new java.awt.Dimension(50, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 7;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -340,7 +293,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jTextFieldOutboundConnections.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldOutboundConnections.setPreferredSize(new java.awt.Dimension(50, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 4;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -349,7 +302,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jTextFieldSendHttpTimeout.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldSendHttpTimeout.setPreferredSize(new java.awt.Dimension(50, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -357,7 +310,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
 
         jLabelMilliseconds.setText("ms");
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 9;
         gridBagConstraints.gridy = 2;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
@@ -376,7 +329,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jTextFieldHTTPSPort.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldHTTPSPort.setPreferredSize(new java.awt.Dimension(50, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -394,7 +347,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jTextFieldHTTPPort.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldHTTPPort.setPreferredSize(new java.awt.Dimension(50, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -403,7 +356,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jLabelWarningJettyConfigAccess1.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image16x16.gif"))); // NOI18N
         jLabelWarningJettyConfigAccess1.setToolTipText(this.rb.getResourceString("embedded.httpconfig.not.available"));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 9;
         gridBagConstraints.gridy = 0;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
@@ -414,7 +367,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jLabelWarningJettyConfigAccess2.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image16x16.gif"))); // NOI18N
         jLabelWarningJettyConfigAccess2.setToolTipText(this.rb.getResourceString("embedded.httpconfig.not.available"));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 9;
         gridBagConstraints.gridy = 1;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
@@ -434,7 +387,7 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jTextFieldInboundConnections.setMinimumSize(new java.awt.Dimension(50, 20));
         jTextFieldInboundConnections.setPreferredSize(new java.awt.Dimension(50, 20));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridx = 8;
         gridBagConstraints.gridy = 5;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
@@ -443,13 +396,54 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         jLabelWarningJettyConfigAccess3.setIcon(new javax.swing.ImageIcon(getClass().getResource("/de/mendelson/comm/as2/preferences/missing_image16x16.gif"))); // NOI18N
         jLabelWarningJettyConfigAccess3.setToolTipText(this.rb.getResourceString("embedded.httpconfig.not.available"));
         gridBagConstraints = new java.awt.GridBagConstraints();
-        gridBagConstraints.gridx = 3;
+        gridBagConstraints.gridx = 9;
         gridBagConstraints.gridy = 5;
         gridBagConstraints.gridwidth = 4;
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 5, 0);
         jPanelMargin.add(jLabelWarningJettyConfigAccess3, gridBagConstraints);
+
+        switchTrustAllServerCerts.setDisplayStatusText(true);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 8;
+        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridwidth = 5;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.WEST;
+        gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
+        jPanelMargin.add(switchTrustAllServerCerts, gridBagConstraints);
+
+        jPanelUIHelpLabelTrustAllServerCerts.setToolTipText(this.rb.getResourceString( "label.trustallservercerts.help" ));
+        jPanelUIHelpLabelTrustAllServerCerts.setText(this.rb.getResourceString( "label.trustallservercerts" ));
+        jPanelUIHelpLabelTrustAllServerCerts.setTooltipWidth(350);
+        jPanelUIHelpLabelTrustAllServerCerts.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 12;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        jPanelMargin.add(jPanelUIHelpLabelTrustAllServerCerts, gridBagConstraints);
+
+        jPanelUIHelpLabelStrictHostnameCheck.setToolTipText(this.rb.getResourceString( "label.stricthostcheck.help" ));
+        jPanelUIHelpLabelStrictHostnameCheck.setText(this.rb.getResourceString( "label.stricthostcheck" ));
+        jPanelUIHelpLabelStrictHostnameCheck.setTooltipWidth(350);
+        jPanelUIHelpLabelStrictHostnameCheck.setTriangleAlignment(BalloonToolTip.TRIANGLE_ALIGNMENT_BOTTOM
+        );
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 0;
+        gridBagConstraints.gridy = 10;
+        gridBagConstraints.gridwidth = 2;
+        gridBagConstraints.anchor = java.awt.GridBagConstraints.LINE_START;
+        jPanelMargin.add(jPanelUIHelpLabelStrictHostnameCheck, gridBagConstraints);
+        gridBagConstraints = new java.awt.GridBagConstraints();
+        gridBagConstraints.gridx = 2;
+        gridBagConstraints.gridy = 0;
+        gridBagConstraints.gridheight = 13;
+        gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
+        gridBagConstraints.insets = new java.awt.Insets(5, 15, 5, 5);
+        jPanelMargin.add(jPanelSpace875, gridBagConstraints);
 
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.fill = java.awt.GridBagConstraints.BOTH;
@@ -461,8 +455,6 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JCheckBox jCheckBoxStrictHostnameCheck;
-    private javax.swing.JCheckBox jCheckBoxTrustAllServerCerts;
     private javax.swing.JLabel jLabelMilliseconds;
     private javax.swing.JLabel jLabelSeconds;
     private javax.swing.JLabel jLabelWarningJettyConfigAccess1;
@@ -470,10 +462,9 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     private javax.swing.JLabel jLabelWarningJettyConfigAccess3;
     private javax.swing.JPanel jPanelMargin;
     private javax.swing.JPanel jPanelSpace;
+    private javax.swing.JPanel jPanelSpace875;
     private javax.swing.JPanel jPanelSpaceStrictHostCheck;
-    private javax.swing.JPanel jPanelSpaceTrustAllServerCerts;
     private javax.swing.JPanel jPanelTrustAllHostNames;
-    private javax.swing.JPanel jPanelTrustAllServerCertficiates;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelConnectionRetryCount;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelConnectionRetryTime;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelHTTPPort;
@@ -481,8 +472,8 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelMaxInboundConnections;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelMaxOutboundConnections;
     private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelSendTimeout;
-    private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelpStrictHostCheck;
-    private de.mendelson.util.balloontip.JPanelUIHelp jPanelUIHelpTrustAllServerCerts;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelStrictHostnameCheck;
+    private de.mendelson.util.balloontip.JPanelUIHelpLabel jPanelUIHelpLabelTrustAllServerCerts;
     private javax.swing.JTextField jTexFieldRetryCount;
     private javax.swing.JTextField jTextFieldHTTPPort;
     private javax.swing.JTextField jTextFieldHTTPSPort;
@@ -490,44 +481,46 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
     private javax.swing.JTextField jTextFieldOutboundConnections;
     private javax.swing.JTextField jTextFieldRetryWaittime;
     private javax.swing.JTextField jTextFieldSendHttpTimeout;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchStrictHostnameCheck;
+    private de.mendelson.util.toggleswitch.ToggleSwitch switchTrustAllServerCerts;
     // End of variables declaration//GEN-END:variables
 
     @Override
     public void savePreferences() {
         boolean serverRestartRequired = false;
-        this.preferences.putBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES, this.jCheckBoxTrustAllServerCerts.isSelected());
-        this.preferences.putBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK, this.jCheckBoxStrictHostnameCheck.isSelected());
+        this.preferences.putBoolean(PreferencesAS2.TLS_TRUST_ALL_REMOTE_SERVER_CERTIFICATES, this.switchTrustAllServerCerts.isSelected());
+        this.preferences.putBoolean(PreferencesAS2.TLS_STRICT_HOST_CHECK, this.switchStrictHostnameCheck.isSelected());
         try {
-            int value = Integer.valueOf(this.jTextFieldSendHttpTimeout.getText().trim()).intValue();
+            int value = Integer.parseInt(this.jTextFieldSendHttpTimeout.getText().trim());
             if (value < 0) {
-                value = Integer.valueOf(this.preferences.getDefaultValue(PreferencesAS2.HTTP_SEND_TIMEOUT));
+                value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.HTTP_SEND_TIMEOUT));
             }
             this.preferences.putInt(PreferencesAS2.HTTP_SEND_TIMEOUT, value);
         } catch (NumberFormatException e) {
             //nop
         }
         try {
-            int value = Integer.valueOf(this.jTexFieldRetryCount.getText().trim()).intValue();
+            int value = Integer.parseInt(this.jTexFieldRetryCount.getText().trim());
             if (value < 0) {
-                value = Integer.valueOf(this.preferences.getDefaultValue(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT));
+                value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT));
             }
             this.preferences.putInt(PreferencesAS2.MAX_CONNECTION_RETRY_COUNT, value);
         } catch (NumberFormatException e) {
             //nop
         }
         try {
-            int value = Integer.valueOf(this.jTextFieldRetryWaittime.getText().trim()).intValue();
+            int value = Integer.parseInt(this.jTextFieldRetryWaittime.getText().trim());
             if (value < 0) {
-                value = Integer.valueOf(this.preferences.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S));
+                value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S));
             }
             this.preferences.putInt(PreferencesAS2.CONNECTION_RETRY_WAIT_TIME_IN_S, value);
         } catch (NumberFormatException e) {
             //nop
         }
         try {
-            int value = Integer.valueOf(this.jTextFieldOutboundConnections.getText().trim()).intValue();
+            int value = Integer.parseInt(this.jTextFieldOutboundConnections.getText().trim());
             if (value < 0) {
-                value = Integer.valueOf(this.preferences.getDefaultValue(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS));
+                value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS));
             }
             this.preferences.putInt(PreferencesAS2.MAX_OUTBOUND_CONNECTIONS, value);
         } catch (NumberFormatException e) {
@@ -536,9 +529,9 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         //is there a change in the HTTP port?
         if (!this.oldHTTPPort.equals(this.jTextFieldHTTPPort.getText().trim())) {
             try {
-                int value = Integer.valueOf(this.jTextFieldHTTPPort.getText().trim()).intValue();
+                int value = Integer.parseInt(this.jTextFieldHTTPPort.getText().trim());
                 if (value < 0) {
-                    value = Integer.valueOf(this.preferences.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT));
+                    value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.HTTP_LISTEN_PORT));
                 }
                 this.preferences.putInt(PreferencesAS2.HTTP_LISTEN_PORT, value);
                 serverRestartRequired = true;
@@ -549,9 +542,9 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         //is there a change in the HTTPS port?
         if (!this.oldHTTPSPort.equals(this.jTextFieldHTTPSPort.getText().trim())) {
             try {
-                int value = Integer.valueOf(this.jTextFieldHTTPSPort.getText().trim()).intValue();
+                int value = Integer.parseInt(this.jTextFieldHTTPSPort.getText().trim());
                 if (value < 0) {
-                    value = Integer.valueOf(this.preferences.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT));
+                    value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.HTTPS_LISTEN_PORT));
                 }
                 this.preferences.putInt(PreferencesAS2.HTTPS_LISTEN_PORT, value);
                 serverRestartRequired = true;
@@ -562,9 +555,9 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
         //is there a change in the max inbound connections?
         if (!this.oldConnectionCountInbound.equals(this.jTextFieldInboundConnections.getText().trim())) {
             try {
-                int value = Integer.valueOf(this.jTextFieldInboundConnections.getText().trim()).intValue();
+                int value = Integer.parseInt(this.jTextFieldInboundConnections.getText().trim());
                 if (value < 0) {
-                    value = Integer.valueOf(this.preferences.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS));
+                    value = Integer.parseInt(this.preferences.getDefaultValue(PreferencesAS2.MAX_INBOUND_CONNECTIONS));
                 }
                 this.preferences.putInt(PreferencesAS2.MAX_INBOUND_CONNECTIONS, value);
                 serverRestartRequired = true;
@@ -576,8 +569,8 @@ public class PreferencesPanelConnectivity extends PreferencesPanel {
             UINotification.instance().addNotification(
                     IMAGE_CONNECTIVITY,
                     UINotification.TYPE_INFORMATION,
-                    this.rb.getResourceString("title"),
-                    this.rb.getResourceString("warning.serverrestart.required"));
+                    rb.getResourceString("title"),
+                    rb.getResourceString("warning.serverrestart.required"));
         }
     }
 

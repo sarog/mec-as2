@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 30    23/11/23 12:21 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/SystemEventManagerImplAS2.java 32    15/01/25 12:56 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -14,6 +14,7 @@ import de.mendelson.comm.as2.partner.PartnerCertificateInformation;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.comm.as2.statistic.QuotaAccessDB;
 import de.mendelson.comm.as2.statistic.StatisticOverviewEntry;
+import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.DebuggablePreparedStatement;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.security.cert.CertificateManager;
@@ -24,7 +25,9 @@ import java.sql.SQLException;
 import java.text.DateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.MissingResourceException;
 import java.util.Properties;
+import java.util.ResourceBundle;
 
 
 /*
@@ -38,11 +41,20 @@ import java.util.Properties;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 32 $
  */
 public class SystemEventManagerImplAS2 extends SystemEventManager {
 
     private static SystemEventManagerImplAS2 instance;
+    private final static MecResourceBundle rb;
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleSystemEventManager.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     
     /**
      * Singleton for the whole application
@@ -289,7 +301,7 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
             replacement.setProperty("${HOST}", getHostname());
             String exceptionCategory = exception.getClass().getName().substring(exception.getClass().getName().lastIndexOf(".") + 1);
             replacement.setProperty("${CATEGORY}", exceptionCategory);
-            replacement.setProperty("${MESSAGE}", exception.getMessage());
+            replacement.setProperty("${MESSAGE}", exception.getMessage() == null?"NONE":exception.getMessage());
             StackTraceElement[] trace = exception.getStackTrace();
             StringBuilder builder = new StringBuilder();
             for (StackTraceElement element : trace) {
@@ -305,9 +317,12 @@ public class SystemEventManagerImplAS2 extends SystemEventManager {
             replacement.setProperty("${DETAILS}", builder.toString());
             SystemEvent event = new SystemEvent(SystemEvent.SEVERITY_ERROR, SystemEvent.ORIGIN_SYSTEM, eventType);
             event.readFromNotificationTemplate(template, replacement);
-            SystemEventManagerImplAS2 eventManager = new SystemEventManagerImplAS2();
-            eventManager.storeEventToFile(event);
+            this.storeEventToFile(event);
         } catch (Throwable e) {
+            System.out.println(
+                    SystemEventManager.MODULE_NAME + 
+                            rb.getResourceString( "error.in.systemevent.registration",
+                                    "[" + e.getClass().getSimpleName() + "]: " + e.getMessage()));
             return;
         }
     }

@@ -1,0 +1,31 @@
+$Header:$
+This file contains the template for an event as result of a post processing problem
+The following variables will be substituted:
+${PRODUCTNAME}: The product name
+${HOST}: The host the mendelson AS2 is running on
+${EVENT_TYPE}: The event type (on receipt, after send (error/ok))
+${PROCESS_TYPE}: The process type (execute shell command, forward to partner..)
+${MESSAGEID}: The related message id
+${ERROR_MESSAGE}: The error message
+${SENDER}: The message sender
+${RECEIVER}: The message receiver
+
+
+[SUBJECT]
+Post processing problem (${SENDER} to ${RECEIVER}) [${MESSAGEID}]
+
+
+[BODY]
+On your ${PRODUCTNAME}@${HOST} a post processing problem occurred. 
+The transaction state is is not changed by the post processing but please have a look at the transaction 
+as your processing flow might be interrupted.
+
+Event type: ${EVENT_TYPE}
+Process type: ${PROCESS_TYPE}
+Message id: ${MESSAGEID}
+Sender: ${SENDER}
+Receiver: ${RECEIVER}
+
+
+${ERROR_MESSAGE}
+

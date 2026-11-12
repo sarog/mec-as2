@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 46    29/11/23 14:46 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/client/AS2Gui.java 48    20/03/25 14:45 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.httpconfig.gui.JDialogDisplayHTTPConfiguration;
@@ -47,11 +47,11 @@ import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.ColorUtil;
 import de.mendelson.util.DateChooserUI;
+import de.mendelson.util.DisplayMode;
 import de.mendelson.util.LayoutManagerJToolbar;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.MendelsonMultiResolutionImage.SVGScalingOption;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.Splash;
 import de.mendelson.util.clientserver.ClientsideMessageProcessor;
 import de.mendelson.util.clientserver.GUIClient;
@@ -97,6 +97,7 @@ import de.mendelson.util.uinotification.UINotification;
 import java.awt.Color;
 import java.awt.Desktop;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Rectangle;
 import java.awt.Taskbar;
 import java.awt.Toolkit;
@@ -111,9 +112,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -163,8 +161,9 @@ import java.net.http.HttpResponse;
 import java.net.http.HttpClient.Redirect;
 import java.net.http.HttpClient.Version;
 import java.net.http.HttpHeaders;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ScheduledExecutorService;
+import javax.swing.plaf.ColorUIResource;
+import javax.swing.plaf.FontUIResource;
+import javax.swing.plaf.InsetsUIResource;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -177,19 +176,19 @@ import java.util.concurrent.ScheduledExecutorService;
  * Main GUI for the control of the mendelson AS2 server
  *
  * @author S.Heller
- * @version $Revision: 46 $
+ * @version $Revision: 48 $
  */
 public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorterListener,
         ClientsideMessageProcessor, MouseListener, PopupMenuListener, ModuleStarter,
         TableColumnHiddenStateListener {
 
-    /**
-     * Image size for the popup menus
-     */
-    public static final int IMAGE_SIZE_POPUP = 18;
-    public static final int IMAGE_SIZE_MENU_ITEM = 18;
+    public static final int IMAGE_SIZE_POPUP = 20;
+    public static final int IMAGE_SIZE_MENU_ITEM = 20;
     public static final int IMAGE_SIZE_TOOLBAR = 24;
     public static final int IMAGE_SIZE_DIALOG = 32;
+    public static final int IMAGE_SIZE_TREENODE = 18;
+    public static final int IMAGE_SIZE_LIST = 18;
+    public static final int IMAGE_SIZE_TABLE = 18;
 
     /**
      * Icons, multi resolution
@@ -234,7 +233,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     public static final MendelsonMultiResolutionImage IMAGE_PRODUCT_LOGO_WITH_TEXT
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/logo_open_source_with_text.svg",
                     100);
-    private final static MendelsonMultiResolutionImage IMAGE_PRODUCT_LOGO
+    private static final MendelsonMultiResolutionImage IMAGE_PRODUCT_LOGO
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/logo_open_source.svg",
                     16, 128);
     private static final MendelsonMultiResolutionImage IMAGE_PENDING
@@ -249,19 +248,19 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
             = MendelsonMultiResolutionImage.fromSVG(
                     "/de/mendelson/comm/as2/message/loggui/state_finished.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private final static MendelsonMultiResolutionImage IMAGE_HIDE
+    private static final MendelsonMultiResolutionImage IMAGE_HIDE
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/hide.svg",
                     IMAGE_SIZE_MENU_ITEM, IMAGE_SIZE_MENU_ITEM * 2,
                     SVGScalingOption.KEEP_HEIGHT);
-    private final static MendelsonMultiResolutionImage IMAGE_SYSINFO
+    private static final MendelsonMultiResolutionImage IMAGE_SYSINFO
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/util/systemevents/gui/sysinfo.svg",
                     IMAGE_SIZE_MENU_ITEM);
-    private final static MendelsonMultiResolutionImage IMAGE_CEM
+    private static final MendelsonMultiResolutionImage IMAGE_CEM
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/cem/gui/cem.svg",
                     IMAGE_SIZE_MENU_ITEM);
     private static final MendelsonMultiResolutionImage IMAGE_NEW_VERSION
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/import_red.svg", 16);
-    private final static MendelsonMultiResolutionImage IMAGE_HOURGLASS
+    private static final MendelsonMultiResolutionImage IMAGE_HOURGLASS
             = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/client/hourglass.svg",
                     IMAGE_SIZE_MENU_ITEM,
                     IMAGE_SIZE_TOOLBAR * 2);    
@@ -273,7 +272,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
      * Preferences of the application
      */
     private final PreferencesAS2 clientPreferences = new PreferencesAS2();
-    private final static Logger logger = Logger.getLogger("de.mendelson.as2.client");
+    private static final  Logger logger = Logger.getLogger("de.mendelson.as2.client");
     /**
      * Resourcebundle to localize the GUI
      */
@@ -302,6 +301,10 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     private final String host;
     private final String username;
     private final String password;
+    
+    public static final String DARK_MODE_CLASSNAME = "com.formdev.flatlaf.FlatDarculaLaf";
+    public static final String HIGH_CONSTRAST_MODE_CLASSNAME = "com.formdev.flatlaf.intellijthemes.FlatHighContrastIJTheme";
+    
     /**
      * Refresh thread for the transaction overview - schedules the refresh
      * requests
@@ -316,8 +319,6 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     private Date filterEndDate = new Date();
     private Color COLOR_RED = Color.RED.darker();
     private String downloadURLNewVersion = "http://mendelson-e-c.com/as2";
-    private final ScheduledExecutorService scheduledExecutor = Executors.newScheduledThreadPool(2,
-            new NamedThreadFactory("client-refresh-update"));
 
     /**
      * Creates new form NewJFrame
@@ -326,39 +327,10 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         this.host = host;
         this.username = username;
         this.password = password;
-        //Set System default look and feel
-        try {
-            //support the command line option -Dswing.defaultlaf=...
-            if (System.getProperty("swing.defaultlaf") == null) {
-                try {
-                    if (displayMode != null && displayMode.equalsIgnoreCase("DARK")) {
-                        try {
-                            UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
-                            //Button.arc is the corner arc diameter for buttons and toggle buttons (default is 6)
-                            UIManager.put("Button.arc", 4);
-                            //Component.arc is used for other components like combo boxes and spinners (default is 5)
-                            UIManager.put("Component.arc", 2);
-                            //CheckBox.arc is used for check box icon (default is 4)
-                            UIManager.put("CheckBox.arc", 2);
-                            //ProgressBar.arc is used for progress bars (default is 4).
-                            UIManager.put("ProgressBar.arc", 2);
-                            //TextComponent.arc is used for text fields (default is 0)
-                            UIManager.put("TextComponent.arc", 0);
-                        } catch (Exception e) {
-                            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                        }
-                    } else {
-                        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    //fall back to metal l&f if an error occured with any l&f
-                    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
-                }
-            }
-        } catch (Exception e) {
-            this.getLogger().warning(this.getClass().getName() + ":" + e.getMessage());
+        if (displayMode == null) {
+            displayMode = "LIGHT";
         }
+        this.setLookAndFeel(displayMode);        
         //load resource bundle
         try {
             this.rb = (MecResourceBundle) ResourceBundle.getBundle(
@@ -401,7 +373,10 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         //ensure to display all messages
         this.getLogger().setLevel(Level.ALL);
         this.consolePanel = new LogConsolePanel(this.getLogger(),
-                new LogFormatterAS2(LogFormatter.FORMAT_CONSOLE_COLORED));
+                new LogFormatterAS2(LogFormatter.FORMAT_CONSOLE_COLORED),
+                new Font(Font.MONOSPACED, Font.PLAIN, 12),
+                displayMode
+        );
         //define the colors for the log levels
         consolePanel.setColor(Level.SEVERE, LogConsolePanel.COLOR_DARK_RED);
         consolePanel.setColor(Level.WARNING, LogConsolePanel.COLOR_DARK_BLUE);
@@ -471,7 +446,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     "To transmit your EDI data via HTTP/S please <a href='mailto:info@mendelson.de?subject=Please%20inform%20me%20about%20your%20HTTPS%20solution'>ask us</a> for the mendelson HTTPS solution.",
                     "If you have questions regarding this product please refer to the <a href='http://mendelson-e-c.com/forum'>mendelson community</a>.",
                     "Looking for BDEW AS4, e-SENS AS4, ENTSOG AS4, Peppol AS4 or ebXML AS4 software? Try the <a href='http://mendelson-e-c.com/as4'>mendelson AS4</a> solution!",});
-        this.initializeUINotification(displayMode);
+        this.initializeUINotification();
         this.connect(new InetSocketAddress(host, clientServerCommPort), 5000);
         Runnable updateCheckThread = new Runnable() {
             @Override
@@ -534,9 +509,94 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
             }
         };
         //check once a day for an update
-        this.scheduledExecutor.scheduleAtFixedRate(updateCheckThread, 1, 60 * 24, TimeUnit.MINUTES);
+        GUIClient.scheduleWithFixedDelay(updateCheckThread, 1, 60 * 24, TimeUnit.MINUTES);
     }
 
+    /**
+     * Sets the look and feel of the client
+     */
+    private void setLookAndFeel(String displayMode) {
+        try {
+            //support the command line option -Dswing.defaultlaf=...
+            if (System.getProperty("swing.defaultlaf") == null) {
+                try {
+                    if (displayMode.equalsIgnoreCase(DisplayMode.DARK)) {
+                        try {
+                            UIManager.setLookAndFeel(DARK_MODE_CLASSNAME);
+                            //Button.arc is the corner arc diameter for buttons and toggle buttons (default is 6)
+                            UIManager.put("Button.arc", 4);
+                            //Component.arc is used for other components like combo boxes and spinners (default is 5)
+                            UIManager.put("Component.arc", 2);
+                            //CheckBox.arc is used for check box icon (default is 4)
+                            UIManager.put("CheckBox.arc", 2);
+                            //ProgressBar.arc is used for progress bars (default is 4).
+                            UIManager.put("ProgressBar.arc", 2);
+                            //TextComponent.arc is used for text fields (default is 0)
+                            UIManager.put("TextComponent.arc", 0);
+                            //Colors
+                            UIManager.put("Objects.Green", new ColorUIResource(98, 181, 67));
+                            UIManager.put("Objects.Red", new ColorUIResource(242, 101, 34));
+                            UIManager.put("Objects.RedStatus", new ColorUIResource(224, 85, 85));
+                            UIManager.put("Objects.Blue", new ColorUIResource(64, 182, 224));
+                            UIManager.put("Objects.Yellow", new ColorUIResource(244, 175, 61));
+                        } catch (Throwable e) {
+                            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                        }
+                    } else if (displayMode.equalsIgnoreCase(DisplayMode.HICONTRAST)) {
+                        try {
+                            UIManager.setLookAndFeel(HIGH_CONSTRAST_MODE_CLASSNAME);
+                            //Button.arc is the corner arc diameter for buttons and toggle buttons (default is 6)
+                            UIManager.put("Button.arc", 4);
+                            //Component.arc is used for other components like combo boxes and spinners (default is 5)
+                            UIManager.put("Component.arc", 2);
+                            //CheckBox.arc is used for check box icon (default is 4)
+                            UIManager.put("CheckBox.arc", 2);
+                            //ProgressBar.arc is used for progress bars (default is 4).
+                            UIManager.put("ProgressBar.arc", 2);
+                            //TextComponent.arc is used for text fields (default is 0)
+                            UIManager.put("TextComponent.arc", 0);
+                            //Colors
+                            UIManager.put("Objects.Green", new ColorUIResource(0, 230, 31));
+                            UIManager.put("Objects.Red", new ColorUIResource(255, 67, 64));
+                            UIManager.put("Objects.RedStatus", new ColorUIResource(255, 67, 64));
+                            UIManager.put("Objects.Blue", new ColorUIResource(0, 234, 255));
+                            UIManager.put("Objects.Yellow", new ColorUIResource(255, 211, 51));
+                        } catch (Throwable e) {
+                            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                        }
+                    } else {
+                        //light mode
+                        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                    }
+                } catch (Throwable e) {
+                    e.printStackTrace();
+                    //fall back to metal l&f if an error occured with any l&f
+                    UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName());
+                }
+            }
+        } catch (Exception e) {
+            logger.warning("[" + e.getClass().getSimpleName() + "]:" + e.getMessage());
+        }
+        //L&F changes for the mendelson products
+        UIManager.put("TableHeader.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("Label.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("CheckBox.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("RadioButton.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("List.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("Button.margin", new InsetsUIResource(4, 14, 4, 14));
+        UIManager.put("Button.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 13));
+        UIManager.put("ToggleButton.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 13));
+        UIManager.put("TabbedPane.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 13));
+        UIManager.put("Textfield.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 11));
+        UIManager.put("Tree.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 11));
+        UIManager.put("Menu.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("MenuItem.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("PopupMenu.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("TextArea.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+        UIManager.put("EditorPane.font", new FontUIResource(Font.DIALOG, Font.PLAIN, 12));
+    }
+    
+    
     private void setMultiresolutionIcons() {
         this.jButtonNewVersion.setIcon(new ImageIcon(IMAGE_NEW_VERSION.toMinResolution(18)));
         this.jButtonFilter.setIcon(new ImageIcon(IMAGE_FILTER.toMinResolution(IMAGE_SIZE_TOOLBAR)));
@@ -587,11 +647,10 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         this.jButtonPartner.setMultiClickThreshhold(threshhold);
     }
 
-    /**
+   /**
      * Initializes the User Interface notification - also for the dark mode
      */
-    private void initializeUINotification(String displayMode) {
-        boolean dark = displayMode != null && displayMode.equalsIgnoreCase("DARK");
+    private void initializeUINotification() {
         UINotification.instance()
                 .setAnchor(this)
                 .setStart(UINotification.START_POS_RIGHT_LOWER)
@@ -600,7 +659,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                         UINotification.DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEIN_IN_MS,
                         UINotification.DEFAULT_NOTIFICATION_DISPLAY_TIME_IN_MS,
                         UINotification.DEFAULT_NOTIFICATION_DISPLAY_TIME_FADEOUT_IN_MS)
-                .setAllColorsDefaultFromUIManager(dark);
+                .setAllColorsDefaultFromUIManager();
     }
 
     private void configureHideableColumns() {
@@ -724,7 +783,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         super.performLogin(this.username, this.password.toCharArray(), AS2ServerVersion.getFullProductName());
         this.as2StatusBar.setConnectedHost(this.host);
         //start the table update thread
-        this.scheduledExecutor.scheduleWithFixedDelay(this.refreshThread, 3000, 3000, TimeUnit.MILLISECONDS);
+        GUIClient.scheduleWithFixedDelay(this.refreshThread, 3000, 3000, TimeUnit.MILLISECONDS);
         this.as2StatusBar.initialize(this.getBaseClient(), this);
         this.as2StatusBar.startConfigurationChecker();
     }
@@ -871,8 +930,8 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
             JDialogCreateDataSheet dialog = new JDialogCreateDataSheet(this, this.getBaseClient(), this.as2StatusBar,
                     certificateManagerEncSign, certificateManagerSSL);
             dialog.setVisible(true);
-        } catch (Exception e) {
-            //nop
+        } catch (Throwable e) {
+            UINotification.instance().addNotification(e);
         }
     }
 
@@ -1202,7 +1261,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     }
 
     @Override
-    public void displayCertificateManagerSSL(final String selectedAlias) {
+    public void displayCertificateManagerTLS(final String selectedAlias) {
         final String uniqueId = this.getClass().getName() + ".displayKeystoreManagerSSL." + System.currentTimeMillis();
         Runnable runnable = new Runnable() {
             @Override
@@ -1246,9 +1305,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
      @Override
@@ -1300,9 +1357,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 }                
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
     private void displayHelpSystem() {
@@ -1371,9 +1426,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(prefRunner);
-        executor.shutdown();
+        GUIClient.submit(prefRunner);
     }
 
     @Override
@@ -1398,9 +1451,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                     AS2Gui.this.jMenuItemPartner.setEnabled(false);
                     if (hasLock) {
                         lockRefresher = new LockRefreshThread(AS2Gui.this.getBaseClient(), ModuleLock.MODULE_PARTNER);
-                        ExecutorService executor = Executors.newSingleThreadExecutor();
-                        executor.submit(lockRefresher);
-                        executor.shutdown();
+                        GUIClient.submit(lockRefresher);
                     }
                     PreferencesClient client = new PreferencesClient(AS2Gui.this.getBaseClient());
                     CertificateManager certificateManagerEncSign = new CertificateManager(logger);
@@ -1465,9 +1516,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
     /**
@@ -2010,6 +2059,9 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
         gridBagConstraints.fill = java.awt.GridBagConstraints.HORIZONTAL;
         gridBagConstraints.weightx = 1.0;
         jPanelMain.add(as2StatusBar, gridBagConstraints);
+
+        browserLinkedPanel.setMinimumSize(new java.awt.Dimension(8, 30));
+        browserLinkedPanel.setPreferredSize(new java.awt.Dimension(110, 30));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 0;
         gridBagConstraints.gridy = 3;
@@ -2273,7 +2325,7 @@ public class AS2Gui extends GUIClient implements ListSelectionListener, RowSorte
     }//GEN-LAST:event_jComboBoxFilterPartnerActionPerformed
 
 private void jMenuItemCertificatesSSLActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemCertificatesTLSActionPerformed
-    this.displayCertificateManagerSSL(null);
+    this.displayCertificateManagerTLS(null);
 }//GEN-LAST:event_jMenuItemCertificatesTLSActionPerformed
 
 private void jComboBoxFilterLocalStationActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jComboBoxFilterLocalStationActionPerformed
@@ -2302,8 +2354,8 @@ private void jMenuItemCEMManagerActionPerformed(java.awt.event.ActionEvent evt) 
         DialogCEMOverview cemOverview = new DialogCEMOverview(this, (GUIClient) this,
                 certificateManagerEncSign, this.consolePanel.getHandler());
         cemOverview.setVisible(true);
-    } catch (Exception e) {
-        logger.severe("[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+    } catch (Throwable e) {
+        UINotification.instance().addNotification(e);
     }
 }//GEN-LAST:event_jMenuItemCEMManagerActionPerformed
 
@@ -2319,8 +2371,8 @@ private void jMenuItemCEMSendActionPerformed(java.awt.event.ActionEvent evt) {//
         certificateManagerEncSign.loadKeystoreCertificates(storage);
         DialogSendCEM dialog = new DialogSendCEM(this, certificateManagerEncSign, this.getBaseClient());
         dialog.setVisible(true);
-    } catch (Exception e) {
-        logger.severe("[" + e.getClass().getSimpleName() + "] " + e.getMessage());
+    } catch (Throwable e) {
+        UINotification.instance().addNotification(e);
     }
 }//GEN-LAST:event_jMenuItemCEMSendActionPerformed
 
@@ -2346,7 +2398,7 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
     }//GEN-LAST:event_jButtonConfigureColumnsActionPerformed
 
     private void jButtonCertificatesTLSActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jButtonCertificatesTLSActionPerformed
-        this.displayCertificateManagerSSL(null);
+        this.displayCertificateManagerTLS(null);
     }//GEN-LAST:event_jButtonCertificatesTLSActionPerformed
 
     private void jMenuItemSystemEventsActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItemSystemEventsActionPerformed
@@ -2657,9 +2709,7 @@ private void jMenuItemPopupSendAgainActionPerformed(java.awt.event.ActionEvent e
          */
         private void lazyloadPayloads() {
             this.lazyLoader = new LazyPayloadLoaderThread();
-            ExecutorService executor = Executors.newSingleThreadExecutor();
-            executor.submit(this.lazyLoader);
-            executor.shutdown();
+            GUIClient.submit(this.lazyLoader);
         }
 
         /**

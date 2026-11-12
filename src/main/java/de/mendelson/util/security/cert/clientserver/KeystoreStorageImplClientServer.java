@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/clientserver/KeystoreStorageImplClientServer.java 26    9/11/23 9:52 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/clientserver/KeystoreStorageImplClientServer.java 31    11/02/25 13:40 Heller $
 package de.mendelson.util.security.cert.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -39,7 +39,7 @@ import java.util.logging.Logger;
  * Keystore storage implementation that relies on a client-server access
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 31 $
  */
 public class KeystoreStorageImplClientServer implements KeystoreStorage {
 
@@ -49,16 +49,25 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
     public static final String KEYSTORE_STORAGE_TYPE_PKCS12 = BCCryptoHelper.KEYSTORE_PKCS12;
 
     private KeyStore keystore = null;
-    private final KeyStoreUtil keystoreUtil = new KeyStoreUtil();
     private final BaseClient baseClient;
     private int keystoreUsage = KEYSTORE_USAGE_ENC_SIGN;
     private String keystoreStorageType = KEYSTORE_STORAGE_TYPE_PKCS12;
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleKeystoreStorage.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private char[] password = null;
     /**
      * Stores all entries that are key entries
      */
     private final Map<String, KeystoreCertificate> downloadedKeyEntries = new ConcurrentHashMap<String, KeystoreCertificate>();
+    private boolean readonly = false;
 
     /**
      * @param KEYSTORE_USAGE keystore type as defined in the class
@@ -66,14 +75,7 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
      */
     public KeystoreStorageImplClientServer(BaseClient baseClient,
             final int KEYSTORE_USAGE,
-            final String KEYSTORE_STORAGE_TYPE) throws Exception {
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleKeystoreStorage.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+            final String KEYSTORE_STORAGE_TYPE) throws Throwable {
         this.baseClient = baseClient;
         this.keystoreUsage = KEYSTORE_USAGE;
         this.keystoreStorageType = KEYSTORE_STORAGE_TYPE;
@@ -99,12 +101,20 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
     }
 
     @Override
-    public void loadKeystoreFromServer() throws Exception {
+    public void loadKeystoreFromServer() throws Throwable {
         //request the keystore from the server
         DownloadRequestKeystore request = new DownloadRequestKeystore(this.keystoreUsage);
         DownloadResponseKeystore response = (DownloadResponseKeystore) baseClient.sendSync(request);
         if (response == null) {
-            throw new Exception(this.rb.getResourceString("error.nodata"));
+            throw new Exception(rb.getResourceString("error.nodata"));
+        }
+        if (response.getException() != null) {
+            throw response.getException();
+        }
+        if (response.isReadonlyOnServer()) {
+            this.readonly = true;
+        } else {
+            this.readonly = false;
         }
         this.password = this.generatePassword(64);
         BCCryptoHelper cryptoHelper = new BCCryptoHelper();
@@ -151,16 +161,16 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
 
     @Override
     public void save() throws Throwable {
+        CertificateManager manager = new CertificateManager(Logger.getAnonymousLogger());
         //write the current keystore object to a byte array
-        ByteArrayOutputStream memOut = new ByteArrayOutputStream();
-        this.keystore.store(memOut, this.password);
-        memOut.flush();
-        memOut.close();
-        KeystoreStorageImplByteArray storage = new KeystoreStorageImplByteArray(
+        try (ByteArrayOutputStream memOut = new ByteArrayOutputStream()) {
+            this.keystore.store(memOut, this.password);
+            memOut.flush();
+            KeystoreStorageImplByteArray storage = new KeystoreStorageImplByteArray(
                 memOut.toByteArray(),
                 this.password, this.keystoreUsage, this.keystoreStorageType);
-        CertificateManager manager = new CertificateManager(Logger.getAnonymousLogger());
-        manager.loadKeystoreCertificates(storage);
+            manager.loadKeystoreCertificates(storage);
+        }        
         List<KeystoreCertificate> certificateList = manager.getKeyStoreCertificateList();
         List<KeystoreCertificate> delEntry = new ArrayList<KeystoreCertificate>();
         List<KeystoreCertificate> addEntry = new ArrayList<KeystoreCertificate>();
@@ -180,7 +190,7 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
         request.addCertificateList(certificateList);
         UploadResponseKeystore response = (UploadResponseKeystore) this.baseClient.sendSync(request);
         if (response == null) {
-            throw new Exception(this.rb.getResourceString("error.save"));
+            throw new Exception(rb.getResourceString("error.save"));
         } else if (response != null && response.getException() != null) {
             throw (response.getException());
         }
@@ -210,8 +220,7 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
 
     @Override
     public void renameEntry(String oldAlias, String newAlias, char[] keypairPass) throws Exception {
-        KeyStoreUtil keystoreUtility = new KeyStoreUtil();
-        keystoreUtility.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
+        KeyStoreUtil.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
     }
 
     @Override
@@ -228,7 +237,7 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
     public void deleteEntry(String alias) throws Exception {
         if (this.keystore == null) {
             //internal error, should not happen
-            throw new Exception(this.rb.getResourceString("error.delete.notloaded"));
+            throw new Exception(rb.getResourceString("error.delete.notloaded"));
         }
         this.keystore.deleteEntry(alias);
     }
@@ -241,16 +250,16 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
      */
     @Override
     public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {
-        Map<String, Certificate> certificateMap = this.keystoreUtil.getCertificatesFromKeystore(this.keystore);
+        Map<String, Certificate> certificateMap = KeyStoreUtil.getCertificatesFromKeystore(this.keystore);
         //replace the loaded certificates by existing key entries if required
         for (String alias : certificateMap.keySet()) {
             Certificate certificate = certificateMap.get(alias);
             KeystoreCertificate ksCertificate = new KeystoreCertificate();
-            ksCertificate.setCertificate((X509Certificate)certificate, new Certificate[]{certificate});
+            ksCertificate.setCertificate((X509Certificate) certificate, new Certificate[]{certificate});
             String fingerprint = ksCertificate.getFingerPrintSHA1();
-            if( this.downloadedKeyEntries.containsKey(fingerprint)){
+            if (this.downloadedKeyEntries.containsKey(fingerprint)) {
                 KeystoreCertificate replacement = this.downloadedKeyEntries.get(fingerprint);
-                certificateMap.put( alias, replacement.getX509Certificate());
+                certificateMap.put(alias, replacement.getX509Certificate());
             }
         }
         return (certificateMap);
@@ -260,7 +269,7 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
     public boolean isKeyEntry(String alias) throws Exception {
         throw new IllegalAccessException("KeystoreStorageImplClientServer: isKeyEntry() is not available for implementation of storage.");
     }
-    
+
     @Override
     public String getKeystoreStorageType() {
         return (this.keystoreStorageType);
@@ -269,5 +278,10 @@ public class KeystoreStorageImplClientServer implements KeystoreStorage {
     @Override
     public int getKeystoreUsage() {
         return (this.keystoreUsage);
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return (this.readonly);
     }
 }

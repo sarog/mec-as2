@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 19    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/PostProcessingEventController.java 21    11/03/25 17:00 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.message.AS2MessageInfo;
@@ -37,26 +37,20 @@ import java.util.logging.Logger;
  * Controls the timed deletion of AS2 file entries from the file system
  *
  * @author S.Heller
- * @version $Revision: 19 $
+ * @version $Revision: 21 $
  */
 public class PostProcessingEventController {
 
-    /**
-     * Logger to log information to
-     */
-    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private EventExecutionThread executeThread;
-    private ClientServer clientserver = null;
     private final CertificateManager certificateManagerEncSign;
     private final MessageAccessDB messageAccess;
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
             new NamedThreadFactory("postprocessing"));
     private final IDBDriverManager dbDriverManager;
 
-    public PostProcessingEventController(ClientServer clientserver, 
+    public PostProcessingEventController(ClientServer clientserver,
             CertificateManager certificateManagerEncSign,
             IDBDriverManager dbDriverManager) throws Exception {
-        this.clientserver = clientserver;
         this.certificateManagerEncSign = certificateManagerEncSign;
         this.messageAccess = new MessageAccessDB(dbDriverManager);
         this.dbDriverManager = dbDriverManager;
@@ -83,14 +77,14 @@ public class PostProcessingEventController {
 
         @Override
         public void run() {
-            Connection runtimeConnectionNoAutoCommit = null;
-            try {
-                runtimeConnectionNoAutoCommit = dbDriverManager.getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME);
+            try (Connection runtimeConnectionNoAutoCommit = dbDriverManager
+                    .getConnectionWithoutErrorHandling(IDBDriverManager.DB_RUNTIME)) {
                 runtimeConnectionNoAutoCommit.setAutoCommit(false);
                 boolean entryFound = true;
                 while (entryFound) {
                     entryFound = false;
-                    ProcessingEvent event = this.processingEventAccess.getNextEventToExecuteAsTransaction(runtimeConnectionNoAutoCommit);
+                    ProcessingEvent event = this.processingEventAccess.getNextEventToExecuteAsTransaction(
+                            runtimeConnectionNoAutoCommit);
                     IProcessingExecution processExecution = null;
                     if (event != null && event.getProcessType() == PartnerEventInformation.PROCESS_EXECUTE_SHELL) {
                         processExecution = new ExecuteShellCommand(this.dbDriverManager);
@@ -110,7 +104,7 @@ public class PostProcessingEventController {
                             String errorMessage = "[" + e.getClass().getSimpleName() + "] " + e.getMessage();
                             AS2MessageInfo messageInfo = messageAccess.getLastMessageEntry(event.getMessageId());
                             Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
-                            logger.log(Level.WARNING, errorMessage, messageInfo);                            
+                            logger.log(Level.WARNING, errorMessage, messageInfo);
                             Partner sender = null;
                             Partner receiver = null;
                             if (e instanceof PostprocessingException) {
@@ -125,14 +119,6 @@ public class PostProcessingEventController {
                 }
             } catch (Throwable e) {
                 SystemEventManagerImplAS2.instance().systemFailure(e);
-            } finally {
-                if (runtimeConnectionNoAutoCommit != null) {
-                    try {
-                        runtimeConnectionNoAutoCommit.close();
-                    } catch (Exception e) {
-                        SystemEventManagerImplAS2.instance().systemFailure(e, SystemEvent.TYPE_DATABASE_ANY);
-                    }
-                }
             }
         }
     }

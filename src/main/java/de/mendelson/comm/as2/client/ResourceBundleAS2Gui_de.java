@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 57    29/11/23 14:00 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui_de.java 60    8/01/25 16:18 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 57 $
+ * @version $Revision: 60 $
  */
 public class ResourceBundleAS2Gui_de extends MecResourceBundle {
 
@@ -24,7 +24,7 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"menu.file", "Datei"},
         {"menu.file.exit", "Beenden"},
         {"menu.file.partner", "Partner"},
@@ -57,15 +57,15 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"filter.showpending", "Wartende anzeigen"},
         {"filter.showstopped", "Gestoppte anzeigen"},
         {"filter.none", "-- Keine --"},
-        {"filter.partner", "Partnerbeschränkung:"},
-        {"filter.localstation", "Beschränkung der lokalen Station:"},
-        {"filter.direction", "Richtungsbeschränkung:"},
+        {"filter.partner", "Partnerbeschränkung"},
+        {"filter.localstation", "Beschränkung der lokalen Station"},
+        {"filter.direction", "Richtungsbeschränkung"},
         {"filter.direction.inbound", "Eingehend"},
         {"filter.direction.outbound", "Ausgehend"},
         {"filter", "Filter"},
         {"filter.use", "Zeitliche Einschränkung" },
-        {"filter.from", "Von:" },
-        {"filter.to", "Bis:" },
+        {"filter.from", "Von" },
+        {"filter.to", "Bis" },
         {"keyrefresh", "Zertifikate aktualisieren"},
         {"configurecolumns", "Spalten" },
         {"delete.msg", "Löschen"},
@@ -99,5 +99,6 @@ public class ResourceBundleAS2Gui_de extends MecResourceBundle {
         {"resend.failed.unknown.sender", "Erneutes Senden fehlgeschlagen: Unbekannter Sender {0} - bitte prüfen Sie, ob dieser Partner noch im System existiert." },
         {"resend.failed.unknown.receiver", "Erneutes Senden fehlgeschlagen: Unbekannter Empfänger {0} - bitte prüfen Sie, ob dieser Partner noch im System existiert." },
         {"buy.license", "Lizenz kaufen" },
+        {"no.helpset.for.language", "Leider gibt es kein Hilfesystem für Ihre Sprache, es wird das englische Hilfesystem verwendet." },
     };
 }

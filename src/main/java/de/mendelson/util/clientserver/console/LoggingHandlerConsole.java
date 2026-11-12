@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/console/LoggingHandlerConsole.java 3     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/console/LoggingHandlerConsole.java 4     20/02/25 13:41 Heller $
 package de.mendelson.util.clientserver.console;
 
 import java.io.Console;
@@ -17,7 +17,7 @@ import java.util.logging.LogRecord;
 /**
  * Handler to log output to a console
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class LoggingHandlerConsole extends Handler {
 
@@ -48,16 +48,16 @@ public class LoggingHandlerConsole extends Handler {
 
     /**
      * Format and publish a LogRecord.
-     * @param  record  description of the log event
+     * @param  logRecord  description of the log event
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-        if (!isLoggable(record)) {
+    public synchronized void publish(LogRecord logRecord) {
+        if (!isLoggable(logRecord)) {
             return;
         }
         try {
-            this.logMessage(record.getLevel(), record.getMillis(), record.getMessage(),
-                    record.getParameters());
+            this.logMessage(logRecord.getLevel(), logRecord.getMillis(), logRecord.getMessage(),
+                    logRecord.getParameters());
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -68,13 +68,13 @@ public class LoggingHandlerConsole extends Handler {
     /**
      * Check if this Handler would actually log a given LogRecord, depending of the
      * log level
-     * @param record a LogRecord
+     * @param logRecord a LogRecord
      * @return true if the LogRecord would be logged.
      *
      */
     @Override
-    public boolean isLoggable(LogRecord record) {
-        return super.isLoggable(record);
+    public boolean isLoggable(LogRecord logRecord) {
+        return super.isLoggable(logRecord);
     }
 
     /**

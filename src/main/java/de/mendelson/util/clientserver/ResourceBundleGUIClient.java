@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleGUIClient.java 11    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ResourceBundleGUIClient.java 12    30/05/24 11:46 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products - if you want to localize
  * eagle to your language, please contact us: localize@mendelson.de
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 12 $
  */
 public class ResourceBundleGUIClient extends MecResourceBundle {
 
@@ -27,7 +27,7 @@ public class ResourceBundleGUIClient extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         //dialog
         {"password.required", "Login failure, server requires password for user {0}"},
         {"connectionrefused.message", "Connection refused to {0}. Please ensure that the server is running."},

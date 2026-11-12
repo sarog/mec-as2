@@ -1,6 +1,8 @@
-//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerator.java 23    2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/security/keygeneration/KeyGenerator.java 28    16/08/24 14:51 Heller $
 package de.mendelson.util.security.keygeneration;
 
+import de.mendelson.util.security.BouncyCastlePQCProviderSingleton;
+import de.mendelson.util.security.BouncyCastleProviderSingleton;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -21,11 +23,13 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
 import org.bouncycastle.jce.ECNamedCurveTable;
-import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.pqc.crypto.sphincsplus.SPHINCSPlusParameters;
+import org.bouncycastle.pqc.jcajce.spec.DilithiumParameterSpec;
+import org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -38,13 +42,15 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
  * This class allows to generate a private key
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 28 $
  */
 public class KeyGenerator {
 
     public static final String KEYALGORITHM_DSA = "DSA";
     public static final String KEYALGORITHM_RSA = "RSA";
     public static final String KEYALGORITHM_ECDSA = "ECDSA";
+    public static final String KEYALGORITHM_DILITHIUM = "DILITHIUM";
+    public static final String KEYALGORITHM_SPHINCSPLUS = "SPHINCSPlus";
     public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA = "SHA256withRSA";
     public static final String SIGNATUREALGORITHM_SHA512_WITH_RSA = "SHA512withRSA";
     public static final String SIGNATUREALGORITHM_SHA256_WITH_RSA_RSASSA_PSS = "SHA256withRSAAndMGF1";
@@ -61,6 +67,12 @@ public class KeyGenerator {
     public static final String SIGNATUREALGORITHM_SHA3_512_WITH_RSA = "SHA3-512withRSA";
     public static final String SIGNATUREALGORITHM_SHA3_256_WITH_RSA_RSASSA_PSS = "SHA3-256withRSAAndMGF1";
     public static final String SIGNATUREALGORITHM_SHA3_512_WITH_RSA_RSASSA_PSS = "SHA3-512withRSAAndMGF1";
+    public static final String SIGNATUREALGORITHM_SHA2_128F = "sha2-128f";
+    public static final String SIGNATUREALGORITHM_SHA2_128S = "sha2-128s";
+    public static final String SIGNATUREALGORITHM_SHA2_192F = "sha2-192f";
+    public static final String SIGNATUREALGORITHM_SHA2_192S = "sha2-192s";
+    public static final String SIGNATUREALGORITHM_SHA2_256F = "sha2-256f";
+    public static final String SIGNATUREALGORITHM_SHA2_256S = "sha2-256s";
 
     public static final String CURVE_NAME_ED25519 = "Ed25519";
 
@@ -71,37 +83,67 @@ public class KeyGenerator {
     }
 
     /**
-     * Generate a key pair.
+     * Generate a key pair using the BC provider.
      *
      */
     public KeyGenerationResult generateKeyPair(KeyGenerationValues generationValues) throws Exception {
         //generation keypair
-        SecureRandom rand = SecureRandom.getInstance("SHA1PRNG");
+        SecureRandom secureRandom = SecureRandom.getInstance("SHA1PRNG");
         KeyPair keyPair;
-        KeyPairGenerator keyPairGen;
+        KeyPairGenerator keyPairGenerator;
         if (generationValues.getKeyAlgorithm().startsWith("EC")) {
             if (generationValues.getECNamedCurve().equalsIgnoreCase(CURVE_NAME_ED25519)) {
-                keyPairGen = KeyPairGenerator.getInstance(CURVE_NAME_ED25519);
-                keyPair = keyPairGen.generateKeyPair();
+                keyPairGenerator = KeyPairGenerator.getInstance(CURVE_NAME_ED25519,
+                        BouncyCastleProviderSingleton.instance());
+                keyPair = keyPairGenerator.generateKeyPair();
             } else {
                 ECNamedCurveParameterSpec curveParams = ECNamedCurveTable.getParameterSpec(generationValues.getECNamedCurve());
                 ECParameterSpec ecParameterSpec = new ECNamedCurveSpec(curveParams.getName(),
                         curveParams.getCurve(),
                         curveParams.getG(),
                         curveParams.getN());
-                keyPairGen
-                        = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm());
-                keyPairGen.initialize(ecParameterSpec, rand);
-                keyPair = keyPairGen.generateKeyPair();
+                keyPairGenerator
+                        = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm(),
+                                BouncyCastleProviderSingleton.instance());
+                keyPairGenerator.initialize(ecParameterSpec, secureRandom);
+                keyPair = keyPairGenerator.generateKeyPair();
             }
+        } else if (generationValues.getKeyAlgorithm().startsWith(KeyGenerationValues.KEYALGORITHM_DILITHIUM)) {
+            keyPairGenerator
+                    = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm(),
+                            BouncyCastlePQCProviderSingleton.instance());
+            //TODO: set the OID of the final FIPS 204, this is Dilithium3
+            keyPairGenerator.initialize(DilithiumParameterSpec.dilithium3, secureRandom);
+            keyPair = keyPairGenerator.generateKeyPair();
+        }else if (generationValues.getKeyAlgorithm().startsWith(KeyGenerationValues.KEYALGORITHM_SPHINCSPLUS)) {
+            keyPairGenerator
+                    = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm(),
+                            BouncyCastlePQCProviderSingleton.instance());            
+            SPHINCSPlusParameterSpec spec = SPHINCSPlusParameterSpec.sha2_128f;
+            if( generationValues.getSignatureAlgorithm().equals(KeyGenerator.SIGNATUREALGORITHM_SHA2_128S )){
+                spec = SPHINCSPlusParameterSpec.sha2_128s;
+            }else if( generationValues.getSignatureAlgorithm().equals(KeyGenerator.SIGNATUREALGORITHM_SHA2_128F )){
+                spec = SPHINCSPlusParameterSpec.sha2_128f;
+            }else if( generationValues.getSignatureAlgorithm().equals(KeyGenerator.SIGNATUREALGORITHM_SHA2_192S )){
+                spec = SPHINCSPlusParameterSpec.sha2_192s;
+            }else if( generationValues.getSignatureAlgorithm().equals(KeyGenerator.SIGNATUREALGORITHM_SHA2_192F )){
+                spec = SPHINCSPlusParameterSpec.sha2_192f;
+            }else if( generationValues.getSignatureAlgorithm().equals(KeyGenerator.SIGNATUREALGORITHM_SHA2_256S )){
+                spec = SPHINCSPlusParameterSpec.sha2_256s;
+            }else if( generationValues.getSignatureAlgorithm().equals(KeyGenerator.SIGNATUREALGORITHM_SHA2_256F )){
+                spec = SPHINCSPlusParameterSpec.sha2_256f;
+            }                
+            keyPairGenerator.initialize(spec, secureRandom);
+            keyPair = keyPairGenerator.generateKeyPair();
         } else {
-            keyPairGen
-                    = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm());
-            keyPairGen.initialize(generationValues.getKeySize(), rand);
-            keyPair = keyPairGen.generateKeyPair();
+            keyPairGenerator
+                    = KeyPairGenerator.getInstance(generationValues.getKeyAlgorithm(),
+                            BouncyCastleProviderSingleton.instance());
+            keyPairGenerator.initialize(generationValues.getKeySize(), secureRandom);
+            keyPair = keyPairGenerator.generateKeyPair();
         }
-        X509Certificate certificate = this.generateCertificate(generationValues, keyPair);
-        KeyGenerationResult result = new KeyGenerationResult(keyPair, certificate);
+        X509Certificate x509Certificate = this.generateCertificate(generationValues, keyPair);
+        KeyGenerationResult result = new KeyGenerationResult(keyPair, x509Certificate);
         return (result);
     }
 
@@ -113,15 +155,22 @@ public class KeyGenerator {
      * @throws Exception
      */
     private X509Certificate generateCertificate(KeyGenerationValues generationValues, KeyPair keyPair) throws Exception {
-        SubjectPublicKeyInfo publicKeyInformation = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
+        SubjectPublicKeyInfo publicKeyInformation
+                = SubjectPublicKeyInfo.getInstance(keyPair.getPublic().getEncoded());
         PrivateKey privateKey = keyPair.getPrivate();
         JcaContentSignerBuilder builder;
         if (generationValues.getECNamedCurve() != null && generationValues.getECNamedCurve().equals(CURVE_NAME_ED25519)) {
             builder = new JcaContentSignerBuilder(CURVE_NAME_ED25519)
-                    .setProvider(BouncyCastleProvider.PROVIDER_NAME);
+                    .setProvider(BouncyCastleProviderSingleton.instance());
+        } else if (generationValues.getKeyAlgorithm().equals( KeyGenerationValues.KEYALGORITHM_DILITHIUM)) {
+            builder = new JcaContentSignerBuilder(KeyGenerationValues.KEYALGORITHM_DILITHIUM)
+                    .setProvider(BouncyCastlePQCProviderSingleton.instance());
+        }else if (generationValues.getKeyAlgorithm().equals( KeyGenerationValues.KEYALGORITHM_SPHINCSPLUS)) {
+            builder = new JcaContentSignerBuilder(KeyGenerationValues.KEYALGORITHM_SPHINCSPLUS)
+                    .setProvider(BouncyCastlePQCProviderSingleton.instance());
         } else {
             builder = new JcaContentSignerBuilder(generationValues.getSignatureAlgorithm())
-                    .setProvider(BouncyCastleProvider.PROVIDER_NAME);
+                    .setProvider(BouncyCastleProviderSingleton.instance());
         }
         ContentSigner signer = builder.build(privateKey);
         StringBuilder nameBuilder = new StringBuilder();
@@ -161,7 +210,7 @@ public class KeyGenerator {
         }
         X509CertificateHolder certificateHolder = certificateBuilder.build(signer);
         X509Certificate certificate = new JcaX509CertificateConverter()
-                .setProvider(BouncyCastleProvider.PROVIDER_NAME)
+                .setProvider(BouncyCastleProviderSingleton.instance())
                 .getCertificate(certificateHolder);
         return (certificate);
     }

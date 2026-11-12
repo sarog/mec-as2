@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 55    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/sendorder/SendOrderReceiver.java 56    13/12/24 11:24 Heller $
 package de.mendelson.comm.as2.sendorder;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -47,7 +47,7 @@ import java.util.logging.Logger;
  * send process for each message
  *
  * @author S.Heller
- * @version $Revision: 55 $
+ * @version $Revision: 56 $
  */
 public class SendOrderReceiver {
 
@@ -108,7 +108,7 @@ public class SendOrderReceiver {
             //If the queue is full, and the number of threads is greater than or equal to maxPoolSize, reject the task.
             //--as this uses a sync queue which will always block until taken a new thread is created for every execute!
             //Unused threads will be killed after 30s once they are idle
-            this.threadExecutor = new ThreadPoolExecutor(0, Integer.MAX_VALUE,
+            this.threadExecutor = new ThreadPoolExecutor(1, Integer.MAX_VALUE,
                     30, TimeUnit.SECONDS, syncQueue,
                     new NamedThreadFactory("sendorder-processing")) {
                 /**

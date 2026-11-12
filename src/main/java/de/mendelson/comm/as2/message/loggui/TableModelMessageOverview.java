@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 35    22/11/22 16:38 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/TableModelMessageOverview.java 37    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.message.loggui;
 
+import de.mendelson.comm.as2.client.AS2Gui;
 import de.mendelson.comm.as2.message.AS2Message;
 import de.mendelson.comm.as2.message.AS2MessageInfo;
 import de.mendelson.comm.as2.message.AS2Payload;
@@ -33,31 +34,31 @@ import javax.swing.table.AbstractTableModel;
  * Model to display the message overview
  *
  * @author S.Heller
- * @version $Revision: 35 $
+ * @version $Revision: 37 $
  */
 public class TableModelMessageOverview extends AbstractTableModel {
-
-    public static final int ROW_HEIGHT = 20;
-    protected static final int IMAGE_HEIGHT = ROW_HEIGHT - 3;
+    
+    protected static final int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_TABLE;
+    public static final int ROW_HEIGHT = IMAGE_HEIGHT+2;
 
     public static final ImageIcon ICON_IN
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/in.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 3));
+                    "/de/mendelson/comm/as2/message/loggui/in.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_OUT
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/out.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 3));
+                    "/de/mendelson/comm/as2/message/loggui/out.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_PENDING
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/state_pending.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 3));
+                    "/de/mendelson/comm/as2/message/loggui/state_pending.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_STOPPED
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/state_stopped.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 3));
+                    "/de/mendelson/comm/as2/message/loggui/state_stopped.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_FINISHED
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/state_finished.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 3));
+                    "/de/mendelson/comm/as2/message/loggui/state_finished.svg", IMAGE_HEIGHT));
     public static final ImageIcon ICON_RESEND_OVERLAY
             = new ImageIcon(MendelsonMultiResolutionImage.fromSVG(
-                    "/de/mendelson/comm/as2/message/loggui/resend_overlay.svg", IMAGE_HEIGHT, IMAGE_HEIGHT * 3));
+                    "/de/mendelson/comm/as2/message/loggui/resend_overlay.svg", IMAGE_HEIGHT));
 
     /**
      * ResourceBundle to localize the headers
@@ -75,10 +76,6 @@ public class TableModelMessageOverview extends AbstractTableModel {
      * Data to display
      */
     private final List<AS2Message> data = Collections.synchronizedList(new ArrayList<AS2Message>());
-    /**
-     * Format the date display
-     */
-    private final DateFormat format = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT);
 
     /**
      * Creates new LogTableModel

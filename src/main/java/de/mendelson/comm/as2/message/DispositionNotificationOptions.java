@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 18    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/DispositionNotificationOptions.java 19    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.Serializable;
@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Stores the options about the MDN, have been set by an inbound AS2 message
  *
  * @author S.Heller
- * @version $Revision: 18 $
+ * @version $Revision: 19 $
  */
 public class DispositionNotificationOptions implements Serializable {
 
@@ -171,11 +171,5 @@ public class DispositionNotificationOptions implements Serializable {
         }
         return (returnValues);
     }
-//    public static final void main( String[]args ){
-//        int[] test = {1, 3, 5, 0, 2};
-//        Arrays.sort(test);
-//        for( int i = 0; i < test.length; i++ ){
-//            System.out.println(test[i]);
-//        }
-//    }
+
 }

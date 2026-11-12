@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/PKCS112PKCS12.java 5     3/11/23 10:16 Heller $
+//$Header: /as2/de/mendelson/util/security/PKCS112PKCS12.java 7     11/02/25 13:40 Heller $
 package de.mendelson.util.security;
 
 import java.io.InputStream;
@@ -24,11 +24,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * other pkcs12 keystore
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 7 $
  */
 public class PKCS112PKCS12 {
 
-    private final Logger logger;
     /**
      * Keystore to use, if this is not set a new one will be created
      */
@@ -45,7 +44,6 @@ public class PKCS112PKCS12 {
      * @param logger Logger to log the information to
      */
     public PKCS112PKCS12(Logger logger) {
-        this.logger = logger;
         //forget it to work without BC at this point, the SUN JCE provider
         //could not handle pcks12
         // adds the BC provider if it has not been added so far - also adds some BC related system properties
@@ -117,14 +115,8 @@ public class PKCS112PKCS12 {
      *
      */
     public void saveTargetKeyStoreTo(Path file) throws Exception {
-        OutputStream out = null;
-        try {
-            out = Files.newOutputStream(file);
+        try (OutputStream out = Files.newOutputStream(file)) {
             this.targetKeystore.store(out, this.targetKeystorePass);
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 }

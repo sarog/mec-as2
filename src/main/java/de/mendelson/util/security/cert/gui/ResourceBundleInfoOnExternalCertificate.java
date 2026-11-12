@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleInfoOnExternalCertificate.java 6     2/11/23 15:53 Heller $ 
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleInfoOnExternalCertificate.java 7     3/07/24 14:19 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleInfoOnExternalCertificate extends MecResourceBundle {
 
@@ -28,15 +28,15 @@ public class ResourceBundleInfoOnExternalCertificate extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"button.ok", "Import >>"},
         {"button.cancel", "Close"},
         {"title.single", "Info on external certificate"},
         {"title.multiple", "Info on external certificates"},
         {"certinfo.certfile", "Certificate file: {0}"},
         {"certinfo.index", "Certificate {0} of {1}"},
-        {"certificate.exists", "This certificate does already exist in the keystore, alias is \"{0}\""},
-        {"certificate.doesnot.exist", "This certificate does not exist in the keystore so far"},
+        {"certificate.exists", "This certificate does already exist in the certificate manager, alias is \"{0}\""},
+        {"certificate.doesnot.exist", "This certificate does not exist in the certificate manager so far"},
         {"no.certificate", "Unable to identify certificate" },
     };    
 }

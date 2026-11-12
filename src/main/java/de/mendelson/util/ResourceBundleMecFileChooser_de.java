@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/ResourceBundleMecFileChooser_de.java 7     6/11/23 11:38 Heller $
+//$Header: /oftp2/de/mendelson/util/ResourceBundleMecFileChooser_de.java 8     9/12/24 15:50 Heller $
 package de.mendelson.util;
 
 /*
@@ -14,7 +14,7 @@ package de.mendelson.util;
  * eagle to your language, please contact us: localize@mendelson.de
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 8 $
  */
 public class ResourceBundleMecFileChooser_de extends MecResourceBundle {
 

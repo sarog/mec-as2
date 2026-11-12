@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandler.java 30    2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/ClientSessionHandler.java 32    17/02/25 12:12 Heller $
 package de.mendelson.util.clientserver;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -12,6 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import org.apache.mina.core.service.IoHandlerAdapter;
 import org.apache.mina.core.session.IoSession;
+import org.apache.mina.core.write.WriteToClosedSessionException;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -24,7 +25,7 @@ import org.apache.mina.core.session.IoSession;
  * Client side protocol handler
  *
  * @author S.Heller
- * @version $Revision: 30 $
+ * @version $Revision: 32 $
  */
 public class ClientSessionHandler extends IoHandlerAdapter {
 
@@ -99,7 +100,7 @@ public class ClientSessionHandler extends IoHandlerAdapter {
                                 + ", reference id: " + response.getReferenceId());
                 this.callback.syncRequestFailed(null, response, unreferredSyncResponseException);
             } else {
-                BlockingQueue queue = this.syncMap.get(response.getReferenceId());
+                BlockingQueue<ClientServerResponse> queue = this.syncMap.get(response.getReferenceId());
                 queue.offer(response);
             }
         }
@@ -123,8 +124,8 @@ public class ClientSessionHandler extends IoHandlerAdapter {
     public ClientServerResponse waitForSyncAnswerInfinite(IoSession session, Long referenceId) throws Exception {
         ClientServerResponse response = null;
         while (response == null) {
-            //wait for 5s and then repeat..
-            response = this.waitForSyncAnswer(referenceId, TimeUnit.SECONDS.toMillis(5));
+            //wait for 1s and then repeat..
+            response = this.waitForSyncAnswer(referenceId, TimeUnit.SECONDS.toMillis(1));
             if (!session.isConnected()) {
                 this.callback.getLogger().log(Level.WARNING, "[Client-Server communication] ClientSessionHandler.waitForSyncAnswerInfinite: Session closed by remote host.");
                 throw new Exception("[Client-Server communication] Session closed by remote host.");
@@ -179,6 +180,13 @@ public class ClientSessionHandler extends IoHandlerAdapter {
 
     @Override
     public void exceptionCaught(IoSession session, Throwable cause) {
-        cause.printStackTrace();
+        if (cause instanceof WriteToClosedSessionException) {
+            return;
+        }
+        if (this.callback != null) {
+            this.callback.error("[" + cause.getClass().getSimpleName() + "] " + cause.getMessage());
+        } else {
+            System.err.println("[Client-Server communication] [" + cause.getClass().getSimpleName() + "] " + cause.getMessage());
+        }
     }
 }

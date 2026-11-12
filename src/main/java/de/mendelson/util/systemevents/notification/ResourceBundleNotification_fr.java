@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_fr.java 16    12/12/23 14:44 Heller $
+//$Header: /oftp2/de/mendelson/util/systemevents/notification/ResourceBundleNotification_fr.java 18    9/12/24 15:51 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.MecResourceBundle;
@@ -16,7 +16,7 @@ import de.mendelson.util.MecResourceBundle;
  *
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public class ResourceBundleNotification_fr extends MecResourceBundle {
 
@@ -30,7 +30,7 @@ public class ResourceBundleNotification_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"module.name", "[NOTIFICATION MAIL]" },
         {"test.message.send", "Un e-mail de test a été envoyé à {0}."},
         {"test.message.debug", "\nEnvoyer un processus envoi a échoué.\n"},
@@ -45,7 +45,7 @@ public class ResourceBundleNotification_fr extends MecResourceBundle {
             + "\"Fichier-Événements système\".\n"
             + "Entrez le numéro unique de l''événement dans le masque de recherche."},
         {"misc.message.summary.send", "Un courriel de notification sommaire a été envoyé à {0}"},
-        {"misc.message.summary.failed", "L'envoi d'un message de notification sommaire à {0} a échoué"},
+        {"misc.message.summary.failed", "L''envoi d''un message de notification sommaire à {0} a échoué"},
         {"do.not.reply", "Veuillez ne pas répondre à ce mail."},
         {"authorization.none", "AUCUN" },
         {"authorization.oauth2", "OAUTH2" },

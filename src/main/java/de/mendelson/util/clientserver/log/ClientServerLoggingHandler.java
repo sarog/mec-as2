@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/ClientServerLoggingHandler.java 4     2/11/23 14:03 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/log/ClientServerLoggingHandler.java 5     20/02/25 13:41 Heller $
 package de.mendelson.util.clientserver.log;
 
 import de.mendelson.util.clientserver.ClientServerSessionHandler;
@@ -17,7 +17,7 @@ import java.util.logging.LogRecord;
 /**
  * Handler to log logger data via the client-server interface
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ClientServerLoggingHandler extends Handler {
 
@@ -49,16 +49,16 @@ public class ClientServerLoggingHandler extends Handler {
 
     /**
      * Format and publish a LogRecord.
-     * @param  record  description of the log event
+     * @param  logRecord  description of the log event
      */
     @Override
-    public synchronized void publish(LogRecord record) {
-        if (!this.isLoggable(record)) {
+    public synchronized void publish(LogRecord logRecord) {
+        if (!this.isLoggable(logRecord)) {
             return;
         }
         try {
-            this.logMessage(record.getLevel(), record.getMessage(),
-                    record.getParameters());
+            this.logMessage(logRecord.getLevel(), logRecord.getMessage(),
+                    logRecord.getParameters());
         } catch (Exception ex) {
             // We don't want to throw an exception here, but we
             // report the exception to any registered ErrorManager.
@@ -69,13 +69,13 @@ public class ClientServerLoggingHandler extends Handler {
     /**
      * Check if this Handler would actually log a given LogRecord, depending of the
      * log level
-     * @param record a LogRecord
+     * @param logRecord a LogRecord
      * @return true if the LogRecord would be logged.
      *
      */
     @Override
-    public boolean isLoggable(LogRecord record) {
-        return super.isLoggable(record);
+    public boolean isLoggable(LogRecord logRecord) {
+        return super.isLoggable(logRecord);
     }
 
     /**

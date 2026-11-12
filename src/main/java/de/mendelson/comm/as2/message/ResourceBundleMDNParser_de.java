@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleMDNParser_de.java 5     2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/ResourceBundleMDNParser_de.java 6     9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.message;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleMDNParser_de extends MecResourceBundle{
     

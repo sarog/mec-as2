@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeystore_fr.java 2     2/11/23 15:53 Heller $ 
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportKeystore_fr.java 4     9/12/24 15:51 Heller $ 
 package de.mendelson.util.security.cert.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 4 $
  */
 public class ResourceBundleExportKeystore_fr extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleExportKeystore_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"button.ok", "Ok"},
         {"button.cancel", "Annuler"},
         {"button.browse", "Parcourir"},

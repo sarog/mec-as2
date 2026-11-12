@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/Crypt.java 2     2/11/23 14:02 Heller $
+//$Header: /as2/de/mendelson/util/Crypt.java 3     11/02/25 13:39 Heller $
 package de.mendelson.util;
 
 /**
@@ -125,6 +125,9 @@ public class Crypt{
     
     private static final byte[] key = new byte[64] ;
     private static byte[] EP = etr;
+    
+    private Crypt(){        
+    }
     
     /* *** Methods start here *** */
     private static void transpose( byte[] data, byte[] t, int n ) {

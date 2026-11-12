@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_de.java 13    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/cem/ResourceBundleCEM_de.java 14    9/12/24 16:02 Heller $
 package de.mendelson.comm.as2.cem;
 import de.mendelson.comm.as2.cem.messages.TrustResponse;
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 14 $
  */
 public class ResourceBundleCEM_de extends MecResourceBundle{
     

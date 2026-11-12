@@ -1,0 +1,33 @@
+$Header:$
+Diese Datei beinhaltet die Vorlage fuer das Senden einer Benachrichtigung,
+wenn eine Nachbearbeitung einer Nachricht fehl schlaegt
+Die folgenden Variablen werden ersetzt:
+${PRODUCTNAME}: Der Produktname
+${HOST}: Der Host, auf dem der Server laeuft
+${EVENT_TYPE}: Der Typ des Ereignisses (nach Empfang, nach Versand (Fehler/Erfolg))
+${PROCESS_TYPE}: Der Prozesstyp (Weiterleitung an Partner, Kommandozeile..)
+${MESSAGEID}: Die dazugehoerige Nachrichtennummer
+${ERROR_MESSAGE}: Die Fehlermeldung
+${SENDER}: Der Nachrichtensender
+${RECEIVER}: Der Nachrichtenempfaenger
+
+
+[SUBJECT]
+Nachbearbeitungsproblem (${SENDER} an ${RECEIVER}) [${MESSAGEID}]
+
+
+[BODY]
+Auf Ihrem ${PRODUCTNAME}@${HOST} gab es ein Problem bei der Nachbearbeitung einer Nachricht. 
+Der Transaktionsstatus ist davon nicht beruehrt. Da Ihre Nachbearbeitung jedoch nicht einwandfrei
+funktionierte, kann Ihre Weiterverarbeitung unterbrochen sein. Bitte schauen Sie sich die
+Transaktion auf dem System an.
+
+Ereignistyp: ${EVENT_TYPE}
+Prozesstyp: ${PROCESS_TYPE}
+Nachrichtennummer: ${MESSAGEID}
+Sender: ${SENDER}
+Empfaenger: ${RECEIVER}
+
+
+${ERROR_MESSAGE}
+

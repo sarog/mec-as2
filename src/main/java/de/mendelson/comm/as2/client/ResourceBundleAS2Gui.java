@@ -1,4 +1,4 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 56    29/11/23 14:00 Heller $ 
+//$Header: /as2/de/mendelson/comm/as2/client/ResourceBundleAS2Gui.java 58    8/01/25 16:18 Heller $ 
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /** 
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 56 $
+ * @version $Revision: 58 $
  */
 public class ResourceBundleAS2Gui extends MecResourceBundle {
 
@@ -24,7 +24,7 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"menu.file", "File"},
         {"menu.file.exit", "Exit"},
         {"menu.file.partner", "Partner"},
@@ -57,14 +57,14 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"filter.showpending", "Show pending"},
         {"filter.showstopped", "Show stopped"},
         {"filter.none", "-- None --"},
-        {"filter.partner", "Partner restriction:"},
-        {"filter.localstation", "Local station restriction:"},
-        {"filter.direction", "Direction restriction:"},
+        {"filter.partner", "Partner restriction"},
+        {"filter.localstation", "Local station restriction"},
+        {"filter.direction", "Direction restriction"},
         {"filter.direction.inbound", "Inbound"},
         {"filter.direction.outbound", "Outbound"},
         {"filter.use", "Use time filter" },
-        {"filter.from", "From:" },
-        {"filter.to", "To:" },
+        {"filter.from", "From" },
+        {"filter.to", "To" },
         {"filter", "Filter"},
         {"keyrefresh", "Reload keys"},
         {"configurecolumns", "Columns" },
@@ -99,5 +99,6 @@ public class ResourceBundleAS2Gui extends MecResourceBundle {
         {"resend.failed.unknown.sender", "Resend failed: Unknown sender {0} - please check if this partner still exists in the system." },
         {"resend.failed.unknown.receiver", "Resend failed: Unknown receiver {0} - please check if this partner still exists in the system." },
         {"buy.license", "Buy license" },
+        {"no.helpset.for.language", "Sorry, there is no help system available for your language, the english help system will be used." },
     };
 }

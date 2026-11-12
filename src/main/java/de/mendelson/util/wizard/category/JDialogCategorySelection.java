@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/wizard/category/JDialogCategorySelection.java 9     27.11.19 10:47 Heller $
+//$Header: /as2/de/mendelson/util/wizard/category/JDialogCategorySelection.java 10    11/02/25 13:40 Heller $
 package de.mendelson.util.wizard.category;
 
 import de.mendelson.util.MecResourceBundle;
@@ -26,7 +26,7 @@ import javax.swing.KeyStroke;
  * Main class for the category selection wizard
  *
  * @author S.Heller
- * @version $Revision: 9 $
+ * @version $Revision: 10 $
  */
 public class JDialogCategorySelection extends JDialog implements CategorySelectionListener {
 
@@ -199,28 +199,6 @@ public class JDialogCategorySelection extends JDialog implements CategorySelecti
         this.dispose();
     }//GEN-LAST:event_jButtonOkActionPerformed
 
-    /**
-     * @param args the command line arguments
-     */
-//    public static void main(String args[]) {
-//        JDialogCategorySelection dialog
-//                = new JDialogCategorySelection(new javax.swing.JFrame());
-//        Category category = new Category();
-//        category.setTitle("Test Test");
-//        for (int i = 0; i < 10; i++) {
-//            Subcategory sub = new Subcategory();
-//            sub.setActionCommand(category.getTitle() + "_" + sub.getTitle());
-//            sub.setTitle("TestSub" + i);
-//            sub.setDescription("This is description #" + i);
-//            category.addSubcategory(sub);
-//        }
-//        dialog.addCategory(category);
-//        Category category2 = new Category();
-//        category2.setTitle("Test2 Test2");
-//        dialog.addCategory(category2);
-//        dialog.setVisible(true);
-//        System.exit(0);
-//    }
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables

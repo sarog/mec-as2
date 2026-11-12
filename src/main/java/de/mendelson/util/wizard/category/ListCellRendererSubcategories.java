@@ -12,7 +12,7 @@ import javax.swing.border.EmptyBorder;
 /**
  * Render the subcategories of a single category panel
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 8 $
  */
 public class ListCellRendererSubcategories extends JLabel implements ListCellRenderer {
 
@@ -79,6 +79,7 @@ public class ListCellRendererSubcategories extends JLabel implements ListCellRen
      * See the <a href="#override">Implementation Note</a>
      * for more information.
      */
+    @Override
     public void firePropertyChange(String propertyName, byte oldValue, byte newValue) {
     }
 
@@ -167,7 +168,6 @@ public class ListCellRendererSubcategories extends JLabel implements ListCellRen
     @Override
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
-        //setComponentOrientation(list.getComponentOrientation());
         if (isSelected) {
             this.setBackground(list.getSelectionBackground());
             this.setForeground(list.getSelectionForeground());

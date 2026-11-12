@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/modulelock/ResourceBundleModuleLock_de.java 5     2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/modulelock/ResourceBundleModuleLock_de.java 6     9/12/24 15:50 Heller $
 package de.mendelson.util.modulelock;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleModuleLock_de extends MecResourceBundle {
 

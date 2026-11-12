@@ -1,4 +1,4 @@
-//$Header: /converteride/de/mendelson/util/FileEncodingDetection.java 14    25.11.20 12:37 Heller $
+//$Header: /as2/de/mendelson/util/FileEncodingDetection.java 16    4/02/25 14:26 Heller $
 package de.mendelson.util;
 
 import java.io.BufferedReader;
@@ -31,7 +31,7 @@ import java.util.Map.Entry;
  * Checks the encoding of a file by just trying all available encodings on it
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 16 $
  */
 public class FileEncodingDetection {
 
@@ -61,7 +61,7 @@ public class FileEncodingDetection {
             if (this.encodingMatches(file, encoding)) {
                 matchingFileEncodingList.add(encoding);
             }
-        }        
+        }
         //sort this list a little bit. There are popular encodings and they should be in the
         //first places
         List<Charset> popularCharsets = new ArrayList<Charset>();
@@ -151,26 +151,18 @@ public class FileEncodingDetection {
      * @return
      */
     public boolean encodingMatches(Path file, Charset charset) {
-        Reader decoderReader = null;
         try {
             CharsetDecoder decoder = charset.newDecoder();
             decoder.reset();
             decoder.onMalformedInput(CodingErrorAction.REPORT);
             decoder.onUnmappableCharacter(CodingErrorAction.REPORT);
-            decoderReader = new InputStreamReader(Files.newInputStream(file), decoder);
-            //no problem occured with character matching
-            this.streamData(decoderReader);
+            try (Reader decoderReader = new InputStreamReader(Files.newInputStream(file), decoder)) {
+                //no problem occured with character matching?
+                this.streamData(decoderReader);
+            }
             return (true);
         } catch (Exception e) {
             return (false);
-        } finally {
-            try {
-                if (decoderReader != null) {
-                    decoderReader.close();
-                }
-            } catch (Exception e) {
-                //nop
-            }
         }
     }
 
@@ -203,20 +195,10 @@ public class FileEncodingDetection {
                 continue;
             }
             byte[] fileStartBytes = new byte[bom.length];
-            InputStream inStream = null;
-            try {
-                inStream = Files.newInputStream(file);
+            try (InputStream inStream = Files.newInputStream(file)) {
                 inStream.readNBytes(fileStartBytes, 0, bom.length);
             } catch (Exception e) {
                 continue;
-            } finally {
-                if (inStream != null) {
-                    try {
-                        inStream.close();
-                    } catch (Exception e) {
-                        continue;
-                    }
-                }
             }
             boolean match = true;
             for (int i = 0; i < fileStartBytes.length; i++) {
@@ -241,14 +223,15 @@ public class FileEncodingDetection {
      * @throws IOException
      */
     private void streamData(Reader decoderReaderIn) throws IOException {
-        BufferedReader bufferedReader = new BufferedReader(decoderReaderIn);
-        //copy the contents to an output stream
-        char[] buffer = new char[2048];
-        int read = 2048;
-        //a read of 0 must be allowed, sometimes it takes time to
-        //extract data from the input
-        while (read != -1) {
-            read = bufferedReader.read(buffer);
+        try (BufferedReader bufferedReader = new BufferedReader(decoderReaderIn)) {
+            //copy the contents to an output stream
+            char[] buffer = new char[2048];
+            int read = 2048;
+            //a read of 0 must be allowed, sometimes it takes time to
+            //extract data from the input
+            while (read != -1) {
+                read = bufferedReader.read(buffer);
+            }
         }
     }
 

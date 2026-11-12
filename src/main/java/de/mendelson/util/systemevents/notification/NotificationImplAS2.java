@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 33    12/12/23 14:47 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/NotificationImplAS2.java 34    19/02/25 10:09 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -27,7 +27,7 @@ import java.util.logging.Logger;
  * Performs the notification for an event
  *
  * @author S.Heller
- * @version $Revision: 33 $
+ * @version $Revision: 34 $
  */
 public class NotificationImplAS2 extends Notification {
 
@@ -50,8 +50,8 @@ public class NotificationImplAS2 extends Notification {
         MODULE_NAME = rb.getResourceString( "module.name");
         PreferencesAS2 preferences = new PreferencesAS2();
         this.setTimeout(
-                Long.valueOf(preferences.get(PreferencesAS2.NOTIFICATION_SMTP_CONNECTION_TIMEOUT)).longValue(),
-                Long.valueOf(preferences.get(PreferencesAS2.NOTIFICATION_SMTP_TIMEOUT)).longValue());                
+                Long.parseLong(preferences.get(PreferencesAS2.NOTIFICATION_SMTP_CONNECTION_TIMEOUT)),
+                Long.parseLong(preferences.get(PreferencesAS2.NOTIFICATION_SMTP_TIMEOUT)));                
     }
 
     @Override

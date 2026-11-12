@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 27    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/datasheet/gui/JDialogCreateDataSheet.java 34    19/12/24 8:54 Heller $
 package de.mendelson.comm.as2.datasheet.gui;
 
 import de.mendelson.comm.as2.client.AS2StatusBar;
@@ -16,6 +16,7 @@ import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.AS2Tools;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.clients.preferences.PreferencesClient;
 import de.mendelson.util.security.KeyStoreUtil;
 import de.mendelson.util.security.cert.CertificateManager;
@@ -28,11 +29,10 @@ import java.awt.Desktop;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Logger;
 import javax.swing.JDialog;
 import javax.swing.JFrame;
@@ -48,16 +48,24 @@ import javax.swing.JFrame;
  * Winzard to create a PDF that contains a data sheet
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 34 $
  */
 public class JDialogCreateDataSheet extends JDialog {
 
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final AS2StatusBar statusbar;
-    private final MecResourceBundle rb;
+    private final static MecResourceBundle rb;
+    static{
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleCreateDataSheet.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
+        }
+    }
     private Partner localStation = null;
     private final CertificateManager certificateManagerEncSign;
-    private final CertificateManager certificateManagerSSL;
+    private final CertificateManager certificateManagerTLS;
     private final PreferencesClient preferenceClient;
 
     /**
@@ -66,22 +74,15 @@ public class JDialogCreateDataSheet extends JDialog {
     public JDialogCreateDataSheet(JFrame parent, BaseClient baseClient,
             AS2StatusBar statusbar, CertificateManager certificateManagerEncSign,
             CertificateManager certificateManagerSSL) {
-        super(parent, true);
-        //load resource bundle
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleCreateDataSheet.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
-        }
+        super(parent, true);        
         this.certificateManagerEncSign = certificateManagerEncSign;
-        this.certificateManagerSSL = certificateManagerSSL;
+        this.certificateManagerTLS = certificateManagerSSL;
         this.statusbar = statusbar;
-        this.setTitle(this.rb.getResourceString("title"));
+        this.setTitle(rb.getResourceString("title"));
         initComponents();
         PartnerListResponse response = (PartnerListResponse) baseClient.sendSync(new PartnerListRequest(PartnerListRequest.LIST_ALL));
         List<Partner> partnerList = response.getList();
-        this.jComboBoxRemotePartner.addItem(this.rb.getResourceString("label.newpartner"));
+        this.jComboBoxRemotePartner.addItem(rb.getResourceString("label.newpartner"));
         for (Partner partner : partnerList) {
             if (partner.isLocalStation()) {
                 this.jComboBoxLocalPartner.addItem(partner);
@@ -111,17 +112,30 @@ public class JDialogCreateDataSheet extends JDialog {
     private void initializeComboboxes() {
         this.jComboBoxEncryptionType.setRenderer(new ListCellRendererEncryption(this.jComboBoxEncryptionType));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_NONE)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_3DES)));        
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_GCM)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_GCM)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_CCM)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_CCM)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CCM)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC_RSAES_AOEP)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC_RSAES_AOEP)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC_RSAES_AOEP)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_GCM_RSAES_AOEP)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_GCM_RSAES_AOEP)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM_RSAES_AOEP)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_128_CBC)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_192_CBC)));
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_256_CBC)));        
+        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_CHACHA20_POLY1305)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_40)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_64)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_128)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC2_196)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_128_RSAES_AOEP)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_192_RSAES_AOEP)));
-        this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_AES_256_RSAES_AOEP)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_40)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_56)));
         this.jComboBoxEncryptionType.addItem(new EncryptionDisplayImplAS2(Integer.valueOf(EncryptionConstantsAS2.ENCRYPTION_RC4_128)));
@@ -155,7 +169,7 @@ public class JDialogCreateDataSheet extends JDialog {
             @Override
             public void run() {
                 //display wait indicator
-                JDialogCreateDataSheet.this.statusbar.startProgressIndeterminate(JDialogCreateDataSheet.this.rb.getResourceString("progress"), uniqueId);
+                JDialogCreateDataSheet.this.statusbar.startProgressIndeterminate(JDialogCreateDataSheet.rb.getResourceString("progress"), uniqueId);
                 try {
                     DatasheetInformation information = new DatasheetInformation();
                     Partner localPartner = (Partner) JDialogCreateDataSheet.this.jComboBoxLocalPartner.getSelectedItem();
@@ -174,24 +188,32 @@ public class JDialogCreateDataSheet extends JDialog {
                     information.setRequestSignedMDN(JDialogCreateDataSheet.this.jCheckBoxSignedMDN.isSelected());
                     information.setCompression(JDialogCreateDataSheet.this.jCheckBoxCompression.isSelected() ? AS2Message.COMPRESSION_ZLIB : AS2Message.COMPRESSION_NONE);
                     CertificateManager certificateManagerEncSign = JDialogCreateDataSheet.this.certificateManagerEncSign;
-                    KeyStoreUtil keystoreUtil = new KeyStoreUtil();
                     PartnerCertificateInformation infoEncryption = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT);
-                    if (infoEncryption != null && !infoEncryption.isEmpty()) {
+                    if (infoEncryption != null && !infoEncryption.isEmpty()) {                                                
                         String alias = certificateManagerEncSign.getAliasByFingerprint(infoEncryption.getFingerprintSHA1());
-                        byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerEncSign.getKeystore(), alias, "PKCS7");
+                        List<X509Certificate> trustChain = certificateManagerEncSign.computeTrustChain(alias);
+                        X509Certificate[] trustChainArray = new X509Certificate[trustChain.size()];
+                        trustChainArray = trustChain.toArray(trustChainArray);                        
+                        byte[] pkcs7 = KeyStoreUtil.convertX509CertificateToPKCS7(trustChainArray);
                         information.setCertDecryptData(pkcs7);
                     }
                     PartnerCertificateInformation infoSignature = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN);
                     if (infoSignature != null && !infoSignature.isEmpty()) {
                         String alias = certificateManagerEncSign.getAliasByFingerprint(infoSignature.getFingerprintSHA1());
-                        byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerEncSign.getKeystore(), alias, "PKCS7");
+                        List<X509Certificate> trustChain = certificateManagerEncSign.computeTrustChain(alias);
+                        X509Certificate[] trustChainArray = new X509Certificate[trustChain.size()];
+                        trustChainArray = trustChain.toArray(trustChainArray);                        
+                        byte[] pkcs7 = KeyStoreUtil.convertX509CertificateToPKCS7(trustChainArray);
                         information.setCertVerifySignature(pkcs7);
                     }
-                    PartnerCertificateInformation infoSSL = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_TLS);
-                    if (infoSSL != null && !infoSSL.isEmpty()) {
-                        String alias = certificateManagerSSL.getAliasByFingerprint(infoSSL.getFingerprintSHA1());
-                        byte[] pkcs7 = keystoreUtil.exportX509Certificate(certificateManagerSSL.getKeystore(), alias, "PKCS7");
-                        information.setCertSSL(pkcs7);
+                    PartnerCertificateInformation infoTLS = localPartner.getCertificateInformation(PartnerCertificateInformation.CATEGORY_TLS);
+                    if (infoTLS != null && !infoTLS.isEmpty()) {
+                        String alias = certificateManagerTLS.getAliasByFingerprint(infoTLS.getFingerprintSHA1());
+                        List<X509Certificate> trustChain = certificateManagerEncSign.computeTrustChain(alias);
+                        X509Certificate[] trustChainArray = new X509Certificate[trustChain.size()];
+                        trustChainArray = trustChain.toArray(trustChainArray);                        
+                        byte[] pkcs7 = KeyStoreUtil.convertX509CertificateToPKCS7(trustChainArray);                        
+                        information.setCertTLS(pkcs7);
                     }
                     DatasheetBuilder builder = new DatasheetBuilder(localPartner, remotePartner, information);
                     //there is a lock on the created file - no idea how to remove it
@@ -200,20 +222,17 @@ public class JDialogCreateDataSheet extends JDialog {
                     builder.create(tempFile);
                     Files.copy(tempFile, outFile, StandardCopyOption.REPLACE_EXISTING);
                     JDialogCreateDataSheet.this.logger.info(
-                            JDialogCreateDataSheet.this.rb.getResourceString("file.written",
+                            JDialogCreateDataSheet.rb.getResourceString("file.written",
                                     outFile.toAbsolutePath().toString()));
                     Desktop.getDesktop().open(outFile.toFile());
                 } catch (Throwable e) {
-                    e.printStackTrace();
-                    JDialogCreateDataSheet.this.logger.warning("createPDF: [" + e.getClass().getSimpleName() + "] " + e.getMessage());
+                    JDialogCreateDataSheet.this.logger.warning("CreatePDF: [" + e.getClass().getSimpleName() + "] " + e.getMessage());
                 } finally {
                     JDialogCreateDataSheet.this.statusbar.stopProgressIfExists(uniqueId);
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
     /**
@@ -274,7 +293,7 @@ public class JDialogCreateDataSheet extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelMain.add(jLabelLocalStation, gridBagConstraints);
 
-        jComboBoxLocalPartner.setMinimumSize(new java.awt.Dimension(280, 22));
+        jComboBoxLocalPartner.setMinimumSize(new java.awt.Dimension(280, 24));
         jComboBoxLocalPartner.setPreferredSize(new java.awt.Dimension(280, 22));
         jComboBoxLocalPartner.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -297,7 +316,7 @@ public class JDialogCreateDataSheet extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 10, 5, 5);
         jPanelMain.add(jLabelRemotePartner, gridBagConstraints);
 
-        jComboBoxRemotePartner.setMinimumSize(new java.awt.Dimension(280, 22));
+        jComboBoxRemotePartner.setMinimumSize(new java.awt.Dimension(280, 24));
         jComboBoxRemotePartner.setPreferredSize(new java.awt.Dimension(280, 22));
         jComboBoxRemotePartner.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -397,7 +416,7 @@ public class JDialogCreateDataSheet extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 0, 10, 5);
         jPanelMain.add(jCheckBoxSignedMDN, gridBagConstraints);
 
-        jComboBoxEncryptionType.setMinimumSize(new java.awt.Dimension(280, 22));
+        jComboBoxEncryptionType.setMinimumSize(new java.awt.Dimension(280, 24));
         jComboBoxEncryptionType.setPreferredSize(new java.awt.Dimension(280, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -406,7 +425,7 @@ public class JDialogCreateDataSheet extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(5, 5, 5, 5);
         jPanelMain.add(jComboBoxEncryptionType, gridBagConstraints);
 
-        jComboBoxSignType.setMinimumSize(new java.awt.Dimension(280, 22));
+        jComboBoxSignType.setMinimumSize(new java.awt.Dimension(280, 24));
         jComboBoxSignType.setPreferredSize(new java.awt.Dimension(280, 22));
         gridBagConstraints = new java.awt.GridBagConstraints();
         gridBagConstraints.gridx = 1;
@@ -473,7 +492,7 @@ public class JDialogCreateDataSheet extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(10, 10, 10, 10);
         getContentPane().add(jPanelButton, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(544, 659));
+        setSize(new java.awt.Dimension(561, 661));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 14    2/11/23 15:53 Heller $
+//$Header: /mec_as2/de/mendelson/util/clientserver/log/search/gui/JDialogSearchLogfile.java 15    20/03/25 14:47 Heller $
 package de.mendelson.util.clientserver.log.search.gui;
 
 import de.mendelson.util.DateChooserUI;
@@ -8,6 +8,7 @@ import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import de.mendelson.util.TextOverlay;
 import de.mendelson.util.clientserver.BaseClient;
+import de.mendelson.util.clientserver.GUIClient;
 import de.mendelson.util.clientserver.log.search.Logline;
 import de.mendelson.util.clientserver.log.search.ServerSideLogfileFilter;
 import de.mendelson.util.clientserver.log.search.ServerSideLogfileFilterImplAS2;
@@ -48,7 +49,7 @@ import javax.swing.SwingUtilities;
  * Dialog to search on the server side in the log files
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class JDialogSearchLogfile extends JDialog {
 
@@ -237,9 +238,7 @@ public class JDialogSearchLogfile extends JDialog {
                 }
             }
         };
-        ExecutorService executor = Executors.newSingleThreadExecutor();
-        executor.submit(runnable);
-        executor.shutdown();
+        GUIClient.submit(runnable);
     }
 
     /**

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/ResourceBundleSystemEvent_fr.java 28    12/12/23 14:44 Heller $
+//$Header: /as4/de/mendelson/util/systemevents/ResourceBundleSystemEvent_fr.java 32    15/01/25 10:18 Heller $
 package de.mendelson.util.systemevents;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 32 $
  */
 public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"type." + SystemEvent.TYPE_CERTIFICATE_ADD, "Certificat (ajouter)"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_ANY, "Certificat"},
         {"type." + SystemEvent.TYPE_CERTIFICATE_DEL, "Certificat (supprimer)"},
@@ -91,7 +91,7 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_FILE_DELETE, "Fichier (supprimer)"},
         {"type." + SystemEvent.TYPE_FILE_MOVE, "Fichier (déplacer)"},
         {"type." + SystemEvent.TYPE_FILE_COPY, "Fichier (copie)"},
-        {"type." + SystemEvent.TYPE_MKDIR, "Répertoire (créer)"},
+        {"type." + SystemEvent.TYPE_FILE_MKDIR, "Répertoire (créer)"},
         {"type." + SystemEvent.TYPE_DIRECTORY_MONITORING_STATE_CHANGED, "Surveillance du répertoire (statut modifié)"},
         {"type." + SystemEvent.TYPE_CLIENT_ANY, "Interface utilisateur"},
         {"type." + SystemEvent.TYPE_CLIENT_LOGIN_FAILURE, "Connexion utilisateur (échec)"},
@@ -99,8 +99,17 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"type." + SystemEvent.TYPE_CLIENT_LOGOFF, "Déconnexion utilisateur"},
         {"type." + SystemEvent.TYPE_OTHER, "Autre"},
         {"type." + SystemEvent.TYPE_PORT_LISTENER, "L''auditeur du port"},
+        {"type." + SystemEvent.TYPE_XML_INTERFACE_ANY, "XML"},
         {"type." + SystemEvent.TYPE_XML_INTERFACE_CERTIFICATE_MODIFICATION, "Configuration du certificat"},
         {"type." + SystemEvent.TYPE_XML_INTERFACE_PARTNER_MODIFICATION, "Configuration du partenaire"},
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_ANY, "REST"},
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_ADD, "Ajouter un certificat" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_DEL, "Supprimer un certificat" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_CERTIFICATE_MODIFICATION, "Configuration du certificat" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_ADD, "Ajouter un partenaire" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_DEL, "Supprimer un partenaire" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_PARTNER_MODIFICATION, "Configuration du partenaire" },
+        {"type." + SystemEvent.TYPE_REST_INTERFACE_SENDORDER, "Demande d envoi" },
         {"origin." + SystemEvent.ORIGIN_SYSTEM, "Système" },
         {"origin." + SystemEvent.ORIGIN_TRANSACTION, "Transaction" },
         {"origin." + SystemEvent.ORIGIN_USER, "Utilisateur" },
@@ -121,5 +130,7 @@ public class ResourceBundleSystemEvent_fr extends MecResourceBundle {
         {"category." + SystemEvent.CATEGORY_FILE_OPERATION, "Opération sur fichier" },
         {"category." + SystemEvent.CATEGORY_CLIENT_OPERATION, "Opération interface utilisateur" },
         {"category." + SystemEvent.CATEGORY_XML_INTERFACE, "Interface XML" },
+        {"category." + SystemEvent.CATEGORY_REST_INTERFACE, "Interface REST" },
+        {"type." + SystemEvent.TYPE_DATABASE_ROLLBACK, "Annulation transaction"},
     };
 }

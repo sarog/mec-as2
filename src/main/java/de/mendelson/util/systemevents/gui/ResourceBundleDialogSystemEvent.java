@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent.java 10    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/gui/ResourceBundleDialogSystemEvent.java 11    30/05/24 13:42 Heller $
 package de.mendelson.util.systemevents.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize the mendelson products
  *
  * @author S.Heller
- * @version $Revision: 10 $
+ * @version $Revision: 11 $
  */
 public class ResourceBundleDialogSystemEvent extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleDialogSystemEvent extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "System event viewer"},
         {"label.user", "Owner"},
         {"label.host", "Host"},
@@ -45,7 +45,7 @@ public class ResourceBundleDialogSystemEvent extends MecResourceBundle {
         {"label.startdate", "Start" },
         {"label.enddate", "End" },
         {"label.freetext", "Free text" },
-        {"label.freetext.hint", "Full event id or textual search in body and subject" },
+        {"label.freetext.hint", "Event id or search text" },
         {"category.all", "-- All --" },
         {"label.close", "Close" },
         {"label.search", "Event search" },

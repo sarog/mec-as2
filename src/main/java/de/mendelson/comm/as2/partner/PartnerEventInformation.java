@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 12    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerEventInformation.java 15    19/02/25 17:31 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.message.postprocessingevent.ProcessingEvent;
@@ -24,7 +24,7 @@ import org.w3c.dom.NodeList;
  * Stores event information of a partner
  *
  * @author S.Heller
- * @version $Revision: 12 $
+ * @version $Revision: 15 $
  */
 public class PartnerEventInformation implements Serializable {
 
@@ -53,16 +53,15 @@ public class PartnerEventInformation implements Serializable {
      * Creates an empty entry
      */
     public PartnerEventInformation() {
-
     }
-
+    
     /**
      * Returns the related image that matches the requested process
      *
      * @param PROCESS_TYPE
      * @return
      */
-    public static MendelsonMultiResolutionImage getImageForProcess(int PROCESS_TYPE) {
+    public static MendelsonMultiResolutionImage getImageForProcess(final int PROCESS_TYPE) {
         if (PROCESS_TYPE == PROCESS_MOVE_TO_DIR) {
             return (PartnerEventResource.IMAGE_PROCESS_MOVE_TO_DIR);
         }
@@ -131,22 +130,22 @@ public class PartnerEventInformation implements Serializable {
                 String key = property.getTagName();
                 String value = property.getTextContent();
                 if (key.equals("useonreceipt")) {
-                    eventInfo.setUseOnReceipt(Boolean.valueOf(value).booleanValue());
+                    eventInfo.setUseOnReceipt(Boolean.parseBoolean(value));
                 }
                 if (key.equals("useonsenderror")) {
-                    eventInfo.setUseOnSenderror(Boolean.valueOf(value).booleanValue());
+                    eventInfo.setUseOnSenderror(Boolean.parseBoolean(value));
                 }
                 if (key.equals("useonsendsuccess")) {
-                    eventInfo.setUseOnSendsuccess(Boolean.valueOf(value).booleanValue());
+                    eventInfo.setUseOnSendsuccess(Boolean.parseBoolean(value));
                 }
                 if (key.equals("typeonreceipt")) {
-                    eventInfo.setProcessOnReceipt(Integer.valueOf(value).intValue());
+                    eventInfo.setProcessOnReceipt(Integer.parseInt(value));
                 }
                 if (key.equals("typeonsenderror")) {
-                    eventInfo.setProcessOnSenderror(Integer.valueOf(value).intValue());
+                    eventInfo.setProcessOnSenderror(Integer.parseInt(value));
                 }
                 if (key.equals("typeonsendsuccess")) {
-                    eventInfo.setProcessOnSendsuccess(Integer.valueOf(value).intValue());
+                    eventInfo.setProcessOnSendsuccess(Integer.parseInt(value));
                 }
                 if (key.equals("onreceiptvalues")) {
                     collectXMLValues(eventInfo.parameteronreceipt, property);
@@ -357,7 +356,9 @@ public class PartnerEventInformation implements Serializable {
      * @return the parameteronreceipt
      */
     private List<String> getParameterOnReceipt() {
-        return parameteronreceipt;
+        List<String> tempList = new ArrayList<String>();
+        tempList.addAll( this.parameteronreceipt );
+        return tempList;
     }
 
     public void setParameter(final int EVENT_TYPE, List<String> parameter) {
@@ -400,7 +401,9 @@ public class PartnerEventInformation implements Serializable {
      * @return the parameteronsenderror
      */
     private List<String> getParameterOnSenderror() {
-        return parameteronsenderror;
+        List<String> tempList = new ArrayList<String>();
+        tempList.addAll( this.parameteronsenderror );
+        return tempList;
     }
 
     /**
@@ -420,7 +423,9 @@ public class PartnerEventInformation implements Serializable {
      * @return the parameteronsendsuccess
      */
     private List<String> getParameterOnSendsuccess() {
-        return parameteronsendsuccess;
+        List<String> tempList = new ArrayList<String>();
+        tempList.addAll( this.parameteronsendsuccess );
+        return tempList;
     }
 
     /**

@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 27    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/send/RawMessageSender.java 28    10/07/24 13:39 Heller $
 package de.mendelson.comm.as2.send;
 
 import de.mendelson.comm.as2.AS2ServerVersion;
@@ -6,6 +6,7 @@ import de.mendelson.comm.as2.clientserver.message.IncomingMessageRequest;
 import de.mendelson.comm.as2.clientserver.message.IncomingMessageResponse;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.clientserver.AnonymousTextClient;
+import de.mendelson.util.clientserver.BaseClient;
 import de.mendelson.util.security.BCCryptoHelper;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
  * AS2 message to a specified sender
  *
  * @author S.Heller
- * @version $Revision: 27 $
+ * @version $Revision: 28 $
  */
 public class RawMessageSender {
 
@@ -50,7 +51,7 @@ public class RawMessageSender {
             }
         }
         AnonymousTextClient client = null;
-        client = new AnonymousTextClient();
+        client = new AnonymousTextClient(BaseClient.CLIENT_UNSPECIFIED);
         client.connect("localhost", AS2Server.CLIENTSERVER_COMM_PORT, 30000);        
         IncomingMessageRequest messageRequest = new IncomingMessageRequest();
         messageRequest.setMessageDataFilename(rawDataFile.toAbsolutePath().toString());

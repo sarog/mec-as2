@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/log/ConsoleHandlerStdout.java 2     8/04/22 10:35 Heller $
+//$Header: /as2/de/mendelson/util/log/ConsoleHandlerStdout.java 3     20/02/25 13:42 Heller $
 package de.mendelson.util.log;
 
 import java.util.logging.SimpleFormatter;
@@ -34,12 +34,12 @@ public class ConsoleHandlerStdout extends StreamHandler {
      * The logging request was made initially to a {@code Logger} object,
      * which initialized the {@code LogRecord} and forwarded it here.
      *
-     * @param  record  description of the log event. A null record is
+     * @param  logRecord  description of the log event. A null record is
      *                 silently ignored and is not published
      */
     @Override
-    public void publish(LogRecord record) {
-        super.publish(record);
+    public void publish(LogRecord logRecord) {
+        super.publish(logRecord);
         flush();
     }
 

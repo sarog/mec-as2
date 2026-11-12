@@ -1,11 +1,13 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 7     20/12/23 14:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/gui/JButtonPartnerConfigOk.java 10    27/06/24 15:49 Heller $
 package de.mendelson.comm.as2.partner.gui;
 
 import de.mendelson.comm.as2.partner.Partner;
+import de.mendelson.util.ColorUtil;
 import java.awt.Color;
 import java.net.URL;
 import java.util.List;
 import javax.swing.JButton;
+import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
@@ -22,7 +24,7 @@ import javax.swing.UIManager;
  * partner config and renders the fields that are erroneous
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 10 $
  */
 public class JButtonPartnerConfigOk extends JButton {
 
@@ -34,24 +36,81 @@ public class JButtonPartnerConfigOk extends JButton {
     private JTextField jTextFieldReceiptURL;
     private JTextField jTextFieldMDNURL;
     private JTextField jTextFieldAS2Id;
+    private JPanel jPanelErrorInConfig;
     private boolean changesAllowed;
 
     private Partner remotePartner;
 
     public void initialize(JTreePartner tree, JTextField jTextFieldName, JTextField jTextFieldAS2Id,
-            JTextField jTextFieldURL, JTextField jTextFieldMDNURL, boolean changesAllowed) {
+            JTextField jTextFieldURL, JTextField jTextFieldMDNURL, boolean changesAllowed,
+            JPanel jPanelErrorInConfig) {
         this.tree = tree;
         this.changesAllowed = changesAllowed;
         this.jTextFieldName = jTextFieldName;
         this.jTextFieldAS2Id = jTextFieldAS2Id;
         this.jTextFieldReceiptURL = jTextFieldURL;
         this.jTextFieldMDNURL = jTextFieldMDNURL;
+        this.jPanelErrorInConfig = jPanelErrorInConfig;
     }
 
     public void setPartner(Partner remotePartner) {
         this.remotePartner = remotePartner;
     }
 
+    /**
+     * Checks if the passed URLs point to localhost
+     *
+     */
+    private boolean checkLocalhostAsURL(Partner checkPartner) {
+        String receiverURL = checkPartner.getURL();
+        String mdnURL = checkPartner.getMdnURL();
+        boolean error = false;
+        if (!checkPartner.isLocalStation()) {
+            //no local station - check receipt URL
+            if (receiverURL == null 
+                    || receiverURL.toLowerCase().startsWith("http://localhost")
+                    || receiverURL.toLowerCase().startsWith("https://localhost")
+                    || receiverURL.toLowerCase().startsWith("https://127.0.0.1")
+                    || receiverURL.toLowerCase().startsWith("http://127.0.0.1")
+                    ) {
+                //graphical modifications for current displayed partner only!
+                if (this.remotePartner.equals(checkPartner)) {
+                    this.markErrorInTextField(this.jTextFieldReceiptURL);
+                }
+                error = true;
+            } 
+            if (!error) {
+                //graphical modifications for current displayed partner only!
+                if (this.remotePartner.equals(checkPartner)) {
+                    this.markNoErrorInTextField(this.jTextFieldReceiptURL);
+                }
+            }
+        } else {
+            //local station - check MDN URL
+            if (mdnURL == null
+                    || mdnURL.toLowerCase().startsWith("http://localhost")
+                    || mdnURL.toLowerCase().startsWith("https://localhost")
+                    || mdnURL.toLowerCase().startsWith("https://127.0.0.1")
+                    || mdnURL.toLowerCase().startsWith("http://127.0.0.1")
+                    ){
+                //graphical modifications for current displayed partner only!
+                if (this.remotePartner.equals(checkPartner)) {
+                    this.markErrorInTextField(this.jTextFieldMDNURL);
+                }
+                error = true;
+            } 
+            if (!error) {
+                //graphical modifications for current displayed partner only!
+                if (this.remotePartner.equals(checkPartner)) {
+                    this.markNoErrorInTextField(this.jTextFieldMDNURL);
+                }
+            }
+        }
+        return (error);
+    }
+    
+    
+    
     /**
      * Checks if the passed URLs contain a leading protocol entry
      *
@@ -66,7 +125,7 @@ public class JButtonPartnerConfigOk extends JButton {
                     && !receiverURL.startsWith("https://"))) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
-                    this.jTextFieldReceiptURL.setBackground(this.errorColor);
+                    this.markErrorInTextField(this.jTextFieldReceiptURL);
                 }
                 error = true;
             } else {
@@ -76,14 +135,14 @@ public class JButtonPartnerConfigOk extends JButton {
                     if (testURL.getPort() == -1) {
                         //graphical modifications for current displayed partner only!
                         if (this.remotePartner.equals(checkPartner)) {
-                            this.jTextFieldReceiptURL.setBackground(this.errorColor);
+                            this.markErrorInTextField(this.jTextFieldReceiptURL);
                         }
                         error = true;
                     }
                 } catch (Exception e) {
                     //graphical modifications for current displayed partner only!
                     if (this.remotePartner.equals(checkPartner)) {
-                        this.jTextFieldReceiptURL.setBackground(this.errorColor);
+                        this.markErrorInTextField(this.jTextFieldReceiptURL);
                     }
                     error = true;
                 }
@@ -91,7 +150,7 @@ public class JButtonPartnerConfigOk extends JButton {
             if (!error) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
-                    this.jTextFieldReceiptURL.setBackground(UIManager.getDefaults().getColor("TextField.background"));
+                    this.markNoErrorInTextField(this.jTextFieldReceiptURL);
                 }
             }
         } else {
@@ -100,7 +159,7 @@ public class JButtonPartnerConfigOk extends JButton {
                     || (!mdnURL.startsWith("http://") && !mdnURL.startsWith("https://"))) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
-                    this.jTextFieldMDNURL.setBackground(this.errorColor);
+                    this.markErrorInTextField(this.jTextFieldMDNURL);
                 }
                 error = true;
             } else {
@@ -110,14 +169,14 @@ public class JButtonPartnerConfigOk extends JButton {
                     if (testURL.getPort() == -1) {
                         //graphical modifications for current displayed partner only!
                         if (this.remotePartner.equals(checkPartner)) {
-                            this.jTextFieldMDNURL.setBackground(this.errorColor);
+                            this.markErrorInTextField(this.jTextFieldMDNURL);
                         }
                         error = true;
                     }
                 } catch (Exception e) {
                     //graphical modifications for current displayed partner only!
                     if (this.remotePartner.equals(checkPartner)) {
-                        this.jTextFieldMDNURL.setBackground(this.errorColor);
+                        this.markErrorInTextField(this.jTextFieldMDNURL);
                     }
                     error = true;
                 }
@@ -125,8 +184,7 @@ public class JButtonPartnerConfigOk extends JButton {
             if (!error) {
                 //graphical modifications for current displayed partner only!
                 if (this.remotePartner.equals(checkPartner)) {
-                    this.jTextFieldMDNURL.setBackground(
-                            UIManager.getDefaults().getColor("TextField.background"));
+                    this.markNoErrorInTextField(this.jTextFieldMDNURL);
                 }
             }
         }
@@ -169,13 +227,12 @@ public class JButtonPartnerConfigOk extends JButton {
         if (newName != null && !newName.trim().isEmpty() && nameCount == 1) {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
-                this.jTextFieldName.setBackground(
-                        UIManager.getDefaults().getColor("TextField.background"));
+                this.markNoErrorInTextField(this.jTextFieldName);
             }
         } else {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
-                this.jTextFieldName.setBackground(this.errorColor);
+                this.markErrorInTextField(this.jTextFieldName);
             }
             error = true;
         }
@@ -184,13 +241,12 @@ public class JButtonPartnerConfigOk extends JButton {
         if (newAS2Id != null && !newAS2Id.trim().isEmpty() && idCount == 1) {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
-                this.jTextFieldAS2Id.setBackground(
-                        UIManager.getDefaults().getColor("TextField.background"));
+                this.markNoErrorInTextField(this.jTextFieldAS2Id);                
             }
         } else {
             //graphical modifications for current displayed partner only!
             if (this.remotePartner.equals(checkPartner)) {
-                this.jTextFieldAS2Id.setBackground(this.errorColor);
+                this.markErrorInTextField(this.jTextFieldAS2Id);
             }
             error = true;
         }
@@ -202,9 +258,20 @@ public class JButtonPartnerConfigOk extends JButton {
      */
     private boolean checkForNonUniqueOrInvalidValues(Partner checkPartner, List<Partner> partnerList) {
         boolean error = false;
-        error = error | this.checkForNonUniqueValues(checkPartner, partnerList);
-        error = error | this.checkURLProtocol(checkPartner);
+        error = error || this.checkForNonUniqueValues(checkPartner, partnerList);
+        error = error || this.checkURLProtocol(checkPartner);
+        error = error || this.checkLocalhostAsURL(checkPartner);
         return (error);
+    }
+
+    private void markErrorInTextField(JTextField textfield) {
+        textfield.setBackground(this.errorColor);
+        ColorUtil.autoCorrectForegroundColor(textfield);
+    }
+
+    private void markNoErrorInTextField(JTextField textfield) {
+        textfield.setBackground(UIManager.getDefaults().getColor("TextField.background"));
+        textfield.setForeground(UIManager.getDefaults().getColor("TextField.foreground"));
     }
 
     public void computeErrorState() {
@@ -218,7 +285,8 @@ public class JButtonPartnerConfigOk extends JButton {
                 public void run() {
                     boolean errorInConfig = false;
                     for (Partner checkPartner : partnerList) {
-                        boolean error = JButtonPartnerConfigOk.this.checkForNonUniqueOrInvalidValues(checkPartner, partnerList);
+                        boolean error = JButtonPartnerConfigOk.this.checkForNonUniqueOrInvalidValues(
+                                checkPartner, partnerList);
                         boolean hasErrorBefore = checkPartner.hasConfigError();
                         if (error != hasErrorBefore) {
                             checkPartner.setConfigError(error);
@@ -229,6 +297,7 @@ public class JButtonPartnerConfigOk extends JButton {
                         }
                     }
                     JButtonPartnerConfigOk.this.setEnabled(!errorInConfig);
+                    JButtonPartnerConfigOk.this.jPanelErrorInConfig.setVisible(errorInConfig);
                 }
             };
             SwingUtilities.invokeLater(runnable);

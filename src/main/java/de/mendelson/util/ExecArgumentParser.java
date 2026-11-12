@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ExecArgumentParser.java 4     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/ExecArgumentParser.java 5     11/02/25 13:39 Heller $
 package de.mendelson.util;
 
 import java.util.*;
@@ -13,7 +13,7 @@ import java.util.*;
 /**
  * Parses the arguments of an exec call, allows to quote arguments by double quote
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class ExecArgumentParser {
 
@@ -84,12 +84,5 @@ public class ExecArgumentParser {
         return result;
     }
 
-//    public static void main(String[] aArguments) {
-//        ExecArgumentParser parser = new ExecArgumentParser();
-//        String[] result = parser.parse("myexec.bat -a \"ABC DEF\" ABC 123 \"A A A \" XXX -user admin -password admin");
-//        for( String token:result){
-//            System.out.println("#" + token + "#");
-//        }
-//    }
 }
 

@@ -1,9 +1,10 @@
-//$Header: /as2/de/mendelson/comm/as2/client/ListCellRendererDirection.java 3     10.05.19 13:12 Heller $
+//$Header: /as2/de/mendelson/comm/as2/client/ListCellRendererDirection.java 5     14/05/24 13:47 Heller $
 package de.mendelson.comm.as2.client;
 
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.MendelsonMultiResolutionImage;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Rectangle;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
@@ -13,20 +14,36 @@ import javax.swing.JLabel;
 import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
+import javax.swing.border.EmptyBorder;
 
 /**
  * Renderer to render the direction of a transaction to be selected
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 5 $
  */
 public class ListCellRendererDirection extends JLabel implements ListCellRenderer {
 
-    private final static MendelsonMultiResolutionImage ICON_DIRECTION_INBOUND
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/message/loggui/in.svg", 16, 32);
-    private final static MendelsonMultiResolutionImage ICON_DIRECTION_OUTBOUND
-            = MendelsonMultiResolutionImage.fromSVG("/de/mendelson/comm/as2/message/loggui/out.svg", 16, 32);
-    private MecResourceBundle rb = null;
+    private final static int IMAGE_HEIGHT = AS2Gui.IMAGE_SIZE_MENU_ITEM;
+    private final static int ROW_HEIGHT = IMAGE_HEIGHT + 2;
+
+    private final static MendelsonMultiResolutionImage IMAGE_DIRECTION_INBOUND
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/in.svg", IMAGE_HEIGHT);
+    private final static MendelsonMultiResolutionImage IMAGE_DIRECTION_OUTBOUND
+            = MendelsonMultiResolutionImage.fromSVG(
+                    "/de/mendelson/comm/as2/message/loggui/out.svg", IMAGE_HEIGHT);
+    private final static MecResourceBundle rb;
+
+    static {
+        try {
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
+                    ResourceBundleAS2Gui.class.getName());
+        } catch (MissingResourceException e) {
+            throw new RuntimeException("Oops..resource bundle "
+                    + e.getClassName() + " not found.");
+        }
+    }
 
     /**
      * Constructs a default renderer object for an item in a list.
@@ -34,13 +51,6 @@ public class ListCellRendererDirection extends JLabel implements ListCellRendere
     public ListCellRendererDirection() {
         super();
         setOpaque(true);
-        try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
-                    ResourceBundleAS2Gui.class.getName());
-        } catch (MissingResourceException e) {
-            throw new RuntimeException("Oops..resource bundle "
-                    + e.getClassName() + " not found.");
-        }
     }
 
     /**
@@ -173,6 +183,7 @@ public class ListCellRendererDirection extends JLabel implements ListCellRendere
     public Component getListCellRendererComponent(
             JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
         setComponentOrientation(list.getComponentOrientation());
+        setBorder(new EmptyBorder(0,2,0,0));
         if (isSelected) {
             this.setBackground(list.getSelectionBackground());
             this.setForeground(list.getSelectionForeground());
@@ -187,11 +198,11 @@ public class ListCellRendererDirection extends JLabel implements ListCellRendere
             this.setEnabled(list.isEnabled());
             if (value instanceof String) {
                 String valueStr = (String) value;
-                if (valueStr.equals(this.rb.getResourceString("filter.direction.inbound"))) {
-                    this.setIcon(new ImageIcon(ICON_DIRECTION_INBOUND));
+                if (valueStr.equals(rb.getResourceString("filter.direction.inbound"))) {
+                    this.setIcon(new ImageIcon(IMAGE_DIRECTION_INBOUND.toMinResolution(IMAGE_HEIGHT)));
                     this.setText(valueStr);
-                } else if (valueStr.equals(this.rb.getResourceString("filter.direction.outbound"))) {
-                    this.setIcon(new ImageIcon(ICON_DIRECTION_OUTBOUND));
+                } else if (valueStr.equals(rb.getResourceString("filter.direction.outbound"))) {
+                    this.setIcon(new ImageIcon(IMAGE_DIRECTION_OUTBOUND.toMinResolution(IMAGE_HEIGHT)));
                     this.setText(valueStr);
                 } else {
                     this.setIcon(null);
@@ -203,8 +214,14 @@ public class ListCellRendererDirection extends JLabel implements ListCellRendere
         }
         this.setHorizontalAlignment(SwingConstants.LEADING);
         this.setHorizontalTextPosition(SwingConstants.RIGHT);
-
         return (this);
+    }
+
+    @Override
+    public Dimension getPreferredSize() {
+        Dimension dimension = super.getPreferredSize();
+        dimension.height = ROW_HEIGHT;
+        return (dimension);
     }
 
 }

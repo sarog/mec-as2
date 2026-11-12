@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/ResourceBundleCertificateManager_de.java 21    6/11/23 11:38 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/ResourceBundleCertificateManager_de.java 23    9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.security.BCCryptoHelper;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 21 $
+ * @version $Revision: 23 $
  */
 public class ResourceBundleCertificateManager_de extends MecResourceBundle {
 
@@ -25,8 +25,8 @@ public class ResourceBundleCertificateManager_de extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
-        {"keystore.reloaded", "Die Zertifikatdatei wurde erneut eingeladen, alle Schlüssel und Zertifikate wurden aktualisiert."},
+    private static final Object[][] CONTENTS = {
+        {"keystore.reloaded", "({0}) Die Zertifikatdatei wurde erneut eingeladen, alle Schlüssel und Zertifikate wurden aktualisiert."},
         {"alias.notfound", "Die Zertifikatdatei beinhaltet kein Zertifikat mit dem Alias \"{0}\"."},
         {"alias.hasno.privatekey", "Die Zertifikatdatei beinhaltet keinen privaten Schlüssel mit dem Alias \"{0}\"."},
         {"alias.hasno.key", "Die Zertifikatdatei beinhaltet keinen Schlüssel mit dem Alias \"{0}\"."},

@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/systemevents/notification/SystemEventNotificationController.java 22    3/11/23 9:57 Heller $
+//$Header: /as2/de/mendelson/util/systemevents/notification/SystemEventNotificationController.java 26    20/02/25 13:42 Heller $
 package de.mendelson.util.systemevents.notification;
 
 import de.mendelson.util.NamedThreadFactory;
@@ -9,10 +9,11 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Comparator;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,32 +32,31 @@ import java.util.logging.Logger;
  * a partner
  *
  * @author S.Heller
- * @version $Revision: 22 $
+ * @version $Revision: 26 $
  */
 public abstract class SystemEventNotificationController {
 
     /**
      * Wait time, this is how long this thread waits
      */
-    private final long WAIT_TIME_IN_MS = TimeUnit.MINUTES.toMillis(1);
-    private final DateFormat EVENT_FILEDATE_FORMAT = new SimpleDateFormat("HH-mm");
-    private final DateFormat DAILY_SUBDIR_FORMAT = new SimpleDateFormat("yyyyMMdd");
+    private final static long WAIT_TIME_IN_MS = TimeUnit.MINUTES.toMillis(1);
+    private final static DateTimeFormatter DAILY_SUBDIR_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd");
     private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-            new NamedThreadFactory("notification-control"));    
+            new NamedThreadFactory("notification-control"));
     /**
      * Logger to log information to
      */
-    private final Logger logger;    
+    private final Logger logger;
     private final NotificationCheckThread notificationCheckThread;
 
     /**
      * Controller that checks notifications and sends them out if required
      *
      */
-    public SystemEventNotificationController(Logger logger) {
+    protected SystemEventNotificationController(Logger logger) {
         this.logger = logger;
         this.notificationCheckThread = new NotificationCheckThread();
-        this.scheduledExecutor.scheduleWithFixedDelay(this.notificationCheckThread, 
+        this.scheduledExecutor.scheduleWithFixedDelay(this.notificationCheckThread,
                 TimeUnit.SECONDS.toMillis(5), WAIT_TIME_IN_MS, TimeUnit.MILLISECONDS);
     }
 
@@ -65,16 +65,17 @@ public abstract class SystemEventNotificationController {
      * if required
      */
     private void checkForNotificationToSend() throws Throwable {
-        Calendar calendar = Calendar.getInstance();
-        calendar.add(Calendar.MILLISECOND, -2 * ((int) this.WAIT_TIME_IN_MS));
         Path storageDir = Paths.get(this.getStorageDir(),
-                this.DAILY_SUBDIR_FORMAT.format(new Date()),
+                LocalDateTime.now().format(DAILY_SUBDIR_FORMAT),
                 "events");
+        DateFormat eventFiledateFormat = new SimpleDateFormat("HH-mm");
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MILLISECOND, -2 * ((int) WAIT_TIME_IN_MS));
         //there is no event for the current day - the event subdirectory does not exist
         if (!Files.exists(storageDir)) {
             return;
         }
-        String startString = this.EVENT_FILEDATE_FORMAT.format(calendar.getTime());
+        String startString = eventFiledateFormat.format(calendar.getTime());
         List<SystemEvent> foundSystemEvents = new ArrayList<SystemEvent>();
         DirectoryStream.Filter<Path> filter = new DirectoryStream.Filter<Path>() {
             @Override
@@ -82,9 +83,7 @@ public abstract class SystemEventNotificationController {
                 return (entry.getFileName().toString().startsWith(startString));
             }
         };
-        DirectoryStream<Path> dirStream = null;
-        try {
-            dirStream = Files.newDirectoryStream(storageDir, filter);
+        try (DirectoryStream<Path> dirStream = Files.newDirectoryStream(storageDir, filter)) {
             for (Path foundNotificationFile : dirStream) {
                 try {
                     SystemEvent event = SystemEvent.parse(foundNotificationFile);
@@ -93,10 +92,6 @@ public abstract class SystemEventNotificationController {
                     //ignore - it is no system event that has been found
                     e.printStackTrace();
                 }
-            }
-        } finally {
-            if (dirStream != null) {
-                dirStream.close();
             }
         }
         if (!foundSystemEvents.isEmpty()) {
@@ -136,6 +131,7 @@ public abstract class SystemEventNotificationController {
     public abstract String getStorageDir();
 
     public class NotificationCheckThread implements Runnable {
+
         @Override
         public void run() {
             try {

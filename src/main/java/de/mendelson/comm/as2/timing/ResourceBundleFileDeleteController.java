@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleFileDeleteController.java 6     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/ResourceBundleFileDeleteController.java 7     11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.timing;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleFileDeleteController extends MecResourceBundle{
     
@@ -24,7 +24,7 @@ public class ResourceBundleFileDeleteController extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"autodelete", "{0}: The file has been deleted by the system maintenance process." },
         {"delete.title", "File delete operation by system maintenance" },
         {"delete.title.log", "Log dir delete operation by system maintenance" },

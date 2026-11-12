@@ -1,4 +1,4 @@
-//$Header: /oftp2/de/mendelson/util/security/PKCS122PKCS12.java 13    3/11/23 10:16 Heller $
+//$Header: /as2/de/mendelson/util/security/PKCS122PKCS12.java 18    11/02/25 13:40 Heller $
 package de.mendelson.util.security;
 
 import java.io.InputStream;
@@ -8,6 +8,10 @@ import java.nio.file.Path;
 import java.security.Key;
 import java.security.KeyStore;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.logging.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
@@ -23,11 +27,10 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * other pkcs12 keystore
  *
  * @author S.Heller
- * @version $Revision: 13 $
+ * @version $Revision: 18 $
  */
-public class PKCS122PKCS12{
+public class PKCS122PKCS12 {
 
-    private Logger logger = Logger.getAnonymousLogger();
     /**
      * Keystore to use, if this is not set a new one will be created
      */
@@ -44,7 +47,6 @@ public class PKCS122PKCS12{
      * @param logger Logger to log the information to
      */
     public PKCS122PKCS12(Logger logger) {
-        this.logger = logger;
         //forget it to work without BC at this point, the SUN JCE provider
         //could not handle pcks12
         // performs "Security.addProvider(new BouncyCastleProvider());" and adds some BC related system properties
@@ -52,14 +54,19 @@ public class PKCS122PKCS12{
     }
 
     /**
+     * Transfers the key and the trust chain to a target
+     *
      * @param sourceKeyStore The keystore where to export the key to
      * @param keyAlias The alias of the key to export
+     *
+     * This does not contain a check if an entry with this fingerprint does
+     * already exist in the target - there is just the alias checked
      */
     public void exportKeyFrom(KeyStore sourceKeyStore, String keyAlias) throws Exception {
         if (sourceKeyStore.isKeyEntry(keyAlias)) {
             Key key = sourceKeyStore.getKey(keyAlias, null);
-            Certificate[] certs = sourceKeyStore.getCertificateChain(keyAlias);
-            if (certs == null || certs.length == 0) {
+            Certificate[] certchain = sourceKeyStore.getCertificateChain(keyAlias);
+            if (certchain == null || certchain.length == 0) {
                 throw new Exception("PKCS#12 import: private key with alias " + keyAlias + " does not contain a certificate.");
             }
             KeyStore targetStore = this.targetKeystore;
@@ -69,24 +76,46 @@ public class PKCS122PKCS12{
             String targetKeyAlias = keyAlias;
             int count = 1;
             //rename the alias for the target if it already exists in the target store
-            while( targetStore.containsAlias(targetKeyAlias)){
+            while (targetStore.containsAlias(targetKeyAlias)) {
                 targetKeyAlias = keyAlias + "_" + String.valueOf(count);
                 count++;
             }
-            //PKCS12 keys dont have a password
-            targetStore.setKeyEntry(targetKeyAlias, key, null, certs);
+            //PKCS12 keys dont have a password.             
+            targetStore.setKeyEntry(targetKeyAlias, key, null, certchain);
+            //add certificates of the trust chain if they do not exist so far in the target keystore
+            List<String> targetFingerprintList = new ArrayList<String>();
+            Enumeration<String> targetAliasEnumeration = targetStore.aliases();
+            while (targetAliasEnumeration.hasMoreElements()) {
+                String targetAlias = targetAliasEnumeration.nextElement();
+                Certificate certificate = targetStore.getCertificate(targetAlias);
+                targetFingerprintList.add(KeyStoreUtil.generateFingerprintSHA1(certificate));
+            }
+            for (Certificate newCertificate : certchain) {
+                if (newCertificate instanceof X509Certificate) {
+                    X509Certificate newCertificateX509 = (X509Certificate) newCertificate;
+                    String newCertFingerprint = KeyStoreUtil.generateFingerprintSHA1(newCertificateX509);
+                    if (!targetFingerprintList.contains(newCertFingerprint)) {
+                        String proposedAlias = KeyStoreUtil.getProposalCertificateAliasForImport(newCertificateX509);
+                        while (targetStore.containsAlias(proposedAlias)) {
+                            proposedAlias = proposedAlias + "0";
+                        }
+                        targetStore.setCertificateEntry(proposedAlias, newCertificateX509);
+                    }
+                }
+            }
         } else {
             throw new Exception("PKCS#12 export: The source keystore doesn't contain a private key with the alias " + keyAlias);
         }
     }
 
     /**
-     * @param providerName The name of the crypto provider, e.g. BouncyCastleProvider.PROVIDER_NAME
+     * @param providerName The name of the crypto provider, e.g.
+     * BouncyCastleProvider.PROVIDER_NAME
      */
     public void exportKeyFrom(InputStream sourceKeystoreStream, char[] sourceKeypass,
             String alias, String providerName) throws Exception {
         //open keystore
-        KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+        KeyStore sourceKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12,
                 providerName);
         sourceKeystore.load(sourceKeystoreStream, sourceKeypass);
         this.exportKeyFrom(sourceKeystore, alias);
@@ -97,7 +126,7 @@ public class PKCS122PKCS12{
      */
     private KeyStore generateKeyStore() throws Exception {
         //do not remove the BC paramter, SUN cannot handle the format proper
-        KeyStore localKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12, 
+        KeyStore localKeystore = KeyStore.getInstance(BCCryptoHelper.KEYSTORE_PKCS12,
                 BouncyCastleProvider.PROVIDER_NAME);
         localKeystore.load(null, null);
         return (localKeystore);
@@ -117,14 +146,8 @@ public class PKCS122PKCS12{
      *
      */
     public void saveTargetKeyStoreTo(Path file) throws Exception {
-        OutputStream out = null;
-        try {
-            out = Files.newOutputStream(file);
+        try (OutputStream out = Files.newOutputStream(file)) {
             this.targetKeystore.store(out, this.targetKeystorePass);
-        } finally {
-            if (out != null) {
-                out.close();
-            }
         }
     }
 }

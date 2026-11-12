@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/partner/PartnerCertificateInformationList.java 26    21/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/partner/PartnerCertificateInformationList.java 28    20/02/25 13:41 Heller $
 package de.mendelson.comm.as2.partner;
 
 import de.mendelson.comm.as2.cem.CEMEntry;
@@ -24,7 +24,7 @@ import java.util.ResourceBundle;
  * communication may use several certificates with several priorities
  *
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 28 $
  */
 public class PartnerCertificateInformationList implements Serializable {
 
@@ -40,16 +40,17 @@ public class PartnerCertificateInformationList implements Serializable {
             = new PartnerCertificateInformation(PartnerCertificateInformation.CATEGORY_SIGN_OVERWRITE_LOCALSTATION);
     private final PartnerCertificateInformation infoCryptOverwriteLocalstation
             = new PartnerCertificateInformation(PartnerCertificateInformation.CATEGORY_CRYPT_OVERWRITE_LOCALSTATION);
-    private final MecResourceBundle rb;
-
-    public PartnerCertificateInformationList() {
-        //load resource bundle
+    private final static MecResourceBundle rb;
+    static{
         try {
-            this.rb = (MecResourceBundle) ResourceBundle.getBundle(
+            rb = (MecResourceBundle) ResourceBundle.getBundle(
                     ResourceBundleCertificateInformation.class.getName());
         } catch (MissingResourceException e) {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
+    }
+
+    public PartnerCertificateInformationList() {
     }
 
     /**
@@ -107,11 +108,11 @@ public class PartnerCertificateInformationList implements Serializable {
         String alias = manager.getAliasByFingerprint(information.getFingerprintSHA1());
         if (partner.isLocalStation()) {
             if (category == PartnerCertificateInformation.CATEGORY_CRYPT) {
-                builder.append(this.rb.getResourceString("localstation.decrypt",
+                builder.append(rb.getResourceString("localstation.decrypt",
                         new Object[]{partner.getName(), alias}));
             }
             if (category == PartnerCertificateInformation.CATEGORY_SIGN) {
-                builder.append(this.rb.getResourceString("localstation.sign",
+                builder.append(rb.getResourceString("localstation.sign",
                         new Object[]{partner.getName(), alias}));
             }
         }

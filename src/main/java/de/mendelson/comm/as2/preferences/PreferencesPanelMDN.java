@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelMDN.java 25    1/11/23 14:57 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/PreferencesPanelMDN.java 26    19/02/25 10:08 Heller $
 package de.mendelson.comm.as2.preferences;
 
 import de.mendelson.util.JTextFieldLimitDocument;
@@ -21,7 +21,7 @@ import javax.swing.ImageIcon;
  * Panel to define the MDN preferences
  *
  * @author S.Heller
- * @version: $Revision: 25 $
+ * @version: $Revision: 26 $
  */
 public class PreferencesPanelMDN extends PreferencesPanel {
 
@@ -88,9 +88,9 @@ public class PreferencesPanelMDN extends PreferencesPanel {
     @Override
     public void savePreferences() {
         try {
-            int value = Integer.valueOf(this.jTextFieldAsyncMDNTimeout.getText().trim()).intValue();
+            int value = Integer.parseInt(this.jTextFieldAsyncMDNTimeout.getText().trim());
             if( value < 0){
-                value = Integer.valueOf( this.preferences.getDefaultValue(PreferencesAS2.ASYNC_MDN_TIMEOUT));
+                value = Integer.parseInt( this.preferences.getDefaultValue(PreferencesAS2.ASYNC_MDN_TIMEOUT));
             }
             this.preferences.putInt(PreferencesAS2.ASYNC_MDN_TIMEOUT, value);
         } catch (NumberFormatException e) {

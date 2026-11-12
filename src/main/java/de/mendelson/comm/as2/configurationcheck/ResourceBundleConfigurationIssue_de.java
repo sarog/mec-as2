@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue_de.java 28    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/configurationcheck/ResourceBundleConfigurationIssue_de.java 36    21/02/25 16:04 Heller $
 package de.mendelson.comm.as2.configurationcheck;
 
 import de.mendelson.util.MecResourceBundle;
@@ -14,7 +14,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 36 $
  */
 public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
 
@@ -27,7 +27,7 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         //preferences localized
         {String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN), "Zertifikat ist abgelaufen (enc/sign)"},
         {"hint." + String.valueOf(ConfigurationIssue.CERTIFICATE_EXPIRED_ENC_SIGN),
@@ -80,11 +80,13 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
         {"hint." + String.valueOf(ConfigurationIssue.FEW_CPU_CORES),
             "<HTML>Für besseren Durchsatz ist es notwendig, dass unterschiedliche Aufgaben im System parallel durchgeführt werden.<br>"
             + "Daher ist es notwendig, eine entsprechende Anzahl von CPU Kernen für den Prozess zu reservieren.</HTML>"},
-        {String.valueOf(ConfigurationIssue.LOW_MAX_HEAP_MEMORY), "Reservieren Sie mindestens 4GB Hauptspeicher für den Serverprozess"},
+        {String.valueOf(ConfigurationIssue.LOW_MAX_HEAP_MEMORY), "Reservieren Sie mindestens 8GB Hauptspeicher für den Serverprozess"},
         {"hint." + String.valueOf(ConfigurationIssue.LOW_MAX_HEAP_MEMORY),
             "<HTML>Dieses Programm ist in Java geschrieben.<br>"
             + "Unabhängig von der physikalischen Ausstattung Ihres Rechners müssen Sie dem Serverprozess eine entsprechende Menge an Speicher reservieren. In Ihrem Fall haben Sie zu wenig Speicher reserviert.<br>"
-            + "Bitte schauen Sie in die Hilfe (Abschnitt Installation) - dort steht, wie Sie für welche Startmethode den entsprechenden Speicher reservieren.</HTML>"},
+            + "Bitte schauen Sie in die Hilfe (Abschnitt Installation) - dort steht, wie Sie für welche Startmethode den entsprechenden Speicher reservieren.<br><br>"
+            + "Bitte stellen Sie auf jeden Fall sicher, nicht mehr Speicher für den Serverprozess zu reservieren, als Ihr System Hauptspeicher hat. "
+            + "Ansonsten wird die Software nahezu unbedienbar, weil das System ständig Speicher auf die Festplatte auslagert.</HTML>"},
         {String.valueOf(ConfigurationIssue.NO_OUTBOUND_CONNECTIONS_ALLOWED), "Menge ausgehender Verbindungen ist auf 0 gesetzt - das System wird NICHT senden"},
         {"hint." + String.valueOf(ConfigurationIssue.NO_OUTBOUND_CONNECTIONS_ALLOWED),
             "<HTML>Sie haben Konfigurationsänderungen vorgenommen, sodass aktuell keine ausgehenden Verbindungen möglich sind.<br>"
@@ -116,7 +118,7 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "Wenn Sie einen beglaubigten Schlüssel benötigen, wenden Sie sich bitte an den mendelson Support.</HTML>"},
         {String.valueOf(ConfigurationIssue.JVM_32_BIT), "Die Verwendung einer 32 Bit Java VM wird nicht für den produktiven Einsatz empfohlen, da dann der maximale Heap-Speicher auf 1,3GB begrenzt ist."},
         {"hint." + String.valueOf(ConfigurationIssue.JVM_32_BIT),
-            "<HTML>Java 32bit Prozesse können nicht genug Speicher reservieren, um das System im Produktivbetrieb stabil zu halten. Bitte verwenden Sie eine 64bit JVM.</HTML>"},        
+            "<HTML>Java 32bit Prozesse können nicht genug Speicher reservieren, um das System im Produktivbetrieb stabil zu halten. Bitte verwenden Sie eine 64bit JVM.</HTML>"},
         {String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT), "Windows Service mit lokalem Systemkonto gestartet"},
         {"hint." + String.valueOf(ConfigurationIssue.WINDOWS_SERVICE_LOCAL_SYSTEM_ACCOUNT),
             "<HTML>Sie haben den mendelson AS2 Server als Windows Service eingerichtet und starten ihn über ein lokales Systemkonto (\"{0}\").<br>"
@@ -131,6 +133,48 @@ public class ResourceBundleConfigurationIssue_de extends MecResourceBundle {
             + "Bitte reduzieren Sie diesen Wert, indem Sie die Überwachungsintervalle der jeweiligen Partnerverzeichnisse vergrößern und"
             + " auch Überwachungen für Partner deaktivieren, wo dies nicht benötigt wird."
             + "Bei einer großen Anzahl von Partnern wird empfohlen, alle Verzeichnisüberwachungen deaktivieren und die Sendeaufträge von "
-            + "Ihrem Backend aus mit den Befehlen <i>AS2Send.exe</i> oder <i>as2send.sh</i> nach Bedarf zu erstellen.</HTML>"},        
+            + "Ihrem Backend aus mit den Befehlen <i>AS2Send.exe</i> oder <i>as2send.sh</i> nach Bedarf zu erstellen.</HTML>"},
+        {String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN), "Sperrlistenproblem (enc/sign)"},
+        {"hint." + String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_ENC_SIGN),
+            "<HTML>Beglaubigte Zertifikate enthalten einen Link zu einer Sperrliste (CRL, certificate revocation list), mit der dieses Zertifikat für ungültig "
+            + "erklärt werden kann. Zum Beispiel, wenn das Zertifikat kompromittiert wurde.<br>"
+            + "Es gab ein Problem bei der "
+            + "Überprüfung der Sperrliste des folgenden enc/sign-Zertifikats oder das Zertifikat wurde widerrufen:<br><strong>{0}</strong><br><br>"
+            + "Zusätzliche Information zu diesem Zertifikat<br><br>"
+            + "Alias: {1}<br>"
+            + "Issuer: {2}<br>"
+            + "Fingerprint (SHA-1): {3}<br>"
+            + "<br>"
+            + "<br>Bitte beachten Sie, dass die automatische CRL Prüfung in den Einstellungen abgeschaltet werden kann."
+            + "</HTML>"},
+        {String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS), "Sperrlistenproblem (TLS)"},
+        {"hint." + String.valueOf(ConfigurationIssue.CRL_CERTIFICATE_REVOCATION_TLS),
+            "<HTML>Beglaubigte Zertifikate enthalten einen Link zu einer Sperrliste, mit der dieses Zertifikat für ungültig "
+            + "erklärt werden kann. Zum Beispiel, wenn das Zertifikat kompromittiert wurde.<br>"
+            + "Es gab ein Problem bei der "
+            + "Überprüfung der Sperrliste des folgenden TLS-Zertifikats oder das Zertifikat wurde widerrufen:<br><strong>{0}</strong><br><br>"
+            + "Zusätzliche Information zu diesem Zertifikat<br><br>"
+            + "Alias: {1}<br>"
+            + "Issuer: {2}<br>"
+            + "Fingerprint (SHA-1): {3}<br>"
+            + "<br>"
+            + "<br>Bitte beachten Sie, dass die automatische CRL Prüfung in den Einstellungen abgeschaltet werden kann."
+            + "</HTML>"},
+        {String.valueOf(ConfigurationIssue.CLIENT_SERVER_IN_ONE_PROCESS), "Client und Server laufen in einem Prozess"},
+        {"hint." + String.valueOf(ConfigurationIssue.CLIENT_SERVER_IN_ONE_PROCESS),
+            "<HTML>Sie haben Client und Server des Produktes in einem Prozess gestartet. Es ist nicht empfehlenswert, das "
+            + "im produktiven Betrieb zu tun. Da die Resourcen den Programmen statisch zugewiesen sind, haben Sie in diesem Fall "
+            + "geringere Resourcen für den Server- und Clientbetrieb.<br><br>"
+            + "Bitte starten Sie zunächst den Serverprozess und verbinden sich dann separat "
+            + "mit dem Client."
+            + "</HTML>"},
+        {String.valueOf(ConfigurationIssue.NOT_ENOUGH_HANDLES), "Nicht genug Handles für Serverprozess"},
+        {"hint." + String.valueOf(ConfigurationIssue.NOT_ENOUGH_HANDLES),
+            "<HTML>Sie können in Ihrem Betriebssystem die Anzahl der offenen Ports und Dateien pro Benutzer limitieren.<br>"
+            + "Ihr aktueller Prozessbenutzer darf nur {0} Handles verwenden, was zu wenig für den Serverbetrieb ist. "
+            + "Aktuell verwendet der Serverprozess {1} Handles.<br>"
+            + "Unter Linux können Sie diesen Wert mit \"ulimit -n\" einsehen.<br><br>"
+            + "Bitte erweitern Sie den Maximalwert der verfügbaren Handles für diesen Prozess auf mindestens {2}."
+            + "</HTML>"},
     };
 }

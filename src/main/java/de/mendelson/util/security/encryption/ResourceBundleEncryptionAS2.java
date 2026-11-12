@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/encryption/ResourceBundleEncryptionAS2.java 4     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/encryption/ResourceBundleEncryptionAS2.java 9     3/09/24 15:58 Heller $
 package de.mendelson.util.security.encryption;
 
 import de.mendelson.util.MecResourceBundle;
@@ -13,7 +13,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize a mendelson product
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundleEncryptionAS2 extends MecResourceBundle {
 
@@ -24,7 +24,7 @@ public class ResourceBundleEncryptionAS2 extends MecResourceBundle {
         return CONTENTS;
     }
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {        
+    private static final Object[][] CONTENTS = {        
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_UNKNOWN, "Unknown"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_NONE, "No encryption"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_3DES, "3DES"},
@@ -33,17 +33,30 @@ public class ResourceBundleEncryptionAS2 extends MecResourceBundle {
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC2_128, "RC2-128"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC2_196, "RC2-196"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC2_UNKNOWN, "RC2"},
-        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128, "AES-128"},
-        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192, "AES-192"},
-        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256, "AES-256"},
-        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_RSAES_AOEP, "AES-128 (RSAES-OAEP)"},
-        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_RSAES_AOEP, "AES-192 (RSAES-OAEP)"},
-        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_RSAES_AOEP, "AES-256 (RSAES-OAEP)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC, "AES-128 (CBC)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC, "AES-192 (CBC)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC, "AES-256 (CBC)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_CBC_RSAES_AOEP, "AES-128 (CBC, RSAES-OAEP)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_CBC_RSAES_AOEP, "AES-192 (CBC, RSAES-OAEP)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_CBC_RSAES_AOEP, "AES-256 (CBC, RSAES-OAEP)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_GCM_RSAES_AOEP, "AES-128 (GCM, RSAES-OAEP)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_GCM_RSAES_AOEP, "AES-192 (GCM, RSAES-OAEP)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM_RSAES_AOEP, "AES-256 (GCM, RSAES-OAEP)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_GCM, "AES-128 (GCM)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_GCM, "AES-192 (GCM)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_GCM, "AES-256 (GCM)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_128_CCM, "AES-128 (CCM)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_192_CCM, "AES-192 (CCM)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_AES_256_CCM, "AES-256 (CCM)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_CHACHA20_POLY1305, "CHACHA20-POLY1305"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC4_40, "RC4-40"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC4_56, "RC4-56"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC4_128, "RC4-128"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_RC4_UNKNOWN, "RC4"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_DES, "DES"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_128_CBC, "CAMELLIA-128 (CBC)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_192_CBC, "CAMELLIA-192 (CBC)"},
+        {"encryption." + EncryptionConstantsAS2.ENCRYPTION_CAMELLIA_256_CBC, "CAMELLIA-256 (CBC)"},
         {"encryption." + EncryptionConstantsAS2.ENCRYPTION_UNKNOWN_ALGORITHM, "Unknown"},
     };
 }

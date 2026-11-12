@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestChunk.java 4     2/11/23 15:53 Heller $
+//$Header: /mendelson_business_integration/de/mendelson/util/clientserver/clients/datatransfer/UploadRequestChunk.java 5     5/03/25 17:53 He $
 package de.mendelson.util.clientserver.clients.datatransfer;
 
 import de.mendelson.util.clientserver.messages.ClientServerMessage;
@@ -18,7 +18,7 @@ import java.io.Serializable;
 /**
  * Msg for the client server protocol
  * @author S.Heller
- * @version $Revision: 4 $
+ * @version $Revision: 5 $
  */
 public class UploadRequestChunk extends ClientServerMessage implements Serializable {
 
@@ -39,7 +39,7 @@ public class UploadRequestChunk extends ClientServerMessage implements Serializa
      * @return the data
      */
     public InputStream getDataStream() {
-        ByteArrayInputStream inStream = new ByteArrayInputStream(this.getDataBytes());
+        InputStream inStream = new ByteArrayInputStream(this.getDataBytes());
         return (inStream);
     }
 

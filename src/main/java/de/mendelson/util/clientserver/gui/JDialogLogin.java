@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/clientserver/gui/JDialogLogin.java 8     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/clientserver/gui/JDialogLogin.java 9     12/06/24 16:25 Heller $
 package de.mendelson.util.clientserver.gui;
 
 import de.mendelson.util.MecResourceBundle;
@@ -22,7 +22,7 @@ import javax.swing.JFrame;
 /**
  * Login dialog for server authentication
  * @author S.Heller
- * @version $Revision: 8 $
+ * @version $Revision: 9 $
  */
 public class JDialogLogin extends JDialog {
 
@@ -211,7 +211,7 @@ public class JDialogLogin extends JDialog {
         gridBagConstraints.insets = new java.awt.Insets(10, 5, 5, 5);
         getContentPane().add(jPanelButtons, gridBagConstraints);
 
-        setSize(new java.awt.Dimension(366, 237));
+        setSize(new java.awt.Dimension(404, 258));
         setLocationRelativeTo(null);
     }// </editor-fold>//GEN-END:initComponents
 

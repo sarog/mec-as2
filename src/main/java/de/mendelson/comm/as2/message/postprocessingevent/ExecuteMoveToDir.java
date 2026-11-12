@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToDir.java 14    24/11/23 13:29 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/postprocessingevent/ExecuteMoveToDir.java 15    11/03/25 17:00 Heller $
 package de.mendelson.comm.as2.message.postprocessingevent;
 
 import de.mendelson.comm.as2.message.AS2Message;
@@ -32,11 +32,11 @@ import java.util.logging.Logger;
  * message receipt
  *
  * @author S.Heller
- * @version $Revision: 14 $
+ * @version $Revision: 15 $
  */
 public class ExecuteMoveToDir implements IProcessingExecution {
 
-    private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
+    private static final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final MessageAccessDB messageAccess;
     private final PartnerAccessDB partnerAccess;
     /**
@@ -90,12 +90,12 @@ public class ExecuteMoveToDir implements IProcessingExecution {
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String targetDirStr = event.getParameter().get(0);
         if (payload != null && !payload.isEmpty()) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.send",
+            logger.log(Level.INFO, this.rb.getResourceString("executing.send",
                     new Object[]{
                         messageSender.getName(),
                         messageReceiver.getName()
                     }), messageInfo);
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.targetdir",
+            logger.log(Level.INFO, this.rb.getResourceString("executing.targetdir",
                     Paths.get(targetDirStr).toAbsolutePath().toString()), messageInfo);
             for (AS2Payload singlePayload : payload) {
                 if (singlePayload.getPayloadFilename() == null) {
@@ -106,7 +106,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
                     String originalFilename = singlePayload.getOriginalFilename();
                     Path sourceFile = Paths.get(singlePayload.getPayloadFilename());
                     Path targetFile = Paths.get(targetDirStr, originalFilename);
-                    this.logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir",
+                    logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir",
                             new Object[]{
                                 sourceFile.toAbsolutePath().toString(),
                                 targetFile.toAbsolutePath().toString()
@@ -114,7 +114,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
                     Files.move(sourceFile, targetFile,
                             StandardCopyOption.ATOMIC_MOVE,
                             StandardCopyOption.REPLACE_EXISTING);
-                    this.logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir.success"), messageInfo);
+                    logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir.success"), messageInfo);
                 } catch (Exception e) {
                     StringBuilder errorBuilder = new StringBuilder();
                     if (e.getCause() != null) {
@@ -152,12 +152,12 @@ public class ExecuteMoveToDir implements IProcessingExecution {
         List<AS2Payload> payload = this.messageAccess.getPayload(messageInfo.getMessageId());
         String targetDirStr = event.getParameter().get(0);
         if (payload != null && !payload.isEmpty()) {
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.receipt",
+            logger.log(Level.INFO, this.rb.getResourceString("executing.receipt",
                     new Object[]{
                         messageSender.getName(),
                         messageReceiver.getName()
                     }), messageInfo);
-            this.logger.log(Level.INFO, this.rb.getResourceString("executing.targetdir",
+            logger.log(Level.INFO, this.rb.getResourceString("executing.targetdir",
                     Paths.get(targetDirStr).toAbsolutePath().toString()), messageInfo);
             for (AS2Payload singlePayload : payload) {
                 if (singlePayload.getPayloadFilename() == null) {
@@ -171,7 +171,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
                 }
                 Path sourceFile = Paths.get(singlePayload.getPayloadFilename());
                 Path targetFile = Paths.get(targetDirStr, originalFilename);
-                this.logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir",
+                logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir",
                         new Object[]{
                             sourceFile.toAbsolutePath().toString(),
                             targetFile.toAbsolutePath().toString()
@@ -180,7 +180,7 @@ public class ExecuteMoveToDir implements IProcessingExecution {
                     Files.move(sourceFile, targetFile,
                             StandardCopyOption.ATOMIC_MOVE,
                             StandardCopyOption.REPLACE_EXISTING);
-                    this.logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir.success"), messageInfo);
+                    logger.log(Level.INFO, this.rb.getResourceString("executing.movetodir.success"), messageInfo);
                 } catch (Exception e) {
                     throw new PostprocessingException(e.getMessage(), messageSender, messageReceiver);
                 }

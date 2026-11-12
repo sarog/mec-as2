@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_de.java 26    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/loggui/ResourceBundleMessageDetails_de.java 28    17/01/25 9:57 Heller $
 package de.mendelson.comm.as2.message.loggui;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 26 $
+ * @version $Revision: 28 $
  */
 public class ResourceBundleMessageDetails_de extends MecResourceBundle{
     
@@ -42,6 +42,8 @@ public class ResourceBundleMessageDetails_de extends MecResourceBundle{
         {"transactionstate.error.decryption-failed", "<HTML>Der Nachrichtenempfänger konnte die Nachricht nicht entschlüsseln. Meistens ist das ein Konfigurationsproblem, verwendet der Sender das richtige Zertifikat zum Verschlüsseln?</HTML>" },
         {"transactionstate.error.connectionrefused", "<HTML>Sie haben versucht, das Partnersystem zu erreichen. Entweder schlug das fehl oder Ihr Partner hat nicht innerhalb der definierten Zeit mit einer Bestätigung geantwortet.</HTML>" },
         {"transactionstate.error.connectionrefused.details", "<HTML>Dies könnte ein Infrastrukturproblem sein, Ihr Partnersystem läuft gar nicht oder Sie haben die falsche Empfangs-URL in der Konfiguration eingegeben? Wenn die Daten übermittelt wurden und Ihr Partner sie nicht bestätigt hat, haben Sie eventuell das Zeitfenster für die Bestätigung zu klein gewählt?</HTML>" },
+        {"transactionstate.error.messagecreation", "<HTML>Bei der Generierung einer ausgehenden AS2 Nachricht ist ein Problem aufgetreten</HTML>" },
+        {"transactionstate.error.messagecreation.details", "<HTML>Das System konnte die erforderliche Nachrichtenstruktur aufgrund eines Problems auf Ihrer Seite nicht erzeugen. Dies hat nichts mit Ihrem Partnersystem zu tun, es wurde keine Verbindung hergestellt.</HTML>" },
         {"transactionstate.error.asyncmdnsend", "<HTML>Eine Nachricht mit einer asynchronen MDN-Anforderung wurde empfangen und erfolgreich verarbeitet, aber Ihr System konnte die asynchrone MDN nicht zurücksenden oder sie wurde vom Partnersystem nicht akzeptiert.</HTML>" },
         {"transactionstate.error.asyncmdnsend.details", "<HTML>Der AS2-Message-Sender übermittelt die URL, an die er die MDN zurücksenden soll - entweder ist dieses System nicht erreichbar (Infrastrukturproblem oder das Partnersystem ist ausgefallen?) oder das Partnersystem hat die asynchrone MDN nicht akzeptiert und antwortete mit einem HTTP 400.</HTML>" },
         {"transactionstate.pending", "Diese Transaktion ist im Wartezustand." },

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_de.java 20    6/11/23 11:38 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/keygeneration/ResourceBundleGenerateKey_de.java 22    9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert.gui.keygeneration;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 20 $
+ * @version $Revision: 22 $
  */
 public class ResourceBundleGenerateKey_de extends MecResourceBundle {
 
@@ -29,7 +29,7 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {
+    private static final Object[][] CONTENTS = {
         {"title", "Schlüsselerstellung"},
         {"button.ok", "Ok"},
         {"button.cancel", "Abbruch"},
@@ -46,7 +46,15 @@ public class ResourceBundleGenerateKey_de extends MecResourceBundle {
             + "Signaturfähigkeiten des Schlüssels zu tun - Sie können also zum Beispiel mit einem SHA-1 signierten "
             + "Schlüssel auch SHA-2 Signaturen erstellen "
             + "oder anders herum.<br>"
-            + "Wir würden Ihnen Stand 2022 einen SHA-2 signierten Schlüssel empfehlen."
+            + "Wir würden Ihnen Stand 2024 einen SHA-2 signierten Schlüssel empfehlen.<br><br>"
+            + "<strong>Kurzer Überblick: SHA-1, SHA-2, SHA-3 und RSASSA-PSS</strong><br><br>"
+            + "<strong>SHA-1</strong>: Ein älterer Hash-Algorithmus, der heutzutage als unsicher gilt.<br>"
+            + "<strong>SHA-2</strong>: Eine modernere und sicherere Version von SHA, die in verschiedenen Varianten wie SHA-256 und SHA-512 existiert.<br>"
+            + "<strong>SHA-3</strong>: Der neueste Hash-Algorithmus, der auf einer anderen Struktur basiert als SHA-1 und SHA-2 und noch "
+            + "sicherer gegen Angriffe ist.<br>"
+            + "<strong>RSASSA-PSS (Probabilistic Signature Scheme)</strong>: Dies ist eine Erweiterung von RSA. "
+            + "Damit werden die SHA-Hash-Funktion mit dem PSS-Signaturverfahren kombiniert, was zusätzliche "
+            + "Sicherheit bietet."
             + "</HTML>"
         },
         {"label.size", "Schlüssellänge"},

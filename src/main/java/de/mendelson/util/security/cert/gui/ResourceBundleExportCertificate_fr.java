@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_fr.java 10    2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/security/cert/gui/ResourceBundleExportCertificate_fr.java 13    9/12/24 15:51 Heller $
 package de.mendelson.util.security.cert.gui;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.security.cert.KeystoreCertificate;
@@ -14,7 +14,7 @@ import de.mendelson.util.security.cert.KeystoreCertificate;
  * ResourceBundle to localize gui entries
  * @author S.Heller
  * @author E.Pailleau
- * @version $Revision: 10 $
+ * @version $Revision: 13 $
  */
 public class ResourceBundleExportCertificate_fr extends MecResourceBundle{
 
@@ -26,7 +26,7 @@ public class ResourceBundleExportCertificate_fr extends MecResourceBundle{
   }
 
   /**List of messages in the specific language*/
-  static final Object[][] CONTENTS = {
+  private static final Object[][] CONTENTS = {
         
     {"button.ok", "Valider" },
     {"button.cancel", "Annuler" },
@@ -43,6 +43,7 @@ public class ResourceBundleExportCertificate_fr extends MecResourceBundle{
     {"certificate.export.success.title", "Succès" },
     {"certificate.export.success.message", "Le certificat a été exporté avec succès a\n\"{0}\"" }, 
     {KeystoreCertificate.CERTIFICATE_FORMAT_PEM, "Format texte (PEM. *.cer)" },
+    {KeystoreCertificate.CERTIFICATE_FORMAT_PEM_CHAIN, "Format texte (+chaîne certification) (PEM. *.cer)" },
     {KeystoreCertificate.CERTIFICATE_FORMAT_DER, "Format binaire (DER, *.cer)" },
     {KeystoreCertificate.CERTIFICATE_FORMAT_PKCS7, "Avec chaîne de confiance (PKCS#7, *.p7b)" },  
     {KeystoreCertificate.CERTIFICATE_FORMAT_SSH2, "Format SSH2 (clé publique, *.pub)"},

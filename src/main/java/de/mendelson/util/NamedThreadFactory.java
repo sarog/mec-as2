@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/NamedThreadFactory.java 3     24/02/22 14:40 Heller $
+//$Header: /oftp2/de/mendelson/util/NamedThreadFactory.java 4     29/05/24 11:44 Heller $
 package de.mendelson.util;
 
 import java.util.concurrent.ThreadFactory;
@@ -16,7 +16,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * program running state using jconsole
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  */
 public class NamedThreadFactory implements ThreadFactory {
 
@@ -45,12 +45,7 @@ public class NamedThreadFactory implements ThreadFactory {
      * Thread.MAX_PRIORITY(10)
      */
     public NamedThreadFactory(String suffix, int priority) {
-        final SecurityManager securityManager = System.getSecurityManager();
-        if (securityManager != null) {
-            this.group = securityManager.getThreadGroup();
-        } else {
-            this.group = Thread.currentThread().getThreadGroup();
-        }
+        this.group = Thread.currentThread().getThreadGroup();
         //format is suffix-poolNo-thread-threadnumber
         this.namePattern = suffix + "-%d-thread-%d";
         this.priority = priority;

@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 28    9/11/23 9:52 Heller $
+//$Header: /as2/de/mendelson/util/security/cert/KeystoreStorageImplFile.java 30    11/02/25 13:40 Heller $
 package de.mendelson.util.security.cert;
 
 import de.mendelson.util.MecResourceBundle;
@@ -28,7 +28,7 @@ import java.util.ResourceBundle;
  * Keystore storage implementation that relies on a keystore file
  *
  * @author S.Heller
- * @version $Revision: 28 $
+ * @version $Revision: 30 $
  */
 public class KeystoreStorageImplFile implements KeystoreStorage {
 
@@ -40,10 +40,10 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     private KeyStore keystore = null;
     private final char[] keystorePass;
     private final String keystoreFilename;
-    private final KeyStoreUtil keystoreUtil = new KeyStoreUtil();
     private final MecResourceBundle rb;
     private int keystoreUsage = KEYSTORE_USAGE_ENC_SIGN;
     private final String keystoreStorageType;
+    private boolean readonly = false;
 
     /**
      * @param keystoreFilename
@@ -72,9 +72,12 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
         if (!keystoreFile.toFile().isFile()) {
             throw new Exception(this.rb.getResourceString("error.notafile", this.keystoreFilename));
         }
+        if (!keystoreFile.toFile().canWrite()) {
+            this.readonly = true;
+        }
         BCCryptoHelper cryptoHelper = new BCCryptoHelper();
         this.keystore = cryptoHelper.createKeyStoreInstance(this.keystoreStorageType);
-        this.keystoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
+        KeyStoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
     }
 
     @Override
@@ -83,7 +86,7 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
             //internal error, should not happen
             throw new Exception(this.rb.getResourceString("error.save.notloaded"));
         }
-        this.keystoreUtil.saveKeyStore(this.keystore, this.keystorePass, this.keystoreFilename);
+        KeyStoreUtil.saveKeyStore(this.keystore, this.keystorePass, this.keystoreFilename);
     }
 
     @Override
@@ -140,8 +143,7 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
 
     @Override
     public void renameEntry(String oldAlias, String newAlias, char[] keypairPass) throws Exception {
-        KeyStoreUtil keystoreUtility = new KeyStoreUtil();
-        keystoreUtility.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
+        KeyStoreUtil.renameEntry(this.keystore, oldAlias, newAlias, keypairPass);
     }
 
     @Override
@@ -174,8 +176,8 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
 
     @Override
     public Map<String, Certificate> loadCertificatesFromKeystore() throws Exception {
-        this.keystoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
-        Map<String, Certificate> certificateMap = this.keystoreUtil.getCertificatesFromKeystore(this.keystore);
+        KeyStoreUtil.loadKeyStore(this.keystore, this.keystoreFilename, this.keystorePass);
+        Map<String, Certificate> certificateMap = KeyStoreUtil.getCertificatesFromKeystore(this.keystore);
         return (certificateMap);
     }
 
@@ -192,5 +194,10 @@ public class KeystoreStorageImplFile implements KeystoreStorage {
     @Override
     public int getKeystoreUsage() {
         return (this.keystoreUsage);
+    }
+
+    @Override
+    public boolean isReadOnly() {
+        return( this.readonly );
     }
 }

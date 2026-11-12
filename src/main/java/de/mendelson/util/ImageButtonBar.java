@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/ImageButtonBar.java 16    2/11/23 15:53 Heller $
+//$Header: /oftp2/de/mendelson/util/ImageButtonBar.java 18    11/02/25 16:26 Heller $
 package de.mendelson.util;
 
 import com.l2fprod.common.swing.JButtonBar;
@@ -33,7 +33,7 @@ import javax.swing.SwingConstants;
  * the following way: 1.initialize it 2.Add panels to it by addButton()
  *
  * @author S.Heller
- * @version $Revision: 16 $
+ * @version $Revision: 18 $
  */
 public class ImageButtonBar extends JPanel {
 
@@ -59,7 +59,7 @@ public class ImageButtonBar extends JPanel {
     public ImageButtonBar setPreferredButtonSize(int width, int height) {
         this.preferredButtonHeight = height;
         this.preferredButtonWidth = width;
-        return( this );
+        return (this);
     }
 
     /**
@@ -88,7 +88,7 @@ public class ImageButtonBar extends JPanel {
             ImageButtonComponent imageButton = new ImageButtonComponent(icon, text, internalName, components, initialSelected);
             this.componentsList.add(imageButton);
         }
-        return( this );
+        return (this);
     }
 
     /**
@@ -99,7 +99,7 @@ public class ImageButtonBar extends JPanel {
      * @param initialSelected selects the component initial if set
      */
     public ImageButtonBar addButton(ImageIcon icon, String text, JComponent[] components, boolean initialSelected) {
-        return( this.addButton(icon, text, null, components, initialSelected));
+        return (this.addButton(icon, text, null, components, initialSelected));
     }
 
     /**
@@ -110,7 +110,7 @@ public class ImageButtonBar extends JPanel {
      * @param initialSelected selects the component initial if set
      */
     public ImageButtonBar addButton(ImageIcon icon, String text, JComponent component, boolean initialSelected) {
-        return( this.addButton(icon, text, null, new JComponent[]{component}, initialSelected));
+        return (this.addButton(icon, text, null, new JComponent[]{component}, initialSelected));
     }
 
     /**
@@ -163,7 +163,7 @@ public class ImageButtonBar extends JPanel {
         BorderLayout layout = new BorderLayout();
         this.setLayout(layout);
         this.add(this.bar, BorderLayout.CENTER);
-        return( this );
+        return (this);
     }
 
     private final static class ImageButtonComponent {

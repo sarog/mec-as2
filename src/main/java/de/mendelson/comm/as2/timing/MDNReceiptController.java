@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 42    2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/comm/as2/timing/MDNReceiptController.java 43    18/12/24 17:06 Heller $
 package de.mendelson.comm.as2.timing;
 
 import de.mendelson.comm.as2.clientserver.message.RefreshClientMessageOverviewList;
@@ -10,7 +10,6 @@ import de.mendelson.comm.as2.message.store.MessageStoreHandler;
 import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.comm.as2.server.AS2Server;
 import de.mendelson.util.MecResourceBundle;
-import de.mendelson.util.NamedThreadFactory;
 import de.mendelson.util.clientserver.ClientServer;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.systemevents.SystemEvent;
@@ -18,8 +17,6 @@ import de.mendelson.util.systemevents.SystemEventManagerImplAS2;
 import java.util.List;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,7 +32,7 @@ import java.util.logging.Logger;
  * Controls the timed deletion of as2 entries from the log
  *
  * @author S.Heller
- * @version $Revision: 42 $
+ * @version $Revision: 43 $
  */
 public class MDNReceiptController {
 
@@ -45,8 +42,6 @@ public class MDNReceiptController {
     private final Logger logger = Logger.getLogger(AS2Server.SERVER_LOGGER_NAME);
     private final PreferencesAS2 preferences;
     private final MDNCheckThread checkThread;
-    private final ScheduledExecutorService scheduledExecutor = Executors.newSingleThreadScheduledExecutor(
-        new NamedThreadFactory("mdn-receipt-control"));
     /**
      * server for client-server communication
      */
@@ -70,10 +65,10 @@ public class MDNReceiptController {
     }
 
     /**
-     * Starts the embedded task that guards the log
+     * Starts the embedded task that guards the MDNs
      */
     public void startMDNCheck() {
-        this.scheduledExecutor.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
+        TimingScheduledThreadPool.scheduleWithFixedDelay(this.checkThread, 1, 1, TimeUnit.MINUTES);
     }
 
     public class MDNCheckThread implements Runnable {

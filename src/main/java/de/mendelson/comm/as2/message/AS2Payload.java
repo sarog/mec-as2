@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 23    2/11/23 15:52 Heller $
+//$Header: /as2/de/mendelson/comm/as2/message/AS2Payload.java 24    1/11/24 11:34 Heller $
 package de.mendelson.comm.as2.message;
 
 import java.io.ByteArrayOutputStream;
@@ -22,14 +22,14 @@ import java.nio.file.StandardOpenOption;
  * have multiple attachments in as2 transmission
  *
  * @author S.Heller
- * @version $Revision: 23 $
+ * @version $Revision: 24 $
  */
 public class AS2Payload implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * Original filename of the sender, mustnt be provided
+     * Original filename of the sender, mustn't be provided
      */
     private String originalFilename = null;
     private final ByteStorage byteStorage = new ByteStorage();
@@ -94,24 +94,14 @@ public class AS2Payload implements Serializable {
     /**
      * Writes the payload to the message to the passed file
      */
-    public void writeTo(Path file) throws Exception {
-        OutputStream outStream = null;
-        InputStream inStream = null;
-        try {
-            outStream = Files.newOutputStream(file,
+    public void writeTo(Path file) throws Exception {        
+        try (InputStream inStream = this.byteStorage.getInputStream()) {
+            try (OutputStream outStream = Files.newOutputStream(file,
                     StandardOpenOption.SYNC,
                     StandardOpenOption.CREATE,
                     StandardOpenOption.TRUNCATE_EXISTING,
-                    StandardOpenOption.WRITE);
-            inStream = this.byteStorage.getInputStream();
-            inStream.transferTo(outStream);
-        } finally {
-            if (outStream != null) {
-                outStream.flush();
-                outStream.close();
-            }
-            if (inStream != null) {
-                inStream.close();
+                    StandardOpenOption.WRITE)) {
+                inStream.transferTo(outStream);
             }
         }
     }
@@ -122,31 +112,7 @@ public class AS2Payload implements Serializable {
      * the object if possible.
      */
     public void loadDataFromPayloadFile() throws Exception {
-        InputStream inStream = null;
-        ByteArrayOutputStream outStream = null;
-        try {
-            inStream = Files.newInputStream(Paths.get(this.payloadFilename));
-            outStream = new ByteArrayOutputStream();
-            inStream.transferTo(outStream);
-        } finally {
-            if (outStream != null) {
-                try {
-                    outStream.flush();
-                    outStream.close();
-                } finally {
-                }
-            }
-            if (inStream != null) {
-                try {
-                    inStream.close();
-                } finally {
-
-                }
-            }
-        }
-        if (outStream != null) {
-            this.byteStorage.put(outStream.toByteArray());
-        }
+        this.byteStorage.put(Files.readAllBytes(Paths.get(this.payloadFilename)));
     }
 
     /**

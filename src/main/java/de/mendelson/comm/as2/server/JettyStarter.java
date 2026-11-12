@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/server/JettyStarter.java 11    31/10/23 14:18 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/JettyStarter.java 14    11/02/25 13:39 Heller $
 package de.mendelson.comm.as2.server;
 
+import de.mendelson.comm.as2.preferences.PreferencesAS2;
 import de.mendelson.util.MecResourceBundle;
 import de.mendelson.util.database.IDBDriverManager;
 import de.mendelson.util.httpconfig.server.HTTPServerConfigInfo;
@@ -18,6 +19,7 @@ import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
+import java.util.TimeZone;
 import org.eclipse.jetty.server.Handler;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
@@ -27,7 +29,10 @@ import org.eclipse.jetty.util.resource.Resource;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.eclipse.jetty.xml.XmlConfiguration;
 import java.util.logging.Logger;
+import java.util.prefs.Preferences;
 import org.eclipse.jetty.server.Connector;
+import org.eclipse.jetty.server.CustomRequestLog;
+import org.eclipse.jetty.server.RequestLogWriter;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
@@ -43,7 +48,7 @@ import org.eclipse.jetty.util.ssl.SslContextFactory;
  * Helper class that starts up the internal jetty web server
  *
  * @author S.Heller
- * @version $Revision: 11 $
+ * @version $Revision: 14 $
  */
 public class JettyStarter {
 
@@ -53,6 +58,7 @@ public class JettyStarter {
     private final Logger logger;
     private final KeystoreStorage tlsStorage;
     private final JettyCertificateRefreshController certificateRefreshController;
+    private final PreferencesAS2 preferences;
 
     public JettyStarter(Logger logger, KeystoreStorage tlsStorage, IDBDriverManager dbDriverManager) {
         this.logger = logger;
@@ -66,6 +72,7 @@ public class JettyStarter {
             throw new RuntimeException("Oops..resource bundle " + e.getClassName() + " not found.");
         }
         this.MODULE_NAME = this.rb.getResourceString("module.name");
+        this.preferences = new PreferencesAS2(dbDriverManager);
     }
 
     /**
@@ -83,12 +90,10 @@ public class JettyStarter {
             //Read the user defined properties file to overwrite the default settings of the
             //jetty.xml file
             Properties userConfiguration = new Properties();
-            InputStream userConfigurationStream = null;
             Path userConfigurationFile = Paths.get("jetty10", "jetty.config");
             this.logger.info(MODULE_NAME + " " + this.rb.getResourceString("userconfiguration.reading",
                     userConfigurationFile.toAbsolutePath().toString()));
-            try {
-                userConfigurationStream = Files.newInputStream(userConfigurationFile);
+            try (InputStream userConfigurationStream = Files.newInputStream(userConfigurationFile)) {
                 userConfiguration.load(userConfigurationStream);
             } catch (Exception e) {
                 this.logger.warning(MODULE_NAME + " " + this.rb.getResourceString("userconfiguration.readerror",
@@ -96,10 +101,6 @@ public class JettyStarter {
                             userConfigurationFile.toAbsolutePath().toString(),
                             "[" + e.getClass().getSimpleName() + "] " + e.getMessage()
                         }));
-            } finally {
-                if (userConfigurationStream != null) {
-                    userConfigurationStream.close();
-                }
             }
             Map<String, String> userConfigurationMap = new HashMap<String, String>();
             for (Object key : userConfiguration.keySet()) {
@@ -112,7 +113,6 @@ public class JettyStarter {
                             valueStr
                         }));
             }
-            //org.eclipse.jetty.start.Main.main(new String[0]);
             Path jettyXMLConfigurationPath = Paths.get("jetty10", "etc", "jetty.xml");
             Resource jettyConfigResource = Resource.newResource(jettyXMLConfigurationPath);
             XmlConfiguration jettyXMLConfiguration = new XmlConfiguration(jettyConfigResource);
@@ -168,12 +168,22 @@ public class JettyStarter {
             for (Connector conn : connector) {
                 if (conn.getConnectionFactory("ssl") != null) {
                     SslConnectionFactory sslConnectionFactory = (SslConnectionFactory) conn.getConnectionFactory("ssl");
-                    SslContextFactory sslContextFactory = sslConnectionFactory.getSslContextFactory();  
+                    SslContextFactory sslContextFactory = sslConnectionFactory.getSslContextFactory();
                     sslContextFactory.setKeyStore(this.tlsStorage.getKeystore());
                     sslContextFactory.setKeyStorePassword(new String(tlsStorage.getKeystorePass()));
                     certificateRefreshController.addRefreshControl(sslContextFactory);
                 }
             }
+            // Add a request logger to jetty
+            if (this.preferences.getBoolean(PreferencesAS2.EMBEDDED_HTTP_SERVER_REQUESTLOG)) {
+                // Use a file name with the pattern 'yyyy_MM_dd'
+                RequestLogWriter logWriter = new RequestLogWriter("log/yyyy_MM_dd.jetty.request.log");
+                // Log times are in the current time zone.
+                logWriter.setTimeZone(TimeZone.getDefault().getID());
+                // Set the RequestLog to log to the given file, rolling over at midnight.
+                tempHTTPServer.setRequestLog(new CustomRequestLog(logWriter, CustomRequestLog.EXTENDED_NCSA_FORMAT));
+            }
+            //finally start the embedded HTTP server
             tempHTTPServer.start();
             //ensure the wars have been deployed
             for (Handler handler : tempHTTPServer.getChildHandlersByClass(WebAppContext.class

@@ -1,6 +1,7 @@
-//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesInterface.java 2     8/11/23 11:07 Heller $
+//$Header: /as2/de/mendelson/comm/as2/preferences/ResourceBundlePreferencesInterface.java 9     19/07/24 11:21 Heller $
 package de.mendelson.comm.as2.preferences;
 
+import de.mendelson.comm.as2.timing.PartnerTLSCertificateChangedController;
 import de.mendelson.util.MecResourceBundle;
 
 /*
@@ -10,12 +11,11 @@ import de.mendelson.util.MecResourceBundle;
  * Please read and agree to all terms before using this software.
  * Other product and brand names are trademarks of their respective owners.
  */
-
 /**
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 2 $
+ * @version $Revision: 9 $
  */
 public class ResourceBundlePreferencesInterface extends MecResourceBundle {
 
@@ -28,8 +28,8 @@ public class ResourceBundlePreferencesInterface extends MecResourceBundle {
     /**
      * List of messages in the specific language
      */
-    static final Object[][] CONTENTS = {        
-        {"label.showsecurityoverwrite", "Partner management: Overwrite security settings of the local station" },
+    private static final Object[][] CONTENTS = {
+        {"label.showsecurityoverwrite", "Partner management: Overwrite security settings of the local station"},
         {"label.showsecurityoverwrite.help", "<HTML><strong>Overwrite security settings of the local station</strong><br><br>"
             + "If you switch this option on, an additional tab is displayed for each partner in the partner "
             + "administration. Here you can define the private keys that are always used for incoming "
@@ -47,6 +47,40 @@ public class ResourceBundlePreferencesInterface extends MecResourceBundle {
             + "</HTML>"},
         {"label.showquota", "Partner management: Allow to configure quota notification"},
         {"label.outboundstatusfiles", "Write outbound transaction status files"},
+        {"label.outboundstatusfiles.help", "<HTML><strong>Write outbound transaction status files</strong><br><br>"
+            + "If you activate this option, a status file is written to the \"outboundstatus\" directory "
+            + "for each outbound transaction. This file is used for integration purposes and contains "
+            + "information on the respective transaction. This includes, for example, the transaction "
+            + "status, message number, sender and recipient ID.<br><br>"
+            + "The file name of the status file contains the message number and ends with \".sent.state\". "
+            + "After sending data, you can parse this file and check the status of the transaction."
+            + "</HTML>"},
         {"label.cem", "Allow certificate exchange (CEM)"},
-    };
+        {"label.checkrevocationlists", "Certificates: Check revocation lists"},
+        {"label.checkrevocationlists.help", "<HTML><strong>Certificates: Checking Revocation Lists</strong><br><br>"
+            + "A revocation list is a list of certificates that have been invalidated due to various security concerns or "
+            + "issues. These concerns may include compromise of the private key, loss of the certificate, or suspicion "
+            + "of fraudulent activity. Revocation lists are managed by certification authorities or other trusted entities "
+            + "authorized to issue certificates. Checking the revocation lists is important to ensure that the certificates "
+            + "used in a connection or for a cryptographic operation are valid and trustworthy. A certificate listed on a "
+            + "revocation list should no longer be used for cryptographic operations, as it may pose potential security risks "
+            + "and compromise the integrity of communication.<br><br>"
+            + "With the help of this setting, you can determine whether the system also checks the revocation lists "
+            + "during configuration validation."
+            + "</HTML>"
+        },
+        {"autoimport.tls", "TLS Certificates: Auto import if changed"},
+        {"autoimport.tls.help", "<HTML><strong>TLS Certificates: Auto import if changed</strong><br><br>"
+            + "If a partner connection is realised via HTTPS (TLS, the URL starts with https), you can regularly check "
+            + "whether the TLS certificate has changed on the partners side. If it has been changed and is not yet in your system, "
+            + "it is then automatically imported with the entire trust chain.<br>"
+            + "The system will check the partners TLS certificates all " 
+            + PartnerTLSCertificateChangedController.CHECK_DELAY_IN_MIN + " minutes. Means it could take some time before "
+            + "the change of a partners TLS certificate is detected.<br><br>"
+            + "You can also carry out this process manually by performing a connection test to a partner "
+            + "and then importing missing TLS certificates.<br><br>"
+            + "Please note that this is a problematic setting at security level because it means "
+            + "that you automatically trust a certificate that has been found - without being asked."
+            + "</HTML>"
+        },};
 }

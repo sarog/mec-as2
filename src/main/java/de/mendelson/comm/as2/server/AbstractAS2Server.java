@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/comm/as2/server/AbstractAS2Server.java 5     24/10/23 14:06 Heller $
+//$Header: /as2/de/mendelson/comm/as2/server/AbstractAS2Server.java 6     20/02/25 13:41 Heller $
 package de.mendelson.comm.as2.server;
 
 import de.mendelson.util.security.cert.CertificateManager;
@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 /**
  * Server root for the mendelson client/server architecture
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public abstract class AbstractAS2Server {
 
@@ -23,8 +23,11 @@ public abstract class AbstractAS2Server {
     private CertificateManager certificateManager;
 
     /** Creates a new instance of Server
+     * Abstract classes should not have public constructors. Constructors of abstract classes can only be 
+     * called in constructors of their subclasses. 
+     * So there is no point in making them public. The protected modifier should be enough.
      */
-    public AbstractAS2Server() {
+    protected AbstractAS2Server() {
         this.startTime = new Date().getTime();
     }
 

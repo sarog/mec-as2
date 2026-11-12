@@ -1,5 +1,9 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBServerPostgreSQL.java 3     2/01/23 13:16 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBServerPostgreSQL.java 4     20/03/25 11:33 Heller $
 package de.mendelson.comm.as2.database;
+
+import de.mendelson.util.database.DBClientInformation;
+import de.mendelson.util.database.DBServerInformation;
+import de.mendelson.util.database.IDBServer;
 
 /*
  * Copyright (C) mendelson-e-commerce GmbH Berlin Germany
@@ -12,7 +16,7 @@ package de.mendelson.comm.as2.database;
  * Class to start a dedicated SQL database server
  *
  * @author S.Heller
- * @version $Revision: 3 $
+ * @version $Revision: 4 $
  * @since build 70
  */
 public class DBServerPostgreSQL implements IDBServer {

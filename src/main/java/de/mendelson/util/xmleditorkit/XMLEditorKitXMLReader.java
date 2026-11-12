@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/xmleditorkit/XMLEditorKitXMLReader.java 7     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/xmleditorkit/XMLEditorKitXMLReader.java 9     11/02/25 13:40 Heller $
 package de.mendelson.util.xmleditorkit;
 
 import java.io.IOException;
@@ -11,6 +11,7 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
 import javax.swing.text.SimpleAttributeSet;
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -27,7 +28,7 @@ import org.w3c.dom.NodeList;
  * XML Editor Kit - based on code from Stanislav Lapitsky
  *
  * @author S.Heller
- * @version $Revision: 7 $
+ * @version $Revision: 9 $
  */
 public class XMLEditorKitXMLReader {
 
@@ -52,6 +53,29 @@ public class XMLEditorKitXMLReader {
         builderFactory.setValidating(false);
         builderFactory.setIgnoringComments(false);
         builderFactory.setIgnoringElementContentWhitespace(false);
+        builderFactory.setAttribute(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        builderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, "");
+        builderFactory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, "");
+        try {
+            builderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        } catch (Exception e) {
+        }
+        try {
+            builderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        } catch (Exception e) {
+        }
+        try {
+            // Disable external DTDs
+            builderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        } catch (Exception e) {
+        }
+        // per Timothy Morgans 2014 paper: "XML Schema, DTD, and Entity Attacks"
+        builderFactory.setXIncludeAware(false);
+        builderFactory.setExpandEntityReferences(false);
 
         try {
             //Using factory get an instance of document builder
@@ -63,7 +87,6 @@ public class XMLEditorKitXMLReader {
             DefaultStyledDocument.ElementSpec elementSpec
                     = new DefaultStyledDocument.ElementSpec(new SimpleAttributeSet(), DefaultStyledDocument.ElementSpec.EndTagType);
             specsList.add(elementSpec);
-            //debugPrintNode(dom, "");
             if (xmlDocument.getLength() == 0) {
                 writeNode(xmlDocument, dom, pos, specsList);
             } else {

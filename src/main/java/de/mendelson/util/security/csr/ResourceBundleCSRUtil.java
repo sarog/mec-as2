@@ -1,4 +1,4 @@
-//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSRUtil.java 6     2/11/23 15:53 Heller $
+//$Header: /as2/de/mendelson/util/security/csr/ResourceBundleCSRUtil.java 7     28/08/24 12:39 Heller $
 package de.mendelson.util.security.csr;
 import de.mendelson.util.MecResourceBundle;
 /*
@@ -12,7 +12,7 @@ import de.mendelson.util.MecResourceBundle;
 /**
  * ResourceBundle to localize gui entries
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class ResourceBundleCSRUtil extends MecResourceBundle{
     
@@ -24,13 +24,15 @@ public class ResourceBundleCSRUtil extends MecResourceBundle{
     }
     
     /**List of messages in the specific language*/
-    static final Object[][] CONTENTS = {                
-        {"verification.failed", "Operation failed - Verification of the created CSR failed" },
-        {"no.certificates.in.reply", "Operation failed - No certificates found in CSR reply, unable to patch the key" },
-        {"missing.cert.in.trustchain", "Operation failed - The system failed to establish the trust chain from the reply.\nPlease import the certificate with the issuer\n{0}\ninto the keystore first." },
-        {"response.chain.incomplete", "Operation failed - The certificate chain of the response is incomplete" },
-        {"response.verification.failed", "Operation failed - Problem verifying the certificate chain of the response: {0}" },
-        {"response.public.key.does.not.match", "Operation failed - This is not the CAs answer for this key." },
+    private static final Object[][] CONTENTS = {                
+        {"verification.failed", "Verification of the created CSR failed" },
+        {"no.certificates.in.reply", "No certificates found in CSR reply, unable to patch the key" },
+        {"missing.cert.in.trustchain", "The certificates of the trust chain (root and intermediate certificate) are missing in the system for this operation.\n"
+            + "You will receive these certificates from your CA.\n"
+            + "Please import the certificate with the issuer\n{0}\ninto the keystore first." },
+        {"response.chain.incomplete", "The certificate chain of the response is incomplete" },
+        {"response.verification.failed", "Problem verifying the certificate chain of the response: {0}" },
+        {"response.public.key.does.not.match", "This is not the CAs answer for this key." },
     };
 
 

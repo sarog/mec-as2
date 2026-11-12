@@ -1,4 +1,4 @@
-//$Header: /as4/de/mendelson/util/log/panel/ResourceBundleLogConsole_de.java 5     6/11/23 11:38 Heller $ 
+//$Header: /oftp2/de/mendelson/util/log/panel/ResourceBundleLogConsole_de.java 6     9/12/24 15:50 Heller $ 
 package de.mendelson.util.log.panel;
 
 import de.mendelson.util.MecResourceBundle;
@@ -15,7 +15,7 @@ import de.mendelson.util.MecResourceBundle;
  * ResourceBundle to localize gui entries
  *
  * @author S.Heller
- * @version $Revision: 5 $
+ * @version $Revision: 6 $
  */
 public class ResourceBundleLogConsole_de extends MecResourceBundle {
 

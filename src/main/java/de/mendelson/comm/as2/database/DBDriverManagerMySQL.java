@@ -1,8 +1,9 @@
-//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerMySQL.java 6     28/11/23 17:03 Heller $
+//$Header: /mec_as2/de/mendelson/comm/as2/database/DBDriverManagerMySQL.java 7     20/03/25 11:32 Heller $
 package de.mendelson.comm.as2.database;
 
 import de.mendelson.util.database.AbstractDBDriverManagerMySQL;
 import de.mendelson.util.database.IDBDriverManager;
+import de.mendelson.util.database.ISQLQueryModifier;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -18,7 +19,7 @@ import java.sql.SQLException;
  * Class needed to access the database
  *
  * @author S.Heller
- * @version $Revision: 6 $
+ * @version $Revision: 7 $
  */
 public class DBDriverManagerMySQL extends AbstractDBDriverManagerMySQL implements IDBDriverManager, ISQLQueryModifier {
 
