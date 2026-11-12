@@ -46,6 +46,7 @@
 
     <fileSets>
         <!-- Runtime dependencies copied by maven-dependency-plugin -->
+        <!-- This copies every dep into jlib. Comment this out if to place them in sub-dirs instead. -->
         <fileSet>
             <directory>${project.build.directory}/jlib</directory>
             <outputDirectory>/jlib</outputDirectory>
@@ -66,8 +67,34 @@
             <outputDirectory>/jetty10</outputDirectory>
             <includes>
                 <!--<include>bin/*</include>-->
-                <include>etc/*</include>
-                <include>lib/*</include>
+                <!--<include>etc/*</include>-->
+                <include>etc/jetty.xml</include>
+                <include>etc/webdefault.xml</include>
+
+                <!--<include>lib/*</include>-->
+                <include>lib/jetty-annotations-*.jar</include>
+                <include>lib/jetty-cdi-*.jar</include>
+                <include>lib/jetty-client-*.jar</include>
+                <include>lib/jetty-deploy-*.jar</include>
+                <include>lib/jetty-http-*.jar</include>
+                <include>lib/jetty-io-*.jar</include>
+                <include>lib/jetty-jaas-*.jar</include>
+                <include>lib/jetty-jmx-*.jar</include>
+                <include>lib/jetty-jndi-*.jar</include>
+                <include>lib/jetty-keystore-*.jar</include>
+                <include>lib/jetty-memcached-sessions-*.jar</include>
+                <include>lib/jetty-proxy-*.jar</include>
+                <include>lib/jetty-rewrite-*.jar</include>
+                <include>lib/jetty-security-*.jar</include>
+                <include>lib/jetty-server-*.jar</include>
+                <include>lib/jetty-servlet-*.jar</include>
+                <include>lib/jetty-servlet-api-*.jar</include>
+                <include>lib/jetty-servlets-*.jar</include>
+                <include>lib/jetty-util-*.jar</include>
+                <include>lib/jetty-util-ajax-*.jar</include>
+                <include>lib/jetty-webapp-*.jar</include>
+                <include>lib/jetty-xml-*.jar</include>
+
                 <include>LICENSE.txt</include>
                 <include>NOTICE.txt</include>
                 <include>README.adoc</include>
@@ -111,8 +138,87 @@
             <useDefaultExcludes>true</useDefaultExcludes>
         </fileSet>
 
-
-
     </fileSets>
+
+    <!-- lib per subdir -->
+    <!--<dependencySets>
+        &lt;!&ndash; BouncyCastle &ndash;&gt;
+        <dependencySet>
+            <outputDirectory>/jlib/bc</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <includes>
+                <include>org.bouncycastle:*</include>
+            </includes>
+        </dependencySet>
+
+        &lt;!&ndash; Lucene &ndash;&gt;
+        <dependencySet>
+            <outputDirectory>/jlib/lucene</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <includes>
+                <include>org.apache.lucene:*</include>
+            </includes>
+        </dependencySet>
+
+        &lt;!&ndash; Jackson + Woodstox &ndash;&gt;
+        <dependencySet>
+            <outputDirectory>/jlib/jackson</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <includes>
+                <include>com.fasterxml.jackson.core:*</include>
+                <include>com.fasterxml.jackson.dataformat:*</include>
+                <include>com.fasterxml.jackson.datatype:*</include>
+                <include>com.fasterxml.jackson.module:*</include>
+                <include>com.fasterxml.woodstox:*</include>
+                <include>org.codehaus.woodstox:*</include>
+            </includes>
+        </dependencySet>
+
+        &lt;!&ndash; FlatLaf &ndash;&gt;
+        <dependencySet>
+            <outputDirectory>/jlib/dark</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <includes>
+                <include>com.formdev:*</include>
+            </includes>
+        </dependencySet>
+
+        &lt;!&ndash; Batik / SVG &ndash;&gt;
+        <dependencySet>
+            <outputDirectory>/jlib/svg</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <includes>
+                <include>org.apache.xmlgraphics:*</include>
+                <include>xml-apis:*</include>
+            </includes>
+        </dependencySet>
+
+        &lt;!&ndash; Everything else stays directly in jlib/ &ndash;&gt;
+        <dependencySet>
+            <outputDirectory>/jlib</outputDirectory>
+            <useProjectArtifact>false</useProjectArtifact>
+            <scope>runtime</scope>
+            <excludes>
+                <exclude>org.bouncycastle:*</exclude>
+                &lt;!&ndash;<exclude>org.eclipse.jetty:*</exclude>
+                <exclude>org.eclipse.jetty.toolchain:*</exclude>&ndash;&gt;
+                <exclude>org.apache.lucene:*</exclude>
+                <exclude>com.fasterxml.jackson.core:*</exclude>
+                <exclude>com.fasterxml.jackson.dataformat:*</exclude>
+                <exclude>com.fasterxml.jackson.datatype:*</exclude>
+                <exclude>com.fasterxml.jackson.module:*</exclude>
+                <exclude>com.fasterxml.woodstox:*</exclude>
+                <exclude>org.codehaus.woodstox:*</exclude>
+                <exclude>com.formdev:*</exclude>
+                <exclude>org.apache.xmlgraphics:*</exclude>
+                <exclude>xml-apis:*</exclude>
+            </excludes>
+        </dependencySet>
+    </dependencySets>-->
 
 </assembly>
