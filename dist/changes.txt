@@ -1,0 +1,870 @@
+04/2026 mendelson opensource AS2 1.1 b69
+
+What is new
+
+    *Because of security problems (the web interface was based on a very old version of vaadin) and the need to move to Java 17 in 
+        the codebase (which was not supported by vaadin) the web interface has been removed from the community version. As the new web 
+        interface is based on the mendelson AS2 REST API now in the commercial version and the REST API is not part of the 
+        community edition there is no replacement for the web interface in the community edition.
+    *If the wait time for an MDN exceeded for sync MDN, the outbound connection is now closed by the client. 
+        Additional information regarding this issue have been added to the UI help of the system preferences
+    *The mendelson AS2 has been localized to Polish
+    *Added a new option in the server settings that shows additional information in the processing log while processing AS2 messages
+    *Added log output if the basic Authentication HTTP Header has been set
+    *Added log output if user defined HTTP Header has been set
+    *The notification templates have been localized to PT, IT, FR, PL, ES
+    *Added a new filter functionality to the partner management, makes it easier to deal with larger amount of partners in the client
+    *Modified the internal client-server protocol
+    *Added a cache mechanism to certficate access - this increases both the performance of the certificate manager and 
+        also the access to certificates
+
+ 
+Resolved problems
+
+    *In the manual send dialog the partner to select were not sorted
+    *There was a synchronization problem in the internal client-server interface, sometimes the TLS handshake came up with 
+        protocol violations
+    *Very seldom there happened a TAG mismatch error in the internal client-server connection. Reason was the external 
+        lib MINA 2.2.4, this release rolls back to MINA 2.2.3 and the client-server connection runs again very stable
+    *Fixed deadlock problems in the database 
+    *In the log there was displayed an upload time and a transmission throughput. These values were not fully correct
+    *Data transmission time and transmission throughput was just displayed for outbound transmission. It is now displayed 
+        for inbound transmissions, too
+    *Added a new locking level to database layer which is less restrictive than the INSERT/UPDATE lock
+    *Increased the assignment performance of message handlers for internal client-server messages
+    *Increased the mapping performance from OID to algorithm names and algorithm names to OID
+    *The postprocessing event (file move) failed if there was no original filename transmitted
+    *There were issues if CA root keys were used to encrypt/sign messages (which is uncommon)
+    *Added a function to the update routine that filters multiple entries with the same fingerprint from the certificate manager - it 
+        seems to be possible for mendelson AS2 2018 and older to import certificates multiple times into the certificate manager
+    *Every transaction in the system has assigned temporary files that contain HTTP header, processing steps, anything like this. 
+        These files are cleaned up once the transaction is removed/deleted from the system, either manual (client) or by the 
+        maintenance process (Preferences-Maintenance). If this one-time file delete process fails, the old transaction files will stay 
+        forever in the sent directory of the partner. The temp file delete routine (that cares for the //temp directory 
+        and the //_rawincoming directory to clean them up) does now additional checks if there are sent files from old 
+    transactions in the messages/receiver/sent/sender of each sender/receiver combination. These files will then be deleted.
+    *Modified the lock level for the database transactions for better performance
+    *In a single known installation some information String data is too long for a database field and has been cut by the database engine. The field has been redefined with this build, this will be performed automatically with the internal database update procedure. This is not production relevant, just to prevent the database warning which will be also notified by mail
+    *The certificate manager has been reworked internally for better performance
+    *The CEM module did no longer work, this has been fixed
+    *The MDN content was not displayed in the user interface for outgoing asynchronous MDN (worked for sync MDN), the 
+        text view was just empty if it was selected
+    *The amount of data updated during the transmission processing has been reduced which should result in better performance
+    *There was a problem in encoding outbound filenames that contain the '=' character
+    *Added several indicies to the database structure for better performance
+    Notification mails have been sent with the default system encoding. This was a problem for languages like Polish. 
+        Now all notification mails are send in UTF-8
+    *Removed an identified double parsing of inbound signatures for better performance
+        Fixed an issue where you can see the content of a deployed war file via the browser
+    *Fixed clipping issues and unusual distortion for help icons, checkboxes, and radio buttons when using 125%/175% system scaling
+    *Improved rendering for multi-resolution UI components to ensure consistent visibility across different DPI settings
+
+
+ 
+Updated software dependency packages
+
+    *Dependencies: Updated to BC 1.82 (crypto API)
+    *Dependencies: Updated to Lucene 12.9 (Index, log search)
+    *Dependencies: Updated to Batik 1.19 (SVG support)
+    *Dependencies: Updated to HikariCP 7.02 (DB pool)
+    *Dependencies: Updated to jackson 2.20 (JSON)
+    *Dependencies: Downgraded to MINA 2.2.3 (Client-Server Interface)
+
+
+
+
+
+
+
+
+03/2025 mendelson opensource AS2 1.1 b67
+
+What is new
+
+    *The HTTP request log of the integrated HTTP server Jetty can now be enabled or disabled.
+    *If outgoing data was rejected by the partner, there was no way to view it in the software. These rejected data are now 
+            stored and can be visualized in the client-just like data that was successfully accepted.
+    *Most checkboxes have been replaced with toggle switches.
+    *New font sizes for buttons, tabs, and logs have been introduced.
+    *A new High Contrast Mode is now available.
+    *The system now supports Spanish, Italian, and Portuguese in addition to German, English, and French. The language can 
+            either be set manually (via command-line parameters or client settings) or automatically detected based on the 
+            system language selected in the operating system.
+    *New configuration checks have been added: the number of file handles and sufficient memory availability.
+    *Not all certificates have valid CRLs. A new setting has been added to suppress these errors.
+    *The entire certification chain of a certificate can now be exported as PEM in a single step.
+    *During the export/import of a private key (PKCS#12), the entire certification chain can now optionally be exported/imported.
+    *Private keys can now also be exported as PEM.
+    *Certificates now display the link to the certificate policy, if the certificate includes it.
+    *3DES has been marked in the UI as an insecure algorithm. This is based on the NIST statement: 
+            "The Triple Data Encryption Algorithm (TDEA or 3DES) is being officially decommissioned, 
+            according to draft guidelines provided by NIST on July 19, 2018. According to the standards, 
+            3DES will be deprecated for all new applications following a period of public deliberation, 
+            and its use will be prohibited after 2023."
+    *Encryption algorithms CAMELLIA, AES_nnn_GCM, AES_nnn_CCM, and CHACHA20_POLY1305 have been added.
+    *Logging has been enhanced to always display the origin of keys and certificates when used. This makes it easier to identify 
+            configuration issues.
+    *There are additional information now in the log regarding the connection security and the used cipher if the in/outbound 
+            connections were TLS connections
+    *Certificate Manager: It contains new information regarding the trust state of an entry
+    *The update path from HSQLDB 1.8.x to HSQLDB 2.x has been removed, this update process is 10 years old now, since 2015 
+            HSQLDB 2.x is part of the product. Means you could no longer automatically update versions that are older than 2015.
+
+ 
+Resolved problems
+
+    *Certificate Manager: The copy function between certificate managers copied only keys but not certificates.
+    *Certificate Manager: It was possible to import private keys even if the corresponding certificate already existed.
+    *Certificate Manager: No CSR could be generated for EC keys.
+    *Certificate Manager: Checking the CRL is now possible manually or at regular intervals via settings.
+    *Certificate Manager: The certification path was not always displayed correctly for EC certificates under Java 17 and higher.
+    *Post-processing: The Exec calls for system commands in post-processing did not wait for the return code of the execution.
+    *There was an error in the executable program addUser for adding new users to the system.
+    *If an outbound AS2 message is generated and a problem occurs (which is very uncommon...), the associated transaction 
+            is not set to red. There will also be no MDN timeout because it has not yet been sent.
+    *CVE-2024-8184: The embedded Jetty HTTP server has been replaced
+    *There was a problem in cloning partners in the partner management    
+
+
+ 
+Updated software dependency packages
+
+    *Update to Bouncycastle v180 (Crypto API).
+    *Update to Lucene 9.11.0 (Indexing of system events).
+    *Update to MINA 2.2.4 (Client-Server Interface).
+    *Update to HSQLDB 2.74 (Integrated database server).
+    *Update to Batik 1.18 (SVG Icons).
+    *Update to Hikari 6.2.1 (Database pool).
+    *Update to Jetty 10.0.24 (HTTP Server).
+
+
+
+
+
+01/2024 mendelson opensource AS2 1.1 b65
+
+What is new
+
+    *The used TLS security provider will be shown up in the overview of the supported TLS protocols now 
+        (Client: File-Display HTTP server configuration)
+    *In the mail notification settings you have now the option to find out automatically your mail server settings by entering your notification receiver mail address    
+    *The original filename verification has been enhanced
+    *Reworked the import/export functions of the certificate manager
+    *Added support for Ed25519 key generation in the certificate manager
+    *The client-server communication has been reduced by adding an additional compression layer    
+    *Added the default values of the server settings to the interactive UI help - this allows the user to restore the default values once he has changed this
+    *The server preferences are cached now in the server processing, this reduces the number of database accesses signficant
+    *Certificate manager: Display the sign algorithm and the name of the EC curve in the overview
+    *Key generation: Adding support for SHA-2 512, SHA2 512 PSSRSA, SHA3 512 und SHA-3 512 PSSRSA signed keys    
+    *Added the possibility to generate a subject key identifier (ski) extension in the key generator of the certificate manager
+    *Added an own notification for client-server connection problems - formerly it was just reported as system error which is not really the case
+    *The formerly file based key/certificate management has been moved to the database. This results in less file IO and more stable operations in cluster mode. R/O and access problems to keystore files are no longer an issue during operations.
+    *Added the possibility to export a full keystore file from the certificate manager
+    *Added the possibility to import a full keystore file to the system at server start
+    *Removed several filesystem based configuration checks regarding keystore files
+    *Removed several keystore file related server settings and configuration interfaces
+    *It's now possible to overwrite the certificate related security settings of the used local station per partner     
+    *Added a more detailled error message if the postprocessing step "move file" failed
+
+
+ 
+Resolved problems
+
+    *Fixed the error "Comparison method violates its general contract" that occurs very seldom in the certificate processing
+    *Fixed a serialization security issue in the http client package, thanks to MOGWAI LABS for reporting the problem
+    *There was a problem in the TLS certificate manager that it was not possible to delete all expired certificates at once    
+    *Certificate Manager: It was not possible to export private keys into an external PKCS#12 keystore if their algorithm was EC or EdDSA
+    *Fixed problems with the basic authentication for outbound connections
+
+
+ 
+Updated software packages
+
+    *Update to Bouncycastle v176 (crypto API)
+    *Update to jetty 10.0.18 (embedded HTTP server)
+    *Update to Lucene 9.8.0 (indexing of system events)
+    *Update to MINA 2.2.3 (client-server interface)
+    *Update to HSQLDB 2.72
+
+
+
+
+
+
+01/2023 mendelson opensource AS2 1.1 b63
+
+What is new
+
+    *In the web interface the disposition text of a MDN is now displayed
+    *In the client, the maximum field length has now been set to the actual possible value. So if a value can be only 5 characters long, it is not possible to enter more than that
+    *If there were changes in the settings, this is now displayed in the user interface    
+    *In the certificate manager it is now possible to view the certificate usage references. So you can see where and if the certificates are still used in the product before deleting them
+    *In the certificate manager unused certificates for encryption/signature are grayed out
+    *The UINotification in the user interface has been revised
+    *The number of incoming connections can now be limited
+    *Light mode and dark mode of the client can now be changed directly in the settings
+    *The system no longer needs to be restarted when the TLS key is changed - once per minute the system checks for a change and initializes the HTTPS interface accordingly new
+    *Default settings for the underlying HTTP server don't have to be changed directly in jetty.xml anymore - instead there is now a simple configuration file (jetty10/jetty.config) where settings can be set as variables. this file is now also managed directly by the client settings of each client, so HTTP port, HTTPS port etc are directly accessible via the settings of the mendelson AS2
+    *The color coding of the logs has been revised. The color codes are now VT-100/ANSI compatible - this allows colored log output on ANSI compatible shells in the future.
+    *In the client there is now a context sensitive help, via balloon tooltips. The mouse can be moved directly to the respective question mark of the text fields, checkboxes etc., then corresponding long texts appear as a hint to the meanings.
+    *The connection test dialog has been reworked and now also shows partner information
+    *There is a new TLS option - you can trust any server certificate if the root certificate is trusted. This allows for example to use fast changing TLS certificates from Let's encrypt, which change every 60 days.
+    *There is a new TLS option: Strict host checking. This checks exactly whether the common name of the remote certificate also corresponds to the desired remote host. This is now available for authenticated certificates
+    *Notification can be sent to multiple recipients - what to do is written directly in the context sensitive help
+    *In the partner management there is now the possibility to make changes to all partners at the same time
+    *In the detail dialog of the transactions, details about the line security of connection are now also displayed
+    *In the test mail dispatch there is now a detailed log regarding the communication with the mail server
+    *More algorithms have been added to the key generation and the EC display has been improved. It is now also possible to select the key directly on an ECC named curve.
+    *It is now possible to directly copy entries of the two certificate managers to each other. It is no longer necessary to take the detour of exporting an entry and importing it into the second administration.
+
+ 
+Resolved problems
+
+    *The directory monitoring was reworked - too many polls slowed down the system a lot
+    *When importing a certificate from an external keystore in JKS format into the TLS keystore (JKS) the error "non recoverable key" occurred
+    *In the certificate export dialog the "refresh" button was missing after the selection button
+    *The HTTP header file in the transaction details view was not scrollable
+    *Under high load, outgoing messages remained on hold
+    *The client also refreshed all payloads when refreshing transactions - a cache was set up so that the payload is fetched from the server only for new transactions
+    *Due to the issue CVE-2022-21449 the security provider for TLS is now displayed - so in case of a TLS security provider change you can see if this was successful
+    *The detail view of the transactions shows a wrong date in the log
+    *There was a memory leak in the security provider - but this mainly only affected the REST API.
+    *There were problems reading notification templates that are not UTF-8 encoded
+    *In the user interface the date filter did not select the correct day
+
+ 
+Updated software packages
+
+    *Update to Bouncycastle v1.72 (Crypto API)
+    *Update to Lucene 9.1.0 (indexing of system events)
+    *Update to MINA 2.2.1 (client-server interface)
+    *Update to flatlaf 3.0 (dark mode)
+    *Update to Batik 1.16 (SVG)
+    *Update to HSQLDB 2.71
+
+
+
+
+02/2022 mendelson opensource AS2 1.1 b61
+
+What is new
+
+*Added the possibility to the server settings to delete old system events and transaction logs in the system maintenance process
+*Allow to build up a High Availability cluster (HA) using multiple mendelson AS2 instances
+*Improved performance for the message delete processes by bulk delete operations on the database
+*Fixed a SQL injection problem
+*Moved several lock mechanism from the server instance to the underlaying database instance
+*It's again possible to select the sign/encrypt keystore location - this is required if you work with shared file systems
+*Added a data migration wizard to transfer the data from the internal HSQLDB to an external database
+*Added a notification in the client if the client-server connection exceeds the timout because of a bad connection or high server load
+*Added an icon to each password field to see the password unmasked
+*Added images to encryption and signature in different colors (green, yellow,red) to indicate if the underlaying algorithms are still strong
+*Added product related fonts to the system
+
+Resolved problems
+
+*Fixed the problem that a configuration check warning occured if no inbound HTTPS port was set in the configuration (keystore mismatch for in/outbound TLS handling)
+*Under some circumstances the send order queue has not been deleted
+*The HTTP basic authentication was set to standard basic authentication - required is preemtive basic authentication
+*Fixed a problem to start the application on macOS Big Sur 11.2.3, the error message was "Native library not found in resource path"
+*Fixed a problem in the web interface that allowed to execute JS using manipulated message content, thanks to the ERNW Vulnerability Disclosure team
+*In the partner management there was a problem with the text widget if unicode has been pasted into the comments of a partner
+*Modified a log message for outbound MDNs that showed the wrong receipt URL
+*RFC 822 states that it is not allowed to transfer characters with ASCII >127 in MIME headers. Therefor a encoding has been added for the filename transfer in the attachment header where this is required (see RFC 2047). Means it should work now to transfer filenames that contain special characters. Anyway if the receiver will process the filename somehow he has to decode it after RFC 2047.
+*Fixed a problem where the splash screen scaled wrong for high resolution
+*A problem has been fixed where a key import from a JKS keystore into the TLS certificate manager resulted in the problem "unable to recover key" on next server start. With this error message the system did not start up. As the certificate manager codebase is shared between all mendelson products please wait for an update of the other product if you encounter it there.
+*Capped the number of threads in the directory poll manager. This reduces the overall load, but leads to the side effect that the specified poll intervals may not be met. Please always keep an eye on the displayed system configuration problems where this is mentioned. For higher load we recommend to disable the directory poll and send the send orders from your ERP system to the mendelson AS2 via AS2Send.exe/sh
+
+
+Updated software packages
+
+    Complete removal of Log4j from the product and all 3rd party products -
+    so the product is no longer affected by previous and upcoming Log4j vulnerabilities
+    The DB connection pool commons pool and commons dbcp was replaced by HikariCP
+    Update to Bouncycastle v1.69 (Crypto API)
+    Update to Lucene 9.0.0 (Indexing of system events)
+    Update to MINA 2.1.5 (Client-Server Interface)
+    Update to flatlaf 2.0 (dark mode)
+    Update to Vaadin 8.14.2 (Web Interface)
+    Adding Jackson for JSON processing
+
+
+
+01/2021 mendelson opensource AS2 1.1 b59
+
+What is new
+
+*Support for colorblindness: Since the icons in the transaction overview are in red or green and therefore in case of red/green blindness (9% of all men are affected, 0.8% of all women) overlays with additional symbols can now be displayed. They are displayed above the colored icons
+*The structure of the Linux shell scripts for starting the software has been completely reworked - they can be extended thus in the future more simply
+*A new notification system for the user interface has been introduced. Most notifications no longer have to be confirmed via a dialog. Instead, there is a notification mechanism, where the message is displayed in a colored window (overlay) in the lower right corner of the main window.
+*When creating a datasheet, the receive URL of a local station will now be is taken from the async MDN setting
+*Under File HTTP Server Configuration, it now displayed how to restrict the inbound TLS protocols
+*Since it is possible (possibly by mistake) to define different keystores for the input and output of the system, there is now a warning in the automatic automatic configuration check if these two keystores do not match.
+*The web interface has been completely reworked.
+    *It is now possible to add a custom home page to the front page of the web interface
+    *The web interface now reports when it is incompatible with the processing unit is incompatible. This test is necessary because you can also update the web interface separately update
+    *There is now a filter function in the web interface for the transaction display
+    *Icons are scalable, logs are colored
+    *The local time or the AS2 server time can be selected in the time display
+*For expired certificates, there is now additional information in the notification system and in the system events, so that the user can quickly identify the certificate
+*For the post-processing of a transaction, the possibility of of a notification has been added.
+*The post-processing (formerly partner events) of transactions has been reworked. One can now not only execute a command line, but also alternatively move the data to a selectable directory  
+*All outgoing HTTPS connections now have SNI (Server Name Indication) support, as does the connection test
+*There is a warning if too many directories are monitored in too short a time. Each monitored directory means a polling process of a directory. If the monitoring intervals are too short when there are too many partners, either the time intervals can no longer be observed or the system is only busy polling directories. This can cause the system to react with timeouts to its own client or incoming data connections
+
+
+Resolved problems
+
+*Client-Server Interface: Under Cent OS, TLS 1.1 connections are no longer allowed by default, so the internal communication between the client and server has been switched to TLS 1.2
+*Better Mac OS integration: On the Mac OS, there is a bar at the top of the screen for each running software. If contains options for "About" and "Preferences". These are now provided with the corresponding functions. In addition, the main menu of the application is now also available at the top of the screen and no longer directly in the main window. There were also problems when displaying the icon for the application
+*In the partner management the tab HTTP Header was not displayed initially, but only after a partner change
+*In the certificate manager, a key was generated in the key generation dialog even if you closed the window with a click on "x"
+*If the display filter was set in the transaction overview, no update of the displayed transactions was triggered, if you changed the start or end date.
+*The automatic deletion of transactions did not work if you chose "hours" as the time unit
+*It was possible to access the underlaying database from other hosts. Now this is only possible from the host where the application is running. You can configure/extend this in the file "database.acl" in the installation directory (if necessary).
+*There was a problem with the lockfile of a server instance. Another started server instance recognized the lockfile, but then deleted it.
+*There was a problem with the internal mapping of the signature algorithms (SHA3_512/SHA3_384 and SHA3_512_RSASSA_PSS/SHA3_384_RSASSA_PSS)
+*If an incoming MDN was in the wrong structure, it resulted in an incorrect error message
+*In dark mode the log color "green" was too pungent and it has been chosen a darker shade
+*There was a problem establishing an outbound connection if a client authentication using a certificate was required
+*When certificate data was in UTF-8, this was displayed in the certificate management incorrectly
+*Fixed a problem in the interaction between the internal lib MINA and TLS 1.3
+*For some certificates, the internal calculation of the trust chain took so long that the user got the impression that the client was hiding. The depth of the trust chain calculation was reduced. It can now can happen in very rare casesthat no CA is displayed for a certificate, even though it is actually authenticated. But this is only a display problem and seems to us as a reasonable solution.
+
+
+Updated software packages
+
+*Update to commons pool 2.9.0 (database connection pooling)
+*Update to commons dbcp 2.8.0 (database connection pooling)
+*Update to Apache Batik 1.13 (SVG - scalable images)
+*Update to Bouncycastle v1.67 (Crypto API)
+*Update to Lucene 8.6.0 (System events)
+*Update to MINA 2.1.3 (Client-Server Interface)
+*Update to flatlaf 0.45 (Dark mode)
+
+ 
+
+
+01/2020 mendelson opensource AS2 1.1 b57
+
+What is new
+
+*Localization possibilities extended: Possibility to define the region. From Java 9 weekday calculations depends not only on the language, but also on the set region. In the client this had effects on the date selection of the client - here it was always Sunday as the first day of the week indicated - but this is for example in Europe not the case. In the client, this can be done directly in the settings, the server now has the option -region
+*Dark Mode Support of the client: The client can switch to Dark Mode switch. This must be done manually, the software does not recognize whether the operating system is in dark mode. The option for client and also server is -mode DARK, default setting is -mode LIGHT. The dark mode has been realized using flatlaf (https://www.formdev.com/flatlaf/)
+*The whole client was reworked - the elements seemed to be crowded and small
+*Hi DPI Icons: All icons of the client were redesigned and are now scalable, they are no longer bitmaps but vector graphics. Means the client could deal now with graphic scaling of the OS. Not only multiples of the native resolution are supported (Mac OS), but also any intermediate value (Windows)
+*Automatic contrast adjustment of some colors of the client: Some outputs of the client were directly colored, for example red or green. Depending on the operating system or dark mode it could be but there are visibility issues. Now for each output an automatic contrast adjustment, so there are no more problems with the contrasts of certain colours.
+*Send manually: Besides selecting a file to send, you can now also file also simply select "Test data" - here you will then send some test data that the system generates
+*The dialog for the connection test was revised, it was missing here also the translation to French
+*The main page of the web client can now be configured. For this there is the file "webas2_welcome.html" in the installation directory whose (HTML-) content is displayed on the main page
+*The web client now uses vector graphics, so the display is scalable
+*Notification: For summary notifications there has been added a text to describe what to do with the summarized ids
+*Notification: There is now a notification for connection problems and better notes and descriptions of what happened
+*In the certificate management is now the export of a public key in SSH2 Format possible. This has no direct function for AS2 operation, but allows a better integration with SSH products
+*Key generator: The keys were made standard to 2048 bit, in addition the generation of self signed RSASSA_PSS keys is supported
+*For all configuration problems found there is now an extended dialogue that gives more details
+*Certificate manager: There is now a display of the OID of the signature algorithm of each certificate
+*System events: It now also shows which files are being processed for transactional delete
+*The event after recept now has access to the original file name
+
+
+Resolved problems
+
+*Search engines were allowed to index the receiving pages of the AS2 server (HttpReceiver and ServerState) - here the corresponding settings in the meta tags of the pages. However, this is still no guarantee, that no indexing takes place, it depends on the respective search engine whether these settings are used
+*It was possible to generate an ECDSA key in the certificate manager with 512 bit, but this resulted in an "invalid key size error"
+*There were incompatibilities regarding TLS 1.2 - the cause was the version of the JVM
+*In the Web Client, the display encoding of the user data was always ISO-8859-1
+*In the user interfce, the display encoding of the data was always ISO-8859-1
+*It was possible to use CR or LF in the AS2 subject - but then If the transmission fails, because it has direct effects on the MIME structure. This is now no longer possible.
+*It was not possible to manually send payloads of 0 bytes. The directory poll was able to send this data
+*The help window when opening the help was extremely small
+*Events defined in the partner management were not able the access the variable ${mdntext}
+*The comment entry in the partner management was not saved
+*Notification: Notifications for rejected messages have been sent even if this was switched off
+*The Log4Java warnings at startup have been removed
+*Certificate management: A cancel button has been added to the trust dialog
+*Certificate management: Renaming an alias to an already existing alias was possible
+*Integrated HTTP Server: The context listing of the path "/" has been switched off
+*Integrated HTTP Server: The display of subdirectories has been switched off
+*The event after receipt has not been executed under seldom circumstances. This only affects the asynchronous MDN - here some AS2 systems already sent the MDN if the outbound transmission connection has not yet been terminated. There is now a queue that caches all events and executes them in a own thread later, about 30s after the inbound MDN (async) has been received.
+*Certificate management: It was possible to delete a certificate by closing the rename dialog.
+
+
+Updated software packages
+
+*Update of HSQLDB 2.41 to 2.5.0 (DB System)
+*Update of commons pool 2.4.2 to 2.6.2
+*Update of commons io 2.5 to 2.6
+*Update of commons dbcp 2.1.1 to 2.6.0
+*Update of jaxen 1.1.3 to 1.2
+*Update of javamail 1.5.6 to 1.6.2
+*Update to Bouncycastle v1.64 (Crypto API)
+*Update of Lucene 7.7.2 to Lucene 8.2 (Indexing the system events)
+*Update to MINA 2.1.2 (Client-Server Interface)
+
+ 
+
+
+01/2019 mendelson opensource AS2 1.1 b55
+
+Enhancement:
+*The configuration check now includes a check for the mendelson test keys - configuration problems are displayed when they are used to encrypt data or as SSL/TLS keys
+*The status bar in the client has been reworked.
+*The system now displays what the partner actually sent back when a synchronous MDN was expected but none came. Mostly these are messages that the partner HTTP server is in maintenance mode or something similar.
+*The icons for sending and receiving messages have been revised.
+*The dialog for transaction details has been reworked, you no longer have to search in the tab of the log where the problem was - this is displayed directly as a status.
+*The SHA-256 fingerprint has been added to any certificate information
+*The restart of a transaction was not documented in the log
+*Support of SHA-3 signatures added:
+
+    SHA-3-224 (SHA-3)
+    SHA-3-256 (SHA-3)
+    SHA-3-384 (SHA-3)
+    SHA-3-512 (SHA-3)
+    SHA-3-224 (SHA-3, RSASSA-PSS)
+    SHA-3-256 (SHA-3, RSASSA-PSS)
+    SHA-3-384 (SHA-3, RSASSA-PSS)
+    SHA-3-512 (SHA-3, RSASSA-PSS)
+
+*Conversion of the directory polling process to nonblocking IO (NIO) - this should be more resource-saving
+*The storage of incoming messages has been changed to nonblocking IO (NIO) - this should be more resource-saving.
+*System events have been introduced that are stored in the file system independently of the database. These replace the System Activity Log and can be searched via the client. The new notification system accesses these system events directly and informs the user in a separate process. Since faulty transactions are also considered system events, they can be tracked as long as required using this mechanism. The system events can be searched using free text search, and indexing takes place on the server side.
+*SMTP connection to mail server for notification now supports TLS 1.2 and TLS 1.3
+*The server log format has been changed - it can now be searched via the client for MDN id, custom id and message number. Thus, the transaction log is not lost as long as the log directories are available.
+*Support of TLS 1.3 for data transfer
+*The test keys key1 and key2 were replaced in the initial configuration by the new test keys key3 and key4, which have already been delivered as additional keys in all versions for one year. key1 and key2 will expire in 08/2019.
+*Java 11 is now a system requirement
+
+
+Fixes:
+*There was a change in both the underlying JVM Crypto and the BC Crypto API - thus certificates with a faulty structure were rejected. The error message was "invalid info structure in RSA public key". This is now ignored - although the certificate structure remains incorrect.
+*Sometimes there were errors in the client when moving the mouse over the display of the configuration problems
+*There was a problem in the database cache that allowed a maximum cache size of 10MB. This caused the error "SendOrderAccessDB.add: Data cache size limit is reached: 10000" if this was exceeded and the server had to be restarted. To change the cache settings, the runtime database must be deleted after updating to the mendelson AS2 2018. The next time the server is started, the runtime database will be created with different cache settings.
+*The CEM has been completely reworked - now there are no automatisms when receiving CEM messages that certificates are overwritten. Also there are no more problems if a certificate was manually deleted, which was armed at a later time by a CEM message.
+*Only one line at a time can be selected in the certificate manager - this is then also the line to which the respective action of the user refers.
+*The Windows Installer overwrote the jetty.xml and thus the HTTP configuration with each update - this was not prevented by the question whether files should be overwritten.
+*The defined connection timeout for connections is now also used for the connection test
+*In the settings of the notification there were fields for the mail account and the mail account password - but this is not needed for SMTP connection to mail server at all
+*The Max Poll Files entry of a partner was only taken over if the server is restarted.
+*The Notification System has been completely revised. This now decouples the notification system from the data processing and there can be no more error loops with database errors. You can also set the maximum number of notifications per minute and the system summarizes them as a single mail. Therefore, there can no longer be a flood of mail, as was previously possible in the event of an error.
+*The connection test did not use the proxy settings defined in the server settings, but always tried it directly.
+
+
+Updates (3rd party libs):
+*Update to HSQLDB 2.41 (DB System)
+*Update to Bouncycastle v160 (Crypto API)Update to MINA 2.0.17
+*Update of jetty 9.2.9 to 9.2.25 (Embedded HTTP Server)
+*Update to MINA 2.0.17
+*Added lucene 7.5.0 (file indexing)
+
+
+
+
+02/2018 mendelson opensource AS2 1.1 b53
+
+Enhancement:
+*If multiple payloads were received, only the first one was displayed in the client. Now there is a separate tab for each payload where the transfer files can be viewed.
+*Support of EC certificates for data encryption and digital signature (RFC 5753)
+*The certificate manager now allows the creation of Elliptic Curve keys
+*When generating keys, SAN (subject added name) can now also be specified, these are then transferred directly to the CSR generation (pkcs#10) and passed on to the CA accordingly. Some partners require special values here.
+*The system now finds out if externally referenced certificates or keys are missing in the internal keystores due to manual intervention and indicates this.
+*RSASSA-PSS signature scheme support, the setup could be found in the security settings
+*Support of RSAES_OAEP (AES-128, AES-192, AES-256) for data encryption
+*Changes in the names of internal tables and SQL scripts for MYSQL compatibility
+*More information is now displayed during the connection test
+*In the certificate manager you can now hide not only the root certificates but also the Intermediate certificates, which increases the overview.
+*Via "File-HTTP Server Information" it is now possible to display detailed information about the configuration of the underlying HTTP server, including ciphers and supported protocol versions, ports to which obeying is performed, etc.
+*Two new test keys have been delivered:"key3" and "key4" - the previously used keys "key1" and "key2" will expire in 2019.
+
+Fixes:
+*If you sent a file via the dialog for manual sending, the original file name was not used.
+*There were import problems in the certificate manager when pkcs#7 (. p7b) certificate files were encoded with PEM
+*The outbound queue for sending stopped under seldom circumstances
+
+
+
+02/2017 mendelson opensource AS2 1.1 b51
+
+Enhancement:
+*The key generator could generate EC keys now
+*Support for RFC 5753 (Use of Elliptic Curve Cryptography (ECC) Algorithms in Cryptographic Message Syntax (CMS))
+*Support for signature generation and validation using EC keys and certificates
+*The certificate manager displays the trust chain of every certificate now
+*The "Toggle refresh" button now disables the log output, too
+
+
+Changes:
+*The Algorithm Protection Attribute could be disabled per partner as there are several older AS2 programs out that could not deal with it
+
+
+Fixes:
+*On receipt of multiple payloads there were generated n tabs in the client but the content was always the one of the first payload
+*The manual send process of data did not transfer the right original filename
+*EC keys were not displayed in a proper way in the certificate manager
+*The original filename is kept now on (manual) transaction resend
+*The JKS export of private keys failed
+*The p7b import of certificates did not work with more than 2 certificates in the chain
+*The p7b export of the certificate manager did not export the whole trust chain
+*The passwords had not been set for JKS key import - this resulted in a "cannot recover key" message
+
+
+
+Updates (3rd party libs):
+*Update to BC 1.54 (crypto API, see https://www.bouncycastle.org/)
+*Update to HSQLDB 2.3.4 (Database)
+*Update to javamail 1.5.6
+*Update to Apache MINA 2.0.16
+
+
+
+02/2016 mendelson opensource AS2 1.1 b49
+
+Enhancement:
+*Certificate import: If your partner sent you a zip archive with a certificate the import function will import the certificate by first extracting it.
+*System maintenance: You could setup the process to delete messages not only after n days but also after n hours or n minutes
+*Columns could be added and hidden in the transaction overview - persistent
+*Partner management: Partners are marked in the partner tree now if there is a problem during the setup (e.g. 2 times the same AS2 id)
+
+Changes:
+*MD5 is no longer allowed in TLS (RFC7465) - this has been set up in the jetty.xml file
+*Several log messages have been modified
+*Icons of the client have been reworked
+
+Fixes:
+*The HTTP request log has been added again - it wasn't included in b47 because of the jetty update
+*The sync MDN date was in wrong format for the french version - the date has to be always in US locale to prevent language specific special characters in the date
+*If empty HTTP headers have been received by the mendelson AS2 it answered with HTTP 500. It's not clear if this is a problem of the mendelson AS2 as empty HTTP headers are not allowed. Anyway it will work with these headers now.
+*It was possible to import two certificates with the same alias which leaded to some weird situations that e.g. the software displayed that a certificate has been expired and the users can't find it
+*The directory poll waited a full period before taking over changes. Means if you set this value to once a day it could have least a day before the new values has been taken
+*A directory poll of 0s was possible - but the result of this setting was 100% CPU and high file IO. Now the min value is 1s even if you enter 0s. We recommend 30s as min value!
+*An AS2 id with slashes (that exists!) prevented the system from writing the transaction status files
+*The outbound sync MDN was always signed in error case
+
+Updates (3rd party libs):
+*Update to BC 1.53 (crypto API, see https://www.bouncycastle.org/)
+*Update HTTP components to 4.5 (see http://hc.apache.org/)
+*Update to HSQLDB 2.3.3 (Database)
+*Update to javamail 1.5.4
+*Update to commons Pool 2.2.3 and commons dbcp 2.1.1: DB Pool libs
+*Update to Commons Codec lib 1.9
+
+
+
+01/2015 mendelson opensource AS2 1.1 b47
+
+Enhancement:
+*It's possible to clone an existing partner in the partner management now
+*You could create a communication data sheet (editable PDF) now in the user interface. The PDF contains all settings of your selected local station and requests the settings of your partners system. The PDF contains the required certificates as attachment. Just send it to your partner to ask him for his communication parameters and deliver yours. Please remember that the standard MAC OS PDF reader does not support PDF attachments. Please install an other PDF reader if you are using this OS. 
+*The partner panel contains additional fields for the partner address and partner contact now, this is written to the communication data sheet if created
+*You could manually resend more than a single transaction now (this will create new transactions). Please select multiple transactions in the transaction overview. Right mouse on it opens the related context menu.
+*The private key generator found in the certificate manager supports SHA256WITHRSA now. This allows to sign your certificates using SHA-2 as some providers are moving away from SHA-1. Please remember that there might be AS2 programs out that cannot work with these certificates - please clarify this first before signing your certificates with SHA-2.
+
+Changes:
+*Removed all RMI code (which was slow) - the communication between the receipt servlet and the AS2 processing unit is based on apache MINA now. This results in higher processing message throughput and port 1099 is no longer used by the AS2 server.
+*The directory "_rawincoming" is managed by the system maintenance process new - it will delete old messages there. If you setup the system maintenance process (which is recommended) it will care for the old files in this directory.
+*The underlaying HTTP server (jetty v6) has been replaced by jetty v9. The reason is that it is possible now to disable transport layer security protocols (e.g. SSLv3) and weak ciphers/hash algorithms. If you are updating from a mendelson AS2 with underlaying jetty v6 there are some manual changes required - please refer to update_howto.txt which is part of the package. SSLv3 and some weak ciphers are disabled now by default. Please edit the file jetty9/etc/jetty.xml to change these defaults or to add other weak ciphers which should be no longer supported by your AS2 instance. The new jetty instance will be found in the directory "jetty9" after an update/clean install. But as always: Please do not rely on the transport security only, always encrypt and sign your data!
+    To disable ciphers please add them to the "ExcludeCipherSuites" section in jetty9/etc/jetty.xml:
+    <Set name="ExcludeCipherSuites">
+            <Array type="String">
+                <Item>SSL_RSA_WITH_DES_CBC_SHA</Item>
+            </Array>
+    </Set>
+    To disable SSL protocols add them to the "excludeProtocols" section jetty9/etc/jetty.xml:
+    <Set name="excludeProtocols">
+            <Array type="java.lang.String">
+                <Item>SSLv3</Item>
+            </Array>
+    </Set>
+
+
+*The JAVA VMs DNS caching has been set to 60s (Windows installer only). This is a setting done in the file jre/lib/security/java.security. Please set it manually if required and you are on a non windows system, add the line
+    networkaddress.cache.ttl=60
+    In older versions this was set in the program code but it turned out that this was useless as these settings are read once on JVM start and setting them later in the program code has no effect at all.
+
+
+Fixes:
+*If a certificate had been exported to p7b format it contained the end certificate only - without the trust chain certificates
+*There were problems if the certificate was not in PEM but additional BASE64 encoded if you tried to import it. This is very uncommon - we encountered this only once.
+*Importing certificates in p7b format now imports the full trust chain and the end certificate. In older versions just the end certificate was imported.
+*If the send partner was unknown the system always sent a sync MDN with the error message "unknown partner" - even if the sender requested an async MDN
+*The certificates have not been sorted proper by their date in the display of the certificate manager.
+*The sent MDN was always signed - even if the partner requested an unsigned MDN
+*A SQL injection was possible in the message delete procedure - that was also the reason that some transactions could not be deleted by the system.
+
+Updates:
+*Update to BC 1.51 (crypto API, see https://www.bouncycastle.org/)
+*Update HTTP components to 4.3.5 (see http://hc.apache.org/)
+*Update servlet API to 3.1 (comes with the new jetty v9 webserver)
+*Updated jetty to v9 (unterlaying HTTP server, see http://download.eclipse.org/jetty/)
+*Update to Apache MINA 2.09 (client-server interface, see https://mina.apache.org/)
+
+
+
+02/2014 mendelson opensource AS2 1.1 b45
+Enhancement:
+*mendelson opensource AS2 contains certificate manager for SSL/encryption/signature now - it is no longer needed to edit the underlaying keystores using a third party tool like portecle
+*Impoved the community versions documentation
+*The user interface (security tab) contains a hint now that the mendelson AS2 will never change a keystore password - these settings are just to work with keystores that have been edited using thried party tools
+
+Updates:
+*Update to BC 1.50 (crypto API)
+*Update to HSQLDB 2.3.2 (Database)
+
+
+
+09/2013 mendelson opensource AS2 1.1 b43
+Enhancement:
+*Support of the AS2 profile SHA-2, this supports the hash functions SHA-256, SHA-384 and SHA-512
+
+Updates:
+*Update to BC 1.49 (crypto API)
+
+
+
+08/2013 mendelson opensource AS2 1.1 b41
+
+Enhancement:
+*A resend is also initiated now if the server response was HTTP 502, 503 or 504 - not even only if the connection attempt failed
+*The test mail for the mail connection setup contains the mail server settings now
+*Mail server connections for the notifications support startSSL/SSL now
+
+Changes:
+*All timestamps in the db are changed to UTC - this allows to use one database instance in different timezones
+
+Fixes:
+*MDNs are signed using SMIME 3.2 instead of SMIME 3.1 - this leads to incompatibility with some AS2 products
+*The directory poll always took a single file even if the file poll number was set to 0
+*It was impossible to send a mail under linx if the host has not been defined in /etc/host
+*The filenames in _rawincoming have not been unique under some circumstances
+
+Updates:
+Update HTTP components to 4.2.5 
+Update to BC 1.48 (crypto API)
+Upgrade to HSQLDB 2.2.9 (database engine)
+
+
+
+04/2012 mendelson opensource AS2 1.1 b39
+
+Enhancement:
+*A retry of the connection attempt has been implemented if it fails the first time
+*MDN Auto recovery on server start has been added: If the server has been shut down and there are pending outbound MDN they are send after the server is up again and the MDN wait time has not been expired
+*If a transaction has been manually resend the original name is kept now and the transaction is marked as "resend"
+*A new temporary directory for files is used, this is below the installation directory now and no longer the systems temp directory
+*A new web interface is included. The password file for the web access access is "passwd" (found in the installation directory). The default web interface URL is http://yourhost:8080/webas2/ now.
+*The underlaying database engine has been upgraded and the structure is incompatible, it is HSQLDB 2.x.x now. That means that an additional update script has to be started once if you upgrade from an earlier version of mendelson opensource AS2. The AS2 server will inform you if such an external update is required and how to perform it.
+*The database has been splitted, there is a configuration database and a runtime database now. The split will be performed on the first server start if the software is updated from an older version of the mendelson AS2
+
+Changes:
+*The JMS interface has been removed
+
+Fixes:
+*There has been a wrong format for december in the HHTP header if the locale is FR
+*The MDN wait time starts at the message send time now, was at message creation time
+
+
+Updates:
+Update to commons IO 2.1
+Update to VAADIN 6.7.3
+Update to HSQLDB 2.2.7
+
+Hint:
+The mendelson opensource AS2 will run fine with Java 64 bit VMs. If you have problems with the memory consumption please install a 64 bit java VM (not included), patch the VM with the "jurisdiction policy strength files" (Oracle download) and set the main memory of the JVM to 4 GB
+
+
+
+09/2011 mendelson opensource AS2 1.1 b37
+
+This is a maintenance release - it just fixes one configuration problem - it does not contain any change in the processing unit
+
+Enhancement:
+*A progress bar has been added for some operations in the client
+*Added the AS2 message subject to the event replacements
+
+Fixes:
+*The default value for the SSL keystore password was wrong, this leaded to the error message "Keystore was tampered with, or password was incorrect" if you try to send messages
+*Fixed a unmarshalling problem at config import
+*No notification mail has been send on send error
+*Error in the french versions localization at the partners event screen 
+*The user was unable to enter the HTTP Basic Authentication in the partner configuration
+
+Updates:
+Update to JORAM 5.6.0 (JMS provider)
+Update to HttpClient 4.1.2 
+
+
+08/2011 mendelson opensource AS2 1.1 b35
+
+Enhancement:
+*A status file for outbound transactions has been added again, this was removed in the prior version
+*New logdata structure: There is a logfile per day now in a single sub directory, the format is log/CCYYMMDD/as2n.log
+*To prevent flooting your partners AS2 server with messages the max number of messages to send per poll attempt could be defined in the partner settings now. All existing polls are set to the default value of 100 outbound transactions per poll. Please modify these settings if it does not fit your needs after an update.
+*User interface: a progress bar has been added for some operations (e.g. storing the partner settings)
+*The delivered keystore contains now the mendelson CA root certificate as trusted certificate
+*If a certificate/key has been deleted outside of the application (e.g. by using portecle) this is displayed
+in the related combobox now by a special icon
+
+Fixes:
+*The private key of an entry has not been found if there are two similar entries
+in the keystore (one key pair and one public key)
+*Problems sending XML data have been fixed. The problem occured if the data has been transmitted uncompressed, unsigned and unencrypted (which is very uncommon)
+*The partner/user specific events have not been processed for outbound connection problems
+*If the signature of an MDN could not be verified the transaction was disregarding this fact set to green
+*The linux start script ignored the command line parameters
+*There was a problem in setting up the HTTP authentication for data upload/MDN in the partner panel
+*If an MDN had a content transfer encoding set there occured a processing error on the MDN. The error
+message was "The MDN references a AS2Message with the message id "null" that does not exist."
+
+Updates:
+Update to MINA 2.0.4
+Update to JORAM 5.5.0 (JMS provider)
+Update to commons-pool-1.5.6 (pool core)
+Update to Bouncycastle 1.46 (crypto API)
+Update to javamail 1.4.4 (MIME API/mail API)
+Update to HTTP components 4.1 (HTTP/HTTPS sender)
+
+
+09/16/2010 mendelson opensource AS2 1.1 b33
+
+Enhancement:
+*SMTP Server authentication could set for outbound notification mail
+*Info panel per partner: Displays information about the trading partners AS2 system. If the trading partner uses an AS2 > 1.2 the profiles are displayed, too
+*New notification event: An email could be send on system errors
+*Encryption of messages uses less memory now, max file size improved
+*It's possible to setup the HTTP protocol version, either 1.0 or 1.1 (default: 1.1). This is required for some older proxies that don't understand HTTP 1.1.
+*File size of files that could be displayed in the file panel has been enhanced
+*Added context menu to the transaction overview, this allows manual resend of transactions (in a new transaction), detail info and delete actions
+
+Fixes:
+*Outbound HTTP date header was in wrong format
+*HTTP send (basic) authentication did not work
+*The content transfer encoding for inbound MDN was not processed
+
+
+Updates:
+Update to JORAM 5.3.1 (JMS provider)
+Update to commons-dbcp-1.4 (DB connection pool)
+Update to commons-pool-1.5.4 (pool core)
+
+
+
+01/26/2010 mendelson opensource AS2 1.1 b31
+
+Enhancement:
+*Max file size for transfered files has been improved
+*Export/import of configuration
+*Providing server state page at http://yourserver:yourport/as2/ServerState
+*New HTTP header: ediint-feature
+
+Fixes:
+*MIC calculation for inbound messages was wrong for some combinations
+*Signature verfication problem
+
+Updates:
+Update to jetty 6.1.22 (webserver)
+Update to Bouncycastle 1.45 (crypto API)
+Update to JORAM 5.2.6 (JMS provider)
+Update to HTTP components 4.01 (HTTP sender)
+
+
+
+10/07/2009 mendelson opensource AS2 1.1 b29
+
+Enhancement:
+*Max file size for transfered files has been inproved
+*Changes of partner names now rename the underlaying directories instead of creating new ones. (This is not done without asking the user)
+*MIC header value may contain blanks now
+*Number of internal database connections and JMS connections reduced for lower resource requirements
+*AS2 id may contain blanks now
+*MIC check is performed for signed messages only now
+*Content transfer encoding could setup for each partner now (base64 or binary)
+*New replaceable variables available for the command execution after receipt or send are available now. These are ${sender} and ${receiver}
+*New filters for the local station in the web client
+*All HTTP 2xx answers are accepted as OK now (even if the RFC allows HTTP 200 only)
+*The server state could be requested now (beneath the web client) using the URL /as2/ServerState
+
+Fixes:
+*Command after receipt (async MDN) has not been executed
+*Fixed an error in the MIC calculation if the message was signed and compressed
+
+Updates:
+Update to Bouncycastle 1.44 (crypto API)
+Update to JORAM 5.2.5 (JMS provider)
+
+
+
+03/12/2009 mendelson opensource AS2 1.1 b27
+
+Enhancement:
+*Content MIC is checked now on message receipt
+*Execute command after message send, depending on the message state
+*Add jurisdiction unlimited strength policy test on server startup
+*Support of rsa-md5 and rsa-sha1im micalg parameter
+*New web interface
+
+
+Fixes:
+*Unsigned encrypted transfer leaded to HTTP headers in the payload
+*Error on unknown partners
+*Error on async transfer if the receiver doesnt know sender and receiver id
+*Poll interval was not visible in the client under linux
+*Error in sorting the transaction for german localization
+
+Updates:
+Update to Bouncycastle 1.41 (crypto API)
+
+
+
+
+01/28/2008 mendelson opensource AS2 1.0 b21
+
+
+*It's possible to keep the original filename now if mendelson opensource AS2 is the receiver (and the sender sent the necessary information), could be defined per partner
+*Added content length header for sync MDN to improve compatibility to other as2 servers
+*2 different keys for encryption/signature possible
+*SQL connection pool implemented
+*Related software update: updated Bouncycastle to 1.38, Joram to 5.0.7, implemented MINA framework
+*As always there are a lot of smaller improvements and fixes as discussed in the mendelson community forum.
+
+
+
+09/24/2007 mendelson opensource AS2 1.0 b19
+
+
+*Execute a user defined command after receipt of as2 messages per partner
+*mendelson opensource AS2 could send files with blanks in its filenames now
+*Compatibility issue: HTTP 202 is accepted beneath HTTP 200
+*HTTP auth supported
+*Usability: Its impossible to assign a cert instead of a key to the local station now
+*Transaction overview: The model-view problems for column sorting have been fixed
+
+
+05/10/2007 mendelson opensource AS2 1.0 b17
+
+*Data compression is supported (AS2 1.1 feature). It could be set up per partner. Please remember that your TP has to support AS2 1.1 or higher for this feature
+*MDN options have been ignored so far (disposition-notification-options). Now it is possible to ask mendelson opensource AS2 for unsigned MDN or single signature algorithm only. mendelson opensource AS2 will still ask for signed MDN and allow SHA-1 and MD5 in answers.
+*If the inbound message contains attachments (AS2 1.2 feature) mendelson opensource AS2 now returns a processing error MDN with the message that attachments are not supported.
+
+
+
+
+03/13/2007 mendelson opensource AS2 1.0 b15
+
+*Fixed a problem that occured if sender or receiver alias were names that lead to invalid filenames, the related files are stored to the filesystem
+*Web interface to monitor the server. The default URL is http://localhost:8080/mec_as2/monitoring.jsp, user: guest, password: guest
+*Fixed a bug in the proxy support
+*File storage system has been rewritten
+*Better overview on in- and outbound messages: raw file decrypted, message header, payload data in separate tabs
+*Inbound parsing of original filename implemented
+
+
+
+01/19/2007 mendelson opensource AS2 1.0 b13
+
+*The server has a persistent message queue now as processing queue, based on JMS. The server integration could now be realized not only by sending files to an outbox dir of a specified partner but also by sending data to the JMS server.
+*It's possible to define a directory poll interval per partner
+*Its possible to define a file pattern ignore list per partner for the directory polls. This allows to copy file to the partners outbox directory and enable the poll on the file by renaming it
+*The GUI "send message to partner" operation no longer copies the file into the polled outbox dir but sends it directly to the as2 server message queue
+*Related software update: updated HSQLDB to v1.8.0_7, Bouncycastle to 1.35.
+*Enhanced server log to create links between processed filenames and the AS2 message ID for external log processing
+

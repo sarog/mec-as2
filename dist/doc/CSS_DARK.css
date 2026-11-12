@@ -1,0 +1,112 @@
+h1 {  
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 20pt; 
+    font-weight: bold; 
+    text-decoration: none; color: #BBBBBB
+}
+h2 {  
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 14pt; 
+    font-weight: bold; 
+    text-decoration: none; color: #BBBBBB
+}
+h3 {  
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 12pt; 
+    font-weight: bold; 
+    text-decoration: none; 
+    color: #BBBBBB
+}
+a { 
+    font-family: Arial, Helvetica, sans-serif; 
+    color: #999999; 
+} 
+a:hover { 
+    font-family: Arial, Helvetica, sans-serif; 
+    color: #FFCCCC; 
+} 
+a:visited { 
+    font-family: Arial, Helvetica, sans-serif; 
+    color: #999999; 
+}
+th { 
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 10pt; 
+    font-weight: bold; 
+    color: #BBBBBB; 
+    background-color: #6C6C6C; 
+    padding-top: 3px; 
+    padding-right: 3px; 
+    padding-left: 8px 
+}
+tr {
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 10pt; 
+    padding-top: 3px; 
+    padding-right: 3px; 
+    padding-left: 8px 
+}
+.textFlow,p,blockquote,br,ul,ol {  
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 10pt; 
+    color: #BBBBBB;
+}
+.tableTxt {          
+}
+.tableTxt2 {     
+}
+.coloredBoxLong .techDescription{
+    color: #103587;
+}
+.techDescription {  
+    font-family: "Courier New", Courier, mono; 
+    font-size: 10pt; 
+    color: #00CCFF; 
+    padding-right: 4px; 
+    padding-bottom: 4px
+}
+.date {  
+    font-family: Arial, Helvetica, sans-serif; 
+    font-size: 9pt; 
+    color: #999999; 
+    font-style: italic
+}
+body { 	
+    background-color:#3C3F41; 
+    color: #BBBBBB;
+}
+.coloredBoxLong {
+    border: 1px solid #BBBBBB;
+    background-color: #999999;
+    padding: 8px;
+    padding-top: 8px;
+    margin: 5px;
+    margin-bottom: 30px;
+}
+.fontRed{
+    color: #FF8080;
+}
+.fontGreen{
+    color: #00FF00; 
+}
+.fontBlue{
+    color: #00CCFF; 
+}
+.fontYellow{
+    color: #FFCC33; 
+}
+div.mendelsonLogo {
+    background-image:url('images/mendelson_banner.png');
+    height: 49px;
+    width: 247px;
+}
+img{
+    background-color: #666666;
+    /*will not work in the mendelson help browser - but in every other...*/
+    -webkit-filter: brightness(0.9);
+    -moz-filter: brightness(0.9);
+    -o-filter: brightness(0.9);
+    -ms-filter: brightness(0.9);
+    filter: brightness(0.9);
+}
+

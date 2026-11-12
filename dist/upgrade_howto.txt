@@ -1,0 +1,58 @@
+To upgrade the mendelson opensource AS2 from a previous installed version please perform the following steps:
+
+
+1.Make a backup of the installation directory of the mendelson opensource AS2. If anything happens during the update this backup 
+        could be copied over the installation and will restore the full state before the upgrade
+
+
+2.Delete the jlib directory found below the installation directory.
+
+
+3.Upgrade (Windows) 
+-----------------
+Please download the installer, execute it and let it install directly over the existing installation. There are some personal 
+        files that must not be overwritten. The installer will probably ask if you want to overwrite them, answer with NO to keep your 
+        personal settings.
+Please ensure that the used keystore files have the default password - else please change this back to the default.
+Afterwards start the mendelson opensource AS2 server. It will perform some database upgrades. If any additional steps are 
+        required the program will inform you.
+--> Done for Windows
+
+
+Upgrade (non-Windows)
+---------------------
+Please download the .zip archive and extract it directly over the existing installation. 
+If your version to upgrade is v61 or older please skip the following and jump to the special update section below.
+Please copy the following files from your backup (step 1) to the installation:
+*certificates.p12 (your keystore for encryption and signature)
+*jetty10/etc/keystore (your TLS keystore)
+*jetty10/jetty.config (your embedded HTTP server basic settings)
+*jetty10/etc/jetty.xml (your receipt web server detailed settings)
+*notificationtemplates/* (your personal templates for the mail notification, skip this step if you haven't modified them)
+*.passwd (if you upgrade from b39 or younger)
+*Remove all jlib/* subdirectories and files from your old installation and replace them by the jlib/* files and
+    subdirectories found in the .zip
+
+*Modify the start script if required (path to java installation etc)
+*Please ensure that the used keystore files have the default password - else please change this back to the default.
+
+
+
+
+Update of mendelson opensource AS2 from mendelson opensource AS2 b61 or older versions
+--------------------------------------------------------------------------------------
+
+Since mendelson AS2 b63 (2023) there is bundled the jetty v10 - in earlier versions this was the jetty v6 (<= b45) 
+   or jetty v9 (<= b61). 
+If you are updating the mendelson opensource AS2 from mendelson opensource AS2 b61 or older please perform the following steps:
+
+*Please copy your old TLS keystore file from jetty/etc/keystore (<= b45) or jetty9/etc/keystore (<= b61) into the 
+   new directory jetty10/etc
+*Please do _not_ copy the old jetty/etc.jetty.xml or jetty9/etc/jetty.xml into the new directory jetty10/etc. The structure of
+   the jetty.xml has been changed in jetty 10 and this would result in incompatibilities.
+*Please review and modify the file "jetty10/jetty.config" for the port settings etc. Normally there is no need anymore to modify 
+   the file jetty10/etc/jetty.xml. Anyway if you need to add special features for the embedded jetty 10 which are not covered
+   by the new jetty10/jetty.config configuration file you might also modify the file jetty10/etc/jetty.xml.
+*Please ensure that the used keystore files have the default password - else please change this back to the default.
+
+

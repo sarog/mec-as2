@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>Log</TITLE>
+<link rel="stylesheet" href="../../doc/mec_HTMLdoc.css">
+</HEAD>
+<h2>Logging</h2>
+<hr>
+<p><br>
+  The mendelson AS2 server writes all activity to a log. This is a view of logging targets:<br>
+</p>
+<p><img src="../images/as2_logging.png" width="548" height="633" alt="Logging"></p>
+<p>All AS2 clients that are connected to a mendelson AS2 server receive the server log via a push mechanism - TCP/IP. The push mechanism reaches all clients even if they are running on a remote machine. The push mechanism runs with low priotiy and you could remember a time shift if the server load is high.</p>
+<p>There are 2 other targets for the log of the server. The first is a logfile that is written to &quot;<strong>log/ccyymmdd/as2.log</strong>&quot; on a daily base. The other one is the database that receives all necessary entries for each transaction. This allows to server the log entries for single transaction requests of the mendelson AS2 client later.</p>
+<p>&nbsp;</p>
+<h3>&nbsp;</h3>
+<h3>AS2 client: Log display</h3>
+<p><strong>Transaction overview</strong></p>
+<p>Every operation of the as server ist stored in a log. This log is showed in the gui (transaction log). <br>
+  For every transaction there are used the following icons to visualize the actual 
+  state:</p>
+<table width="75%" border="0">
+  <tr>
+    <td width="3%"><object data="../images/in.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td width="97%">Inbound message (initial direction)</td>
+  </tr>
+  <tr>
+    <td><object data="../images/out.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Outbound message (initial direction)</td>
+  </tr>
+  <tr>
+    <td><object data="../images/state_finished.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Transaction finished successfully</td>
+  </tr>
+  <tr>
+    <td><object data="../images/state_pending.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Transaction is still waiting, e.g. for a MDN</td>
+  </tr>
+  <tr>
+    <td><object data="../images/state_stopped.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Error in transaction</td>
+  </tr>
+</table>
+<p> <br>
+  <br>
+<strong> Log per message</strong></p>
+<p>Every transaction contains of a message (AS2 message) and a receipt acknowledge 
+  (MDN, message delivery notification). The following icons are used:</p>
+<table width="75%" border="0">
+  <tr> 
+    <td width="3%"><object data="../images/in.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td width="97%">Inbound message or MDN</td>
+  </tr>
+  <tr> 
+    <td><object data="../images/out.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Outbound message or MDN</td>
+  </tr>
+  <tr> 
+    <td><object data="../images/message.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>AS2 Message</td>
+  </tr>
+  <tr> 
+    <td><object data="../images/signal_ok.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>MDN (No processing error on remote station)</td>
+  </tr>
+  <tr>
+    <td><object data="../images/signal_failure.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>MDN (Processing error on remote station)</td>
+  </tr>
+</table>
+<p>All operations on the single messages/MDN per transaction are stored. You could 
+  also see the raw data of all in/outbound messages in the GUI.</p>
+<p>&nbsp;</p>
+<h3>HTTP request log</h3>
+<p>Every HTTP request to the mendelson AS2 is logged, you will find the log in the log directory (&quot;<strong>CCYY_MM_DD.httprequest.log</strong>&quot;). The log format is the <strong>NCSA Common log format</strong>, this allows to work with web log analysis software using this log. To disable the HTTP request log please edit the file jetty&lt;n&gt;/etc/jetty.xml, comment the sectino that is marked as request log section.</p>
+<p>&nbsp;</p>
+<h3>Client-Server  request log</h3>
+<p>If you are loggin in into the mendelson AS2 using a client (user interface), the attempt is logged. You will find the log file in the log directory, called &quot;<strong>client_server_session_0.log</strong>&quot;, &quot;<strong>client_server_session_1.log</strong>&quot; and &quot;<strong>client_server_session_2.log</strong>&quot;. It's a cycling log, if the first log reaches the size of 1 MB the last log is deleted and a new one is started.</p>
+<p>&nbsp;</p>
+<p><br>
+</p>
+<h3>Log Files and Log Search</h3>
+<p><br>
+  The mendelson AS2 server writes all log information that you see in the client 
+  in the console to log files. These are sorted by date and are located in the 
+  directory &quot;log/YYYYMMDD&quot;. The log files can be viewed and searched 
+  as text files in an editor. Each line contains additional information about 
+  the time, the number of the transmission (if available) and the respective session 
+  (if available).<br>
+  Using the client, you can also search these files for specific message numbers, 
+  MDN numbers oder the user defined processing id. If your partner has a question 
+  about an older transaction that is no longer in your transaction overview, you 
+  can use this information. However, the relevant transfer data is probably no 
+  longer available at this point. The server logs are available until you manually 
+  delete the corresponding directory &quot;log/YYYYMMDD&quot;. Deleting them is 
+  no problem for the search indexes - they are located in the subdirectory &quot;log/YYYYMMDD/index&quot; 
+  each day and can be deleted at any time.</p>
+<p><img src="../images/screenshots/screenshot_logsearch_1_en.png" border="1"></p>
+<p>To search for a special AS2 message if you have the message id please enter 
+  this data in the format seen in the screenshot and press the the &quot;Log search&quot; 
+  button. You should see afterwards the log of this transmission in the defined 
+  time range.</p>
+<p><img src="../images/screenshots/screenshot_logsearch_2_en.png" border="1"></p>
+<p>To search for the data of a special MDN please have a look at a transaction 
+  log of a special message log and get the MDN id from it. This selection will 
+  search for all matching MDN data in the defined time range.<br>
+</p>
+<p><img src="../images/screenshots/screenshot_logsearch_3_en.png" border="1"></p>
+<p>It's possible to queue send orders using the command line. In this case it 
+  is possible to define a userdefined id that marks the whole transmission in 
+  the log. To get this transmission later please put the user defined if into 
+  the search field, slect &quot;user defined id&quot; and hit the &quot;Log search 
+  button&quot;. </p>
+<p></p>
+<hr>
+<table width="100%" border="0">
+  <tr> 
+    <td><div class="mendelsonLogo"/></td>
+    <td class="date"><b>Last modified:</b> $Date: 2/05/22 9:20 $</td>
+  </tr>
+</table>
+</BODY>
+
+</HTML>

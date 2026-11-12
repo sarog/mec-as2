@@ -1,0 +1,149 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>Log</TITLE>
+<link rel="stylesheet" href="../../doc/mec_HTMLdoc.css">
+</HEAD>
+<h2>Log der Vorg&auml;nge und Nachrichten</h2>
+<hr>
+<p>Der mendelson AS2 Server schreibt f&uuml;r alle Aktivit&auml;ten ein Log. Hierbei gibt es unterschiedliche Ziele f&uuml;r das Logging.</p>
+<p><img src="../images/as2_logging.png" width="548" height="633" alt="Logging"></p>
+<p>Die an einen mendelson AS2 Server angeschlossenen Clients werden &uuml;ber einen Pushmechanismus mit der Information &uuml;ber die aktuellen Aktivit&auml;ten versorgt. Dies l&auml;uft &uuml;ber TCP/IP und versorgt somit auch Clients, die auf anderen Rechnern laufen als dem AS2 Server Host. Der Pushmechanismus l&auml;uft mit geringer Priorit&auml;t, es kann durchaus zu zeitlichen Verschiebungen bei der Anzeige der Logs im Logfenster des Clients kommen, wenn die Serverlast hoch ist.<br>
+  <br>
+Serverseitig schreibt der Server alle Aktivit&auml;ten in Logdateien. Diese finden Sie (nach Tagesdatum unterteilt) in den Dateien &quot;<strong>log/ccyymmdd/as2.log</strong>&quot;. Jede Transaktion wird datenbankseitig ausserdem mit den entsprechd dazugeh&ouml;rigen Aktivit&auml;ten versogt, sodass jeder Client sp&auml;ter detaillierte Loginformationen zu einzelnen Transaktionen abfragen kann.</p>
+<p><br>
+  <br>
+</p>
+<h3>Logansicht im Client</h3>
+<p><br>
+  <strong>&Uuml;bersicht: Transaktionslog</strong></p>
+  
+<p> Jede Operation des AS2 Servers wird in einem Log festgehalten. <br>
+  F&uuml;r jede Nachricht gibt es in der &Uuml;bersichtsanzeige des AS2 Clients einen Eintrag, der 
+  den aktuellen Status und die Richtung beinhaltet. Dabei werden folgende Icon 
+  verwendet:</p>
+<table width="75%" border="0">
+  <tr>
+    <td width="3%"><object data="../images/in.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td width="97%">Eingehende Nachricht (Initialrichtung)</td>
+  </tr>
+  <tr>
+    <td><object data="../images/out.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Ausgehende Nachrichte (Initialrichtung)</td>
+  </tr>
+  <tr>
+    <td><object data="../images/state_finished.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Kommunikation wurde erfolgreich beendet</td>
+  </tr>
+  <tr>
+    <td><object data="../images/state_pending.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Nachricht im Wartezustand, es fehlt noch eine MDN (Empfangsbest&auml;tigung) zur Vervollst&auml;ndigung</td>
+  </tr>
+  <tr>
+    <td><object data="../images/state_stopped.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Nachrichten&uuml;bertragung wurde fehlerhaft beendet</td>
+  </tr>
+</table>
+<p> <br> 
+<strong>Log der einzelnen Nachrichten </strong></p>
+<p>Jede Nachricht besteht aus einer Nachricht und einer Empfangsbest&auml;tigung. Wenn man sich die 
+  Details einer Nachrichten&uuml;bertragung anschaut, werden folgende Icons benutzt:</p>
+<table width="75%" border="0">
+  <tr> 
+    <td width="3%"><object data="../images/in.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td width="97%">Eingehende Nachricht oder eingehende Empfangsbest&auml;tigung</td>
+  </tr>
+  <tr> 
+    <td><object data="../images/out.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>Ausgehende Nachricht oder ausgehende MDN</td>
+  </tr>
+  <tr> 
+    <td><object data="../images/message.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>AS2 Nachricht</td>
+  </tr>
+  <tr> 
+    <td><object data="../images/signal_ok.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>MDN (Fehlerfreie Verarbeitung auf Gegenseite)</td>
+  </tr>
+  <tr>
+    <td><object data="../images/signal_failure.svg" type="image/svg+xml" width="20" height="20" align="absmiddle">
+      </object></td>
+    <td>MDN (Verarbeitungsfehler auf Gegenseite)</td>
+  </tr>
+</table>
+<p>F&uuml;r jede Nachricht wird gespeichert, welche Operationen durchgef&uuml;hrt wurden. 
+  Ausserdem sind in der GUI die Rohnachrichten f&uuml;r alle Anfragen und entsprechenden Antworten
+  einsehbar. </p>
+<p>&nbsp;</p>
+<h3>HTTP Anfrage Log</h3>
+<p>Jeder HTTP Zugriff auf den mendelson AS2 wird geloggt, Sie finden das Log im Logverzeichnis, in der Datei &quot;<strong>CCYY_MM_DD.httprequest.log</strong>&quot;. Das Log Format ist das &quot;<strong>NCSA Common log format</strong>&quot;, sofass Sie diese Daten auch mit Web-Analysesoftware weiterverarbeiten k&ouml;nnen.<br>
+  Um diesen Logging-Mechnismus auszuschalten, bearbeiten Sie bitte die Datei jetty&lt;n&gt;/etc/jetty.xml, hier kommentieren Sie bitte den Abschnitt aus, der als request section gekennzeichnet ist.
+</p>
+<p>&nbsp;</p>
+<h3>Client-Server Anfrage Log</h3>
+<p>Jeder Einlogvorgang eines Clients (Benutzeroberfl&auml;che) in den mendelson 
+  AS2 Server wird geloggt. Sie finden die Logdateien im Logverzeichnis unter den 
+  Namen &quot;<strong>client_server_session_0.log</strong>&quot;, &quot;<strong>client_server_session_1.log</strong>&quot; 
+  and &quot;<strong>client_server_session_2.log</strong>&quot;. Dies ist ein rotierendes 
+  Log - wenn das j&uuml;ngste Log die Dateigr&ouml;&szlig;e von 1MB &uuml;berschreitet, 
+  wird das &auml;lteste gel&ouml;scht und ein neues Log gestartet.</p>
+<p>&nbsp;</p>
+<h3></h3>
+<h3></h3>
+<h3>Logdateien und Suche im Log</h3>
+<p>Der mendelson AS2 Server schreibt alle Loginformationen, die Sie im Client 
+  in der Console sehen, auch in Logdateien. Diese sind nach Datum sortiert und 
+  befinden sich im Verzeichnis &quot;log/YYYYMMDD&quot;. Die Logdateien k&ouml;nnen 
+  Sie sich als Textdatei in einem Editor anschauen und auch durchsuchen. Dabei 
+  beinhaltet jede Zeile Zusatzinformationen &uuml;ber die Zeit, die Nummer der 
+  &Uuml;bertragung (so vorhanden) und die jeweilige Session (so vorhanden).<br>
+  Mit Hilfe des Clients k&ouml;nnen Sie diese Dateien auch nach bestimmten &Uuml;bertragungen 
+  durchsuchen. Falls also Ihr Partner eine Frage zum Ablauf einer &auml;lteren 
+  Transaktion hat, die sich nicht mehr in Ihrer Transaktions&uuml;bersicht befindet, 
+  k&ouml;nnen Sie so Auskunft geben. Die jeweiligen &Uuml;bertragungsdaten sind 
+  dann aber zu diesem Zeitpunkt wahrscheinlich nicht mehr verf&uuml;gbar. Die 
+  Serverlogs sind jeweils so lange verf&uuml;gbar, bis Sie manuell das entsprechende 
+  Verzeichnis &quot;log/YYYYMMDD&quot; l&ouml;schen. Hierbei stellt das L&ouml;schen 
+  kein Problem f&uuml;r die Suchindicies dar - diese befinden sich pro Tag jeweils 
+  im Unterverzeichnis &quot;log/YYYYMMDD/index&quot; und k&ouml;nnen jederzeit 
+  gel&ouml;scht werden.<br>
+  <br>
+  <img src="../images/screenshots/screenshot_logsearch_1_de.png" border="1"></p>
+<p>Um nach den Daten einer &Uuml;bertragung zu suchen, geben Sie bitte die eindeutige 
+  Nachrichtenummer ein und dr&uuml;cken den &quot;Log durchsuchen&quot; Knopf.</p>
+<p>&nbsp;</p>
+<p><img src="../images/screenshots/screenshot_logsearch_2_de.png" border="1"></p>
+<p>Um die Log Daten einer bestimmten MDN einsehen zu k&ouml;nnen, geben Sie bitte 
+  in die Suchmaske die MDN Nachrichtennummer ein, selektieren als Suche &quot;MDN 
+  Nummer&quot; und dr&uuml;cken den &quot;Log durchsuchen&quot; Knopf.</p>
+<p>&nbsp;</p>
+<p><img src="../images/screenshots/screenshot_logsearch_3_de.png" border="1"></p>
+<p>Wenn Sie &uuml;ber die Kommandozeile einen Sendeauftrag an den mendelson AS2 
+  aufgegeben haben, k&ouml;nnen Sie eine zus&auml;tzliche benutzerdefinierte Nummer 
+  vergeben. Mit Hilfe dieser Nummer k&ouml;nnen Sie den &Uuml;bertragungsverlauf 
+  an vielen Stellen der Software nachvollziehen. Bitte geben Sie diese Nummer 
+  vollst&auml;ndig in das Suchfeld ein und dr&uuml;cken &quot;Log suchsuchen&quot;, 
+  wenn Sie die Daten einer bestimmten Transaktion sehen wollen, die mit solch 
+  einer Nummer verkn&uuml;pft ist.<br>
+  <br>
+</p>
+<p>&nbsp;</p>
+<hr>
+<table width="100%" border="0">
+  <tr> 
+    <td><div class="mendelsonLogo"/></td>
+    <td class="date"><b>Last modified:</b> $Date: 12/10/22 14:13 $</td>
+  </tr>
+</table>
+</BODY>
+
+</HTML>

@@ -1,0 +1,598 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<HTML>
+<HEAD>
+<TITLE>Schl&uuml;ssel und Zertifikate</TITLE>
+<link rel="stylesheet" href="../../doc/mec_HTMLdoc.css">
+</HEAD>
+<h2>Schl&uuml;ssel und Zertifikate</h2>
+<hr>
+<p><a href="#keystores">Keystores, Formate, Zertifikate und Schl&uuml;ssel<br>  
+</a><a href="#certmanager">Funktionen der Zertifikatverwaltung<br>
+  </a><a href="#msgencryption">Signatur und Verschl&uuml;sselung von Nachrichten<br>
+  </a><a href="#transportencryption">Verschl&uuml;sselung des &Uuml;bertragungsweges 
+      (https)</a><br>
+  <a href="#keytypes">Schl&uuml;ssel-/Zertifikattypen</a> <br>
+  <a href="#wildcard">Wildcard Zertifikate</a><br>
+  <a href="#createkey">Erstellung von Schl&uuml;sseln</a><br>
+  <a href="#trustedkeys">Beglaubigte Schl&uuml;ssel anfordern (CA)</a><br>
+  <a href="#renew">Zertifikate erneuern(CA)</a><br>
+  <a href="#imexport">Import und Export von Schl&uuml;sseln und Zertifikaten </a><br>
+  <a href="#keys_hints">Hinweise zu Schl&uuml;sseln und Zertifikaten </a><br> 
+  <a href="#fileextension">Dateinameserweiterungen</a><br>
+<a href="#pkcs">PKCS </a><br>
+<a href="#crl">Sperrlisten</a><br>    
+<a href="#links">Weiterf&uuml;hrende Links</a></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<hr>
+<P>Das unterliegende &Uuml;bertragungsprotokoll erlaubt eine verschl&uuml;sselte 
+  &Uuml;bertragung von Daten &uuml;ber das Internet. Zudem lassen sich die Nachrichten 
+  signieren und ebenfalls verschl&uuml;sseln. Die Mechanismen hierf&uuml;r sind 
+  die der PKI (Public-Key-Infrastruktur). Daher ist es notwendig, entsprechende 
+  Schl&uuml;ssel und Zertifikate von sich und seinem Partner vorzuhalten.<br>
+  Das Arbeiten mit Sicherheit in der IT setzt leider einiges an technischem Hintergrundwissen 
+  voraus. Bitte beachten Sie unter diesem Aspekt auch die <a href="#links">weiterf&uuml;hrenden 
+  Links</a>, um sich &uuml;ber dieses Thema zu informieren.</P>
+<p>Dazu ist eine Schl&uuml;sselverwaltung in die mendelson Produkten integriert. 
+  Die Terminologie im Client bezeichnet einen &quot;Schl&uuml;ssel&quot; als den 
+  private Schl&uuml;ssel oder ein Schl&uuml;sselpaar (privater und &ouml;ffentlicher 
+  Schl&uuml;ssel), w&auml;hrend &quot;Zertifikat&quot; ein Zertifikat meint, in 
+  das ein &ouml;ffentlicher Schl&uuml;ssel eines Partner eingebettet ist.<br>
+  <br>
+  <span class="fontRed"><strong>Achtung:</strong> Diese mendelson Software wird 
+  mit einigen Testschl&uuml;sseln ausgeliefert. Verwenden Sie diese NIEMALS f&uuml;r 
+den produktiven Betrieb!</span></p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="keystores" id="keystores"></a>Keystores, Formate, Zertifikate und 
+  Schl&uuml;ssel</h3>
+<P>Sie ben&ouml;tigen f&uuml;r die &Uuml;bermittlung von Daten unterschiedliche 
+  Schl&uuml;ssel und Zertifikate f&uuml;r die Transportsicherung, die Verschl&uuml;sselung 
+  und die digitale Signatur.<br>
+  Diese Schl&uuml;ssel und Zertifikate werden in diesem mendelson Produkt auf 
+  technischer Ebene intern gehalten, in der jeweils unterliegenden Datenbank. Es werden zwar auch immer Keystore Dateien ausgeliefert, diese dienen allerdings nur Backup Zwecken.<br>
+  <br>
+  Es gibt 
+unterschiedliche Formate von Schl&uuml;sseln und Zertifikaten. 
+Das Einpflegen von Partnerzertifikaten 
+  in Ihrer Zertifikatverwaltung kann somit durchaus ein komplexer Vorgang sein. Dies gilt insbesondere, wenn die von 
+  Ihrem Partner gesandten Zertifikate in Formaten vorliegen, die nicht direkt 
+  von dieser Software unterst&uuml;tzt werden.<br>
+</P>
+<P>Bitte beachten Sie, dass <strong>Sie Ihren private Schl&uuml;ssel niemals an 
+  Partner weitergeben d&uuml;rfen. </strong>Sie werden auch keine private Schl&uuml;ssel 
+  Ihres Partners erhalten. Ausgetauscht werden zwischen den Kommunikationspartnern 
+  immer nur Zertifikate.<br>
+  <br>
+  <strong>Sch&uuml;tzen Sie bitte Ihren private Schl&uuml;ssel und erstellen Sie 
+  sich ein Backup, das Sie an einem sicheren Ort aufbewahren.</strong><br>
+  <br>
+  Von Ihren Partner werden Sie in der Regel Zertifikatdateien bekommen, die CER 
+  oder DER kodiert sind. Das l&auml;&szlig;t sich im Regelfall <a href="#fileextension">an 
+  den Dateiendungen ablesen</a>. Diese k&ouml;nnen Sie &uuml;ber die Importfunktion 
+  der Zertifikatverwaltung importieren. Sie sind dann im System verf&uuml;gbar 
+  und m&uuml;ssen nur noch in der Partnerverwaltung dem Partner zugewiesen werden.<br>
+  <br>
+  Zertifikate liegen in vielen unterschiedlichen Formaten vor. Wenn die F&auml;higkeiten 
+  der integrierten Zertifikatverwaltung nicht ausreicht, um ein Zertifikat Ihres 
+  Partners zu importieren, sprechen Sie bitte mit Ihrem Partner und bitten ihn, 
+  das Zertifikat in einem anderen Format zur Verf&uuml;gung zu stellen - das sollte allerdings nur sehr selten der Fall sein. Wenn dies 
+  nicht m&ouml;glich ist, m&uuml;ssten Sie versuchen, die Zertifikate Ihrer Partner 
+  mit speziellen Programmen zu konvertieren. Ein wichtiges Softwarepaket in diesem 
+  Umfeld ist OpenSSL. Es ist sehr m&auml;chtig, der Umgang damit ist jedoch auch 
+recht komplex, weil das Programm kommandozeilenbasiert ist.</P>
+<p>Sie k&ouml;nnen mit der integrierten Zertifikatsverwaltung auch Schl&uuml;ssel 
+  (nur f&uuml;r Backupzwecke) und Zertifikate (f&uuml;r Ihre Handelspartner) exportieren.</p>
+<p>Bitte machen Sie sich mit den M&ouml;glichkeiten des Im- und Exports von Schl&uuml;sseln 
+  und Zertifikaten in diesem Produkt vertraut. Da aus Sicherheitsgr&uuml;nden 
+  Schl&uuml;ssel nach bestimmter Zeit erneuert werden m&uuml;ssen (und damit auch 
+  die Zertifikate), ist es immer wieder notwendig, Zertifikate zu ersetzen. In 
+  der Regel wird jeder Schl&uuml;ssel ein Mal pro Jahr ersetzt. Sie sollten aus 
+  Sicherheitsgr&uuml;nden keine Zertifikate verwenden, die eine l&auml;ngere G&uuml;ltigkeit 
+  als drei Jahre besitzen.<br>
+  Nach Ablauf eines Zertifikats oder eines Schl&uuml;ssels kann dieser nicht mehr 
+  benutzt werden. Sie sollten bereits vor dem Ablauf eines Schl&uuml;ssels ein 
+  neues Zertifikat bei Ihrer CA beantragen. Sie sollten mit Ihren Partnern einen 
+  genauen Zeitpunkt und ein genaues Datum ausmachen, ab wann der neue Schl&uuml;ssel 
+  von Ihnen benutzt wird. Wenn es hier zu Abstimmungsproblemen kommt, kann es 
+  passieren, dass einige Nachrichten abgewiesen werden, weil sie mit falschen 
+  Schl&uuml;sseln verarbeitet wurden.<br>
+  Sie werden auch von Ihren Partnern von Zeit zu Zeit neue Zertifikate erhalten 
+  (oder einen Hinweis, wo Sie die Zertifikate herunterladen k&ouml;nnen). Bitte 
+  achten Sie darauf, f&uuml;r jeden Partner immer die aktuell g&uuml;ltigen Zertifikate 
+  zu verwenden, ansonsten kann <strong>kein Datenaustausch</strong> statt finden!  </p>
+<p>Leider ben&ouml;tigt man f&uuml;r den Umgang mit den Schl&uuml;sseln und den 
+  Zertifikates auch einiges an Hintergrundwissen: Wir empfehlen Ihnen die <a href="#links">weiterf&uuml;hrenden 
+  Links</a>, die einen ersten &Uuml;berblick &uuml;ber die benutzten kryprographischen 
+  Grundlagen vermitteln.</p>
+<p>&nbsp;</p>
+<h3><strong>Zertifikatverwaltung</strong></h3>
+<p>In den mendelson Produkten werden die Schl&uuml;ssel und Zertifikate f&uuml;r unterschiedliche Aufgaben jeweils in einem eigenen Zertifikatmanager verwaltet. So gibt es einen TLS Zertifikatmanager f&uuml;r die TLS Anbindung und einen Signatur/Verschl&uuml;sselungs Zertifikatmanager f&uuml;r die Schl&uuml;ssel und Zertifikate der Inhaltsverschl&uuml;sselung und Signatur. Sie werden also immer zwei Zertifikatmanager vorfinden.<br>
+  Die Zertifikatmanager sind ein Pool verf&uuml;gbarer Schl&uuml;ssel und Zertifikate. Sobald ein Schl&uuml;ssel/Zertifikat in der Zertifikatverwaltung ist, ist er dem System bekannt. &Uuml;ber den (graphischen) Client k&ouml;nnen die Zertifikate dann den jeweilgen Aufgaben zugeordnet werden, zum Beispiel den Partnern f&uuml;r die Verschl&uuml;sselung etc. Aus Sicherheitsgr&uuml;nden werden die privaten Schl&uuml;ssel Ihres Systems nie an einen angebundenen graphischen Client weitergeleitet. Das f&uuml;hrt zu einigen Unbequemlichkeiten - so k&ouml;nnen Sie zum Beispiel private Schl&uuml;ssel nur in Verzeichnisse auf der Serverseite exportieren. Das bedeutet: auch wenn im Zertifikatmanager auf dem Client ihr privater Schl&uuml;ssel angezeigt wird, ist er dort nicht vorhanden, sondern verbleibt auf Serverseite.<br>
+  <br>
+  <br>
+  Bevor Sie  mit Schl&uuml;sseln/Zertifikaten arbeiten k&ouml;nnen, m&uuml;ssen Sie diese in die jeweiligen Zertifikatverwaltung importieren. </p>
+<p><br>
+In der mendelson Zertifikatverwaltung  werden folgende Bilder verwendet:</p>
+<table width="700" border = "0">
+  <tr>
+    <td width="47"><object data="../images/certificate.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td><td width="1160">
+     Partnerzertifikat 
+    oder Zertifikat Ihrer lokalen Station. Diese Zertifikate geben Sie bitte an 
+    Ihre Partner weiter.
+	</td>
+  </tr>
+  <tr>
+    <td><object data="../images/key.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td><td>
+     Eigener privater 
+    Schl&uuml;ssel. Diesen d&uuml;rfen Sie auf keinen Fall an einen Partner weitergeben. 
+    Sie signieren Ihre ausgehenden Nachrichten mit Ihrem privaten Schl&uuml;ssel 
+    und entschl&uuml;sseln eingehende Nachrichten damit.
+	</td>
+  </tr>
+  <td>
+    <object data="../images/cert_root.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+  <td>
+     Root Zertifikat. 
+    Wenn Sie beglaubigte Zertifikate verwenden, die also &uuml;ber eine Certification 
+    Authority (CA) ausgegeben wurde, werden Sie auf diese Zertifikate treffen.</td>
+	<tr>
+	 <td>
+    <object data="../images/cert_untrusted.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td><td>
+     Fehlendes Zertifikat 
+    Wenn Sie auf dieses Icon treffen, fehlt ein Zertifikat in einer Zuordnung oder Beglaubigungskette</td>
+	</tr>
+</table>
+<p>Hinweis: Wenn ein Bild ausgegraut ist, bedeutet das, dass der zugeh&ouml;rige Schl&uuml;ssel bzw das zugeh&ouml;rige Zertifikat nicht im Produkt verwendet wird.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="certmanager"></a>Funktionen der Zertifikatverwaltung</h3>
+<table width="700" border = "0">
+  <tr>
+    <td width="47"><object data="../images/ca.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td width="885"> Certificate Authority: Alles, was mit der Beglaubigung eines Zertifikats zu tun hat. Hier&uuml;ber k&ouml;nnen Sie auch abgelaufene Zertifikate/Schl&uuml;ssel bei der CA erneuern.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/add.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td>Erstellen eines neuen - zun&auml;chst self signed Schl&uuml;ssels. Diesen k&ouml;nnen Sie dann sp&auml;ter bei der mendelson CA beglaubigen lassen.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/import.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td>Importieren Sie Zertifikate und private Schl&uuml;ssel unterschiedlicher Formate in den Zertifikatmanager.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/export.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Exportieren Sie Zertifikate f&uuml;r Ihre Partner und private Schl&uuml;ssel f&uuml;r Ihr Backup</td>
+  </tr>
+  <tr>
+    <td><object data="../images/keycopy.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Kopieren Sie einen Eintrag vom TLS Zertifikatmanager in den Verschl&uuml;sselungs/Signatur Zertifikatmanager oder umgekehrt</td>
+  </tr>
+  <tr>
+    <td><object data="../images/reference.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Lassen Sie sich anzeigen, an welcher Stelle des mendelson Produktes ein Schl&uuml;ssel bzw ein Zertifikat verwendet wird. Diese Funktion ist nur f&uuml;r die Signatur/Verschl&uuml;sslungs Verwaltung verf&uuml;gbar. Sie k&ouml;nnen Zertifikate/Schl&uuml;ssel nur auf dem Zertifikatmanager l&ouml;schen, wenn sie nicht mehr an anderer Stelle im Produkt verwendet werden.</td>
+  </tr>
+  <tr>
+    <td><object data="../images/delete_expired.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> L&ouml;schen Sie alle Eintr&auml;ge aus der Zertifikatverwaltung, die abgelaufen sind</td>
+  </tr>
+  <tr>
+    <td><object data="../images/delete.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> L&ouml;schen Sie einen einzelnen Eintrag aus der Zertifikatverwaltung. Das funktioniert nur, wenn der Schl&uuml;ssel/das Zertifikat nicht mehr im Produkt verwendet wird</td>
+  </tr>
+  <tr>
+    <td><object data="../images/edit.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Benennen Sie einen Alias eines Eintrags in der Zertifikatverwaltung um. Das hat keine funktionale Auswirkung auf das Produkt, die Eintr&auml;ge werden &uuml;ber ihren Fingerprint und nicht den Alias identifiziert</td>
+  </tr>
+    <tr>
+    <td><object data="../images/crl.svg" type="image/svg+xml" width="24" height="24" align="absmiddle">
+    </object></td>
+    <td> Pr&uuml;fen Sie die Sperrlisten der beglaubigten Zertifikate - ob diese noch g&uuml;ltig sind oder von der CA zurückgezogen wurden.</td>
+  </tr>
+</table>
+<p>&nbsp;</p>
+<p>Zu jedem Zertifikat k&ouml;nnen Sie im Zertifikatmanager alle relevanten Informationen einsehen - dorthin gelangen Sie durch die Reiter im unternen Bereich des Zertifikatmanagers. Dies sind:</p>
+<ul>
+  <li>Details: Hier k&ouml;nnen Sie alle Daten zum Zertifikat einsehen wie G&uuml;ltigkeit, technische Werte, Fingerprints</li>
+  <li>Erweiterungen: Dies sind in der Regel Angaben zur Schl&uuml;ssel/Zertifikatverwendung</li>
+  <li>Zertifizierungspfad: Dies ist der Beglaubigungspfad vom Endzertifikat &uuml;ber das Intermediate Zertifikat bis zum Root Zertifikat der CA - dies ist also nur f&uuml;r beglaubigte Zertifikate notwendig. Es sollten alle Zertifikate, die den Beglaubigungspfad bilden, im jeweiligen Zertifikatmanager verf&uuml;gbar sein.</li>
+</ul>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="msgencryption"></a>Signatur und Verschl&uuml;sselung von Nachrichten</h3>
+<p>Der Sender einer Nachricht ben&ouml;tigt jeweils einen privaten Schl&uuml;ssel 
+  f&uuml;r sich und einen &ouml;ffentlichen Schl&uuml;ssel seines Partners. <br>
+  Eine Nachricht wird mit dem jeweiligen privaten Schl&uuml;ssel signiert, dieser 
+  sollte sich daher nur im Besitz des jeweiligen Senders befinden. Der &ouml;ffentliche 
+  Schl&uuml;ssel dient zur Verifikation einer Signatur. Der gleiche Mechanismus 
+  funktioniert auch beim Verschl&uuml;sseln.<br>
+</p>
+<p>Die &ouml;ffentlichen Schl&uuml;ssel sind vor der &Uuml;bertragung entsprechend 
+  auszutauschen. Um dem Partner seinen &ouml;ffentlichen Schl&uuml;ssel zu geben, 
+  kann die Funktion &quot;Zertifikat exportieren&quot; in der GUI zum Verwalten 
+  der Zertifikate benutzt werden. Um den &ouml;ffentlichen Schl&uuml;ssel (eingebettet 
+  ins Zertifikat) seines Partners zu importieren, kann die Funktion &quot;Schl&uuml;ssel-Zertifikat 
+  importieren&quot; benutzt werden.<br>
+  Jeder Schl&uuml;ssel oder jedes Schl&uuml;sselpaar wird &uuml;ber einen Alias 
+  adressiert, der beim Import zu vergeben ist. Bei den Partnerdefinitionen kann 
+  dann jeweils dieser Alias ausgew&auml;hlt werden.<br>
+  Bitte beachten Sie, dass die meisten Schl&uuml;ssel eine begrenzte G&uuml;ltigkeit 
+  haben, das sollten Sie von Zeit zu Zeit &uuml;berpr&uuml;fen. Das Ablaufdatum 
+  ist in der GUI zur Schl&uuml;sselverwaltung ersichtlich. Wenn ein Schl&uuml;ssel 
+  abgelaufen ist, kann mit ihm nicht mehr gearbeitet werden, er ist ung&uuml;ltig.<br>
+  Ein Nachrichtenaustausch kann nur signiert und/oder verschl&uuml;sselt stattfinden, 
+  wenn beide beteiligten Parteien &uuml;ber die jeweils wechselseitig gleichen Zertifikate und 
+  Schl&uuml;ssel verf&uuml;gen.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="transportencryption"></a>Verschl&uuml;sselung des &Uuml;bertragungsweges (TLS)</h3>
+<P>Der  &Uuml;bertragungsweg kann gesondert verschl&uuml;sselt werden (<strong>T</strong>ransport<strong> L</strong>ayer <strong>S</strong>ecurity - TLS). Dies stellt keine Verschl&uuml;sselung/Sicherung der Daten dar, sondern nur eine Sicherung des &Uuml;bertragungsweges.<br>
+  Dazu sind die entsprechenden Zertifikate zum Senden von Nachrichten in den TLS Zertifikatmanager zu importieren. Es darf nur ein privater Schl&uuml;ssel in diesem Zertifikatmanager sein - dieser wird dann als Ihr privater TLS Schl&uuml;ssel verwendet.<br>
+  <br>
+Sie ben&ouml;tigen in der Regel f&uuml;r die Herstellung einer TLS Verbindung folgende Voraussetzungen:</P>
+<ul>
+  <li>Es mu&szlig; ein (und NUR ein!) privater Schl&uuml;ssel von Ihnen in der TLS Zertifkatverwaltung vorliegen. Dieser sollte bei einer CA beglaubigt sein, der gesamte Beglaubigungspfad (Trust Path) mu&szlig; in diesem Fall in der TLS Zertifikatverwaltung vorliegen. Es ist unter Umst&auml;nden m&ouml;glich, einen Self Signed Schl&uuml;ssel zu verwenden (nicht vertrauensw&uuml;rdig) - das ist aber in der Regel nicht m&ouml;glich, weil es von den Verbindungspartnern abgelehnt wird</li>
+  <li>Ihr  privater Schl&uuml;ssel in der TLS Zertifikatverwaltung mu&szlig; in der Regel im Feld CN (common name) den Namen des Hosts beinhalten. Wenn also Ihre Empfangs URL zum Beispiel &quot;https://myhost.com:8080/asX/HttpReceiver&quot; lautet, sollte im CN der Wert &quot;myhost.com&quot; stehen. Diese Einstellung wird nicht immer vom Partnersystem gepr&uuml;ft, ist aber bei vielen System Voraussetzung.</li>
+  <li>Das Endzertifikat des jeweiligen Partners und der gesamte Beglaubigungspfad zum Stammzertifikat seiner CA mu&szlig; vorhanden sein. </li>
+  <li>Auf der Seite Ihres Partners mu&szlig; das Zertifikat Ihres privaten Schl&uuml;ssels - auch mit dem gesamten Beglaubigungspfad - vorhanden sein. Das heisst also, da&szlig; Sie das Zertifikat Ihres privaten Schl&uuml;ssels f&uuml;r den Partner exportieren m&uuml;ssen, mit Ihrem gesamten Beglaubigungspfad.<br>
+    <br>
+    <br>
+  </li>
+</ul>
+<p>Sind diese Voraussetzungen nicht er&uuml;llt, wird es zu einem sogenannten TLS Handshake Fehler kommen. Die dabei auftretenen Fehlermeldungen sind nicht immer besonders aussagekr&auml;ftig. Meistens wird moniert, dass der Trust Pfad zum Stammzertifikat nicht gefunden werden konnte. Dann m&uuml;ssten Sie und Ihr Partner kontrollieren, dass auf beiden Seiten wirklich folgende Dinge vorliegen:<br>
+  <br>
+  In Ihrem System:
+  <ul>
+<li>Ihr privater Schl&uuml;ssel</li>
+<li>(Gegebenenfalls) Das Intermediate Zertifiat der CA Ihres Schl&uuml;ssels</li>
+<li>Das Stammzertifikat der CA Ihres Schl&uuml;ssels<br>
+</li>
+<li>Das Endzertifikat Ihres Partners<br>
+</li>
+<li>(Gegebenenfalls) Das Intermediate Zertifikat der CA Ihres Partners</li>
+<li>Das Stammzertifikat der CA Ihres Partners</li>
+</ul>
+<p>Im System Ihres Partners mu&szlig; die gleiche Konfiguration vorliegen, nur entsprechend anders herum.</p>
+<p>&nbsp;</p>
+<h3><a name="keytypes"></a>Schl&uuml;ssel-/Zertifikattypen</h3>
+<P>Prinzipiell gibt es zwei verschiedene Arten von Schl&uuml;sseln/Zertifikaten: 
+  &quot;trusted&quot; (beglaubigt) und &quot;self-signed&quot; (nicht beglaubigt). 
+  Technisch sind diese Zertifikate identisch. Self-signed Zertifikate k&ouml;nnen 
+  Sie selber ausstellen, w&auml;hrend trusted Zertifikate in der Regel &uuml;ber 
+  eine Certification Authority(CA) ausgegeben werden. mendelson-e-commerce GmbH 
+  betreibt eine CA, sie ist erreichbar unter http://ca.mendelson-e-c.com/. Bitte 
+  beachten Sie auch die <a href="#links">weiterf&uuml;hrenden Links</a> zu diesem 
+  Thema. <br>
+  <br>
+  Preislich gibt es hierbei recht grosse Unterschiede. So gibt es einige CAs, 
+  die die Schl&uuml;ssel kostenlos ausgeben, bei anderen widerum zahlen Sie einen 
+  entsprechenden j&auml;hrlichen Betrag. Man kann bei den Schl&uuml;sseln &uuml;ber 
+  sogenannte Extensions auch Nutzungsgebiete angeben, zum Beispiel &quot;Verschl&uuml;sselung&quot; 
+  oder &quot;Digitale Signatur&quot;. Auf technischer Ebene k&ouml;nnen Sie mit 
+  jedem Schl&uuml;ssel jede Operation ausf&uuml;hren, es gibt aber einige Softwarel&ouml;sungen, 
+  die Operationen mit Schl&uuml;sseln/Zertifikaten verweigern, die nicht die entsprechende 
+  Extension gesetzt haben.<br>
+  Extensions werden im vorliegenden Produkt ignoriert.<br>
+  <br>
+  Einige Kommunikationspartner werden f&uuml;r die Anbindung nach beglaubigten 
+  (trusted) Zertifikaten fragen, in der Regel reichen selbstsignierte Zertifikate 
+  (self signed) aber aus.<br>
+  <br>
+</P>
+<P>&nbsp;</P>
+<h3><a name="wildcard"></a>Wildcard Zertifikate</h3>
+<p> Wenn Sie die Transportsicherung (SSL) verwenden, mu&szlig; bei Ihrem Schl&uuml;ssel 
+  der &quot;Common Name&quot; (CN) Eintrag mit der Domain (Subdomain) &uuml;bereinstimmen, 
+  auf der die Serversoftware l&auml;uft. Wenn Sie den Schl&uuml;ssel f&uuml;r 
+  alle bzw mehrere Subdomains einer Domain verwenden m&ouml;chten, k&ouml;nnen 
+  Sie ein Wildcard Schl&uuml;ssel erstellen. Es werden dann zum Beispiel die Subdomains 
+  &quot;as2.mydomain.net&quot;, &quot;as4.mydomain.net&quot; und &quot;oftp2.mydomain.net&quot; 
+  gesch&uuml;tzt. Da Sie statt vieler einzelner Zertifikate bei der Verwendung 
+  von Wildcard Zertifikaten/Schl&uuml;sseln nur ein einzelnes Wildcard Zertifikat 
+  ben&ouml;tigen, ist das f&uuml;r viele Unternehmen eine kosteneffektive und 
+  effiziente L&ouml;sung.<br>
+  F&uuml;r Wildcard Zertifikate geben Sie bitte Ihren Common Name (CN) des zu 
+  erzeugenen Schl&uuml;ssels nach dem Schema &quot;*.domain.de&quot; an, dies 
+  sch&uuml;tzt dann wie beschrieben zum Beispiel &quot;mail.domain.de&quot;, &quot;www.domain.de&quot; 
+  und &quot;www2.domain.de&quot;.<br>
+  <strong>Achtung:</strong> Es sch&uuml;tzt nicht &quot;domain.de&quot;, &quot;www.de.domain.de&quot; 
+  und &quot;www.at.domain.de&quot;. Um auch &quot;domain.de&quot; zu sch&uuml;tzen, 
+  m&uuml;ssten Sie ein gesondertes einfaches Zertifikat erwerben. <br>
+  Mehrstufige Wildcard-Zertifikate nach dem Schema &quot;*.*.domain.de&quot; werden 
+  von keiner Zertifizierungsstelle (CA) angeboten, so k&ouml;nnen Sie zum Beispiel 
+  f&uuml;r die Subdomain &quot;www.xx.domain.de&quot; nur Wildcards f&uuml;r &quot;*.xx.domain.de&quot; 
+  erwerben, nicht jedoch f&uuml;r &quot;*.*.domain.de&quot;.<br>
+  <br>
+  Die mendelson CA unterst&uuml;tzt Wildcard Zertifikate ohne Aufpreis. Wenn Sie 
+  Ihren Schl&uuml;ssel bei einer anderen Zertifizierungsstelle als der mendelson 
+  CA beglaubigen lassen m&ouml;chten, stellen Sie bitte sicher, dass die CA diese 
+  unterst&uuml;tzt und informieren Sie sich bitte &uuml;ber die entsprechenden 
+  Tarife. </p>
+<P><strong>Hinweis: </strong>Bitte beachten Sie, dass es Verbindungspartner gibt, die Wildcard Zertifikate ablehnen.</P>
+<P>&nbsp;</P>
+<P>&nbsp;</P>
+<h3><a name="createkey"></a>Erstellung von Schl&uuml;sseln</h3>
+<p>Mit Hilfe der Zertifikatverwaltung k&ouml;nnen Sie sich selber Schl&uuml;ssel 
+  erstellen. Aus Sicherheitsgr&uuml;nden sollten Sie die G&uuml;ltigkeitsdauer 
+  nicht l&auml;nger als ein Jahr (365 Tage) w&auml;hlen. Nach der Erstellung des 
+  Schl&uuml;ssels ist er im System verf&uuml;gbar. In der Oberfl&auml;che zur 
+  Erstellung des Schl&uuml;ssels gibt es zus&auml;tzliche Hinweise zum Erstellen 
+  des Schl&uuml;ssels.<br>
+  Wenn Sie einen privaten Schl&uuml;ssel erstellen, den Sie sp&auml;ter beglaubigen 
+  lassen m&ouml;chten, spielt der bei der Erstellung angegeben G&uuml;ltigkeitszeitraum 
+  keine Rolle - auch der Einsatzzweck des Schl&uuml;ssels wird w&auml;hrend des 
+  Beglaubigungsprozesses durch die CA gesetzt.<br>
+  <strong><br>
+  Bitte vergessen Sie nicht, ihn zu exportieren und entsprechend zu sichern</strong> 
+  (bitte auch das Passwort merken).<br>
+  <br>
+  Wenn Sie den Schl&uuml;ssel erstellt haben, k&ouml;nnen Sie das entsprechende 
+  Zertifikat exportieren und an Ihre Partner schicken. Bitte geben Sie Ihren pers&ouml;nlichen 
+  Schl&uuml;ssel niemals einem Partner oder Dritten weiter.</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="trustedkeys" id="trustedkeys"></a>Beglaubigte Schl&uuml;ssel anfordern 
+  (CA) </h3>
+<p>Wenn Sie ein Zertifikat wollen, das von einer CA trusted ist, m&uuml;ssen Sie 
+  sich zun&auml;chst einen Schl&uuml;ssel erstellen. Das funktioniert &uuml;ber 
+  das Zertifikatmanagement. <br>
+  Die meisten Beglaubigungsverfahren funktionieren so, dass die im Zertifikat 
+  enthaltene Domain &uuml;ber das Senden einer Mail an eine Mailadresse auf dieser 
+  Domain verifiziert wird - Sie sollten also auf jeden Fall eine Mailadresse auf 
+  der enthaltenen Domain (CN) eingeben, die Sie erreichen k&ouml;nnen und die 
+  auch g&uuml;ltig ist. Bitte geben Sie auf keinen Fall im Zertifikat eine Einwegmail 
+  oder eine SPAM-/Trashmail an, ansonsten kann die Beglaubigung in der Regel nicht 
+  durchgef&uuml;hrt werden.<br>
+  F&uuml;r diesen Schl&uuml;ssel m&uuml;ssen Sie sich einen CSR (certificate signing 
+  request) erstellen, den Sie an die CA schicken.<br>
+  Darauf wird eine Antwort geschickt, damit patchen Sie ihren privaten Schl&uuml;ssel 
+  und erhalten so den Schl&uuml;ssel, der jetzt &uuml;ber einen Trustpath mit 
+  der CA verbunden ist. <br>
+  &Uuml;ber diesen Mechanismus geben Sie niemals den privaten Schl&uuml;ssel aus 
+  der Hand, auch die CA verf&uuml;gt nicht &uuml;ber ihn. Bitte erstellen Sie 
+  sich eine Sicherheitskopie Ihres privaten Schl&uuml;ssels und geben Sie Ihren 
+  privaten Schl&uuml;ssel niemals an Dritte weiter.</p>
+<p>&nbsp;</p>
+<p><img src="../images/trust_key.png" width="579" height="629" alt="Trusted key"></p>
+<p><br>
+  <br>
+  Im vorliegenden Produkt gehen Sie f&uuml;r die Durchf&uuml;hrung dieser Schritte 
+  folgendermassen vor:</p>
+<ul>
+  <li>&Ouml;ffnen Sie den Zertifikatmanager</li>
+  <li>Erstellen Sie sich einen privaten Schl&uuml;ssel, unter &quot;Erweitert 
+    - Schl&uuml;ssel erstellen (self signed)&quot;. Die erweiterten Einstellungen 
+    zur Verwendung des Schl&uuml;ssels sind hierbei egal, diese Information f&uuml;gt 
+    die CA dem Schl&uuml;ssel hinzu. Tragen Sie alle Ihre Daten in die Maske ein.</li>
+  <li>Erstellen Sie von diesem Schl&uuml;ssel einen Certificate Sign Request (CSR), 
+    unter &quot;Erweitert - CSR generieren (an CA)&quot;. Dazu markieren Sie den 
+    neu erstellen Schl&uuml;ssel und generieren dann die CSR Datei. </li>
+  <li>Schicken Sie die CSR Datei an die CA. Wie genau das geht, h&auml;ngt von 
+    Ihrer CA ab. Wenn Sie das nicht wissen, setzen Sie sich bitte mit der CA in 
+    Verbindung und fragen den Kundensupport. Sie m&uuml;ssen der CA auch sagen, 
+    f&uuml;r welchen Verwendungszweck Sie den Schl&uuml;ssel trusten m&ouml;chten.  
+  Wenn Sie Ihren Schl&uuml;ssel bei der mendelson CA beglaubigen m&ouml;chten, k&ouml;nnen Sie die Anfrage (CSR) gerne an den mendelson Support via Mail senden. </li>
+  <li>Erstellen Sie ein Backup des Keystores, die Keystoredatei wird in der Statuszeile 
+    der Zertifikatverwaltung angezeigt. Kopieren Sie diese Datei an einen sicheren 
+    Ort.</li>
+  <li>Importieren Sie die Root- und Intermediate Zertifikate der CA in das System. 
+    Diese bekommen Sie in der Regel von der Website der CA. Die mendelson CA Rootzertifikate sind in der Regel bereits mit dem Produkt ausgeliefert, hier ist kein Import notwendig.</li>
+  <li>Die CA schickt Ihnen eine Antwort auf Ihren Certificate Sign Request (CSR), 
+    sie sieht aus wie ein normales Zertifikat</li>
+  <li>Markieren Sie den Schl&uuml;ssel, f&uuml;r den Sie die CSR abgeschickt haben 
+    und patchen Sie den Schl&uuml;ssel mit der Antwort der CA, unter &quot;Erweitert 
+    - Antwort der CA auf CSR importieren&quot;. Der Keystore des systems enth&auml;lt 
+    nun den trusted Key. Bitte erstellen Sie ein Backup des Zertifikatkeystores 
+    an einem sicheren Ort. Geben Sie den privaten Schl&uuml;ssel niemals aus der 
+    Hand. Die Zertifikate, die Ihr Partner ben&ouml;tigt, bekommen Sie &uuml;ber die Option &quot;Export-Zertifikate exportieren (f&uuml;r den Partner)&quot;.</li>
+</ul>
+<h3>&nbsp;</h3>
+<p>&nbsp;</p>
+<h3><a name="renew" id="renew"></a>Zertifikate erneuern</h3>
+<p>Wenn Sie ein Zertifikat verwenden, das von einer CA beglaubigt ist, l&auml;uft 
+  dieses nach einer gewissen Zeit aus. In der Regel ist das ein Jahr. Hier gibt 
+  es nun die M&ouml;glichkeit, das Zertifikat zu erneuern. <strong>Sie k&ouml;nnen 
+  auch ein Zertifikat bei der mendelson CA erneuern, das vorher von einer anderen 
+  CA beglaubigt war.</strong> Dazu gehen Sie folgendermassen vor: </p>
+<ul>
+  <li>&Ouml;ffnen Sie den Zertifikatmanager</li>
+  <li>Markieren Sie den Schl&uuml;ssel, dessen Zertifikat Sie erneuern m&ouml;chten</li>
+  <li>Erstellen Sie von diesem Schl&uuml;ssel einen Certificate Sign Request (CSR), 
+    unter &quot;Erweitert - CSR generieren (an CA)&quot;. Dazu markieren Sie den 
+    neu erstellen Schl&uuml;ssel und generieren dann die CSR Datei. </li>
+  <li>Schicken Sie die CSR Datei an die CA, zum Beispiel die mendelson CA. Das k&ouml;nnen Sie gerne per Mail an den mendelson Support durchf&uuml;hren.</li>
+  <li>Erstellen Sie ein Backup des Keystores, die Keystoredatei wird in der Statuszeile 
+    der Zertifikatverwaltung angezeigt. Kopieren Sie diese Datei an einen sicheren 
+    Ort.</li>
+  <li>Die CA schickt Ihnen eine Antwort auf Ihren Certificate Sign Request (CSR), 
+    sie sieht aus wie ein normales Zertifikat</li>
+  <li>Markieren Sie den Schl&uuml;ssel, f&uuml;r den Sie die CSR abgeschickt haben 
+    und patchen Sie den Schl&uuml;ssel mit der Antwort der CA, unter &quot;Erweitert 
+    - Antwort der CA auf CSR importieren&quot;. Der Keystore des systems enth&auml;lt 
+    nun den trusted Key. Bitte erstellen Sie ein Backup des Zertifikatkeystores 
+    an einem sicheren Ort. Geben Sie den privaten Schl&uuml;ssel niemals aus der 
+    Hand. </li>
+</ul>
+<p>Keine Sorge - Dieser Vorgang wird das vorherige Zertifikt nicht l&ouml;schen, 
+  sondern einen neuen Eintrag im keystore erstellen.</p>
+<p>&nbsp;</p>
+<h3>&nbsp;</h3>
+<h3><a name="imexport" id="imexport"></a>Import und Export von Schl&uuml;sseln 
+  und Zertifikaten</h3>
+<p> Sie k&ouml;nnen Zertifikate und Schl&uuml;ssel aus dem Produkt exportieren 
+  und auch Schl&uuml;ssel importieren, die von externen Programmen generiert wurden. 
+  Es ist auch m&ouml;glich, Zertifikate Ihrer Partner zu importieren, die f&uuml;r 
+  jede sichere Verbindung oder &Uuml;bertragung zu oder von einem Ihrer Partner 
+  erforderlich sind. Sobald die Zertifikate und Schl&uuml;ssel im Zertifikatsmanager 
+  verf&uuml;gbar sind, k&ouml;nnen sie den Sicherheitsfunktionen des Partners 
+  im Partner-Management zugeordnet oder f&uuml;r die TLS-Verbindung verwendet 
+  werden.<br>
+  Alle von Ihrem Partner gesendeten Zertifikate k&ouml;nnen &uuml;ber die Funktion 
+  &quot;Import&quot; importiert werden. Die Importfunktion erkennt das 
+  Importformat automatisch. Wenn ein Zertifikat nicht &uuml;ber den Importmechanismus 
+  importiert werden kann, weil eine Fehlermeldung auftritt, wenden Sie sich bitte 
+  an den mendelson Support.<br>
+  Manchmal enthalten empfangene Zertifikatsdateien Ihrer Partner mehr als ein 
+  Zertifikat (. p7b) - in diesem Fall k&ouml;nnen Sie mehrere Zertifikate aus 
+  einer Datei importieren.<br>
+  Private Schl&uuml;ssel, die Sie importieren m&ouml;chten, liegen in der Regel in einem Schl&uuml;sselspeicherformat 
+  (JKS oder PKCS #12) vor. Wenn ein Keystore-Format importiert wird, 
+  denken Sie bitte daran, dass der Keystore durch ein Passwort gesch&uuml;tzt 
+  ist (PKCS#12) oder sogar der Keystore mit einem Passwort und der mitgelieferte 
+  Schl&uuml;ssel mit einem anderen (JKS) - d.h. Sie ben&ouml;tigen das Keystore-Passwort 
+  und (abh&auml;ngig vom Format) das Keypasswort, um Schl&uuml;ssel aus einer 
+  Keystore-Datei zu importieren.<br>
+  <br>
+  Wenn Sie den Schl&uuml;ssel exportieren m&ouml;chten, dann tun Sie dies bitte 
+  nur zu Sicherungszwecken und geben Sie diese Schl&uuml;ssel <strong>niemals</strong> an Dritte 
+  weiter. mendelson-e-commerce GmbH wird <strong>niemals</strong> nach Ihren privaten Schl&uuml;sseln fragen!<br>
+  <br>
+  F&uuml;r jede Form der sicheren Kommunikation ist es nur notwendig, Ihrem Partner 
+  den &ouml;ffentlichen Teil Ihres Schl&uuml;ssels zu geben, daf&uuml;r gibt es 
+  eine Funktion &quot;Export&quot;. Hier gibt es unterschiedliche Formate 
+  - bis auf das Format &quot;SSH2&quot; (was nur f&uuml;r SSH basierte Systeme 
+  wie SFTP oder SCP verwendet wird) sollte Ihr Partner alle importieren k&ouml;nnen.<br>
+  Wir w&uuml;rden Ihnen zum Weitergeben Ihres Zertifikats immer das Format .p7b (pkcs#7) empfehlen - dieses Format beinhaltet sowohl Ihr Endzertifikat als auch die gesamte Beglaubigungskette 
+  bis zur CA.<br>
+</p>
+<p><img src="../images/certificates_im_export.png" width="553" height="639"> </p>
+<p>&nbsp;</p>
+<h3><a name="keys_hints"></a>Hinweise zu Schl&uuml;sseln und Zertifikaten<br> 
+</h3>
+    
+<p>Schl&uuml;ssel und Zertifikate haben einige Kenndaten wie Schl&uuml;ssell&auml;nge oder Signaturalgorithmus, bei denen Sie sich fragen k&ouml;nnten, warum man aus Sicherheitsgre&uuml;nden nicht einfach immer die gr&ouml;&szlig;te Schl&uuml;ssell&auml;nge und den st&auml;rksten Signaturlagorithmus verwendet. H&ouml;here Sicherheit hat allerdings auch  Nachteile, diese liegen in der Verarbeitungsgeschwindigkeit. Wenn Sie zum Beispiel hohe Schl&uuml;ssell&auml;ngen w&auml;hlen, werden sie eine Verlangsamung der Verarbeitung erkennen. Die Verarbeitungsgeschwindigkeit w&auml;chst nichtlinear mit der Schl&uuml;ssell&auml;nge. Hier m&uuml;ssen Sie jeweils abw&auml;gen zwischen Geschwindigkeit und Sicherheit.<br>
+  Es ist ausserdem zu beachten, dass &auml;ltere TLS Versionen with TLS 1.2 in manchen Implementierungen nicht mit SHA-3 512 oder SHA-2 512 signierten Schl&uuml;sseln umgehen k&ouml;nnen. Hier m&uuml;ssten Sie sich vor dem Einsatz der jeweilgen Schl&uuml;ssel und Zertifikate bei Ihren Partnern erkundigen, was deren TLS Versionen unterst&uuml;tzen.
+</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="fileextension"></a>Dateinamenserweiterungen<br>
+</h3>
+<p>Wann immer Sie mit Zertifikaten oder Schl&uuml;sseln zu tun haben, werden Sie 
+  auf bestimmte Dateinamen treffen. &Uuml;ber die Dateinamenserweiterungen l&auml;sst 
+  sich im Regelfall das Format der Datei erkennen. Bitte beachten Sie, dass der 
+  Inhalt oder das Format der Dateien nicht zwingend &uuml;ber die Dateinamenserweiterungen 
+  herleitbar ist. </p>
+<ul>
+  <li><strong>.CER: </strong>CER-kodiertes Zertifikat. Diese Dateien bekommen 
+    Sie h&auml;ufig von Ihrem Kommunikationspartner, um ein neues Zertifikat in 
+    Ihr System zu importieren.</li>
+  <li><strong>.CRT: </strong>DER- oder Base64-kodiertes Zertifikat. Diese Dateien 
+    bekommen Sie h&auml;ufig von Ihrem Kommunikationspartner, um ein neues Zertifikat 
+    in Ihr System zu importieren.</li>
+  <li><strong>.DER</strong>: DER - kodiertes Zertifikat. Diese Dateien bekommen 
+    Sie h&auml;ufig von Ihrem Kommunikationspartner, um ein neues Zertifikat in 
+    Ihr System zu importieren.</li>
+  <li><strong>.P7B, .P7C: </strong>Signatur im PKCS#7 Format, enth&auml;lt ein 
+    Zertifikat und eventuell auch die trust chain inklusive aller Zertifikate</li>
+  <li><strong>.P12</strong>, <strong>.PFX: </strong>Keystoreformat (PKCS#12), 
+    enth&auml;lt einen oder mehrere Schl&uuml;ssel und/oder Zertifikate. Der Keystore 
+    ist passwortgesch&uuml;tzt, die darin enthaltenen Schl&uuml;ssel nicht.</li>
+  <li><strong>.PEM: </strong>Base64-kodiertes Zertifikat oder Schl&uuml;ssel, 
+    umschlossen von „-----BEGIN CERTIFICATE-----“ und „-----END CERTIFICATE-----“. 
+    Dieses Format kann mit einem normalen Editor ge&ouml;ffnet werden. Wenn es 
+    sich bei der Datei um einen Schl&uuml;ssel handelt, gibt es neben dem &quot;BEGIN 
+    CERTIFICATE -- END CERTIFICATE&quot; Abschnitt auch noch einen &quot;BEGIN 
+    .. KEY -- END .. KEY&quot; Abschnitt. Prinzipiell lassen sich alle Zertifikate, 
+    keystores und Schl&uuml;ssel in diesem Format speichern.<br>
+    Es ist m&ouml;glich, beliebig viele Zertifikat und Schl&uuml;ssel in einer PEM Datei hintereinander zu speichern.
+  </li>
+  <li><strong>.pub:</strong> Zertifikat im PEM Format/BASE 64, f&uuml;r alle SSH 
+    basierten Anwendungen wie SFTP, SCP etc. Dieses Format wird ausserhalb von 
+    SSH Anwendungen nicht verwendet.</li>
+</ul>
+  
+<p>Achtung: Sie sollten an Ihre Partner keine PKCS#12 Dateien weitergeben, diese 
+  enthalten in der Regel Ihren privaten Schl&uuml;ssel!</p>
+<p>Wenn in dem jeweiligen Dateiformat private Schl&uuml;ssel gespeichert sind, 
+  gibt es einen entsprechenden Passwortschutz, wenn man versucht, die Daten zu 
+  dekodieren. </p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="pkcs" id="pkcs"></a>PKCS<br>
+</h3>
+<p>Wenn Sie mit Ihrem Partner &uuml;ber Sicherheit der &Uuml;bertragungen sprechen, 
+  k&ouml;nnten auch Begriffe zum &quot;Public Key Cryptography Standard&quot; 
+  fallen (PKCS). Die folgende Liste soll Ihnen helfen, die einzelnen PKCS zuzuordnen. 
+  F&uuml;r eine detaillierte Liste k&ouml;nnen Sie auch unter <a href="http://de.wikipedia.org/wiki/PKCS">http://de.wikipedia.org/wiki/PKCS</a> 
+  schauen. </p>
+
+<table width="700">
+  
+    <tr> 
+      <th width="66"></th>
+      <th width="281">Name</th>
+      <th width="541">Kommentar</th>
+    </tr>
+    
+  <tr> 
+    <th align="left">PKCS#7</th>
+      <td>Cryptographic Message Syntax Standard</td>
+      <td>Wird zum Signieren und/oder Verschl&uuml;sseln von Nachrichten genutzt.</td>
+    </tr>
+    <tr> 
+      
+    <th align="left">PKCS#10</th>
+      <td>Certification Request Standard</td>
+      <td>Format der Nachrichten, die zu einer CA (<i>certification authority</i>) 
+        gesendet werden, um die Zertifizierung eines Schl&uuml;sselpaares zu erfragen.</td>
+    </tr>
+    <tr> 
+      
+    <th align="left">PKCS#12</th>
+      <td>Personal Information Exchange Syntax Standard</td>
+      <td>Definiert ein Dateiformat (keystore), das dazu benutzt wird, private 
+        Schl&uuml;ssel mit dem zugeh&ouml;rigen Zertifikat passwortgesch&uuml;tzt zu speichern.</td>
+    </tr>
+ 
+</table>
+
+
+<p>&nbsp;</p>
+<h3><a name="crl" id="crl"></a>Sperrlisten</h3>
+<p>Eine <strong>Zertifikatsperrliste</strong> (<span lang="en-Latn">certificate revocation list</span>, <em>CRL</em>) ist eine Liste, die die Ung&uuml;ltigkeit von Zertifikaten beschreibt. Sie erm&ouml;glicht es, festzustellen, ob ein Zertifikat von der jeweiligen CA gesperrt oder widerrufen wurde und warum. Daher gibt es Sperrlistenabfragen auch nur f&uuml;r beglaubigte Zertifikate.<br>
+Zertifikate werden in der Regel gesperrt oder widerrufen, wenn deren zugeh&ouml;rige Schl&uuml;ssel<a href="https://de.wikipedia.org/wiki/Schl%C3%BCssel_(Kryptologie)" title="Schl&uuml;ssel (Kryptologie)"></a> zum Beispiel nicht mehr sicher sind, weil sie  in falsche H&auml;nde geraten sind. In solchen F&auml;llen muss das Zertifikat noch vor   dem eigentlichen Ablaufdatum gesperrt werden, damit der zugeh&ouml;rige Schl&uuml;ssel nicht weiter verwendet wird. </p>
+<p>Die CA verwaltet f&uuml;r diese F&auml;lle eine Sperrliste, die &uuml;ber den  mendelson Zertifikatmanager abgefragt werden kann. Damit das funktioniert, muss der Serverprozess in der Lage sein, die jeweilige URL der Sperrliste eines jeden Zertifikats zu erreichen - dies ist in der DMZ in der Regel nicht m&ouml;glich.<br>
+  Technisch ist in jedem beglaubigten Zertifikat &uuml;ber eine optionale Zertifikatserweiterung eine URL gespeichert, die Informationen zur Sperrliste beinhaltet. Es gibt hier in der Regel die M&ouml;glichkeiten des Zugriffs via HTTP, FTP oder LDAP (RFC 2587). Diese URL wird verfolgt und die Sperrliste analysiert. <br>
+</p>
+<p>&nbsp;</p>
+<p>&nbsp;</p>
+<h3><a name="links"></a>Weiterf&uuml;hrende Links</h3>
+<h3>mendelson CA</h3>
+<p><strong>Certificate Authority, beglaubigtes Zertifikat beantragen: </strong>http://ca.mendelson-e-c.com<br>
+  <br>
+</p>
+<h3>Begriffserkl&auml;rungen:</h3>
+<p><strong>Privater Schl&uuml;ssel: </strong>http://de.wikipedia.org/wiki/Privater_Schl%C3%BCssel<strong><br>
+  &Ouml;ffentlicher Schl&uuml;ssel: </strong>http://de.wikipedia.org/wiki/%C3%96ffentlicher_Schl%C3%BCssel<strong><br>
+  Zertifikate: </strong>http://de.wikipedia.org/wiki/Digitales_Zertifikat<strong><br>
+  Certificate Authority (CA):</strong> http://de.wikipedia.org/wiki/Certificate_Authority<br>
+  <strong>Self signed certificates (engl.):</strong> http://en.wikipedia.org/wiki/Self-signed_certificate 
+</p>
+<h3>&nbsp;</h3>
+<h3>Technische Hintergr&uuml;nde:</h3>
+<p><strong>Public Key Verfahren:</strong> http://de.wikipedia.org/wiki/Public-Key-Verfahren<br>
+  <strong>Symmetrisches Kryptosystem:</strong> http://de.wikipedia.org/wiki/Symmetrisches_Kryptosystem<br>
+</p>
+<hr>
+<table width="100%" border="0">
+  <tr> 
+    <td><div class="mendelsonLogo"/></td>
+    <td class="date"><b>Last modified:</b> $Date: 11/03/25 9:18 $</td>
+  </tr>
+</table>
+</BODY>
+
+</HTML>

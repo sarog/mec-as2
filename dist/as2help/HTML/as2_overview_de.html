@@ -1,0 +1,47 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html><head><title>Architektur</title>
+
+
+
+<link rel="stylesheet" href="../../doc/mec_HTMLdoc.css"></head><body><h1>Architektur</h1>
+<hr>
+<p><img src="../images/architecture.png"></p>
+<p>Der AS2 Server besteht aus mehreren Komponenten, die eine Anbindung an die 
+  Partner (TP, trading partner) und das jeweilige Integrationssystem gew&auml;hrleisten.<br>
+  <br>
+  <strong>AS2 Server:</strong><br>
+  Der Server regelt den Ablauf der Nachrichtenverarbeitung und ist ausserdem f&uuml;r 
+  Verschl&uuml;sselung, digitale Signatur und Zugriffe auf alle anderen Komponenten 
+  verantwortlich.</p>
+<p><strong>AS2 Client (Rich Client):</strong><br>
+  &uuml;ber den AS2 Client k&ouml;nnen s&auml;mtliche Einstellungen am Server 
+  vorgenommen werden, zus&auml;tzlich k&ouml;nnen Informationen &uuml;ber die 
+  Transaktionen angezeigt werden. Der Client beinhaltet auch die Partnerverwaltung, 
+  die Statistik und die gesamte Zertifikatverwaltung</p>
+<p><strong>AS2 Web Client/Browser</strong><br> 
+  Erlaubt ein Monitoring der Transaktionen &uuml;ber einen Webbrowser. Diese Komponente ist optional.
+</p>
+<p><strong>DB Server:</strong><br>
+  Der Datenbankserver speichert alle Informationen &uuml;ber die ein- und ausgehenden 
+  Transaktionen. Ausserdem werden die Stammdaten abgelegt.<br>
+  <strong><br>
+  HTTP Server:</strong><br>
+  Der HTTP Server dient zum einen als Servlet Container f&uuml;r das Empfangsservlet 
+  f&uuml;r eingehende Nachrichten, zum Anderen zum Hosten einiger Informationsseiten. 
+  Das Servlet empf&auml;ngt AS2 Nachrichten und asynchron versandte MDN und schickt 
+  sie via RMI (remote method invokation) an den Server. Wenn AS2 Nachrichten mit 
+  synchroner MDN verschickt werden, kommt diese Komponente nicht zum Einsatz.</p>
+<p><strong>AS2 Sender:</strong><br>
+  Ist f&uuml;r den Versand von AS2 Nachrichten und bei synchroner MDN auch f&uuml;r 
+  den Empfang der MDN verantwortlich.</p>
+<p><strong>Notification:</strong><br>
+  Erlaubt die Benachrichtigung &uuml;ber Mail, falls es zu Ereignissen gekommen ist, die die Aufmerksamkeit eines Benutzers erfordern.
+</p>
+<hr>
+<table border="0" width="100%">
+  <tbody><tr> 
+    <td><div class="mendelsonLogo"/></td>
+    <td class="date"><b>Last modified:</b> $Date: 12/10/22 14:13 $</td>
+  </tr>
+</tbody></table>
+</body></html>
